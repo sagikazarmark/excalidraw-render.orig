@@ -1,0 +1,17 @@
+{
+  "approval": null,
+  "fresh_base": "7b432b62faaa3c55361a7501bf55687578ec42d6",
+  "fresh_capture": {
+    "path": "tests/conformance/proposals/jpeg189-requalification-v1/old/snapshots/snapshots.json",
+    "byte_length": 435653,
+    "sha256": "c33412a5798904418da0fd07e212fa557e54595599624f602aaac49cded8a082"
+  },
+  "prior_capture": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v1/final-current/snapshots/snapshots.json",
+    "byte_length": 466402,
+    "sha256": "be9d5fc2acd8706b6a5b972b96a804e94b88d0f184c42f0417e3a88d3284cda0"
+  },
+  "identical_records": 168,
+  "total": 168,
+  "note": "fresh HEAD provenance, never relabel old producer"
+}

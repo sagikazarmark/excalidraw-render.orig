@@ -1,0 +1,27 @@
+{
+  "approval": null,
+  "base_commit": "7b432b62faaa3c55361a7501bf55687578ec42d6",
+  "reference": {
+    "path": "tests/oracle/jpeg-exif/reference.json",
+    "byte_length": 3196428,
+    "sha256": "cd811bca81e24aaeb652c86d3e6dfd7b4aeb65d8050764da34b129530aac6ecf"
+  },
+  "helper_sources": {
+    "capture": {
+      "path": "tests/conformance/proposals/jpeg189-requalification-v1/before/tests/conformance/proposals/jpeg187-requalification-v1/collect.py",
+      "byte_length": 19893,
+      "sha256": "a36b1b97a72a8dd565144c226693510abbc1dfcf7add247c72bc687495c1df0f"
+    },
+    "qualification": {
+      "path": "tests/conformance/proposals/jpeg189-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v1/workflow.py",
+      "byte_length": 28814,
+      "sha256": "c7fe2ae0acee1e30d0b87f5ac16b8b8389910184ca020b23ff31ac89b60d1fcc"
+    },
+    "receipts": {
+      "path": "tests/conformance/proposals/jpeg189-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+      "byte_length": 20173,
+      "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+    }
+  },
+  "qualification_scope": "JPEG-specific APP1/TIFF precedence only; shared orientation/Cargo/reference unchanged"
+}

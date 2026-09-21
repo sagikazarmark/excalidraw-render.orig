@@ -1,0 +1,39 @@
+
+running 34 tests
+test jpeg_color_contract::cmyk_component_probe_isolates_reference_truncation_from_decoder_rounding ... ok
+test jpeg_color_contract::issue_187_minimized_noninterleaved_neutral_image_still_exposes_missing_rows ... ok
+test jpeg_color_contract::extent_gates_reject_artifacts_with_unchanged_image_payloads ... ok
+test jpeg_color_contract::provisional_adobe_color_space_does_not_override_three_component_rgb ... ok
+test jpeg_color_contract::jpeg_headers_independently_confirm_color_sampling_and_scan_axes ... ok
+test jpeg_color_contract::ycck_unconverted_components_with_integer_color_conversion_match_reference ... ok
+test jpeg_contract::absent_and_invalid_tiff_orientation_leave_the_source_layout_intact ... ok
+test jpeg_color_contract::issue_187_baseline_sampling_cells_remain_explicit_defects ... ok
+test jpeg_contract::all_tiff_orientations_preserve_exact_samples_and_svg_source_octets ... ok
+test jpeg_contract::decoded_dimension_and_pixel_boundaries_do_not_apply_to_direct_svg ... ok
+test jpeg_contract::malformed_markers_and_icc_sequences_have_exact_recovery_reports ... ok
+test jpeg_contract::baseline_and_progressive_dc_blocks_are_exact_opaque_samples ... ok
+test jpeg_exif_contract::authored_earlier_app1_and_marker_fill_preserve_exif_selection ... ok
+test jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities ... ok
+test jpeg_exif_contract::evidence_has_closed_matrix_and_reconstructible_app1_precedence ... ok
+test jpeg_exif_contract::orientation_controls_discriminate_all_four_pixel_permutations ... ok
+test jpeg_exif_contract::authored_invalid_tiff_blocks_and_malformed_headers_have_bounded_recovery ... ok
+test jpeg_icc_contract::evidence_has_closed_matrix_and_reconstructible_app2_profiles ... ok
+test jpeg_icc_contract::gray_precision_probe_discriminates_8bit_from_16bit ... ok
+test jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference ... ok
+test jpeg_icc_contract::gray_profile_precision_handles_small_extents_and_scratch_boundaries ... ok
+test jpeg_icc_contract::invalid_gray_profiles_are_not_silently_ignored_on_rgb_sources ... ok
+test jpeg_icc_contract::gray_trc_profile_on_ycbcr_preserves_untagged_pixels ... ok
+test jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation ... ok
+test jpeg_icc_contract::recovery_gates_reject_changed_extents_and_non_rgba_png ... ok
+test jpeg_exif_contract::qualified_exif_precedence_matches_reference ... ok
+test static_jpeg_asset_render::direct_svg_preserves_validated_jfif_octets_in_a_canonical_data_url ... ok
+test static_jpeg_asset_render::direct_svg_validates_jpeg_without_charging_decoded_pixels ... ok
+test static_jpeg_asset_render::pdf_embeds_normalized_jpeg_losslessly_with_a_soft_mask_and_no_fallback ... ok
+test static_jpeg_asset_render::png_projects_jpeg_as_opaque_canonical_srgb ... ok
+test static_jpeg_asset_render::sniffed_jpeg_type_wins_over_jfif_and_png_claims ... ok
+test jpeg_icc_contract::multipart_profiles_preserve_semantics_and_discriminate_ignored_icc ... ok
+test jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference ... ok
+test jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities ... ok
+
+test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 567 filtered out; finished in 6.29s
+

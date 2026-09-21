@@ -1,0 +1,1 @@
+{"schema_version":1,"diagnostics":[{"code":"font.liberation-sans-substituted","severity":"info","format":"svg","effects":["visual"],"element_id":"helvetica-detected","json_pointer":"/elements/0","message":"Helvetica text used bundled Liberation Sans","details":{"kind":"compatibility","recovery":"substituted","recipe_id":null}}]}

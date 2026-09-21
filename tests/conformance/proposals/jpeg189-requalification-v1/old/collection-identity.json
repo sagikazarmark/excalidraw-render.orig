@@ -1,0 +1,24 @@
+{
+  "schema": "excalidraw-render/jpeg187-public-facade-comparison/v1",
+  "approval": null,
+  "label": "old",
+  "commit": "7b432b62faaa3c55361a7501bf55687578ec42d6",
+  "source_status": "",
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "consumer_lock": {
+    "path": "tests/package-consumer/Cargo.lock",
+    "sha256": "897026587dec22941b32ecef3d55d51988f1813c006ab7dd355810fc2f39b5c5",
+    "byte_length": 38776
+  },
+  "workspace_lock": {
+    "path": "Cargo.lock",
+    "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2",
+    "byte_length": 60882
+  },
+  "collector": {
+    "path": "tests/package-consumer/examples/native_snapshots.rs",
+    "sha256": "028a4909fb6814148e6392bbbdb9c1a88f041a8177f0f3bec48a2c6995126d2b",
+    "byte_length": 17402
+  },
+  "comparison_only_not_baseline_refresh": true
+}

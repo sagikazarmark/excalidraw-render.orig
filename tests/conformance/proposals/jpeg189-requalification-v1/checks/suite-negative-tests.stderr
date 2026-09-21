@@ -1,0 +1,14 @@
+test_actual_counts_and_exact_failures (__main__.SuiteChecks.test_actual_counts_and_exact_failures) ... ok
+test_auth_scope_stays_exif_and_requires_affirmative (__main__.SuiteChecks.test_auth_scope_stays_exif_and_requires_affirmative) ... ok
+test_changed_error_body_rejected (__main__.SuiteChecks.test_changed_error_body_rejected) ... ok
+test_counts_or_pass_list_cannot_be_forged (__main__.SuiteChecks.test_counts_or_pass_list_cannot_be_forged) ... ok
+test_extra_error_or_truncation_rejected (__main__.SuiteChecks.test_extra_error_or_truncation_rejected) ... ok
+test_only_exact_nonsemantic_backtrace_note_can_move (__main__.SuiteChecks.test_only_exact_nonsemantic_backtrace_note_can_move) ... ok
+test_optimized_refusal_precedes_seal (__main__.SuiteChecks.test_optimized_refusal_precedes_seal) ... ok
+test_receipt_gate_retains_exact_109_ids_and_six_commands (__main__.SuiteChecks.test_receipt_gate_retains_exact_109_ids_and_six_commands) ... ok
+test_unknown_identity_even_same_count_rejected (__main__.SuiteChecks.test_unknown_identity_even_same_count_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.099s
+
+OK

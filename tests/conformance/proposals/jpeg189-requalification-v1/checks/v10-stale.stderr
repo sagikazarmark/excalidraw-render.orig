@@ -1,0 +1,3 @@
+    Finished `release` profile [optimized] target(s) in 0.14s
+     Running `target/release/xtask conformance candidate-approval-subject tests/conformance/candidates/stage4-frames-text-assets-v10`
+error: stale adapter production/source bindings

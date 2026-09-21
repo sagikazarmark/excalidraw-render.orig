@@ -1,59 +1,60 @@
 //! Bounded EXIF precedence: 82 cells / 164 vectors, independently authored APP1
-//! bytes and pinned official-browser evidence. #189 tracks the 36 failing cells;
-//! their exact measurements characterize defects, not approved exceptions.
-//! Browser selection is first APP1 (even invalid/absent/bad magic), then first
-//! valid orientation within its IFD. Runtime selection is last pre-scan APP1,
-//! then first tag, even invalid. Late/between-scan APP1 is ignored by both.
+//! bytes and pinned official-browser evidence. All 164 vectors must pass the
+//! canonical gates, including the 36 cells corrected by #189.
+//! In this matrix the first pre-SOS EXIF APP1 wins (even invalid/absent/bad
+//! magic), then the first valid orientation within its IFD. Late/between-scan
+//! APP1 is ignored. Authored bounds controls below make no new browser claims.
 //! PDF checks inspect the page-bound native image and page extents, not a viewer.
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{
-    compare, CanonicalRgba8, ComparisonError, ComparisonMode, ComparisonReport, SsimOutcome,
-    VisualClass,
+    compare, CanonicalRgba8, ComparisonError, ComparisonMode, ComparisonReport, VisualClass,
 };
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 
-// Each tuple authors (signal, browser orientation, current runtime orientation).
+// Each tuple authors (signal, browser orientation).
 // Selection never comes from the production metadata parser or measured pixels.
-const QUALIFIED: &[(&str, u8, u8)] = &[
-    ("control-1", 1, 1),
-    ("control-3", 3, 3),
-    ("control-6", 6, 6),
-    ("control-8", 8, 8),
-    ("duplicate-tags-6-3", 6, 6),
-    ("duplicate-tags-3-6", 3, 3),
-    ("valid-tag-then-invalid", 6, 6),
-    ("late-only", 1, 1),
-    ("early-3-late-6", 3, 3),
-    ("early-6-late-3", 6, 6),
+const QUALIFIED: &[(&str, u8)] = &[
+    ("control-1", 1),
+    ("control-3", 3),
+    ("control-6", 6),
+    ("control-8", 8),
+    ("duplicate-tags-6-3", 6),
+    ("duplicate-tags-3-6", 3),
+    ("valid-tag-then-invalid", 6),
+    ("late-only", 1),
+    ("early-3-late-6", 3),
+    ("early-6-late-3", 6),
 ];
-const BETWEEN_SCANS: &[(&str, u8, u8)] = &[
-    ("between-scans-only", 1, 1),
-    ("early-3-between-6", 3, 3),
-    ("early-6-between-3", 6, 6),
+const BETWEEN_SCANS: &[(&str, u8)] = &[
+    ("between-scans-only", 1),
+    ("early-3-between-6", 3),
+    ("early-6-between-3", 6),
 ];
-const FAILURES: &[(&str, u8, u8)] = &[
-    ("duplicate-6-3", 6, 3),
-    ("duplicate-3-6", 3, 6),
-    ("invalid-then-valid", 1, 6),
-    ("absent-tag-then-valid", 1, 6),
-    ("bad-magic-then-valid", 1, 6),
-    ("valid-then-invalid", 6, 1),
-    ("valid-then-absent-tag", 6, 1),
-    ("valid-then-bad-magic", 6, 1),
-    ("invalid-tag-then-valid", 6, 1),
+// Historical ownership partition only: these nine signals were corrected by
+// #189. Both partitions now have identical canonical acceptance gates.
+const CORRECTED: &[(&str, u8)] = &[
+    ("duplicate-6-3", 6),
+    ("duplicate-3-6", 3),
+    ("invalid-then-valid", 1),
+    ("absent-tag-then-valid", 1),
+    ("bad-magic-then-valid", 1),
+    ("valid-then-invalid", 6),
+    ("valid-then-absent-tag", 6),
+    ("valid-then-bad-magic", 6),
+    ("invalid-tag-then-valid", 6),
 ];
 
-fn orientations(row: &Value) -> (u8, u8) {
-    let &(_, browser, runtime) = QUALIFIED
+fn browser_orientation(row: &Value) -> u8 {
+    let &(_, browser) = QUALIFIED
         .iter()
         .chain(BETWEEN_SCANS)
-        .chain(FAILURES)
-        .find(|(signal, _, _)| row["signal"] == *signal)
+        .chain(CORRECTED)
+        .find(|(signal, _)| row["signal"] == *signal)
         .unwrap();
-    (browser, runtime)
+    browser
 }
 fn decode(value: &Value) -> Vec<u8> {
     base64::engine::general_purpose::STANDARD
@@ -241,9 +242,9 @@ fn reconstruct_contract(record: &Value) {
     let mut cells = BTreeSet::new();
     for mode in ["baseline", "progressive"] {
         for order in ["little", "big"] {
-            for &(signal, _, _) in QUALIFIED
+            for &(signal, _) in QUALIFIED
                 .iter()
-                .chain(FAILURES)
+                .chain(CORRECTED)
                 .chain(BETWEEN_SCANS.iter().filter(|_| mode == "progressive"))
             {
                 let cell = format!("{mode}-{order}-{signal}");
@@ -292,7 +293,7 @@ fn reconstruct_contract(record: &Value) {
         );
         assert_eq!(row["source_width"], w);
         assert_eq!(row["source_height"], h);
-        let (w, h) = dimensions(pattern, orientations(row).0);
+        let (w, h) = dimensions(pattern, browser_orientation(row));
         assert_eq!(row["width"], w);
         assert_eq!(row["height"], h);
         assert_eq!(row["scene"]["elements"].as_array().unwrap().len(), 1);
@@ -446,7 +447,7 @@ fn reference_contract(record: &Value) {
     for row in rows {
         let base = base(&untagged, row);
         assert_eq!(base["jpeg_base64"], self::base(&inputs, row)["jpeg_base64"]);
-        let orientation = orientations(row).0;
+        let orientation = browser_orientation(row);
         for key in ["png", "svg_png"] {
             let reference = raster(&decode(&row["reference"][key]));
             let untagged = raster(&decode(&base["reference"][key]));
@@ -481,7 +482,7 @@ fn reference_contract(record: &Value) {
 fn svg_check(svg: &str, row: &Value) {
     let doc = roxmltree::Document::parse(svg).unwrap();
     let root = doc.root_element();
-    let (w, h) = dimensions(row["pattern"].as_str().unwrap(), orientations(row).0);
+    let (w, h) = dimensions(row["pattern"].as_str().unwrap(), browser_orientation(row));
     assert!(root.has_tag_name("svg"));
     assert_eq!(root.attribute("width").unwrap().parse::<u32>().unwrap(), w);
     assert_eq!(root.attribute("height").unwrap().parse::<u32>().unwrap(), h);
@@ -515,8 +516,7 @@ fn pdf_extent(bytes: &[u8], (w, h): (u32, u32)) {
     assert!(!page.contains("/Rotate") && !page.contains("/UserUnit"));
 }
 fn pdf_pixels(bytes: &[u8], (w, h): (u32, u32)) -> CanonicalRgba8 {
-    // Actual intrinsics are authored per signal; never force oracle dimensions
-    // into the helper on known failures (the page and image extents differ).
+    // The helper verifies the bound image's native dimensions and sample count.
     let rgba = super::png_profile_contract::pdf_rgba(bytes, w as usize, h as usize);
     assert!(rgba.chunks_exact(4).all(|p| p[3] == 255));
     CanonicalRgba8::new(w, h, rgba).unwrap()
@@ -542,32 +542,11 @@ fn render(scene: &Value, format: OutputFormat) -> Vec<u8> {
     );
     first.artifact().bytes().to_vec()
 }
-fn png_failure_pin(signal: &str, pattern: &str) -> (u64, u64) {
-    let pins = match signal {
-        "duplicate-6-3" => [(775, 0x3fdd1a3de3bd40df), (1313, 0x3fba0fdbb322801d)],
-        "duplicate-3-6" => [(772, 0x3fc3534e318124f5), (1302, 0x3fbc1dbe2fad4fcd)],
-        "invalid-then-valid" | "absent-tag-then-valid" | "bad-magic-then-valid" => {
-            [(775, 0x3fdd21fb486f170b), (1313, 0x3fba0fdbb3228058)]
-        }
-        "valid-then-invalid"
-        | "valid-then-absent-tag"
-        | "valid-then-bad-magic"
-        | "invalid-tag-then-valid" => [(774, 0x3fc33e73b52b94ba), (1304, 0x3fbc24ff8a3f2806)],
-        _ => panic!("not a pinned failure: {signal}"),
-    };
-    pins[match pattern {
-        "ramp" => 0,
-        "edges" => 1,
-        _ => unreachable!(),
-    }]
-}
 fn check(row: &Value, rows: &[Value], inputs: &Value) {
     let id = row["id"].as_str().unwrap();
     let pattern = row["pattern"].as_str().unwrap();
-    let (browser, runtime) = orientations(row);
-    let qualified = browser == runtime;
+    let browser = browser_orientation(row);
     let expected_dims = dimensions(pattern, browser);
-    let actual_dims = dimensions(pattern, runtime);
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let bytes = render(&row["scene"], format);
         match format {
@@ -580,33 +559,18 @@ fn check(row: &Value, rows: &[Value], inputs: &Value) {
                 for key in ["png", "svg_png"] {
                     let expected = raster(&decode(&row["reference"][key]));
                     let result = comparison(&expected, &actual).unwrap();
-                    assert_eq!(
-                        result.passed(),
-                        qualified,
-                        "{id}: {key}: {:?}",
-                        result.whole
-                    );
-                    if !qualified {
-                        let (changed, bits) =
-                            png_failure_pin(row["signal"].as_str().unwrap(), pattern);
-                        assert_eq!(result.whole.changed_pixels, changed, "{id}: {key}");
-                        let SsimOutcome::Score(score) = result.whole.ssim else {
-                            panic!("{id}: expected finite SSIM score")
-                        };
-                        assert_eq!(score.to_bits(), bits, "{id}: {key}");
-                        assert!(!result.whole.changed_pixels_pass && !result.whole.ssim_pass);
-                    }
+                    assert!(result.passed(), "{id}: {key}: {:?}", result.whole);
                 }
             }
             OutputFormat::Pdf => {
                 pdf_extent(&bytes, expected_dims);
-                let actual = pdf_pixels(&bytes, actual_dims);
-                let single = control(rows, row, runtime);
+                let actual = pdf_pixels(&bytes, expected_dims);
+                let single = control(rows, row, browser);
                 let single_bytes = render(&single["scene"], OutputFormat::Pdf);
-                pdf_extent(&single_bytes, actual_dims);
+                pdf_extent(&single_bytes, expected_dims);
                 assert_eq!(
                     actual,
-                    pdf_pixels(&single_bytes, actual_dims),
+                    pdf_pixels(&single_bytes, expected_dims),
                     "{id}: exact single-orientation bound control"
                 );
 
@@ -624,44 +588,17 @@ fn check(row: &Value, rows: &[Value], inputs: &Value) {
                 let native = pdf_pixels(&untagged, (w, h));
                 assert_eq!(
                     actual,
-                    orient(&native, runtime),
+                    orient(&native, browser),
                     "{id}: independently permuted untagged PDF samples"
                 );
-                let intended = orient(&native, browser);
-                assert_eq!(extent(&intended), expected_dims);
-                assert_eq!(
-                    actual == intended,
-                    qualified,
-                    "{id}: structural orientation judgment"
-                );
                 for key in ["png", "svg_png"] {
-                    // Color budget is checked at native size against the browser
-                    // control for the *authored actual* orientation. It does not
-                    // approve that orientation for a failing precedence signal.
-                    let actual_control = raster(&decode(&single["reference"][key]));
-                    assert!(
-                        comparison(&actual_control, &actual).unwrap().passed(),
-                        "{id}: PDF native color budget"
-                    );
                     let expected = raster(&decode(&row["reference"][key]));
-                    let judgment = comparison(&expected, &actual);
-                    if qualified {
-                        assert!(judgment.unwrap().passed(), "{id}: PDF bound image");
-                    } else {
-                        assert_eq!(
-                            actual_dims,
-                            (expected_dims.1, expected_dims.0),
-                            "{id}: wrong dimensions proved"
-                        );
-                        assert_eq!(
-                            judgment,
-                            Err(ComparisonError::DimensionMismatch {
-                                reference: expected_dims,
-                                candidate: actual_dims
-                            }),
-                            "{id}: exact PDF failure judgment"
-                        );
-                    }
+                    let result = comparison(&expected, &actual).unwrap();
+                    assert!(
+                        result.passed(),
+                        "{id}: {key}: PDF bound image: {:?}",
+                        result.whole
+                    );
                 }
             }
             _ => unreachable!(),
@@ -715,17 +652,14 @@ fn discrimination_contract(record: &Value) {
     }
 }
 
-fn check_partition(qualified: bool, cells: usize, vectors: usize) {
+fn check_partition(corrected: bool, cells: usize, vectors: usize) {
     let record = evidence();
     reference_contract(&record);
     discrimination_contract(&record);
     let rows = record["cases"].as_array().unwrap();
     let selected: Vec<_> = rows
         .iter()
-        .filter(|r| {
-            let (browser, runtime) = orientations(r);
-            (browser == runtime) == qualified
-        })
+        .filter(|r| CORRECTED.iter().any(|(signal, _)| r["signal"] == *signal) == corrected)
         .collect();
     assert_eq!(selected.len(), vectors);
     assert_eq!(
@@ -749,9 +683,208 @@ fn check_partition(qualified: bool, cells: usize, vectors: usize) {
 }
 #[test]
 fn qualified_exif_precedence_matches_reference() {
-    check_partition(true, 46, 92);
+    check_partition(false, 46, 92);
 }
 #[test]
-fn known_exif_precedence_failures_have_exact_png_pins_and_pdf_wrong_intrinsics() {
-    check_partition(false, 36, 72);
+fn corrected_duplicate_exif_precedence_matches_reference() {
+    check_partition(true, 36, 72);
+}
+
+fn with_early_segments(source: &[u8], segments: &[Vec<u8>]) -> Vec<u8> {
+    assert_eq!(&source[..2], b"\xff\xd8");
+    let mut bytes = source[..2].to_vec();
+    for segment in segments {
+        bytes.extend_from_slice(segment);
+    }
+    bytes.extend_from_slice(&source[2..]);
+    bytes
+}
+
+// Authored robustness controls compare native output with a single-orientation
+// runtime control. They do not extend the collected browser precedence matrix.
+fn check_authored(bytes: &[u8], single: &Value, name: &str) {
+    let mut row = single.clone();
+    row["scene"]["files"]["asset"]["dataURL"] =
+        json!(crate::common::image_scene::data_url("image/jpeg", bytes));
+    let dims = dimensions(
+        single["pattern"].as_str().unwrap(),
+        browser_orientation(single),
+    );
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        // render also requires empty diagnostics and stable bytes/reports.
+        let actual = render(&row["scene"], format);
+        match format {
+            OutputFormat::Svg => svg_check(std::str::from_utf8(&actual).unwrap(), &row),
+            OutputFormat::Png => {
+                super::png_profile_contract::assert_untagged_png(&actual);
+                let actual = crate::common::raster::decode_png(&actual).into_canonical();
+                let expected = render(&single["scene"], format);
+                assert_eq!(extent(&actual), dims, "{name}");
+                assert_eq!(actual, raster(&expected), "{name}: PNG samples");
+            }
+            OutputFormat::Pdf => {
+                pdf_extent(&actual, dims);
+                let expected = render(&single["scene"], format);
+                assert_eq!(
+                    pdf_pixels(&actual, dims),
+                    pdf_pixels(&expected, dims),
+                    "{name}: bound PDF samples"
+                );
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[test]
+fn authored_earlier_app1_and_marker_fill_preserve_exif_selection() {
+    let record = evidence();
+    let rows = record["cases"].as_array().unwrap();
+    let inputs = inputs();
+    for row in rows.iter().filter(|r| r["signal"] == "control-1") {
+        let source = decode(&base(&inputs, row)["jpeg_base64"]);
+        let valid = app1(&tiff(&[6], row["byte_order"] == "big", 42));
+        for (name, segments, orientation) in [
+            (
+                "non-exif-app1-before-valid",
+                vec![
+                    app1(b"http://ns.adobe.com/xap/1.0/\0unrelated"),
+                    valid.clone(),
+                ],
+                6,
+            ),
+            (
+                "truncated-exif-prefix-is-not-an-exif-block",
+                vec![app1(b"Exif\0"), valid.clone()],
+                6,
+            ),
+            (
+                "complete-exif-prefix-without-tiff-captures-first-block",
+                vec![app1(b"Exif\0\0"), valid.clone()],
+                1,
+            ),
+            (
+                "marker-fill-before-app1",
+                vec![[vec![0xff, 0xff], valid].concat()],
+                6,
+            ),
+        ] {
+            check_authored(
+                &with_early_segments(&source, &segments),
+                control(rows, row, orientation),
+                name,
+            );
+        }
+    }
+}
+
+fn check_rejected_header(bytes: &[u8], row: &Value, name: &str) {
+    let mut scene = row["scene"].clone();
+    scene["files"]["asset"]["dataURL"] =
+        json!(crate::common::image_scene::data_url("image/jpeg", bytes));
+    let parsed = SceneDocument::parse(&serde_json::to_vec(&scene).unwrap()).unwrap();
+    scene["files"] = json!({});
+    let missing = SceneDocument::parse(&serde_json::to_vec(&scene).unwrap()).unwrap();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .padding(0.0)
+            .include_background(false)
+            .build()
+            .unwrap();
+        let first = Renderer::new().render(&parsed, &request).unwrap();
+        let second = Renderer::new().render(&parsed, &request).unwrap();
+        assert_eq!(
+            first.artifact().bytes(),
+            second.artifact().bytes(),
+            "{name}"
+        );
+        assert_eq!(first.report(), second.report(), "{name}");
+        let mut report = serde_json::to_value(first.report()).unwrap();
+        for diagnostic in report["diagnostics"].as_array_mut().unwrap() {
+            assert!(!diagnostic["message"].as_str().unwrap().is_empty());
+            diagnostic.as_object_mut().unwrap().remove("message");
+        }
+        let placeholder = format == OutputFormat::Png;
+        assert_eq!(
+            report,
+            json!({"schema_version":1,"diagnostics":[{
+                "code":"image.decode-failed","severity":"warning","format":format.as_str(),
+                "effects":["visual"],"element_id":row["scene"]["elements"][0]["id"],
+                "json_pointer":"/files/asset/dataURL",
+                "details":{"kind":"asset","asset_id":"asset","claimed_media_type":null,
+                "validated_media_type":"image/jpeg","recovery":if placeholder {"placeholder"} else {"omitted"},
+                "recipe_id":if placeholder {json!("official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d")} else {Value::Null}}
+            }]}),
+            "{name}: {format:?}"
+        );
+        let control = Renderer::new().render(&missing, &request).unwrap();
+        assert_eq!(
+            first.artifact().bytes(),
+            control.artifact().bytes(),
+            "{name}: recovery"
+        );
+    }
+}
+
+#[test]
+fn authored_invalid_tiff_blocks_and_malformed_headers_have_bounded_recovery() {
+    let record = evidence();
+    let rows = record["cases"].as_array().unwrap();
+    let inputs = inputs();
+    for row in rows.iter().filter(|r| r["signal"] == "control-1") {
+        let source = decode(&base(&inputs, row)["jpeg_base64"]);
+        let big = row["byte_order"] == "big";
+        let good = tiff(&[6], big, 42);
+        let mut payloads = vec![
+            ("truncated-byte-order", good[..7].to_vec()),
+            ("truncated-ifd-offset", good[..13].to_vec()),
+            ("truncated-entry-count", good[..15].to_vec()),
+            ("truncated-entry-value", good[..25].to_vec()),
+            // Even a present orientation value cannot make a short entry valid.
+            ("truncated-entry-padding", good[..27].to_vec()),
+        ];
+        for (name, range, replacement) in [
+            ("ifd-offset-overflow", 10..14, vec![255; 4]),
+            ("invalid-tag-type", 18..20, vec![0; 2]),
+            ("invalid-tag-count-zero", 20..24, vec![0; 4]),
+            ("invalid-tag-count-overflow", 20..24, vec![255; 4]),
+        ] {
+            let mut bad = good.clone();
+            bad[range].copy_from_slice(&replacement);
+            payloads.push((name, bad));
+        }
+        // A huge IFD count after an invalid value must stop at the APP1 boundary,
+        // rather than treating the next APP1's valid orientation as another entry.
+        let mut short_ifd = tiff(&[0], big, 42);
+        short_ifd[14..16].copy_from_slice(&[255; 2]);
+        short_ifd.truncate(28);
+        payloads.push(("entry-count-exceeds-block", short_ifd));
+        for (name, payload) in payloads {
+            for later in [false, true] {
+                let mut segments = vec![app1(&payload)];
+                if later {
+                    segments.push(app1(&good));
+                }
+                check_authored(&with_early_segments(&source, &segments), row, name);
+            }
+        }
+        for (name, header) in [
+            ("app1-length-zero", b"\xff\xe1\0\0".as_slice()),
+            ("app1-length-one", b"\xff\xe1\0\x01".as_slice()),
+            ("app1-past-eof", b"\xff\xe1\xff\xffExif\0\0".as_slice()),
+        ] {
+            // Keep the valid frame and scans: rejection must come from the
+            // malformed APP1 framing, not merely a missing image body.
+            let bytes = with_early_segments(&source, &[header.to_vec()]);
+            assert!(bytes.len() < usize::from(u16::MAX));
+            check_rejected_header(&bytes, row, name);
+        }
+        for (name, header) in [
+            ("truncated-app1-length", b"\xff\xe1\0".as_slice()),
+            ("unterminated-marker-fill", b"\xff\xff\xff".as_slice()),
+        ] {
+            let bytes = [source[..2].to_vec(), header.to_vec()].concat();
+            check_rejected_header(&bytes, row, name);
+        }
+    }
 }

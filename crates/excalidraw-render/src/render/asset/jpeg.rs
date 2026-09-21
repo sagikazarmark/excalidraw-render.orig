@@ -11,7 +11,7 @@ use zune_jpeg::zune_core::options::DecoderOptions;
 use zune_jpeg::JpegDecoder;
 
 use super::color::{ColorNormalization, LINEAR_TO_SRGB};
-use super::orientation::{exif_orientation, orient_rgba, oriented_dimensions};
+use super::orientation::{orient_rgba, oriented_dimensions};
 use super::{try_copy, DecodedRaster, ResolveError};
 
 pub(super) const JPEG_SIGNATURE: &[u8; 3] = b"\xff\xd8\xff";
@@ -57,8 +57,91 @@ fn read_jpeg_metadata(bytes: &[u8]) -> Result<JpegMetadata, ResolveError> {
     Ok(JpegMetadata {
         width: u32::from(info.width),
         height: u32::from(info.height),
-        orientation: decoder.exif().and_then(|data| exif_orientation(data)),
+        orientation: jpeg_orientation(bytes),
     })
+}
+
+// JPEG owns APP1 precedence. The reference uses the first EXIF block before
+// the first scan, even when that block has no usable orientation. Never use
+// the decoder's last-APP1 metadata or inspect post-SOS entropy as header bytes.
+fn jpeg_orientation(bytes: &[u8]) -> Option<u8> {
+    if bytes.get(..2)? != b"\xff\xd8" {
+        return None;
+    }
+    let mut offset = 2_usize;
+    while offset < bytes.len() {
+        if *bytes.get(offset)? != 0xff {
+            return None;
+        }
+        while bytes.get(offset) == Some(&0xff) {
+            offset = offset.checked_add(1)?;
+        }
+        let marker = *bytes.get(offset)?;
+        offset = offset.checked_add(1)?;
+        if matches!(marker, 0xda | 0xd9) {
+            return None;
+        }
+        let length = usize::from(u16::from_be_bytes(
+            bytes.get(offset..offset.checked_add(2)?)?.try_into().ok()?,
+        ));
+        if length < 2 {
+            return None;
+        }
+        let end = offset.checked_add(length)?;
+        let payload = bytes.get(offset.checked_add(2)?..end)?;
+        if marker == 0xe1 && payload.starts_with(b"Exif\0\0") {
+            return jpeg_tiff_orientation(&payload[6..]);
+        }
+        offset = end;
+    }
+    None
+}
+
+// The JPEG reference skips invalid orientation values within IFD0. This is
+// intentionally separate from the qualified PNG/WebP TIFF interpretation.
+fn jpeg_tiff_orientation(bytes: &[u8]) -> Option<u8> {
+    let big = match bytes.get(..2)? {
+        b"MM" => true,
+        b"II" => false,
+        _ => return None,
+    };
+    let short = |at: usize| -> Option<u16> {
+        let b = bytes.get(at..at.checked_add(2)?)?.try_into().ok()?;
+        Some(if big {
+            u16::from_be_bytes(b)
+        } else {
+            u16::from_le_bytes(b)
+        })
+    };
+    let long = |at: usize| -> Option<u32> {
+        let b = bytes.get(at..at.checked_add(4)?)?.try_into().ok()?;
+        Some(if big {
+            u32::from_be_bytes(b)
+        } else {
+            u32::from_le_bytes(b)
+        })
+    };
+    if short(2)? != 42 {
+        return None;
+    }
+    let ifd = usize::try_from(long(4)?).ok()?;
+    let count = usize::from(short(ifd)?);
+    let entries = ifd.checked_add(2)?;
+    for i in 0..count {
+        let at = entries.checked_add(i.checked_mul(12)?)?;
+        bytes.get(at..at.checked_add(12)?)?;
+        if short(at)? != 0x112 {
+            continue;
+        }
+        if short(at.checked_add(2)?)? != 3 || long(at.checked_add(4)?)? != 1 {
+            return None;
+        }
+        let value = short(at.checked_add(8)?)?;
+        if (1..=8).contains(&value) {
+            return Some(value as u8);
+        }
+    }
+    None
 }
 
 pub(super) fn validate_static_jpeg(

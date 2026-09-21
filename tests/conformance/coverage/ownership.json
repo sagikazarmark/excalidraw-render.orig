@@ -3014,17 +3014,59 @@
     {
       "id": "codec:jpeg:exif-precedence:baseline-big-absent-tag-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-big-bad-magic-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -3035,7 +3077,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3064,7 +3106,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3093,7 +3135,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3122,7 +3164,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3146,17 +3188,59 @@
     {
       "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-3-6",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-6-3",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -3167,7 +3251,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3196,7 +3280,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3225,7 +3309,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3254,7 +3338,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3278,17 +3362,59 @@
     {
       "id": "codec:jpeg:exif-precedence:baseline-big-invalid-tag-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-big-invalid-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -3299,7 +3425,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3328,7 +3454,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3352,41 +3478,146 @@
     {
       "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-absent-tag",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-bad-magic",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-invalid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-little-absent-tag-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-little-bad-magic-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -3397,7 +3628,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3426,7 +3657,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3455,7 +3686,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3484,7 +3715,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3508,17 +3739,59 @@
     {
       "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-3-6",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-6-3",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -3529,7 +3802,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3558,7 +3831,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3587,7 +3860,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3616,7 +3889,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3640,17 +3913,59 @@
     {
       "id": "codec:jpeg:exif-precedence:baseline-little-invalid-tag-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-little-invalid-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -3661,7 +3976,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3690,7 +4005,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3714,41 +4029,146 @@
     {
       "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-absent-tag",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-bad-magic",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-invalid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-big-absent-tag-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-big-bad-magic-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -3759,7 +4179,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3788,7 +4208,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3817,7 +4237,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3846,7 +4266,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3875,7 +4295,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3899,17 +4319,59 @@
     {
       "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-3-6",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-6-3",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -3920,7 +4382,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3949,7 +4411,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -3978,7 +4440,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4007,7 +4469,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4036,7 +4498,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4065,7 +4527,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4089,17 +4551,59 @@
     {
       "id": "codec:jpeg:exif-precedence:progressive-big-invalid-tag-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-big-invalid-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -4110,7 +4614,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4139,7 +4643,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4163,41 +4667,146 @@
     {
       "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-absent-tag",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-bad-magic",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-invalid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-little-absent-tag-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-little-bad-magic-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -4208,7 +4817,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4237,7 +4846,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4266,7 +4875,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4295,7 +4904,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4324,7 +4933,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4348,17 +4957,59 @@
     {
       "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-3-6",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-6-3",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -4369,7 +5020,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4398,7 +5049,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4427,7 +5078,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4456,7 +5107,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4485,7 +5136,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4514,7 +5165,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4538,17 +5189,59 @@
     {
       "id": "codec:jpeg:exif-precedence:progressive-little-invalid-tag-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-little-invalid-then-valid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -4559,7 +5252,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4588,7 +5281,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
-            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
           },
           "function": "qualified_exif_precedence_matches_reference",
           "binary": "fast",
@@ -4612,25 +5305,88 @@
     {
       "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-absent-tag",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-bad-magic",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
       "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-invalid",
       "disposition": {
-        "status": "gap",
-        "issue": 189,
-        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "26b920434f2480bd4ee3cb555595a734bad961e968ddb2816cbade9cead585dc"
+          },
+          "function": "corrected_duplicate_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::corrected_duplicate_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #189 bounded JPEG first-header-EXIF and first-valid-IFD orientation correction; both independent fixed patterns, exact reconstruction/source/extent/alpha/report/replay and canonical PNG/bound-PDF sample gates. See tests/conformance/proposals/jpeg189-requalification-v1/; no exhaustive TIFF/IFD-chain or whole-PDF closure implied."
       }
     },
     {
@@ -38508,16 +39264,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v10",
+            "case": "representative.stage4-frames-text-assets.v11",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "e578337798ef50096b3f4e9dd4ddeb57150cf722f4b201bd8ace89f033bb7266"
+              "sha256": "13b3727b37db3ed0f127c9a33a882523530f615c6fad2b210a276183d07c0f2c"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v10/manifest.json",
-              "sha256": "4898ca5091e30f4bae6e6dd4d36809ae177258f19bf0014786bc336509968031"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v11/manifest.json",
+              "sha256": "852eb248fd26adbe5e42242f46f80db6f5802e0c3faad9948a2e3fa2657a9b1d"
             },
-            "approval_subject_sha256": "sha256:a6f7f0d2c2fd7f1a5142c24edfc4696e54d5bc1811271b12bd0f195db0276f15",
+            "approval_subject_sha256": "sha256:d8e086187884e412c78b98197957e2793b3f3a7f0c5fd11df72ceac4dbb3f87c",
             "command": [
               "cargo",
               "run",
@@ -38528,7 +39284,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v10"
+              "tests/conformance/candidates/stage4-frames-text-assets-v11"
             ]
           }
         },
