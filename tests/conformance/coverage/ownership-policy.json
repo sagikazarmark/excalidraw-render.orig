@@ -3330,6 +3330,294 @@
       "category": "codec-profile",
       "criterion": "GIF late-truncated-palette: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-static-full",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-opaque-static-full: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-full-blend-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-opaque-anim-full-blend-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-full-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-opaque-anim-full-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-sub-blend-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-opaque-anim-sub-blend-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-sub-replace-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-opaque-anim-sub-replace-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-sub-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-opaque-anim-sub-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-static-full",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-partial-static-full: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-full-blend-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-partial-anim-full-blend-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-full-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-partial-anim-full-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-sub-blend-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-partial-anim-sub-blend-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-sub-replace-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-partial-anim-sub-replace-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-sub-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-partial-anim-sub-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-static-full",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-binary-static-full: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-full-blend-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-binary-anim-full-blend-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-full-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-binary-anim-full-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-sub-blend-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-binary-anim-sub-blend-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-sub-replace-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-binary-anim-sub-replace-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-sub-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossless-binary-anim-sub-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-static-full",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-opaque-static-full: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-full-blend-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-opaque-anim-full-blend-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-full-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-opaque-anim-full-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-sub-blend-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-opaque-anim-sub-blend-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-sub-replace-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-opaque-anim-sub-replace-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-sub-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-opaque-anim-sub-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-static-full",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-partial-static-full: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-full-blend-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-partial-anim-full-blend-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-full-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-partial-anim-full-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-sub-blend-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-partial-anim-sub-blend-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-sub-replace-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-partial-anim-sub-replace-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-sub-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-partial-anim-sub-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-static-full",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-binary-static-full: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-full-blend-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-binary-anim-full-blend-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-full-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-binary-anim-full-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-sub-blend-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-binary-anim-sub-blend-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-sub-replace-d0-clear",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-binary-anim-sub-replace-d0-clear: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-sub-replace-d1-opaque",
+      "category": "codec-profile",
+      "criterion": "WebP lossy-binary-anim-sub-replace-d1-opaque: both independent external-libwebp encoded patterns match pinned-browser first-frame interpretation with exact RIFF/ANMF reconstruction, source-octet SVG, dimensions/alpha/reports/replay, canonical PNG and black/white PDF sample comparisons, and lossless straight-sample invariants; explicitly discriminate first/later and background hypotheses without inferring partial-alpha precision. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:riff-size-short",
+      "category": "codec-profile",
+      "criterion": "WebP riff-size-short: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:riff-size-long",
+      "category": "codec-profile",
+      "criterion": "WebP riff-size-long: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:chunk-length-overflow",
+      "category": "codec-profile",
+      "criterion": "WebP chunk-length-overflow: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:vp8x-reserved-flag",
+      "category": "codec-profile",
+      "criterion": "WebP vp8x-reserved-flag: independently reconstructed reserved VP8X field control is accepted according to the specified ignore rule, preserving source bytes and exact baseline artifact/report behavior; no new pixel qualification for the underlying unqualified partial-alpha scene. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:vp8x-reserved-byte",
+      "category": "codec-profile",
+      "criterion": "WebP vp8x-reserved-byte: independently reconstructed reserved VP8X field control is accepted according to the specified ignore rule, preserving source bytes and exact baseline artifact/report behavior; no new pixel qualification for the underlying unqualified partial-alpha scene. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:anmf-reserved-flag",
+      "category": "codec-profile",
+      "criterion": "WebP anmf-reserved-flag: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:frame-outside-canvas",
+      "category": "codec-profile",
+      "criterion": "WebP frame-outside-canvas: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:intrinsic-frame-mismatch",
+      "category": "codec-profile",
+      "criterion": "WebP intrinsic-frame-mismatch: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:missing-anim",
+      "category": "codec-profile",
+      "criterion": "WebP missing-anim: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:first-invalid-payload",
+      "category": "codec-profile",
+      "criterion": "WebP first-invalid-payload: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:later-invalid-payload",
+      "category": "codec-profile",
+      "criterion": "WebP later-invalid-payload: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:sample:truncated-later-chunk",
+      "category": "codec-profile",
+      "criterion": "WebP truncated-later-chunk: independently reconstructed RIFF/chunk/frame fault has exact existing decode-failed recovery in SVG/PNG/PDF, missing-asset equivalence, extents and replay; reserved ANMF rejection is a strict implementation characterization, not a browser rejection claim. Exact owner executes closed matrix, binding, reconstruction, discrimination and negative gates; no codec-umbrella or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     }
   ]
 }

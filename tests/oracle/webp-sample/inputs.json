@@ -1,0 +1,605 @@
+{
+  "schema": "excalidraw-render/webp-sample-inputs/v1",
+  "oci": "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9",
+  "author_sources": [
+    {
+      "path": "tools/reference-oracle/run-webp-sample.sh",
+      "sha256": "718c9d7186f53a897e2132292df527505b2ccd6a6ae7a6d2a1202e741ee737c6"
+    },
+    {
+      "path": "tools/reference-oracle/scripts/jpeg-icc-fixtures.mjs",
+      "sha256": "5776ba51ec9797903f2877218b65f20ac4cc6b50706f792f7be8540cda5c57b7"
+    },
+    {
+      "path": "tools/reference-oracle/scripts/webp-encode-inputs.py",
+      "sha256": "b3d238aca068b7673ef740b43ac540297511376fff03d3eaf6916df9a8339d22"
+    },
+    {
+      "path": "tools/reference-oracle/scripts/webp-sample-evidence.mjs",
+      "sha256": "256c738708ca9740b335567054fef97e5d9b3f5802ec8cf410690addb0724a6b"
+    },
+    {
+      "path": "tools/reference-oracle/scripts/webp-sample-fixtures.mjs",
+      "sha256": "66b45a1c0e3c1944417cfaa59b558a4e3b328e43ce0f10e25893e72896ad140c"
+    }
+  ],
+  "encoder": {
+    "implementation": "libwebp",
+    "version": "1.3.2",
+    "distribution_package": "1.3.2-0.4build3",
+    "python": "3.12.3",
+    "binaries": {
+      "/lib/x86_64-linux-gnu/libwebp.so.7": "9664db51ec65209078abbb8bc7b699888a43ecc2f3c74ce8dd4e497175aa5bf0",
+      "/lib/x86_64-linux-gnu/libsharpyuv.so.0": "b2e62799e5dbd783a0671d53be99f7c6489567a5332a1e8f471e6bb250f294dc",
+      "/usr/bin/python3": "e1efa562c2cc2e35521a5c9c9b9939921001ff8ca9708a13ef15ace68cc2ccd7"
+    },
+    "invocation": "/usr/bin/python3 scripts/webp-encode-inputs.py (JSON stdin/stdout)",
+    "lossless": "WebPEncodeLosslessRGBA(rgba,width,height,stride=width*4,out); simple API defaults; invisible RGB may be discarded",
+    "lossy": "WebPEncodeRGBA(rgba,width,height,stride=width*4,quality_factor=75.0f,out); simple API defaults; exact alpha",
+    "native_diagnostic": "WebPDecodeRGBA; same external libwebp, not an independent codec cross-check",
+    "independence": "External C libwebp encoder; no production Rust image-webp encoder/decoder or renderer invoked",
+    "build_provenance": "Prebuilt Ubuntu package in digest-pinned OCI; no local compiler or network preparation; OCI pins full runtime closure"
+  },
+  "frames": [
+    {
+      "id": "lossless-opaque-full-ramp",
+      "codec": "lossless",
+      "alpha": "opaque",
+      "shape": "full",
+      "pattern": "ramp",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "ABF//wGAgP8R/7//PxH+/3+A//+A/wD/vxEB//6AEf///z//ET8A/z+/Af9/ABH/gD8//7+/f//+AID//z+//wC//v8BAP//f3+A/4D+v/+/Af7//n/////+AP8AAQH/AX8R/xH+P/8/AX//v4AB//7/Ef//ET//AIB//wH/gP8REb//P4D+/3////+AEQD//7+//wAA/v8BP///Eb8A/z8AAf9/PxH/gL8//78Af//+P4D/Af4R/xEBP/8/f3//f/6A/4ABv/+/f/7//v7///8BAP8AfwH/P//+/38R//+AgAD/v/8B//4REf//gD//AP9//wERgP8RgL//",
+      "encoded": {
+        "base64": "UklGRpIAAABXRUJQVlA4TIUAAAAvCIABAJmM6H9sIqL/AQZt2whWpFcRfIE8hf4QlcEyR20jCXJ4vQhqiTSEq0J0DNq2ESQzGJJS6DAcof8j9oyeQ8T7PIXU1w642kG+796ZTeS6U9HT4f+/qNotEGtIdPvs0rHUgtNeGZN9o+FiTjYn003lPUr2lpFuS4nl+f2eQrlTwZqmAA==",
+        "sha256": "a7586c80e24f469a2f6febe1f20a0c380fc68b318091586707f380f3bf86b3af",
+        "bytes": 154
+      },
+      "native_decoded_rgba": {
+        "base64": "ABF//wGAgP8R/7//PxH+/3+A//+A/wD/vxEB//6AEf///z//ET8A/z+/Af9/ABH/gD8//7+/f//+AID//z+//wC//v8BAP//f3+A/4D+v/+/Af7//n/////+AP8AAQH/AX8R/xH+P/8/AX//v4AB//7/Ef//ET//AIB//wH/gP8REb//P4D+/3////+AEQD//7+//wAA/v8BP///Eb8A/z8AAf9/PxH/gL8//78Af//+P4D/Af4R/xEBP/8/f3//f/6A/4ABv/+/f/7//v7///8BAP8AfwH/P//+/38R//+AgAD/v/8B//4REf//gD//AP9//wERgP8RgL//",
+        "sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossless-opaque-full-edges",
+      "codec": "lossless",
+      "alpha": "opaque",
+      "shape": "full",
+      "pattern": "edges",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "7x/l/+8gQ//vIUP/EyJD/xMjQ/8TH0P/EyBD/xMhQ/8TIkP/8B9D//Ag5f/wIUP/FCJD/xQjQ/8UH0P/FCBD/xQhQ/8UIkP/8dND//HUQ//x1eX/FdZD/xXXQ/8V00P/FdRD/xXVQ/8V1kP/79ND/+/UQ//v1UP/E9bl/xPXQ/8T00P/E9RD/xPVQ/8T1kP/8NND//DUQ//w1UP/FNZD/xTX5f8U00P/FNRD/xTVQ/8U1kP/8dND//HUQ//x1UP/FdZD/xXXQ/8V0+X/FdRD/xXVQ/8V1kP/79ND/+/UQ//v1UP/E9ZD/xPXQ/8T00P/E9Tl/xPVQ/8T1kP/",
+      "encoded": {
+        "base64": "UklGRk4AAABXRUJQVlA4TEEAAAAvCIABAJkyRPQ/NhHR/wCato3kIHn++8P78cvBINtIncv7q73BRSCQRLr9HrEC50/RiUdEKCZ8bmgaTMEUTIM/AAA=",
+        "sha256": "98794627ac71327293d0e24a2e28183cd3ec2f9d8e718705f7a3e79dbc5f13fc",
+        "bytes": 86
+      },
+      "native_decoded_rgba": {
+        "base64": "7x/l/+8gQ//vIUP/EyJD/xMjQ/8TH0P/EyBD/xMhQ/8TIkP/8B9D//Ag5f/wIUP/FCJD/xQjQ/8UH0P/FCBD/xQhQ/8UIkP/8dND//HUQ//x1eX/FdZD/xXXQ/8V00P/FdRD/xXVQ/8V1kP/79ND/+/UQ//v1UP/E9bl/xPXQ/8T00P/E9RD/xPVQ/8T1kP/8NND//DUQ//w1UP/FNZD/xTX5f8U00P/FNRD/xTVQ/8U1kP/8dND//HUQ//x1UP/FdZD/xXXQ/8V0+X/FdRD/xXVQ/8V1kP/79ND/+/UQ//v1UP/E9ZD/xPXQ/8T00P/E9Tl/xPVQ/8T1kP/",
+        "sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossless-opaque-subrect-ramp",
+      "codec": "lossless",
+      "alpha": "opaque",
+      "shape": "subrect",
+      "pattern": "ramp",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "ABF//wGAgP8R/7//PxH+/3+A//8RPwD/P78B/38AEf+APz//v79//39/gP+A/r//vwH+//5//////gD/",
+      "encoded": {
+        "base64": "UklGRm4AAABXRUJQVlA4TGEAAAAvBIAAAHegEJIVqo9BoilEFEMMAb3TUAiACbMxzCPEo5DRIgohA2nbdEzC/f6OrmHKxvyHnunCQ3w+qIumkHAcCif5qIVZr9mAqsg2qPt5r0ceiQTSRQoxpIrof/TyPmsAAA==",
+        "sha256": "4a8792d605b112f51d19e18ec3e9f8834ef8e7f7688596dc37dd40c98aff75fb",
+        "bytes": 118
+      },
+      "native_decoded_rgba": {
+        "base64": "ABF//wGAgP8R/7//PxH+/3+A//8RPwD/P78B/38AEf+APz//v79//39/gP+A/r//vwH+//5//////gD/",
+        "sha256": "844e8adc41f846fd710b010c867092dd5add6227d1e25ea34e187d12d05ceb28",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossless-opaque-subrect-edges",
+      "codec": "lossless",
+      "alpha": "opaque",
+      "shape": "subrect",
+      "pattern": "edges",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "7x/l/+8gQ//vIUP/EyJD/xMjQ//wH0P/8CDl//AhQ/8UIkP/FCND//HTQ//x1EP/8dXl/xXWQ/8V10P/",
+      "encoded": {
+        "base64": "UklGRlgAAABXRUJQVlA4TEwAAAAvBIAAAHegkI0kaB+QAzre07vRMMg20uZy/kTv8AgTCCSRbr/H/Mf8LScQoMOwoTBI/lAACFRDtkL93RdEFJGkk0Jw4UX0P/5cmx4A",
+        "sha256": "1893b8f48e0a5be4935367c42f1affe2342f4d90bca1e1a389f4bdda0a47c7d7",
+        "bytes": 96
+      },
+      "native_decoded_rgba": {
+        "base64": "7x/l/+8gQ//vIUP/EyJD/xMjQ//wH0P/8CDl//AhQ/8UIkP/FCND//HTQ//x1EP/8dXl/xXWQ/8V10P/",
+        "sha256": "def453696518d95adff349e1149bdd2cf9954177b46bd56f59ef787b72fcb295",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossless-partial-full-ramp",
+      "codec": "lossless",
+      "alpha": "partial",
+      "shape": "full",
+      "pattern": "ramp",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "rTvjAAGAgAER/78RPxH+P3+A/3+A/wCAvxEBv/6AEf7//z//ET8APz+/AX9/ABGAgD8/v7+/f/7+AID/rTvjAAC//gEBAP8Rf3+Av4D+v/6/Af7/rTvjAP/+AAEAAQERAX8RPxH+P38/AX+ArTvjAP7/EQH/ET8RAIB/PwH/gH8REb+AP4D+v3////6AEQD//7+/PwAA/n8BP/+AEb8Avz8AAf5/PxH/rTvjAL8AfwH+P4ARAf4RvxEBP/4/f3//rTvjAIABvwG/f/4R/v7/P/8BAH8AfwGArTvjAH8R/wGAgAARv/8BP/4REX//gD+AAP9/vwERgP4RgL//",
+      "encoded": {
+        "base64": "UklGRpoAAABXRUJQVlA4TI4AAAAvCIABEBaDAJAUQkSjndlmpxGKgQBEmGCRaTzzrAwEIMIEi0zjmWdFIAGRCRaZxjPPiJpFNMon550iGuvT8v4IOtOIMnVvGa7v4QA+N+134+79BwhyKb1sOmlO0JtGFNbSYl+Tn4rfT8B5+DmhMDfRiwVz5VOlvHVedtgd/158eMFUebhgRulkvxOkYmft",
+        "sha256": "5703e261999f02a77345dece55530f8f6fbaf1d16483296701405bef9b1f4c87",
+        "bytes": 162
+      },
+      "native_decoded_rgba": {
+        "base64": "AAAAAAGAgAER/78RPxH+P3+A/3+A/wCAvxEBv/6AEf7//z//ET8APz+/AX9/ABGAgD8/v7+/f/7+AID/AAAAAAC//gEBAP8Rf3+Av4D+v/6/Af7/AAAAAP/+AAEAAQERAX8RPxH+P38/AX+AAAAAAP7/EQH/ET8RAIB/PwH/gH8REb+AP4D+v3////6AEQD//7+/PwAA/n8BP/+AEb8Avz8AAf5/PxH/AAAAAL8AfwH+P4ARAf4RvxEBP/4/f3//AAAAAIABvwG/f/4R/v7/P/8BAH8AfwGAAAAAAH8R/wGAgAARv/8BP/4REX//gD+AAP9/vwERgP4RgL//",
+        "sha256": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossless-partial-full-edges",
+      "codec": "lossless",
+      "alpha": "partial",
+      "shape": "full",
+      "pattern": "edges",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "rTvjAO8gQwHvIUMREyJDPxMjQ38TH0OAEyBDvxMhQ/4TIkP/8B9DP/Ag5X/wIUOAFCJDvxQjQ/4UH0P/rTvjABQhQwEUIkMR8dNDv/HUQ/7x1eX/rTvjABXXQwEV00MRFdRDPxXVQ38V1kOArTvjAO/UQwHv1UMRE9blPxPXQ38T00OAE9RDvxPVQ/4T1kP/8NNDP/DUQ3/w1UOAFNZDvxTX5f4U00P/rTvjABTVQwEU1kMR8dNDv/HUQ/7x1UP/rTvjABXXQwEV0+URFdRDPxXVQ38V1kOArTvjAO/UQwHv1UMRE9ZDPxPXQ38T00OAE9TlvxPVQ/4T1kP/",
+      "encoded": {
+        "base64": "UklGRoAAAABXRUJQVlA4THMAAAAvCIABEJmM6H9sIqL/AbRt28bMI+3/c8/z1DyBoG3beFzCn9qG4CfItqnbPQZ3UoRsJCk1OJJTmHuzRyebtBmTtI8EdwcjiysQgnOLH5FQEQwwb3zEBVPKYHEQngdGX7qFfOFA4lU+ZHwEwUR9aBf2xqMAAA==",
+        "sha256": "12f8ae8033000c86d51309d54cfe88d7f1836fc48439a0ca6721657956543fea",
+        "bytes": 136
+      },
+      "native_decoded_rgba": {
+        "base64": "AAAAAO8gQwHvIUMREyJDPxMjQ38TH0OAEyBDvxMhQ/4TIkP/8B9DP/Ag5X/wIUOAFCJDvxQjQ/4UH0P/FB9DABQhQwEUIkMR8dNDv/HUQ/7x1eX/8dXlABXXQwEV00MRFdRDPxXVQ38V1kOA8dNDAO/UQwHv1UMRE9blPxPXQ38T00OAE9RDvxPVQ/4T1kP/8NNDP/DUQ3/w1UOAFNZDvxTX5f4U00P/FNNDABTVQwEU1kMR8dNDv/HUQ/7x1UP/8dVDABXXQwEV0+URFdRDPxXVQ38V1kOA8dNDAO/UQwHv1UMRE9ZDPxPXQ38T00OAE9TlvxPVQ/4T1kP/",
+        "sha256": "ddb4fb780f1b47483fa19d5792d8b836ec78a7def4b139a69a8699772dc3aa21",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossless-partial-subrect-ramp",
+      "codec": "lossless",
+      "alpha": "partial",
+      "shape": "subrect",
+      "pattern": "ramp",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "rTvjAAGAgAER/78RPxH+P3+A/38RPwA/P78Bf38AEYCAPz+/v79//n9/gL+A/r/+vwH+/6074wD//gAB",
+      "encoded": {
+        "base64": "UklGRnoAAABXRUJQVlA4TG4AAAAvBIAAEG9gIJKMfxooZBSWgWL/NQykbdMZmoZbnKEzSXdwA5Fk/BNBINUopIJR7CmIZIM6GfSQ4SXzqaYXEwDoYVm9GyNNMvByxuL6EaZ1WpDrudrePyhqIwXK7mu5hCEEFcjBCDIj+h8/2qsmAA==",
+        "sha256": "60715d93cd68b163671cb2334aaf8eb6c896a1307258f55292fb4600576da170",
+        "bytes": 130
+      },
+      "native_decoded_rgba": {
+        "base64": "AAAAAAGAgAER/78RPxH+P3+A/38RPwA/P78Bf38AEYCAPz+/v79//n9/gL+A/r/+vwH+/wAAAAD//gAB",
+        "sha256": "6da5c823aa595d91d7ff28a1c5d5c6d5b0cfba051e660bab8d5dba1ace66bdfd",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossless-partial-subrect-edges",
+      "codec": "lossless",
+      "alpha": "partial",
+      "shape": "subrect",
+      "pattern": "edges",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "rTvjAO8gQwHvIUMREyJDPxMjQ3/wH0M/8CDlf/AhQ4AUIkO/FCND/vHTQ7/x1EP+8dXl/6074wAV10MB",
+      "encoded": {
+        "base64": "UklGRmYAAABXRUJQVlA4TFoAAAAvBIAAEG9gIJKM/xdPXlHE4WoYZBupeZf3F3qJJ5hAIIl0+z0URLJB0Vyz94kgiQJvhKj9vzNWP0gWrlZADoEzfCcgKGojBcq+LmwgDC9oQQ7+Ivofc+7lowA=",
+        "sha256": "7a89abfce3deea08c2e34d9e0b419486740c4d1c23b2275912ccda2d034b428b",
+        "bytes": 110
+      },
+      "native_decoded_rgba": {
+        "base64": "AAAAAO8gQwHvIUMREyJDPxMjQ3/wH0M/8CDlf/AhQ4AUIkO/FCND/vHTQ7/x1EP+8dXl/wAAAAAV10MB",
+        "sha256": "3b040283fc9b578d947c522f7b58aa402668e3f9277e0a75153945dba0138b2d",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossless-binary-full-ramp",
+      "codec": "lossless",
+      "alpha": "binary",
+      "shape": "full",
+      "pattern": "ramp",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "rTvjAAGAgP8R/7//rTvjAH+A//+A/wD/rTvjAP6AEf///z//rTvjAD+/Af9/ABH/rTvjAL+/f//+AID/rTvjAAC//v8BAP//rTvjAID+v/+/Af7/rTvjAP/+AP8AAQH/rTvjABH+P/8/AX//rTvjAP7/Ef//ET//rTvjAAH/gP8REb//rTvjAH////+AEQD/rTvjAAAA/v8BP///rTvjAD8AAf9/PxH/rTvjAL8Af//+P4D/rTvjABEBP/8/f3//rTvjAIABv/+/f/7/rTvjAP8BAP8AfwH/rTvjAH8R//+AgAD/rTvjAP4REf//gD//rTvjAAERgP8RgL//",
+      "encoded": {
+        "base64": "UklGRnoAAABXRUJQVlA4TG0AAAAvCIABEBaDkKT8IzxRaGWWWWkcioEARJhgUdN41jMMBCDCBItMyzPPMv/BMF/NeD/IVH/OHsvK/lWTxRdXgEv7Pzc0mJP7Ll/NnGdGzXsTFED4xUXHZUV/q4nlfRen+78AHjaYeCdIqjMnzFEDAA==",
+        "sha256": "e47ef5b57374659c3f34c5f2a27ac3060bf89636bb2e59268886ccf1844d6833",
+        "bytes": 130
+      },
+      "native_decoded_rgba": {
+        "base64": "AAAAAAGAgP8R/7//AAAAAH+A//+A/wD/AAAAAP6AEf///z//AAAAAD+/Af9/ABH/AAAAAL+/f//+AID/AAAAAAC//v8BAP//AAAAAID+v/+/Af7/AAAAAP/+AP8AAQH/AAAAABH+P/8/AX//AAAAAP7/Ef//ET//AAAAAAH/gP8REb//AAAAAH////+AEQD/AAAAAAAA/v8BP///AAAAAD8AAf9/PxH/AAAAAL8Af//+P4D/AAAAABEBP/8/f3//AAAAAIABv/+/f/7/AAAAAP8BAP8AfwH/AAAAAH8R//+AgAD/AAAAAP4REf//gD//AAAAAAERgP8RgL//",
+        "sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossless-binary-full-edges",
+      "codec": "lossless",
+      "alpha": "binary",
+      "shape": "full",
+      "pattern": "edges",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "rTvjAO8gQ//vIUP/rTvjABMjQ/8TH0P/rTvjABMhQ/8TIkP/rTvjAPAg5f/wIUP/rTvjABQjQ/8UH0P/rTvjABQhQ/8UIkP/rTvjAPHUQ//x1eX/rTvjABXXQ/8V00P/rTvjABXVQ/8V1kP/rTvjAO/UQ//v1UP/rTvjABPXQ/8T00P/rTvjABPVQ/8T1kP/rTvjAPDUQ//w1UP/rTvjABTX5f8U00P/rTvjABTVQ/8U1kP/rTvjAPHUQ//x1UP/rTvjABXXQ/8V0+X/rTvjABXVQ/8V1kP/rTvjAO/UQ//v1UP/rTvjABPXQ/8T00P/rTvjABPVQ/8T1kP/",
+      "encoded": {
+        "base64": "UklGRlgAAABXRUJQVlA4TEsAAAAvCIABEBI1bSQ5UC48fzR7gdFjmPK7V8g2AgSxnT/iY/Ch8v73AK8oDgwEEvjGcGQilKKunw0FHRNUdbEQaAyo6WEt0Rrx+vjKKwMA",
+        "sha256": "308fc55cb72f89dffca307ddcb5fd7d8037a73eb43b77b4fdd6ff8b64d5c81f2",
+        "bytes": 96
+      },
+      "native_decoded_rgba": {
+        "base64": "AAAAAO8gQ//vIUP/AAAAABMjQ/8TH0P/AAAAABMhQ/8TIkP/AAAAAPAg5f/wIUP/AAAAABQjQ/8UH0P/AAAAABQhQ/8UIkP/AAAAAPHUQ//x1eX/AAAAABXXQ/8V00P/AAAAABXVQ/8V1kP/AAAAAO/UQ//v1UP/AAAAABPXQ/8T00P/AAAAABPVQ/8T1kP/AAAAAPDUQ//w1UP/AAAAABTX5f8U00P/AAAAABTVQ/8U1kP/AAAAAPHUQ//x1UP/AAAAABXXQ/8V0+X/AAAAABXVQ/8V1kP/AAAAAO/UQ//v1UP/AAAAABPXQ/8T00P/AAAAABPVQ/8T1kP/",
+        "sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossless-binary-subrect-ramp",
+      "codec": "lossless",
+      "alpha": "binary",
+      "shape": "subrect",
+      "pattern": "ramp",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "rTvjAAGAgP8R/7//rTvjAH+A//+tO+MAP78B/38AEf+tO+MAv79//6074wCA/r//vwH+/6074wD//gD/",
+      "encoded": {
+        "base64": "UklGRlYAAABXRUJQVlA4TEoAAAAvBIAAEE+gIAAZxgmmuhWzGgYakKGQDLJpoNCn2QkEKPrgkWcOmcj8B4A9vfnJWCwqOw8SuYNCNpLg5O7eb3Uoh3IR/Y+POpsVAQ==",
+        "sha256": "853f3145ab218de0e081ac272e04f42d70be32c3dade096bb36b241d9bcb7a48",
+        "bytes": 94
+      },
+      "native_decoded_rgba": {
+        "base64": "AAAAAAGAgP8R/7//AAAAAH+A//8AAAAAP78B/38AEf8AAAAAv79//wAAAACA/r//vwH+/wAAAAD//gD/",
+        "sha256": "2f199ce0789e181612f18ce29e7531b493791702126a5735784b166388f21a58",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossless-binary-subrect-edges",
+      "codec": "lossless",
+      "alpha": "binary",
+      "shape": "subrect",
+      "pattern": "edges",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "rTvjAO8gQ//vIUP/rTvjABMjQ/+tO+MA8CDl//AhQ/+tO+MAFCND/6074wDx1EP/8dXl/6074wAV10P/",
+      "encoded": {
+        "base64": "UklGRk4AAABXRUJQVlA4TEEAAAAvBIAAEE+gEAAapiMSULrTWxoEASTtsr/RDhskEEgi3X6P+Q9A/gsjLhXID8gAihpJYa7QnkhBKvIj+h8/tZ2nAAA=",
+        "sha256": "25c45166d6f1fb9cd2891f2436edafd186ae84465fbef8f1d19f791c4d288007",
+        "bytes": 86
+      },
+      "native_decoded_rgba": {
+        "base64": "AAAAAO8gQ//vIUP/AAAAABMjQ/8AAAAA8CDl//AhQ/8AAAAAFCND/wAAAADx1EP/8dXl/wAAAAAV10P/",
+        "sha256": "169f188cce92f77aa1aade56fcb7a4416c14b513c6d53b267bb6452540c7d70f",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossy-opaque-full-ramp",
+      "codec": "lossy",
+      "alpha": "opaque",
+      "shape": "full",
+      "pattern": "ramp",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "ABF//wGAgP8R/7//PxH+/3+A//+A/wD/vxEB//6AEf///z//ET8A/z+/Af9/ABH/gD8//7+/f//+AID//z+//wC//v8BAP//f3+A/4D+v/+/Af7//n/////+AP8AAQH/AX8R/xH+P/8/AX//v4AB//7/Ef//ET//AIB//wH/gP8REb//P4D+/3////+AEQD//7+//wAA/v8BP///Eb8A/z8AAf9/PxH/gL8//78Af//+P4D/Af4R/xEBP/8/f3//f/6A/4ABv/+/f/7//v7///8BAP8AfwH/P//+/38R//+AgAD/v/8B//4REf//gD//AP9//wERgP8RgL//",
+      "encoded": {
+        "base64": "UklGRp4AAABXRUJQVlA4IJIAAADQAgCdASoJAAcAAgA0JbACdH8EWAdYB5QAK7rYstAAAP55PcPnt/+8TZG+eg8K2gPL7u8GclTue9vj/T386HPoG5sCJ/Hb1VbNy6SzYs/A1wOkakGz3JoJOovSV4xE5qxah/3H/+tZn3lVf+45M/k3vUpfwad/9zdyn/PxqCP5HZMX4zgee/4tea/uvZ4/ZAAAAA==",
+        "sha256": "d782f5d67a4918a5c8c622dbc800c05977c262fc2bd775f036747dbf60e04461",
+        "bytes": 166
+      },
+      "native_decoded_rgba": {
+        "base64": "ADIX/zloX/+grMP/STpT/6CBef/gsKD/djU7/72Fnf/04P//DUAN/3KRef8nID3/aFBz/8Wxrf9nVkD/j39y/5KBh/8rGTj/boYh/9nZov91Rm//1Kbh/9Xa2/8AGgD/InND/3y3mv8uHDL/iptB/+Xptv9nTmv/cFWH/5yhrf8JLhn/SZVl/7Dowf86Jyv/u97M/wozJf8ZUEn/XH+G/x0JIv9pP1L/tZeK/1Y9I/+Ud2T/eZ7P/wAcL/9CjWT/tNuw/1cfK//Ufpn//+zs/2BNQf9HSz7/rcr//zRShv9egDf/5dl3/6M5G//dgX7/jqec/wA1M/8teZT/",
+        "sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossy-opaque-full-edges",
+      "codec": "lossy",
+      "alpha": "opaque",
+      "shape": "full",
+      "pattern": "edges",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "7x/l/+8gQ//vIUP/EyJD/xMjQ/8TH0P/EyBD/xMhQ/8TIkP/8B9D//Ag5f/wIUP/FCJD/xQjQ/8UH0P/FCBD/xQhQ/8UIkP/8dND//HUQ//x1eX/FdZD/xXXQ/8V00P/FdRD/xXVQ/8V1kP/79ND/+/UQ//v1UP/E9bl/xPXQ/8T00P/E9RD/xPVQ/8T1kP/8NND//DUQ//w1UP/FNZD/xTX5f8U00P/FNRD/xTVQ/8U1kP/8dND//HUQ//x1UP/FdZD/xXXQ/8V0+X/FdRD/xXVQ/8V1kP/79ND/+/UQ//v1UP/E9ZD/xPXQ/8T00P/E9Tl/xPVQ/8T1kP/",
+      "encoded": {
+        "base64": "UklGRmwAAABXRUJQVlA4IGAAAADQAgCdASoJAAcAAgA0JbACdLoA1AD9ALMABgbBtCgAAPl0Fkp83MeplAq+pSUJgjUt8/8ZJSmsfuBg4xfcvsoX4p4yTr11fzf/oA3/fjxQv/psbwb7Eflf/qxb47/qPAA=",
+        "sha256": "0b9c652e0d97f1d602cfae16309e0877776d1bdafdc84db2f977b86ccd9e7efe",
+        "bytes": 116
+      },
+      "native_decoded_rgba": {
+        "base64": "/yOc/9whhP+wOXH/Rgku/ykXPf8ZHkX/GR1H/xkdSf8XHUv/0SVY/89EbP+PSFn/Jxca/w4tJ/8AMyv/ADMr/wA0Lf8AMy///8Fn//LKev/W67L/XaZp/0G7X/8xxFn/McNb/y/EXf8vxF3/59U1/9PeUP+m6n3/Tsdh/yXNUv8X1kz/FdhG/xXYQv8U2UT/6dk//9TgTf+u92//Qb1G/zPWef8Y0m//CMhG/xTYRv8U2Ej/6tg//9ThSf+u+WH/Q786/ynNav8f2Hz/B8VT/xfZWP8U107/7Ng7/9XhRf+w+V3/RMEs/yjQR/8NyVP/Jd1//xLNaf8V1VL/",
+        "sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossy-opaque-subrect-ramp",
+      "codec": "lossy",
+      "alpha": "opaque",
+      "shape": "subrect",
+      "pattern": "ramp",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "ABF//wGAgP8R/7//PxH+/3+A//8RPwD/P78B/38AEf+APz//v79//39/gP+A/r//vwH+//5//////gD/",
+      "encoded": {
+        "base64": "UklGRnwAAABXRUJQVlA4IHAAAACwAgCdASoFAAMAAgA0JbACdLoAkwD9AN5uBhOpyQAA/kE+GMeP/w08fBn67+6t9kVQzNv+//3Xd/+OGOuqvf730av9Lse/9kY/4d/oUa/2N/qv/xpZe+5n/+Rx6tG2/91vLOV6nBqDrh6w/IjVaAAA",
+        "sha256": "afe7acb6981cfac59eb56f9ac1410bdf0569b22cafb969b33567123099646b06",
+        "bytes": 132
+      },
+      "native_decoded_rgba": {
+        "base64": "ADQa/zltYv+ns8r/Pzlf/5KJs/8AQSv/ZIqL/zIkVP9eOmv/xrWv/1uUg//E0un/ezSc/+6X1P//23j/",
+        "sha256": "05b6ac716e6ddd28edeb4dfa5ec0ea1a339481ec811730a98a42df29d4e58a62",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossy-opaque-subrect-edges",
+      "codec": "lossy",
+      "alpha": "opaque",
+      "shape": "subrect",
+      "pattern": "edges",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "7x/l/+8gQ//vIUP/EyJD/xMjQ//wH0P/8CDl//AhQ/8UIkP/FCND//HTQ//x1EP/8dXl/xXWQ/8V10P/",
+      "encoded": {
+        "base64": "UklGRmgAAABXRUJQVlA4IFwAAAAwAwCdASoFAAMAAgA0JbACdLoA1AD9APYA/UC+MwYGi2zAAPl0Fkp8+lx9P/Vg0/4i+C0fDQDqKL7l9lw/McIP8m/PN/C/+gDfEHQ/+mxvBvuC+q/+Z5b+SQAAAA==",
+        "sha256": "0ea59b31ef1855e445204b0a4736238398786469e3db11701f6e507c9a8342f4",
+        "bytes": 112
+      },
+      "native_decoded_rgba": {
+        "base64": "/yaN/9wjev+sNmz/SAsy/y0aTP/ZLlr/xTxf/4xFVP8tHCD/ES4v///Fef/nvnj/3fO1/1qlYf9AuWD/",
+        "sha256": "5a6e30d47936470b3ec98cc44f6436c50525ab787d816993811eec2d69bd6977",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossy-partial-full-ramp",
+      "codec": "lossy",
+      "alpha": "partial",
+      "shape": "full",
+      "pattern": "ramp",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "rTvjAAGAgAER/78RPxH+P3+A/3+A/wCAvxEBv/6AEf7//z//ET8APz+/AX9/ABGAgD8/v7+/f/7+AID/rTvjAAC//gEBAP8Rf3+Av4D+v/6/Af7/rTvjAP/+AAEAAQERAX8RPxH+P38/AX+ArTvjAP7/EQH/ET8RAIB/PwH/gH8REb+AP4D+v3////6AEQD//7+/PwAA/n8BP/+AEb8Avz8AAf5/PxH/rTvjAL8AfwH+P4ARAf4RvxEBP/4/f3//rTvjAIABvwG/f/4R/v7/P/8BAH8AfwGArTvjAH8R/wGAgAARv/8BP/4REX//gD+AAP9/vwERgP4RgL//",
+      "encoded": {
+        "base64": "UklGRugAAABXRUJQVlA4WAoAAAAQAAAACAAABgAAQUxQSDAAAAABR0AQQJo7g0lW6IiI0B0FigEAjbrrmUIKKaQwhSmkMPUhRPS/B9lnY+5L2qjRLwJWUDggkgAAALACAJ0BKgkABwACADQlsAJ0MoA/QDrgAcJAxw60QAD+iJTgzfpuwxGgWNEE+yH3FqKGEWvzXusf6e/nQ58+dzIXPyumVd1L7LmdZ81K8LPVIL21N24kQ//OUv+byX9Qgn/jXZ9O138vURcX874P+Tb/Kh+Frmz/pgNXzKv/yMSYUofyZZ8O94Shfk7/amfkoAAA",
+        "sha256": "6479ac37b47e80b9aa9d552ad2b503da8623d19e6d2cd135f961796b3e752652",
+        "bytes": 240
+      },
+      "native_decoded_rgba": {
+        "base64": "S6EZAE1zIAHfqLoRcRdKP7x4hH/uoIiApCgAv/OELP7/6mz/AFMAP2uNVn9QEUSAiDKBv8+ow/5wVEf/omk/AMCCPgFJHwARU59qv7fS1f57L6H/oVLYAMjf/wEAEBYRJm9fP4ywlH9AGwCARox+AMTk/gFsQq4RakCyP4in1X8AMjiAQYaBv7zl1/45Khj/mtnhPwA0QX8hS2OAaHuQvx4YFv5nQjX/pl9XAHdEKgF2jEsRfJHXvwARM/5Ag1j/aZBMAF4vAwHhhm4R/9vTP3dINn8nXyqAj1X/AF1ClAFihCIR3exTP6BIAH/mhmuAsKSkvwAkMv4nfoz/",
+        "sha256": "751e22bd4de3db1b682a4c76212b45c33be6a77b58a0bc1f6ba482b933cd2903",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossy-partial-full-edges",
+      "codec": "lossy",
+      "alpha": "partial",
+      "shape": "full",
+      "pattern": "edges",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "rTvjAO8gQwHvIUMREyJDPxMjQ38TH0OAEyBDvxMhQ/4TIkP/8B9DP/Ag5X/wIUOAFCJDvxQjQ/4UH0P/rTvjABQhQwEUIkMR8dNDv/HUQ/7x1eX/rTvjABXXQwEV00MRFdRDPxXVQ38V1kOArTvjAO/UQwHv1UMRE9blPxPXQ38T00OAE9RDvxPVQ/4T1kP/8NNDP/DUQ3/w1UOAFNZDvxTX5f4U00P/rTvjABTVQwEU1kMR8dNDv/HUQ/7x1UP/rTvjABXXQwEV0+URFdRDPxXVQ38V1kOArTvjAO/UQwHv1UMRE9ZDPxPXQ38T00OAE9TlvxPVQ/4T1kP/",
+      "encoded": {
+        "base64": "UklGRswAAABXRUJQVlA4WAoAAAAQAAAACAAABgAAQUxQSDAAAAABR0AQQJo7g0lW6IiI0B0FigEAjbrrmUIKKaQwhSmkMPUhRPS/B9lnY+5L2qjRLwJWUDggdgAAAJACAJ0BKgkABwACADQlsAJ0ugDUAP1AA7NtWIUAAOJ8Te1QY+L+SiFYIsOcDRTAZfnVKHZL75J41Ol8PsxtVAml/CkEWmP3MXlKcoC+HRaxt8U8WZt3Nfzf/oA0mPx6E5rIT/jY3hG/sbftP/miL6//Bv/UeAA=",
+        "sha256": "e76e31cd0871551adaf304e3d323a02182ba568939a9cc71c108f170fac59de9",
+        "bytes": 212
+      },
+      "native_decoded_rgba": {
+        "base64": "/zzGAMAdiAGQR3IRLhstPx0hPX8TIkSAFyFCvxUcQf4XHkn/1C50P8RFe3+HU2uAIiYrvwUtKf4AMiX/XZOFAAE3KwEAMCoR/7x2v/e9iv7a0MP/bJuHAE26cwEsuVURN8dgPzvOZn8vxF2AroYAAN/KWwHH2poRZa5zPy+9WX8ZzUyAFNJAvxTYP/4S2EP/8stPP+HQVn/K52yAZLZEv0XUdv4czmn/CcY9ABzgRwEU2EYR8NBVv97bVv627Fb/WcI2ACzGXQEp330REMxRPxjYUX8U10yAnY8EAMfeUAGh/GwRMsMyPx3OR38R0lqAKuWCvw/LY/4V1VL/",
+        "sha256": "a435f01e20c9e54f3e122f398bb62f61d03223b4abdfeb958f32b577aea683e2",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossy-partial-subrect-ramp",
+      "codec": "lossy",
+      "alpha": "partial",
+      "shape": "subrect",
+      "pattern": "ramp",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "rTvjAAGAgAER/78RPxH+P3+A/38RPwA/P78Bf38AEYCAPz+/v79//n9/gL+A/r/+vwH+/6074wD//gAB",
+      "encoded": {
+        "base64": "UklGRqAAAABXRUJQVlA4WAoAAAAQAAAABAAAAgAAQUxQSBAAAAAAAAERP38/f4C//r/+/wABVlA4IGoAAADwAgCdASoFAAMAAgA0JbACdLoAyADKAP0A6QAGZViMwAD+RYdLrfKNrCnww7j/92n0LvX/9//rtKeTu+7U93zH8f8Ms/9qQ/yT/lRa/0N/in/yQVA3Kf/I4+1vWCv2mUU5VG0KcBuAawAA",
+        "sha256": "66942e4d8c741074d758d04517e2bba4480b099345adc9734529f7c80029e524",
+        "bytes": 168
+      },
+      "native_decoded_rgba": {
+        "base64": "P6ohAD10HQHTpq4RYx1FP5iDhX8AUQA/aZFbf1UWR4CON3C/zrCR/l2Ya7/Ey9n+ki2u/9NbuAD/3nwB",
+        "sha256": "812e0e3aa73b676a53830bcb4cdffb07bffe93a001c64289970466443af0a8bd",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossy-partial-subrect-edges",
+      "codec": "lossy",
+      "alpha": "partial",
+      "shape": "subrect",
+      "pattern": "edges",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "rTvjAO8gQwHvIUMREyJDPxMjQ3/wH0M/8CDlf/AhQ4AUIkO/FCND/vHTQ7/x1EP+8dXl/6074wAV10MB",
+      "encoded": {
+        "base64": "UklGRp4AAABXRUJQVlA4WAoAAAAQAAAABAAAAgAAQUxQSBAAAAAAAAERP38/f4C//r/+/wABVlA4IGgAAABwAgCdASoFAAMAAgA0JbACdLoA1AD9AAOzWuzgAOJ/FsxPdWR3B89EGJxyU0UTy/KR4xb9v1/4gGjszb9LHNwPY29hDn9//ub883qf/XtLpT/m3p+fX/xsbwb9RUef/7u8/9Tf+o8AAA==",
+        "sha256": "1d0f3367bcaf44fd3a61832bbaa9cf3b9cb566237093546143d8e724b3d1e5a6",
+        "bytes": 166
+      },
+      "native_decoded_rgba": {
+        "base64": "9R2qANclmgGnPoQROws4Px8VQ3/XL3M/zkN/f5hFc4AxEzC/Dycv/v+9cb/wsoD++M3O/2pxbQBTrGcB",
+        "sha256": "92c7f81c1f60dc299191083ab14bc7c3f5482594923877367c95ee65553e0c30",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossy-binary-full-ramp",
+      "codec": "lossy",
+      "alpha": "binary",
+      "shape": "full",
+      "pattern": "ramp",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "rTvjAAGAgP8R/7//rTvjAH+A//+A/wD/rTvjAP6AEf///z//rTvjAD+/Af9/ABH/rTvjAL+/f//+AID/rTvjAAC//v8BAP//rTvjAID+v/+/Af7/rTvjAP/+AP8AAQH/rTvjABH+P/8/AX//rTvjAP7/Ef//ET//rTvjAAH/gP8REb//rTvjAH////+AEQD/rTvjAAAA/v8BP///rTvjAD8AAf9/PxH/rTvjAL8Af//+P4D/rTvjABEBP/8/f3//rTvjAIABv/+/f/7/rTvjAP8BAP8AfwH/rTvjAH8R//+AgAD/rTvjAP4REf//gD//rTvjAAERgP8RgL//",
+      "encoded": {
+        "base64": "UklGRsIAAABXRUJQVlA4WAoAAAAQAAAACAAABgAAQUxQSBMAAAABDzD/ERFCIJvs/j4hxhDR/8gDAFZQOCCIAAAA0AIAnQEqCQAHAAIANCWwAnR/A9gD9APRgJkAmeRQxAD7zMsq/IBunyt7D6RdPBVOh5U3eQf15/81fzoc+g7wop+88Flm8w+Qp/CapoHeBLynKPKFEtH+yFMXFr4o17X/ccmfybx6Uv47f4N/J9/NP7SxZ4XORPP27b/xf/zIYPv/+hP+4UAAAA==",
+        "sha256": "68e272cb7d1ba5b8a8a337e4330e08a8b5021c4d163f8dc637c760a712bb921d",
+        "bytes": 202
+      },
+      "native_decoded_rgba": {
+        "base64": "Iak+ABuIOv+RxLD/aXJ0AJ6JfP/Ctp3/VXhWAHKbif/g6///MagyAE2eUP8mKi3/f2R7AMCypP9RYjr/TJBZAGChff8bIjL/PZYIAMjklv+NM2T/uVSbAObl2v8AIQD/H6VIAFzHg/8mIir/VYtAAObs1v+VOov/q02oAKuisf8EMwz/OYhEAL71vv89JyX/YnLHAA0ac/9ARKf/a122ACQAN/+GQ2f/q0tcAIEmJ/+kb2T/bE//AAUAjf9Ja7P/WmWPAG4kVv/yda3/yjp2AJYkT/9dPkT/n03/AGAptv9sa3D/fmo9AKc3K//1doz/nVeWACcZYP9CbJ7/",
+        "sha256": "e992d9791ce399d433d3787d5328a4022153a0ff8c29ff5bcc8cc13dd83f1d00",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossy-binary-full-edges",
+      "codec": "lossy",
+      "alpha": "binary",
+      "shape": "full",
+      "pattern": "edges",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "rTvjAO8gQ//vIUP/rTvjABMjQ/8TH0P/rTvjABMhQ/8TIkP/rTvjAPAg5f/wIUP/rTvjABQjQ/8UH0P/rTvjABQhQ/8UIkP/rTvjAPHUQ//x1eX/rTvjABXXQ/8V00P/rTvjABXVQ/8V1kP/rTvjAO/UQ//v1UP/rTvjABPXQ/8T00P/rTvjABPVQ/8T1kP/rTvjAPDUQ//w1UP/rTvjABTX5f8U00P/rTvjABTVQ/8U1kP/rTvjAPHUQ//x1UP/rTvjABXXQ/8V0+X/rTvjABXVQ/8V1kP/rTvjAO/UQ//v1UP/rTvjABPXQ/8T00P/rTvjABPVQ/8T1kP/",
+      "encoded": {
+        "base64": "UklGRqQAAABXRUJQVlA4WAoAAAAQAAAACAAABgAAQUxQSBMAAAABDzD/ERFCIJvs/j4hxhDR/8gDAFZQOCBqAAAA8AIAnQEqCQAHAAIANCWwAnS6ANQA/UD3/9xABGBYyIAA/eOyk0figBav96f36kHlo0vDu4Bb1Ezqzqm/8NdNojds2c1YyMfvB+wNv/OlqK0S8//3XrLrYlR/8bG8JFw23X/28raf8FQAAA==",
+        "sha256": "a4709e3c781251db3eef8709ac531c118ac2fb90e5fd952f5e1b891750320074",
+        "bytes": 172
+      },
+      "native_decoded_rgba": {
+        "base64": "/z20APAUcf/1I0z/81xvAEQZM/8XIkD/gI6pAAoVM/8XHkX//EyDAOM5Xv/ULzL/2m5jACUoGf8AOiz/YZyRAAA2K/8ANCv/xXstAP62av//xH//l4Y6AFSzVf8lvlr/J75nACO6YP8ovVj/pI0AAPLaVf/q0l3/fJkpADK/R/8P0lf/B81RABDUUv8R1kb/pI8JAOXQSP/r1k7/fJ4jADnDaf8S0Xr/B8xXAA3VTf8Q1Ef/qJEJAOXRRv/r2Eb/fp4dADvCZ/8S0nj/B8xTAA3VSf8Q1UX/qpEBAOfRQv/t1kr/gJ8XADvGR/8U1Vb/CtBEAA/WQ/8S1EH/",
+        "sha256": "3fdce4cde1536af850cd404f24bd2e8d5e4c69a42df181f60e9dfe226b142078",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossy-binary-subrect-ramp",
+      "codec": "lossy",
+      "alpha": "binary",
+      "shape": "subrect",
+      "pattern": "ramp",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "rTvjAAGAgP8R/7//rTvjAH+A//+tO+MAP78B/38AEf+tO+MAv79//6074wCA/r//vwH+/6074wD//gD/",
+      "encoded": {
+        "base64": "UklGRqAAAABXRUJQVlA4WAoAAAAQAAAABAAAAgAAQUxQSAsAAAABDzD/ERGiFhH9DwBWUDggbgAAAPACAJ0BKgUAAwACADQlsAJ0RoBlAH6AdY7+mYMyoVWgAOIoNMf+eJ6/5/Y9+xz8l4I8/+//t6hV3J3faU3d5H/Rln/+5GP+Hf6FGv9jf/mX/xpXzlf/+RwyYuM2/VlOd51KyWdO56LF36wwAAAA",
+        "sha256": "414e896a0d8d4334035162f38f5f613eadfb879f5a202867d794dca41a6711d5",
+        "bytes": 168
+      },
+      "native_decoded_rgba": {
+        "base64": "OLxZACKQRP+BwKb/dpKZAI6Ppv88vmUAUKx4/yAzSv+Qf6IAw7am/zKxbQCl5N//fDat/9BmwwD/3of/",
+        "sha256": "1e7becbfbb025e475f3d3ecfe16ccacb4f7309ea67ebc9a5ed9d7604fd0be21b",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossy-binary-subrect-edges",
+      "codec": "lossy",
+      "alpha": "binary",
+      "shape": "subrect",
+      "pattern": "edges",
+      "width": 5,
+      "height": 3,
+      "rgba_base64": "rTvjAO8gQ//vIUP/rTvjABMjQ/+tO+MA8CDl//AhQ/+tO+MAFCND/6074wDx1EP/8dXl/6074wAV10P/",
+      "encoded": {
+        "base64": "UklGRpoAAABXRUJQVlA4WAoAAAAQAAAABAAAAgAAQUxQSAsAAAABDzD/ERGiFhH9DwBWUDggaAAAAHACAJ0BKgUAAwACADQlsAJ0ugDUAP1AA1Tzu0AA99/Avrd+KB2UoGh79zD3gi1PRHfmaveL38/8Nmc12LSTfu1OBVR8RDx7//ub9mff/969Yy/6rtUf/GxvCN/Y27//27z/1N/6jwAA",
+        "sha256": "6c0a4d45dd751ffb7ff4a543722501c5dcb4aad7f13336a2e98a05f4b9a5a984",
+        "bytes": 162
+      },
+      "native_decoded_rgba": {
+        "base64": "/x+TAPgdd//nIEP/2UlZAEQRMv/mM2kA6j9r/84wSP/AWGIAJR8d/7hoIwD/t4j//8fH/4BqYgBbr2r/",
+        "sha256": "961b36789aa2bce324f6fbd6652f3204950c29fa0c98dd293db00d77847eb29a",
+        "bytes": 60
+      }
+    },
+    {
+      "id": "lossless-later-ramp",
+      "codec": "lossless",
+      "alpha": "opaque",
+      "shape": "full",
+      "pattern": "ramp",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "/+6A//5/f//uAED/wO4B/4B/AP9/AP//QO7+/wF/7v8AAMD/7sD//8BA/v+A/+7/f8DA/0BAgP8B/3//AMBA//9AAf/+/wD/gIB//38BQP9A/gH/AYAA/wAB/////v7//oDu/+4BwP/A/oD/QH/+/wEA7v8A7sD//3+A//4Af//u7kD/wH8B/4AAAP9/7v//AEBA////Af/+wAD/7kD//8D//v+AwO7/f0DA/0D/gP8BwH///gHu/+7+wP/AgID/gAF//3/+QP9AgAH/AQEA/wD+////gP7/wAAB/4DuAP9/f///QAD+/wHu7v8Af8D//wCA//7uf//uf0D/",
+      "encoded": {
+        "base64": "UklGRo4AAABXRUJQVlA4TIIAAAAvCIABAJmM6H9sIqL/AQZt2wiivoxBEfVL4YGUwXQ0GEOSJMj/e0Tdh9AiNwSXDBlJEgRxRi92R/QMOwpDsgYVUU9w6aKAlrro/90ZZ6PTcUVGzPc85JotONZyvc3LpVuVgV60ECX5LGGOJ9lRd1L5/7vuhjjZhjqW956GoNqVYoou",
+        "sha256": "c6fb80804f6bece899a07e3eaf713cc1a9be58ef35e870fc94d8202efa92e025",
+        "bytes": 150
+      },
+      "native_decoded_rgba": {
+        "base64": "/+6A//5/f//uAED/wO4B/4B/AP9/AP//QO7+/wF/7v8AAMD/7sD//8BA/v+A/+7/f8DA/0BAgP8B/3//AMBA//9AAf/+/wD/gIB//38BQP9A/gH/AYAA/wAB/////v7//oDu/+4BwP/A/oD/QH/+/wEA7v8A7sD//3+A//4Af//u7kD/wH8B/4AAAP9/7v//AEBA////Af/+wAD/7kD//8D//v+AwO7/f0DA/0D/gP8BwH///gHu/+7+wP/AgID/gAF//3/+QP9AgAH/AQEA/wD+////gP7/wAAB/4DuAP9/f///QAD+/wHu7v8Af8D//wCA//7uf//uf0D/",
+        "sha256": "2bd1b65dc599e4fc26cf83227294001f7993c574380653662aaf51c44410db8d",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossless-later-edges",
+      "codec": "lossless",
+      "alpha": "opaque",
+      "shape": "full",
+      "pattern": "edges",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "EOAa/xDfvP8Q3rz/7N28/+zcvP/s4Lz/7N+8/+zevP/s3bz/D+C8/w/fGv8P3rz/6928/+vcvP/r4Lz/69+8/+vevP/r3bz/Diy8/w4rvP8OKhr/6im8/+oovP/qLLz/6iu8/+oqvP/qKbz/ECy8/xArvP8QKrz/7Cka/+wovP/sLLz/7Cu8/+wqvP/sKbz/Dyy8/w8rvP8PKrz/6ym8/+soGv/rLLz/6yu8/+sqvP/rKbz/Diy8/w4rvP8OKrz/6im8/+oovP/qLBr/6iu8/+oqvP/qKbz/ECy8/xArvP8QKrz/7Cm8/+wovP/sLLz/7Csa/+wqvP/sKbz/",
+      "encoded": {
+        "base64": "UklGRlIAAABXRUJQVlA4TEYAAAAvCIABAJkyRPQ/NhHR/4CitpEcX4F3/N/HZHevcDDINlJzBO/P9i4jyLYpx28/0liBfQsF8YJJEASKEx4r9DX4Cr6Cr8Eb",
+        "sha256": "ef7b926957dbeb6f16a74894d2ad39715ef923ee0fc1495c225259a07372a6f6",
+        "bytes": 90
+      },
+      "native_decoded_rgba": {
+        "base64": "EOAa/xDfvP8Q3rz/7N28/+zcvP/s4Lz/7N+8/+zevP/s3bz/D+C8/w/fGv8P3rz/6928/+vcvP/r4Lz/69+8/+vevP/r3bz/Diy8/w4rvP8OKhr/6im8/+oovP/qLLz/6iu8/+oqvP/qKbz/ECy8/xArvP8QKrz/7Cka/+wovP/sLLz/7Cu8/+wqvP/sKbz/Dyy8/w8rvP8PKrz/6ym8/+soGv/rLLz/6yu8/+sqvP/rKbz/Diy8/w4rvP8OKrz/6im8/+oovP/qLBr/6iu8/+oqvP/qKbz/ECy8/xArvP8QKrz/7Cm8/+wovP/sLLz/7Csa/+wqvP/sKbz/",
+        "sha256": "6b92608a09d5176cee8e35067f2cd79346a63debf6b96ba263abeda4a1cb729c",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossy-later-ramp",
+      "codec": "lossy",
+      "alpha": "opaque",
+      "shape": "full",
+      "pattern": "ramp",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "/+6A//5/f//uAED/wO4B/4B/AP9/AP//QO7+/wF/7v8AAMD/7sD//8BA/v+A/+7/f8DA/0BAgP8B/3//AMBA//9AAf/+/wD/gIB//38BQP9A/gH/AYAA/wAB/////v7//oDu/+4BwP/A/oD/QH/+/wEA7v8A7sD//3+A//4Af//u7kD/wH8B/4AAAP9/7v//AEBA////Af/+wAD/7kD//8D//v+AwO7/f0DA/0D/gP8BwH///gHu/+7+wP/AgID/gAF//3/+QP9AgAH/AQEA/wD+////gP7/wAAB/4DuAP9/f///QAD+/wHu7v8Af8D//wCA//7uf//uf0D/",
+      "encoded": {
+        "base64": "UklGRpwAAABXRUJQVlA4IJAAAADQAgCdASoJAAcAAgA0JbACdDVAOsd8oAlwAnR2UhiAAPyP5e7sZ/FBRmqPBEEGZf3qdITRhwy38Zv/K/9QnPzyRTWP5FfWuFoJMFiF/JkXVyUkdfxs2uixQQ+fzFODof9X+frplU3LX/gan8G/Uiv/f+pL41fzPj52WH+HqRz+dr69f/yoqkUN3968kf7jAAA=",
+        "sha256": "7ab4eac2642755dad3e633d10be92146bde761ac5c7545c2fc883234561cc085",
+        "bytes": 164
+      },
+      "native_decoded_rgba": {
+        "base64": "/8T2/8+Pq/9nTTr/wcKi/2V3av8zVlH/ms3F/0VwYv8PHgf/9bj4/5Npif/d277/nq6C/zxGPv+YoKT/bnd2/2t5a//W6M3/jnvT/yMoUf+Juof/K1oa/yQfIf//9P//7KGv/3xJQf/Q6MX/cGmw/xQaPP+TtZD/iqx4/1pbUv/x0dz/sXB7/0YbGf+/4cj/PyQv//HQ2//jsb3/oIR+/9n2zf+RxJr/RWte/6LIy/9cjZH/iGA7///j3v+/cqn/TCRW/6Xgyv8ogVj/ABII/521vf+ruL3/Wi0A/9Sllf+petn/IiGV/2G+7P8meIX/eVNp///I1P/RgnH/",
+        "sha256": "4bc9f90850280c3e2aa4cc71cfb96fbe078a71eda580dcf1f45c0a4d0461bf04",
+        "bytes": 252
+      }
+    },
+    {
+      "id": "lossy-later-edges",
+      "codec": "lossy",
+      "alpha": "opaque",
+      "shape": "full",
+      "pattern": "edges",
+      "width": 9,
+      "height": 7,
+      "rgba_base64": "EOAa/xDfvP8Q3rz/7N28/+zcvP/s4Lz/7N+8/+zevP/s3bz/D+C8/w/fGv8P3rz/6928/+vcvP/r4Lz/69+8/+vevP/r3bz/Diy8/w4rvP8OKhr/6im8/+oovP/qLLz/6iu8/+oqvP/qKbz/ECy8/xArvP8QKrz/7Cka/+wovP/sLLz/7Cu8/+wqvP/sKbz/Dyy8/w8rvP8PKrz/6ym8/+soGv/rLLz/6yu8/+sqvP/rKbz/Diy8/w4rvP8OKrz/6im8/+oovP/qLBr/6iu8/+oqvP/qKbz/ECy8/xArvP8QKrz/7Cm8/+wovP/sLLz/7Csa/+wqvP/sKbz/",
+      "encoded": {
+        "base64": "UklGRm4AAABXRUJQVlA4IGIAAADQAgCdASoJAAcAAgA0JbACdLoA1AD9ALMABgbByVgAAP5PJtJjhxv7bD6RTKhwnoHbh32G/lf9LvnIWwjOhFzAFE/MXrFqJes+TP+197q8j6H/xQ71psT/gX/sZbw9+FQAAA==",
+        "sha256": "02d2e8887bebbaa65f3939ded604eb492c0b4f1dcef68e65da41c51643b75c59",
+        "bytes": 118
+      },
+      "native_decoded_rgba": {
+        "base64": "AN5g/xfjd/860Iv/o//O/8/qv//n4Lf/6t+1/+rftf/n4Lf/Kdum/ya/kP9YwaL/xPHi/+nV1f//ydH//8jR///I0f//ydH/AD6X/wM5gv8RH0r/j2OU/7lHnv/ROqT/1Tmi/9U5ov/ROqT/FCzI/yMmrf9EIID/nEOc/9M2q//rKLH/7yW3/+8lu//rJr3/Eim+/yIksP89Eo7/q0y3/8UshP/qLY///TS3//Alt//tJrn/Eim+/yIjtP88EZz/qUrF/9A2lf/iJoH//jqs/+0jp//tJ7X/ECnC/yAjuP86EaD/qEjR/9Eztv/zNar/3yCA//Iwlv/tKrD/",
+        "sha256": "0312ab2ecbe5b02211288065c6c0020fab5d44cad1285889959c94ea5a49eaf7",
+        "bytes": 252
+      }
+    }
+  ]
+}

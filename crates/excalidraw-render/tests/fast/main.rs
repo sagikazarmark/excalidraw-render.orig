@@ -96,4 +96,5 @@ mod surface_metadata_contract;
 mod svg_link_diagnostic_contract;
 mod text_field_contract;
 mod text_line_endings_render;
+mod webp_sample_contract;
 mod whole_scene_controls;

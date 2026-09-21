@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "3c7826ba46f5ba80b2f53c42c70ac73bdfdd58b612efd1bf1ae0bc1a8382c7a8",
+  "catalog_sha256": "ed159793c5342322af74e208cd3fbcc21b2f5915f055f0dc21119e9a41f4dcd4",
   "approval": null,
   "assignments": [
     {
@@ -43919,6 +43919,915 @@
         "status": "gap",
         "issue": 82,
         "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+      }
+    },
+    {
+      "id": "codec:webp:sample:anmf-reserved-flag",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:chunk-length-overflow",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:first-invalid-payload",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:frame-outside-canvas",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:intrinsic-frame-mismatch",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:later-invalid-payload",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-full-blend-d0-clear",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-full-replace-d1-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-sub-blend-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-sub-replace-d0-clear",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-anim-sub-replace-d1-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-binary-static-full",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-full-blend-d0-clear",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-full-replace-d1-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-sub-blend-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-sub-replace-d0-clear",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-anim-sub-replace-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-opaque-static-full",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-full-blend-d0-clear",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-full-replace-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-sub-blend-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-sub-replace-d0-clear",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-anim-sub-replace-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossless-partial-static-full",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-full-blend-d0-clear",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-full-replace-d1-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-sub-blend-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-sub-replace-d0-clear",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-anim-sub-replace-d1-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-binary-static-full",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-full-blend-d0-clear",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-full-replace-d1-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-sub-blend-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-sub-replace-d0-clear",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-anim-sub-replace-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-opaque-static-full",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "qualified_13_cells_first_display_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::qualified_13_cells_first_display_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-full-blend-d0-clear",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-full-replace-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-sub-blend-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-sub-replace-d0-clear",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-anim-sub-replace-d1-opaque",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:lossy-partial-static-full",
+      "disposition": {
+        "status": "gap",
+        "issue": 191,
+        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+      }
+    },
+    {
+      "id": "codec:webp:sample:missing-anim",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:riff-size-long",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:riff-size-short",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:truncated-later-chunk",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "malformed_10_controls_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:vp8x-reserved-byte",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "reserved_vp8x_controls_are_accepted_characterization",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::reserved_vp8x_controls_are_accepted_characterization",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+      }
+    },
+    {
+      "id": "codec:webp:sample:vp8x-reserved-flag",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+          },
+          "function": "reserved_vp8x_controls_are_accepted_characterization",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::reserved_vp8x_controls_are_accepted_characterization",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
       }
     },
     {
