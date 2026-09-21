@@ -146,11 +146,10 @@ def canonicalize(bitmap) -> bytes:
         alpha = output[index + 3]
         if alpha == 0:
             output[index : index + 3] = b"\0\0\0"
-        elif alpha != 255:
-            for channel in range(3):
-                output[index + channel] = min(
-                    255, (output[index + channel] * 255 + alpha // 2) // alpha
-                )
+        # This pinned PDFium backend writes straight BGRA (swizzled to RGBA
+        # by FPDF_REVERSE_BYTE_ORDER), not premultiplied canvas samples.
+        # Unpremultiplying again corrupts translucent colors. Independent
+        # vector-opacity and image-soft-mask controls pin this representation.
     return bytes(output)
 
 

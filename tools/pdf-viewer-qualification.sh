@@ -20,6 +20,10 @@ if [[ ! -x "${REPO_ROOT}/target/pdf-harness/qpdf/bin/qpdf" || ! -d "${REPO_ROOT}
   exit 1
 fi
 
+# Independent translucent vectors and image soft masks qualify the bitmap's
+# straight-alpha representation; opaque calibration alone cannot distinguish it.
+PYTHONDONTWRITEBYTECODE=1 python3 "${REPO_ROOT}/tools/pdf-harness/pdfium/test_alpha.py"
+
 case "${1:-}" in
   generate)
     if [[ -e "${CASE_ROOT}/manifest.json" ]]; then

@@ -23,8 +23,10 @@ bash tools/pdf-harness/run-pdfjs.sh render input.pdf output.rgba width height
 bash tools/pdf-harness/run-structure.sh inspect input.pdf expectation.json pass output.json
 ```
 
-PDFium emits packed top-left RGBA after explicit byte-order selection and
-deterministic unpremultiplication. PDF.js accepts only in-memory bytes, disables
+PDFium emits packed top-left straight RGBA after explicit byte-order selection
+and zeroes invisible RGB. Independent vector-opacity and image-soft-mask controls
+in `pdfium/test_alpha.py` verify its straight-alpha bitmap representation; no
+second unpremultiplication is applied. PDF.js accepts only in-memory bytes, disables
 network, streaming, range fetching, system fonts, external font data, forms,
 annotations, XFA, WASM, and hardware acceleration, and emits canvas
 `getImageData` bytes. Both adapters reject nonconforming page shape before
