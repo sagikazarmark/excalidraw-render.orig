@@ -1,44 +1,234 @@
 {
   "schema": "excalidraw-render/coverage-ownership-policy/v1",
   "rows": [
-    {"id":"codec:jpeg:color-sampling:gray-1x1-baseline","category":"codec-profile","criterion":"Untagged 8-bit gray 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:gray-1x1-progressive","category":"codec-profile","criterion":"Untagged 8-bit gray 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:rgb-1x1-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-0 RGB 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:rgb-1x1-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-0 RGB 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-1x1-baseline","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-1x1-progressive","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-2x1-baseline","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 2x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-2x1-progressive","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 2x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-1x2-baseline","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 1x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-1x2-progressive","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 1x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-2x2-baseline","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 2x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-2x2-progressive","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 2x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-4x1-baseline","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 4x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-4x1-progressive","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 4x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-4x2-baseline","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 4x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-4x2-progressive","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 4x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-1x4-baseline","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 1x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-1x4-progressive","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 1x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-2x4-baseline","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 2x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycbcr-2x4-progressive","category":"codec-profile","criterion":"Untagged 8-bit JFIF YCbCr 2x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:cmyk-1x1-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-0 CMYK 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:cmyk-1x1-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-0 CMYK 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-1x1-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-1x1-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-2x1-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 2x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-2x1-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 2x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-1x2-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 1x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-1x2-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 1x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-2x2-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 2x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-2x2-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 2x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-4x1-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 4x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-4x1-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 4x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-4x2-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 4x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-4x2-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 4x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-1x4-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 1x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-1x4-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 1x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-2x4-baseline","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 2x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
-    {"id":"codec:jpeg:color-sampling:ycck-2x4-progressive","category":"codec-profile","criterion":"Untagged 8-bit Adobe-transform-2 YCCK 2x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.","spec_anchor":"### 8.2 Raster and Nested-SVG Assets"},
+    {
+      "id": "codec:jpeg:color-sampling:gray-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit gray 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:gray-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit gray 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:rgb-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-0 RGB 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:rgb-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-0 RGB 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 4x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 4x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 4x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 4x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x4-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x4-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x4-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x4-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:cmyk-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-0 CMYK 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:cmyk-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-0 CMYK 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 4x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 4x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 4x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 4x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x4-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x4-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x4-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x4-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
     {
       "id": "closure:all-five-layers",
       "category": "closure",
@@ -392,6 +582,486 @@
       "category": "interaction",
       "criterion": "Approved representative scene combines frames/clips, text, raster/nested SVG, links and metadata in all formats.",
       "spec_anchor": "Representative licensed or project-authored scene documents."
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-opposite-model-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-opposite-model-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-bad-signature-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-truncated-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-tag-out-of-bounds-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-missing",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-duplicate",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-zero-index",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-inconsistent-count",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-opposite-model-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-opposite-model-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-bad-signature-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-truncated-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-tag-out-of-bounds-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-missing",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-duplicate",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-zero-index",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-inconsistent-count",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-opposite-model-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-opposite-model-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-bad-signature-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-truncated-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-tag-out-of-bounds-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-missing",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-duplicate",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-zero-index",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-inconsistent-count",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-opposite-model-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-opposite-model-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-bad-signature-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-truncated-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-tag-out-of-bounds-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-missing",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-duplicate",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-zero-index",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-inconsistent-count",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     }
   ]
 }

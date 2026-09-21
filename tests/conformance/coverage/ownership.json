@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "1507cde0e7d246bc09b5be3c4689810838833975e4b14993a449643c7dd44ff7",
+  "catalog_sha256": "3d04acf9566e9ad075c4679912aef1cf26bde39dc814d84bdff630111077123a",
   "approval": null,
   "assignments": [
     {
@@ -3017,6 +3017,1990 @@
         "status": "gap",
         "issue": 82,
         "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-bad-signature-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-opposite-model-single",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-tag-out-of-bounds-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-truncated-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-duplicate",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-inconsistent-count",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-missing",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-ordered",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-reverse",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-single",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-zero-index",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g2.2-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g2.2-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g2.2-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g1-ordered",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g1-reverse",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g1-single",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g2.2-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g2.2-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g2.2-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-bad-signature-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-opposite-model-single",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-tag-out-of-bounds-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-truncated-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-duplicate",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-inconsistent-count",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-missing",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-ordered",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-reverse",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-single",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-zero-index",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g2.2-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g2.2-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g2.2-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g1-ordered",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g1-reverse",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g1-single",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g2.2-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g2.2-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g2.2-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-bad-signature-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-opposite-model-single",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-tag-out-of-bounds-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-truncated-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-duplicate",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-inconsistent-count",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-missing",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-zero-index",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g2.2-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g2.2-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g2.2-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g1-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g1-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g1-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g2.2-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g2.2-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g2.2-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-bad-signature-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-opposite-model-single",
+      "disposition": {
+        "status": "gap",
+        "issue": 188,
+        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-tag-out-of-bounds-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-truncated-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-duplicate",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-inconsistent-count",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-missing",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-zero-index",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g2.2-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g2.2-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g2.2-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g1-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g1-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g1-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g2.2-ordered",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g2.2-reverse",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g2.2-single",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+          },
+          "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
       }
     },
     {
