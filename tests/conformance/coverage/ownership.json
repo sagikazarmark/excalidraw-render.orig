@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "620d73c740ad418ccda2bc0143c29ae91983c8f8c0c1d06ed980f58012d5a139",
+  "catalog_sha256": "3175a2c7a54c7e575fc18d3b333aa67888fab8641526f182139ec11d80eedefd",
   "approval": null,
   "assignments": [
     {
@@ -7731,6 +7731,1010 @@
         "status": "gap",
         "issue": 82,
         "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-bad-count",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-bad-offset",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-bad-size",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-hdr-edges",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-hdr-ramp",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-identity",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-missing-secondary",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-omit-mpf",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-omit-xmp",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-sdr-edges",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-sdr-ramp",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-third-image",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-truncated-secondary",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-bad-count",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-bad-offset",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-bad-size",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-hdr-edges",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-hdr-ramp",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-identity",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-missing-secondary",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-omit-mpf",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-omit-xmp",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-sdr-edges",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-sdr-ramp",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-third-image",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-truncated-secondary",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-bad-count",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-bad-offset",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-bad-size",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-hdr-edges",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-hdr-ramp",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-identity",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-missing-secondary",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-omit-mpf",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-omit-xmp",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-sdr-edges",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-sdr-ramp",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-third-image",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-truncated-secondary",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-bad-count",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-bad-offset",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-bad-size",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-hdr-edges",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-hdr-ramp",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-identity",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-missing-secondary",
+      "disposition": {
+        "status": "gap",
+        "issue": 190,
+        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-omit-mpf",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-omit-xmp",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-sdr-edges",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-sdr-ramp",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "valid_sdr_gain_maps_match_reference_base_projection",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::valid_sdr_gain_maps_match_reference_base_projection",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-third-image",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
+      }
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-truncated-secondary",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+          },
+          "function": "invalid_container_framing_has_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::invalid_container_framing_has_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent MP Index/XMP reconstruction, two authored patterns, repeated pinned-browser canvas/SVG authorities, exact native reports/extents/source preservation/alpha/replay and strict recovery where declared. Bounded SDR/recovery cells only; HDR-base and malformed-index scope remains #190. See docs/research/jpeg-gain-map-qualification.md."
       }
     },
     {

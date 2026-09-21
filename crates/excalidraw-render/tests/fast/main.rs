@@ -49,6 +49,7 @@ mod image_viewport_rounding;
 mod jpeg_color_contract;
 mod jpeg_contract;
 mod jpeg_exif_contract;
+mod jpeg_gain_map_contract;
 mod jpeg_icc_contract;
 mod license_bundle;
 mod linear_rotation_render;
