@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "4c1ac0195daef24c51637d08e4c213f74843d8b74874788812fe940c194d9c15",
+  "catalog_sha256": "6ec981d705a554fc2087f9bf6b7258a21fcd6786cd70cb76ce8d9f02ed014744",
   "approval": null,
   "assignments": [
     {
@@ -1921,6 +1921,3950 @@
         "status": "gap",
         "issue": 82,
         "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:bad-palette-index",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:first-stream-invalid-code",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:frame-outside-screen",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:huge-image-descriptor",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "huge_header_controls_are_preempted_by_bounded_validation_work",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::huge_header_controls_are_preempted_by_bounded_validation_work",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:huge-logical-screen",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "huge_header_controls_are_preempted_by_bounded_validation_work",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::huge_header_controls_are_preempted_by_bounded_validation_work",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:input-byte-budget",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "byte_pixel_dimension_and_prepaid_work_boundaries_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::byte_pixel_dimension_and_prepaid_work_boundaries_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:invalid-gce-size",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:later-stream-invalid-code",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-animated-d0",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-animated-d1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-animated-d2",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-animated-d3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-static",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::valid_first_frame_matrix_matches_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:logical-pixel-budget",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "byte_pixel_dimension_and_prepaid_work_boundaries_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::byte_pixel_dimension_and_prepaid_work_boundaries_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:missing-color-table",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:missing-trailer",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:reserved-disposal-4",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:reserved-gce-bits",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:reserved-image-bits",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:truncated-image-data",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:first-frame:zero-logical-width",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
+            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+          },
+          "function": "authored_malformed_controls_have_exact_decode_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_first_frame_contract::authored_malformed_controls_have_exact_decode_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Bounded independently authored GIF first-frame/recovery/resource vectors; exact owner executes reconstruction, discrimination, negative gates, reports and replay. Browser claims apply only to the 240 valid collected vectors; huge controls prove work preemption only. See docs/research/gif-first-frame-qualification.md."
       }
     },
     {
@@ -7743,8 +11687,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -7772,8 +11716,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -7801,8 +11745,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -7875,8 +11819,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8078,8 +12022,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8107,8 +12051,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8136,8 +12080,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8210,8 +12154,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8413,8 +12357,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8442,8 +12386,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8471,8 +12415,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8545,8 +12489,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8748,8 +12692,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8777,8 +12721,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8806,8 +12750,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -8880,8 +12824,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
             "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
-          "binary": "fast",
           "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",

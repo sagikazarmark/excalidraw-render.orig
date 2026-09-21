@@ -1866,6 +1866,822 @@
       "category": "codec-profile",
       "criterion": "JPEG MPF/Adobe-XMP progressive-big-third-image: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-opaque-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-opaque-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-full-transparent-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF global-full-transparent-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-opaque-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-opaque-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:global-subrect-transparent-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF global-subrect-transparent-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-opaque-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-opaque-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-full-transparent-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF local-full-transparent-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-opaque-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-opaque-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:local-subrect-transparent-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF local-subrect-transparent-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-opaque-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-opaque-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-full-transparent-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-full-transparent-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-opaque-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-opaque-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-static",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-sequential-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-sequential-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-sequential-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-sequential-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-sequential-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-sequential-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-static",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-interlaced-static: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-animated-d0",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-interlaced-animated-d0: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-animated-d1",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-interlaced-animated-d1: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-animated-d2",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-interlaced-animated-d2: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:both-local-override-subrect-transparent-interlaced-animated-d3",
+      "category": "codec-profile",
+      "criterion": "GIF both-local-override-subrect-transparent-interlaced-animated-d3: both independent asymmetric GIF89a four-entry literal-LZW vectors: first-frame logical-screen/palette/offset/transparency/interlace interpretation, disposal as frame-zero metadata only, exact authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, ordered flattening reports and replay. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:bad-palette-index",
+      "category": "codec-profile",
+      "criterion": "GIF bad-palette-index: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:later-stream-invalid-code",
+      "category": "codec-profile",
+      "criterion": "GIF later-stream-invalid-code: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:missing-trailer",
+      "category": "codec-profile",
+      "criterion": "GIF missing-trailer: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:invalid-gce-size",
+      "category": "codec-profile",
+      "criterion": "GIF invalid-gce-size: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:reserved-gce-bits",
+      "category": "codec-profile",
+      "criterion": "GIF reserved-gce-bits: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:reserved-image-bits",
+      "category": "codec-profile",
+      "criterion": "GIF reserved-image-bits: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:reserved-disposal-4",
+      "category": "codec-profile",
+      "criterion": "GIF reserved-disposal-4: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:first-stream-invalid-code",
+      "category": "codec-profile",
+      "criterion": "GIF first-stream-invalid-code: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:truncated-image-data",
+      "category": "codec-profile",
+      "criterion": "GIF truncated-image-data: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:missing-color-table",
+      "category": "codec-profile",
+      "criterion": "GIF missing-color-table: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:zero-logical-width",
+      "category": "codec-profile",
+      "criterion": "GIF zero-logical-width: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:frame-outside-screen",
+      "category": "codec-profile",
+      "criterion": "GIF frame-outside-screen: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:input-byte-budget",
+      "category": "codec-profile",
+      "criterion": "GIF input-byte-budget: finite authored valid control at byte, logical-pixel, dimension and prepaid validation-work equality/first crossing, exact format-specific reports/recovery and direct-SVG pixel exemption; no aggregate/resource-umbrella claim. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:logical-pixel-budget",
+      "category": "codec-profile",
+      "criterion": "GIF logical-pixel-budget: finite authored valid control at byte, logical-pixel, dimension and prepaid validation-work equality/first crossing, exact format-specific reports/recovery and direct-SVG pixel exemption; no aggregate/resource-umbrella claim. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:huge-logical-screen",
+      "category": "codec-profile",
+      "criterion": "GIF huge-logical-screen: independently authored huge header is preempted by an asset-work cap before large decode/allocation, with exact resource report/recovery; no claim of decode, pixel-limit precedence or physical OOM qualification. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:first-frame:huge-image-descriptor",
+      "category": "codec-profile",
+      "criterion": "GIF huge-image-descriptor: independently authored huge header is preempted by an asset-work cap before large decode/allocation, with exact resource report/recovery; no claim of decode, pixel-limit precedence or physical OOM qualification. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     }
   ]
 }
