@@ -1,0 +1,6 @@
+    Updating crates.io index
+ Downgrading image v0.25.10 -> v0.25.8 (available: v0.25.10)
+ Downgrading moxcms v0.8.1 -> v0.7.11
+    Updating zune-core v0.5.1 -> v0.5.3
+    Updating zune-jpeg v0.5.15 -> v0.5.16-rc2
+note: pass `--verbose` to see 42 unchanged dependencies behind latest

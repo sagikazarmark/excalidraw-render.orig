@@ -1,0 +1,496 @@
+{
+  "approval": null,
+  "final_freeze_recollection_required": false,
+  "controls": [
+    {
+      "id": "jpeg-rgb-1x1-baseline-edges",
+      "diagnostics_before": [
+        [],
+        [],
+        []
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        []
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": true,
+          "report_equal": true
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "failures": []
+    },
+    {
+      "id": "jpeg-cmyk-1x1-baseline-ramp",
+      "diagnostics_before": [
+        [],
+        [],
+        []
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        []
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": false,
+          "report_equal": false
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": false,
+          "report_equal": false
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 711,
+        "bytes_equal": false
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 711,
+        "bytes_equal": false
+      },
+      "failures": []
+    },
+    {
+      "id": "jpeg-ycck-1x1-progressive-ramp",
+      "diagnostics_before": [
+        [],
+        [],
+        []
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        []
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": false,
+          "report_equal": false
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": false,
+          "report_equal": false
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 713,
+        "bytes_equal": false
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 713,
+        "bytes_equal": false
+      },
+      "failures": []
+    },
+    {
+      "id": "jpeg-ycbcr-4x2-baseline-edges",
+      "diagnostics_before": [
+        [],
+        [],
+        []
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        []
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": true,
+          "report_equal": true
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "failures": []
+    },
+    {
+      "id": "jpeg-ycck-2x4-baseline-edges",
+      "diagnostics_before": [
+        [],
+        [],
+        []
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        []
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": true,
+          "report_equal": true
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "failures": []
+    },
+    {
+      "id": "png-rgb8",
+      "diagnostics_before": [
+        [],
+        [],
+        []
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        []
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": true,
+          "report_equal": true
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "failures": []
+    },
+    {
+      "id": "png-rgba8",
+      "diagnostics_before": [
+        [],
+        [],
+        []
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        []
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": true,
+          "report_equal": true
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "failures": []
+    },
+    {
+      "id": "png-rgb16",
+      "diagnostics_before": [
+        [],
+        [],
+        []
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        []
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": true,
+          "report_equal": true
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "failures": []
+    },
+    {
+      "id": "gif-palette",
+      "diagnostics_before": [
+        [],
+        [],
+        []
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        []
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": true,
+          "report_equal": true
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "failures": []
+    },
+    {
+      "id": "png-alpha-filter",
+      "diagnostics_before": [
+        [],
+        [],
+        [
+          {
+            "code": "pdf.raster-fallback",
+            "severity": "warning",
+            "format": "pdf",
+            "effects": [
+              "visual",
+              "semantic"
+            ],
+            "element_id": "image",
+            "json_pointer": "/files/asset/dataURL",
+            "message": "unsupported nested-SVG effect closure was rasterized for PDF",
+            "details": {
+              "kind": "pdf_raster_fallback",
+              "recovery": "rasterized",
+              "logical_bounds": {
+                "x": 0,
+                "y": 0,
+                "width": 16,
+                "height": 12
+              },
+              "pixel_width": 16,
+              "pixel_height": 12,
+              "causes": [
+                {
+                  "segments": [
+                    {
+                      "kind": "node",
+                      "ordinal": 4,
+                      "name": null
+                    },
+                    {
+                      "kind": "attribute",
+                      "ordinal": 0,
+                      "name": "filter"
+                    }
+                  ]
+                },
+                {
+                  "segments": [
+                    {
+                      "kind": "node",
+                      "ordinal": 3,
+                      "name": null
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      ],
+      "diagnostics_after": [
+        [],
+        [],
+        [
+          {
+            "code": "pdf.raster-fallback",
+            "severity": "warning",
+            "format": "pdf",
+            "effects": [
+              "visual",
+              "semantic"
+            ],
+            "element_id": "image",
+            "json_pointer": "/files/asset/dataURL",
+            "message": "unsupported nested-SVG effect closure was rasterized for PDF",
+            "details": {
+              "kind": "pdf_raster_fallback",
+              "recovery": "rasterized",
+              "logical_bounds": {
+                "x": 0,
+                "y": 0,
+                "width": 16,
+                "height": 12
+              },
+              "pixel_width": 16,
+              "pixel_height": 12,
+              "causes": [
+                {
+                  "segments": [
+                    {
+                      "kind": "node",
+                      "ordinal": 4,
+                      "name": null
+                    },
+                    {
+                      "kind": "attribute",
+                      "ordinal": 0,
+                      "name": "filter"
+                    }
+                  ]
+                },
+                {
+                  "segments": [
+                    {
+                      "kind": "node",
+                      "ordinal": 3,
+                      "name": null
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      ],
+      "formats": [
+        {
+          "format": "svg",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "png",
+          "artifact_equal": true,
+          "report_equal": true
+        },
+        {
+          "format": "pdf",
+          "artifact_equal": true,
+          "report_equal": true
+        }
+      ],
+      "pdfium": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "pdfjs": {
+        "exact_changed_pixels": 0,
+        "bytes_equal": true
+      },
+      "failures": []
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "final_current_capture_authorized": true,
+  "parent_freeze_message": "Freeze color-only stable-graph production/test/xtask bytes now for #187 final qualification; Cargo.toml and both locks exactly HEAD4e5b624. Production jpeg.rs includes reviewed four-component guard; all8JPEGfocusedtests, workspacefmt andClippy passed. No furtherproducer/toolingchangesallowedwithoutinvalidatingcapture."
+}

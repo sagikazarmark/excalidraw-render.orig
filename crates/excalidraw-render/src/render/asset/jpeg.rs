@@ -249,17 +249,64 @@ pub(super) fn decode_static_jpeg(
         ColorNormalization::Hdr(_) => return Err(ResolveError::Unsupported),
     };
     let mut decoder = jpeg_decoder(bytes);
-    decoder.set_options((*decoder.options()).jpeg_set_out_colorspace(source_color_space));
+    decoder
+        .decode_headers()
+        .map_err(|_| ResolveError::JpegDecodeFailed)?;
+    // Read four-component data without zune's rounded multiply-by-K. The
+    // reference's untagged JPEG projection truncates that operation (#187).
+    // Preserve the existing gray-profile route and normalize RGB before CMS.
+    // Adobe's header color tag is provisional for three-component images;
+    // zune resolves those to RGB/YCbCr only during decoder setup.
+    let component_count = decoder
+        .info()
+        .ok_or(ResolveError::JpegDecodeFailed)?
+        .components;
+    let raw_space = match (
+        decoder.input_colorspace(),
+        source_color_space,
+        component_count,
+    ) {
+        (Some(space @ (ColorSpace::CMYK | ColorSpace::YCCK)), ColorSpace::RGB, 4) => space,
+        _ => source_color_space,
+    };
+    decoder.set_options((*decoder.options()).jpeg_set_out_colorspace(raw_space));
     let mut rgb = decoder
         .decode()
         .map_err(|_| ResolveError::JpegDecodeFailed)?;
     let info = decoder.info().ok_or(ResolveError::JpegDecodeFailed)?;
-    let components =
-        u64::try_from(source_color_space.num_components()).map_err(|_| ResolveError::Memory)?;
+    let components = u64::try_from(raw_space.num_components()).map_err(|_| ResolveError::Memory)?;
     let expected_rgb = usize::try_from(pixels.checked_mul(components).ok_or(ResolveError::Memory)?)
         .map_err(|_| ResolveError::Memory)?;
     if rgb.len() != expected_rgb {
         return Err(ResolveError::JpegDecodeFailed);
+    }
+    if matches!(raw_space, ColorSpace::CMYK | ColorSpace::YCCK) {
+        // Compact in place: every four input bytes become three output bytes.
+        // All arithmetic is bounded integer arithmetic, identical on both targets.
+        for index in 0..rgb.len() / 4 {
+            let p: [u8; 4] = rgb[index * 4..index * 4 + 4]
+                .try_into()
+                .map_err(|_| ResolveError::JpegDecodeFailed)?;
+            let channels = if raw_space == ColorSpace::YCCK {
+                let y = i32::from(p[0]);
+                let cb = i32::from(p[1]) - 128;
+                let cr = i32::from(p[2]) - 128;
+                // Full-range JPEG YCbCr coefficients, nearest integer before
+                // inversion to CMY. The independent browser matrix qualifies
+                // this conversion separately from the following K operation.
+                [
+                    y + ((91881 * cr + 32768) >> 16),
+                    y + ((-22554 * cb - 46802 * cr + 32768) >> 16),
+                    y + ((116130 * cb + 32768) >> 16),
+                ]
+                .map(|v| (255 - v.clamp(0, 255)) as u8)
+            } else {
+                [p[0], p[1], p[2]]
+            };
+            let channels = channels.map(|v| (u32::from(v) * u32::from(p[3]) / 255) as u8);
+            rgb[index * 3..index * 3 + 3].copy_from_slice(&channels);
+        }
+        rgb.truncate(rgb.len() / 4 * 3);
     }
     if let ColorNormalization::Lut(lut) = color_normalization {
         let lut = lut.first().ok_or(ResolveError::DecodeFailed)?;

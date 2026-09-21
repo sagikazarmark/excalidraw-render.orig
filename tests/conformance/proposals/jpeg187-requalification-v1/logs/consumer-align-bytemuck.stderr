@@ -1,0 +1,3 @@
+    Updating crates.io index
+ Downgrading bytemuck v1.25.2 -> v1.25.1
+note: pass `--verbose` to see 43 unchanged dependencies behind latest

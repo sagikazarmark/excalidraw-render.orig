@@ -1,0 +1,12 @@
+test_actual_combined_record_passes (__main__.SplitChecks.test_actual_combined_record_passes) ... ok
+test_long_test_continuation_must_be_exact (__main__.SplitChecks.test_long_test_continuation_must_be_exact) ... ok
+test_no_invented_continuation_raw_log (__main__.SplitChecks.test_no_invented_continuation_raw_log) ... ok
+test_optimized_execution_stops_before_seal (__main__.SplitChecks.test_optimized_execution_stops_before_seal) ... ok
+test_pending_failure_cannot_be_waived_or_expanded (__main__.SplitChecks.test_pending_failure_cannot_be_waived_or_expanded) ... ok
+test_removed_or_duplicated_fast_success_rejected (__main__.SplitChecks.test_removed_or_duplicated_fast_success_rejected) ... ok
+test_timeout_cannot_be_relabelled_pass (__main__.SplitChecks.test_timeout_cannot_be_relabelled_pass) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.025s
+
+OK

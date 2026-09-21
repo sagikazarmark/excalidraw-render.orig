@@ -2030,17 +2030,59 @@
     {
       "id": "codec:jpeg:color-sampling:cmyk-1x1-baseline",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:cmyk-1x1-progressive",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
@@ -2051,7 +2093,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2080,7 +2122,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2109,7 +2151,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2138,7 +2180,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2167,7 +2209,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2196,7 +2238,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2225,7 +2267,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2254,7 +2296,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2291,7 +2333,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2320,7 +2362,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2349,7 +2391,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2378,7 +2420,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2407,7 +2449,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2444,7 +2486,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2473,7 +2515,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2502,7 +2544,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2539,7 +2581,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
-            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
           },
           "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
           "binary": "fast",
@@ -2563,33 +2605,117 @@
     {
       "id": "codec:jpeg:color-sampling:ycck-1x1-baseline",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:ycck-1x1-progressive",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:ycck-1x2-baseline",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:ycck-1x2-progressive",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
@@ -2603,41 +2729,146 @@
     {
       "id": "codec:jpeg:color-sampling:ycck-1x4-progressive",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:ycck-2x1-baseline",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:ycck-2x1-progressive",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:ycck-2x2-baseline",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:ycck-2x2-progressive",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
@@ -2651,25 +2882,88 @@
     {
       "id": "codec:jpeg:color-sampling:ycck-2x4-progressive",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:ycck-4x1-baseline",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
       "id": "codec:jpeg:color-sampling:ycck-4x1-progressive",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
@@ -2683,9 +2977,30 @@
     {
       "id": "codec:jpeg:color-sampling:ycck-4x2-progressive",
       "disposition": {
-        "status": "gap",
-        "issue": 187,
-        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #187 CMYK/YCCK integer color correction on the unchanged stable HEAD graph; both frozen patterns and both independent color authorities pass canonical gates. Six baseline sampling cells remain unowned #187 known failures. Exact qualification/migration: tests/conformance/proposals/jpeg187-requalification-v1/."
       }
     },
     {
@@ -34251,16 +34566,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v8",
+            "case": "representative.stage4-frames-text-assets.v9",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "082d93f1c585b2d48a63f3ec1e3a9bcf277b29938598dee07008bed610daa802"
+              "sha256": "fbb3fb617089b2204433916cf8887626fb692a50b269a0ffc23c2c48c903aae4"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v8/manifest.json",
-              "sha256": "6e0d4764fc1be35bcdfe44298f1442c58f728e66ff056928f75aa6a41018e9c5"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v9/manifest.json",
+              "sha256": "473f95c569ece715bf531d893bc6e9eb82ed346f2a2be968ba08cf6e687be0cf"
             },
-            "approval_subject_sha256": "sha256:aaa772430f342a60807ef97255bf2296041cbcf23dff4c2aa4284052deb92454",
+            "approval_subject_sha256": "sha256:00f193a54cf4076911ec0a679c6f82e50c09d4b75502b1a88c5de3d8e1b6858d",
             "command": [
               "cargo",
               "run",
@@ -34271,7 +34586,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v8"
+              "tests/conformance/candidates/stage4-frames-text-assets-v9"
             ]
           }
         },

@@ -1,0 +1,194 @@
+{
+  "version": 2,
+  "parameters": {
+    "decodelevel": "all"
+  },
+  "pages": [
+    {
+      "contents": [
+        "4 0 R"
+      ],
+      "images": [],
+      "label": null,
+      "object": "3 0 R",
+      "outlines": [],
+      "pageposfrom1": 1
+    }
+  ],
+  "pagelabels": [],
+  "acroform": {
+    "fields": [],
+    "hasacroform": false,
+    "needappearances": false
+  },
+  "attachments": {},
+  "encrypt": {
+    "capabilities": {
+      "accessibility": true,
+      "extract": true,
+      "modify": true,
+      "modifyannotations": true,
+      "modifyassembly": true,
+      "modifyforms": true,
+      "modifyother": true,
+      "printhigh": true,
+      "printlow": true
+    },
+    "encrypted": false,
+    "ownerpasswordmatched": false,
+    "parameters": {
+      "P": 0,
+      "R": 0,
+      "V": 0,
+      "bits": 0,
+      "filemethod": "none",
+      "key": null,
+      "method": "none",
+      "streammethod": "none",
+      "stringmethod": "none"
+    },
+    "recovereduserpassword": null,
+    "userpasswordmatched": false
+  },
+  "outlines": [],
+  "qpdf": [
+    {
+      "jsonversion": 2,
+      "pdfversion": "1.7",
+      "pushedinheritedpageresources": false,
+      "calledgetallpages": true,
+      "maxobjectid": 8
+    },
+    {
+      "obj:1 0 R": {
+        "value": {
+          "/OutputIntents": [
+            "6 0 R"
+          ],
+          "/Pages": "2 0 R",
+          "/Type": "/Catalog"
+        }
+      },
+      "obj:2 0 R": {
+        "value": {
+          "/Count": 1,
+          "/Kids": [
+            "3 0 R"
+          ],
+          "/Type": "/Pages"
+        }
+      },
+      "obj:3 0 R": {
+        "value": {
+          "/Contents": "4 0 R",
+          "/CropBox": [
+            0,
+            0,
+            24.75,
+            18.75
+          ],
+          "/MediaBox": [
+            0,
+            0,
+            24.75,
+            18.75
+          ],
+          "/Parent": "2 0 R",
+          "/Resources": {
+            "/ColorSpace": {
+              "/CS1": [
+                "/ICCBased",
+                "5 0 R"
+              ]
+            },
+            "/XObject": {
+              "/Svg0": "8 0 R"
+            }
+          },
+          "/Type": "/Page"
+        }
+      },
+      "obj:4 0 R": {
+        "stream": {
+          "data": "cQowLjc1IDAgMCAtMC43NSAwIDE4Ljc1IGNtCnEKMSAwIDAgMSAwIDAgY20KMCAwIDMzIDI1IHJlClcKbgozMyAwIDAgLTI1IDAgMjUgY20KL1N2ZzAgRG8KUQpR",
+          "dict": {}
+        }
+      },
+      "obj:5 0 R": {
+        "stream": {
+          "data": "AAADNEVSTkQCEAAAbW50clJHQiBYWVogB9AAAQABAAAAAAAAYWNzcAAAAAAAAAAARVJORHNSR0IAAAAAAAAAAAAAAAAAAPbWAAEAAAAA0y1FUk5EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHclhZWgAAANgAAAAUZ1hZWgAAAOwAAAAUYlhZWgAAAQAAAAAUd3RwdAAAARQAAAAUclRSQwAAASgAAAIMZ1RSQwAAASgAAAIMYlRSQwAAASgAAAIMWFlaIAAAAAAAAG+jAAA49gAAA5FYWVogAAAAAAAAYpQAALeFAAAY3FhZWiAAAAAAAAAkoQAAD4UAALbUWFlaIAAAAAAAAPbWAAEAAAAA0y1jdXJ2AAAAAAAAAQAAAAAUACgAPABQAGMAdwCLAJ8AswDHANsA8QEIASABOQFUAW8BjAGrAcoB6wIOAjICVwJ9AqUCzgL5AyUDUwOCA7MD5QQYBE0EhAS8BPYFMgVvBa0F7QYvBnMGuAb+B0cHkQfdCCoIegjKCR0JcgnICiAKeQrVCzILkQvyDFUMug0gDYgN8g5eDswPPA+uECEQlxEOEYgSAxKAEwATgRQEFIkVEBWaFiUWshdBF9MYZhj7GZMaLBrIG2YcBhynHUwd8h6aH0Qf8SCgIVAiBCK5I3AkKiTlJaMmZCcmJ+sosSl7KkYrFCvjLLYtii5hLzowFTDyMdIytDOZNIA1aTZVN0I4MzklOho7EjwLPQc+Bj8HQApBEEIYQyNEMEU/RlFHZUh8SZVKsUvPTPBOE085UGFRjFK5U+lVG1ZQV4dYwVn+Wz1cfl3CXwlgUmGeYu1kPmWRZuhoQGmcavpsW22+byRwjXH4c2Z013ZKd8B5OXq0fDJ9s383gL2CRoPRhV+G8IiEihuLtI1Qju+QkJI1k9yVhpcymOKalJxJngGfu6F5ozmk/KbCqIuqVqwlrfavyrGhs3u1V7c3uRm6/7znvtLAwMKxxKXGnMiVypLMkc6U0JnSodSt1rvYzNrg3PffEeEu407lceeX6cDr7O4b8E3ygvS69vX5M/t0/bj//w==",
+          "dict": {
+            "/Alternate": "/DeviceRGB",
+            "/N": 3
+          }
+        }
+      },
+      "obj:6 0 R": {
+        "value": {
+          "/DestOutputProfile": "5 0 R",
+          "/Info": "u:excalidraw-render project sRGB",
+          "/OutputConditionIdentifier": "u:sRGB",
+          "/S": "/GTS_PDFA1",
+          "/Type": "/OutputIntent"
+        }
+      },
+      "obj:7 0 R": {
+        "stream": {
+          "data": "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",
+          "dict": {
+            "/BitsPerComponent": 8,
+            "/ColorSpace": "/DeviceRGB",
+            "/Height": 25,
+            "/Subtype": "/Image",
+            "/Type": "/XObject",
+            "/Width": 33
+          }
+        }
+      },
+      "obj:8 0 R": {
+        "stream": {
+          "data": "cQoxIDAgMCAtMSAwIDI1IGNtCnEKMSAwIDAgMSAwIDAgY20KcQoxIDAgMCAxIDAgMCBjbQpxCjEgMCAwIDEgMCAwIGNtCnEKMSAwIDAgMSAwIDAgY20KMzMgMCAwIC0yNSAwIDI1IGNtCi94bzAgRG8KUQpRClEKUQpR",
+          "dict": {
+            "/BBox": [
+              0,
+              0,
+              33,
+              25
+            ],
+            "/Matrix": [
+              0.030303031,
+              0,
+              0,
+              0.04,
+              0,
+              0
+            ],
+            "/Resources": {
+              "/ProcSet": [
+                "/PDF",
+                "/Text",
+                "/ImageC",
+                "/ImageB"
+              ],
+              "/XObject": {
+                "/xo0": "7 0 R"
+              }
+            },
+            "/Subtype": "/Form",
+            "/Type": "/XObject"
+          }
+        }
+      },
+      "trailer": {
+        "value": {
+          "/ID": [
+            "b:ef5a7ad04106218223ad012236f82260",
+            "b:ef5a7ad04106218223ad012236f82260"
+          ],
+          "/Root": "1 0 R",
+          "/Size": 9
+        }
+      }
+    }
+  ]
+}

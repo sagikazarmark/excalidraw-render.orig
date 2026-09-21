@@ -1,0 +1,210 @@
+{
+  "followup_issue": 187,
+  "status": "known-failure-not-a-tolerance",
+  "test": "jpeg_color_contract::issue_187_minimized_noninterleaved_neutral_image_still_exposes_missing_rows",
+  "source": {
+    "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+    "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac",
+    "byte_length": 26028
+  },
+  "basis": "actual source match arms plus successful final test execution; nonzero cases remain known failures; 1x1 controls pass",
+  "rows": [
+    {
+      "sampling": "F_4_2",
+      "width": 1,
+      "height": 1,
+      "format": "png",
+      "expected_wrong_pixels": 0,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_4_2",
+      "width": 1,
+      "height": 1,
+      "format": "pdf",
+      "expected_wrong_pixels": 0,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_4_2",
+      "width": 9,
+      "height": 9,
+      "format": "png",
+      "expected_wrong_pixels": 9,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_4_2",
+      "width": 9,
+      "height": 9,
+      "format": "pdf",
+      "expected_wrong_pixels": 9,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_4_2",
+      "width": 17,
+      "height": 17,
+      "format": "png",
+      "expected_wrong_pixels": 153,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_4_2",
+      "width": 17,
+      "height": 17,
+      "format": "pdf",
+      "expected_wrong_pixels": 153,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_4_2",
+      "width": 33,
+      "height": 25,
+      "format": "png",
+      "expected_wrong_pixels": 825,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_4_2",
+      "width": 33,
+      "height": 25,
+      "format": "pdf",
+      "expected_wrong_pixels": 825,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_1_4",
+      "width": 1,
+      "height": 1,
+      "format": "png",
+      "expected_wrong_pixels": 0,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_1_4",
+      "width": 1,
+      "height": 1,
+      "format": "pdf",
+      "expected_wrong_pixels": 0,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_1_4",
+      "width": 9,
+      "height": 9,
+      "format": "png",
+      "expected_wrong_pixels": 9,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_1_4",
+      "width": 9,
+      "height": 9,
+      "format": "pdf",
+      "expected_wrong_pixels": 9,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_1_4",
+      "width": 17,
+      "height": 17,
+      "format": "png",
+      "expected_wrong_pixels": 289,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_1_4",
+      "width": 17,
+      "height": 17,
+      "format": "pdf",
+      "expected_wrong_pixels": 289,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_1_4",
+      "width": 33,
+      "height": 25,
+      "format": "png",
+      "expected_wrong_pixels": 825,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_1_4",
+      "width": 33,
+      "height": 25,
+      "format": "pdf",
+      "expected_wrong_pixels": 825,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_2_4",
+      "width": 1,
+      "height": 1,
+      "format": "png",
+      "expected_wrong_pixels": 0,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_2_4",
+      "width": 1,
+      "height": 1,
+      "format": "pdf",
+      "expected_wrong_pixels": 0,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_2_4",
+      "width": 9,
+      "height": 9,
+      "format": "png",
+      "expected_wrong_pixels": 9,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_2_4",
+      "width": 9,
+      "height": 9,
+      "format": "pdf",
+      "expected_wrong_pixels": 9,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_2_4",
+      "width": 17,
+      "height": 17,
+      "format": "png",
+      "expected_wrong_pixels": 289,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_2_4",
+      "width": 17,
+      "height": 17,
+      "format": "pdf",
+      "expected_wrong_pixels": 289,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_2_4",
+      "width": 33,
+      "height": 25,
+      "format": "png",
+      "expected_wrong_pixels": 825,
+      "matched_by_passing_exact_assertion": true
+    },
+    {
+      "sampling": "F_2_4",
+      "width": 33,
+      "height": 25,
+      "format": "pdf",
+      "expected_wrong_pixels": 825,
+      "matched_by_passing_exact_assertion": true
+    }
+  ],
+  "browser_control": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/final-checks/tiny-neutral-browser-corrected.stdout",
+    "sha256": "a1b5560abc9bf0a8a32718af07bb8bc9da3509c053756a3d61d22bf75109d6f6",
+    "byte_length": 108
+  }
+}

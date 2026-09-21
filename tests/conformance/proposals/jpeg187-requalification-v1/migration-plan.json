@@ -1,0 +1,63 @@
+{
+  "approval": null,
+  "schema": "excalidraw-render/jpeg187-migration/v1",
+  "source": {
+    "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+    "sha256": "a297d7a044244bc3027f43d3b7eecdeac73383f25d93e9046e30e6ec16ed1fac",
+    "byte_length": 26028
+  },
+  "new_owner_ids": [
+    "codec:jpeg:color-sampling:cmyk-1x1-baseline",
+    "codec:jpeg:color-sampling:cmyk-1x1-progressive",
+    "codec:jpeg:color-sampling:ycck-1x1-baseline",
+    "codec:jpeg:color-sampling:ycck-1x1-progressive",
+    "codec:jpeg:color-sampling:ycck-1x2-baseline",
+    "codec:jpeg:color-sampling:ycck-1x2-progressive",
+    "codec:jpeg:color-sampling:ycck-1x4-progressive",
+    "codec:jpeg:color-sampling:ycck-2x1-baseline",
+    "codec:jpeg:color-sampling:ycck-2x1-progressive",
+    "codec:jpeg:color-sampling:ycck-2x2-baseline",
+    "codec:jpeg:color-sampling:ycck-2x2-progressive",
+    "codec:jpeg:color-sampling:ycck-2x4-progressive",
+    "codec:jpeg:color-sampling:ycck-4x1-baseline",
+    "codec:jpeg:color-sampling:ycck-4x1-progressive",
+    "codec:jpeg:color-sampling:ycck-4x2-progressive"
+  ],
+  "deferred_sampling_ids": [
+    "codec:jpeg:color-sampling:ycbcr-1x4-baseline",
+    "codec:jpeg:color-sampling:ycbcr-2x4-baseline",
+    "codec:jpeg:color-sampling:ycbcr-4x2-baseline",
+    "codec:jpeg:color-sampling:ycck-1x4-baseline",
+    "codec:jpeg:color-sampling:ycck-2x4-baseline",
+    "codec:jpeg:color-sampling:ycck-4x2-baseline"
+  ],
+  "refresh_owner_ids": [
+    "codec:jpeg:color-sampling:gray-1x1-baseline",
+    "codec:jpeg:color-sampling:gray-1x1-progressive",
+    "codec:jpeg:color-sampling:rgb-1x1-baseline",
+    "codec:jpeg:color-sampling:rgb-1x1-progressive",
+    "codec:jpeg:color-sampling:ycbcr-1x1-baseline",
+    "codec:jpeg:color-sampling:ycbcr-1x1-progressive",
+    "codec:jpeg:color-sampling:ycbcr-1x2-baseline",
+    "codec:jpeg:color-sampling:ycbcr-1x2-progressive",
+    "codec:jpeg:color-sampling:ycbcr-1x4-progressive",
+    "codec:jpeg:color-sampling:ycbcr-2x1-baseline",
+    "codec:jpeg:color-sampling:ycbcr-2x1-progressive",
+    "codec:jpeg:color-sampling:ycbcr-2x2-baseline",
+    "codec:jpeg:color-sampling:ycbcr-2x2-progressive",
+    "codec:jpeg:color-sampling:ycbcr-2x4-progressive",
+    "codec:jpeg:color-sampling:ycbcr-4x1-baseline",
+    "codec:jpeg:color-sampling:ycbcr-4x1-progressive",
+    "codec:jpeg:color-sampling:ycbcr-4x2-progressive"
+  ],
+  "representative_subject_sha256": "sha256:00f193a54cf4076911ec0a679c6f82e50c09d4b75502b1a88c5de3d8e1b6858d",
+  "catalog_sha256": "1507cde0e7d246bc09b5be3c4689810838833975e4b14993a449643c7dd44ff7",
+  "counts": {
+    "assignments": 1912,
+    "owned": 1832,
+    "excluded": 3,
+    "assigned_or_excluded": 1835,
+    "gaps": 77
+  },
+  "parameterized_field": "Final approved V9 manifest file digest only; no synthetic approval or live assignments in this proposal."
+}

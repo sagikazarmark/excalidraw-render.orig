@@ -1,0 +1,25 @@
+{
+  "approval": null,
+  "schema": "excalidraw-render/jpeg187-split-verification-successor/v1",
+  "frozen_checker": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/qualify.py",
+    "sha256": "975e07e274f6f0a3e526b33518b8a26c728f3a1b814b36a7a43cd84948f48bf4",
+    "byte_length": 34013
+  },
+  "successor": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/split-verification.py",
+    "sha256": "5aa2445540be376233591ace3e9117c9fe09174043325208147ad922a36a6bcd",
+    "byte_length": 6844
+  },
+  "purpose": "Validate exact split-completion/timeout/expected-pending-failure evidence before invoking unchanged frozen seal/verify. No passing flag is assigned to timeout or five failing tests.",
+  "original_focused_qualification_record_unchanged": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/final-checks/production-qualification.json",
+    "sha256": "568a3c0e3fec878a20088e499fcf46d153c2269acced4e2107081be5352042d1",
+    "byte_length": 41643
+  },
+  "pending_draft_subject_preserved": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/capture-draft-subject.json",
+    "sha256": "6ec93290446253f92574a5a002493df9d533a9f6c17d7c156d1ffd84aea6b78f",
+    "byte_length": 752044
+  }
+}

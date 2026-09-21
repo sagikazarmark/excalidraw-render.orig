@@ -1,0 +1,6 @@
+# Frozen command output retains its actual terminal blank lines.
+coverage/jpeg187-application-v2/logs/*.stdout whitespace=-blank-at-eof
+proposals/jpeg187-requalification-v1/final-checks/*.stdout whitespace=-blank-at-eof
+proposals/jpeg187-requalification-v1/logs/*.stdout whitespace=-blank-at-eof
+# Unified-diff empty context lines carry a required leading space.
+proposals/jpeg187-requalification-v1/proposed/*.diff whitespace=-blank-at-eol

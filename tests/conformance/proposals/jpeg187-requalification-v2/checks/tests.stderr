@@ -1,0 +1,19 @@
+test_actual_old_verifier_accepts_rejection_but_successor_rejects_it (__main__.Decisions.test_actual_old_verifier_accepts_rejection_but_successor_rejects_it) ... ok
+test_actual_remote_rejection_cannot_use_saved_affirmative_snapshot (__main__.Decisions.test_actual_remote_rejection_cannot_use_saved_affirmative_snapshot) ... ok
+test_applied_verification_authenticates_before_migration (__main__.Decisions.test_applied_verification_authenticates_before_migration) ... ok
+test_approval_fields_and_v9_decision_must_match (__main__.Decisions.test_approval_fields_and_v9_decision_must_match) ... ok
+test_contradictory_or_quoted_approval_block_rejected (__main__.Decisions.test_contradictory_or_quoted_approval_block_rejected) ... ok
+test_designated_supplied_login_does_not_override_actual_comment_author (__main__.Decisions.test_designated_supplied_login_does_not_override_actual_comment_author) ... ok
+test_duplicate_blocks_keys_and_unknown_fields_rejected (__main__.Decisions.test_duplicate_blocks_keys_and_unknown_fields_rejected) ... ok
+test_exact_affirmative_designated_maintainer_fixture_passes (__main__.Decisions.test_exact_affirmative_designated_maintainer_fixture_passes) ... ok
+test_old_hash_mention_positive_fixture_is_now_rejected (__main__.Decisions.test_old_hash_mention_positive_fixture_is_now_rejected) ... ok
+test_optimized_execution_refuses_before_any_workflow (__main__.Decisions.test_optimized_execution_refuses_before_any_workflow) ... ok
+test_other_author_cannot_grant_approval_even_when_supplied_identity_matches (__main__.Decisions.test_other_author_cannot_grant_approval_even_when_supplied_identity_matches) ... ok
+test_reject_pending_missing_or_wrong_scope_and_subject (__main__.Decisions.test_reject_pending_missing_or_wrong_scope_and_subject) ... ok
+test_remote_comment_author_must_be_designated_maintainer (__main__.Decisions.test_remote_comment_author_must_be_designated_maintainer) ... ok
+test_saved_vs_remote_decision_mismatch_rejected (__main__.Decisions.test_saved_vs_remote_decision_mismatch_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.073s
+
+OK

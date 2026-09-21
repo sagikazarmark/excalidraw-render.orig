@@ -1,0 +1,22 @@
+test_applied_audit_requires_persisted_production_decision_not_just_v9 (__main__.AuthorizationTests.test_applied_audit_requires_persisted_production_decision_not_just_v9) ... ok
+test_authenticated_shaped_fixture_passes_no_live_writes (__main__.AuthorizationTests.test_authenticated_shaped_fixture_passes_no_live_writes) ... ok
+test_both_subjects_required (__main__.AuthorizationTests.test_both_subjects_required) ... ok
+test_identity_date_and_url_must_agree (__main__.AuthorizationTests.test_identity_date_and_url_must_agree) ... ok
+test_incomplete_applied_attempt_rejected (__main__.AuthorizationTests.test_incomplete_applied_attempt_rejected) ... ok
+test_missing_and_wrong_production_approval_rejected (__main__.AuthorizationTests.test_missing_and_wrong_production_approval_rejected) ... ok
+test_representative_alone_does_not_authorize_production (__main__.AuthorizationTests.test_representative_alone_does_not_authorize_production) ... ok
+test_saved_decision_must_equal_remote (__main__.AuthorizationTests.test_saved_decision_must_equal_remote) ... ok
+test_color_only_evidence_requires_exact_24_failures_and_neutral_control (__main__.MigrationTests.test_color_only_evidence_requires_exact_24_failures_and_neutral_control) ... ok
+test_exact_15_additions_17_refresh_and_one_representative_preserve_rest (__main__.MigrationTests.test_exact_15_additions_17_refresh_and_one_representative_preserve_rest) ... ok
+test_freeze_required_before_native_operations (__main__.MigrationTests.test_freeze_required_before_native_operations) ... ok
+test_loosened_representative_exception_rejected (__main__.MigrationTests.test_loosened_representative_exception_rejected) ... ok
+test_omitted_or_substituted_cell_rejected (__main__.MigrationTests.test_omitted_or_substituted_cell_rejected) ... ok
+test_optimized_startup_refuses_before_mutation (__main__.MigrationTests.test_optimized_startup_refuses_before_mutation) ... ok
+test_sampling_gap_cannot_be_promoted_as_color_qualification (__main__.MigrationTests.test_sampling_gap_cannot_be_promoted_as_color_qualification) ... ok
+test_wrong_gap_issue_rejected (__main__.MigrationTests.test_wrong_gap_issue_rejected) ... ok
+test_wrong_old_owner_selector_rejected (__main__.MigrationTests.test_wrong_old_owner_selector_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.371s
+
+OK

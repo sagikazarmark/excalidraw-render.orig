@@ -1,5 +1,5 @@
-//! Independent JPEG reference gates. #187 defect measurements are exact pins,
-//! never tolerance exceptions or evidence of qualified ownership.
+//! Independent JPEG reference gates. #187 color corrections pass canonical
+//! budgets; six sampling cells retain exact known-defect measurements.
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{
@@ -217,52 +217,6 @@ fn jpeg_headers_independently_confirm_color_sampling_and_scan_axes() {
     }
 }
 
-fn qualified(row: &Value) -> bool {
-    match row["model"].as_str().unwrap() {
-        "gray" | "rgb" => true,
-        "ycbcr" => {
-            row["mode"] == "progressive"
-                || !matches!(
-                    (
-                        row["sampling"][0].as_u64().unwrap(),
-                        row["sampling"][1].as_u64().unwrap()
-                    ),
-                    (4, 2) | (1, 4) | (2, 4)
-                )
-        }
-        _ => false,
-    }
-}
-
-// These are measurements of known defects, not permitted error ceilings.
-// A change in either direction requires #187 diagnosis/update, never a refresh.
-fn defect(id: &str) -> Option<(u64, u64)> {
-    Some(match id {
-        "ycbcr-4x2-baseline-ramp" => (814, 0x3fcc5b0a24de3b74),
-        "ycbcr-4x2-baseline-edges" => (1507, 0x3fbd6cebb4036331),
-        "ycbcr-1x4-baseline-ramp" => (822, 0x3fc4cc85cad8760a),
-        "ycbcr-1x4-baseline-edges" => (1536, 0x3fbe499a5f7bd0d1),
-        "ycbcr-2x4-baseline-ramp" => (821, 0x3fc49786fb86165f),
-        "ycbcr-2x4-baseline-edges" => (1521, 0x3fbee9df3bb84b69),
-        "cmyk-1x1-baseline-ramp" | "cmyk-1x1-progressive-ramp" => (0, 0x3feff66d0aa1fc19),
-        "ycck-1x1-baseline-ramp" | "ycck-1x1-progressive-ramp" => (0, 0x3feff5b75ad4aaf8),
-        "ycck-2x1-baseline-ramp" | "ycck-2x1-progressive-ramp" => (0, 0x3feff54eeedc7a78),
-        "ycck-1x2-baseline-ramp" | "ycck-1x2-progressive-ramp" => (0, 0x3feff468438ccfbc),
-        "ycck-2x2-baseline-ramp" | "ycck-2x2-progressive-ramp" => (0, 0x3feff3af1cc468f0),
-        "ycck-4x1-baseline-ramp" | "ycck-4x1-progressive-ramp" => (0, 0x3feff62dd6c32a38),
-        "ycck-4x2-baseline-ramp" => (825, 0x3f41f75c931c33e4),
-        "ycck-4x2-baseline-edges" => (1536, 0x3f1d786c5dc23a31),
-        "ycck-4x2-progressive-ramp" => (0, 0x3feff5c2886fedfa),
-        "ycck-1x4-baseline-ramp" => (825, 0x3f41f6edcda7062a),
-        "ycck-1x4-baseline-edges" => (1536, 0x3f1bd5d3252e3748),
-        "ycck-1x4-progressive-ramp" => (0, 0x3feff64d0e3ac754),
-        "ycck-2x4-baseline-ramp" => (825, 0x3f41f1dc1ac80141),
-        "ycck-2x4-baseline-edges" => (1536, 0x3f1cc3d0228479b7),
-        "ycck-2x4-progressive-ramp" => (0, 0x3feff6cd13325e5f),
-        _ => return None,
-    })
-}
-
 fn svg_extent(svg: &str, width: u32, height: u32) {
     let document = roxmltree::Document::parse(svg).unwrap();
     let root = document.root_element();
@@ -336,6 +290,26 @@ fn extent_gates_reject_artifacts_with_unchanged_image_payloads() {
             assert!(std::panic::catch_unwind(|| pdf_extent(&changed, 33, 25)).is_err());
         }
     }
+}
+
+fn sampling_defect(id: &str) -> Option<(u64, u64)> {
+    // Six baseline sampling cells are still unqualified under #187. These
+    // exact measurements are not error ceilings or approved exceptions.
+    Some(match id {
+        "ycbcr-4x2-baseline-ramp" => (814, 0x3fcc5b0a24de3b74),
+        "ycbcr-4x2-baseline-edges" => (1507, 0x3fbd6cebb4036331),
+        "ycbcr-1x4-baseline-ramp" => (822, 0x3fc4cc85cad8760a),
+        "ycbcr-1x4-baseline-edges" => (1536, 0x3fbe499a5f7bd0d1),
+        "ycbcr-2x4-baseline-ramp" => (821, 0x3fc49786fb86165f),
+        "ycbcr-2x4-baseline-edges" => (1521, 0x3fbee9df3bb84b69),
+        "ycck-4x2-baseline-ramp" => (825, 0x3f41f75c931c33e4),
+        "ycck-4x2-baseline-edges" => (1536, 0x3f1d786c5dc23a31),
+        "ycck-1x4-baseline-ramp" => (825, 0x3f41f6edcda7062a),
+        "ycck-1x4-baseline-edges" => (1536, 0x3f1bd5d3252e3748),
+        "ycck-2x4-baseline-ramp" => (825, 0x3f41f1dc1ac80141),
+        "ycck-2x4-baseline-edges" => (1536, 0x3f1cc3d0228479b7),
+        _ => return None,
+    })
 }
 
 fn check(row: &Value) -> usize {
@@ -429,8 +403,8 @@ fn check(row: &Value) -> usize {
             ComparisonMode::Canonical,
         )
         .unwrap();
-        if let Some((changed, bits)) = defect(id) {
-            assert!(!result.passed(), "#187 pin became stale: {id} {format:?}");
+        if let Some((changed, bits)) = sampling_defect(id) {
+            assert!(!result.passed(), "#187 sampling pin became stale: {id}");
             assert_eq!(result.whole.changed_pixels, changed, "{id}");
             let SsimOutcome::Score(score) = result.whole.ssim else {
                 panic!("SSIM expected")
@@ -438,13 +412,15 @@ fn check(row: &Value) -> usize {
             assert_eq!(
                 score.to_bits(),
                 bits,
-                "#187 changed measurement: {id} {format:?}"
+                "#187 sampling measurement moved: {id}"
             );
             pins += 1;
         } else {
             assert!(
                 result.passed(),
-                "unqualified JPEG difference: {id} {format:?}: {result:?}"
+                "JPEG {id} {format:?}: changed={} SSIM={:?}",
+                result.whole.changed_pixels,
+                result.whole.ssim
             );
         }
     }
@@ -454,29 +430,31 @@ fn check(row: &Value) -> usize {
 #[test]
 fn qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities() {
     let record = evidence();
+    // Retain the existing exact owner selector; its scope now also covers
+    // the 15 repaired CMYK/YCCK color cells. Sampling cells stay separate.
     let rows: Vec<_> = record["cases"]
         .as_array()
         .unwrap()
         .iter()
-        .filter(|r| qualified(r))
+        .filter(|r| sampling_defect(r["id"].as_str().unwrap()).is_none())
         .collect();
-    assert_eq!(rows.len(), 34);
+    assert_eq!(rows.len(), 64);
     for row in rows {
         assert_eq!(check(row), 0);
     }
 }
 
 #[test]
-fn issue_187_unqualified_cells_keep_exact_defect_measurements() {
+fn issue_187_baseline_sampling_cells_remain_explicit_defects() {
     let record = evidence();
     let rows: Vec<_> = record["cases"]
         .as_array()
         .unwrap()
         .iter()
-        .filter(|r| !qualified(r))
+        .filter(|r| sampling_defect(r["id"].as_str().unwrap()).is_some())
         .collect();
-    assert_eq!(rows.len(), 42);
-    assert_eq!(rows.into_iter().map(check).sum::<usize>(), 54);
+    assert_eq!(rows.len(), 12);
+    assert_eq!(rows.into_iter().map(check).sum::<usize>(), 24);
 }
 
 #[test]
@@ -528,6 +506,183 @@ fn cmyk_component_probe_isolates_reference_truncation_from_decoder_rounding() {
                 "{} rounding={rounding}",
                 row["id"]
             );
+        }
+    }
+}
+
+#[test]
+fn ycck_unconverted_components_with_integer_color_conversion_match_reference() {
+    use zune_jpeg::zune_core::{
+        bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions,
+    };
+    let record = evidence();
+    for row in record["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["model"] == "ycck" && r["mode"] == "progressive")
+    {
+        let bytes = decode(&row["jpeg_base64"]);
+        let options = DecoderOptions::default()
+            .set_use_unsafe(false)
+            .set_strict_mode(true)
+            .jpeg_set_out_colorspace(ColorSpace::YCCK);
+        let mut decoder =
+            zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(bytes.as_slice()), options);
+        let raw = decoder.decode().unwrap();
+        let expected = raster(&decode(&row["reference"]["png"]));
+        let rgba = raw
+            .chunks_exact(4)
+            .flat_map(|p| {
+                let y = i32::from(p[0]);
+                let cb = i32::from(p[1]) - 128;
+                let cr = i32::from(p[2]) - 128;
+                let cmy = [
+                    y + ((91881 * cr + 32768) >> 16),
+                    y + ((-22554 * cb - 46802 * cr + 32768) >> 16),
+                    y + ((116130 * cb + 32768) >> 16),
+                ];
+                let rgb =
+                    cmy.map(|v| ((255 - v.clamp(0, 255)) as u32 * u32::from(p[3]) / 255) as u8);
+                [rgb[0], rgb[1], rgb[2], 255]
+            })
+            .collect();
+        let actual = CanonicalRgba8::new(expected.width(), expected.height(), rgba).unwrap();
+        let result = compare(
+            &expected,
+            &actual,
+            VisualClass::GeometryImage,
+            &[],
+            ComparisonMode::Canonical,
+        )
+        .unwrap();
+        assert!(result.passed(), "{} {:?}", row["id"], result.whole.ssim);
+    }
+}
+
+#[test]
+fn provisional_adobe_color_space_does_not_override_three_component_rgb() {
+    let record = evidence();
+    for row in record["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["model"] == "rgb")
+    {
+        let mut bytes = decode(&row["jpeg_base64"]);
+        let mut offset = 2;
+        while offset < bytes.len() {
+            assert_eq!(bytes[offset], 255);
+            let marker = bytes[offset + 1];
+            if marker == 0xd9 {
+                break;
+            }
+            let length = u16::from_be_bytes([bytes[offset + 2], bytes[offset + 3]]) as usize;
+            if matches!(marker, 0xc0 | 0xc2) {
+                for i in 0..3 {
+                    bytes[offset + 10 + i * 3] = i as u8;
+                }
+            }
+            if marker == 0xda {
+                for i in 0..bytes[offset + 4] as usize {
+                    let at = offset + 5 + i * 2;
+                    bytes[at] = b"RGB".iter().position(|&c| c == bytes[at]).unwrap() as u8;
+                }
+            }
+            offset += 2 + length;
+            if marker == 0xda {
+                while offset + 1 < bytes.len() {
+                    if bytes[offset] == 255
+                        && bytes[offset + 1] != 0
+                        && !matches!(bytes[offset + 1], 0xd0..=0xd7)
+                    {
+                        break;
+                    }
+                    offset += 1;
+                }
+            }
+        }
+        let changed = crate::common::image_scene::image_scene(
+            &bytes,
+            "image/jpeg",
+            row["width"].as_u64().unwrap() as u32,
+            row["height"].as_u64().unwrap() as u32,
+        );
+        let original = SceneDocument::parse(&serde_json::to_vec(&row["scene"]).unwrap()).unwrap();
+        for format in [OutputFormat::Png, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format)
+                .padding(0.0)
+                .include_background(false)
+                .build()
+                .unwrap();
+            let expected = Renderer::new().render(&original, &request).unwrap();
+            let actual = Renderer::new().render(&changed, &request).unwrap();
+            assert_eq!(actual.report(), expected.report());
+            assert_eq!(actual.artifact().bytes(), expected.artifact().bytes());
+        }
+    }
+}
+
+#[test]
+fn issue_187_minimized_noninterleaved_neutral_image_still_exposes_missing_rows() {
+    for sampling in [
+        jpeg_encoder::SamplingFactor::F_4_2,
+        jpeg_encoder::SamplingFactor::F_1_4,
+        jpeg_encoder::SamplingFactor::F_2_4,
+    ] {
+        for (width, height) in [(1_u16, 1_u16), (9, 9), (17, 17), (33, 25)] {
+            // Constant Y=96, Cb=Cr=128: no color rounding or AC coefficients
+            // can explain missing rows/chroma starvation in sequential scans.
+            let samples = [96, 128, 128].repeat(usize::from(width) * usize::from(height));
+            let mut bytes = Vec::new();
+            let mut encoder = jpeg_encoder::Encoder::new(&mut bytes, 100);
+            encoder.set_sampling_factor(sampling);
+            encoder
+                .encode(&samples, width, height, jpeg_encoder::ColorType::Ycbcr)
+                .unwrap();
+            let scene = crate::common::image_scene::image_scene(
+                &bytes,
+                "image/jpeg",
+                u32::from(width),
+                u32::from(height),
+            );
+            for format in [OutputFormat::Png, OutputFormat::Pdf] {
+                let request = RenderRequest::builder(format)
+                    .padding(0.0)
+                    .include_background(false)
+                    .build()
+                    .unwrap();
+                let output = Renderer::new().render(&scene, &request).unwrap();
+                assert_eq!(
+                    serde_json::to_value(output.report()).unwrap(),
+                    json!({"schema_version":1,"diagnostics":[]})
+                );
+                let actual = if format == OutputFormat::Png {
+                    crate::common::raster::decode_png(output.artifact().bytes()).rgba
+                } else {
+                    super::png_profile_contract::pdf_rgba(
+                        output.artifact().bytes(),
+                        width as usize,
+                        height as usize,
+                    )
+                };
+                let wrong = actual
+                    .chunks_exact(4)
+                    .filter(|p| *p != [96, 96, 96, 255])
+                    .count();
+                let expected_wrong = match width {
+                    1 => 0,
+                    9 => 9,
+                    17 if sampling == jpeg_encoder::SamplingFactor::F_4_2 => 153,
+                    17 => 289,
+                    33 => 825,
+                    _ => unreachable!(),
+                };
+                assert_eq!(
+                    wrong, expected_wrong,
+                    "#187 neutral measurement changed: {sampling:?} {width}x{height} {format:?}"
+                );
+            }
         }
     }
 }

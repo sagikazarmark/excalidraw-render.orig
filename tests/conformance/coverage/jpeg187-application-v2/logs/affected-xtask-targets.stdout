@@ -1,0 +1,124 @@
+
+running 103 tests
+test catalog::tests::review_decode_fails_closed_on_a_source_that_does_not_decode ... ok
+test catalog::tests::font_notices_project_one_line_for_the_bundle_and_one_attribution_for_artifacts ... ok
+test catalog::tests::rematerializing_keeps_an_approval_only_while_its_subject_holds ... ok
+test catalog::tests::review_decode_reproduces_the_independently_reviewed_excalifont_decode ... ok
+test catalog::tests::reviewed_decodes_approval_subject_excludes_the_approval_and_moves_with_a_digest ... ok
+test catalog::tests::reviewed_decodes_approval_is_required_by_the_gate_and_bound_to_issue_120 ... ok
+test catalog::tests::scene_surface_emitter_carries_notices_and_recipe_notice_obligations ... ok
+test catalog::tests::scene_surface_rejects_duplicate_ownership ... ok
+test catalog::tests::scene_surface_rejects_missing_disposition ... ok
+test catalog::tests::unicode_range_parsers_agree ... ok
+test catalog::tests::xiaolai_index_rejects_a_descriptor_without_a_unicode_range ... ok
+test catalog::tests::xiaolai_index_rejects_a_face_declared_twice ... ok
+test catalog::tests::xiaolai_index_rejects_a_face_whose_binding_is_not_imported ... ok
+test catalog::tests::xiaolai_index_rejects_a_malformed_unicode_range ... ok
+test catalog::tests::xiaolai_index_rejects_an_import_that_declares_no_face ... ok
+test catalog::tests::xiaolai_index_yields_faces_in_declaration_order_with_parsed_ranges ... ok
+test conformance::tests::exceptions_accept_the_registered_record_for_a_declared_variant ... ok
+test conformance::tests::exceptions_must_match_the_registered_case_exactly ... ok
+test conformance::tests::exceptions_reject_a_non_finite_ssim_floor ... ok
+test conformance::tests::exceptions_reject_an_approving_issue_outside_this_repository ... ok
+test conformance::tests::exceptions_reject_an_undeclared_variant ... ok
+test conformance::tests::exceptions_reject_an_undocumented_cause ... ok
+test conformance::tests::exceptions_reject_scopes_the_harness_does_not_judge ... ok
+test conformance::tests::exceptions_reject_two_records_for_one_scope ... ok
+test conformance::tests::exceptions_reject_unknown_or_missing_keys ... ok
+test conformance::tests::png_extent_accepts_the_truncated_scaled_extent ... ok
+test conformance::tests::png_extent_rejects_a_rounded_rather_than_truncated_raster ... ok
+test conformance::tests::png_extent_treats_a_maximum_above_the_extent_as_a_no_op ... ok
+test catalog::tests::scene_surface_rejects_unresolved_coverage ... ok
+test conformance::tests::svg_metadata_carries_the_embedded_scene_only_for_an_embedding_variant ... ok
+test conformance::tests::svg_root_extent_accepts_a_scaled_root_over_its_logical_view_box ... ok
+test conformance::tests::svg_root_extent_accepts_the_rounded_unscaled_extent ... ok
+test conformance::tests::svg_root_extent_rejects_a_view_box_that_is_not_the_logical_extent ... ok
+test conformance::tests::png_semantics_admit_the_embedded_scene_chunk_only_for_an_embedding_variant ... ok
+test catalog::tests::scene_surface_rejects_record_inheritance_cycles ... ok
+test catalog::tests::scene_surface_rejects_unknown_field_identity ... ok
+test conformance_candidate_exceptions::tests::scoped_fixed_pdf_requires_the_exact_validated_colourspec_bridge ... ok
+test conformance_candidate_exceptions::tests::scoped_proposal_rejects_scope_limit_cause_and_proof_mutations ... ok
+test conformance_candidate_gate::tests::approval_mutations_prevent_execution_and_preparation_never_grants_approval ... ok
+test conformance_candidate_gate::tests::candidate_paths_cannot_escape_the_repository ... ok
+test conformance_candidate_gate::tests::existing_candidate_materialization_is_immutable ... ok
+test conformance_candidate_gate::tests::producer_sets_reject_missing_duplicate_stale_and_detached_entries ... ok
+test conformance_candidate_gate::tests::provenance_inspection_never_promotes_measurements_to_approval ... ok
+test conformance_candidate_gate::tests::provenance_requires_every_viewer_and_font_audit_producer ... ok
+test conformance_candidate_gate::tests::scoped_exception_records_are_inside_the_case_approval_subject ... ok
+test conformance_candidate_gate::tests::withdrawn_v1_subject_is_never_approval_ready ... ok
+test conformance_candidate_native::tests::cli_success_alone_does_not_satisfy_the_report_contract ... ok
+test conformance_candidate_exceptions::tests::scoped_proposals_recompute_pixels_and_cannot_hide_png_or_passing_crop ... ok
+test conformance_candidate_native::tests::release_qualification_binds_actual_command_and_profile ... ok
+test conformance_candidate_native::tests::report_and_artifact_are_independent_replay_gates ... ok
+test conformance_candidate_semantics::tests::detached_or_corrupted_semantic_objects_never_pass ... ok
+test conformance_pdf_bridge::tests::colourspec_bridge_rejects_any_other_stream_or_dictionary_change ... ok
+test conformance_pdf_requalification::tests::approved_pin_history_rejects_unrelated_changes_and_wrong_approval ... ok
+test conformance_pdf_requalification::tests::image_only_structural_delta_rejects_unrelated_changes ... ok
+test coverage::ownership::authority_migration::tests::authority_migration_is_not_a_digest_override ... ok
+test coverage::ownership::authority_migration::tests::authority_migration_rejects_changes_outside_the_reviewed_paragraph ... ok
+test coverage::ownership::png_profiles::tests::expanded_png_inventory_has_closed_axes_and_unique_ids ... ok
+test coverage::ownership::representative::tests::representative_owner_rejects_unknown_redirected_stale_and_arbitrary_commands ... ok
+test conformance_candidate::tests::provenance_derivation_rejects_mutations_without_repairing_evidence ... ok
+test coverage::ownership::representative::tests::representative_owner_requires_approval_before_invoking_consumer ... ok
+test coverage::ownership::representative::tests::representative_owner_sources_are_in_the_final_bundle_and_cannot_be_omitted ... ok
+test coverage::ownership::tests::case_assignment_cannot_claim_unrelated_or_expanded_scope ... ok
+test coverage::ownership::tests::commented_out_test_is_not_an_executable_owner ... ok
+test coverage::ownership::tests::exclusion_requires_proof_and_scoped_approval ... ok
+test coverage::ownership::tests::gaps_are_explicit_not_coverage_and_assignments_are_exactly_once ... ok
+test coverage::ownership::tests::ignored_and_conditional_owners_are_rejected ... ok
+test coverage::ownership::tests::inline_conditional_or_ignored_test_is_not_an_executable_owner ... ok
+test coverage::ownership::tests::inventory_extension_preserves_dispositions_and_only_adds_gaps ... ok
+test conformance_candidate_exceptions::tests::scoped_evaluation_ignores_forged_stored_judgment_booleans ... ok
+test coverage::ownership::tests::library_adapter_rejects_disabled_redirected_and_custom_harness_targets ... ok
+test coverage::ownership::tests::library_adapter_requires_a_real_unconditional_library_test ... ok
+test coverage::ownership::tests::library_owner_binds_source_digest_and_exact_executable_command ... ok
+test coverage::ownership::tests::non_compiled_or_redirected_module_is_not_an_executable_owner ... ok
+test coverage::ownership::tests::owner_selection_uses_syntax_without_restricting_unrelated_tests ... ok
+test coverage::ownership::tests::shadowable_or_inner_test_attributes_do_not_establish_ownership ... ok
+test conformance_candidate_native::tests::fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds ... ok
+test coverage::snapshots::baseline::tests::approval_binds_provenance_and_expectations_but_not_itself ... ok
+test coverage::snapshots::baseline::tests::replay_ignores_run_provenance_but_rejects_artifact_report_and_failure_drift ... ok
+test coverage::snapshots::tests::rejects_incomplete_and_wrong_format_reports ... ok
+test coverage::snapshots::tests::validates_repeated_bytes_and_rejects_altered_process_results ... ok
+test coverage::snapshots::tests::verifies_actual_blob_bytes_and_rejects_unreferenced_files ... ok
+test coverage::snapshots::wasm::tests::rejects_incomplete_and_misbound_browser_logs ... ok
+test coverage::traces::tests::trace_logs_require_exact_keys_target_order_and_input ... ok
+test svg_font_subset_targets::tests::a_swapped_aggregate_copy_fails_the_recorded_evidence_closed ... ok
+test svg_font_subset_targets::tests::an_aggregate_copy_the_evidence_does_not_record_fails_closed ... ok
+test svg_font_subset_targets::tests::binding_an_aggregate_records_it_and_completes_the_release_decision ... ok
+test svg_font_subset_targets::tests::binding_rejects_a_run_outside_this_repository_workflow ... ok
+test svg_font_subset_targets::tests::binding_rejects_a_second_aggregate_once_one_is_recorded ... ok
+test svg_font_subset_targets::tests::binding_rejects_an_aggregate_produced_for_a_different_corpus ... ok
+test svg_font_subset_targets::tests::binding_rejects_an_aggregate_produced_for_a_different_font_subset_profile ... ok
+test svg_font_subset_targets::tests::binding_rejects_an_aggregate_produced_for_a_different_viewer_approval ... ok
+test svg_font_subset_targets::tests::binding_rejects_an_aggregate_that_did_not_pass ... ok
+test svg_font_subset_targets::tests::binding_rejects_an_aggregate_whose_reports_do_not_back_its_summary ... ok
+test svg_font_subset_targets::tests::provenance_is_one_workflow_run_or_one_attestation_comment_of_this_repository ... ok
+test svg_font_subset_targets::tests::recording_an_aggregate_moves_the_committed_evidence_to_aggregated ... ok
+test svg_font_subset_targets::tests::release_state_aggregated_verifies_a_consistent_recorded_aggregate ... ok
+test svg_font_subset_targets::tests::release_state_pending_verifies_without_a_recorded_aggregate ... ok
+test svg_font_subset_targets::tests::release_state_rejects_a_recorded_aggregate_once_the_committed_measurement_moves ... ok
+test svg_font_subset_targets::tests::release_state_rejects_a_recorded_aggregate_once_the_corpus_moves ... ok
+test svg_font_subset_targets::tests::release_state_rejects_a_status_and_decision_that_disagree ... ok
+test coverage::ownership::representative::tests::representative_owner_release_positive_path_uses_real_gate_in_isolated_fixture ... ok
+test coverage::ownership::tests::test_owner_checks_compiled_module_exact_selector_and_source_digest ... ok
+test coverage::ownership::tests::inventory_extension_preserves_live_owners_and_approved_exclusions ... ok
+
+test result: ok. 103 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.93s
+
+
+running 5 tests
+test compares_both_targets_both_orders_and_both_sessions_including_failures ... ok
+test rejects_incomplete_stale_or_divergent_collector_results ... ok
+test ownership_recording_rejects_unknown_obligations_without_changing_the_ledger ... ok
+test inventory_is_current_and_release_closure_does_not_pass_for_a_draft ... ok
+test ownership_recording_validates_the_entire_batch_before_writing ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 29.63s
+
+
+running 1 test
+test representative_registry_is_consumed_through_approval_aware_native_execution ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.92s
+

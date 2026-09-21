@@ -1,0 +1,18 @@
+warning: methods `scratch_bytes` and `generation_work` are never used
+   --> /tmp/opencode/jpeg187-color-final-stage/target/package/excalidraw-render-0.1.0/src/render/metadata.rs:241:19
+    |
+ 87 | impl ArtifactMetadata {
+    | --------------------- methods in this implementation
+...
+241 |     pub(super) fn scratch_bytes(&self) -> u64 {
+    |                   ^^^^^^^^^^^^^
+...
+254 |     pub(super) fn generation_work(&self) -> u64 {
+    |                   ^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `excalidraw-render` (lib) generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.05s
+     Running `../../target/package-consumer/release/examples/native_snapshots collect /tmp/opencode/jpeg187-color-final-stage /home/laborant/excalidraw-render.orig/tests/conformance/proposals/jpeg187-requalification-v1/final-current/snapshots`
+collected 168 keys, two sessions in each of two processes

@@ -1,0 +1,12 @@
+[package]
+name = "jpeg187-diagnostic-compare"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+excalidraw-render-compare = { path = "../../../../../crates/excalidraw-render-compare" }
+serde_json = "=1.0.141"
+png = "=0.17.16"

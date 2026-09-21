@@ -1,0 +1,362 @@
+{
+  "approval": null,
+  "status": "capture-complete-draft-awaiting-parent-full-suite",
+  "v9_subject_sha256": "sha256:00f193a54cf4076911ec0a679c6f82e50c09d4b75502b1a88c5de3d8e1b6858d",
+  "build": {
+    "build_command": [
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "-p",
+      "excalidraw-render-cli",
+      "--message-format=json-render-diagnostics"
+    ],
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "cargo_profile": {
+      "debug_assertions": false,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": false,
+      "test": false
+    },
+    "codegen_units": 1,
+    "debug": 0,
+    "executable_sha256": "4a38e29bcdb6180f2d3c4b7e1cd00ab7bf83d0aea7a2505b9a047a1d43185b52",
+    "incremental": false,
+    "lto": true,
+    "panic": "abort",
+    "profile": "release",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+    "rustflags": []
+  },
+  "inventory_keys": 168,
+  "inventory_unchanged": 168,
+  "jpeg_vectors": {
+    "canonical_pass": 64,
+    "known_failure": 12,
+    "exact_failure_pins": 24
+  },
+  "representative_comparisons": [
+    {
+      "id": "svg-chromium",
+      "passed": true,
+      "whole": {
+        "area": 24000,
+        "changed_mask_sha256": "151ff79f29e96d211576b9a2e3e78f518b26109916616945d50cdee82dd2ba8b",
+        "changed_pixels": 0,
+        "changed_pixels_pass": true,
+        "height": 120,
+        "ssim_bits": "3ff0000000000000",
+        "ssim_pass": true,
+        "width": 200
+      },
+      "crops": [
+        {
+          "id": "typography",
+          "region": {
+            "area": 5084,
+            "changed_mask_sha256": "34f39334b29f1a0cb9dbf024d05b03b023cc95aca9eba3ce39f234a507ce4f17",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 41,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 124
+          }
+        },
+        {
+          "id": "raster",
+          "region": {
+            "area": 968,
+            "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 44,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 22
+          }
+        },
+        {
+          "id": "nested-svg",
+          "region": {
+            "area": 1008,
+            "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 28,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 36
+          }
+        }
+      ]
+    },
+    {
+      "id": "svg-rust",
+      "passed": true,
+      "whole": {
+        "area": 24000,
+        "changed_mask_sha256": "151ff79f29e96d211576b9a2e3e78f518b26109916616945d50cdee82dd2ba8b",
+        "changed_pixels": 0,
+        "changed_pixels_pass": true,
+        "height": 120,
+        "ssim_bits": "3ff0000000000000",
+        "ssim_pass": true,
+        "width": 200
+      },
+      "crops": [
+        {
+          "id": "typography",
+          "region": {
+            "area": 5084,
+            "changed_mask_sha256": "34f39334b29f1a0cb9dbf024d05b03b023cc95aca9eba3ce39f234a507ce4f17",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 41,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 124
+          }
+        },
+        {
+          "id": "raster",
+          "region": {
+            "area": 968,
+            "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 44,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 22
+          }
+        },
+        {
+          "id": "nested-svg",
+          "region": {
+            "area": 1008,
+            "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 28,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 36
+          }
+        }
+      ]
+    },
+    {
+      "id": "pdf-pdfium",
+      "passed": true,
+      "whole": {
+        "area": 24000,
+        "changed_mask_sha256": "7f23c193e9ae9c6f3ad5b0e898e4b32bb7c8ea65563a85fa7919bff1041d19f3",
+        "changed_pixels": 118,
+        "changed_pixels_pass": true,
+        "height": 120,
+        "ssim_bits": "3fefacd49b980278",
+        "ssim_pass": true,
+        "width": 200
+      },
+      "crops": [
+        {
+          "id": "typography",
+          "region": {
+            "area": 5084,
+            "changed_mask_sha256": "f7eb7f18beac960937e82347166f78beedadf253619667b2263b615049345929",
+            "changed_pixels": 118,
+            "changed_pixels_pass": true,
+            "height": 41,
+            "ssim_bits": "3fee1f978eeaac28",
+            "ssim_pass": true,
+            "width": 124
+          }
+        },
+        {
+          "id": "raster",
+          "region": {
+            "area": 968,
+            "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 44,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 22
+          }
+        },
+        {
+          "id": "nested-svg",
+          "region": {
+            "area": 1008,
+            "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 28,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 36
+          }
+        }
+      ]
+    },
+    {
+      "id": "pdf-pdfjs",
+      "passed": true,
+      "whole": {
+        "area": 24000,
+        "changed_mask_sha256": "5caaeb64a12900b62e57a5976e2ad4d3ddb0bec95eb9d08078d65bb2d21954f7",
+        "changed_pixels": 16,
+        "changed_pixels_pass": true,
+        "height": 120,
+        "ssim_bits": "3feff3e226be27cf",
+        "ssim_pass": true,
+        "width": 200
+      },
+      "crops": [
+        {
+          "id": "typography",
+          "region": {
+            "area": 5084,
+            "changed_mask_sha256": "4159ac56668532e1c5afb8c9f428d853d9b4ab86e45ac8a276a82036b0753a3d",
+            "changed_pixels": 16,
+            "changed_pixels_pass": true,
+            "height": 41,
+            "ssim_bits": "3fefbe7a57566bff",
+            "ssim_pass": true,
+            "width": 124
+          }
+        },
+        {
+          "id": "raster",
+          "region": {
+            "area": 968,
+            "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 44,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 22
+          }
+        },
+        {
+          "id": "nested-svg",
+          "region": {
+            "area": 1008,
+            "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 28,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 36
+          }
+        }
+      ]
+    },
+    {
+      "id": "png-canvas",
+      "passed": true,
+      "whole": {
+        "area": 24000,
+        "changed_mask_sha256": "a5bbf5779060f91199eaa5c60dd30d25013c0905737f42f1229973ee91a97ce4",
+        "changed_pixels": 2,
+        "changed_pixels_pass": true,
+        "height": 120,
+        "ssim_bits": "3feffc22b89a7fb2",
+        "ssim_pass": true,
+        "width": 200
+      },
+      "crops": [
+        {
+          "id": "typography",
+          "region": {
+            "area": 5084,
+            "changed_mask_sha256": "97769ee2c69f32d3525dbe150bee4b639c5dcd93a84becf89939174c989d5090",
+            "changed_pixels": 2,
+            "changed_pixels_pass": true,
+            "height": 41,
+            "ssim_bits": "3fefea3f469eca2c",
+            "ssim_pass": true,
+            "width": 124
+          }
+        },
+        {
+          "id": "raster",
+          "region": {
+            "area": 968,
+            "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 44,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 22
+          }
+        },
+        {
+          "id": "nested-svg",
+          "region": {
+            "area": 1008,
+            "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 28,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 36
+          }
+        }
+      ]
+    }
+  ],
+  "semantics": {
+    "pdf": {
+      "attached_alpha_samples": 1600,
+      "embedded_scene_preserved": true,
+      "image_count": 2,
+      "links": {
+        "https://example.com/raster": [
+          135.0,
+          30.0,
+          150.0,
+          60.0
+        ],
+        "https://example.com/text": [
+          8.182279349193683,
+          50.712783867389795,
+          99.81772065080632,
+          80.53721613261021
+        ]
+      },
+      "nested_vector_form": true,
+      "output_intent_bound": true,
+      "page_count": 1,
+      "text": "Stage four"
+    },
+    "schema": "excalidraw-render/representative-semantics/v1",
+    "svg": {
+      "both_links_bound": true,
+      "frame_clip_used": true,
+      "source_raster_octets_preserved": true
+    }
+  },
+  "pending_counts": {
+    "assignments": 1912,
+    "owned": 1832,
+    "excluded": 3,
+    "assigned_or_excluded": 1835,
+    "gaps": 77
+  },
+  "new_nested_defects": [],
+  "known_nested_sampling_failures_match_old": true,
+  "known_pdfium_alpha_unchanged": {
+    "changed_pixels": 24,
+    "ssim_bits": "3febf9303648d4c8",
+    "exception": false
+  }
+}

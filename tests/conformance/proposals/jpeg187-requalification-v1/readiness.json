@@ -1,0 +1,60 @@
+{
+  "status": "ready-for-parent-final-freeze-not-captured",
+  "approval": null,
+  "final_capture_performed": false,
+  "selected_consumer_lock_sha256": "897026587dec22941b32ecef3d55d51988f1813c006ab7dd355810fc2f39b5c5",
+  "old_root_lock_sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2",
+  "current_root_lock_sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2",
+  "bridge_constant": "v3-only-no-validation-changes",
+  "tests": [
+    {
+      "command": [
+        "/usr/bin/python3",
+        "/home/laborant/excalidraw-render.orig/tests/conformance/proposals/jpeg187-requalification-v1/test_qualify.py"
+      ],
+      "passed": true,
+      "log": {
+        "path": "tests/conformance/proposals/jpeg187-requalification-v1/color-only-readiness-checks/test_qualify.py.log",
+        "sha256": "15bb482c8fe3955f56a57ef56984faa21d0623a3bed534422db40f82bbd83298",
+        "byte_length": 2362
+      }
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "/home/laborant/excalidraw-render.orig/tests/conformance/proposals/jpeg187-requalification-v1/test_collect.py"
+      ],
+      "passed": true,
+      "log": {
+        "path": "tests/conformance/proposals/jpeg187-requalification-v1/color-only-readiness-checks/test_collect.py.log",
+        "sha256": "efa5a60d8d1347b485a071a85d5d23ef78d76eefcb9b87e873514fb8b25cc160",
+        "byte_length": 1020
+      }
+    }
+  ],
+  "scope": "stable-graph-color-only",
+  "deferred_sampling_cells": [
+    "codec:jpeg:color-sampling:ycbcr-1x4-baseline",
+    "codec:jpeg:color-sampling:ycbcr-2x4-baseline",
+    "codec:jpeg:color-sampling:ycbcr-4x2-baseline",
+    "codec:jpeg:color-sampling:ycck-1x4-baseline",
+    "codec:jpeg:color-sampling:ycck-2x4-baseline",
+    "codec:jpeg:color-sampling:ycck-4x2-baseline"
+  ],
+  "expected_migration": {
+    "new_owners": 15,
+    "source_refreshes": 17,
+    "representative_replacement": 1,
+    "assignments": 1912,
+    "assigned_or_excluded": 1835,
+    "gaps": 77
+  },
+  "known_preexisting_finding": {
+    "control": "png-rgba8",
+    "viewer": "pdfium",
+    "changed_pixels": 24,
+    "ssim_bits": "3febf9303648d4c8",
+    "exception": false,
+    "blocks_unrelated_jpeg187": false
+  }
+}

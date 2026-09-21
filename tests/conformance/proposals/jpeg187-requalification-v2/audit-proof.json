@@ -1,0 +1,38 @@
+{
+  "schema": "excalidraw-render/jpeg187-affirmative-decision-review-fix/v1",
+  "approval": null,
+  "original_checker": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/qualify.py",
+    "byte_length": 34013,
+    "sha256": "975e07e274f6f0a3e526b33518b8a26c728f3a1b814b36a7a43cd84948f48bf4"
+  },
+  "new_verifier": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v2/verify.py",
+    "byte_length": 9808,
+    "sha256": "a107b71da6ffee287be77814cba79b6be24e09f7b5c40610717f3ac2aca232b5"
+  },
+  "tests": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v2/test_verify.py",
+    "byte_length": 9250,
+    "sha256": "3be79a22a0fcb4b008970bf81ce1bc020f173d33e694997f6478db9db41be473"
+  },
+  "test_stdout": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v2/checks/tests.stdout",
+    "byte_length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "test_stderr": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v2/checks/tests.stderr",
+    "byte_length": 2137,
+    "sha256": "3c7fd29ca78dc4a1a79bb58ce9f1be1ea0c4b9d247001b58d65ab6d75cb46840"
+  },
+  "tests_passed": 14,
+  "old_rejection_with_hashes_accepted_by_original_and_rejected_by_successor": true,
+  "designated_maintainer": "sagikazarmark",
+  "decision_protocol": "whole body exactly one json fence; exact four fields; decision approve; scope jpeg187-color-only; both exact subjects",
+  "applied_verification_order": "strong maintainer/API/structured decision authentication before unchanged evidence and exact migration checks",
+  "mocked_positive_fixture": "in-memory/disposable-root only; no actual approval posted or recorded",
+  "preserved_review_file_count": 1461,
+  "frozen_files_unchanged": 3433,
+  "production_xtask_renderer_tests_or_capture_changed": false
+}

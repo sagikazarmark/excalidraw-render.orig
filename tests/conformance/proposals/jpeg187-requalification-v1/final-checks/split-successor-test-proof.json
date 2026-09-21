@@ -1,0 +1,31 @@
+{
+  "approval": null,
+  "status": "strict-split-successor-tests-passed",
+  "tests": 7,
+  "checker": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/split-verification.py",
+    "sha256": "5aa2445540be376233591ace3e9117c9fe09174043325208147ad922a36a6bcd",
+    "byte_length": 6844
+  },
+  "test_source": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/test_split_verification.py",
+    "sha256": "6a135be458fc7c5217d1eab8994c5703df1b4a870b63334bf132cd8a9997f200",
+    "byte_length": 2992
+  },
+  "stdout": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/final-checks/split-negative-tests.stdout",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "byte_length": 0
+  },
+  "stderr": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/final-checks/split-negative-tests.stderr",
+    "sha256": "9ae1773b2dce227fb202fdc516c4f2f36b318f54d3e834b5ebca063abdc41709",
+    "byte_length": 900
+  },
+  "frozen_checker_unchanged": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/qualify.py",
+    "sha256": "975e07e274f6f0a3e526b33518b8a26c728f3a1b814b36a7a43cd84948f48bf4",
+    "byte_length": 34013
+  },
+  "production_xtask_or_candidate_changed": false
+}
