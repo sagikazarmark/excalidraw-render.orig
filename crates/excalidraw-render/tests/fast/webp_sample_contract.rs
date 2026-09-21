@@ -1,7 +1,8 @@
 //! Frozen v1 external-libwebp/browser observations. No codec is invoked to
 //! manufacture expectations. Small artifacts retain the canonical comparator's
-//! exact projected-view rule. Issue #191's 23 unqualified cells have separate
-//! native defect pins: a change in either direction requires fresh diagnosis.
+//! exact projected-view rule. Composition corrects 11 of #191's original 23
+//! gaps; the 12 partial-alpha cells retain exact native defect pins. Synthetic
+//! PDF projection failures are not measurements of any PDF viewer.
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
@@ -22,7 +23,7 @@ const INPUT_HASH: &str = "21ce05bb34249f370de8dab10026972e58dd59d40a6dfbff4d7d7d
 const OCI: &str = "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9";
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 // Fixed by the initial all-72 probe, not selected by runtime pass/fail results.
-// Both patterns belong to each cell. The complement remains unqualified (#191).
+// Both patterns belong to each cell. Keep this original selector stable.
 const QUALIFIED_CELLS: [&str; 13] = [
     "lossless-opaque-static-full",
     "lossless-opaque-anim-full-replace-d1-opaque",
@@ -37,6 +38,33 @@ const QUALIFIED_CELLS: [&str; 13] = [
     "lossy-binary-anim-full-replace-d1-opaque",
     "lossy-binary-anim-sub-replace-d0-clear",
     "lossy-binary-anim-sub-replace-d1-opaque",
+];
+const CORRECTED_CELLS: [&str; 11] = [
+    "lossless-opaque-anim-full-blend-d0-clear",
+    "lossless-opaque-anim-sub-blend-d1-opaque",
+    "lossless-opaque-anim-sub-replace-d0-clear",
+    "lossless-opaque-anim-sub-replace-d1-opaque",
+    "lossless-binary-anim-full-blend-d0-clear",
+    "lossless-binary-anim-sub-blend-d1-opaque",
+    "lossy-opaque-anim-sub-blend-d1-opaque",
+    "lossy-opaque-anim-sub-replace-d0-clear",
+    "lossy-opaque-anim-sub-replace-d1-opaque",
+    "lossy-binary-anim-full-blend-d0-clear",
+    "lossy-binary-anim-sub-blend-d1-opaque",
+];
+const RESIDUAL_CELLS: [&str; 12] = [
+    "lossless-partial-static-full",
+    "lossless-partial-anim-full-blend-d0-clear",
+    "lossless-partial-anim-full-replace-d1-opaque",
+    "lossless-partial-anim-sub-blend-d1-opaque",
+    "lossless-partial-anim-sub-replace-d0-clear",
+    "lossless-partial-anim-sub-replace-d1-opaque",
+    "lossy-partial-static-full",
+    "lossy-partial-anim-full-blend-d0-clear",
+    "lossy-partial-anim-full-replace-d1-opaque",
+    "lossy-partial-anim-sub-blend-d1-opaque",
+    "lossy-partial-anim-sub-replace-d0-clear",
+    "lossy-partial-anim-sub-replace-d1-opaque",
 ];
 type Configuration = (&'static str, bool, bool, bool, u8, [u8; 4]);
 const CONFIGS: [Configuration; 6] = [
@@ -798,6 +826,7 @@ fn evidence() -> (Value, Value) {
     }
     negative_helpers(&record);
     native_pin_discrimination(&native_defect_pins(), &record);
+    composition_discrimination(&record);
     lossless_pdf_gates_are_independent(&record, &inputs);
     (record, inputs)
 }
@@ -1103,16 +1132,171 @@ fn collect_native_defects(record: &Value, inputs: &Value) -> Value {
         json!({"id":row["id"],"cell":row["cell"],"source_webp_sha256":row["webp"]["sha256"],"formats":formats})
     }).collect();
     assert_eq!(cases.len(), 46);
-    json!({"schema":"excalidraw-render/webp-native-defect-measurements/v1",
+    let result = json!({"schema":"excalidraw-render/webp-composition-defect-measurements/v1",
         "issue":"https://github.com/sagikazarmark/excalidraw-render.orig/issues/191",
-        "provenance":"One-time native Rust 1.97.1 measurement after the RED reference probe; not browser evidence or qualification. No automatic refresh. Any change requires diagnosis under #191.",
+        "provenance":"Unapproved one-time Rust 1.97.1 native observations after composition-only correction against dd3389a. First frame decoded standalone onto clear RGBA; no static or color-policy change. Not browser evidence; no automatic refresh.",
+        "previous_measurements_sha256":"d31850b8a23ed04039de976437a06b9922bbc963ee83f3b6269833d5cc24ba76",
         "reference_sha256":REFERENCE_HASH,"inputs_sha256":INPUT_HASH,
-        "qualified_sample_cells":13,"unqualified_sample_cells":23,"unqualified_vectors":46,
+        "original_qualified_cells":QUALIFIED_CELLS,"corrected_cells":CORRECTED_CELLS,"residual_cells":RESIDUAL_CELLS,
+        "qualified_sample_cells":24,"unqualified_sample_cells":12,"unqualified_vectors":24,
+        "residual_classification":{"png":"WebP partial-alpha premultiplication rounding differs from frozen browser readback",
+            "pdf":"Synthetic rounded straight-RGBA projection versus browser floor-premultiplied opaque captures; not a demonstrated PDF decoder or viewer defect. Exact lossless straight invariant remains required."},
         "comparison":{"class":"geometry-image","mode":"canonical","minimum_ssim_bits":format!("{:016x}",0.999f64.to_bits()),"changed_fraction":[1,400]},
-        "oracle_amendment":{"previous_sha256":"d8b85832ed9b9567f56b03dcbfa1e39d5b5b6be6b988e71bb8ab18eafb54b6f1",
-            "reason":"Uncommitted #191 Spec P2 correction: lossless PDF exact straight AND observed black/white composites. Added gates only; existing pixels, alpha, diagnostics, and view measurements unchanged.",
-            "new_lossless_pdf_composite_views":48,"previously_passing_pdf_formats_now_failing":8},
-        "cases":cases})
+        "cases":cases});
+    audit_composition_changes(&result, record);
+    result
+}
+
+fn audit_composition_changes(actual: &Value, record: &Value) {
+    let before = native_defect_pins();
+    assert_eq!(rows(actual, "cases").len(), 46);
+    let mut changed_rows = 0;
+    let mut changed_formats = 0;
+    for row in rows(actual, "cases") {
+        let id = row["id"].as_str().unwrap();
+        let old = by_id(&before, "cases", id);
+        let reference = by_id(record, "cases", id);
+        assert_eq!(row["cell"], old["cell"]);
+        assert_eq!(row["source_webp_sha256"], old["source_webp_sha256"]);
+        let affected = CORRECTED_CELLS.contains(&row["cell"].as_str().unwrap())
+            || (reference["alpha"] == "partial" && reference["config"]["blend"] == true);
+        assert_eq!(
+            row != old,
+            affected,
+            "{id}: only first-frame composition may change"
+        );
+        changed_rows += usize::from(row != old);
+        for (new, old) in rows(row, "formats").iter().zip(rows(old, "formats")) {
+            for key in ["format", "dimensions", "diagnostic", "diagnostic_sha256"] {
+                assert_eq!(new[key], old[key], "{id} {key}");
+            }
+            if new["format"] == "svg" {
+                assert_eq!(new, old);
+                continue;
+            }
+            assert_eq!(new != old, affected, "{id}: pixel change scope");
+            changed_formats += usize::from(new != old);
+            assert_eq!(
+                new["alpha"]["expected_sha256"],
+                old["alpha"]["expected_sha256"]
+            );
+            assert_eq!(new["alpha"]["passed"], true);
+            for (nv, ov) in rows(new, "views").iter().zip(rows(old, "views")) {
+                for key in ["name", "requirement", "expected_rgba_sha256"] {
+                    assert_eq!(nv[key], ov[key], "{id} reference view changed");
+                }
+            }
+        }
+    }
+    assert_eq!((changed_rows, changed_formats), (30, 60));
+}
+
+fn composition_pins() -> Value {
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/oracle/webp-sample/composition-defect-measurements.json"
+    ));
+    assert_eq!(
+        hash(bytes),
+        "6c9f48c8903604c7112085d64fd53325d30975f3552c01a3ace5e50dae5de668"
+    );
+    serde_json::from_slice(bytes).unwrap()
+}
+
+fn assert_composition_defects(actual: &Value, pinned: &Value, record: &Value) {
+    assert!(actual==pinned,"#191 composition measurement changed: diagnose improvement or regression, never refresh automatically");
+    audit_composition_changes(actual, record);
+    let mut passes = [0; 3];
+    let mut failures = 0;
+    let mut residuals = 0;
+    for row in rows(actual, "cases") {
+        let corrected = CORRECTED_CELLS.contains(&row["cell"].as_str().unwrap());
+        let residual = RESIDUAL_CELLS.contains(&row["cell"].as_str().unwrap());
+        assert_ne!(corrected, residual);
+        residuals += usize::from(residual);
+        assert_eq!(rows(row, "formats").len(), 3);
+        for (i, f) in rows(row, "formats").iter().enumerate() {
+            assert_eq!(f["format"], FORMATS[i].as_str());
+            assert_eq!(f["requirement_passed"], i == 0 || corrected);
+            passes[i] += usize::from(f["requirement_passed"] == true);
+            if i == 0 {
+                continue;
+            }
+            assert_eq!(f["alpha"]["passed"], true);
+            assert_eq!(f["alpha"]["mismatched_pixels"], 0);
+            assert_eq!(f["alpha"]["nonzero_invisible_pixels"], 0);
+            for view in rows(f, "views") {
+                let straight = view["name"] == "external-lossless-straight";
+                let passed = corrected || straight;
+                assert_eq!(view["requirement_passed"], passed);
+                assert_eq!(view["canonical"]["passed"], passed);
+                if !passed {
+                    failures += 1;
+                    assert_eq!(
+                        view["canonical"]["ssim"],
+                        json!({"kind":"small-artifact-mismatch"})
+                    );
+                    assert_eq!(view["canonical"]["changed_pixels"], 0);
+                    assert_ne!(view["expected_rgba_sha256"], view["actual_rgba_sha256"]);
+                }
+            }
+        }
+    }
+    assert_eq!(residuals, 24);
+    assert_eq!(passes, [46, 22, 22]);
+    assert_eq!(failures, 72);
+}
+
+fn composition_discrimination(record: &Value) {
+    let pinned = composition_pins();
+    assert_composition_defects(&pinned, &pinned, record);
+    let all: BTreeSet<_> = QUALIFIED_CELLS
+        .iter()
+        .chain(&CORRECTED_CELLS)
+        .chain(&RESIDUAL_CELLS)
+        .copied()
+        .collect();
+    assert_eq!(all.len(), 36);
+    assert_eq!(
+        all,
+        rows(record, "cases")
+            .iter()
+            .map(|r| r["cell"].as_str().unwrap())
+            .collect()
+    );
+    let residual = rows(&pinned, "cases")
+        .iter()
+        .position(|r| RESIDUAL_CELLS.contains(&r["cell"].as_str().unwrap()))
+        .unwrap();
+    let row = by_id(
+        record,
+        "cases",
+        pinned["cases"][residual]["id"].as_str().unwrap(),
+    );
+    let reference = crate::common::raster::decode_png(&decode(&row["reference"]["png"]));
+    let mut improved = pinned.clone();
+    improved["cases"][residual]["formats"][1]["views"][0] =
+        measured_view("browser-png", &reference.rgba, &reference.rgba, false);
+    rejects(|| assert_composition_defects(&improved, &pinned, record));
+    rejects(|| assert_composition_defects(&improved, &improved, record));
+    for pointer in [
+        "/formats/1/actual_rgba_sha256",
+        "/formats/1/alpha/mismatched_pixels",
+        "/formats/2/diagnostic_sha256",
+        "/formats/2/views/0/canonical/ssim/bits",
+        "/formats/2/views/1/actual_rgba_sha256",
+        "/formats/2/views/1/canonical/changed_pixels",
+        "/formats/0/requirement_passed",
+    ] {
+        let mut wrong = pinned.clone();
+        *wrong["cases"][residual].pointer_mut(pointer).unwrap() = Value::Null;
+        rejects(|| assert_composition_defects(&wrong, &pinned, record));
+    }
+    // Old first-frame blending/opaque-canvas behavior must not regress back.
+    let before = native_defect_pins();
+    let mut regressed = pinned.clone();
+    regressed["cases"][0] = before["cases"][0].clone();
+    rejects(|| assert_composition_defects(&regressed, &pinned, record));
 }
 
 // Projecting away only the additional gates reconstructs the original pin file
@@ -1260,11 +1444,13 @@ fn native_pin_discrimination(pinned: &Value, record: &Value) {
 }
 
 fn lossless_pdf_gates_are_independent(record: &Value, inputs: &Value) {
-    // Exact straight RGB is necessary but insufficient: these eight real PDF
+    // Exact straight RGB is necessary but insufficient: these twelve real PDF
     // outputs pass it while failing BOTH independent browser-composite gates.
     for config in [
         "static-full",
+        "anim-full-blend-d0-clear",
         "anim-full-replace-d1-opaque",
+        "anim-sub-blend-d1-opaque",
         "anim-sub-replace-d0-clear",
         "anim-sub-replace-d1-opaque",
     ] {
@@ -1462,15 +1648,15 @@ fn negative_helpers(record: &Value) {
     rejects(|| assert_eq!(duplicate, complete));
 }
 
-fn qualified_first_display_partition() {
+fn qualified_first_display_partition(cells: &[&str]) {
     let (record, inputs) = evidence();
     let mut failures = vec![];
     let mut pass = 0;
     let selected: Vec<_> = rows(&record, "cases")
         .iter()
-        .filter(|row| QUALIFIED_CELLS.contains(&row["cell"].as_str().unwrap()))
+        .filter(|row| cells.contains(&row["cell"].as_str().unwrap()))
         .collect();
-    assert_eq!(selected.len(), 26);
+    assert_eq!(selected.len(), cells.len() * 2);
     let mut format_passes = [0; 3];
     for row in &selected {
         let mut good = true;
@@ -1509,14 +1695,19 @@ fn qualified_first_display_partition() {
 
 #[test]
 fn qualified_13_cells_first_display_contract() {
-    qualified_first_display_partition();
+    qualified_first_display_partition(&QUALIFIED_CELLS);
 }
 
 #[test]
-fn issue_191_unqualified_23_cells_exact_native_defects() {
+fn issue_191_partial_12_cells_exact_native_defects() {
     let (record, inputs) = evidence();
-    let pinned = native_defect_pins();
-    assert_native_defects(&collect_native_defects(&record, &inputs), &pinned);
+    let pinned = composition_pins();
+    assert_composition_defects(&collect_native_defects(&record, &inputs), &pinned, &record);
+}
+
+#[test]
+fn corrected_composition_cells_match_reference() {
+    qualified_first_display_partition(&CORRECTED_CELLS);
 }
 
 #[test]

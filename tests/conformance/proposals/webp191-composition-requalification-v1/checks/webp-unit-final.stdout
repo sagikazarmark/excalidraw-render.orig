@@ -1,0 +1,13 @@
+
+running 8 tests
+test render::asset::tests::webp_codec::a_lossy_webp_decodes_to_opaque_srgb ... ok
+test render::asset::tests::webp_codec::a_lossless_webp_keeps_its_alpha_straight ... ok
+test render::asset::tests::webp_codec::exif_orientation_swaps_the_dimensions_and_turns_the_pixels ... ok
+test render::asset::tests::webp_codec::later_frames_outside_the_canvas_reserved_flags_and_a_missing_alpha_flag_are_rejected ... ok
+test render::asset::tests::webp_codec::the_first_animation_frame_keeps_its_alpha ... ok
+test render::asset::tests::webp_codec::truncated_and_malformed_containers_are_decode_failures ... ok
+test render::asset::tests::webp_codec::an_embedded_icc_profile_takes_precedence_over_the_srgb_default ... ok
+test render::asset::tests::webp_codec::an_animated_webp_flattens_to_its_first_frame_and_reports_animation ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 403 filtered out; finished in 0.01s
+

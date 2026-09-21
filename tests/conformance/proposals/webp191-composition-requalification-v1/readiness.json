@@ -1,0 +1,55 @@
+{
+  "approval": null,
+  "status": "awaiting-parent-production-resource-review-tests-and-explicit-freeze",
+  "current_capture_started": false,
+  "old_capture": {
+    "path": "tests/conformance/proposals/webp191-composition-requalification-v1/old/snapshots/snapshots.json",
+    "byte_length": 435653,
+    "sha256": "34b29db917bc4844cc035c44a99c48708ca63e243927fa3281b2b4cdf0f8e623"
+  },
+  "old_equal_prior_records": 168,
+  "new_owner_ids": [
+    "codec:webp:sample:lossless-binary-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossless-binary-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossless-opaque-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossless-opaque-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossless-opaque-anim-sub-replace-d0-clear",
+    "codec:webp:sample:lossless-opaque-anim-sub-replace-d1-opaque",
+    "codec:webp:sample:lossy-binary-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossy-binary-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossy-opaque-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossy-opaque-anim-sub-replace-d0-clear",
+    "codec:webp:sample:lossy-opaque-anim-sub-replace-d1-opaque"
+  ],
+  "residual_gap_ids": [
+    "codec:webp:sample:lossless-partial-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossless-partial-anim-full-replace-d1-opaque",
+    "codec:webp:sample:lossless-partial-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossless-partial-anim-sub-replace-d0-clear",
+    "codec:webp:sample:lossless-partial-anim-sub-replace-d1-opaque",
+    "codec:webp:sample:lossless-partial-static-full",
+    "codec:webp:sample:lossy-partial-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossy-partial-anim-full-replace-d1-opaque",
+    "codec:webp:sample:lossy-partial-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossy-partial-anim-sub-replace-d0-clear",
+    "codec:webp:sample:lossy-partial-anim-sub-replace-d1-opaque",
+    "codec:webp:sample:lossy-partial-static-full"
+  ],
+  "measurement_transition": {
+    "path": "tests/conformance/proposals/webp191-composition-requalification-v1/measurement-transition.json",
+    "byte_length": 9263,
+    "sha256": "ce3bbaa0089bf0f3f1bfa2a22c3fb362b6bf269a92716c7e8be926fe85e6d2c9"
+  },
+  "counts_after": {
+    "assignments": 2418,
+    "owned": 2318,
+    "excluded": 3,
+    "assigned_or_excluded": 2321,
+    "gaps": 97
+  },
+  "tests": {
+    "path": "tests/conformance/proposals/webp191-composition-requalification-v1/checks/readiness-tests.stderr",
+    "byte_length": 4045,
+    "sha256": "c966e9cb579bc32c2ca54c272c8334aed487c38558d5900b751c14bb4498ca03"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "approval": null,
+  "bridge_sha256": "81a18f352e854fd7993ba041587193959aa7619b64b1cfea1ddaaad007e899e5",
+  "new_pdf_sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265",
+  "structural_changes": {
+    "all_raw_streams_fonts_text_coordinates_and_other_objects_identical": true,
+    "changed_image_objects": [
+      "obj:18 0 R"
+    ],
+    "permitted_changes": [
+      "image ColorSpace resource alias to original ICCBased array",
+      "derived trailer IDs/xref offsets"
+    ]
+  },
+  "viewers": [
+    {
+      "byte_identical": true,
+      "diagnosed": {
+        "byte_length": 96000,
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfium.rgba",
+        "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"
+      },
+      "fixed": {
+        "byte_length": 96000,
+        "path": "pdfium.rgba",
+        "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"
+      },
+      "metrics": {
+        "typography": {
+          "canonical_passed": false,
+          "changed_pixels": 118,
+          "ssim_bits": "3fee1f978eeaac28"
+        },
+        "whole": {
+          "changed_pixels": 118,
+          "ssim_bits": "3fefacd49b980278"
+        }
+      },
+      "repeat": {
+        "byte_length": 96000,
+        "path": "pdfium-repeat.rgba",
+        "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"
+      },
+      "viewer": "pdfium"
+    },
+    {
+      "byte_identical": true,
+      "diagnosed": {
+        "byte_length": 96000,
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfjs.rgba",
+        "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"
+      },
+      "fixed": {
+        "byte_length": 96000,
+        "path": "pdfjs.rgba",
+        "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"
+      },
+      "metrics": {
+        "typography": {
+          "canonical_passed": true,
+          "changed_pixels": 16,
+          "ssim_bits": "3fefbe7a57566bff"
+        },
+        "whole": {
+          "changed_pixels": 16,
+          "ssim_bits": "3feff3e226be27cf"
+        }
+      },
+      "repeat": {
+        "byte_length": 96000,
+        "path": "pdfjs-repeat.rgba",
+        "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"
+      },
+      "viewer": "pdfjs"
+    }
+  ]
+}

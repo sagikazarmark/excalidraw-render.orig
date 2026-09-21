@@ -1,0 +1,76 @@
+{
+  "approval": null,
+  "base_commit": "dd3389a0e023b105331011e226e5bcc40533a94d",
+  "helper_sources": {
+    "capture": {
+      "path": "tests/conformance/proposals/webp191-composition-requalification-v1/before/tests/conformance/proposals/jpeg187-requalification-v1/collect.py",
+      "byte_length": 19893,
+      "sha256": "a36b1b97a72a8dd565144c226693510abbc1dfcf7add247c72bc687495c1df0f"
+    },
+    "qualification": {
+      "path": "tests/conformance/proposals/webp191-composition-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v1/workflow.py",
+      "byte_length": 28814,
+      "sha256": "c7fe2ae0acee1e30d0b87f5ac16b8b8389910184ca020b23ff31ac89b60d1fcc"
+    },
+    "representative": {
+      "path": "tests/conformance/proposals/webp191-composition-requalification-v1/before/tests/conformance/proposals/jpeg189-requalification-v1/workflow.py",
+      "byte_length": 28973,
+      "sha256": "2f63f660bc502ab2a9bc3624f793001d4967fbe382619da222444a64e652f1f4"
+    },
+    "receipts": {
+      "path": "tests/conformance/proposals/webp191-composition-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+      "byte_length": 20173,
+      "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+    }
+  },
+  "data_sources": [
+    {
+      "path": "tests/oracle/webp-sample/reference.json",
+      "byte_length": 2802651,
+      "sha256": "b325e8a2d8ad0a1fbd72463a9e2272ef43a1151c2ca040aa5fc46150335f49b6"
+    },
+    {
+      "path": "tests/oracle/webp-sample/inputs.json",
+      "byte_length": 35342,
+      "sha256": "21ce05bb34249f370de8dab10026972e58dd59d40a6dfbff4d7d7df1e3b857c4"
+    },
+    {
+      "path": "tests/oracle/webp-sample/native-defect-measurements.json",
+      "byte_length": 316989,
+      "sha256": "d31850b8a23ed04039de976437a06b9922bbc963ee83f3b6269833d5cc24ba76"
+    },
+    {
+      "path": "tests/oracle/webp-sample/composition-defect-measurements.json",
+      "byte_length": 320337,
+      "sha256": "6c9f48c8903604c7112085d64fd53325d30975f3552c01a3ace5e50dae5de668"
+    }
+  ],
+  "new_owner_ids": [
+    "codec:webp:sample:lossless-binary-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossless-binary-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossless-opaque-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossless-opaque-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossless-opaque-anim-sub-replace-d0-clear",
+    "codec:webp:sample:lossless-opaque-anim-sub-replace-d1-opaque",
+    "codec:webp:sample:lossy-binary-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossy-binary-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossy-opaque-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossy-opaque-anim-sub-replace-d0-clear",
+    "codec:webp:sample:lossy-opaque-anim-sub-replace-d1-opaque"
+  ],
+  "residual_cell_ids": [
+    "codec:webp:sample:lossless-partial-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossless-partial-anim-full-replace-d1-opaque",
+    "codec:webp:sample:lossless-partial-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossless-partial-anim-sub-replace-d0-clear",
+    "codec:webp:sample:lossless-partial-anim-sub-replace-d1-opaque",
+    "codec:webp:sample:lossless-partial-static-full",
+    "codec:webp:sample:lossy-partial-anim-full-blend-d0-clear",
+    "codec:webp:sample:lossy-partial-anim-full-replace-d1-opaque",
+    "codec:webp:sample:lossy-partial-anim-sub-blend-d1-opaque",
+    "codec:webp:sample:lossy-partial-anim-sub-replace-d0-clear",
+    "codec:webp:sample:lossy-partial-anim-sub-replace-d1-opaque",
+    "codec:webp:sample:lossy-partial-static-full"
+  ],
+  "scope": "first ANMF standalone decode and clear RGBA placement only; static/partial-alpha/PDF sample policy unchanged"
+}

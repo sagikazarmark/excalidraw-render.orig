@@ -1,0 +1,124 @@
+{
+  "schema": "excalidraw-render/coverage-requirements/v1",
+  "requirements": [
+    {
+      "id": "corpus.five-layers",
+      "issue": 85,
+      "remaining": "Integrate exact vectors, focused, representative, adversarial and regression owners; promote representative scenes with approved sanitization and crops.",
+      "evidence": [
+        {
+          "source": {
+            "path": "tests/public-scenes/README.md",
+            "sha256": "1919facd7644258c91f1fa37ea79a07f58c1b40d291c50f4f5ad9d416a62a064"
+          },
+          "anchor": "# Public scene pool"
+        }
+      ]
+    },
+    {
+      "id": "coverage.global-ownership",
+      "issue": 85,
+      "remaining": "Extend the draft field/label inventory to all diagnostic, codec/profile, exception and interaction rows; choose and approve exactly one primary owner or justified exclusion per row.",
+      "evidence": [
+        {
+          "source": {
+            "path": "xtask/src/conformance.rs",
+            "sha256": "eb64d6362e3845759c3bf083b4f6f05892b35731c774cc5dab1936ea9fb68232"
+          },
+          "anchor": "fn verify_case_metadata("
+        }
+      ]
+    },
+    {
+      "id": "fuzz.codecs",
+      "issue": 82,
+      "remaining": "Generate and mutate all admitted raster profiles and nested SVG paths under semantic limits; characterize and retain minimized failures.",
+      "evidence": [
+        {
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/static_png_asset_render.rs",
+            "sha256": "02377311ef96aea23ba878915cf7d95819c5b0c281bb224857b60014338dc61b"
+          },
+          "anchor": "fn apng_is_preserved_in_svg_and_flattened_to_frame_zero_in_png_and_pdf()"
+        }
+      ]
+    },
+    {
+      "id": "fuzz.complete-render",
+      "issue": 83,
+      "remaining": "Extend actual generated rendering beyond SVG to PNG/PDF, metadata, reports, frames and failure/limit outcomes.",
+      "evidence": [
+        {
+          "source": {
+            "path": "crates/excalidraw-render/src/scene_fuzz/mod.rs",
+            "sha256": "131f9f28adb9997de4b73225f6a4249abfd177003fdf7bd9326016724eb4b73c"
+          },
+          "anchor": "pub(crate) fn assert_scene_fuzz_smoke()"
+        },
+        {
+          "source": {
+            "path": "crates/excalidraw-render/src/render/font_subset_fuzz.rs",
+            "sha256": "10aa9c2c14509f3861e7cac760a117c55438cceef4cf97bcd076543619899a9a"
+          },
+          "anchor": "pub(crate) fn assert_font_subset_fuzz_smoke()"
+        }
+      ]
+    },
+    {
+      "id": "snapshots.public-facade",
+      "issue": 85,
+      "remaining": "Generate and approve exact artifact and serialized report expectations for every execution key through the packaged public facade.",
+      "evidence": [
+        {
+          "source": {
+            "path": "tests/package-consumer/tests/public_facade.rs",
+            "sha256": "bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed"
+          },
+          "anchor": "fn packaged_public_facade_preserves_artifact_byte_stability()"
+        }
+      ]
+    },
+    {
+      "id": "determinism.process-order",
+      "issue": 86,
+      "remaining": "Implement collectors executing forward/reverse keys in independent processes or WASM instances, with two fresh sessions per key.",
+      "evidence": [
+        {
+          "source": {
+            "path": "tests/package-consumer/tests/public_facade.rs",
+            "sha256": "bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed"
+          },
+          "anchor": "let mut reverse_round ="
+        }
+      ]
+    },
+    {
+      "id": "determinism.cross-target",
+      "issue": 86,
+      "remaining": "Populate this result contract from the complete risk inventory, compare approved canonical outputs, and wire automatic Dagger execution; existing live aggregation is font-specific.",
+      "evidence": [
+        {
+          "source": {
+            "path": "xtask/src/svg_font_subset_targets.rs",
+            "sha256": "4769a20f676e35e94ccd2d4ecf4204432e611ab135b9182512799e41250e3eab"
+          },
+          "anchor": "pub(crate) fn aggregate("
+        }
+      ]
+    },
+    {
+      "id": "smoke.mixed-scene",
+      "issue": 86,
+      "remaining": "One checked all-format scene must combine rough geometry, bundled/fallback fonts, image, frames/clipping and ordered diagnostics, with complete canonical report bytes.",
+      "evidence": [
+        {
+          "source": {
+            "path": "tests/package-consumer/tests/public_facade.rs",
+            "sha256": "bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed"
+          },
+          "anchor": "fn packaged_public_facade_renders_discovered_frames_directly_and_lazily()"
+        }
+      ]
+    }
+  ]
+}

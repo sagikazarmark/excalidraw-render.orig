@@ -1,0 +1,10 @@
+
+running 5 tests
+test webp_sample_contract::malformed_10_controls_exact_recovery ... ok
+test webp_sample_contract::qualified_13_cells_first_display_contract ... ok
+test webp_sample_contract::corrected_composition_cells_match_reference ... ok
+test webp_sample_contract::issue_191_partial_12_cells_exact_native_defects ... ok
+test webp_sample_contract::reserved_vp8x_controls_are_accepted_characterization ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 621 filtered out; finished in 0.41s
+

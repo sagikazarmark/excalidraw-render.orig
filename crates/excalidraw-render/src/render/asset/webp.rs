@@ -235,34 +235,7 @@ fn validate_webp_animation_frames(bytes: &[u8]) -> Result<(), ResolveError> {
 }
 
 fn validate_webp_animation_frame(frame: &[u8]) -> Result<(), ResolveError> {
-    let frame_header = frame.get(..16).ok_or(ResolveError::WebPDecodeFailed)?;
-    if frame_header[15] & !0x03 != 0 {
-        return Err(ResolveError::WebPDecodeFailed);
-    }
-    let width = read_webp_u24(&frame_header[6..9])?.saturating_add(1);
-    let height = read_webp_u24(&frame_header[9..12])?.saturating_add(1);
-    let chunks = frame.get(16..).ok_or(ResolveError::WebPDecodeFailed)?;
-    let has_alpha = validate_webp_frame_chunks(chunks)?;
-    let mut body = Vec::new();
-    if has_alpha && chunks.starts_with(b"ALPH") {
-        append_webp_chunk(&mut body, b"VP8X", &[0x10, 0, 0, 0], width, height)?;
-    }
-    body.try_reserve_exact(chunks.len())
-        .map_err(|_| ResolveError::Memory)?;
-    body.extend_from_slice(chunks);
-    let riff_size = body
-        .len()
-        .checked_add(4)
-        .and_then(|size| u32::try_from(size).ok())
-        .ok_or(ResolveError::Memory)?;
-    let mut standalone = Vec::new();
-    standalone
-        .try_reserve_exact(body.len().saturating_add(12))
-        .map_err(|_| ResolveError::Memory)?;
-    standalone.extend_from_slice(b"RIFF");
-    standalone.extend_from_slice(&riff_size.to_le_bytes());
-    standalone.extend_from_slice(b"WEBP");
-    standalone.extend_from_slice(&body);
+    let (standalone, width, height) = standalone_webp_frame(frame)?;
     let mut decoder = webp_decoder(&standalone)?;
     if decoder.dimensions() != (width, height) || decoder.is_animated() {
         return Err(ResolveError::WebPDecodeFailed);
@@ -276,27 +249,41 @@ fn validate_webp_animation_frame(frame: &[u8]) -> Result<(), ResolveError> {
     decoder.read_image(&mut output).map_err(map_webp_error)
 }
 
-fn append_webp_chunk(
-    output: &mut Vec<u8>,
-    kind: &[u8; 4],
-    flags: &[u8; 4],
-    width: u32,
-    height: u32,
-) -> Result<(), ResolveError> {
-    output
-        .try_reserve_exact(18)
+fn standalone_webp_frame(frame: &[u8]) -> Result<(Vec<u8>, u32, u32), ResolveError> {
+    let frame_header = frame.get(..16).ok_or(ResolveError::WebPDecodeFailed)?;
+    if frame_header[15] & !0x03 != 0 {
+        return Err(ResolveError::WebPDecodeFailed);
+    }
+    let width = read_webp_u24(&frame_header[6..9])?.saturating_add(1);
+    let height = read_webp_u24(&frame_header[9..12])?.saturating_add(1);
+    let chunks = frame.get(16..).ok_or(ResolveError::WebPDecodeFailed)?;
+    let has_alpha = validate_webp_frame_chunks(chunks)?;
+    let needs_vp8x = has_alpha && chunks.starts_with(b"ALPH");
+    let body_size = chunks
+        .len()
+        .checked_add(if needs_vp8x { 18 } else { 0 })
+        .ok_or(ResolveError::Memory)?;
+    let riff_size = body_size
+        .checked_add(4)
+        .and_then(|size| u32::try_from(size).ok())
+        .ok_or(ResolveError::Memory)?;
+    let standalone_size = body_size.checked_add(12).ok_or(ResolveError::Memory)?;
+    let mut standalone = Vec::new();
+    standalone
+        .try_reserve_exact(standalone_size)
         .map_err(|_| ResolveError::Memory)?;
-    output.extend_from_slice(kind);
-    output.extend_from_slice(&10_u32.to_le_bytes());
-    output.extend_from_slice(flags);
-    output.extend_from_slice(&webp_u24(width.saturating_sub(1)));
-    output.extend_from_slice(&webp_u24(height.saturating_sub(1)));
-    Ok(())
-}
-
-fn webp_u24(value: u32) -> [u8; 3] {
-    let bytes = value.to_le_bytes();
-    [bytes[0], bytes[1], bytes[2]]
+    standalone.extend_from_slice(b"RIFF");
+    standalone.extend_from_slice(&riff_size.to_le_bytes());
+    standalone.extend_from_slice(b"WEBP");
+    if needs_vp8x {
+        standalone.extend_from_slice(b"VP8X");
+        standalone.extend_from_slice(&10_u32.to_le_bytes());
+        standalone.extend_from_slice(&[0x10, 0, 0, 0]);
+        // ANMF and VP8X both store width/height minus one as little-endian u24.
+        standalone.extend_from_slice(&frame_header[6..12]);
+    }
+    standalone.extend_from_slice(chunks);
+    Ok((standalone, width, height))
 }
 
 fn webp_exif_orientation(exif: &[u8]) -> Option<u8> {
@@ -311,7 +298,50 @@ pub(super) fn decode_webp_default_frame(
     color_normalization: ColorNormalization,
     orientation: Option<u8>,
 ) -> Result<DecodedRaster, ResolveError> {
-    let mut decoder = webp_decoder(bytes)?;
+    let decoder = webp_decoder(bytes)?;
+    // Frame zero is drawn onto transparent black. Do not delegate this to the
+    // animation compositor: opaque source channels do not imply an opaque
+    // canvas, and blending against an empty destination must preserve samples.
+    let mut first_frame = None;
+    let mut placement = (0_u32, 0_u32, source_width, source_height);
+    if decoder.is_animated() {
+        let mut offset = 12;
+        while offset < bytes.len() {
+            let (kind, data, next) = webp_chunk_at(bytes, offset)?;
+            if kind == *b"ANMF" {
+                let header = data.get(..16).ok_or(ResolveError::WebPDecodeFailed)?;
+                let (standalone, width, height) = standalone_webp_frame(data)?;
+                let x = read_webp_u24(&header[..3])?
+                    .checked_mul(2)
+                    .ok_or(ResolveError::WebPDecodeFailed)?;
+                let y = read_webp_u24(&header[3..6])?
+                    .checked_mul(2)
+                    .ok_or(ResolveError::WebPDecodeFailed)?;
+                if x.checked_add(width).is_none_or(|v| v > source_width)
+                    || y.checked_add(height).is_none_or(|v| v > source_height)
+                {
+                    return Err(ResolveError::WebPDecodeFailed);
+                }
+                placement = (x, y, width, height);
+                first_frame = Some(standalone);
+                break;
+            }
+            offset = next;
+        }
+        if first_frame.is_none() {
+            return Err(ResolveError::WebPDecodeFailed);
+        }
+    }
+    let mut decoder = if let Some(frame) = &first_frame {
+        drop(decoder);
+        let decoder = webp_decoder(frame)?;
+        if decoder.dimensions() != (placement.2, placement.3) || decoder.is_animated() {
+            return Err(ResolveError::WebPDecodeFailed);
+        }
+        decoder
+    } else {
+        decoder
+    };
     let output_size = decoder.output_buffer_size().ok_or(ResolveError::Memory)?;
     let mut decoded = Vec::new();
     decoded
@@ -319,25 +349,53 @@ pub(super) fn decode_webp_default_frame(
         .map_err(|_| ResolveError::Memory)?;
     decoded.resize(output_size, 0);
     decoder.read_image(&mut decoded).map_err(map_webp_error)?;
+    let channels = if decoder.has_alpha() { 4_u8 } else { 3_u8 };
+    drop(decoder);
+    drop(first_frame);
+
+    let (x, y, width, height) = placement;
+    let frame_pixels = u64::from(width)
+        .checked_mul(u64::from(height))
+        .ok_or(ResolveError::Memory)?;
+    let expected = usize::try_from(
+        frame_pixels
+            .checked_mul(u64::from(channels))
+            .ok_or(ResolveError::Memory)?,
+    )
+    .map_err(|_| ResolveError::Memory)?;
+    if decoded.len() != expected {
+        return Err(ResolveError::WebPDecodeFailed);
+    }
+    let x = usize::try_from(x).map_err(|_| ResolveError::Memory)?;
+    let y = usize::try_from(y).map_err(|_| ResolveError::Memory)?;
+    let width = usize::try_from(width).map_err(|_| ResolveError::Memory)?;
+    let canvas_width = usize::try_from(source_width).map_err(|_| ResolveError::Memory)?;
 
     let rgba_size = usize::try_from(pixels.checked_mul(4).ok_or(ResolveError::Memory)?)
         .map_err(|_| ResolveError::Memory)?;
     let mut rgba = Vec::new();
     rgba.try_reserve_exact(rgba_size)
         .map_err(|_| ResolveError::Memory)?;
-    if decoder.has_alpha() {
-        if decoded.len() != rgba_size {
-            return Err(ResolveError::WebPDecodeFailed);
-        }
-        rgba.extend_from_slice(&decoded);
-    } else {
-        for pixel in decoded.as_chunks::<3>().0 {
-            rgba.extend_from_slice(&[pixel[0], pixel[1], pixel[2], 255]);
-        }
-        if rgba.len() != rgba_size {
-            return Err(ResolveError::WebPDecodeFailed);
+    rgba.resize(rgba_size, 0);
+    for (i, pixel) in decoded.chunks_exact(usize::from(channels)).enumerate() {
+        let row = y.checked_add(i / width).ok_or(ResolveError::Memory)?;
+        let col = x.checked_add(i % width).ok_or(ResolveError::Memory)?;
+        let start = row
+            .checked_mul(canvas_width)
+            .and_then(|n| n.checked_add(col))
+            .and_then(|n| n.checked_mul(4))
+            .ok_or(ResolveError::Memory)?;
+        let end = start.checked_add(4).ok_or(ResolveError::Memory)?;
+        let target = rgba
+            .get_mut(start..end)
+            .ok_or(ResolveError::WebPDecodeFailed)?;
+        target[..3].copy_from_slice(&pixel[..3]);
+        target[3] = if channels == 4 { pixel[3] } else { 255 };
+        if target[3] == 0 {
+            target.fill(0);
         }
     }
+    drop(decoded);
     normalize_rgba(&mut rgba, color_normalization)?;
     if let Some(orientation) = orientation {
         rgba = orient_rgba(&rgba, source_width, source_height, orientation)?;

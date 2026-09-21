@@ -1,0 +1,33 @@
+test_exact_30_vector_60_record_delta_and_partial_residuals (__main__.MeasurementTests.test_exact_30_vector_60_record_delta_and_partial_residuals) ... ok
+test_partial_success_cannot_be_promoted (__main__.MeasurementTests.test_partial_success_cannot_be_promoted) ... ok
+test_reference_or_alpha_invariant_cannot_change (__main__.MeasurementTests.test_reference_or_alpha_invariant_cannot_change) ... ok
+test_residual_failure_cannot_be_replaced_by_tolerance (__main__.MeasurementTests.test_residual_failure_cannot_be_replaced_by_tolerance) ... ok
+test_static_and_svg_records_cannot_move (__main__.MeasurementTests.test_static_and_svg_records_cannot_move) ... ok
+test_exact_11_new_25_refresh_one_rep_other_criteria_and_residuals_unchanged (__main__.MigrationTests.test_exact_11_new_25_refresh_one_rep_other_criteria_and_residuals_unchanged) ... ok
+test_no_current_capture_without_explicit_freeze (__main__.MigrationTests.test_no_current_capture_without_explicit_freeze) ... ok
+test_old_selector_and_gap_issue_preserved (__main__.MigrationTests.test_old_selector_and_gap_issue_preserved) ... ok
+test_partial_cell_cannot_enter_owner_map (__main__.MigrationTests.test_partial_cell_cannot_enter_owner_map) ... ok
+test_representative_scope_cannot_be_loosened (__main__.MigrationTests.test_representative_scope_cannot_be_loosened) ... ok
+test_designated_maintainer_required (__main__.AuthTests.test_designated_maintainer_required) ... ok
+test_only_affirmative_composition_scope (__main__.AuthTests.test_only_affirmative_composition_scope) ... ok
+test_optimized_startup_refused (__main__.AuthTests.test_optimized_startup_refused) ... ok
+test_actual_identity_sets_and_all_six_command_receipts_required (authenticated_receipt_tests.Receipts.test_actual_identity_sets_and_all_six_command_receipts_required) ... ok
+test_forged_checked_summary_rejected (authenticated_receipt_tests.Receipts.test_forged_checked_summary_rejected) ... ok
+test_forged_summary_cannot_replace_full_success_identities (authenticated_receipt_tests.Receipts.test_forged_summary_cannot_replace_full_success_identities) ... ok
+test_missing_receipt_or_log_rejected (authenticated_receipt_tests.Receipts.test_missing_receipt_or_log_rejected) ... ok
+test_nonzero_exit_even_green_stdout_rejected (authenticated_receipt_tests.Receipts.test_nonzero_exit_even_green_stdout_rejected) ... ok
+test_pending_or_wrong_ownership_totals_rejected (authenticated_receipt_tests.Receipts.test_pending_or_wrong_ownership_totals_rejected) ... ok
+test_same_count_substituted_test_identity_rejected (authenticated_receipt_tests.Receipts.test_same_count_substituted_test_identity_rejected) ... ok
+test_saved_parseable_forgery_is_not_accepted_when_actual_rerun_fails (authenticated_receipt_tests.Receipts.test_saved_parseable_forgery_is_not_accepted_when_actual_rerun_fails) ... ok
+test_stderr_failure_or_wrong_binary_rejected (authenticated_receipt_tests.Receipts.test_stderr_failure_or_wrong_binary_rejected) ... ok
+test_successful_applied_audit_reexecutes_all_required_commands (authenticated_receipt_tests.Receipts.test_successful_applied_audit_reexecutes_all_required_commands) ... ok
+test_wrong_candidate_subject_artifact_or_missing_registry_case_rejected (authenticated_receipt_tests.Receipts.test_wrong_candidate_subject_artifact_or_missing_registry_case_rejected) ... ok
+test_wrong_command_flags_or_target_rejected (authenticated_receipt_tests.Receipts.test_wrong_command_flags_or_target_rejected) ... ok
+test_wrong_source_subject_metadata_or_snapshot_rejected (authenticated_receipt_tests.Receipts.test_wrong_source_subject_metadata_or_snapshot_rejected) ... ok
+test_applied_status_only_after_recorded_checks_validate (authenticated_receipt_tests.TransactionTests.test_applied_status_only_after_recorded_checks_validate) ... ok
+test_failure_restores_exact_preimages_and_never_marks_applied (authenticated_receipt_tests.TransactionTests.test_failure_restores_exact_preimages_and_never_marks_applied) ... ok
+
+----------------------------------------------------------------------
+Ran 28 tests in 0.772s
+
+OK

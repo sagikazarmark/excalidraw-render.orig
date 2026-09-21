@@ -1,0 +1,313 @@
+{
+  "approval": null,
+  "old": {
+    "path": "tests/oracle/webp-sample/native-defect-measurements.json",
+    "byte_length": 316989,
+    "sha256": "d31850b8a23ed04039de976437a06b9922bbc963ee83f3b6269833d5cc24ba76"
+  },
+  "new": {
+    "path": "tests/oracle/webp-sample/composition-defect-measurements.json",
+    "byte_length": 320337,
+    "sha256": "6c9f48c8903604c7112085d64fd53325d30975f3552c01a3ace5e50dae5de668"
+  },
+  "reference": {
+    "path": "tests/oracle/webp-sample/reference.json",
+    "byte_length": 2802651,
+    "sha256": "b325e8a2d8ad0a1fbd72463a9e2272ef43a1151c2ca040aa5fc46150335f49b6"
+  },
+  "scope": {
+    "changed_vectors": [
+      "lossless-binary-anim-full-blend-d0-clear-edges",
+      "lossless-binary-anim-full-blend-d0-clear-ramp",
+      "lossless-binary-anim-sub-blend-d1-opaque-edges",
+      "lossless-binary-anim-sub-blend-d1-opaque-ramp",
+      "lossless-opaque-anim-full-blend-d0-clear-edges",
+      "lossless-opaque-anim-full-blend-d0-clear-ramp",
+      "lossless-opaque-anim-sub-blend-d1-opaque-edges",
+      "lossless-opaque-anim-sub-blend-d1-opaque-ramp",
+      "lossless-opaque-anim-sub-replace-d0-clear-edges",
+      "lossless-opaque-anim-sub-replace-d0-clear-ramp",
+      "lossless-opaque-anim-sub-replace-d1-opaque-edges",
+      "lossless-opaque-anim-sub-replace-d1-opaque-ramp",
+      "lossless-partial-anim-full-blend-d0-clear-edges",
+      "lossless-partial-anim-full-blend-d0-clear-ramp",
+      "lossless-partial-anim-sub-blend-d1-opaque-edges",
+      "lossless-partial-anim-sub-blend-d1-opaque-ramp",
+      "lossy-binary-anim-full-blend-d0-clear-edges",
+      "lossy-binary-anim-full-blend-d0-clear-ramp",
+      "lossy-binary-anim-sub-blend-d1-opaque-edges",
+      "lossy-binary-anim-sub-blend-d1-opaque-ramp",
+      "lossy-opaque-anim-sub-blend-d1-opaque-edges",
+      "lossy-opaque-anim-sub-blend-d1-opaque-ramp",
+      "lossy-opaque-anim-sub-replace-d0-clear-edges",
+      "lossy-opaque-anim-sub-replace-d0-clear-ramp",
+      "lossy-opaque-anim-sub-replace-d1-opaque-edges",
+      "lossy-opaque-anim-sub-replace-d1-opaque-ramp",
+      "lossy-partial-anim-full-blend-d0-clear-edges",
+      "lossy-partial-anim-full-blend-d0-clear-ramp",
+      "lossy-partial-anim-sub-blend-d1-opaque-edges",
+      "lossy-partial-anim-sub-blend-d1-opaque-ramp"
+    ],
+    "changed_raster_records": [
+      {
+        "id": "lossless-opaque-anim-full-blend-d0-clear-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossless-opaque-anim-full-blend-d0-clear-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-opaque-anim-full-blend-d0-clear-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossless-opaque-anim-full-blend-d0-clear-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-blend-d1-opaque-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-blend-d1-opaque-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-blend-d1-opaque-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-blend-d1-opaque-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-replace-d0-clear-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-replace-d0-clear-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-replace-d0-clear-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-replace-d0-clear-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-replace-d1-opaque-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-replace-d1-opaque-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-replace-d1-opaque-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossless-opaque-anim-sub-replace-d1-opaque-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-partial-anim-full-blend-d0-clear-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossless-partial-anim-full-blend-d0-clear-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-partial-anim-full-blend-d0-clear-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossless-partial-anim-full-blend-d0-clear-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-partial-anim-sub-blend-d1-opaque-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossless-partial-anim-sub-blend-d1-opaque-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-partial-anim-sub-blend-d1-opaque-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossless-partial-anim-sub-blend-d1-opaque-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-binary-anim-full-blend-d0-clear-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossless-binary-anim-full-blend-d0-clear-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-binary-anim-full-blend-d0-clear-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossless-binary-anim-full-blend-d0-clear-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-binary-anim-sub-blend-d1-opaque-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossless-binary-anim-sub-blend-d1-opaque-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossless-binary-anim-sub-blend-d1-opaque-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossless-binary-anim-sub-blend-d1-opaque-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-blend-d1-opaque-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-blend-d1-opaque-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-blend-d1-opaque-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-blend-d1-opaque-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-replace-d0-clear-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-replace-d0-clear-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-replace-d0-clear-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-replace-d0-clear-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-replace-d1-opaque-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-replace-d1-opaque-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-replace-d1-opaque-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossy-opaque-anim-sub-replace-d1-opaque-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-partial-anim-full-blend-d0-clear-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossy-partial-anim-full-blend-d0-clear-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-partial-anim-full-blend-d0-clear-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossy-partial-anim-full-blend-d0-clear-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-partial-anim-sub-blend-d1-opaque-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossy-partial-anim-sub-blend-d1-opaque-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-partial-anim-sub-blend-d1-opaque-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossy-partial-anim-sub-blend-d1-opaque-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-binary-anim-full-blend-d0-clear-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossy-binary-anim-full-blend-d0-clear-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-binary-anim-full-blend-d0-clear-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossy-binary-anim-full-blend-d0-clear-edges",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-binary-anim-sub-blend-d1-opaque-ramp",
+        "format": "png"
+      },
+      {
+        "id": "lossy-binary-anim-sub-blend-d1-opaque-ramp",
+        "format": "pdf"
+      },
+      {
+        "id": "lossy-binary-anim-sub-blend-d1-opaque-edges",
+        "format": "png"
+      },
+      {
+        "id": "lossy-binary-anim-sub-blend-d1-opaque-edges",
+        "format": "pdf"
+      }
+    ],
+    "improved_but_failing_partial_vectors": [
+      "lossless-partial-anim-full-blend-d0-clear-edges",
+      "lossless-partial-anim-full-blend-d0-clear-ramp",
+      "lossless-partial-anim-sub-blend-d1-opaque-edges",
+      "lossless-partial-anim-sub-blend-d1-opaque-ramp",
+      "lossy-partial-anim-full-blend-d0-clear-edges",
+      "lossy-partial-anim-full-blend-d0-clear-ramp",
+      "lossy-partial-anim-sub-blend-d1-opaque-edges",
+      "lossy-partial-anim-sub-blend-d1-opaque-ramp"
+    ],
+    "full_corpus_passes": {
+      "svg": 72,
+      "png": 48,
+      "pdf": 48
+    },
+    "residual_cells": 12,
+    "residual_vectors": 24,
+    "exact_failed_views": 72,
+    "tolerance_or_policy_change": false
+  }
+}

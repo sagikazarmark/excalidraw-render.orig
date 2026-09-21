@@ -43929,7 +43929,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -43958,7 +43958,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -43987,7 +43987,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44016,7 +44016,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44045,7 +44045,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44074,7 +44074,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44098,9 +44098,30 @@
     {
       "id": "codec:webp:sample:lossless-binary-anim-full-blend-d0-clear",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
@@ -44111,7 +44132,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44135,9 +44156,30 @@
     {
       "id": "codec:webp:sample:lossless-binary-anim-sub-blend-d1-opaque",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
@@ -44148,7 +44190,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44177,7 +44219,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44206,7 +44248,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44230,9 +44272,30 @@
     {
       "id": "codec:webp:sample:lossless-opaque-anim-full-blend-d0-clear",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
@@ -44243,7 +44306,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44267,25 +44330,88 @@
     {
       "id": "codec:webp:sample:lossless-opaque-anim-sub-blend-d1-opaque",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
       "id": "codec:webp:sample:lossless-opaque-anim-sub-replace-d0-clear",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
       "id": "codec:webp:sample:lossless-opaque-anim-sub-replace-d1-opaque",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
@@ -44296,7 +44422,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44368,9 +44494,30 @@
     {
       "id": "codec:webp:sample:lossy-binary-anim-full-blend-d0-clear",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
@@ -44381,7 +44528,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44405,9 +44552,30 @@
     {
       "id": "codec:webp:sample:lossy-binary-anim-sub-blend-d1-opaque",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
@@ -44418,7 +44586,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44447,7 +44615,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44476,7 +44644,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44505,7 +44673,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44534,7 +44702,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44558,25 +44726,88 @@
     {
       "id": "codec:webp:sample:lossy-opaque-anim-sub-blend-d1-opaque",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
       "id": "codec:webp:sample:lossy-opaque-anim-sub-replace-d0-clear",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
       "id": "codec:webp:sample:lossy-opaque-anim-sub-replace-d1-opaque",
       "disposition": {
-        "status": "gap",
-        "issue": 191,
-        "reason": "Bounded WebP sample/control cell needs independent format gates; first-frame alpha/blend/partial projection failures remain #191."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+          },
+          "binary": "fast",
+          "function": "corrected_composition_cells_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_sample_contract::corrected_composition_cells_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #191 first-ANMF standalone decode onto clear RGBA canvas. Both fixed independent patterns pass unchanged SVG/PNG/PDF sample/composite gates and exact reconstruction/alpha/report/replay invariants. See tests/conformance/proposals/webp191-composition-requalification-v1/. Partial-alpha PNG premultiplication and synthetic PDF projection-boundary decisions remain unqualified; no tolerance or whole-viewer claim."
       }
     },
     {
@@ -44587,7 +44818,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44664,7 +44895,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44693,7 +44924,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44722,7 +44953,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44751,7 +44982,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44780,7 +45011,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "reserved_vp8x_controls_are_accepted_characterization",
           "binary": "fast",
@@ -44809,7 +45040,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "1018b0150686bdcca9a6cd4beedc364c2dc8ce5b0f096e7839e6873ccbed0496"
+            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
           },
           "function": "reserved_vp8x_controls_are_accepted_characterization",
           "binary": "fast",
@@ -48589,16 +48820,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v12",
+            "case": "representative.stage4-frames-text-assets.v13",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+              "sha256": "6ed4769d0a4f590ac6e8e6c512de22552d5caf8a421ce2ab179fa1ae3c88f08a"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
-              "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v13/manifest.json",
+              "sha256": "2d4482a6182ddfcdc6f6a333a38bd02a448a5c8865da9edadb1dbf261c20d1cc"
             },
-            "approval_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+            "approval_subject_sha256": "sha256:520b71395cd48b8768caba6eedadf6c6c40f996a9e0c36019f5ef9dafe62c5f5",
             "command": [
               "cargo",
               "run",
@@ -48609,7 +48840,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v12"
+              "tests/conformance/candidates/stage4-frames-text-assets-v13"
             ]
           }
         },

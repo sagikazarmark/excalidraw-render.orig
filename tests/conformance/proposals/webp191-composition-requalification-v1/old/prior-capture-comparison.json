@@ -1,0 +1,17 @@
+{
+  "approval": null,
+  "base_commit": "dd3389a0e023b105331011e226e5bcc40533a94d",
+  "fresh": {
+    "path": "tests/conformance/proposals/webp191-composition-requalification-v1/old/snapshots/snapshots.json",
+    "byte_length": 435653,
+    "sha256": "34b29db917bc4844cc035c44a99c48708ca63e243927fa3281b2b4cdf0f8e623"
+  },
+  "prior": {
+    "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-current/snapshots/snapshots.json",
+    "byte_length": 468167,
+    "sha256": "3a89973df13bb78a9439bdfa4bb9ce88291fef0b4c3df541aa95f64ba11f5d4f"
+  },
+  "identical_records": 168,
+  "total": 168,
+  "fresh_provenance_not_relabelled": true
+}

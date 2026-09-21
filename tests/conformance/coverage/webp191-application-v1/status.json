@@ -1,0 +1,13 @@
+{
+  "schema": "excalidraw-render/webp191-receipt-transaction/v1",
+  "state": "applied",
+  "attempt_id": "4aa8fb5c27934555a8fd82027c6fa937",
+  "started_at": "2026-09-21T15:09:31.959410+00:00",
+  "production_subject_sha256": "sha256:8c706d759ad01650eb34eac247ca0ba2d61cf3ac101ede290ffd9c398edbc801",
+  "representative_subject_sha256": "sha256:520b71395cd48b8768caba6eedadf6c6c40f996a9e0c36019f5ef9dafe62c5f5",
+  "before_sha256": {
+    "tests/conformance/candidates/stage4-frames-text-assets-v13/manifest.json": "a9d7b0166cb2f1adb224698816dbb99aa941291bd2be90ba362e1ffb57014417",
+    "tests/conformance/candidates/registry.json": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3",
+    "tests/conformance/coverage/ownership.json": "563c61e63c7ada0a38929218f5a8fda1587c60477093525b6078069305e6834d"
+  }
+}
