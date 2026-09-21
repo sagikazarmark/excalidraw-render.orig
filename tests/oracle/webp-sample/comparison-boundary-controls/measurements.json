@@ -1,0 +1,2573 @@
+{
+  "approval": null,
+  "cases": [
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-static-full",
+      "id": "lossless-opaque-static-full-ramp",
+      "independent_pdf_sha256": "127fdce8a714ecf5038e1c0e3ce621cdfd1ef029afeb06a5ec8d0f6bfdd9bb15",
+      "straight_sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-static-full",
+      "id": "lossless-opaque-static-full-edges",
+      "independent_pdf_sha256": "620b38838035b67a909a49620fbcd47565c8e689ff23823255979b9ad291cbde",
+      "straight_sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-full-blend-d0-clear",
+      "id": "lossless-opaque-anim-full-blend-d0-clear-ramp",
+      "independent_pdf_sha256": "127fdce8a714ecf5038e1c0e3ce621cdfd1ef029afeb06a5ec8d0f6bfdd9bb15",
+      "straight_sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-full-blend-d0-clear",
+      "id": "lossless-opaque-anim-full-blend-d0-clear-edges",
+      "independent_pdf_sha256": "620b38838035b67a909a49620fbcd47565c8e689ff23823255979b9ad291cbde",
+      "straight_sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-full-replace-d1-opaque",
+      "id": "lossless-opaque-anim-full-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "127fdce8a714ecf5038e1c0e3ce621cdfd1ef029afeb06a5ec8d0f6bfdd9bb15",
+      "straight_sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-full-replace-d1-opaque",
+      "id": "lossless-opaque-anim-full-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "620b38838035b67a909a49620fbcd47565c8e689ff23823255979b9ad291cbde",
+      "straight_sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-sub-blend-d1-opaque",
+      "id": "lossless-opaque-anim-sub-blend-d1-opaque-ramp",
+      "independent_pdf_sha256": "510c2e91f03472f6680d57e8ffe0630fc0f3bb367e8b56668ba78c52b138301b",
+      "straight_sha256": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-sub-blend-d1-opaque",
+      "id": "lossless-opaque-anim-sub-blend-d1-opaque-edges",
+      "independent_pdf_sha256": "8872074f5151c99591b077750c8c753fcff247d8149c2e004ddd04b8006619a1",
+      "straight_sha256": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-sub-replace-d0-clear",
+      "id": "lossless-opaque-anim-sub-replace-d0-clear-ramp",
+      "independent_pdf_sha256": "510c2e91f03472f6680d57e8ffe0630fc0f3bb367e8b56668ba78c52b138301b",
+      "straight_sha256": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-sub-replace-d0-clear",
+      "id": "lossless-opaque-anim-sub-replace-d0-clear-edges",
+      "independent_pdf_sha256": "8872074f5151c99591b077750c8c753fcff247d8149c2e004ddd04b8006619a1",
+      "straight_sha256": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-sub-replace-d1-opaque",
+      "id": "lossless-opaque-anim-sub-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "510c2e91f03472f6680d57e8ffe0630fc0f3bb367e8b56668ba78c52b138301b",
+      "straight_sha256": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossless-opaque-anim-sub-replace-d1-opaque",
+      "id": "lossless-opaque-anim-sub-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "8872074f5151c99591b077750c8c753fcff247d8149c2e004ddd04b8006619a1",
+      "straight_sha256": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-static-full",
+      "id": "lossless-partial-static-full-ramp",
+      "independent_pdf_sha256": "281f74b6585442294150cd5b8618026f057c878b515a277b89828f6ec3e36473",
+      "straight_sha256": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "5994218cbf87b80f44f5b9d65e2dc83a4618be4f6c901a22d159f5844e1a4ebe",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-static-full",
+      "id": "lossless-partial-static-full-edges",
+      "independent_pdf_sha256": "76f28399144ddea159120d6e2a5f12454787ab16e2d634f625b6b5d19e963ec4",
+      "straight_sha256": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+          "alpha_equal": true,
+          "black_differing_pixels": 39,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "fa2d47341bfb661738ca8e1c57dd8f16c05ee1e76a55509c018e8e23c183d6d5",
+          "alpha_equal": true,
+          "black_differing_pixels": 39,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-full-blend-d0-clear",
+      "id": "lossless-partial-anim-full-blend-d0-clear-ramp",
+      "independent_pdf_sha256": "281f74b6585442294150cd5b8618026f057c878b515a277b89828f6ec3e36473",
+      "straight_sha256": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "5994218cbf87b80f44f5b9d65e2dc83a4618be4f6c901a22d159f5844e1a4ebe",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-full-blend-d0-clear",
+      "id": "lossless-partial-anim-full-blend-d0-clear-edges",
+      "independent_pdf_sha256": "76f28399144ddea159120d6e2a5f12454787ab16e2d634f625b6b5d19e963ec4",
+      "straight_sha256": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+          "alpha_equal": true,
+          "black_differing_pixels": 39,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "fa2d47341bfb661738ca8e1c57dd8f16c05ee1e76a55509c018e8e23c183d6d5",
+          "alpha_equal": true,
+          "black_differing_pixels": 39,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-full-replace-d1-opaque",
+      "id": "lossless-partial-anim-full-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "281f74b6585442294150cd5b8618026f057c878b515a277b89828f6ec3e36473",
+      "straight_sha256": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "5994218cbf87b80f44f5b9d65e2dc83a4618be4f6c901a22d159f5844e1a4ebe",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-full-replace-d1-opaque",
+      "id": "lossless-partial-anim-full-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "76f28399144ddea159120d6e2a5f12454787ab16e2d634f625b6b5d19e963ec4",
+      "straight_sha256": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+          "alpha_equal": true,
+          "black_differing_pixels": 39,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "fa2d47341bfb661738ca8e1c57dd8f16c05ee1e76a55509c018e8e23c183d6d5",
+          "alpha_equal": true,
+          "black_differing_pixels": 39,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-sub-blend-d1-opaque",
+      "id": "lossless-partial-anim-sub-blend-d1-opaque-ramp",
+      "independent_pdf_sha256": "d34b398f66a6fd03db6a0760021aa6fc5b0d860ca161193a6d90e64a87e38a32",
+      "straight_sha256": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "e8129e179fcf703d3ea96876e975f1f64bc628b69f683bbc83c3870bf21d414c",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-sub-blend-d1-opaque",
+      "id": "lossless-partial-anim-sub-blend-d1-opaque-edges",
+      "independent_pdf_sha256": "0955b36dc45e2ef63cc9231c609e5c7693751a32682e6cd90e25da391d9a2299",
+      "straight_sha256": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+          "alpha_equal": true,
+          "black_differing_pixels": 11,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "b283b6884725794fc273f121a25ee23b923e1e764c2c5f59d673f6259f7d3fb6",
+          "alpha_equal": true,
+          "black_differing_pixels": 11,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-sub-replace-d0-clear",
+      "id": "lossless-partial-anim-sub-replace-d0-clear-ramp",
+      "independent_pdf_sha256": "d34b398f66a6fd03db6a0760021aa6fc5b0d860ca161193a6d90e64a87e38a32",
+      "straight_sha256": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "e8129e179fcf703d3ea96876e975f1f64bc628b69f683bbc83c3870bf21d414c",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-sub-replace-d0-clear",
+      "id": "lossless-partial-anim-sub-replace-d0-clear-edges",
+      "independent_pdf_sha256": "0955b36dc45e2ef63cc9231c609e5c7693751a32682e6cd90e25da391d9a2299",
+      "straight_sha256": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+          "alpha_equal": true,
+          "black_differing_pixels": 11,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "b283b6884725794fc273f121a25ee23b923e1e764c2c5f59d673f6259f7d3fb6",
+          "alpha_equal": true,
+          "black_differing_pixels": 11,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-sub-replace-d1-opaque",
+      "id": "lossless-partial-anim-sub-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "d34b398f66a6fd03db6a0760021aa6fc5b0d860ca161193a6d90e64a87e38a32",
+      "straight_sha256": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "e8129e179fcf703d3ea96876e975f1f64bc628b69f683bbc83c3870bf21d414c",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossless-partial-anim-sub-replace-d1-opaque",
+      "id": "lossless-partial-anim-sub-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "0955b36dc45e2ef63cc9231c609e5c7693751a32682e6cd90e25da391d9a2299",
+      "straight_sha256": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+          "alpha_equal": true,
+          "black_differing_pixels": 11,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "b283b6884725794fc273f121a25ee23b923e1e764c2c5f59d673f6259f7d3fb6",
+          "alpha_equal": true,
+          "black_differing_pixels": 11,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-static-full",
+      "id": "lossless-binary-static-full-ramp",
+      "independent_pdf_sha256": "f3c369a200b9a566cfaca3b00e9ba2a29f620fb74ec823df3cd70bbe0ea1f886",
+      "straight_sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-static-full",
+      "id": "lossless-binary-static-full-edges",
+      "independent_pdf_sha256": "93f3c597ab593fdfb8bda5b8eadcd4710a92bebcd25bbab2974190b8c54e62e0",
+      "straight_sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-full-blend-d0-clear",
+      "id": "lossless-binary-anim-full-blend-d0-clear-ramp",
+      "independent_pdf_sha256": "f3c369a200b9a566cfaca3b00e9ba2a29f620fb74ec823df3cd70bbe0ea1f886",
+      "straight_sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-full-blend-d0-clear",
+      "id": "lossless-binary-anim-full-blend-d0-clear-edges",
+      "independent_pdf_sha256": "93f3c597ab593fdfb8bda5b8eadcd4710a92bebcd25bbab2974190b8c54e62e0",
+      "straight_sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-full-replace-d1-opaque",
+      "id": "lossless-binary-anim-full-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "f3c369a200b9a566cfaca3b00e9ba2a29f620fb74ec823df3cd70bbe0ea1f886",
+      "straight_sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-full-replace-d1-opaque",
+      "id": "lossless-binary-anim-full-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "93f3c597ab593fdfb8bda5b8eadcd4710a92bebcd25bbab2974190b8c54e62e0",
+      "straight_sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-sub-blend-d1-opaque",
+      "id": "lossless-binary-anim-sub-blend-d1-opaque-ramp",
+      "independent_pdf_sha256": "be322aee89c0302a0e80ef864596467789d1cbdd03c25d05e928c4b6f9b2758d",
+      "straight_sha256": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-sub-blend-d1-opaque",
+      "id": "lossless-binary-anim-sub-blend-d1-opaque-edges",
+      "independent_pdf_sha256": "157b7ec7b2027c072fdcb0d45eee6bb1c483b2c7dd051170d497a4d94bb8e9e2",
+      "straight_sha256": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-sub-replace-d0-clear",
+      "id": "lossless-binary-anim-sub-replace-d0-clear-ramp",
+      "independent_pdf_sha256": "be322aee89c0302a0e80ef864596467789d1cbdd03c25d05e928c4b6f9b2758d",
+      "straight_sha256": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-sub-replace-d0-clear",
+      "id": "lossless-binary-anim-sub-replace-d0-clear-edges",
+      "independent_pdf_sha256": "157b7ec7b2027c072fdcb0d45eee6bb1c483b2c7dd051170d497a4d94bb8e9e2",
+      "straight_sha256": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-sub-replace-d1-opaque",
+      "id": "lossless-binary-anim-sub-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "be322aee89c0302a0e80ef864596467789d1cbdd03c25d05e928c4b6f9b2758d",
+      "straight_sha256": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossless-binary-anim-sub-replace-d1-opaque",
+      "id": "lossless-binary-anim-sub-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "157b7ec7b2027c072fdcb0d45eee6bb1c483b2c7dd051170d497a4d94bb8e9e2",
+      "straight_sha256": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-static-full",
+      "id": "lossy-opaque-static-full-ramp",
+      "independent_pdf_sha256": "963b1238795534b48b60bbca70ef115fe4b624d12dd8c9ba36832155965fbc64",
+      "straight_sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-static-full",
+      "id": "lossy-opaque-static-full-edges",
+      "independent_pdf_sha256": "71825b98cbe7d4134041411db88cb854dca26387169cefae3dfbb99e784ba086",
+      "straight_sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-full-blend-d0-clear",
+      "id": "lossy-opaque-anim-full-blend-d0-clear-ramp",
+      "independent_pdf_sha256": "963b1238795534b48b60bbca70ef115fe4b624d12dd8c9ba36832155965fbc64",
+      "straight_sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-full-blend-d0-clear",
+      "id": "lossy-opaque-anim-full-blend-d0-clear-edges",
+      "independent_pdf_sha256": "71825b98cbe7d4134041411db88cb854dca26387169cefae3dfbb99e784ba086",
+      "straight_sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-full-replace-d1-opaque",
+      "id": "lossy-opaque-anim-full-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "963b1238795534b48b60bbca70ef115fe4b624d12dd8c9ba36832155965fbc64",
+      "straight_sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-full-replace-d1-opaque",
+      "id": "lossy-opaque-anim-full-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "71825b98cbe7d4134041411db88cb854dca26387169cefae3dfbb99e784ba086",
+      "straight_sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-sub-blend-d1-opaque",
+      "id": "lossy-opaque-anim-sub-blend-d1-opaque-ramp",
+      "independent_pdf_sha256": "af8a3666c5bb3347471e7f73f58b199e6179702e470b1eca6f63d28ac874b5ba",
+      "straight_sha256": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-sub-blend-d1-opaque",
+      "id": "lossy-opaque-anim-sub-blend-d1-opaque-edges",
+      "independent_pdf_sha256": "9a5a2b0c31465168681ca5448de23704461823d193fba3c3d88b5d0286d574de",
+      "straight_sha256": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-sub-replace-d0-clear",
+      "id": "lossy-opaque-anim-sub-replace-d0-clear-ramp",
+      "independent_pdf_sha256": "af8a3666c5bb3347471e7f73f58b199e6179702e470b1eca6f63d28ac874b5ba",
+      "straight_sha256": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-sub-replace-d0-clear",
+      "id": "lossy-opaque-anim-sub-replace-d0-clear-edges",
+      "independent_pdf_sha256": "9a5a2b0c31465168681ca5448de23704461823d193fba3c3d88b5d0286d574de",
+      "straight_sha256": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-sub-replace-d1-opaque",
+      "id": "lossy-opaque-anim-sub-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "af8a3666c5bb3347471e7f73f58b199e6179702e470b1eca6f63d28ac874b5ba",
+      "straight_sha256": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "opaque",
+      "cell": "lossy-opaque-anim-sub-replace-d1-opaque",
+      "id": "lossy-opaque-anim-sub-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "9a5a2b0c31465168681ca5448de23704461823d193fba3c3d88b5d0286d574de",
+      "straight_sha256": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-static-full",
+      "id": "lossy-partial-static-full-ramp",
+      "independent_pdf_sha256": "4c8c8a8a2a763a8193a6607727a25b86e967e48397b42440dd47624f2ad82164",
+      "straight_sha256": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "1d6866722d1a78424ed55fb3c0026201d0d08551d2a5b0c8d1a874418c636030",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-static-full",
+      "id": "lossy-partial-static-full-edges",
+      "independent_pdf_sha256": "b12cd5ed212b375c85ed454b3b205e4363914d287aa53fe476fddad757ad35f7",
+      "straight_sha256": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+          "alpha_equal": true,
+          "black_differing_pixels": 43,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "6b7353df5b87340a73f795a1835a1747fbbbeaa97c647e71d16e3a6000499ee1",
+          "alpha_equal": true,
+          "black_differing_pixels": 43,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-full-blend-d0-clear",
+      "id": "lossy-partial-anim-full-blend-d0-clear-ramp",
+      "independent_pdf_sha256": "4c8c8a8a2a763a8193a6607727a25b86e967e48397b42440dd47624f2ad82164",
+      "straight_sha256": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "1d6866722d1a78424ed55fb3c0026201d0d08551d2a5b0c8d1a874418c636030",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-full-blend-d0-clear",
+      "id": "lossy-partial-anim-full-blend-d0-clear-edges",
+      "independent_pdf_sha256": "b12cd5ed212b375c85ed454b3b205e4363914d287aa53fe476fddad757ad35f7",
+      "straight_sha256": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+          "alpha_equal": true,
+          "black_differing_pixels": 43,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "6b7353df5b87340a73f795a1835a1747fbbbeaa97c647e71d16e3a6000499ee1",
+          "alpha_equal": true,
+          "black_differing_pixels": 43,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-full-replace-d1-opaque",
+      "id": "lossy-partial-anim-full-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "4c8c8a8a2a763a8193a6607727a25b86e967e48397b42440dd47624f2ad82164",
+      "straight_sha256": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "1d6866722d1a78424ed55fb3c0026201d0d08551d2a5b0c8d1a874418c636030",
+          "alpha_equal": true,
+          "black_differing_pixels": 37,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-full-replace-d1-opaque",
+      "id": "lossy-partial-anim-full-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "b12cd5ed212b375c85ed454b3b205e4363914d287aa53fe476fddad757ad35f7",
+      "straight_sha256": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+          "alpha_equal": true,
+          "black_differing_pixels": 43,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "6b7353df5b87340a73f795a1835a1747fbbbeaa97c647e71d16e3a6000499ee1",
+          "alpha_equal": true,
+          "black_differing_pixels": 43,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-sub-blend-d1-opaque",
+      "id": "lossy-partial-anim-sub-blend-d1-opaque-ramp",
+      "independent_pdf_sha256": "272e3cdc8a377b98b4289cdd7638f3450de44d8d18afab7ef018454592e501ec",
+      "straight_sha256": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+          "alpha_equal": true,
+          "black_differing_pixels": 6,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "4c62598b5765eae33d3eff734ca5e1f0a496d74b5b92d2525bbebe87d3188b32",
+          "alpha_equal": true,
+          "black_differing_pixels": 6,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-sub-blend-d1-opaque",
+      "id": "lossy-partial-anim-sub-blend-d1-opaque-edges",
+      "independent_pdf_sha256": "770d27539e324e74d13788ee5e86944bd1cc099ca03bae53f42afbc96c35c5aa",
+      "straight_sha256": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "436c708e340572f1d30013882629bf2b2d84f71b092a501d5345a2b9ff8f08e2",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-sub-replace-d0-clear",
+      "id": "lossy-partial-anim-sub-replace-d0-clear-ramp",
+      "independent_pdf_sha256": "272e3cdc8a377b98b4289cdd7638f3450de44d8d18afab7ef018454592e501ec",
+      "straight_sha256": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+          "alpha_equal": true,
+          "black_differing_pixels": 6,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "4c62598b5765eae33d3eff734ca5e1f0a496d74b5b92d2525bbebe87d3188b32",
+          "alpha_equal": true,
+          "black_differing_pixels": 6,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-sub-replace-d0-clear",
+      "id": "lossy-partial-anim-sub-replace-d0-clear-edges",
+      "independent_pdf_sha256": "770d27539e324e74d13788ee5e86944bd1cc099ca03bae53f42afbc96c35c5aa",
+      "straight_sha256": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "436c708e340572f1d30013882629bf2b2d84f71b092a501d5345a2b9ff8f08e2",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-sub-replace-d1-opaque",
+      "id": "lossy-partial-anim-sub-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "272e3cdc8a377b98b4289cdd7638f3450de44d8d18afab7ef018454592e501ec",
+      "straight_sha256": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+          "alpha_equal": true,
+          "black_differing_pixels": 6,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "4c62598b5765eae33d3eff734ca5e1f0a496d74b5b92d2525bbebe87d3188b32",
+          "alpha_equal": true,
+          "black_differing_pixels": 6,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "partial",
+      "cell": "lossy-partial-anim-sub-replace-d1-opaque",
+      "id": "lossy-partial-anim-sub-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "770d27539e324e74d13788ee5e86944bd1cc099ca03bae53f42afbc96c35c5aa",
+      "straight_sha256": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        },
+        "pdfjs": {
+          "actual_sha256": "436c708e340572f1d30013882629bf2b2d84f71b092a501d5345a2b9ff8f08e2",
+          "alpha_equal": true,
+          "black_differing_pixels": 10,
+          "black_max_channel_delta": 1,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": false
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-static-full",
+      "id": "lossy-binary-static-full-ramp",
+      "independent_pdf_sha256": "c2d75466268f5db42adfe7bdb6141368e96419d610932c66618434a6c50d8407",
+      "straight_sha256": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-static-full",
+      "id": "lossy-binary-static-full-edges",
+      "independent_pdf_sha256": "7d34960fcc2c1ea9ec4dd2ce1b2a20343e717b91b4efc3682b23cc23ef754932",
+      "straight_sha256": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-full-blend-d0-clear",
+      "id": "lossy-binary-anim-full-blend-d0-clear-ramp",
+      "independent_pdf_sha256": "c2d75466268f5db42adfe7bdb6141368e96419d610932c66618434a6c50d8407",
+      "straight_sha256": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-full-blend-d0-clear",
+      "id": "lossy-binary-anim-full-blend-d0-clear-edges",
+      "independent_pdf_sha256": "7d34960fcc2c1ea9ec4dd2ce1b2a20343e717b91b4efc3682b23cc23ef754932",
+      "straight_sha256": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-full-replace-d1-opaque",
+      "id": "lossy-binary-anim-full-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "c2d75466268f5db42adfe7bdb6141368e96419d610932c66618434a6c50d8407",
+      "straight_sha256": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-full-replace-d1-opaque",
+      "id": "lossy-binary-anim-full-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "7d34960fcc2c1ea9ec4dd2ce1b2a20343e717b91b4efc3682b23cc23ef754932",
+      "straight_sha256": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-sub-blend-d1-opaque",
+      "id": "lossy-binary-anim-sub-blend-d1-opaque-ramp",
+      "independent_pdf_sha256": "2752047e69bde93be08b13302f710b12d72a26e5b04f49644bda13347e7aefb9",
+      "straight_sha256": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-sub-blend-d1-opaque",
+      "id": "lossy-binary-anim-sub-blend-d1-opaque-edges",
+      "independent_pdf_sha256": "d4cfb2980ec0900748d0f905e9978849028211eeeff937794faf53aa497e8bab",
+      "straight_sha256": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-sub-replace-d0-clear",
+      "id": "lossy-binary-anim-sub-replace-d0-clear-ramp",
+      "independent_pdf_sha256": "2752047e69bde93be08b13302f710b12d72a26e5b04f49644bda13347e7aefb9",
+      "straight_sha256": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-sub-replace-d0-clear",
+      "id": "lossy-binary-anim-sub-replace-d0-clear-edges",
+      "independent_pdf_sha256": "d4cfb2980ec0900748d0f905e9978849028211eeeff937794faf53aa497e8bab",
+      "straight_sha256": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-sub-replace-d1-opaque",
+      "id": "lossy-binary-anim-sub-replace-d1-opaque-ramp",
+      "independent_pdf_sha256": "2752047e69bde93be08b13302f710b12d72a26e5b04f49644bda13347e7aefb9",
+      "straight_sha256": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    },
+    {
+      "alpha": "binary",
+      "cell": "lossy-binary-anim-sub-replace-d1-opaque",
+      "id": "lossy-binary-anim-sub-replace-d1-opaque-edges",
+      "independent_pdf_sha256": "d4cfb2980ec0900748d0f905e9978849028211eeeff937794faf53aa497e8bab",
+      "straight_sha256": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+      "viewers": {
+        "pdfium": {
+          "actual_sha256": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        },
+        "pdfjs": {
+          "actual_sha256": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+          "alpha_equal": true,
+          "black_differing_pixels": 0,
+          "black_max_channel_delta": 0,
+          "independent_equals_production": true,
+          "small_artifact_exact_views_pass": true
+        }
+      }
+    }
+  ],
+  "files": {
+    "lossless-binary-anim-full-blend-d0-clear-edges/external-straight.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-blend-d0-clear-edges/independent.pdf": "93f3c597ab593fdfb8bda5b8eadcd4710a92bebcd25bbab2974190b8c54e62e0",
+    "lossless-binary-anim-full-blend-d0-clear-edges/pdfium-0.json": "fa75d363830873973ab0ad6bca0b0ff07b30cbf11ae7b10abe2cd391631459a3",
+    "lossless-binary-anim-full-blend-d0-clear-edges/pdfium-0.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-blend-d0-clear-edges/pdfium-1.json": "fa75d363830873973ab0ad6bca0b0ff07b30cbf11ae7b10abe2cd391631459a3",
+    "lossless-binary-anim-full-blend-d0-clear-edges/pdfium-1.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-blend-d0-clear-edges/pdfjs-0.json": "8255a9133f90476f9eee25f3ae1c66641bd097f51379b1a261647707918e6dea",
+    "lossless-binary-anim-full-blend-d0-clear-edges/pdfjs-0.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-blend-d0-clear-edges/pdfjs-1.json": "8255a9133f90476f9eee25f3ae1c66641bd097f51379b1a261647707918e6dea",
+    "lossless-binary-anim-full-blend-d0-clear-edges/pdfjs-1.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/external-straight.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/independent.pdf": "f3c369a200b9a566cfaca3b00e9ba2a29f620fb74ec823df3cd70bbe0ea1f886",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/pdfium-0.json": "e70a37e79d735a9bbb1f115c02357541e8997427c4758a99d870583bcba9df48",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/pdfium-0.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/pdfium-1.json": "e70a37e79d735a9bbb1f115c02357541e8997427c4758a99d870583bcba9df48",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/pdfium-1.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/pdfjs-0.json": "aa47d56da0e5c98b1960001630f7386ce0e716ecc129b29efb95d0490f349d03",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/pdfjs-0.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/pdfjs-1.json": "aa47d56da0e5c98b1960001630f7386ce0e716ecc129b29efb95d0490f349d03",
+    "lossless-binary-anim-full-blend-d0-clear-ramp/pdfjs-1.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/external-straight.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/independent.pdf": "93f3c597ab593fdfb8bda5b8eadcd4710a92bebcd25bbab2974190b8c54e62e0",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/pdfium-0.json": "fa75d363830873973ab0ad6bca0b0ff07b30cbf11ae7b10abe2cd391631459a3",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/pdfium-0.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/pdfium-1.json": "fa75d363830873973ab0ad6bca0b0ff07b30cbf11ae7b10abe2cd391631459a3",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/pdfium-1.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/pdfjs-0.json": "8255a9133f90476f9eee25f3ae1c66641bd097f51379b1a261647707918e6dea",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/pdfjs-0.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/pdfjs-1.json": "8255a9133f90476f9eee25f3ae1c66641bd097f51379b1a261647707918e6dea",
+    "lossless-binary-anim-full-replace-d1-opaque-edges/pdfjs-1.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/external-straight.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/independent.pdf": "f3c369a200b9a566cfaca3b00e9ba2a29f620fb74ec823df3cd70bbe0ea1f886",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/pdfium-0.json": "e70a37e79d735a9bbb1f115c02357541e8997427c4758a99d870583bcba9df48",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/pdfium-0.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/pdfium-1.json": "e70a37e79d735a9bbb1f115c02357541e8997427c4758a99d870583bcba9df48",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/pdfium-1.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/pdfjs-0.json": "aa47d56da0e5c98b1960001630f7386ce0e716ecc129b29efb95d0490f349d03",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/pdfjs-0.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/pdfjs-1.json": "aa47d56da0e5c98b1960001630f7386ce0e716ecc129b29efb95d0490f349d03",
+    "lossless-binary-anim-full-replace-d1-opaque-ramp/pdfjs-1.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/external-straight.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/independent.pdf": "157b7ec7b2027c072fdcb0d45eee6bb1c483b2c7dd051170d497a4d94bb8e9e2",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/pdfium-0.json": "4a58e284e71e0b65ba37b395d2d5a3e48bc1be47bb7cf7ffd610fec8506c679a",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/pdfium-0.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/pdfium-1.json": "4a58e284e71e0b65ba37b395d2d5a3e48bc1be47bb7cf7ffd610fec8506c679a",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/pdfium-1.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/pdfjs-0.json": "d58df858f59055c3c89ad7b999bed0b202d36a10de1c8a71ad1b58248b1c5521",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/pdfjs-0.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/pdfjs-1.json": "d58df858f59055c3c89ad7b999bed0b202d36a10de1c8a71ad1b58248b1c5521",
+    "lossless-binary-anim-sub-blend-d1-opaque-edges/pdfjs-1.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/external-straight.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/independent.pdf": "be322aee89c0302a0e80ef864596467789d1cbdd03c25d05e928c4b6f9b2758d",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/pdfium-0.json": "f7f80f787ad3fbb417d463db8ceb1af6503e8f0146c28bb0aef374b0e7cd4a99",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/pdfium-0.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/pdfium-1.json": "f7f80f787ad3fbb417d463db8ceb1af6503e8f0146c28bb0aef374b0e7cd4a99",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/pdfium-1.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/pdfjs-0.json": "365c98b743d9a0277e51dcf8516350ff77907e0ce8710654953542c375d0c9bd",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/pdfjs-0.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/pdfjs-1.json": "365c98b743d9a0277e51dcf8516350ff77907e0ce8710654953542c375d0c9bd",
+    "lossless-binary-anim-sub-blend-d1-opaque-ramp/pdfjs-1.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/external-straight.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/independent.pdf": "157b7ec7b2027c072fdcb0d45eee6bb1c483b2c7dd051170d497a4d94bb8e9e2",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/pdfium-0.json": "4a58e284e71e0b65ba37b395d2d5a3e48bc1be47bb7cf7ffd610fec8506c679a",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/pdfium-0.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/pdfium-1.json": "4a58e284e71e0b65ba37b395d2d5a3e48bc1be47bb7cf7ffd610fec8506c679a",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/pdfium-1.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/pdfjs-0.json": "d58df858f59055c3c89ad7b999bed0b202d36a10de1c8a71ad1b58248b1c5521",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/pdfjs-0.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/pdfjs-1.json": "d58df858f59055c3c89ad7b999bed0b202d36a10de1c8a71ad1b58248b1c5521",
+    "lossless-binary-anim-sub-replace-d0-clear-edges/pdfjs-1.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/external-straight.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/independent.pdf": "be322aee89c0302a0e80ef864596467789d1cbdd03c25d05e928c4b6f9b2758d",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/pdfium-0.json": "f7f80f787ad3fbb417d463db8ceb1af6503e8f0146c28bb0aef374b0e7cd4a99",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/pdfium-0.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/pdfium-1.json": "f7f80f787ad3fbb417d463db8ceb1af6503e8f0146c28bb0aef374b0e7cd4a99",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/pdfium-1.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/pdfjs-0.json": "365c98b743d9a0277e51dcf8516350ff77907e0ce8710654953542c375d0c9bd",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/pdfjs-0.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/pdfjs-1.json": "365c98b743d9a0277e51dcf8516350ff77907e0ce8710654953542c375d0c9bd",
+    "lossless-binary-anim-sub-replace-d0-clear-ramp/pdfjs-1.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/external-straight.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/independent.pdf": "157b7ec7b2027c072fdcb0d45eee6bb1c483b2c7dd051170d497a4d94bb8e9e2",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/pdfium-0.json": "4a58e284e71e0b65ba37b395d2d5a3e48bc1be47bb7cf7ffd610fec8506c679a",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/pdfium-0.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/pdfium-1.json": "4a58e284e71e0b65ba37b395d2d5a3e48bc1be47bb7cf7ffd610fec8506c679a",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/pdfium-1.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/pdfjs-0.json": "d58df858f59055c3c89ad7b999bed0b202d36a10de1c8a71ad1b58248b1c5521",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/pdfjs-0.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/pdfjs-1.json": "d58df858f59055c3c89ad7b999bed0b202d36a10de1c8a71ad1b58248b1c5521",
+    "lossless-binary-anim-sub-replace-d1-opaque-edges/pdfjs-1.rgba": "fe7a7e7da9643859d88588c746fb8c15d00caddaf3c1c5471a14c1fed73b53ae",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/external-straight.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/independent.pdf": "be322aee89c0302a0e80ef864596467789d1cbdd03c25d05e928c4b6f9b2758d",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/pdfium-0.json": "f7f80f787ad3fbb417d463db8ceb1af6503e8f0146c28bb0aef374b0e7cd4a99",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/pdfium-0.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/pdfium-1.json": "f7f80f787ad3fbb417d463db8ceb1af6503e8f0146c28bb0aef374b0e7cd4a99",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/pdfium-1.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/pdfjs-0.json": "365c98b743d9a0277e51dcf8516350ff77907e0ce8710654953542c375d0c9bd",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/pdfjs-0.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/pdfjs-1.json": "365c98b743d9a0277e51dcf8516350ff77907e0ce8710654953542c375d0c9bd",
+    "lossless-binary-anim-sub-replace-d1-opaque-ramp/pdfjs-1.rgba": "d9e109a0efff026882a67002bc3674d8e66affb1a7e67875d68abdcbd29759e9",
+    "lossless-binary-static-full-edges/external-straight.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-static-full-edges/independent.pdf": "93f3c597ab593fdfb8bda5b8eadcd4710a92bebcd25bbab2974190b8c54e62e0",
+    "lossless-binary-static-full-edges/pdfium-0.json": "fa75d363830873973ab0ad6bca0b0ff07b30cbf11ae7b10abe2cd391631459a3",
+    "lossless-binary-static-full-edges/pdfium-0.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-static-full-edges/pdfium-1.json": "fa75d363830873973ab0ad6bca0b0ff07b30cbf11ae7b10abe2cd391631459a3",
+    "lossless-binary-static-full-edges/pdfium-1.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-static-full-edges/pdfjs-0.json": "8255a9133f90476f9eee25f3ae1c66641bd097f51379b1a261647707918e6dea",
+    "lossless-binary-static-full-edges/pdfjs-0.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-static-full-edges/pdfjs-1.json": "8255a9133f90476f9eee25f3ae1c66641bd097f51379b1a261647707918e6dea",
+    "lossless-binary-static-full-edges/pdfjs-1.rgba": "43b559a46db3edba8576116863a32ddd5ae4b86a5966514a94e358c82b729311",
+    "lossless-binary-static-full-ramp/external-straight.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-static-full-ramp/independent.pdf": "f3c369a200b9a566cfaca3b00e9ba2a29f620fb74ec823df3cd70bbe0ea1f886",
+    "lossless-binary-static-full-ramp/pdfium-0.json": "e70a37e79d735a9bbb1f115c02357541e8997427c4758a99d870583bcba9df48",
+    "lossless-binary-static-full-ramp/pdfium-0.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-static-full-ramp/pdfium-1.json": "e70a37e79d735a9bbb1f115c02357541e8997427c4758a99d870583bcba9df48",
+    "lossless-binary-static-full-ramp/pdfium-1.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-static-full-ramp/pdfjs-0.json": "aa47d56da0e5c98b1960001630f7386ce0e716ecc129b29efb95d0490f349d03",
+    "lossless-binary-static-full-ramp/pdfjs-0.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-binary-static-full-ramp/pdfjs-1.json": "aa47d56da0e5c98b1960001630f7386ce0e716ecc129b29efb95d0490f349d03",
+    "lossless-binary-static-full-ramp/pdfjs-1.rgba": "606d3b4b138cae4f9107a4be21fad58ab18369832dc38d015f50c58f11b57359",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/external-straight.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/independent.pdf": "620b38838035b67a909a49620fbcd47565c8e689ff23823255979b9ad291cbde",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/pdfium-0.json": "4f91c251cb96e28222404b90dae4be0fdae41c98e652a12ff199ae4805af86a1",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/pdfium-0.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/pdfium-1.json": "4f91c251cb96e28222404b90dae4be0fdae41c98e652a12ff199ae4805af86a1",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/pdfium-1.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/pdfjs-0.json": "5a30d09bf5dfdb6114e7279ea435aeba90e39365d84e765926cba02ffa3da892",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/pdfjs-0.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/pdfjs-1.json": "5a30d09bf5dfdb6114e7279ea435aeba90e39365d84e765926cba02ffa3da892",
+    "lossless-opaque-anim-full-blend-d0-clear-edges/pdfjs-1.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/external-straight.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/independent.pdf": "127fdce8a714ecf5038e1c0e3ce621cdfd1ef029afeb06a5ec8d0f6bfdd9bb15",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/pdfium-0.json": "076bbdac8ffe45ab4f816415bf6fd57139628dd5c86574e1e01eef45c5b76e7c",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/pdfium-0.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/pdfium-1.json": "076bbdac8ffe45ab4f816415bf6fd57139628dd5c86574e1e01eef45c5b76e7c",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/pdfium-1.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/pdfjs-0.json": "15500586f193dc7abe18bd693684082669831dbd1734d0177ddd3848744eb95b",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/pdfjs-0.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/pdfjs-1.json": "15500586f193dc7abe18bd693684082669831dbd1734d0177ddd3848744eb95b",
+    "lossless-opaque-anim-full-blend-d0-clear-ramp/pdfjs-1.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/external-straight.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/independent.pdf": "620b38838035b67a909a49620fbcd47565c8e689ff23823255979b9ad291cbde",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/pdfium-0.json": "4f91c251cb96e28222404b90dae4be0fdae41c98e652a12ff199ae4805af86a1",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/pdfium-0.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/pdfium-1.json": "4f91c251cb96e28222404b90dae4be0fdae41c98e652a12ff199ae4805af86a1",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/pdfium-1.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/pdfjs-0.json": "5a30d09bf5dfdb6114e7279ea435aeba90e39365d84e765926cba02ffa3da892",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/pdfjs-0.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/pdfjs-1.json": "5a30d09bf5dfdb6114e7279ea435aeba90e39365d84e765926cba02ffa3da892",
+    "lossless-opaque-anim-full-replace-d1-opaque-edges/pdfjs-1.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/external-straight.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/independent.pdf": "127fdce8a714ecf5038e1c0e3ce621cdfd1ef029afeb06a5ec8d0f6bfdd9bb15",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/pdfium-0.json": "076bbdac8ffe45ab4f816415bf6fd57139628dd5c86574e1e01eef45c5b76e7c",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/pdfium-0.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/pdfium-1.json": "076bbdac8ffe45ab4f816415bf6fd57139628dd5c86574e1e01eef45c5b76e7c",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/pdfium-1.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/pdfjs-0.json": "15500586f193dc7abe18bd693684082669831dbd1734d0177ddd3848744eb95b",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/pdfjs-0.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/pdfjs-1.json": "15500586f193dc7abe18bd693684082669831dbd1734d0177ddd3848744eb95b",
+    "lossless-opaque-anim-full-replace-d1-opaque-ramp/pdfjs-1.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/external-straight.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/independent.pdf": "8872074f5151c99591b077750c8c753fcff247d8149c2e004ddd04b8006619a1",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/pdfium-0.json": "b4b4042b3a9ee8806182e349cf69605860c7098f6203e4cf2ac14ef1cbf3ce07",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/pdfium-0.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/pdfium-1.json": "b4b4042b3a9ee8806182e349cf69605860c7098f6203e4cf2ac14ef1cbf3ce07",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/pdfium-1.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/pdfjs-0.json": "f40ae1b945675b4bdf454135a5d2384547a1299a7cd7196905a8c147d5be83c5",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/pdfjs-0.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/pdfjs-1.json": "f40ae1b945675b4bdf454135a5d2384547a1299a7cd7196905a8c147d5be83c5",
+    "lossless-opaque-anim-sub-blend-d1-opaque-edges/pdfjs-1.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/external-straight.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/independent.pdf": "510c2e91f03472f6680d57e8ffe0630fc0f3bb367e8b56668ba78c52b138301b",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/pdfium-0.json": "fde82f3a092c6e7cb3f989f1bb93bbd18edaf7aa9c77fe948135b310a35ced29",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/pdfium-0.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/pdfium-1.json": "fde82f3a092c6e7cb3f989f1bb93bbd18edaf7aa9c77fe948135b310a35ced29",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/pdfium-1.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/pdfjs-0.json": "d2d6e1887b5cd9a72f30df7a362f24c4d08a7e37c755e06a3ed1dd013acfc7d3",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/pdfjs-0.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/pdfjs-1.json": "d2d6e1887b5cd9a72f30df7a362f24c4d08a7e37c755e06a3ed1dd013acfc7d3",
+    "lossless-opaque-anim-sub-blend-d1-opaque-ramp/pdfjs-1.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/external-straight.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/independent.pdf": "8872074f5151c99591b077750c8c753fcff247d8149c2e004ddd04b8006619a1",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/pdfium-0.json": "b4b4042b3a9ee8806182e349cf69605860c7098f6203e4cf2ac14ef1cbf3ce07",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/pdfium-0.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/pdfium-1.json": "b4b4042b3a9ee8806182e349cf69605860c7098f6203e4cf2ac14ef1cbf3ce07",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/pdfium-1.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/pdfjs-0.json": "f40ae1b945675b4bdf454135a5d2384547a1299a7cd7196905a8c147d5be83c5",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/pdfjs-0.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/pdfjs-1.json": "f40ae1b945675b4bdf454135a5d2384547a1299a7cd7196905a8c147d5be83c5",
+    "lossless-opaque-anim-sub-replace-d0-clear-edges/pdfjs-1.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/external-straight.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/independent.pdf": "510c2e91f03472f6680d57e8ffe0630fc0f3bb367e8b56668ba78c52b138301b",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/pdfium-0.json": "fde82f3a092c6e7cb3f989f1bb93bbd18edaf7aa9c77fe948135b310a35ced29",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/pdfium-0.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/pdfium-1.json": "fde82f3a092c6e7cb3f989f1bb93bbd18edaf7aa9c77fe948135b310a35ced29",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/pdfium-1.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/pdfjs-0.json": "d2d6e1887b5cd9a72f30df7a362f24c4d08a7e37c755e06a3ed1dd013acfc7d3",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/pdfjs-0.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/pdfjs-1.json": "d2d6e1887b5cd9a72f30df7a362f24c4d08a7e37c755e06a3ed1dd013acfc7d3",
+    "lossless-opaque-anim-sub-replace-d0-clear-ramp/pdfjs-1.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/external-straight.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/independent.pdf": "8872074f5151c99591b077750c8c753fcff247d8149c2e004ddd04b8006619a1",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/pdfium-0.json": "b4b4042b3a9ee8806182e349cf69605860c7098f6203e4cf2ac14ef1cbf3ce07",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/pdfium-0.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/pdfium-1.json": "b4b4042b3a9ee8806182e349cf69605860c7098f6203e4cf2ac14ef1cbf3ce07",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/pdfium-1.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/pdfjs-0.json": "f40ae1b945675b4bdf454135a5d2384547a1299a7cd7196905a8c147d5be83c5",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/pdfjs-0.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/pdfjs-1.json": "f40ae1b945675b4bdf454135a5d2384547a1299a7cd7196905a8c147d5be83c5",
+    "lossless-opaque-anim-sub-replace-d1-opaque-edges/pdfjs-1.rgba": "5a0b070e727b1cf98ac022aa03aa1ccacaaa7b1b5bca5b7ee8958349d161f159",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/external-straight.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/independent.pdf": "510c2e91f03472f6680d57e8ffe0630fc0f3bb367e8b56668ba78c52b138301b",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/pdfium-0.json": "fde82f3a092c6e7cb3f989f1bb93bbd18edaf7aa9c77fe948135b310a35ced29",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/pdfium-0.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/pdfium-1.json": "fde82f3a092c6e7cb3f989f1bb93bbd18edaf7aa9c77fe948135b310a35ced29",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/pdfium-1.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/pdfjs-0.json": "d2d6e1887b5cd9a72f30df7a362f24c4d08a7e37c755e06a3ed1dd013acfc7d3",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/pdfjs-0.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/pdfjs-1.json": "d2d6e1887b5cd9a72f30df7a362f24c4d08a7e37c755e06a3ed1dd013acfc7d3",
+    "lossless-opaque-anim-sub-replace-d1-opaque-ramp/pdfjs-1.rgba": "206b7397fa2865a154f1aec53b76996925239290e5c9f71a06691e5d8169b05f",
+    "lossless-opaque-static-full-edges/external-straight.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-static-full-edges/independent.pdf": "620b38838035b67a909a49620fbcd47565c8e689ff23823255979b9ad291cbde",
+    "lossless-opaque-static-full-edges/pdfium-0.json": "4f91c251cb96e28222404b90dae4be0fdae41c98e652a12ff199ae4805af86a1",
+    "lossless-opaque-static-full-edges/pdfium-0.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-static-full-edges/pdfium-1.json": "4f91c251cb96e28222404b90dae4be0fdae41c98e652a12ff199ae4805af86a1",
+    "lossless-opaque-static-full-edges/pdfium-1.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-static-full-edges/pdfjs-0.json": "5a30d09bf5dfdb6114e7279ea435aeba90e39365d84e765926cba02ffa3da892",
+    "lossless-opaque-static-full-edges/pdfjs-0.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-static-full-edges/pdfjs-1.json": "5a30d09bf5dfdb6114e7279ea435aeba90e39365d84e765926cba02ffa3da892",
+    "lossless-opaque-static-full-edges/pdfjs-1.rgba": "aad6435b2b884fd92dd5e4b22c9bfb96d7fa1563189c35b3fdc1ff111e28298a",
+    "lossless-opaque-static-full-ramp/external-straight.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-static-full-ramp/independent.pdf": "127fdce8a714ecf5038e1c0e3ce621cdfd1ef029afeb06a5ec8d0f6bfdd9bb15",
+    "lossless-opaque-static-full-ramp/pdfium-0.json": "076bbdac8ffe45ab4f816415bf6fd57139628dd5c86574e1e01eef45c5b76e7c",
+    "lossless-opaque-static-full-ramp/pdfium-0.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-static-full-ramp/pdfium-1.json": "076bbdac8ffe45ab4f816415bf6fd57139628dd5c86574e1e01eef45c5b76e7c",
+    "lossless-opaque-static-full-ramp/pdfium-1.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-static-full-ramp/pdfjs-0.json": "15500586f193dc7abe18bd693684082669831dbd1734d0177ddd3848744eb95b",
+    "lossless-opaque-static-full-ramp/pdfjs-0.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-opaque-static-full-ramp/pdfjs-1.json": "15500586f193dc7abe18bd693684082669831dbd1734d0177ddd3848744eb95b",
+    "lossless-opaque-static-full-ramp/pdfjs-1.rgba": "404975f48f1b33ce6433828df522f18c50f1fdc8fa3bd6083f10911e5a852fe2",
+    "lossless-partial-anim-full-blend-d0-clear-edges/external-straight.rgba": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+    "lossless-partial-anim-full-blend-d0-clear-edges/independent.pdf": "76f28399144ddea159120d6e2a5f12454787ab16e2d634f625b6b5d19e963ec4",
+    "lossless-partial-anim-full-blend-d0-clear-edges/pdfium-0.json": "71e9905841ee8a11defd219866271116e015a603fbf0aefde571483528b6dc13",
+    "lossless-partial-anim-full-blend-d0-clear-edges/pdfium-0.rgba": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+    "lossless-partial-anim-full-blend-d0-clear-edges/pdfium-1.json": "71e9905841ee8a11defd219866271116e015a603fbf0aefde571483528b6dc13",
+    "lossless-partial-anim-full-blend-d0-clear-edges/pdfium-1.rgba": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+    "lossless-partial-anim-full-blend-d0-clear-edges/pdfjs-0.json": "2ae4acdffc3fe16ce937affbdf1924ed8a53345b2794a06e2ee877aea70b641b",
+    "lossless-partial-anim-full-blend-d0-clear-edges/pdfjs-0.rgba": "fa2d47341bfb661738ca8e1c57dd8f16c05ee1e76a55509c018e8e23c183d6d5",
+    "lossless-partial-anim-full-blend-d0-clear-edges/pdfjs-1.json": "2ae4acdffc3fe16ce937affbdf1924ed8a53345b2794a06e2ee877aea70b641b",
+    "lossless-partial-anim-full-blend-d0-clear-edges/pdfjs-1.rgba": "fa2d47341bfb661738ca8e1c57dd8f16c05ee1e76a55509c018e8e23c183d6d5",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/external-straight.rgba": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/independent.pdf": "281f74b6585442294150cd5b8618026f057c878b515a277b89828f6ec3e36473",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/pdfium-0.json": "789ab19cc63a5738376028bc56e94cadf8d3c855a7840c38580344558b728dfb",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/pdfium-0.rgba": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/pdfium-1.json": "789ab19cc63a5738376028bc56e94cadf8d3c855a7840c38580344558b728dfb",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/pdfium-1.rgba": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/pdfjs-0.json": "607d77bc93f4a0774fd740891381b3fd5cf522068d82258350cecd459934bee7",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/pdfjs-0.rgba": "5994218cbf87b80f44f5b9d65e2dc83a4618be4f6c901a22d159f5844e1a4ebe",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/pdfjs-1.json": "607d77bc93f4a0774fd740891381b3fd5cf522068d82258350cecd459934bee7",
+    "lossless-partial-anim-full-blend-d0-clear-ramp/pdfjs-1.rgba": "5994218cbf87b80f44f5b9d65e2dc83a4618be4f6c901a22d159f5844e1a4ebe",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/external-straight.rgba": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/independent.pdf": "76f28399144ddea159120d6e2a5f12454787ab16e2d634f625b6b5d19e963ec4",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/pdfium-0.json": "71e9905841ee8a11defd219866271116e015a603fbf0aefde571483528b6dc13",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/pdfium-0.rgba": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/pdfium-1.json": "71e9905841ee8a11defd219866271116e015a603fbf0aefde571483528b6dc13",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/pdfium-1.rgba": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/pdfjs-0.json": "2ae4acdffc3fe16ce937affbdf1924ed8a53345b2794a06e2ee877aea70b641b",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/pdfjs-0.rgba": "fa2d47341bfb661738ca8e1c57dd8f16c05ee1e76a55509c018e8e23c183d6d5",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/pdfjs-1.json": "2ae4acdffc3fe16ce937affbdf1924ed8a53345b2794a06e2ee877aea70b641b",
+    "lossless-partial-anim-full-replace-d1-opaque-edges/pdfjs-1.rgba": "fa2d47341bfb661738ca8e1c57dd8f16c05ee1e76a55509c018e8e23c183d6d5",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/external-straight.rgba": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/independent.pdf": "281f74b6585442294150cd5b8618026f057c878b515a277b89828f6ec3e36473",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/pdfium-0.json": "789ab19cc63a5738376028bc56e94cadf8d3c855a7840c38580344558b728dfb",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/pdfium-0.rgba": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/pdfium-1.json": "789ab19cc63a5738376028bc56e94cadf8d3c855a7840c38580344558b728dfb",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/pdfium-1.rgba": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/pdfjs-0.json": "607d77bc93f4a0774fd740891381b3fd5cf522068d82258350cecd459934bee7",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/pdfjs-0.rgba": "5994218cbf87b80f44f5b9d65e2dc83a4618be4f6c901a22d159f5844e1a4ebe",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/pdfjs-1.json": "607d77bc93f4a0774fd740891381b3fd5cf522068d82258350cecd459934bee7",
+    "lossless-partial-anim-full-replace-d1-opaque-ramp/pdfjs-1.rgba": "5994218cbf87b80f44f5b9d65e2dc83a4618be4f6c901a22d159f5844e1a4ebe",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/external-straight.rgba": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/independent.pdf": "0955b36dc45e2ef63cc9231c609e5c7693751a32682e6cd90e25da391d9a2299",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/pdfium-0.json": "e147d7bd01e817c666a333ff99f88ba5127104a536131b6c2b12f746f29f7728",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/pdfium-0.rgba": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/pdfium-1.json": "e147d7bd01e817c666a333ff99f88ba5127104a536131b6c2b12f746f29f7728",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/pdfium-1.rgba": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/pdfjs-0.json": "78e74d213e7df4f6b032694ab31ff4079fbee5c75c8369c904b45aff1d8d6848",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/pdfjs-0.rgba": "b283b6884725794fc273f121a25ee23b923e1e764c2c5f59d673f6259f7d3fb6",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/pdfjs-1.json": "78e74d213e7df4f6b032694ab31ff4079fbee5c75c8369c904b45aff1d8d6848",
+    "lossless-partial-anim-sub-blend-d1-opaque-edges/pdfjs-1.rgba": "b283b6884725794fc273f121a25ee23b923e1e764c2c5f59d673f6259f7d3fb6",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/external-straight.rgba": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/independent.pdf": "d34b398f66a6fd03db6a0760021aa6fc5b0d860ca161193a6d90e64a87e38a32",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/pdfium-0.json": "9894c5f6f134f12aa2901046ea1456e11cbebce42bcbbee944790ea63a51dc74",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/pdfium-0.rgba": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/pdfium-1.json": "9894c5f6f134f12aa2901046ea1456e11cbebce42bcbbee944790ea63a51dc74",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/pdfium-1.rgba": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/pdfjs-0.json": "54efa114b95405361239b8846dd25a7fa34a8ef7ab8ed00f05842a97f57351b6",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/pdfjs-0.rgba": "e8129e179fcf703d3ea96876e975f1f64bc628b69f683bbc83c3870bf21d414c",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/pdfjs-1.json": "54efa114b95405361239b8846dd25a7fa34a8ef7ab8ed00f05842a97f57351b6",
+    "lossless-partial-anim-sub-blend-d1-opaque-ramp/pdfjs-1.rgba": "e8129e179fcf703d3ea96876e975f1f64bc628b69f683bbc83c3870bf21d414c",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/external-straight.rgba": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/independent.pdf": "0955b36dc45e2ef63cc9231c609e5c7693751a32682e6cd90e25da391d9a2299",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/pdfium-0.json": "e147d7bd01e817c666a333ff99f88ba5127104a536131b6c2b12f746f29f7728",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/pdfium-0.rgba": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/pdfium-1.json": "e147d7bd01e817c666a333ff99f88ba5127104a536131b6c2b12f746f29f7728",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/pdfium-1.rgba": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/pdfjs-0.json": "78e74d213e7df4f6b032694ab31ff4079fbee5c75c8369c904b45aff1d8d6848",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/pdfjs-0.rgba": "b283b6884725794fc273f121a25ee23b923e1e764c2c5f59d673f6259f7d3fb6",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/pdfjs-1.json": "78e74d213e7df4f6b032694ab31ff4079fbee5c75c8369c904b45aff1d8d6848",
+    "lossless-partial-anim-sub-replace-d0-clear-edges/pdfjs-1.rgba": "b283b6884725794fc273f121a25ee23b923e1e764c2c5f59d673f6259f7d3fb6",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/external-straight.rgba": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/independent.pdf": "d34b398f66a6fd03db6a0760021aa6fc5b0d860ca161193a6d90e64a87e38a32",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/pdfium-0.json": "9894c5f6f134f12aa2901046ea1456e11cbebce42bcbbee944790ea63a51dc74",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/pdfium-0.rgba": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/pdfium-1.json": "9894c5f6f134f12aa2901046ea1456e11cbebce42bcbbee944790ea63a51dc74",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/pdfium-1.rgba": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/pdfjs-0.json": "54efa114b95405361239b8846dd25a7fa34a8ef7ab8ed00f05842a97f57351b6",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/pdfjs-0.rgba": "e8129e179fcf703d3ea96876e975f1f64bc628b69f683bbc83c3870bf21d414c",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/pdfjs-1.json": "54efa114b95405361239b8846dd25a7fa34a8ef7ab8ed00f05842a97f57351b6",
+    "lossless-partial-anim-sub-replace-d0-clear-ramp/pdfjs-1.rgba": "e8129e179fcf703d3ea96876e975f1f64bc628b69f683bbc83c3870bf21d414c",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/external-straight.rgba": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/independent.pdf": "0955b36dc45e2ef63cc9231c609e5c7693751a32682e6cd90e25da391d9a2299",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/pdfium-0.json": "e147d7bd01e817c666a333ff99f88ba5127104a536131b6c2b12f746f29f7728",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/pdfium-0.rgba": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/pdfium-1.json": "e147d7bd01e817c666a333ff99f88ba5127104a536131b6c2b12f746f29f7728",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/pdfium-1.rgba": "309172443c0e8316a3f553379feb3a3f6c31c3e26dcdae3afcc9a805bff5de9d",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/pdfjs-0.json": "78e74d213e7df4f6b032694ab31ff4079fbee5c75c8369c904b45aff1d8d6848",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/pdfjs-0.rgba": "b283b6884725794fc273f121a25ee23b923e1e764c2c5f59d673f6259f7d3fb6",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/pdfjs-1.json": "78e74d213e7df4f6b032694ab31ff4079fbee5c75c8369c904b45aff1d8d6848",
+    "lossless-partial-anim-sub-replace-d1-opaque-edges/pdfjs-1.rgba": "b283b6884725794fc273f121a25ee23b923e1e764c2c5f59d673f6259f7d3fb6",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/external-straight.rgba": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/independent.pdf": "d34b398f66a6fd03db6a0760021aa6fc5b0d860ca161193a6d90e64a87e38a32",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/pdfium-0.json": "9894c5f6f134f12aa2901046ea1456e11cbebce42bcbbee944790ea63a51dc74",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/pdfium-0.rgba": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/pdfium-1.json": "9894c5f6f134f12aa2901046ea1456e11cbebce42bcbbee944790ea63a51dc74",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/pdfium-1.rgba": "e51a78de84fc56377fbe2b40be94477484ad4ebfd8e64b7797da88db55f085a0",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/pdfjs-0.json": "54efa114b95405361239b8846dd25a7fa34a8ef7ab8ed00f05842a97f57351b6",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/pdfjs-0.rgba": "e8129e179fcf703d3ea96876e975f1f64bc628b69f683bbc83c3870bf21d414c",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/pdfjs-1.json": "54efa114b95405361239b8846dd25a7fa34a8ef7ab8ed00f05842a97f57351b6",
+    "lossless-partial-anim-sub-replace-d1-opaque-ramp/pdfjs-1.rgba": "e8129e179fcf703d3ea96876e975f1f64bc628b69f683bbc83c3870bf21d414c",
+    "lossless-partial-static-full-edges/external-straight.rgba": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+    "lossless-partial-static-full-edges/independent.pdf": "76f28399144ddea159120d6e2a5f12454787ab16e2d634f625b6b5d19e963ec4",
+    "lossless-partial-static-full-edges/pdfium-0.json": "71e9905841ee8a11defd219866271116e015a603fbf0aefde571483528b6dc13",
+    "lossless-partial-static-full-edges/pdfium-0.rgba": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+    "lossless-partial-static-full-edges/pdfium-1.json": "71e9905841ee8a11defd219866271116e015a603fbf0aefde571483528b6dc13",
+    "lossless-partial-static-full-edges/pdfium-1.rgba": "52a79e0a67d57ea7648febdc464ce5c13f0efbd1708a255935ce4d92672e3414",
+    "lossless-partial-static-full-edges/pdfjs-0.json": "2ae4acdffc3fe16ce937affbdf1924ed8a53345b2794a06e2ee877aea70b641b",
+    "lossless-partial-static-full-edges/pdfjs-0.rgba": "fa2d47341bfb661738ca8e1c57dd8f16c05ee1e76a55509c018e8e23c183d6d5",
+    "lossless-partial-static-full-edges/pdfjs-1.json": "2ae4acdffc3fe16ce937affbdf1924ed8a53345b2794a06e2ee877aea70b641b",
+    "lossless-partial-static-full-edges/pdfjs-1.rgba": "fa2d47341bfb661738ca8e1c57dd8f16c05ee1e76a55509c018e8e23c183d6d5",
+    "lossless-partial-static-full-ramp/external-straight.rgba": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+    "lossless-partial-static-full-ramp/independent.pdf": "281f74b6585442294150cd5b8618026f057c878b515a277b89828f6ec3e36473",
+    "lossless-partial-static-full-ramp/pdfium-0.json": "789ab19cc63a5738376028bc56e94cadf8d3c855a7840c38580344558b728dfb",
+    "lossless-partial-static-full-ramp/pdfium-0.rgba": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+    "lossless-partial-static-full-ramp/pdfium-1.json": "789ab19cc63a5738376028bc56e94cadf8d3c855a7840c38580344558b728dfb",
+    "lossless-partial-static-full-ramp/pdfium-1.rgba": "4f3e6e33684958815a7680fabd3c57d6aad77d752d65363c12d2c62fb2e45729",
+    "lossless-partial-static-full-ramp/pdfjs-0.json": "607d77bc93f4a0774fd740891381b3fd5cf522068d82258350cecd459934bee7",
+    "lossless-partial-static-full-ramp/pdfjs-0.rgba": "5994218cbf87b80f44f5b9d65e2dc83a4618be4f6c901a22d159f5844e1a4ebe",
+    "lossless-partial-static-full-ramp/pdfjs-1.json": "607d77bc93f4a0774fd740891381b3fd5cf522068d82258350cecd459934bee7",
+    "lossless-partial-static-full-ramp/pdfjs-1.rgba": "5994218cbf87b80f44f5b9d65e2dc83a4618be4f6c901a22d159f5844e1a4ebe",
+    "lossy-binary-anim-full-blend-d0-clear-edges/external-straight.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-blend-d0-clear-edges/independent.pdf": "7d34960fcc2c1ea9ec4dd2ce1b2a20343e717b91b4efc3682b23cc23ef754932",
+    "lossy-binary-anim-full-blend-d0-clear-edges/pdfium-0.json": "1ae64894c7c4d4fa6992df55b1b02efe753e9934010cde17e2808dc6b65e040d",
+    "lossy-binary-anim-full-blend-d0-clear-edges/pdfium-0.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-blend-d0-clear-edges/pdfium-1.json": "1ae64894c7c4d4fa6992df55b1b02efe753e9934010cde17e2808dc6b65e040d",
+    "lossy-binary-anim-full-blend-d0-clear-edges/pdfium-1.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-blend-d0-clear-edges/pdfjs-0.json": "31276cf35525ec5ae0c8037e7a336e7a5ae7f1247d853c2b9a93a5fbe5e977b6",
+    "lossy-binary-anim-full-blend-d0-clear-edges/pdfjs-0.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-blend-d0-clear-edges/pdfjs-1.json": "31276cf35525ec5ae0c8037e7a336e7a5ae7f1247d853c2b9a93a5fbe5e977b6",
+    "lossy-binary-anim-full-blend-d0-clear-edges/pdfjs-1.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/external-straight.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/independent.pdf": "c2d75466268f5db42adfe7bdb6141368e96419d610932c66618434a6c50d8407",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/pdfium-0.json": "2c75fa090848c3b4334144382ccbe6ff2109629a29b8c91d72be81f279c50914",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/pdfium-0.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/pdfium-1.json": "2c75fa090848c3b4334144382ccbe6ff2109629a29b8c91d72be81f279c50914",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/pdfium-1.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/pdfjs-0.json": "05722d0e3aec722231defa660908e75412fa01c8d71722cf90f38853a95d3878",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/pdfjs-0.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/pdfjs-1.json": "05722d0e3aec722231defa660908e75412fa01c8d71722cf90f38853a95d3878",
+    "lossy-binary-anim-full-blend-d0-clear-ramp/pdfjs-1.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/external-straight.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/independent.pdf": "7d34960fcc2c1ea9ec4dd2ce1b2a20343e717b91b4efc3682b23cc23ef754932",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/pdfium-0.json": "1ae64894c7c4d4fa6992df55b1b02efe753e9934010cde17e2808dc6b65e040d",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/pdfium-0.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/pdfium-1.json": "1ae64894c7c4d4fa6992df55b1b02efe753e9934010cde17e2808dc6b65e040d",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/pdfium-1.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/pdfjs-0.json": "31276cf35525ec5ae0c8037e7a336e7a5ae7f1247d853c2b9a93a5fbe5e977b6",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/pdfjs-0.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/pdfjs-1.json": "31276cf35525ec5ae0c8037e7a336e7a5ae7f1247d853c2b9a93a5fbe5e977b6",
+    "lossy-binary-anim-full-replace-d1-opaque-edges/pdfjs-1.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/external-straight.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/independent.pdf": "c2d75466268f5db42adfe7bdb6141368e96419d610932c66618434a6c50d8407",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/pdfium-0.json": "2c75fa090848c3b4334144382ccbe6ff2109629a29b8c91d72be81f279c50914",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/pdfium-0.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/pdfium-1.json": "2c75fa090848c3b4334144382ccbe6ff2109629a29b8c91d72be81f279c50914",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/pdfium-1.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/pdfjs-0.json": "05722d0e3aec722231defa660908e75412fa01c8d71722cf90f38853a95d3878",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/pdfjs-0.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/pdfjs-1.json": "05722d0e3aec722231defa660908e75412fa01c8d71722cf90f38853a95d3878",
+    "lossy-binary-anim-full-replace-d1-opaque-ramp/pdfjs-1.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/external-straight.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/independent.pdf": "d4cfb2980ec0900748d0f905e9978849028211eeeff937794faf53aa497e8bab",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/pdfium-0.json": "cc70d89eb3749cd2af8b6021892fc0aeb95c69073f3a069e8d79a431e6b92e6a",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/pdfium-0.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/pdfium-1.json": "cc70d89eb3749cd2af8b6021892fc0aeb95c69073f3a069e8d79a431e6b92e6a",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/pdfium-1.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/pdfjs-0.json": "115cfb9c5786cfa6968cc31ae4309eed2502c8bccbb146c8c841e5d467b7db23",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/pdfjs-0.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/pdfjs-1.json": "115cfb9c5786cfa6968cc31ae4309eed2502c8bccbb146c8c841e5d467b7db23",
+    "lossy-binary-anim-sub-blend-d1-opaque-edges/pdfjs-1.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/external-straight.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/independent.pdf": "2752047e69bde93be08b13302f710b12d72a26e5b04f49644bda13347e7aefb9",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/pdfium-0.json": "233bd6f5203c9d0f493a30aff6d155648a1568d305d0660d2f1cf1b6bf25075b",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/pdfium-0.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/pdfium-1.json": "233bd6f5203c9d0f493a30aff6d155648a1568d305d0660d2f1cf1b6bf25075b",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/pdfium-1.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/pdfjs-0.json": "b134cafceb1c88e30d07d961568681f7c68447081147085f0e7dc85dd50dec54",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/pdfjs-0.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/pdfjs-1.json": "b134cafceb1c88e30d07d961568681f7c68447081147085f0e7dc85dd50dec54",
+    "lossy-binary-anim-sub-blend-d1-opaque-ramp/pdfjs-1.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/external-straight.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/independent.pdf": "d4cfb2980ec0900748d0f905e9978849028211eeeff937794faf53aa497e8bab",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/pdfium-0.json": "cc70d89eb3749cd2af8b6021892fc0aeb95c69073f3a069e8d79a431e6b92e6a",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/pdfium-0.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/pdfium-1.json": "cc70d89eb3749cd2af8b6021892fc0aeb95c69073f3a069e8d79a431e6b92e6a",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/pdfium-1.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/pdfjs-0.json": "115cfb9c5786cfa6968cc31ae4309eed2502c8bccbb146c8c841e5d467b7db23",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/pdfjs-0.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/pdfjs-1.json": "115cfb9c5786cfa6968cc31ae4309eed2502c8bccbb146c8c841e5d467b7db23",
+    "lossy-binary-anim-sub-replace-d0-clear-edges/pdfjs-1.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/external-straight.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/independent.pdf": "2752047e69bde93be08b13302f710b12d72a26e5b04f49644bda13347e7aefb9",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/pdfium-0.json": "233bd6f5203c9d0f493a30aff6d155648a1568d305d0660d2f1cf1b6bf25075b",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/pdfium-0.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/pdfium-1.json": "233bd6f5203c9d0f493a30aff6d155648a1568d305d0660d2f1cf1b6bf25075b",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/pdfium-1.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/pdfjs-0.json": "b134cafceb1c88e30d07d961568681f7c68447081147085f0e7dc85dd50dec54",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/pdfjs-0.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/pdfjs-1.json": "b134cafceb1c88e30d07d961568681f7c68447081147085f0e7dc85dd50dec54",
+    "lossy-binary-anim-sub-replace-d0-clear-ramp/pdfjs-1.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/external-straight.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/independent.pdf": "d4cfb2980ec0900748d0f905e9978849028211eeeff937794faf53aa497e8bab",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/pdfium-0.json": "cc70d89eb3749cd2af8b6021892fc0aeb95c69073f3a069e8d79a431e6b92e6a",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/pdfium-0.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/pdfium-1.json": "cc70d89eb3749cd2af8b6021892fc0aeb95c69073f3a069e8d79a431e6b92e6a",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/pdfium-1.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/pdfjs-0.json": "115cfb9c5786cfa6968cc31ae4309eed2502c8bccbb146c8c841e5d467b7db23",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/pdfjs-0.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/pdfjs-1.json": "115cfb9c5786cfa6968cc31ae4309eed2502c8bccbb146c8c841e5d467b7db23",
+    "lossy-binary-anim-sub-replace-d1-opaque-edges/pdfjs-1.rgba": "7adaf35318117f046967bcb5e863eac2a93b5dda97797c09f6fe1f839614ffa9",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/external-straight.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/independent.pdf": "2752047e69bde93be08b13302f710b12d72a26e5b04f49644bda13347e7aefb9",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/pdfium-0.json": "233bd6f5203c9d0f493a30aff6d155648a1568d305d0660d2f1cf1b6bf25075b",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/pdfium-0.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/pdfium-1.json": "233bd6f5203c9d0f493a30aff6d155648a1568d305d0660d2f1cf1b6bf25075b",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/pdfium-1.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/pdfjs-0.json": "b134cafceb1c88e30d07d961568681f7c68447081147085f0e7dc85dd50dec54",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/pdfjs-0.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/pdfjs-1.json": "b134cafceb1c88e30d07d961568681f7c68447081147085f0e7dc85dd50dec54",
+    "lossy-binary-anim-sub-replace-d1-opaque-ramp/pdfjs-1.rgba": "7f147767f5537b179f939168edfdd3eca467e03646e351b4ff122f231c534009",
+    "lossy-binary-static-full-edges/external-straight.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-static-full-edges/independent.pdf": "7d34960fcc2c1ea9ec4dd2ce1b2a20343e717b91b4efc3682b23cc23ef754932",
+    "lossy-binary-static-full-edges/pdfium-0.json": "1ae64894c7c4d4fa6992df55b1b02efe753e9934010cde17e2808dc6b65e040d",
+    "lossy-binary-static-full-edges/pdfium-0.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-static-full-edges/pdfium-1.json": "1ae64894c7c4d4fa6992df55b1b02efe753e9934010cde17e2808dc6b65e040d",
+    "lossy-binary-static-full-edges/pdfium-1.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-static-full-edges/pdfjs-0.json": "31276cf35525ec5ae0c8037e7a336e7a5ae7f1247d853c2b9a93a5fbe5e977b6",
+    "lossy-binary-static-full-edges/pdfjs-0.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-static-full-edges/pdfjs-1.json": "31276cf35525ec5ae0c8037e7a336e7a5ae7f1247d853c2b9a93a5fbe5e977b6",
+    "lossy-binary-static-full-edges/pdfjs-1.rgba": "c6e9a175559edb832ac9a128bdf5a514a05ebe975c9b4564031f00cdc85e29b3",
+    "lossy-binary-static-full-ramp/external-straight.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-static-full-ramp/independent.pdf": "c2d75466268f5db42adfe7bdb6141368e96419d610932c66618434a6c50d8407",
+    "lossy-binary-static-full-ramp/pdfium-0.json": "2c75fa090848c3b4334144382ccbe6ff2109629a29b8c91d72be81f279c50914",
+    "lossy-binary-static-full-ramp/pdfium-0.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-static-full-ramp/pdfium-1.json": "2c75fa090848c3b4334144382ccbe6ff2109629a29b8c91d72be81f279c50914",
+    "lossy-binary-static-full-ramp/pdfium-1.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-static-full-ramp/pdfjs-0.json": "05722d0e3aec722231defa660908e75412fa01c8d71722cf90f38853a95d3878",
+    "lossy-binary-static-full-ramp/pdfjs-0.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-binary-static-full-ramp/pdfjs-1.json": "05722d0e3aec722231defa660908e75412fa01c8d71722cf90f38853a95d3878",
+    "lossy-binary-static-full-ramp/pdfjs-1.rgba": "a1b990b15a3b49903f0321d24b1a0e5d6580789e7ecc0e1e630697238d1a831d",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/external-straight.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/independent.pdf": "71825b98cbe7d4134041411db88cb854dca26387169cefae3dfbb99e784ba086",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/pdfium-0.json": "f8e3692a618d8ea127e4dd99dab6bae89fa26b9b5289c35384c957c1f66aadc5",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/pdfium-0.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/pdfium-1.json": "f8e3692a618d8ea127e4dd99dab6bae89fa26b9b5289c35384c957c1f66aadc5",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/pdfium-1.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/pdfjs-0.json": "41fb0aca367d8804263ea6a0fc32f27c0d0f8c0a067aea4d61ce23ed9c69fe26",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/pdfjs-0.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/pdfjs-1.json": "41fb0aca367d8804263ea6a0fc32f27c0d0f8c0a067aea4d61ce23ed9c69fe26",
+    "lossy-opaque-anim-full-blend-d0-clear-edges/pdfjs-1.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/external-straight.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/independent.pdf": "963b1238795534b48b60bbca70ef115fe4b624d12dd8c9ba36832155965fbc64",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/pdfium-0.json": "409e7eabc7d981590bf6a1bb0618fcc9e3d71d230577993ee014bb3f756f9d23",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/pdfium-0.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/pdfium-1.json": "409e7eabc7d981590bf6a1bb0618fcc9e3d71d230577993ee014bb3f756f9d23",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/pdfium-1.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/pdfjs-0.json": "7ee0400f2f413c43402e07b275a556161d97b7c1963c150f850b28e477a65050",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/pdfjs-0.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/pdfjs-1.json": "7ee0400f2f413c43402e07b275a556161d97b7c1963c150f850b28e477a65050",
+    "lossy-opaque-anim-full-blend-d0-clear-ramp/pdfjs-1.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/external-straight.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/independent.pdf": "71825b98cbe7d4134041411db88cb854dca26387169cefae3dfbb99e784ba086",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/pdfium-0.json": "f8e3692a618d8ea127e4dd99dab6bae89fa26b9b5289c35384c957c1f66aadc5",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/pdfium-0.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/pdfium-1.json": "f8e3692a618d8ea127e4dd99dab6bae89fa26b9b5289c35384c957c1f66aadc5",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/pdfium-1.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/pdfjs-0.json": "41fb0aca367d8804263ea6a0fc32f27c0d0f8c0a067aea4d61ce23ed9c69fe26",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/pdfjs-0.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/pdfjs-1.json": "41fb0aca367d8804263ea6a0fc32f27c0d0f8c0a067aea4d61ce23ed9c69fe26",
+    "lossy-opaque-anim-full-replace-d1-opaque-edges/pdfjs-1.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/external-straight.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/independent.pdf": "963b1238795534b48b60bbca70ef115fe4b624d12dd8c9ba36832155965fbc64",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/pdfium-0.json": "409e7eabc7d981590bf6a1bb0618fcc9e3d71d230577993ee014bb3f756f9d23",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/pdfium-0.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/pdfium-1.json": "409e7eabc7d981590bf6a1bb0618fcc9e3d71d230577993ee014bb3f756f9d23",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/pdfium-1.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/pdfjs-0.json": "7ee0400f2f413c43402e07b275a556161d97b7c1963c150f850b28e477a65050",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/pdfjs-0.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/pdfjs-1.json": "7ee0400f2f413c43402e07b275a556161d97b7c1963c150f850b28e477a65050",
+    "lossy-opaque-anim-full-replace-d1-opaque-ramp/pdfjs-1.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/external-straight.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/independent.pdf": "9a5a2b0c31465168681ca5448de23704461823d193fba3c3d88b5d0286d574de",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/pdfium-0.json": "85504740b6144fb5e08de886bf3f612434e3099feca6970e03b0b695f5437864",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/pdfium-0.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/pdfium-1.json": "85504740b6144fb5e08de886bf3f612434e3099feca6970e03b0b695f5437864",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/pdfium-1.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/pdfjs-0.json": "eacb12d34a33ce3e9cd85bbcc3941a7251e0715f2a12ee1ef3a109e5ec1ca73d",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/pdfjs-0.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/pdfjs-1.json": "eacb12d34a33ce3e9cd85bbcc3941a7251e0715f2a12ee1ef3a109e5ec1ca73d",
+    "lossy-opaque-anim-sub-blend-d1-opaque-edges/pdfjs-1.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/external-straight.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/independent.pdf": "af8a3666c5bb3347471e7f73f58b199e6179702e470b1eca6f63d28ac874b5ba",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/pdfium-0.json": "2b8b327133347779aaa0297f16683d1de62ae1a5d05023523e96fe1493371832",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/pdfium-0.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/pdfium-1.json": "2b8b327133347779aaa0297f16683d1de62ae1a5d05023523e96fe1493371832",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/pdfium-1.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/pdfjs-0.json": "6f0612335c3a7be3f3e92ebd825ebccc63d85186702c580cf74e0796bb40409e",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/pdfjs-0.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/pdfjs-1.json": "6f0612335c3a7be3f3e92ebd825ebccc63d85186702c580cf74e0796bb40409e",
+    "lossy-opaque-anim-sub-blend-d1-opaque-ramp/pdfjs-1.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/external-straight.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/independent.pdf": "9a5a2b0c31465168681ca5448de23704461823d193fba3c3d88b5d0286d574de",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/pdfium-0.json": "85504740b6144fb5e08de886bf3f612434e3099feca6970e03b0b695f5437864",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/pdfium-0.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/pdfium-1.json": "85504740b6144fb5e08de886bf3f612434e3099feca6970e03b0b695f5437864",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/pdfium-1.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/pdfjs-0.json": "eacb12d34a33ce3e9cd85bbcc3941a7251e0715f2a12ee1ef3a109e5ec1ca73d",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/pdfjs-0.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/pdfjs-1.json": "eacb12d34a33ce3e9cd85bbcc3941a7251e0715f2a12ee1ef3a109e5ec1ca73d",
+    "lossy-opaque-anim-sub-replace-d0-clear-edges/pdfjs-1.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/external-straight.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/independent.pdf": "af8a3666c5bb3347471e7f73f58b199e6179702e470b1eca6f63d28ac874b5ba",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/pdfium-0.json": "2b8b327133347779aaa0297f16683d1de62ae1a5d05023523e96fe1493371832",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/pdfium-0.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/pdfium-1.json": "2b8b327133347779aaa0297f16683d1de62ae1a5d05023523e96fe1493371832",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/pdfium-1.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/pdfjs-0.json": "6f0612335c3a7be3f3e92ebd825ebccc63d85186702c580cf74e0796bb40409e",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/pdfjs-0.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/pdfjs-1.json": "6f0612335c3a7be3f3e92ebd825ebccc63d85186702c580cf74e0796bb40409e",
+    "lossy-opaque-anim-sub-replace-d0-clear-ramp/pdfjs-1.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/external-straight.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/independent.pdf": "9a5a2b0c31465168681ca5448de23704461823d193fba3c3d88b5d0286d574de",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/pdfium-0.json": "85504740b6144fb5e08de886bf3f612434e3099feca6970e03b0b695f5437864",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/pdfium-0.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/pdfium-1.json": "85504740b6144fb5e08de886bf3f612434e3099feca6970e03b0b695f5437864",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/pdfium-1.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/pdfjs-0.json": "eacb12d34a33ce3e9cd85bbcc3941a7251e0715f2a12ee1ef3a109e5ec1ca73d",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/pdfjs-0.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/pdfjs-1.json": "eacb12d34a33ce3e9cd85bbcc3941a7251e0715f2a12ee1ef3a109e5ec1ca73d",
+    "lossy-opaque-anim-sub-replace-d1-opaque-edges/pdfjs-1.rgba": "992dd8ede0a81752b217cd7e0ae3603df3fb5d49b45e7ddd078721aff0ceee10",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/external-straight.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/independent.pdf": "af8a3666c5bb3347471e7f73f58b199e6179702e470b1eca6f63d28ac874b5ba",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/pdfium-0.json": "2b8b327133347779aaa0297f16683d1de62ae1a5d05023523e96fe1493371832",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/pdfium-0.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/pdfium-1.json": "2b8b327133347779aaa0297f16683d1de62ae1a5d05023523e96fe1493371832",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/pdfium-1.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/pdfjs-0.json": "6f0612335c3a7be3f3e92ebd825ebccc63d85186702c580cf74e0796bb40409e",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/pdfjs-0.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/pdfjs-1.json": "6f0612335c3a7be3f3e92ebd825ebccc63d85186702c580cf74e0796bb40409e",
+    "lossy-opaque-anim-sub-replace-d1-opaque-ramp/pdfjs-1.rgba": "2ebbe42ca244227fd4c26e87491a5005fa8bd63454f852b9077df77cd8dd995c",
+    "lossy-opaque-static-full-edges/external-straight.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-static-full-edges/independent.pdf": "71825b98cbe7d4134041411db88cb854dca26387169cefae3dfbb99e784ba086",
+    "lossy-opaque-static-full-edges/pdfium-0.json": "f8e3692a618d8ea127e4dd99dab6bae89fa26b9b5289c35384c957c1f66aadc5",
+    "lossy-opaque-static-full-edges/pdfium-0.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-static-full-edges/pdfium-1.json": "f8e3692a618d8ea127e4dd99dab6bae89fa26b9b5289c35384c957c1f66aadc5",
+    "lossy-opaque-static-full-edges/pdfium-1.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-static-full-edges/pdfjs-0.json": "41fb0aca367d8804263ea6a0fc32f27c0d0f8c0a067aea4d61ce23ed9c69fe26",
+    "lossy-opaque-static-full-edges/pdfjs-0.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-static-full-edges/pdfjs-1.json": "41fb0aca367d8804263ea6a0fc32f27c0d0f8c0a067aea4d61ce23ed9c69fe26",
+    "lossy-opaque-static-full-edges/pdfjs-1.rgba": "d236dadd105fafe30577c90adf3a69d1ef3869308e972aa16af307f5588c59b0",
+    "lossy-opaque-static-full-ramp/external-straight.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-static-full-ramp/independent.pdf": "963b1238795534b48b60bbca70ef115fe4b624d12dd8c9ba36832155965fbc64",
+    "lossy-opaque-static-full-ramp/pdfium-0.json": "409e7eabc7d981590bf6a1bb0618fcc9e3d71d230577993ee014bb3f756f9d23",
+    "lossy-opaque-static-full-ramp/pdfium-0.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-static-full-ramp/pdfium-1.json": "409e7eabc7d981590bf6a1bb0618fcc9e3d71d230577993ee014bb3f756f9d23",
+    "lossy-opaque-static-full-ramp/pdfium-1.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-static-full-ramp/pdfjs-0.json": "7ee0400f2f413c43402e07b275a556161d97b7c1963c150f850b28e477a65050",
+    "lossy-opaque-static-full-ramp/pdfjs-0.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-opaque-static-full-ramp/pdfjs-1.json": "7ee0400f2f413c43402e07b275a556161d97b7c1963c150f850b28e477a65050",
+    "lossy-opaque-static-full-ramp/pdfjs-1.rgba": "edb26e3233ab448716d63e60c1a68fdd90e44d1c1609f02c23d311895c55d94d",
+    "lossy-partial-anim-full-blend-d0-clear-edges/external-straight.rgba": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+    "lossy-partial-anim-full-blend-d0-clear-edges/independent.pdf": "b12cd5ed212b375c85ed454b3b205e4363914d287aa53fe476fddad757ad35f7",
+    "lossy-partial-anim-full-blend-d0-clear-edges/pdfium-0.json": "c372f83eae92f1cf17b3f1371a2ef4cafef8dc63ac80fcd10ad5ccdf3d91f62e",
+    "lossy-partial-anim-full-blend-d0-clear-edges/pdfium-0.rgba": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+    "lossy-partial-anim-full-blend-d0-clear-edges/pdfium-1.json": "c372f83eae92f1cf17b3f1371a2ef4cafef8dc63ac80fcd10ad5ccdf3d91f62e",
+    "lossy-partial-anim-full-blend-d0-clear-edges/pdfium-1.rgba": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+    "lossy-partial-anim-full-blend-d0-clear-edges/pdfjs-0.json": "b34d7772f0c77efc749b63c1ba5a9422e66ebc2e25c4014399dbf8e94e19c143",
+    "lossy-partial-anim-full-blend-d0-clear-edges/pdfjs-0.rgba": "6b7353df5b87340a73f795a1835a1747fbbbeaa97c647e71d16e3a6000499ee1",
+    "lossy-partial-anim-full-blend-d0-clear-edges/pdfjs-1.json": "b34d7772f0c77efc749b63c1ba5a9422e66ebc2e25c4014399dbf8e94e19c143",
+    "lossy-partial-anim-full-blend-d0-clear-edges/pdfjs-1.rgba": "6b7353df5b87340a73f795a1835a1747fbbbeaa97c647e71d16e3a6000499ee1",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/external-straight.rgba": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/independent.pdf": "4c8c8a8a2a763a8193a6607727a25b86e967e48397b42440dd47624f2ad82164",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/pdfium-0.json": "87690093ee9e2618c1dd74346df70b13963db10ce8e615c8b9e434e1f1e489a6",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/pdfium-0.rgba": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/pdfium-1.json": "87690093ee9e2618c1dd74346df70b13963db10ce8e615c8b9e434e1f1e489a6",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/pdfium-1.rgba": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/pdfjs-0.json": "04524fe38e78d52374c66668298c6344dfafeebc23138b4ffa8be801203df3b2",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/pdfjs-0.rgba": "1d6866722d1a78424ed55fb3c0026201d0d08551d2a5b0c8d1a874418c636030",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/pdfjs-1.json": "04524fe38e78d52374c66668298c6344dfafeebc23138b4ffa8be801203df3b2",
+    "lossy-partial-anim-full-blend-d0-clear-ramp/pdfjs-1.rgba": "1d6866722d1a78424ed55fb3c0026201d0d08551d2a5b0c8d1a874418c636030",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/external-straight.rgba": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/independent.pdf": "b12cd5ed212b375c85ed454b3b205e4363914d287aa53fe476fddad757ad35f7",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/pdfium-0.json": "c372f83eae92f1cf17b3f1371a2ef4cafef8dc63ac80fcd10ad5ccdf3d91f62e",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/pdfium-0.rgba": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/pdfium-1.json": "c372f83eae92f1cf17b3f1371a2ef4cafef8dc63ac80fcd10ad5ccdf3d91f62e",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/pdfium-1.rgba": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/pdfjs-0.json": "b34d7772f0c77efc749b63c1ba5a9422e66ebc2e25c4014399dbf8e94e19c143",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/pdfjs-0.rgba": "6b7353df5b87340a73f795a1835a1747fbbbeaa97c647e71d16e3a6000499ee1",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/pdfjs-1.json": "b34d7772f0c77efc749b63c1ba5a9422e66ebc2e25c4014399dbf8e94e19c143",
+    "lossy-partial-anim-full-replace-d1-opaque-edges/pdfjs-1.rgba": "6b7353df5b87340a73f795a1835a1747fbbbeaa97c647e71d16e3a6000499ee1",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/external-straight.rgba": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/independent.pdf": "4c8c8a8a2a763a8193a6607727a25b86e967e48397b42440dd47624f2ad82164",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/pdfium-0.json": "87690093ee9e2618c1dd74346df70b13963db10ce8e615c8b9e434e1f1e489a6",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/pdfium-0.rgba": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/pdfium-1.json": "87690093ee9e2618c1dd74346df70b13963db10ce8e615c8b9e434e1f1e489a6",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/pdfium-1.rgba": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/pdfjs-0.json": "04524fe38e78d52374c66668298c6344dfafeebc23138b4ffa8be801203df3b2",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/pdfjs-0.rgba": "1d6866722d1a78424ed55fb3c0026201d0d08551d2a5b0c8d1a874418c636030",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/pdfjs-1.json": "04524fe38e78d52374c66668298c6344dfafeebc23138b4ffa8be801203df3b2",
+    "lossy-partial-anim-full-replace-d1-opaque-ramp/pdfjs-1.rgba": "1d6866722d1a78424ed55fb3c0026201d0d08551d2a5b0c8d1a874418c636030",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/external-straight.rgba": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/independent.pdf": "770d27539e324e74d13788ee5e86944bd1cc099ca03bae53f42afbc96c35c5aa",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/pdfium-0.json": "c53ccf3e2e9ce6bda9cffad5e2d484156d4158c784fe0d50a1de66c73af0e05a",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/pdfium-0.rgba": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/pdfium-1.json": "c53ccf3e2e9ce6bda9cffad5e2d484156d4158c784fe0d50a1de66c73af0e05a",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/pdfium-1.rgba": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/pdfjs-0.json": "daf3186ea8d54b95e37c78329538a95ce867d2c24e56f63f3fa45c9643d82409",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/pdfjs-0.rgba": "436c708e340572f1d30013882629bf2b2d84f71b092a501d5345a2b9ff8f08e2",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/pdfjs-1.json": "daf3186ea8d54b95e37c78329538a95ce867d2c24e56f63f3fa45c9643d82409",
+    "lossy-partial-anim-sub-blend-d1-opaque-edges/pdfjs-1.rgba": "436c708e340572f1d30013882629bf2b2d84f71b092a501d5345a2b9ff8f08e2",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/external-straight.rgba": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/independent.pdf": "272e3cdc8a377b98b4289cdd7638f3450de44d8d18afab7ef018454592e501ec",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/pdfium-0.json": "0512632a9a92171b123fb79c19812246bd848921b2b5b70c673df942622d96b2",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/pdfium-0.rgba": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/pdfium-1.json": "0512632a9a92171b123fb79c19812246bd848921b2b5b70c673df942622d96b2",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/pdfium-1.rgba": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/pdfjs-0.json": "7fdf646a26d98700fa6aa7cf794e9f47eba8eb80598ebf22caee5da29b810f5a",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/pdfjs-0.rgba": "4c62598b5765eae33d3eff734ca5e1f0a496d74b5b92d2525bbebe87d3188b32",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/pdfjs-1.json": "7fdf646a26d98700fa6aa7cf794e9f47eba8eb80598ebf22caee5da29b810f5a",
+    "lossy-partial-anim-sub-blend-d1-opaque-ramp/pdfjs-1.rgba": "4c62598b5765eae33d3eff734ca5e1f0a496d74b5b92d2525bbebe87d3188b32",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/external-straight.rgba": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/independent.pdf": "770d27539e324e74d13788ee5e86944bd1cc099ca03bae53f42afbc96c35c5aa",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/pdfium-0.json": "c53ccf3e2e9ce6bda9cffad5e2d484156d4158c784fe0d50a1de66c73af0e05a",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/pdfium-0.rgba": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/pdfium-1.json": "c53ccf3e2e9ce6bda9cffad5e2d484156d4158c784fe0d50a1de66c73af0e05a",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/pdfium-1.rgba": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/pdfjs-0.json": "daf3186ea8d54b95e37c78329538a95ce867d2c24e56f63f3fa45c9643d82409",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/pdfjs-0.rgba": "436c708e340572f1d30013882629bf2b2d84f71b092a501d5345a2b9ff8f08e2",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/pdfjs-1.json": "daf3186ea8d54b95e37c78329538a95ce867d2c24e56f63f3fa45c9643d82409",
+    "lossy-partial-anim-sub-replace-d0-clear-edges/pdfjs-1.rgba": "436c708e340572f1d30013882629bf2b2d84f71b092a501d5345a2b9ff8f08e2",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/external-straight.rgba": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/independent.pdf": "272e3cdc8a377b98b4289cdd7638f3450de44d8d18afab7ef018454592e501ec",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/pdfium-0.json": "0512632a9a92171b123fb79c19812246bd848921b2b5b70c673df942622d96b2",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/pdfium-0.rgba": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/pdfium-1.json": "0512632a9a92171b123fb79c19812246bd848921b2b5b70c673df942622d96b2",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/pdfium-1.rgba": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/pdfjs-0.json": "7fdf646a26d98700fa6aa7cf794e9f47eba8eb80598ebf22caee5da29b810f5a",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/pdfjs-0.rgba": "4c62598b5765eae33d3eff734ca5e1f0a496d74b5b92d2525bbebe87d3188b32",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/pdfjs-1.json": "7fdf646a26d98700fa6aa7cf794e9f47eba8eb80598ebf22caee5da29b810f5a",
+    "lossy-partial-anim-sub-replace-d0-clear-ramp/pdfjs-1.rgba": "4c62598b5765eae33d3eff734ca5e1f0a496d74b5b92d2525bbebe87d3188b32",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/external-straight.rgba": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/independent.pdf": "770d27539e324e74d13788ee5e86944bd1cc099ca03bae53f42afbc96c35c5aa",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/pdfium-0.json": "c53ccf3e2e9ce6bda9cffad5e2d484156d4158c784fe0d50a1de66c73af0e05a",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/pdfium-0.rgba": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/pdfium-1.json": "c53ccf3e2e9ce6bda9cffad5e2d484156d4158c784fe0d50a1de66c73af0e05a",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/pdfium-1.rgba": "4e1cd81afb0d5ed0a22778969d5b0d9c57da2ff68e9388beaf0a4dfdd57285b3",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/pdfjs-0.json": "daf3186ea8d54b95e37c78329538a95ce867d2c24e56f63f3fa45c9643d82409",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/pdfjs-0.rgba": "436c708e340572f1d30013882629bf2b2d84f71b092a501d5345a2b9ff8f08e2",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/pdfjs-1.json": "daf3186ea8d54b95e37c78329538a95ce867d2c24e56f63f3fa45c9643d82409",
+    "lossy-partial-anim-sub-replace-d1-opaque-edges/pdfjs-1.rgba": "436c708e340572f1d30013882629bf2b2d84f71b092a501d5345a2b9ff8f08e2",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/external-straight.rgba": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/independent.pdf": "272e3cdc8a377b98b4289cdd7638f3450de44d8d18afab7ef018454592e501ec",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/pdfium-0.json": "0512632a9a92171b123fb79c19812246bd848921b2b5b70c673df942622d96b2",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/pdfium-0.rgba": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/pdfium-1.json": "0512632a9a92171b123fb79c19812246bd848921b2b5b70c673df942622d96b2",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/pdfium-1.rgba": "ca9376ccccfd8559daab2e55e5e8f16328889893c7c0f9d495fdd3174494b8c8",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/pdfjs-0.json": "7fdf646a26d98700fa6aa7cf794e9f47eba8eb80598ebf22caee5da29b810f5a",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/pdfjs-0.rgba": "4c62598b5765eae33d3eff734ca5e1f0a496d74b5b92d2525bbebe87d3188b32",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/pdfjs-1.json": "7fdf646a26d98700fa6aa7cf794e9f47eba8eb80598ebf22caee5da29b810f5a",
+    "lossy-partial-anim-sub-replace-d1-opaque-ramp/pdfjs-1.rgba": "4c62598b5765eae33d3eff734ca5e1f0a496d74b5b92d2525bbebe87d3188b32",
+    "lossy-partial-static-full-edges/external-straight.rgba": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+    "lossy-partial-static-full-edges/independent.pdf": "b12cd5ed212b375c85ed454b3b205e4363914d287aa53fe476fddad757ad35f7",
+    "lossy-partial-static-full-edges/pdfium-0.json": "c372f83eae92f1cf17b3f1371a2ef4cafef8dc63ac80fcd10ad5ccdf3d91f62e",
+    "lossy-partial-static-full-edges/pdfium-0.rgba": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+    "lossy-partial-static-full-edges/pdfium-1.json": "c372f83eae92f1cf17b3f1371a2ef4cafef8dc63ac80fcd10ad5ccdf3d91f62e",
+    "lossy-partial-static-full-edges/pdfium-1.rgba": "4263a99847d1576d69aad35e03be954999e618fe580d49739cc1eee22bc23039",
+    "lossy-partial-static-full-edges/pdfjs-0.json": "b34d7772f0c77efc749b63c1ba5a9422e66ebc2e25c4014399dbf8e94e19c143",
+    "lossy-partial-static-full-edges/pdfjs-0.rgba": "6b7353df5b87340a73f795a1835a1747fbbbeaa97c647e71d16e3a6000499ee1",
+    "lossy-partial-static-full-edges/pdfjs-1.json": "b34d7772f0c77efc749b63c1ba5a9422e66ebc2e25c4014399dbf8e94e19c143",
+    "lossy-partial-static-full-edges/pdfjs-1.rgba": "6b7353df5b87340a73f795a1835a1747fbbbeaa97c647e71d16e3a6000499ee1",
+    "lossy-partial-static-full-ramp/external-straight.rgba": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+    "lossy-partial-static-full-ramp/independent.pdf": "4c8c8a8a2a763a8193a6607727a25b86e967e48397b42440dd47624f2ad82164",
+    "lossy-partial-static-full-ramp/pdfium-0.json": "87690093ee9e2618c1dd74346df70b13963db10ce8e615c8b9e434e1f1e489a6",
+    "lossy-partial-static-full-ramp/pdfium-0.rgba": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+    "lossy-partial-static-full-ramp/pdfium-1.json": "87690093ee9e2618c1dd74346df70b13963db10ce8e615c8b9e434e1f1e489a6",
+    "lossy-partial-static-full-ramp/pdfium-1.rgba": "1ccabf571fabfdad026246f27f1867e7747d20a58ffbc24b92f51e914a029bbd",
+    "lossy-partial-static-full-ramp/pdfjs-0.json": "04524fe38e78d52374c66668298c6344dfafeebc23138b4ffa8be801203df3b2",
+    "lossy-partial-static-full-ramp/pdfjs-0.rgba": "1d6866722d1a78424ed55fb3c0026201d0d08551d2a5b0c8d1a874418c636030",
+    "lossy-partial-static-full-ramp/pdfjs-1.json": "04524fe38e78d52374c66668298c6344dfafeebc23138b4ffa8be801203df3b2",
+    "lossy-partial-static-full-ramp/pdfjs-1.rgba": "1d6866722d1a78424ed55fb3c0026201d0d08551d2a5b0c8d1a874418c636030"
+  },
+  "inputs_sha256": "21ce05bb34249f370de8dab10026972e58dd59d40a6dfbff4d7d7df1e3b857c4",
+  "reference_sha256": "b325e8a2d8ad0a1fbd72463a9e2272ef43a1151c2ca040aa5fc46150335f49b6",
+  "schema": "webp191-comparison-boundary-controls/v1",
+  "scope": "Independent DeviceRGB/SMask PDFs from external straight decoder samples, exact same-grid comparison with production through each approved viewer. No color fitting, resizing, metric exception or replacement reference.",
+  "sources": [
+    {
+      "path": "tools/pdf-harness/pdfium/render.py",
+      "sha256": "f01b2b38bdd2341602ce9f333423c79be5188328184e274bdd7c8acb2f83df3a"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium/test_alpha.py",
+      "sha256": "c39a7cddedf8225fd332563ccd0ea8c6f1d7399559146d040311cb6682daf005"
+    },
+    {
+      "path": "tools/pdf-harness/pdfjs/render.mjs",
+      "sha256": "7386887b7b697c49fbe2c1095a94df86315bb0c15353f51eb4d03d1ba9c9a1ad"
+    },
+    {
+      "path": "tools/pdf-harness/run-pdfium.sh",
+      "sha256": "1f6ceb77d6f90bbeb5c7727279f13a37b1fe3d695744b82389631ba9e03bc819"
+    },
+    {
+      "path": "tools/pdf-harness/run-pdfjs.sh",
+      "sha256": "a944fd3b5e3e09daca96d372341585b3b17442b3421bf7697eb865d1abc8d82e"
+    },
+    {
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+      "sha256": "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
+    },
+    {
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+      "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
+    },
+    {
+      "path": "tests/conformance/pdf-viewer-qualification/rectangle-outline/manifest.json",
+      "sha256": "e2ff529519fe14feb72c53eda4097ce20da2ea8c3358ab5787e75bb5afdd96ba"
+    },
+    {
+      "path": "tests/oracle/webp-sample/approved-profile-viewer-diagnosis/measurements.json",
+      "sha256": "6d47db1399e8c857b8f402d7604d21bd0ed8474f4422fa2128bcab6a40833879"
+    },
+    {
+      "path": "tools/pdf-harness/diagnostics/webp191-comparison-boundary.py",
+      "sha256": "b5d9aa90d357094c63b2f6c5aee2e5ca162a2b165d2930d0b45b814dd48fc730"
+    }
+  ]
+}
