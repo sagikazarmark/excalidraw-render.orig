@@ -1,0 +1,1541 @@
+{
+  "schema": "excalidraw-render/jpeg190-post-approval-receipts/v1",
+  "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+  "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+  "binding": {
+    "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+    "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+    "frozen_source_record": {
+      "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+      "byte_length": 970211,
+      "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+    },
+    "post_application_files": [
+      {
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+        "byte_length": 26481,
+        "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+      },
+      {
+        "path": "tests/conformance/candidates/registry.json",
+        "byte_length": 4556,
+        "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+      },
+      {
+        "path": "tests/conformance/coverage/ownership.json",
+        "byte_length": 2709046,
+        "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+      },
+      {
+        "path": "tests/conformance/coverage/ownership-policy.json",
+        "byte_length": 178129,
+        "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+      },
+      {
+        "path": "tests/conformance/coverage/inventory.json",
+        "byte_length": 188854,
+        "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+      },
+      {
+        "path": "xtask/src/main.rs",
+        "byte_length": 26407,
+        "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+      },
+      {
+        "path": "xtask/src/coverage/ownership.rs",
+        "byte_length": 51126,
+        "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+      },
+      {
+        "path": "xtask/tests/coverage.rs",
+        "byte_length": 9584,
+        "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+      },
+      {
+        "path": "xtask/tests/representative_candidate.rs",
+        "byte_length": 2011,
+        "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+      },
+      {
+        "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+        "byte_length": 64591,
+        "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+      },
+      {
+        "path": "Cargo.toml",
+        "byte_length": 4959,
+        "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+      },
+      {
+        "path": "Cargo.lock",
+        "byte_length": 60882,
+        "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+      }
+    ],
+    "workflow": {
+      "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+      "byte_length": 34977,
+      "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+    },
+    "receipt_entry": {
+      "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+      "byte_length": 750,
+      "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+    },
+    "original_receipt_helper": {
+      "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+      "byte_length": 20173,
+      "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+    },
+    "test_inventory": {
+      "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+      "byte_length": 11207,
+      "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+    }
+  },
+  "runs": [
+    {
+      "name": "affected-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "xtask",
+        "--bin",
+        "xtask",
+        "--test",
+        "coverage",
+        "--test",
+        "representative_candidate",
+        "--no-fail-fast"
+      ],
+      "cwd": ".",
+      "environment": {
+        "toolchain": "/home/laborant/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin",
+        "settings": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_PROFILE_RELEASE_DEBUG": "0",
+          "RUSTFLAGS": "",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "exit_code": 0,
+      "stdout": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/affected-tests.stdout",
+        "byte_length": 11055,
+        "sha256": "3060d43ac7866af41fb0af96996a9e6e7cfac8970ef3092d3128c65656a7df96"
+      },
+      "stderr": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/affected-tests.stderr",
+        "byte_length": 396,
+        "sha256": "8c616221613e2bd9aa5b9a9a062e7f651d99f4295241c378ae29f6a282c4ea77"
+      },
+      "before": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "after": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "checked_outcome": {
+        "targets": [
+          {
+            "target": "xtask-bin",
+            "passed": 103,
+            "identities_sha256": "b19bf553499f0e725361a4b8954e8734d932753c1105a060595c6af0d957cabc"
+          },
+          {
+            "target": "coverage",
+            "passed": 5,
+            "identities_sha256": "6901a536423450a32f00c0e0e085c95c99607bb16d49180d2806fc2a3ab7ffd0"
+          },
+          {
+            "target": "representative_candidate",
+            "passed": 1,
+            "identities_sha256": "5e63f4bcffb2d249db28e21a028272f1c40b9d089db72f2fe6ceecc107b85142"
+          }
+        ],
+        "passed": 109,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "candidate",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "-p",
+        "xtask",
+        "--",
+        "conformance",
+        "candidate-verify",
+        "tests/conformance/candidates/stage4-frames-text-assets-v12"
+      ],
+      "cwd": ".",
+      "environment": {
+        "toolchain": "/home/laborant/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin",
+        "settings": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_PROFILE_RELEASE_DEBUG": "0",
+          "RUSTFLAGS": "",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "exit_code": 0,
+      "stdout": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/candidate.stdout",
+        "byte_length": 2242,
+        "sha256": "62223cfa600ac555b40e04891768c83c099267db97c90a273f8ea0272d80efff"
+      },
+      "stderr": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/candidate.stderr",
+        "byte_length": 186,
+        "sha256": "a534bb7ead54f0bf7f2a45c509187fe6696ac02184aa2410a9b254ac3314732f"
+      },
+      "before": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "after": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "checked_outcome": {
+        "approval_required": true,
+        "approval_subject_sha256": "f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "case_id": "representative.stage4-frames-text-assets.v12",
+        "executions": [
+          {
+            "approval_subject_sha256": "f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+            "execution_key": "representative.stage4-frames-text-assets.v12:default:svg",
+            "judgments_sha256": "ea091a7f567a12e709c0b4516189d87efd49001430ad8cb608651cdd41421050",
+            "native": {
+              "artifact_sha256": "6d27f04f4dad351ca4330895d90a6ab68a5e05e2d6e39f2e21cccffc72171743",
+              "format": "svg",
+              "fresh_process_runs": 2,
+              "report_sha256": "28d4485b1e107a379f99e3b6bbbe0c21506fa6df6361e1958841b8451c1be521"
+            },
+            "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+          },
+          {
+            "approval_subject_sha256": "f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+            "execution_key": "representative.stage4-frames-text-assets.v12:default:png",
+            "judgments_sha256": "ea091a7f567a12e709c0b4516189d87efd49001430ad8cb608651cdd41421050",
+            "native": {
+              "artifact_sha256": "e6c206a45e03e4f1f634275d7537f096f53f2b22d990e39a820e47dd90757d93",
+              "format": "png",
+              "fresh_process_runs": 2,
+              "report_sha256": "5a1fa744c59f4b9ebfdbc8ab4c92ca84f15cc6b68db2755fd6b81c1a4e357f70"
+            },
+            "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+          },
+          {
+            "approval_subject_sha256": "f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+            "execution_key": "representative.stage4-frames-text-assets.v12:default:pdf",
+            "judgments_sha256": "ea091a7f567a12e709c0b4516189d87efd49001430ad8cb608651cdd41421050",
+            "native": {
+              "artifact_sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265",
+              "format": "pdf",
+              "fresh_process_runs": 2,
+              "report_sha256": "28bf56d68a29bc7bebc0ab0d75a2913c40cced818845a63ce374705020db32cb"
+            },
+            "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+          }
+        ],
+        "schema": "excalidraw-render/representative-executions/v1"
+      }
+    },
+    {
+      "name": "registry",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "-p",
+        "xtask",
+        "--",
+        "conformance",
+        "candidate-executions"
+      ],
+      "cwd": ".",
+      "environment": {
+        "toolchain": "/home/laborant/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin",
+        "settings": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_PROFILE_RELEASE_DEBUG": "0",
+          "RUSTFLAGS": "",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "exit_code": 0,
+      "stdout": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/registry.stdout",
+        "byte_length": 2505,
+        "sha256": "d494a81eee8b92691511e83228b66d97f3a2f1e3cb319f2a91e3dba5200689db"
+      },
+      "stderr": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/registry.stderr",
+        "byte_length": 131,
+        "sha256": "5672734d085ca4f626e596b06807bd2422ea77fdfb7388b35967211e255e6336"
+      },
+      "before": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "after": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "checked_outcome": {
+        "cases": [
+          {
+            "approval_required": true,
+            "approval_subject_sha256": "f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+            "case_id": "representative.stage4-frames-text-assets.v12",
+            "executions": [
+              {
+                "approval_subject_sha256": "f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+                "execution_key": "representative.stage4-frames-text-assets.v12:default:svg",
+                "judgments_sha256": "ea091a7f567a12e709c0b4516189d87efd49001430ad8cb608651cdd41421050",
+                "native": {
+                  "artifact_sha256": "6d27f04f4dad351ca4330895d90a6ab68a5e05e2d6e39f2e21cccffc72171743",
+                  "format": "svg",
+                  "fresh_process_runs": 2,
+                  "report_sha256": "28d4485b1e107a379f99e3b6bbbe0c21506fa6df6361e1958841b8451c1be521"
+                },
+                "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+              },
+              {
+                "approval_subject_sha256": "f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+                "execution_key": "representative.stage4-frames-text-assets.v12:default:png",
+                "judgments_sha256": "ea091a7f567a12e709c0b4516189d87efd49001430ad8cb608651cdd41421050",
+                "native": {
+                  "artifact_sha256": "e6c206a45e03e4f1f634275d7537f096f53f2b22d990e39a820e47dd90757d93",
+                  "format": "png",
+                  "fresh_process_runs": 2,
+                  "report_sha256": "5a1fa744c59f4b9ebfdbc8ab4c92ca84f15cc6b68db2755fd6b81c1a4e357f70"
+                },
+                "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+              },
+              {
+                "approval_subject_sha256": "f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+                "execution_key": "representative.stage4-frames-text-assets.v12:default:pdf",
+                "judgments_sha256": "ea091a7f567a12e709c0b4516189d87efd49001430ad8cb608651cdd41421050",
+                "native": {
+                  "artifact_sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265",
+                  "format": "pdf",
+                  "fresh_process_runs": 2,
+                  "report_sha256": "28bf56d68a29bc7bebc0ab0d75a2913c40cced818845a63ce374705020db32cb"
+                },
+                "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+              }
+            ],
+            "schema": "excalidraw-render/representative-executions/v1"
+          }
+        ],
+        "schema": "excalidraw-render/representative-corpus-results/v1"
+      }
+    },
+    {
+      "name": "owner",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "-p",
+        "xtask",
+        "--",
+        "conformance",
+        "verify-representative-owner",
+        "representative.stage4-frames-text-assets.v12"
+      ],
+      "cwd": ".",
+      "environment": {
+        "toolchain": "/home/laborant/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin",
+        "settings": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_PROFILE_RELEASE_DEBUG": "0",
+          "RUSTFLAGS": "",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "exit_code": 0,
+      "stdout": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/owner.stdout",
+        "byte_length": 84,
+        "sha256": "b14880fee313fd7b90b545c5c449be06820cbea98d150f5cb0f01e0878dcb135"
+      },
+      "stderr": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/owner.stderr",
+        "byte_length": 183,
+        "sha256": "e2d2c4e5c27efab05b661ac28d7e782406fe2ee0971662318f8177140652aec4"
+      },
+      "before": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "after": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "checked_outcome": {
+        "verified_output": "verified approved representative owner representative.stage4-frames-text-assets.v12\n"
+      }
+    },
+    {
+      "name": "inventory",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "-p",
+        "xtask",
+        "--",
+        "conformance",
+        "verify-inventory"
+      ],
+      "cwd": ".",
+      "environment": {
+        "toolchain": "/home/laborant/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin",
+        "settings": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_PROFILE_RELEASE_DEBUG": "0",
+          "RUSTFLAGS": "",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "exit_code": 0,
+      "stdout": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/inventory.stdout",
+        "byte_length": 113,
+        "sha256": "33d1f9bfa7af9722bec7e570df1304f827984b82ef859d1873334c05ac405795"
+      },
+      "stderr": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/inventory.stderr",
+        "byte_length": 127,
+        "sha256": "ea16b7d4955482754776a1889d1cde8cc57c4ef1f6c8ad7d8d960606f955dc45"
+      },
+      "before": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "after": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "checked_outcome": {
+        "verified_output": "verified draft inventory: 320 coverage rows, 168 executions, 8 unresolved milestones; release closure is pending\n"
+      }
+    },
+    {
+      "name": "ownership",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "-p",
+        "xtask",
+        "--",
+        "conformance",
+        "verify-ownership"
+      ],
+      "cwd": ".",
+      "environment": {
+        "toolchain": "/home/laborant/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin",
+        "settings": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_PROFILE_RELEASE_DEBUG": "0",
+          "RUSTFLAGS": "",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "exit_code": 0,
+      "stdout": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/ownership.stdout",
+        "byte_length": 103,
+        "sha256": "dfc6cafabe1a2a2c178b1a7e9bf18211170c3f417281e91b317bfd05a364dcb1"
+      },
+      "stderr": {
+        "path": "tests/conformance/coverage/jpeg190-application-v1/logs/ownership.stderr",
+        "byte_length": 127,
+        "sha256": "e7b6a8a8d359c3c4ff1058c66399c31f87fe8ef9d425e04072df1b20f8010e56"
+      },
+      "before": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "after": {
+        "production_subject_sha256": "sha256:090a8683ca07feff5c95800de8713da14270ceba6ac50f95ab669a3107512963",
+        "representative_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
+        "frozen_source_record": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/final-freeze.json",
+          "byte_length": 970211,
+          "sha256": "e97db20470587e937e8eb67a58bf0f46a2728f1f90393dff8d23cc4dcf68c534"
+        },
+        "post_application_files": [
+          {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+            "byte_length": 26481,
+            "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
+          },
+          {
+            "path": "tests/conformance/candidates/registry.json",
+            "byte_length": 4556,
+            "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership.json",
+            "byte_length": 2709046,
+            "sha256": "840300f5ea86fa57f34964922576ee4f7becfaec62da672c509c8f61dcb4ac3d"
+          },
+          {
+            "path": "tests/conformance/coverage/ownership-policy.json",
+            "byte_length": 178129,
+            "sha256": "b17711bb0b8af5702c24cfb51d00a654e45bea1bc8f9422e87bf4bf69f22318e"
+          },
+          {
+            "path": "tests/conformance/coverage/inventory.json",
+            "byte_length": 188854,
+            "sha256": "5d4c81d5cc17b5153fe5b0a6784c0e2499a947c77eb32d600c6a65e6a7130faa"
+          },
+          {
+            "path": "xtask/src/main.rs",
+            "byte_length": 26407,
+            "sha256": "0ce2ed5b03413581f9685b4692bbaa9030078dc4b1535e93c65f3f0b9faf13fb"
+          },
+          {
+            "path": "xtask/src/coverage/ownership.rs",
+            "byte_length": 51126,
+            "sha256": "be12e52a12c397da567749351dc7a6d3645c5b750d41c7f6be672d03c2cfa377"
+          },
+          {
+            "path": "xtask/tests/coverage.rs",
+            "byte_length": 9584,
+            "sha256": "2174acac8c01d55ed15aed384b9c63dd37a85e9fdca8cf73680560d3dc7c39c1"
+          },
+          {
+            "path": "xtask/tests/representative_candidate.rs",
+            "byte_length": 2011,
+            "sha256": "e76988c3b871fcbddb327ee1e2a3349c4fa67b37c088dd8cdde5e7b01d9dced2"
+          },
+          {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "byte_length": 64591,
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          {
+            "path": "Cargo.toml",
+            "byte_length": 4959,
+            "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+          },
+          {
+            "path": "Cargo.lock",
+            "byte_length": 60882,
+            "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+          }
+        ],
+        "workflow": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/workflow.py",
+          "byte_length": 34977,
+          "sha256": "a01169d37109a98bf5874180765db868b3920e1c6e3e3406838d2e78d49f1631"
+        },
+        "receipt_entry": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/receipt_gate.py",
+          "byte_length": 750,
+          "sha256": "119ecfaf3027cbf80049f954b5c8a229c11a266fe3995bd2a6198d91c149c97c"
+        },
+        "original_receipt_helper": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/before/tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+          "byte_length": 20173,
+          "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+        },
+        "test_inventory": {
+          "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/target-identities.json",
+          "byte_length": 11207,
+          "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+        }
+      },
+      "checked_outcome": {
+        "verified_output": "verified 2126 ownership assignments: 2041 assigned/excluded, 85 explicit gaps; ledger approval pending\n"
+      }
+    }
+  ]
+}

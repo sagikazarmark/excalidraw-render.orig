@@ -1,0 +1,15 @@
+
+running 10 tests
+test render::asset::tests::jpeg_codec::a_baseline_jpeg_decodes_to_opaque_srgb ... ok
+test render::asset::tests::jpeg_codec::baseline_progressive_grayscale_and_raw_streams_decode_alike ... ok
+test render::asset::tests::jpeg_codec::exif_orientation_swaps_the_dimensions_and_turns_the_pixels ... ok
+test render::asset::tests::jpeg_codec::malformed_multipart_icc_metadata_is_a_decode_failure ... ok
+test render::asset::tests::jpeg_codec::the_sniffed_kind_wins_over_both_claims_which_are_kept_for_the_session ... ok
+test render::asset::tests::jpeg_codec::truncated_and_malformed_streams_are_decode_failures ... ok
+test render::asset::tests::jpeg_codec::unqualified_concatenated_streams_are_a_decode_failure ... ok
+test render::asset::tests::jpeg_codec::an_embedded_icc_profile_takes_precedence_over_the_srgb_default ... ok
+test render::asset::tests::jpeg_codec::a_signature_only_gain_map_index_is_not_a_valid_container ... ok
+test render::asset::tests::jpeg_codec::a_cmyk_jpeg_decodes_to_opaque_srgb ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 401 filtered out; finished in 0.00s
+

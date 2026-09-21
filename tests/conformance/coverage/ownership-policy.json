@@ -1600,25 +1600,25 @@
     {
       "id": "codec:jpeg:mpf-xmp:baseline-little-bad-offset",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP baseline-little-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-little-bad-size",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP baseline-little-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-little-bad-count",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP baseline-little-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-little-missing-secondary",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP baseline-little-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
@@ -1678,25 +1678,25 @@
     {
       "id": "codec:jpeg:mpf-xmp:baseline-big-bad-offset",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP baseline-big-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-big-bad-size",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP baseline-big-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-big-bad-count",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP baseline-big-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-big-missing-secondary",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP baseline-big-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
@@ -1756,25 +1756,25 @@
     {
       "id": "codec:jpeg:mpf-xmp:progressive-little-bad-offset",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP progressive-little-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-little-bad-size",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP progressive-little-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-little-bad-count",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP progressive-little-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-little-missing-secondary",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP progressive-little-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
@@ -1834,25 +1834,25 @@
     {
       "id": "codec:jpeg:mpf-xmp:progressive-big-bad-offset",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP progressive-big-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-big-bad-size",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP progressive-big-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-big-bad-count",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP progressive-big-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-big-missing-secondary",
       "category": "codec-profile",
-      "criterion": "JPEG MPF/Adobe-XMP progressive-big-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact image.decode-failed machine reports in SVG/PNG/PDF, independent missing-asset recovery artifact equivalence, exact artifact/page/image extents, opacity where applicable and fresh replay for malformed MP index ranges/count or missing secondary; independently prove the index inconsistency and characterize browser base-image fallback without claiming canonical visual equivalence for rejected input or granting a tolerance exception. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {

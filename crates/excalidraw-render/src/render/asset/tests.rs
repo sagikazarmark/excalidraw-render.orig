@@ -523,7 +523,7 @@ mod jpeg_codec {
     }
 
     #[test]
-    fn a_gain_map_container_projects_its_base_image() {
+    fn a_signature_only_gain_map_index_is_not_a_valid_container() {
         let base = jpeg_rgb(1, 1, &[JFIF_BLUE]);
         let gain_map = jpeg_rgb(1, 1, &[[255, 255, 255]]);
         let xmp = b"http://ns.adobe.com/xap/1.0/\0<x:xmpmeta hdrgm:Version=\"1.0\"/>";
@@ -532,8 +532,8 @@ mod jpeg_codec {
         container.extend_from_slice(&gain_map);
 
         assert_eq!(
-            only_pixel(&decode("image/jpeg", &container)),
-            only_pixel(&decode("image/jpeg", &base))
+            failure_for("image/jpeg", &container, OutputFormat::Svg),
+            ResolveError::JpegDecodeFailed
         );
     }
 

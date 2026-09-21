@@ -1,10 +1,12 @@
 //! Bounded MPF/XMP qualification: 52 cells / 104 vectors, frozen official
 //! browser evidence, independently inspected TIFF fields, XML and JPEG ranges.
-//! Owners: 12 SDR cells and 16 strict framing-recovery cells. #190 retains
-//! 8 HDR color gaps and 16 malformed-but-admitted gaps; admission is not safety
-//! qualification. Defect pins require canonical failure, never an exception.
+//! Owners: 12 SDR cells, 16 strict framing-recovery cells and 16 strict MPF
+//! index-recovery cells. #190 retains 8 unqualified HDR color gaps.
+//! Defect pins require canonical failure, never an exception.
 //! PDF measurements cover page bounds and the actual bound image/ICC/alpha,
 //! against browser-rasterized SVG, not a whole-PDF viewer claim.
+//! Optional MPF tags and relocated IFDs are additional native structural
+//! controls; they add no browser evidence or qualified matrix cells.
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{
@@ -17,7 +19,7 @@ use std::collections::BTreeSet;
 const SDR: &[&str] = &["identity", "sdr-ramp", "sdr-edges"];
 const HDR: &[&str] = &["hdr-ramp", "hdr-edges"];
 const RECOVERY: &[&str] = &["omit-mpf", "omit-xmp", "truncated-secondary", "third-image"];
-const ADMISSION_GAPS: &[&str] = &["bad-offset", "bad-size", "bad-count", "missing-secondary"];
+const INDEX_RECOVERY: &[&str] = &["bad-offset", "bad-size", "bad-count", "missing-secondary"];
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 const XMP: &[u8] = b"http://ns.adobe.com/xap/1.0/\0";
 const HDRGM: &str = "http://ns.adobe.com/hdr-gain-map/1.0/";
@@ -336,7 +338,7 @@ fn structural_matrix(record: &Value) {
     let mut expected = BTreeSet::new();
     for mode in ["baseline", "progressive"] {
         for order in ["big", "little"] {
-            for signal in SDR.iter().chain(HDR).chain(RECOVERY).chain(ADMISSION_GAPS) {
+            for signal in SDR.iter().chain(HDR).chain(RECOVERY).chain(INDEX_RECOVERY) {
                 for pattern in ["ramp", "edges"] {
                     expected.insert(format!("{mode}-{order}-{signal}-{pattern}"));
                 }
@@ -746,11 +748,15 @@ fn hdr_gain_maps_pin_known_color_defect_190() {
     }
 }
 #[test]
-fn malformed_mpf_admission_is_unqualified_gap_190() {
+fn corrected_mpf_index_ranges_have_exact_recovery() {
     let record = evidence();
-    let bases = base_evidence();
-    for row in selected(&record, ADMISSION_GAPS, 16) {
-        admitted(row, by_id(&bases, &row["base_id"]), false);
+    assert_optional_mpf_controls(&record);
+    assert_malformed_mpf_fields(&record);
+    assert_representative_primary_flag(&record);
+    assert_secondary_mpf_index_recovery(&record);
+    assert_secondary_mpf_attributes(&record);
+    for row in selected(&record, INDEX_RECOVERY, 16) {
+        exact_recovery(row);
     }
 }
 #[test]
@@ -760,34 +766,650 @@ fn invalid_container_framing_has_exact_recovery() {
     assert_nonidentity_map_discrimination(&record);
     assert_output_mutations(&record);
     for row in selected(&record, RECOVERY, 16) {
-        let mut missing = row["scene"].clone();
-        missing["files"] = json!({});
-        for format in FORMATS {
-            let (bytes, mut report) = render(&row["scene"], format);
-            for diagnostic in report["diagnostics"].as_array_mut().unwrap() {
-                assert!(!diagnostic["message"].as_str().unwrap().is_empty());
-                diagnostic.as_object_mut().unwrap().remove("message");
-            }
-            assert_eq!(
-                report,
-                json!({"schema_version":1,"diagnostics":[{
-                    "code":"image.decode-failed","severity":"warning","format":format.as_str(),"effects":["visual"],
-                    "element_id":"image","json_pointer":"/files/asset/dataURL","details":{"kind":"asset","asset_id":"asset",
-                    "claimed_media_type":null,"validated_media_type":"image/jpeg",
-                    "recovery":if format == OutputFormat::Png {"placeholder"} else {"omitted"},
-                    "recipe_id":if format == OutputFormat::Png {json!("official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d")} else {Value::Null}}
-                }]}),
-                "{}: {format:?}",
-                row["id"]
-            );
-            assert_eq!(
-                bytes,
-                render(&missing, format).0,
-                "{}: {format:?}",
-                row["id"]
-            );
-            recovery_artifact(&bytes, format, row);
+        exact_recovery(row);
+    }
+}
+
+fn exact_recovery(row: &Value) {
+    let mut missing = row["scene"].clone();
+    missing["files"] = json!({});
+    for format in FORMATS {
+        let (bytes, mut report) = render(&row["scene"], format);
+        for diagnostic in report["diagnostics"].as_array_mut().unwrap() {
+            assert!(!diagnostic["message"].as_str().unwrap().is_empty());
+            diagnostic.as_object_mut().unwrap().remove("message");
         }
+        assert_eq!(
+            report,
+            json!({"schema_version":1,"diagnostics":[{
+                "code":"image.decode-failed","severity":"warning","format":format.as_str(),"effects":["visual"],
+                "element_id":"image","json_pointer":"/files/asset/dataURL","details":{"kind":"asset","asset_id":"asset",
+                "claimed_media_type":null,"validated_media_type":"image/jpeg",
+                "recovery":if format == OutputFormat::Png {"placeholder"} else {"omitted"},
+                "recipe_id":if format == OutputFormat::Png {json!("official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d")} else {Value::Null}}
+            }]}),
+            "{}: {format:?}",
+            row["id"]
+        );
+        assert_eq!(
+            bytes,
+            render(&missing, format).0,
+            "{}: {format:?}",
+            row["id"]
+        );
+        recovery_artifact(&bytes, format, row);
+    }
+}
+
+// Mutate frozen, independently qualified containers, never a production writer
+// or a signature-only MPF stand-in. Addresses are relative to TIFF at byte 10.
+fn tiff_long(bytes: &mut [u8], big: bool, at: usize, value: u32) {
+    let value = if big {
+        value.to_be_bytes()
+    } else {
+        value.to_le_bytes()
+    };
+    bytes[10 + at..14 + at].copy_from_slice(&value);
+}
+fn tiff_short(bytes: &mut [u8], big: bool, at: usize, value: u16) {
+    let value = if big {
+        value.to_be_bytes()
+    } else {
+        value.to_le_bytes()
+    };
+    bytes[10 + at..12 + at].copy_from_slice(&value);
+}
+
+fn with_mpf_bytes(row: &Value, name: &str, bytes: &[u8]) -> Value {
+    let mut changed = row.clone();
+    changed["id"] = json!(format!("{}-{name}", row["id"].as_str().unwrap()));
+    changed["scene"]["files"]["asset"]["dataURL"] = json!(format!(
+        "data:image/jpeg;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(bytes)
+    ));
+    changed
+}
+
+// Construct legal alternatives from the frozen SDR index, without calling any
+// production MPF parser/writer. The unchanged JPEG/XMP payloads remain the
+// authority for image extents; TIFF placement is independently inspected below.
+fn optional_mpf_bytes(
+    original: &[u8],
+    big: bool,
+    uid: bool,
+    frames: bool,
+    before: bool,
+) -> Vec<u8> {
+    let count = 3 + usize::from(uid) + usize::from(frames);
+    let ifd = if before { 40 } else { 8 };
+    let table_end = ifd + 2 + count * 12 + 4;
+    let entries = if before { 8 } else { table_end };
+    let uid_at = table_end.max(entries + 32);
+    let tiff_len = uid_at + if uid { 66 } else { 0 };
+    let mut bytes = original[..18].to_vec();
+    bytes.resize(10 + tiff_len, 0);
+    bytes[4..6].copy_from_slice(&u16::try_from(tiff_len + 6).unwrap().to_be_bytes());
+    tiff_long(&mut bytes, big, 4, ifd as u32);
+    tiff_short(&mut bytes, big, ifd, count as u16);
+    bytes[10 + ifd + 2..10 + ifd + 38].copy_from_slice(&original[20..56]);
+    tiff_long(&mut bytes, big, ifd + 34, entries as u32);
+    if uid {
+        let tag = ifd + 38;
+        tiff_short(&mut bytes, big, tag, 0xb003);
+        tiff_short(&mut bytes, big, tag + 2, 7);
+        tiff_long(&mut bytes, big, tag + 4, 66);
+        tiff_long(&mut bytes, big, tag + 8, uid_at as u32);
+        bytes[10 + uid_at..10 + uid_at + 33].copy_from_slice(b"0123456789abcdef0123456789abcdef\0");
+        bytes[10 + uid_at + 33..10 + uid_at + 66]
+            .copy_from_slice(b"fedcba9876543210fedcba9876543210\0");
+    }
+    if frames {
+        let tag = ifd + 38 + usize::from(uid) * 12;
+        tiff_short(&mut bytes, big, tag, 0xb004);
+        tiff_short(&mut bytes, big, tag + 2, 4);
+        tiff_long(&mut bytes, big, tag + 4, 1);
+        // TotalFrames describes a larger collection, not NumberOfImages.
+        tiff_long(&mut bytes, big, tag + 8, if before { u32::MAX } else { 0 });
+    }
+    bytes[10 + entries..10 + entries + 32].copy_from_slice(&original[60..92]);
+    let primary = jpeg_end(original).unwrap() + tiff_len - 82;
+    tiff_long(&mut bytes, big, entries + 4, primary as u32);
+    tiff_long(&mut bytes, big, entries + 24, primary as u32 - 10);
+    bytes.extend_from_slice(&original[92..]);
+    bytes
+}
+
+// Deliberately separate from index(), whose exact three-tag layout qualifies
+// only the frozen browser fixtures. Inspect actual TIFF fields and disjoint
+// ranges, not a production parse result or just a successful native render.
+fn inspect_optional_mpf(
+    bytes: &[u8],
+    original: &[u8],
+    big: bool,
+    uid: bool,
+    frames: bool,
+    before: bool,
+) {
+    let mpf = segment(bytes, 2, 0xe2).unwrap();
+    assert_eq!(&mpf[4..8], b"MPF\0");
+    let tiff = &mpf[8..];
+    assert_eq!(&tiff[..2], if big { b"MM" } else { b"II" });
+    let short = |at| {
+        let value = tiff[at..at + 2].try_into().unwrap();
+        if big {
+            u16::from_be_bytes(value)
+        } else {
+            u16::from_le_bytes(value)
+        }
+    };
+    let long = |at| {
+        let value = tiff[at..at + 4].try_into().unwrap();
+        if big {
+            u32::from_be_bytes(value)
+        } else {
+            u32::from_le_bytes(value)
+        }
+    };
+    assert_eq!(short(2), 42);
+    let ifd = long(4) as usize;
+    let count = usize::from(short(ifd));
+    let tags: Vec<_> = (0..count).map(|i| ifd + 2 + i * 12).collect();
+    let mut expected = vec![(0xb000, 7, 4), (0xb001, 4, 1), (0xb002, 7, 32)];
+    if uid {
+        expected.push((0xb003, 7, 66));
+    }
+    if frames {
+        expected.push((0xb004, 4, 1));
+    }
+    assert_eq!(
+        tags.iter()
+            .map(|&at| (short(at), short(at + 2), long(at + 4)))
+            .collect::<Vec<_>>(),
+        expected
+    );
+    assert_eq!(&tiff[tags[0] + 8..tags[0] + 12], b"0100");
+    assert_eq!(long(tags[1] + 8), 2);
+    let entries = long(tags[2] + 8) as usize;
+    let table_end = ifd + 2 + count * 12 + 4;
+    assert_eq!(long(table_end - 4), 0);
+    assert_eq!(entries < ifd, before);
+    let mut ranges = vec![0..8, ifd..table_end, entries..entries + 32];
+    if uid {
+        let start = long(tags[3] + 8) as usize;
+        assert_eq!(
+            &tiff[start..start + 66],
+            b"0123456789abcdef0123456789abcdef\0fedcba9876543210fedcba9876543210\0"
+        );
+        ranges.push(start..start + 66);
+    }
+    if frames {
+        assert_eq!(
+            long(tags.last().unwrap() + 8),
+            if before { u32::MAX } else { 0 }
+        );
+    }
+    ranges.sort_by_key(|range| range.start);
+    for pair in ranges.windows(2) {
+        assert_eq!(pair[0].end, pair[1].start);
+    }
+    assert_eq!(ranges.last().unwrap().end, tiff.len());
+    let primary = jpeg_end(bytes).unwrap();
+    let secondary = jpeg_end(&bytes[primary..]).unwrap();
+    assert_eq!(primary + secondary, bytes.len());
+    assert_eq!(
+        (long(entries), long(entries + 8), long(entries + 12)),
+        (0x030000, 0, 0)
+    );
+    assert_eq!((long(entries + 16), long(entries + 28)), (0, 0));
+    assert_eq!(long(entries + 4) as usize, primary);
+    assert_eq!(long(entries + 20) as usize, secondary);
+    assert_eq!(long(entries + 24) as usize + 10, primary);
+    assert_eq!(&bytes[2 + mpf.len()..], &original[92..]);
+    xmp(
+        segment(bytes, 2 + mpf.len(), 0xe1).unwrap(),
+        true,
+        secondary,
+        false,
+        0,
+    )
+    .unwrap();
+    xmp(
+        segment(&bytes[primary..], 2, 0xe1).unwrap(),
+        false,
+        secondary,
+        false,
+        0,
+    )
+    .unwrap();
+}
+
+#[test]
+fn optional_mpf_layouts_preserve_native_projection() {
+    assert_optional_mpf_controls(&evidence());
+}
+
+fn assert_metadata_projection(row: &Value, name: &str, bytes: &[u8]) {
+    let changed = with_mpf_bytes(row, name, bytes);
+    for format in FORMATS {
+        let (plain, plain_report) = render(&row["scene"], format);
+        let (artifact, report) = render(&changed["scene"], format);
+        assert_eq!(plain_report, json!({"schema_version":1,"diagnostics":[]}));
+        assert_eq!(report, plain_report, "{name}: {format:?}");
+        if format == OutputFormat::Svg {
+            let svg = std::str::from_utf8(&artifact).unwrap();
+            svg_check(svg, &changed, true);
+            let normalized = svg.replace(
+                changed["scene"]["files"]["asset"]["dataURL"]
+                    .as_str()
+                    .unwrap(),
+                row["scene"]["files"]["asset"]["dataURL"].as_str().unwrap(),
+            );
+            assert_eq!(normalized.as_bytes(), plain, "{name}");
+        } else {
+            assert_eq!(artifact, plain, "{name}: {format:?}");
+            pixels(&artifact, format, row);
+        }
+    }
+}
+
+// Insert an APP2 immediately after the secondary SOI. Repair both the primary
+// MPEntry size and XMP length, so a conflicting secondary index is the only
+// rejection cause. These frozen sizes retain the same decimal digit count.
+fn with_secondary_mpf(original: &[u8], big: bool, app2: &[u8]) -> Vec<u8> {
+    assert_eq!(segment(app2, 0, 0xe2).unwrap(), app2);
+    let primary = jpeg_end(original).unwrap();
+    let secondary = jpeg_end(&original[primary..]).unwrap();
+    assert_eq!(primary + secondary, original.len());
+    let old_length = format!("Item:Length=\"{secondary}\"");
+    let new_length = format!("Item:Length=\"{}\"", secondary + app2.len());
+    assert_eq!(old_length.len(), new_length.len());
+    let primary_xmp = segment(original, 92, 0xe1).unwrap();
+    let length_at = 92
+        + primary_xmp
+            .windows(old_length.len())
+            .position(|w| w == old_length.as_bytes())
+            .unwrap();
+    let mut bytes = original.to_vec();
+    bytes[length_at..length_at + new_length.len()].copy_from_slice(new_length.as_bytes());
+    tiff_long(&mut bytes, big, 70, (secondary + app2.len()) as u32);
+    bytes.splice(primary + 2..primary + 2, app2.iter().copied());
+    assert_eq!(jpeg_end(&bytes), Ok(primary));
+    assert_eq!(jpeg_end(&bytes[primary..]), Ok(secondary + app2.len()));
+    assert_eq!(bytes.len(), original.len() + app2.len());
+    let entry = index(segment(&bytes, 2, 0xe2).unwrap(), big).unwrap();
+    assert_eq!(entry.count, 2);
+    assert_eq!(entry.primary, primary);
+    assert_eq!(entry.offset + 10, primary);
+    assert_eq!(entry.secondary, secondary + app2.len());
+    assert_eq!(&bytes[primary + 2 + app2.len()..], &original[primary + 2..]);
+    xmp(
+        segment(&bytes, 92, 0xe1).unwrap(),
+        true,
+        secondary + app2.len(),
+        false,
+        0,
+    )
+    .unwrap();
+    bytes
+}
+
+#[test]
+fn secondary_mpf_index_has_exact_recovery() {
+    assert_secondary_mpf_index_recovery(&evidence());
+}
+
+fn assert_secondary_mpf_index_recovery(record: &Value) {
+    let mut rows = Vec::new();
+    for mode in ["baseline", "progressive"] {
+        for order in ["little", "big"] {
+            let row = by_id(record, &json!(format!("{mode}-{order}-identity-ramp")));
+            let original = decode(&row["jpeg_base64"]);
+            let big = order == "big";
+            assert_eq!(container(&original, big, false, 0), Ok(()));
+            let copy = segment(&original, 2, 0xe2).unwrap();
+            assert_eq!(copy.len(), 90);
+            let bytes = with_secondary_mpf(&original, big, copy);
+            let primary = jpeg_end(&bytes).unwrap();
+            assert_eq!(segment(&bytes, primary + 2, 0xe2).unwrap(), copy);
+            // It is a complete MP Index IFD, not an MP Attribute IFD. Its
+            // copied image ranges also conflict with its new TIFF origin.
+            let copied = index(copy, big).unwrap();
+            assert_eq!(copied.count, 2);
+            assert_ne!(primary + 10 + copied.offset, primary);
+            rows.push(with_mpf_bytes(row, "secondary-mp-index", &bytes));
+        }
+    }
+    assert_eq!(rows.len(), 4);
+    for row in rows {
+        exact_recovery(&row);
+    }
+}
+
+#[test]
+fn representative_primary_flag_preserves_native_projection() {
+    assert_representative_primary_flag(&evidence());
+}
+
+fn assert_representative_primary_flag(record: &Value) {
+    for mode in ["baseline", "progressive"] {
+        for order in ["little", "big"] {
+            let row = by_id(record, &json!(format!("{mode}-{order}-identity-ramp")));
+            let original = decode(&row["jpeg_base64"]);
+            let big = order == "big";
+            assert_eq!(container(&original, big, false, 0), Ok(()));
+            let mut bytes = original.clone();
+            tiff_long(&mut bytes, big, 50, 0x20030000);
+            let flag_byte = if big { 60 } else { 63 };
+            assert_eq!(bytes[flag_byte], original[flag_byte] | 0x20);
+            assert_eq!(&bytes[..flag_byte], &original[..flag_byte]);
+            assert_eq!(&bytes[flag_byte + 1..], &original[flag_byte + 1..]);
+            assert_metadata_projection(row, "representative-primary", &bytes);
+        }
+    }
+}
+
+#[test]
+fn secondary_mpf_attribute_ifd_preserves_native_projection() {
+    assert_secondary_mpf_attributes(&evidence());
+}
+
+fn assert_secondary_mpf_attributes(record: &Value) {
+    let mut rejected = 0;
+    for mode in ["baseline", "progressive"] {
+        for order in ["little", "big"] {
+            let row = by_id(record, &json!(format!("{mode}-{order}-identity-ramp")));
+            let original = decode(&row["jpeg_base64"]);
+            let big = order == "big";
+            assert_eq!(container(&original, big, false, 0), Ok(()));
+            // Independently authored APP2: 38-byte TIFF, sorted version and
+            // MPIndividualNum tags, inline values, no MP Index or next IFD.
+            let app2: &[u8] = if big {
+                b"\xff\xe2\x00\x2cMPF\0MM\x00\x2a\x00\x00\x00\x08\x00\x02\xb0\x00\x00\x07\x00\x00\x00\x040100\xb1\x01\x00\x04\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x00"
+            } else {
+                b"\xff\xe2\x00\x2cMPF\0II\x2a\x00\x08\x00\x00\x00\x02\x00\x00\xb0\x07\x00\x04\x00\x00\x000100\x01\xb1\x04\x00\x01\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00"
+            };
+            assert_eq!(app2.len(), 46);
+            let bytes = with_secondary_mpf(&original, big, app2);
+            assert_eq!(
+                segment(&bytes, jpeg_end(&bytes).unwrap() + 2, 0xe2).unwrap(),
+                app2
+            );
+            assert_metadata_projection(row, "secondary-mp-attribute", &bytes);
+
+            // A second individually valid MP Attribute APP2 is still a
+            // duplicate. Reuse the same insertion path to repair MPEntry and
+            // XMP lengths again, rather than failing on stale image ranges.
+            let duplicate = with_secondary_mpf(&bytes, big, app2);
+            let primary = jpeg_end(&duplicate).unwrap();
+            assert_eq!(duplicate.len(), original.len() + 2 * app2.len());
+            for at in [primary + 2, primary + 2 + app2.len()] {
+                assert_eq!(segment(&duplicate, at, 0xe2).unwrap(), app2);
+            }
+            exact_recovery(&with_mpf_bytes(
+                row,
+                "duplicate-secondary-attribute",
+                &duplicate,
+            ));
+            rejected += 1;
+
+            // All offsets are TIFF-relative in the secondary image. Mutating
+            // the TIFF leaves APP2/JPEG framing and repaired XMP lengths valid.
+            let mut mutations = Vec::new();
+            for (name, at, value) in [
+                ("attribute-bad-magic", 2, 0),
+                ("attribute-huge-ifd-count", 8, u16::MAX),
+                ("attribute-individual-not-long", 24, 3),
+            ] {
+                let mut changed = bytes.clone();
+                tiff_short(&mut changed[primary..], big, at, value);
+                mutations.push((name, changed));
+            }
+            for (name, at, value) in [
+                ("attribute-huge-ifd-offset", 4, u32::MAX),
+                ("attribute-wrong-version-count", 14, 3),
+                ("attribute-wrong-individual-count", 26, 2),
+                ("attribute-wrong-individual-number", 30, 1),
+            ] {
+                let mut changed = bytes.clone();
+                tiff_long(&mut changed[primary..], big, at, value);
+                mutations.push((name, changed));
+            }
+            assert_eq!(mutations.len(), 7);
+            for (name, changed) in mutations {
+                assert_ne!(changed, bytes);
+                assert_eq!(&changed[..primary + 10], &bytes[..primary + 10]);
+                assert_eq!(
+                    &changed[primary + 2 + app2.len()..],
+                    &bytes[primary + 2 + app2.len()..]
+                );
+                assert_eq!(jpeg_end(&changed), Ok(primary));
+                assert_eq!(jpeg_end(&changed[primary..]), Ok(changed.len() - primary));
+                exact_recovery(&with_mpf_bytes(row, name, &changed));
+                rejected += 1;
+            }
+        }
+    }
+    assert_eq!(rejected, 32);
+}
+
+fn assert_optional_mpf_controls(record: &Value) {
+    let mut valid = 0;
+    let mut invalid = 0;
+    for mode in ["baseline", "progressive"] {
+        for order in ["little", "big"] {
+            let row = by_id(record, &json!(format!("{mode}-{order}-identity-ramp")));
+            let original = decode(&row["jpeg_base64"]);
+            let big = order == "big";
+            let originals = FORMATS.map(|format| render(&row["scene"], format));
+            for (uid, frames) in [(false, false), (true, false), (false, true), (true, true)] {
+                for before in [false, true] {
+                    let bytes = optional_mpf_bytes(&original, big, uid, frames, before);
+                    inspect_optional_mpf(&bytes, &original, big, uid, frames, before);
+                    let name = format!("uid-{uid}-frames-{frames}-entries-before-{before}");
+                    let changed = with_mpf_bytes(row, &name, &bytes);
+                    for (format, (plain, plain_report)) in FORMATS.into_iter().zip(&originals) {
+                        let (artifact, report) = render(&changed["scene"], format);
+                        assert_eq!(plain_report, &json!({"schema_version":1,"diagnostics":[]}));
+                        assert_eq!(&report, plain_report, "{name}: {format:?}");
+                        if format == OutputFormat::Svg {
+                            let svg = std::str::from_utf8(&artifact).unwrap();
+                            svg_check(svg, &changed, true);
+                            let normalized = svg.replace(
+                                changed["scene"]["files"]["asset"]["dataURL"]
+                                    .as_str()
+                                    .unwrap(),
+                                row["scene"]["files"]["asset"]["dataURL"].as_str().unwrap(),
+                            );
+                            assert_eq!(normalized.as_bytes(), plain, "{name}");
+                        } else {
+                            assert_eq!(&artifact, plain, "{name}: {format:?}");
+                            pixels(&artifact, format, row);
+                        }
+                    }
+                    valid += 1;
+
+                    let ifd = if before { 40 } else { 8 };
+                    let count = 3 + usize::from(uid) + usize::from(frames);
+                    let table_end = ifd + 2 + count * 12 + 4;
+                    let entries = if before { 8 } else { table_end };
+                    let mut mutations = Vec::new();
+                    let mut reordered = bytes.clone();
+                    let first = 10 + ifd + 2;
+                    // Swap whole required tags; all values and ranges survive.
+                    reordered[first..first + 24].rotate_left(12);
+                    mutations.push(("required-tags-out-of-order", reordered));
+                    let mut next = bytes.clone();
+                    tiff_long(&mut next, big, table_end - 4, ifd as u32);
+                    mutations.push(("nonzero-next-ifd", next));
+                    if uid {
+                        for (reason, offset) in [
+                            ("uid-overlaps-header", 0),
+                            ("uid-overlaps-table", ifd as u32),
+                            ("uid-overlaps-entries", entries as u32),
+                            (
+                                "uid-out-of-bounds",
+                                (segment(&bytes, 2, 0xe2).unwrap().len() - 8 - 65) as u32,
+                            ),
+                        ] {
+                            let mut bad_uid = bytes.clone();
+                            tiff_long(&mut bad_uid, big, ifd + 46, offset);
+                            mutations.push((reason, bad_uid));
+                        }
+                    }
+                    for (reason, bad) in mutations {
+                        assert_ne!(bad, bytes);
+                        assert_eq!(jpeg_end(&bad), jpeg_end(&bytes));
+                        let payload = 2 + segment(&bytes, 2, 0xe2).unwrap().len();
+                        assert_eq!(&bad[payload..], &bytes[payload..]);
+                        exact_recovery(&with_mpf_bytes(row, &format!("{name}-{reason}"), &bad));
+                        invalid += 1;
+                    }
+                }
+            }
+        }
+    }
+    assert_eq!((valid, invalid), (32, 128));
+}
+
+#[test]
+fn malformed_mpf_fields_and_duplicate_indexes_have_exact_recovery() {
+    let record = evidence();
+    assert_optional_mpf_controls(&record);
+    assert_malformed_mpf_fields(&record);
+}
+
+fn assert_malformed_mpf_fields(record: &Value) {
+    let bases = base_evidence();
+    let mut recovery_rows = Vec::new();
+    for mode in ["baseline", "progressive"] {
+        for order in ["little", "big"] {
+            let row = by_id(record, &json!(format!("{mode}-{order}-identity-ramp")));
+            admitted(row, by_id(&bases, &row["base_id"]), false);
+            let bytes = decode(&row["jpeg_base64"]);
+            let big = order == "big";
+            assert_eq!(container(&bytes, big, false, 0), Ok(()));
+            let primary = jpeg_end(&bytes).unwrap();
+            let secondary = jpeg_end(&bytes[primary..]).unwrap();
+            assert_eq!(primary + secondary, bytes.len());
+            let mut mutations = Vec::new();
+            for (name, at, value) in [
+                ("huge-ifd-offset", 4, u32::MAX),
+                ("huge-version-count", 14, u32::MAX),
+                ("huge-number-tag-count", 26, u32::MAX),
+                ("huge-image-count", 30, u32::MAX),
+                ("huge-entry-tag-count", 38, u32::MAX),
+                ("huge-entry-offset", 42, u32::MAX),
+                ("entries-overlap-header", 42, 0),
+                ("entries-overlap-ifd", 42, 8),
+                ("entries-overlap-table-end", 42, 46),
+                ("primary-not-jpeg", 50, 0x01030000),
+                ("secondary-not-jpeg", 66, 0x01000000),
+                ("primary-unsupported-type", 50, 0x030001),
+                ("secondary-unsupported-type", 66, 0x030000),
+                ("primary-offset-nonzero", 58, 1),
+                ("primary-size-short", 54, primary as u32 - 1),
+                ("secondary-overlaps-primary", 74, primary as u32 - 11),
+                ("secondary-offset-past-end", 74, bytes.len() as u32),
+                ("secondary-size-overflow", 70, u32::MAX),
+            ] {
+                let mut changed = bytes.clone();
+                tiff_long(&mut changed, big, at, value);
+                mutations.push((name, changed));
+            }
+            for (name, at, value) in [
+                ("huge-ifd-count", 8, u16::MAX),
+                ("number-not-long", 24, 3),
+                ("entries-not-undefined", 36, 4),
+                ("primary-dependency-one-out-of-range", 62, 3),
+                ("primary-dependency-two-out-of-range", 64, u16::MAX),
+                ("secondary-dependency-one-out-of-range", 78, 3),
+                ("secondary-dependency-two-out-of-range", 80, u16::MAX),
+            ] {
+                let mut changed = bytes.clone();
+                tiff_short(&mut changed, big, at, value);
+                mutations.push((name, changed));
+            }
+            let mut version = bytes.clone();
+            version[28..32].copy_from_slice(b"0101");
+            mutations.push(("unsupported-version", version));
+
+            // Add a fourth IFD tag while retaining all three required tags.
+            // Repair sizes and entry locations so duplicate detection, rather
+            // than missing tags or stale image ranges, is what must reject it.
+            for (name, tag) in [
+                ("duplicate-version-tag", 20),
+                ("duplicate-number-tag", 32),
+                ("duplicate-entry-tag", 44),
+            ] {
+                let mut changed = bytes.clone();
+                changed.splice(56..56, bytes[tag..tag + 12].iter().copied());
+                changed[4..6].copy_from_slice(&100u16.to_be_bytes());
+                tiff_short(&mut changed, big, 8, 4);
+                tiff_long(&mut changed, big, 42, 62);
+                if tag == 44 {
+                    tiff_long(&mut changed, big, 54, 62);
+                }
+                tiff_long(&mut changed, big, 66, primary as u32 + 12);
+                tiff_long(&mut changed, big, 86, primary as u32 + 2);
+                assert_eq!(segment(&changed, 2, 0xe2).unwrap().len(), 102);
+                assert_eq!(jpeg_end(&changed), Ok(primary + 12));
+                mutations.push((name, changed));
+            }
+
+            // Both indexes describe the new actual ranges relative to their
+            // own TIFF bases. Also reject an invalid first index followed by a
+            // valid one (and the reverse): a later APP2 must not hide an error.
+            let mut duplicate = bytes.clone();
+            duplicate.splice(92..92, bytes[2..92].iter().copied());
+            tiff_long(&mut duplicate, big, 54, primary as u32 + 90);
+            tiff_long(&mut duplicate, big, 74, primary as u32 + 80);
+            tiff_long(&mut duplicate[90..], big, 54, primary as u32 + 90);
+            assert_eq!(jpeg_end(&duplicate), Ok(primary + 90));
+            for (at, base) in [(2, 10), (92, 100)] {
+                let entry = index(segment(&duplicate, at, 0xe2).unwrap(), big).unwrap();
+                assert_eq!(entry.primary, primary + 90);
+                assert_eq!(base + entry.offset, primary + 90);
+                assert_eq!(entry.secondary, secondary);
+            }
+            let mut bad_first = duplicate.clone();
+            tiff_short(&mut bad_first, big, 2, 0);
+            let mut bad_last = duplicate.clone();
+            tiff_short(&mut bad_last[90..], big, 2, 0);
+            mutations.extend([
+                ("duplicate-app2", duplicate),
+                ("bad-first-mpf-valid-second", bad_first),
+                ("valid-first-mpf-bad-second", bad_last),
+            ]);
+            assert_eq!(mutations.len(), 32);
+
+            for (name, changed) in mutations {
+                assert_ne!(changed, bytes, "{name}");
+                let end = jpeg_end(&changed).unwrap();
+                // JPEG payload and XMP remain intact: only MPF has changed.
+                assert_eq!(&changed[end..], &bytes[primary..], "{name}");
+                let original_xmp = 2 + segment(&bytes, 2, 0xe2).unwrap().len();
+                let changed_xmp = end - (primary - original_xmp);
+                assert_eq!(
+                    &changed[changed_xmp..end],
+                    &bytes[original_xmp..primary],
+                    "{name}"
+                );
+                assert!(container(&changed, big, false, 0).is_err(), "{name}");
+                let mut mutated = row.clone();
+                mutated["id"] = json!(format!("{mode}-{order}-{name}"));
+                mutated["scene"]["files"]["asset"]["dataURL"] = json!(format!(
+                    "data:image/jpeg;base64,{}",
+                    base64::engine::general_purpose::STANDARD.encode(&changed)
+                ));
+                recovery_rows.push(mutated);
+            }
+        }
+    }
+    // Validate every mutation's independent framing before observing renderer
+    // recovery, including while the renderer regression is still RED.
+    assert_eq!(recovery_rows.len(), 128);
+    for row in recovery_rows {
+        exact_recovery(&row);
     }
 }
 
@@ -797,6 +1419,7 @@ fn structural_gates_reject_range_metadata_and_scope_mutations() {
 }
 
 fn assert_structural_mutations(record: &Value) {
+    assert_optional_mpf_controls(record);
     for order in ["little", "big"] {
         let row = by_id(record, &json!(format!("baseline-{order}-hdr-ramp-ramp")));
         let bytes = decode(&row["jpeg_base64"]);
@@ -906,7 +1529,9 @@ fn assert_nonidentity_map_discrimination(record: &Value) {
 
 #[test]
 fn output_gates_reject_extent_source_alpha_and_binding_mutations() {
-    assert_output_mutations(&evidence());
+    let record = evidence();
+    assert_optional_mpf_controls(&record);
+    assert_output_mutations(&record);
 }
 
 fn assert_output_mutations(record: &Value) {

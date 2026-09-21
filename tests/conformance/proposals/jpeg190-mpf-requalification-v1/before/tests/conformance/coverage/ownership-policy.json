@@ -1,0 +1,1871 @@
+{
+  "schema": "excalidraw-render/coverage-ownership-policy/v1",
+  "rows": [
+    {
+      "id": "codec:jpeg:color-sampling:gray-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit gray 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:gray-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit gray 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:rgb-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-0 RGB 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:rgb-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-0 RGB 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 4x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 4x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 4x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 4x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x4-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x4-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 1x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x4-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x4-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit JFIF YCbCr 2x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:cmyk-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-0 CMYK 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:cmyk-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-0 CMYK 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x1-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 4x1 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x1-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 4x1 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x2-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 4x2 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x2-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 4x2 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x4-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x4-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 1x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x4-baseline",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x4 baseline: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x4-progressive",
+      "category": "codec-profile",
+      "criterion": "Untagged 8-bit Adobe-transform-2 YCCK 2x4 progressive: both frozen JPEG color-matrix ramp and edge vectors pass canonical direct-PNG and official-SVG-derived PDF sample budgets, exact dimensions/opaque alpha/reports, original SVG octets and fresh native replay. No full PDF-viewer or broader profile claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "closure:all-five-layers",
+      "category": "closure",
+      "criterion": "Every vector, focused, representative, adversarial and permanent regression owner integrated into the ledger.",
+      "spec_anchor": "The conformance corpus has five layers:"
+    },
+    {
+      "id": "closure:atomic-profile-inventory",
+      "category": "closure",
+      "criterion": "Expand family-level codec facets into the full accepted profile/orientation/alpha/animation matrix; this initial policy is not exhaustive.",
+      "spec_anchor": "Raster coverage blocks release"
+    },
+    {
+      "id": "closure:pdf-judgments",
+      "category": "closure",
+      "criterion": "Bind every specialized PDF structural/visual exception and expected report with approved judgment subjects; close the 48 report gaps.",
+      "spec_anchor": "The subject is a canonical bundle"
+    },
+    {
+      "id": "closure:process-target-equality",
+      "category": "closure",
+      "criterion": "Current inventory snapshot/replay/trace gates pass on both supported targets; #178 remains unresolved.",
+      "spec_anchor": "An aggregation directly compares the targets"
+    },
+    {
+      "id": "codec:avif:rejection",
+      "category": "codec-profile",
+      "criterion": "Revision 1 rejects AVIF with the specified unsupported-format recovery, not decoder admission.",
+      "spec_anchor": "AVIF is not accepted in revision 1"
+    },
+    {
+      "id": "codec:bmp:alpha",
+      "category": "codec-profile",
+      "criterion": "BMP: Characterize alpha representation, soft mask, and transparent RGB zero.",
+      "spec_anchor": "a grayscale soft mask"
+    },
+    {
+      "id": "codec:bmp:color-profile",
+      "category": "codec-profile",
+      "criterion": "BMP: Characterize every accepted color model/profile and precedence; enumerate unsupported combinations with proof.",
+      "spec_anchor": "profile/chunk/CICP"
+    },
+    {
+      "id": "codec:bmp:default-frame",
+      "category": "codec-profile",
+      "criterion": "BMP: PNG/PDF select the canonical default image/frame.",
+      "spec_anchor": "PNG selects the pinned default frame"
+    },
+    {
+      "id": "codec:bmp:limits",
+      "category": "codec-profile",
+      "criterion": "BMP: Equality and first-crossing behavior for byte, pixel, dimension and work limits.",
+      "spec_anchor": "### 13.2 Semantic Accounting"
+    },
+    {
+      "id": "codec:bmp:malformed",
+      "category": "codec-profile",
+      "criterion": "BMP: Bounded malformed payload handling and exact recovery diagnostics.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:bmp:orientation",
+      "category": "codec-profile",
+      "criterion": "BMP: Characterize accepted orientation metadata and its precedence, including absence and invalid metadata.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:bmp:passthrough",
+      "category": "codec-profile",
+      "criterion": "BMP: Direct SVG preserves validated payload octets.",
+      "spec_anchor": "Direct SVG embeds validated compressed raster payload octets exactly."
+    },
+    {
+      "id": "codec:gif:alpha",
+      "category": "codec-profile",
+      "criterion": "GIF: Characterize alpha representation, soft mask, and transparent RGB zero.",
+      "spec_anchor": "a grayscale soft mask"
+    },
+    {
+      "id": "codec:gif:animation",
+      "category": "codec-profile",
+      "criterion": "GIF: validate all frames, preserve SVG animation, flatten PNG/PDF with one informational diagnostic per rendered occurrence; static and one-frame cases silent.",
+      "spec_anchor": "PNG and PDF emit one informational `image.animation-flattened` occurrence"
+    },
+    {
+      "id": "codec:gif:color-profile",
+      "category": "codec-profile",
+      "criterion": "GIF: Characterize every accepted color model/profile and precedence; enumerate unsupported combinations with proof.",
+      "spec_anchor": "profile/chunk/CICP"
+    },
+    {
+      "id": "codec:gif:default-frame",
+      "category": "codec-profile",
+      "criterion": "GIF: PNG/PDF select the canonical default image/frame.",
+      "spec_anchor": "PNG selects the pinned default frame"
+    },
+    {
+      "id": "codec:gif:limits",
+      "category": "codec-profile",
+      "criterion": "GIF: Equality and first-crossing behavior for byte, pixel, dimension and work limits.",
+      "spec_anchor": "### 13.2 Semantic Accounting"
+    },
+    {
+      "id": "codec:gif:malformed",
+      "category": "codec-profile",
+      "criterion": "GIF: Bounded malformed payload handling and exact recovery diagnostics.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:orientation",
+      "category": "codec-profile",
+      "criterion": "GIF: Characterize accepted orientation metadata and its precedence, including absence and invalid metadata.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:gif:passthrough",
+      "category": "codec-profile",
+      "criterion": "GIF: Direct SVG preserves validated payload octets.",
+      "spec_anchor": "Direct SVG embeds validated compressed raster payload octets exactly."
+    },
+    {
+      "id": "codec:ico:alpha",
+      "category": "codec-profile",
+      "criterion": "ICO: Characterize alpha representation, soft mask, and transparent RGB zero.",
+      "spec_anchor": "a grayscale soft mask"
+    },
+    {
+      "id": "codec:ico:color-profile",
+      "category": "codec-profile",
+      "criterion": "ICO: Characterize every accepted color model/profile and precedence; enumerate unsupported combinations with proof.",
+      "spec_anchor": "profile/chunk/CICP"
+    },
+    {
+      "id": "codec:ico:default-frame",
+      "category": "codec-profile",
+      "criterion": "ICO: PNG/PDF select the canonical default image/frame.",
+      "spec_anchor": "PNG selects the pinned default frame"
+    },
+    {
+      "id": "codec:ico:limits",
+      "category": "codec-profile",
+      "criterion": "ICO: Equality and first-crossing behavior for byte, pixel, dimension and work limits.",
+      "spec_anchor": "### 13.2 Semantic Accounting"
+    },
+    {
+      "id": "codec:ico:malformed",
+      "category": "codec-profile",
+      "criterion": "ICO: Bounded malformed payload handling and exact recovery diagnostics.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:ico:orientation",
+      "category": "codec-profile",
+      "criterion": "ICO: Characterize accepted orientation metadata and its precedence, including absence and invalid metadata.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:ico:passthrough",
+      "category": "codec-profile",
+      "criterion": "ICO: Direct SVG preserves validated payload octets.",
+      "spec_anchor": "Direct SVG embeds validated compressed raster payload octets exactly."
+    },
+    {
+      "id": "codec:jpeg:alpha",
+      "category": "codec-profile",
+      "criterion": "JPEG: Characterize alpha representation, soft mask, and transparent RGB zero.",
+      "spec_anchor": "a grayscale soft mask"
+    },
+    {
+      "id": "codec:jpeg:color-profile",
+      "category": "codec-profile",
+      "criterion": "JPEG: Characterize every accepted color model/profile and precedence; enumerate unsupported combinations with proof.",
+      "spec_anchor": "profile/chunk/CICP"
+    },
+    {
+      "id": "codec:jpeg:default-frame",
+      "category": "codec-profile",
+      "criterion": "JPEG: PNG/PDF select the canonical default image/frame.",
+      "spec_anchor": "PNG selects the pinned default frame"
+    },
+    {
+      "id": "codec:jpeg:hdr-gain-map",
+      "category": "codec-profile",
+      "criterion": "JPEG: enumerate accepted HDR transfer and gain-map precedence/tone mapping paths, with canonical vectors.",
+      "spec_anchor": "HDR tone mapping"
+    },
+    {
+      "id": "codec:jpeg:limits",
+      "category": "codec-profile",
+      "criterion": "JPEG: Equality and first-crossing behavior for byte, pixel, dimension and work limits.",
+      "spec_anchor": "### 13.2 Semantic Accounting"
+    },
+    {
+      "id": "codec:jpeg:malformed",
+      "category": "codec-profile",
+      "criterion": "JPEG: Bounded malformed payload handling and exact recovery diagnostics.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:orientation",
+      "category": "codec-profile",
+      "criterion": "JPEG: Characterize accepted orientation metadata and its precedence, including absence and invalid metadata.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:passthrough",
+      "category": "codec-profile",
+      "criterion": "JPEG: Direct SVG preserves validated payload octets.",
+      "spec_anchor": "Direct SVG embeds validated compressed raster payload octets exactly."
+    },
+    {
+      "id": "codec:nested-svg:pdf-fallback",
+      "category": "codec-profile",
+      "criterion": "Native vector families, isolated effect closures and forbid behavior with exact diagnostics.",
+      "spec_anchor": "### 8.6 Vector-First PDF"
+    },
+    {
+      "id": "codec:nested-svg:references",
+      "category": "codec-profile",
+      "criterion": "Local fragments and bounded data images, cycles, recursion and resource limits.",
+      "spec_anchor": "Only same-document"
+    },
+    {
+      "id": "codec:nested-svg:sanitization",
+      "category": "codec-profile",
+      "criterion": "Bounded XML/CSS sanitization; remove active content, external resources and unsafe actions.",
+      "spec_anchor": "Nested SVG is parsed"
+    },
+    {
+      "id": "codec:png:alpha",
+      "category": "codec-profile",
+      "criterion": "PNG: Characterize alpha representation, soft mask, and transparent RGB zero.",
+      "spec_anchor": "a grayscale soft mask"
+    },
+    {
+      "id": "codec:png:animation",
+      "category": "codec-profile",
+      "criterion": "PNG: validate all frames, preserve SVG animation, flatten PNG/PDF with one informational diagnostic per rendered occurrence; static and one-frame cases silent.",
+      "spec_anchor": "PNG and PDF emit one informational `image.animation-flattened` occurrence"
+    },
+    {
+      "id": "codec:png:color-profile",
+      "category": "codec-profile",
+      "criterion": "PNG: Characterize every accepted color model/profile and precedence; enumerate unsupported combinations with proof.",
+      "spec_anchor": "profile/chunk/CICP"
+    },
+    {
+      "id": "codec:png:default-frame",
+      "category": "codec-profile",
+      "criterion": "PNG: PNG/PDF select the canonical default image/frame.",
+      "spec_anchor": "PNG selects the pinned default frame"
+    },
+    {
+      "id": "codec:png:hdr-gain-map",
+      "category": "codec-profile",
+      "criterion": "PNG: enumerate accepted HDR transfer and gain-map precedence/tone mapping paths, with canonical vectors.",
+      "spec_anchor": "HDR tone mapping"
+    },
+    {
+      "id": "codec:png:limits",
+      "category": "codec-profile",
+      "criterion": "PNG: Equality and first-crossing behavior for byte, pixel, dimension and work limits.",
+      "spec_anchor": "### 13.2 Semantic Accounting"
+    },
+    {
+      "id": "codec:png:malformed",
+      "category": "codec-profile",
+      "criterion": "PNG: Bounded malformed payload handling and exact recovery diagnostics.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:png:orientation",
+      "category": "codec-profile",
+      "criterion": "PNG: Characterize accepted orientation metadata and its precedence, including absence and invalid metadata.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:png:passthrough",
+      "category": "codec-profile",
+      "criterion": "PNG: Direct SVG preserves validated payload octets.",
+      "spec_anchor": "Direct SVG embeds validated compressed raster payload octets exactly."
+    },
+    {
+      "id": "codec:webp:alpha",
+      "category": "codec-profile",
+      "criterion": "WEBP: Characterize alpha representation, soft mask, and transparent RGB zero.",
+      "spec_anchor": "a grayscale soft mask"
+    },
+    {
+      "id": "codec:webp:animation",
+      "category": "codec-profile",
+      "criterion": "WEBP: validate all frames, preserve SVG animation, flatten PNG/PDF with one informational diagnostic per rendered occurrence; static and one-frame cases silent.",
+      "spec_anchor": "PNG and PDF emit one informational `image.animation-flattened` occurrence"
+    },
+    {
+      "id": "codec:webp:color-profile",
+      "category": "codec-profile",
+      "criterion": "WEBP: Characterize every accepted color model/profile and precedence; enumerate unsupported combinations with proof.",
+      "spec_anchor": "profile/chunk/CICP"
+    },
+    {
+      "id": "codec:webp:default-frame",
+      "category": "codec-profile",
+      "criterion": "WEBP: PNG/PDF select the canonical default image/frame.",
+      "spec_anchor": "PNG selects the pinned default frame"
+    },
+    {
+      "id": "codec:webp:limits",
+      "category": "codec-profile",
+      "criterion": "WEBP: Equality and first-crossing behavior for byte, pixel, dimension and work limits.",
+      "spec_anchor": "### 13.2 Semantic Accounting"
+    },
+    {
+      "id": "codec:webp:malformed",
+      "category": "codec-profile",
+      "criterion": "WEBP: Bounded malformed payload handling and exact recovery diagnostics.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:webp:orientation",
+      "category": "codec-profile",
+      "criterion": "WEBP: Characterize accepted orientation metadata and its precedence, including absence and invalid metadata.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:webp:passthrough",
+      "category": "codec-profile",
+      "criterion": "WEBP: Direct SVG preserves validated payload octets.",
+      "spec_anchor": "Direct SVG embeds validated compressed raster payload octets exactly."
+    },
+    {
+      "id": "interaction:dark-mode-nested-svg-pdf",
+      "category": "interaction",
+      "criterion": "Own the currently specified nested-SVG PDF dark-mode limitation; do not silently treat #154 as fixed.",
+      "spec_anchor": "colors until #154 decides the mechanism."
+    },
+    {
+      "id": "interaction:diagnostic-order",
+      "category": "interaction",
+      "criterion": "Mixed normalization/render/resource/metadata diagnostics preserve canonical source order in all formats.",
+      "spec_anchor": "Final diagnostic order uses this total key:"
+    },
+    {
+      "id": "interaction:frame-batch-limits",
+      "category": "interaction",
+      "criterion": "Direct/lazy frame rendering, independent limits, cache reuse and atomic error results.",
+      "spec_anchor": "### 13.2 Semantic Accounting"
+    },
+    {
+      "id": "interaction:frames-text-assets",
+      "category": "interaction",
+      "criterion": "Approved representative scene combines frames/clips, text, raster/nested SVG, links and metadata in all formats.",
+      "spec_anchor": "Representative licensed or project-authored scene documents."
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v4-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v4-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-opposite-model-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-opposite-model-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-bad-signature-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-truncated-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-tag-out-of-bounds-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-missing",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-duplicate",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-zero-index",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-baseline-v2-g1-inconsistent-count",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v4-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v4-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-opposite-model-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-opposite-model-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-bad-signature-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-truncated-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-tag-out-of-bounds-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-missing",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-duplicate",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-zero-index",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:gray-progressive-v2-g1-inconsistent-count",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v4-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v4-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-opposite-model-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-opposite-model-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-bad-signature-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-truncated-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-tag-out-of-bounds-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-missing",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-duplicate",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-zero-index",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-baseline-v2-g1-inconsistent-count",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g1-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g1-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g1-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g1-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g1-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g2.2-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g2.2-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g2.2-ordered",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g2.2-ordered: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v4-g2.2-reverse",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v4-g2.2-reverse: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-opposite-model-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-opposite-model-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-bad-signature-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-truncated-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-tag-out-of-bounds-single",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-missing",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-duplicate",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-zero-index",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:icc:rgb-progressive-v2-g1-inconsistent-count",
+      "category": "codec-profile",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-1",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-control-1: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-control-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-control-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-8",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-control-8: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-duplicate-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-duplicate-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-invalid-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-invalid-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-valid-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-absent-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-absent-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-absent-tag",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-valid-then-absent-tag: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-bad-magic-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-bad-magic-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-bad-magic",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-valid-then-bad-magic: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-tags-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-duplicate-tags-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-tags-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-duplicate-tags-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-invalid-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-invalid-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-tag-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-valid-tag-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-late-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-late-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-early-3-late-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-early-3-late-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-early-6-late-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-early-6-late-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-1",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-control-1: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-control-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-control-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-8",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-control-8: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-duplicate-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-duplicate-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-invalid-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-invalid-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-valid-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-absent-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-absent-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-absent-tag",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-valid-then-absent-tag: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-bad-magic-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-bad-magic-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-bad-magic",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-valid-then-bad-magic: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-tags-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-duplicate-tags-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-tags-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-duplicate-tags-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-invalid-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-invalid-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-tag-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-valid-tag-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-late-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-late-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-early-3-late-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-early-3-late-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-early-6-late-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-early-6-late-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-1",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-control-1: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-control-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-control-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-8",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-control-8: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-duplicate-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-duplicate-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-invalid-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-invalid-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-valid-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-absent-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-absent-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-absent-tag",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-valid-then-absent-tag: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-bad-magic-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-bad-magic-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-bad-magic",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-valid-then-bad-magic: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-tags-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-duplicate-tags-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-tags-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-duplicate-tags-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-invalid-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-invalid-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-tag-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-valid-tag-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-late-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-late-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-3-late-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-early-3-late-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-6-late-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-early-6-late-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-between-scans-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-between-scans-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-3-between-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-early-3-between-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-6-between-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-early-6-between-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-1",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-control-1: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-control-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-control-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-8",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-control-8: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-duplicate-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-duplicate-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-invalid-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-invalid-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-valid-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-absent-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-absent-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-absent-tag",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-valid-then-absent-tag: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-bad-magic-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-bad-magic-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-bad-magic",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-valid-then-bad-magic: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-tags-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-duplicate-tags-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-tags-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-duplicate-tags-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-invalid-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-invalid-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-tag-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-valid-tag-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-late-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-late-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-3-late-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-early-3-late-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-6-late-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-early-6-late-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-between-scans-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-between-scans-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-3-between-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-early-3-between-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-6-between-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-early-6-between-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-identity",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-identity: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-sdr-ramp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-sdr-ramp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-sdr-edges",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-sdr-edges: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-hdr-ramp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-hdr-ramp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-hdr-edges",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-hdr-edges: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-omit-mpf",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-omit-mpf: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-omit-xmp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-omit-xmp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-bad-offset",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-bad-size",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-bad-count",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-missing-secondary",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-truncated-secondary",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-truncated-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-little-third-image",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-little-third-image: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-identity",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-identity: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-sdr-ramp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-sdr-ramp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-sdr-edges",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-sdr-edges: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-hdr-ramp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-hdr-ramp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-hdr-edges",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-hdr-edges: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-omit-mpf",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-omit-mpf: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-omit-xmp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-omit-xmp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-bad-offset",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-bad-size",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-bad-count",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-missing-secondary",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-truncated-secondary",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-truncated-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:baseline-big-third-image",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP baseline-big-third-image: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-identity",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-identity: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-sdr-ramp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-sdr-ramp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-sdr-edges",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-sdr-edges: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-hdr-ramp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-hdr-ramp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-hdr-edges",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-hdr-edges: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-omit-mpf",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-omit-mpf: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-omit-xmp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-omit-xmp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-bad-offset",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-bad-size",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-bad-count",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-missing-secondary",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-truncated-secondary",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-truncated-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-little-third-image",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-little-third-image: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-identity",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-identity: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-sdr-ramp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-sdr-ramp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-sdr-edges",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-sdr-edges: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-hdr-ramp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-hdr-ramp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-hdr-edges",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-hdr-edges: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-omit-mpf",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-omit-mpf: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-omit-xmp",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-omit-xmp: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-bad-offset",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-bad-offset: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-bad-size",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-bad-size: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-bad-count",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-bad-count: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-missing-secondary",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-missing-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; canonical direct-PNG and official-SVG-authoritative bound PDF sample interpretation with discriminating gain controls, validated source-octet SVG preservation, exact extents/opaque alpha/reports and replay; malformed-index acceptance alone cannot establish validity. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-truncated-secondary",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-truncated-secondary: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:mpf-xmp:progressive-big-third-image",
+      "category": "codec-profile",
+      "criterion": "JPEG MPF/Adobe-XMP progressive-big-third-image: independently reconstruct both frozen base patterns and verify MP index/TIFF image ranges, XMP namespaces/gain parameters and metadata placement; exact existing decode-failed reports, recovery artifact equivalence and extents in all formats, characterizing browser fallback without claiming visual parity for rejected input. Bounded Adobe XMP/MPF evidence; no ISO21496-1, Apple or whole-PDF viewer claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    }
+  ]
+}

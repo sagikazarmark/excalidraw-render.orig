@@ -1,0 +1,28 @@
+warning: manifest has no documentation, homepage or repository
+  |
+  = note: see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata for more info
+   Packaging excalidraw-render-assets-data-000 v0.1.0 (/tmp/opencode/jpeg190-old-80670ae/crates/excalidraw-render-assets-data-000)
+    Packaged 7 files, 8.0MiB (8.0MiB compressed)
+warning: manifest has no documentation, homepage or repository
+  |
+  = note: see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata for more info
+   Packaging excalidraw-render-assets-data-001 v0.1.0 (/tmp/opencode/jpeg190-old-80670ae/crates/excalidraw-render-assets-data-001)
+    Packaged 7 files, 4.5MiB (4.5MiB compressed)
+warning: manifest has no documentation, homepage or repository
+  |
+  = note: see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata for more info
+   Packaging excalidraw-render-assets-base v0.1.0 (/tmp/opencode/jpeg190-old-80670ae/crates/excalidraw-render-assets-base)
+    Updating crates.io index
+    Packaged 38 files, 2.8MiB (911.3KiB compressed)
+warning: manifest has no documentation, homepage or repository
+  |
+  = note: see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata for more info
+   Packaging excalidraw-render v0.1.0 (/tmp/opencode/jpeg190-old-80670ae/crates/excalidraw-render)
+    Updating crates.io index
+    Packaged 235 files, 5.8MiB (1.2MiB compressed)
+warning: manifest has no documentation, homepage or repository
+  |
+  = note: see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata for more info
+   Packaging excalidraw-render-cli v0.1.0 (/tmp/opencode/jpeg190-old-80670ae/crates/excalidraw-render-cli)
+    Updating crates.io index
+    Packaged 10 files, 260.7KiB (56.7KiB compressed)

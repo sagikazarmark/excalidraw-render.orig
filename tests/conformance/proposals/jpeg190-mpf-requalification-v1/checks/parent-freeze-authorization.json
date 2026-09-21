@@ -1,0 +1,22 @@
+{
+  "final_current_capture_authorized": true,
+  "parent_freeze_message": "Freeze #190 MPF-validation-only on stable HEAD80670ae graph now. Parent review settled bounded primary two-image index with optional UID/TotalFrames and nonoverlapping relocated entries; rejects secondary Index IFDs while admitting narrow Attribute version/individual-number IFD and rejecting duplicate secondary MPF. All46JPEGfocusedtests including12gainmap and10libraryJPEGcodec tests pass, formatClippypass; Standardsnohardblock SpecP2secondaryindexfixedconfirmed. HDRprojectiondeferredreducedIDCTmissing. Proceed final168/V12bridgev6/protected and exact16criterion/owner migration without further frozen edits.",
+  "new_owner_selectors": {
+    "codec:jpeg:mpf-xmp:baseline-big-bad-count": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:baseline-big-bad-offset": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:baseline-big-bad-size": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:baseline-big-missing-secondary": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:baseline-little-bad-count": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:baseline-little-bad-offset": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:baseline-little-bad-size": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:baseline-little-missing-secondary": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:progressive-big-bad-count": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:progressive-big-bad-offset": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:progressive-big-bad-size": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:progressive-big-missing-secondary": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:progressive-little-bad-count": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:progressive-little-bad-offset": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:progressive-little-bad-size": "corrected_mpf_index_ranges_have_exact_recovery",
+    "codec:jpeg:mpf-xmp:progressive-little-missing-secondary": "corrected_mpf_index_ranges_have_exact_recovery"
+  }
+}

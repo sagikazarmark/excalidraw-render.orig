@@ -164,9 +164,11 @@ pub(super) fn validate_static_jpeg(
 fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
     let mut image_start = 0_usize;
     let mut image_count = 0_u8;
-    let mut primary_has_mpf = false;
+    let mut primary_mpf = None;
     let mut primary_has_gain_map_metadata = false;
     while image_start < bytes.len() {
+        let current_start = image_start;
+        let mut saw_secondary_mpf = false;
         let mut icc_parts = [false; 256];
         let mut icc_part_count = None;
         if bytes.get(image_start..image_start.saturating_add(2)) != Some(b"\xff\xd8") {
@@ -196,6 +198,12 @@ fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
                             return Err(ResolveError::JpegDecodeFailed);
                         }
                     }
+                    if let Some(entries) = &primary_mpf {
+                        let entries: &[std::ops::Range<usize>; 2] = entries;
+                        if entries.get(usize::from(image_count)) != Some(&(current_start..offset)) {
+                            return Err(ResolveError::JpegDecodeFailed);
+                        }
+                    }
                     image_start = offset;
                     break;
                 }
@@ -222,8 +230,25 @@ fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
                     let segment = bytes
                         .get(length_end..segment_end)
                         .ok_or(ResolveError::JpegDecodeFailed)?;
-                    if image_count == 0 && marker == 0xe2 && segment.starts_with(b"MPF\0") {
-                        primary_has_mpf = true;
+                    if marker == 0xe2 && segment.starts_with(b"MPF\0") {
+                        if image_count == 0 {
+                            if primary_mpf.is_some() {
+                                return Err(ResolveError::JpegDecodeFailed);
+                            }
+                            primary_mpf = Some(mpf_image_ranges(
+                                &segment[4..],
+                                length_end
+                                    .checked_add(4)
+                                    .ok_or(ResolveError::JpegDecodeFailed)?,
+                                bytes.len(),
+                            )?);
+                        } else {
+                            if saw_secondary_mpf {
+                                return Err(ResolveError::JpegDecodeFailed);
+                            }
+                            validate_secondary_mpf(&segment[4..])?;
+                            saw_secondary_mpf = true;
+                        }
                     }
                     if marker == 0xe2 && segment.starts_with(b"ICC_PROFILE\0") {
                         let sequence = *segment.get(12).ok_or(ResolveError::JpegDecodeFailed)?;
@@ -298,15 +323,236 @@ fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
             .checked_add(1)
             .ok_or(ResolveError::JpegDecodeFailed)?;
         if image_start < bytes.len()
-            && (image_count != 1 || !primary_has_mpf || !primary_has_gain_map_metadata)
+            && (image_count != 1 || primary_mpf.is_none() || !primary_has_gain_map_metadata)
         {
             return Err(ResolveError::JpegDecodeFailed);
         }
     }
-    if image_count > 2 {
+    if image_count > 2 || (primary_mpf.is_some() && image_count != 2) {
         return Err(ResolveError::JpegDecodeFailed);
     }
     Ok(())
+}
+
+// The index belongs to the primary image. This narrow secondary Attribute IFD
+// profile requires version 0100 and individual image number 2, with no next IFD.
+// Index tags are rejected; only the primary index supplies image ranges.
+fn validate_secondary_mpf(tiff: &[u8]) -> Result<(), ResolveError> {
+    let invalid = ResolveError::JpegDecodeFailed;
+    let big = match tiff.get(..2) {
+        Some(b"MM") => true,
+        Some(b"II") => false,
+        _ => return Err(invalid),
+    };
+    let short = |at: usize| -> Result<u16, ResolveError> {
+        let b = tiff
+            .get(at..at.checked_add(2).ok_or(invalid)?)
+            .ok_or(invalid)?;
+        let b = b.try_into().map_err(|_| invalid)?;
+        Ok(if big {
+            u16::from_be_bytes(b)
+        } else {
+            u16::from_le_bytes(b)
+        })
+    };
+    let long = |at: usize| -> Result<u32, ResolveError> {
+        let b = tiff
+            .get(at..at.checked_add(4).ok_or(invalid)?)
+            .ok_or(invalid)?;
+        let b = b.try_into().map_err(|_| invalid)?;
+        Ok(if big {
+            u32::from_be_bytes(b)
+        } else {
+            u32::from_le_bytes(b)
+        })
+    };
+    if short(2)? != 42 {
+        return Err(invalid);
+    }
+    let ifd = usize::try_from(long(4)?).map_err(|_| invalid)?;
+    if ifd < 8 || short(ifd)? != 2 {
+        return Err(invalid);
+    }
+    let first = ifd.checked_add(2).ok_or(invalid)?;
+    let end = first.checked_add(24).ok_or(invalid)?;
+    tiff.get(first..end).ok_or(invalid)?;
+    let version = if big {
+        u32::from_be_bytes(*b"0100")
+    } else {
+        u32::from_le_bytes(*b"0100")
+    };
+    if short(first)? != 0xb000
+        || short(first + 2)? != 7
+        || long(first + 4)? != 4
+        || long(first + 8)? != version
+        || short(first + 12)? != 0xb101
+        || short(first + 14)? != 4
+        || long(first + 16)? != 1
+        || long(first + 20)? != 2
+        || long(end)? != 0
+    {
+        return Err(invalid);
+    }
+    Ok(())
+}
+
+// Narrow revision-1 two-image MP Index admission: the three required tags plus
+// optional ImageUIDList and TotalFrames, with bounded, nonoverlapping values.
+// Primary Attribute IFDs and dependencies remain outside this parser's profile;
+// rejecting them does not imply that they are invalid MPF metadata.
+// All offsets are relative to the TIFF header, except the first image's required
+// zero (the file's SOI). Fixed storage and checked slices avoid allocating from
+// attacker-controlled counts.
+fn mpf_image_ranges(
+    tiff: &[u8],
+    tiff_base: usize,
+    file_size: usize,
+) -> Result<[std::ops::Range<usize>; 2], ResolveError> {
+    let invalid = ResolveError::JpegDecodeFailed;
+    let big = match tiff.get(..2) {
+        Some(b"MM") => true,
+        Some(b"II") => false,
+        _ => return Err(invalid),
+    };
+    let span = |at: usize, size: usize| {
+        tiff.get(at..at.checked_add(size).ok_or(invalid)?)
+            .ok_or(invalid)
+    };
+    let short = |at: usize| -> Result<u16, ResolveError> {
+        let b = span(at, 2)?.try_into().map_err(|_| invalid)?;
+        Ok(if big {
+            u16::from_be_bytes(b)
+        } else {
+            u16::from_le_bytes(b)
+        })
+    };
+    let long = |at: usize| -> Result<u32, ResolveError> {
+        let b = span(at, 4)?.try_into().map_err(|_| invalid)?;
+        Ok(if big {
+            u32::from_be_bytes(b)
+        } else {
+            u32::from_le_bytes(b)
+        })
+    };
+    let offset = |value: u32| usize::try_from(value).map_err(|_| invalid);
+    if short(2)? != 42 {
+        return Err(invalid);
+    }
+    let ifd = offset(long(4)?)?;
+    if ifd < 8 {
+        return Err(invalid);
+    }
+    let count = usize::from(short(ifd)?);
+    let table_start = ifd.checked_add(2).ok_or(invalid)?;
+    let table_end = table_start
+        .checked_add(count.checked_mul(12).ok_or(invalid)?)
+        .ok_or(invalid)?;
+    span(table_start, count.checked_mul(12).ok_or(invalid)?)?;
+    // Attribute IFDs are outside the admitted two-image index profile.
+    if long(table_end)? != 0 {
+        return Err(invalid);
+    }
+    let ifd_end = table_end.checked_add(4).ok_or(invalid)?;
+    let value_range = |at: usize, size: usize| -> Result<std::ops::Range<usize>, ResolveError> {
+        span(at, size)?;
+        let end = at.checked_add(size).ok_or(invalid)?;
+        if at < 8 || (at < ifd_end && ifd < end) {
+            return Err(invalid);
+        }
+        Ok(at..end)
+    };
+    let mut version = false;
+    let mut images = false;
+    let mut entries = None;
+    let mut image_uids = None;
+    let mut previous_tag = 0;
+    for index in 0..count {
+        let at = table_start + index * 12;
+        let tag = short(at)?;
+        if tag <= previous_tag {
+            return Err(invalid);
+        }
+        previous_tag = tag;
+        match tag {
+            0xb000 => {
+                if version
+                    || short(at + 2)? != 7
+                    || long(at + 4)? != 4
+                    || span(at + 8, 4)? != b"0100"
+                {
+                    return Err(invalid);
+                }
+                version = true;
+            }
+            0xb001 => {
+                if images || short(at + 2)? != 4 || long(at + 4)? != 1 || long(at + 8)? != 2 {
+                    return Err(invalid);
+                }
+                images = true;
+            }
+            0xb002 => {
+                if entries.is_some() || short(at + 2)? != 7 || long(at + 4)? != 32 {
+                    return Err(invalid);
+                }
+                entries = Some(offset(long(at + 8)?)?);
+            }
+            0xb003 => {
+                // CIPA DC-007 section 5.2.3.4: 33 bytes per individual image.
+                if short(at + 2)? != 7 || long(at + 4)? != 66 {
+                    return Err(invalid);
+                }
+                image_uids = Some(value_range(offset(long(at + 8)?)?, 66)?);
+            }
+            0xb004 => {
+                // Captured frames are independent of the stored image count.
+                if short(at + 2)? != 4 || long(at + 4)? != 1 {
+                    return Err(invalid);
+                }
+            }
+            _ => return Err(invalid),
+        }
+    }
+    let entries = entries.ok_or(invalid)?;
+    if !version || !images {
+        return Err(invalid);
+    }
+    let entry_range = value_range(entries, 32)?;
+    if image_uids.is_some_and(|uids| uids.start < entry_range.end && entry_range.start < uids.end) {
+        return Err(invalid);
+    }
+    let mut result = [0..0, 0..0];
+    for (i, range) in result.iter_mut().enumerate() {
+        let at = entries + i * 16;
+        let attributes = long(at)?;
+        // Primary type (optionally representative) then undefined-type JPEG;
+        // no dependent images or reserved/format bits in this profile.
+        if (i == 0 && attributes != 0x030000 && attributes != 0x20030000)
+            || (i == 1 && attributes != 0)
+            || short(at + 12)? != 0
+            || short(at + 14)? != 0
+        {
+            return Err(invalid);
+        }
+        let size = offset(long(at + 4)?)?;
+        let relative = offset(long(at + 8)?)?;
+        let start = if i == 0 {
+            if relative != 0 {
+                return Err(invalid);
+            }
+            0
+        } else {
+            tiff_base.checked_add(relative).ok_or(invalid)?
+        };
+        let end = start.checked_add(size).ok_or(invalid)?;
+        if size < 4 || end > file_size {
+            return Err(invalid);
+        }
+        *range = start..end;
+    }
+    if result[0].end != result[1].start || result[1].end != file_size {
+        return Err(invalid);
+    }
+    Ok(result)
 }
 
 pub(super) fn decode_static_jpeg(

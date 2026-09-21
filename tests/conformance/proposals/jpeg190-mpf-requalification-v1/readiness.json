@@ -1,0 +1,38 @@
+{
+  "approval": null,
+  "status": "awaiting-parent-policy-review-production-checks-and-explicit-freeze",
+  "current_capture_started": false,
+  "reference": {
+    "path": "tests/oracle/jpeg-gain-map/reference.json",
+    "byte_length": 2948078,
+    "sha256": "af3c97e389ef230c57bbe9a4b3406dc1ef1d6a2ad37b0e8ad2e1f4fbe6568ce4"
+  },
+  "old_capture": {
+    "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/old/snapshots/snapshots.json",
+    "byte_length": 435653,
+    "sha256": "a89afdb2545e56eabe9a75d8273e9112bf2d9e92a6ddb77eca6647b3ea46100e"
+  },
+  "old_identical_to_prior": 168,
+  "criterion_transition": {
+    "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/policy/criterion-transition.json",
+    "byte_length": 28574,
+    "sha256": "3a440e3f6679ca1d73150311be2f968b047cf280d555adbbcce62d7350e17738"
+  },
+  "new_owners": 16,
+  "existing_source_refreshes": 28,
+  "HDR_gaps_preserved": 8,
+  "counts_after": {
+    "assignments": 2126,
+    "owned": 2038,
+    "excluded": 3,
+    "assigned_or_excluded": 2041,
+    "gaps": 85
+  },
+  "checker_test_log": {
+    "path": "tests/conformance/proposals/jpeg190-mpf-requalification-v1/checks/readiness-tests.stderr",
+    "byte_length": 3980,
+    "sha256": "43af5bfbfbb5252b7afcdda7d4f9dc986179bb24a2d0d618da940b493fd288d7"
+  },
+  "required_from_parent": "review exact 16 changed criteria, narrow MPF admission constraints and final new-owner selectors; send explicit freeze after fmt/Clippy/tests",
+  "HDR_diagnosis": "external reduced-IDCT finding does not grant current production qualification or decoder permission"
+}

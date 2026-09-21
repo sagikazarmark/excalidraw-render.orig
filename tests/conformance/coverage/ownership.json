@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "3175a2c7a54c7e575fc18d3b333aa67888fab8641526f182139ec11d80eedefd",
+  "catalog_sha256": "4c1ac0195daef24c51637d08e4c213f74843d8b74874788812fe940c194d9c15",
   "approval": null,
   "assignments": [
     {
@@ -7736,25 +7736,88 @@
     {
       "id": "codec:jpeg:mpf-xmp:baseline-big-bad-count",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-big-bad-offset",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-big-bad-size",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
@@ -7781,7 +7844,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -7805,9 +7868,30 @@
     {
       "id": "codec:jpeg:mpf-xmp:baseline-big-missing-secondary",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
@@ -7818,7 +7902,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -7847,7 +7931,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -7876,7 +7960,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -7905,7 +7989,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -7934,7 +8018,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -7963,7 +8047,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -7987,25 +8071,88 @@
     {
       "id": "codec:jpeg:mpf-xmp:baseline-little-bad-count",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-little-bad-offset",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
       "id": "codec:jpeg:mpf-xmp:baseline-little-bad-size",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
@@ -8032,7 +8179,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -8056,9 +8203,30 @@
     {
       "id": "codec:jpeg:mpf-xmp:baseline-little-missing-secondary",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
@@ -8069,7 +8237,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8098,7 +8266,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8127,7 +8295,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -8156,7 +8324,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -8185,7 +8353,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8214,7 +8382,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8238,25 +8406,88 @@
     {
       "id": "codec:jpeg:mpf-xmp:progressive-big-bad-count",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-big-bad-offset",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-big-bad-size",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
@@ -8283,7 +8514,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -8307,9 +8538,30 @@
     {
       "id": "codec:jpeg:mpf-xmp:progressive-big-missing-secondary",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
@@ -8320,7 +8572,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8349,7 +8601,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8378,7 +8630,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -8407,7 +8659,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -8436,7 +8688,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8465,7 +8717,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8489,25 +8741,88 @@
     {
       "id": "codec:jpeg:mpf-xmp:progressive-little-bad-count",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-little-bad-offset",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
       "id": "codec:jpeg:mpf-xmp:progressive-little-bad-size",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
@@ -8534,7 +8849,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -8558,9 +8873,30 @@
     {
       "id": "codec:jpeg:mpf-xmp:progressive-little-missing-secondary",
       "disposition": {
-        "status": "gap",
-        "issue": 190,
-        "reason": "MPF/XMP cell needs independent gain-map interpretation or exact strict recovery; HDR-base projection and malformed index admission remain under #190."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
+          },
+          "binary": "fast",
+          "function": "corrected_mpf_index_ranges_have_exact_recovery",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_gain_map_contract::corrected_mpf_index_ranges_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #190 narrow two-image MPF index validation and explicit criterion transition: independently reconstructed invalid ranges/count/missing secondary require exact image.decode-failed recovery in all formats; browser base fallback is characterized, not claimed visually equivalent. See tests/conformance/proposals/jpeg190-mpf-requalification-v1/. HDR projection/decoder work stays deferred."
       }
     },
     {
@@ -8571,7 +8907,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8600,7 +8936,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8629,7 +8965,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -8658,7 +8994,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "valid_sdr_gain_maps_match_reference_base_projection",
           "binary": "fast",
@@ -8687,7 +9023,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -8716,7 +9052,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_gain_map_contract.rs",
-            "sha256": "1ab5ca0a6bb441193b7272b3ab7de9dce6ff43fe9105d6edaa6ee091782c4f44"
+            "sha256": "e69f4e59d6e93d7f185554c8af07b72ca8e3adaad105d3a0f8f291df8b205b08"
           },
           "function": "invalid_container_framing_has_exact_recovery",
           "binary": "fast",
@@ -40268,16 +40604,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v11",
+            "case": "representative.stage4-frames-text-assets.v12",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "13b3727b37db3ed0f127c9a33a882523530f615c6fad2b210a276183d07c0f2c"
+              "sha256": "15b332350c38540416cb19f325154afb00094112d91759d187166eeb858068c3"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v11/manifest.json",
-              "sha256": "852eb248fd26adbe5e42242f46f80db6f5802e0c3faad9948a2e3fa2657a9b1d"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v12/manifest.json",
+              "sha256": "461690e309e19fabbef6d1fad8273d8412faddf6a94b1820095737aee0bf285e"
             },
-            "approval_subject_sha256": "sha256:d8e086187884e412c78b98197957e2793b3f3a7f0c5fd11df72ceac4dbb3f87c",
+            "approval_subject_sha256": "sha256:f6c3a1fb16d0c1ce7d96b0ccd23ea2a4a95635f34ca56de3e669f28f9e81d9bf",
             "command": [
               "cargo",
               "run",
@@ -40288,7 +40624,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v11"
+              "tests/conformance/candidates/stage4-frames-text-assets-v12"
             ]
           }
         },

@@ -1,0 +1,15 @@
+test_actual_complete_result_exact_pending_failures (__main__.SuiteTests.test_actual_complete_result_exact_pending_failures) ... ok
+test_authentication_is_only_affirmative_mpf_scope (__main__.SuiteTests.test_authentication_is_only_affirmative_mpf_scope) ... ok
+test_changed_body_or_extra_error_rejected (__main__.SuiteTests.test_changed_body_or_extra_error_rejected) ... ok
+test_failed_receipt_run_restores_all_four_files_including_policy (__main__.SuiteTests.test_failed_receipt_run_restores_all_four_files_including_policy) ... ok
+test_missing_completion_count_or_pass_listing_rejected (__main__.SuiteTests.test_missing_completion_count_or_pass_listing_rejected) ... ok
+test_only_exact_nonsemantic_note_ignored (__main__.SuiteTests.test_only_exact_nonsemantic_note_ignored) ... ok
+test_optimized_startup_refuses_before_seal (__main__.SuiteTests.test_optimized_startup_refuses_before_seal) ... ok
+test_receipt_targets_and_four_file_template_exact (__main__.SuiteTests.test_receipt_targets_and_four_file_template_exact) ... ok
+test_same_count_unknown_failure_rejected (__main__.SuiteTests.test_same_count_unknown_failure_rejected) ... ok
+test_unrelated_policy_or_hdr_criterion_rejected (__main__.SuiteTests.test_unrelated_policy_or_hdr_criterion_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 1.547s
+
+OK

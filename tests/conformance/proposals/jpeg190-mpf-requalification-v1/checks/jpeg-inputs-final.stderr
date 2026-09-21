@@ -1,0 +1,3 @@
+   Compiling excalidraw-render v0.1.0 (/home/laborant/excalidraw-render.orig/crates/excalidraw-render)
+    Finished `test` profile [optimized] target(s) in 2.35s
+     Running tests/jpeg_matrix_inputs.rs (target/debug/deps/jpeg_matrix_inputs-8ef119da6e79ddac)
