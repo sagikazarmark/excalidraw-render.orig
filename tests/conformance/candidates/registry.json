@@ -2,9 +2,9 @@
   "schema": "excalidraw-render/representative-corpus-adapter/v1",
   "cases": [
     {
-      "id": "representative.stage4-frames-text-assets.v13",
-      "directory": "tests/conformance/candidates/stage4-frames-text-assets-v13",
-      "status": "webp191-composition-release-successor",
+      "id": "representative.stage4-frames-text-assets.v14",
+      "directory": "tests/conformance/candidates/stage4-frames-text-assets-v14",
+      "status": "pdfium192-alpha-profile-successor",
       "formats": [
         "svg",
         "png",
@@ -15,9 +15,9 @@
         "interaction:frames-text-assets"
       ],
       "execution_keys": [
-        "representative.stage4-frames-text-assets.v13:default:svg",
-        "representative.stage4-frames-text-assets.v13:default:png",
-        "representative.stage4-frames-text-assets.v13:default:pdf"
+        "representative.stage4-frames-text-assets.v14:default:svg",
+        "representative.stage4-frames-text-assets.v14:default:png",
+        "representative.stage4-frames-text-assets.v14:default:pdf"
       ],
       "consumer": [
         "cargo",
@@ -29,7 +29,7 @@
         "--",
         "conformance",
         "candidate-verify",
-        "tests/conformance/candidates/stage4-frames-text-assets-v13"
+        "tests/conformance/candidates/stage4-frames-text-assets-v14"
       ],
       "exceptions": [
         {
@@ -40,7 +40,7 @@
             200,
             120
           ],
-          "case_id": "representative.stage4-frames-text-assets.v13",
+          "case_id": "representative.stage4-frames-text-assets.v14",
           "comparison_id": "pdf-pdfium",
           "format": "pdf",
           "max_changed_pixels": 118,
@@ -50,9 +50,9 @@
           "variant": "default",
           "viewer_profile": {
             "descriptor": {
-              "byte_length": 4159,
               "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
-              "sha256": "9267d525bd682a338a5d7927747d508bfca17447598f7d3454c9137b091c99ad"
+              "byte_length": 4478,
+              "sha256": "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
             },
             "id": "canonical-pdf.pdfium.v1"
           }
@@ -65,7 +65,7 @@
             124,
             41
           ],
-          "case_id": "representative.stage4-frames-text-assets.v13",
+          "case_id": "representative.stage4-frames-text-assets.v14",
           "comparison_id": "pdf-pdfium",
           "format": "pdf",
           "max_changed_pixels": 118,
@@ -75,9 +75,9 @@
           "variant": "default",
           "viewer_profile": {
             "descriptor": {
-              "byte_length": 4159,
               "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
-              "sha256": "9267d525bd682a338a5d7927747d508bfca17447598f7d3454c9137b091c99ad"
+              "byte_length": 4478,
+              "sha256": "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
             },
             "id": "canonical-pdf.pdfium.v1"
           }
@@ -90,7 +90,7 @@
             200,
             120
           ],
-          "case_id": "representative.stage4-frames-text-assets.v13",
+          "case_id": "representative.stage4-frames-text-assets.v14",
           "comparison_id": "pdf-pdfjs",
           "format": "pdf",
           "max_changed_pixels": 16,

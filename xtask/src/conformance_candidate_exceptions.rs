@@ -36,10 +36,41 @@ fn proof() -> Result<Value> {
     {
         let path = d["path"].as_str().ok_or("proof path")?;
         if d != &descriptor(&root, path)? {
-            return Err(format!("stale diagnosis producer {path}"));
+            validate_pdfium_alpha_successor(d)?;
         }
     }
     Ok(evidence)
+}
+// Preserve the diagnosed producer bytes. Only the explicitly approved #192
+// adapter/profile pair may supersede these two historical bindings; candidate
+// input equality and the fresh colour bridge still gate every exception below.
+fn validate_pdfium_alpha_successor(historical: &Value) -> Result<()> {
+    let path = historical["path"].as_str().ok_or("proof path")?;
+    let expected = match path {
+        "tools/pdf-harness/pdfium/render.py" => {
+            "f01b2b38bdd2341602ce9f333423c79be5188328184e274bdd7c8acb2f83df3a"
+        }
+        "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json" => {
+            "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
+        }
+        _ => return Err(format!("stale diagnosis producer {path}")),
+    };
+    let archived =
+        format!("tests/conformance/proposals/pdfium192-alpha-requalification-v1/before/{path}");
+    let bytes = read(&repo_root(), &archived)?;
+    if historical["sha256"] != sha256(&bytes)
+        || historical["byte_length"] != bytes.len()
+        || descriptor(&repo_root(), path)?["sha256"] != expected
+    {
+        return Err("unreviewed PDFium diagnosis producer transition".into());
+    }
+    crate::pdf_viewers::verify(true)?;
+    if crate::pdf_viewers::approval_subject()?
+        != "c393a0dd957df1041323b2e736406fc21e30a915176388ca8a1da23460840c01"
+    {
+        return Err("PDFium alpha successor requires its exact approved profile".into());
+    }
+    Ok(())
 }
 fn expected(directory: &str) -> Result<Value> {
     let root = candidate_root(directory)?;
@@ -222,6 +253,20 @@ mod tests {
         .unwrap();
         fs::write(root.join("native.pdf"), &fixed).unwrap();
         let proposal = expected(&dir).unwrap();
+        let evidence = proof().unwrap();
+        for historical in evidence["repository_bindings"].as_array().unwrap() {
+            if historical["path"] == "tools/pdf-harness/pdfium/render.py"
+                || historical["path"]
+                    == "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json"
+            {
+                validate_pdfium_alpha_successor(historical).unwrap();
+                for key in ["path", "sha256", "byte_length"] {
+                    let mut bad = historical.clone();
+                    bad[key] = json!("unreviewed");
+                    assert!(validate_pdfium_alpha_successor(&bad).is_err());
+                }
+            }
+        }
         assert_eq!(
             proposal["colour_binding_bridge"]["fixed_pdf"]["sha256"],
             sha256(&fixed)

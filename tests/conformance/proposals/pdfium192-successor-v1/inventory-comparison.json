@@ -1,0 +1,16 @@
+{
+  "prior": {
+    "path": "tests/conformance/proposals/webp191-composition-requalification-v1/final-current/snapshots/snapshots.json",
+    "sha256": "24e5d90dbbc119f09649ab07def8586eea04aff628b2adbe6e0063a73c07d632",
+    "byte_length": 469887
+  },
+  "current": {
+    "path": "tests/conformance/proposals/pdfium192-successor-v1/final-retry/snapshots/snapshots.json",
+    "sha256": "dd4b74b5ef749a5196d1cf509671f68f9fa7a08457c355ed7f26cae28d98e29b",
+    "byte_length": 435653
+  },
+  "keys": 168,
+  "unchanged": 168,
+  "changes": [],
+  "note": "Fresh packaged source provenance at 0cbdad3; later changes only xtask provenance checks. Not baseline approval."
+}

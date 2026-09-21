@@ -1,0 +1,24 @@
+{
+  "prior": "tests/conformance/candidates/stage4-frames-text-assets-v13",
+  "successor": "tests/conformance/candidates/stage4-frames-text-assets-v14",
+  "identical_files": [
+    "native.svg",
+    "native-svg-report.json",
+    "native.png",
+    "native-png-report.json",
+    "native.pdf",
+    "native-pdf-report.json",
+    "viewer-evidence/official-chromium.rgba",
+    "viewer-evidence/native-rust.rgba",
+    "viewer-evidence/official-rust.rgba",
+    "viewer-evidence/native-pdfium.repeat.rgba",
+    "viewer-evidence/native-pdfjs.rgba",
+    "viewer-evidence/native-chromium.repeat.rgba",
+    "viewer-evidence/official-rust.repeat.rgba",
+    "viewer-evidence/native-chromium.rgba",
+    "viewer-evidence/native-rust.repeat.rgba",
+    "viewer-evidence/official-chromium.repeat.rgba",
+    "viewer-evidence/native-pdfium.rgba",
+    "viewer-evidence/native-pdfjs.repeat.rgba"
+  ]
+}

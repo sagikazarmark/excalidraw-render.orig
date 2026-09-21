@@ -43929,7 +43929,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -43958,7 +43958,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -43987,7 +43987,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44016,7 +44016,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44045,7 +44045,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44074,7 +44074,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44103,7 +44103,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44132,7 +44132,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44161,7 +44161,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44190,7 +44190,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44219,7 +44219,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44248,7 +44248,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44277,7 +44277,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44306,7 +44306,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44335,7 +44335,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44364,7 +44364,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44393,7 +44393,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44422,7 +44422,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44499,7 +44499,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44528,7 +44528,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44557,7 +44557,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44586,7 +44586,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44615,7 +44615,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44644,7 +44644,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44673,7 +44673,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44702,7 +44702,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44731,7 +44731,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44760,7 +44760,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44789,7 +44789,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
@@ -44818,7 +44818,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44895,7 +44895,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44924,7 +44924,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44953,7 +44953,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44982,7 +44982,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -45011,7 +45011,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "reserved_vp8x_controls_are_accepted_characterization",
           "binary": "fast",
@@ -45040,7 +45040,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "584790caf78738d27fb7b34c2f32cec03043db564378ef1266662ba6d696803a"
+            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
           "function": "reserved_vp8x_controls_are_accepted_characterization",
           "binary": "fast",
@@ -48820,16 +48820,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v13",
+            "case": "representative.stage4-frames-text-assets.v14",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "6ed4769d0a4f590ac6e8e6c512de22552d5caf8a421ce2ab179fa1ae3c88f08a"
+              "sha256": "359467c8127accf9b6073524ddabed023be0358e67087d80fc903e9d589d173f"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v13/manifest.json",
-              "sha256": "2d4482a6182ddfcdc6f6a333a38bd02a448a5c8865da9edadb1dbf261c20d1cc"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v14/manifest.json",
+              "sha256": "28a50a1ae71119a035b3b529e12128fda24bb6685ed7e3494794d2b10b73808e"
             },
-            "approval_subject_sha256": "sha256:520b71395cd48b8768caba6eedadf6c6c40f996a9e0c36019f5ef9dafe62c5f5",
+            "approval_subject_sha256": "sha256:0b9f6a7d6eb1fd176d412855aecdb63b309ed260ae4d552054dbef794deb74ba",
             "command": [
               "cargo",
               "run",
@@ -48840,7 +48840,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v13"
+              "tests/conformance/candidates/stage4-frames-text-assets-v14"
             ]
           }
         },
