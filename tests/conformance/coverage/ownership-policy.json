@@ -2682,6 +2682,342 @@
       "category": "codec-profile",
       "criterion": "GIF huge-image-descriptor: independently authored huge header is preempted by an asset-work cap before large decode/allocation, with exact resource report/recovery; no claim of decode, pixel-limit precedence or physical OOM qualification. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-growth-to-full-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p2-87a-growth-to-full-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-growth-to-full-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p2-87a-growth-to-full-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-midstream-reset-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p2-87a-midstream-reset-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-midstream-reset-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p2-87a-midstream-reset-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-kwkwk-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p2-87a-kwkwk-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-kwkwk-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p2-87a-kwkwk-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-growth-to-full-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p2-89a-growth-to-full-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-growth-to-full-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p2-89a-growth-to-full-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-midstream-reset-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p2-89a-midstream-reset-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-midstream-reset-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p2-89a-midstream-reset-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-kwkwk-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p2-89a-kwkwk-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-kwkwk-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p2-89a-kwkwk-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-growth-to-full-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p16-87a-growth-to-full-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-growth-to-full-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p16-87a-growth-to-full-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-midstream-reset-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p16-87a-midstream-reset-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-midstream-reset-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p16-87a-midstream-reset-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-kwkwk-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p16-87a-kwkwk-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-kwkwk-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p16-87a-kwkwk-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-growth-to-full-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p16-89a-growth-to-full-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-growth-to-full-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p16-89a-growth-to-full-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-midstream-reset-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p16-89a-midstream-reset-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-midstream-reset-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p16-89a-midstream-reset-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-kwkwk-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p16-89a-kwkwk-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-kwkwk-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p16-89a-kwkwk-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-growth-to-full-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p256-87a-growth-to-full-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-growth-to-full-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p256-87a-growth-to-full-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-midstream-reset-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p256-87a-midstream-reset-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-midstream-reset-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p256-87a-midstream-reset-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-kwkwk-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p256-87a-kwkwk-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-kwkwk-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p256-87a-kwkwk-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-growth-to-full-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p256-89a-growth-to-full-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-growth-to-full-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p256-89a-growth-to-full-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-midstream-reset-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p256-89a-midstream-reset-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-midstream-reset-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p256-89a-midstream-reset-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-kwkwk-b1",
+      "category": "codec-profile",
+      "criterion": "GIF p256-89a-kwkwk-b1: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-kwkwk-b255",
+      "category": "codec-profile",
+      "criterion": "GIF p256-89a-kwkwk-b255: both independently authored static full-screen opaque patterns qualify the declared palette size, GIF version, LZW growth/reset/KwKwK program and sub-block size; independently decoded indices/code-width/dictionary events, exact authored and pinned-browser pixels, source-octet SVG, PNG/PDF samples/alpha/extents, empty reports and replay. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:extension-comment-before",
+      "category": "codec-profile",
+      "criterion": "GIF extension-comment-before: one independently authored static opaque full-screen extension vector qualifies extension framing and final image preservation; exact source reconstruction, authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, reports and replay; no intermediate plain-text rendering or animated loop-timing claim. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:extension-comment-after",
+      "category": "codec-profile",
+      "criterion": "GIF extension-comment-after: one independently authored static opaque full-screen extension vector qualifies extension framing and final image preservation; exact source reconstruction, authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, reports and replay; no intermediate plain-text rendering or animated loop-timing claim. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:extension-comment-before-split",
+      "category": "codec-profile",
+      "criterion": "GIF extension-comment-before-split: one independently authored static opaque full-screen extension vector qualifies extension framing and final image preservation; exact source reconstruction, authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, reports and replay; no intermediate plain-text rendering or animated loop-timing claim. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:extension-comment-after-split",
+      "category": "codec-profile",
+      "criterion": "GIF extension-comment-after-split: one independently authored static opaque full-screen extension vector qualifies extension framing and final image preservation; exact source reconstruction, authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, reports and replay; no intermediate plain-text rendering or animated loop-timing claim. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:extension-unknown-app-before",
+      "category": "codec-profile",
+      "criterion": "GIF extension-unknown-app-before: one independently authored static opaque full-screen extension vector qualifies extension framing and final image preservation; exact source reconstruction, authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, reports and replay; no intermediate plain-text rendering or animated loop-timing claim. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:extension-netscape-infinite",
+      "category": "codec-profile",
+      "criterion": "GIF extension-netscape-infinite: one independently authored static opaque full-screen extension vector qualifies extension framing and final image preservation; exact source reconstruction, authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, reports and replay; no intermediate plain-text rendering or animated loop-timing claim. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:extension-netscape-finite",
+      "category": "codec-profile",
+      "criterion": "GIF extension-netscape-finite: one independently authored static opaque full-screen extension vector qualifies extension framing and final image preservation; exact source reconstruction, authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, reports and replay; no intermediate plain-text rendering or animated loop-timing claim. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:extension-plain-text-before",
+      "category": "codec-profile",
+      "criterion": "GIF extension-plain-text-before: one independently authored static opaque full-screen extension vector qualifies extension framing and final image preservation; exact source reconstruction, authored and pinned-browser pixels, SVG octets, PNG/PDF samples/alpha/extents, reports and replay; no intermediate plain-text rendering or animated loop-timing claim. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:minimum-code-size-1",
+      "category": "codec-profile",
+      "criterion": "GIF minimum-code-size-1: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:minimum-code-size-9",
+      "category": "codec-profile",
+      "criterion": "GIF minimum-code-size-9: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:undefined-initial-code",
+      "category": "codec-profile",
+      "criterion": "GIF undefined-initial-code: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:undefined-after-literal",
+      "category": "codec-profile",
+      "criterion": "GIF undefined-after-literal: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:missing-eoi",
+      "category": "codec-profile",
+      "criterion": "GIF missing-eoi: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:truncated-subblock",
+      "category": "codec-profile",
+      "criterion": "GIF truncated-subblock: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:missing-subblock-terminator",
+      "category": "codec-profile",
+      "criterion": "GIF missing-subblock-terminator: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:early-eoi",
+      "category": "codec-profile",
+      "criterion": "GIF early-eoi: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:excess-pixels",
+      "category": "codec-profile",
+      "criterion": "GIF excess-pixels: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:missing-trailer",
+      "category": "codec-profile",
+      "criterion": "GIF missing-trailer: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:gif87a-comment",
+      "category": "codec-profile",
+      "criterion": "GIF gif87a-comment: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:lzw:gif87a-application",
+      "category": "codec-profile",
+      "criterion": "GIF gif87a-application: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     }
   ]
 }

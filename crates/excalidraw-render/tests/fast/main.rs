@@ -41,6 +41,7 @@ mod frame_render;
 mod freedraw_render;
 mod geometry_style_contract;
 mod gif_first_frame_contract;
+mod gif_lzw_contract;
 mod helvetica_text_render;
 mod image_corner_clip;
 mod image_edge_coverage;

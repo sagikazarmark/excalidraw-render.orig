@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "6ec981d705a554fc2087f9bf6b7258a21fcd6786cd70cb76ce8d9f02ed014744",
+  "catalog_sha256": "16922cca016b9eee821d54c8043dbaa9dc5e886d1a8605e80eb7224e08f5b84a",
   "approval": null,
   "assignments": [
     {
@@ -5873,6 +5873,1630 @@
         "status": "gap",
         "issue": 82,
         "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:early-eoi",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:excess-pixels",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:extension-comment-after",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:extension-comment-after-split",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:extension-comment-before",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:extension-comment-before-split",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:extension-netscape-finite",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:extension-netscape-infinite",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:extension-plain-text-before",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:extension-unknown-app-before",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:gif87a-application",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:gif87a-comment",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:minimum-code-size-1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:minimum-code-size-9",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:missing-eoi",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:missing-subblock-terminator",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:missing-trailer",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-growth-to-full-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-growth-to-full-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-kwkwk-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-kwkwk-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-midstream-reset-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-87a-midstream-reset-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-growth-to-full-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-growth-to-full-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-kwkwk-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-kwkwk-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-midstream-reset-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p16-89a-midstream-reset-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-growth-to-full-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-growth-to-full-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-kwkwk-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-kwkwk-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-midstream-reset-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-87a-midstream-reset-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-growth-to-full-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-growth-to-full-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-kwkwk-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-kwkwk-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-midstream-reset-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p2-89a-midstream-reset-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-growth-to-full-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-growth-to-full-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-kwkwk-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-kwkwk-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-midstream-reset-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-87a-midstream-reset-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-growth-to-full-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-growth-to-full-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-kwkwk-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-kwkwk-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-midstream-reset-b1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:p256-89a-midstream-reset-b255",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:truncated-subblock",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:undefined-after-literal",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:lzw:undefined-initial-code",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
+            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+          },
+          "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_lzw_contract::malformed_lzw_controls_have_exact_decode_failed_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent authored indices/palettes, packed LZW and container reconstruction, exact code-width/dictionary-event checks and frozen browser surfaces; native artifact/report/extent/alpha/replay and negative gates execute under the exact selector. Uncollected malformed controls qualify strict recovery only. See docs/research/gif-lzw-qualification.md."
       }
     },
     {
