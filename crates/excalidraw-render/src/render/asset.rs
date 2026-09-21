@@ -1027,12 +1027,16 @@ struct ValidatedNestedRaster {
 fn normalize_nested_raster(
     bytes: &[u8],
     validated: ValidatedNestedRaster,
+    format: OutputFormat,
 ) -> Result<NormalizedNestedRaster, ResolveError> {
     let color_normalization = prepare_color_normalization(
         bytes,
         &validated.semantics,
         decoder_workspace_bytes(validated.width, validated.height)?,
     )?;
+    let webp_draw_time = validated.media_kind == MediaKind::WebP
+        && format == OutputFormat::Png
+        && matches!(color_normalization, ColorNormalization::None);
     let decoded = match validated.media_kind {
         MediaKind::Png => decode_static_png(
             bytes,
@@ -1066,7 +1070,24 @@ fn normalize_nested_raster(
         ),
         MediaKind::Svg => unreachable!("nested SVG uses recursive sanitization"),
     }?;
-    let normalized_png = encode_normalized_png(validated.width, validated.height, &decoded.rgba)?;
+    let normalized_png = if webp_draw_time {
+        // Nested PNG rendering consumes a normalized PNG through resvg. Encode
+        // a straight representation that reconstructs the WebP draw-time copy,
+        // rather than discarding its codec-specific alpha quantization. PDF must
+        // continue to receive the original canonical straight samples.
+        let mut pixels = try_copy(&decoded.premultiplied_rgba)?;
+        for pixel in pixels.as_chunks_mut::<4>().0 {
+            let alpha = u16::from(pixel[3]);
+            for channel in &mut pixel[..3] {
+                *channel = (u16::from(*channel) * 255 + alpha / 2)
+                    .checked_div(alpha)
+                    .unwrap_or(0) as u8;
+            }
+        }
+        encode_normalized_png(validated.width, validated.height, &pixels)?
+    } else {
+        encode_normalized_png(validated.width, validated.height, &decoded.rgba)?
+    };
     Ok(NormalizedNestedRaster {
         source_media_kind: validated.media_kind,
         normalized_png,

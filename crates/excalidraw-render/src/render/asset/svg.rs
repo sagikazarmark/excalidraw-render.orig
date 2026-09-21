@@ -1460,7 +1460,8 @@ fn sanitize_nested_data_image(
                 });
                 nested_accounting.total_work_units =
                     nested_accounting.total_work_units.saturating_add(work);
-                let normalized = Arc::new(super::normalize_nested_raster(&bytes, validated)?);
+                let normalized =
+                    Arc::new(super::normalize_nested_raster(&bytes, validated, format)?);
                 pending_rasters.insert(identity, Arc::clone(&normalized));
                 normalized
             };

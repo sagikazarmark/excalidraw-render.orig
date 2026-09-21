@@ -1121,32 +1121,6 @@ fn measurement(
     measured
 }
 
-fn collect_native_defects(record: &Value, inputs: &Value) -> Value {
-    let cases: Vec<_> = rows(record,"cases").iter().filter(|r|!QUALIFIED_CELLS.contains(&r["cell"].as_str().unwrap())).map(|row| {
-        let formats: Vec<_> = FORMATS.into_iter().map(|format| {
-            let (bytes,diagnostic) = render(&row["scene"],format);
-            let measured = measurement(row,inputs,format,&bytes,&diagnostic);
-            assert_eq!(measured["requirement_passed"],appearance(row,inputs,format,&bytes).is_empty());
-            measured
-        }).collect();
-        json!({"id":row["id"],"cell":row["cell"],"source_webp_sha256":row["webp"]["sha256"],"formats":formats})
-    }).collect();
-    assert_eq!(cases.len(), 46);
-    let result = json!({"schema":"excalidraw-render/webp-composition-defect-measurements/v1",
-        "issue":"https://github.com/sagikazarmark/excalidraw-render.orig/issues/191",
-        "provenance":"Unapproved one-time Rust 1.97.1 native observations after composition-only correction against dd3389a. First frame decoded standalone onto clear RGBA; no static or color-policy change. Not browser evidence; no automatic refresh.",
-        "previous_measurements_sha256":"d31850b8a23ed04039de976437a06b9922bbc963ee83f3b6269833d5cc24ba76",
-        "reference_sha256":REFERENCE_HASH,"inputs_sha256":INPUT_HASH,
-        "original_qualified_cells":QUALIFIED_CELLS,"corrected_cells":CORRECTED_CELLS,"residual_cells":RESIDUAL_CELLS,
-        "qualified_sample_cells":24,"unqualified_sample_cells":12,"unqualified_vectors":24,
-        "residual_classification":{"png":"WebP partial-alpha premultiplication rounding differs from frozen browser readback",
-            "pdf":"Synthetic rounded straight-RGBA projection versus browser floor-premultiplied opaque captures; not a demonstrated PDF decoder or viewer defect. Exact lossless straight invariant remains required."},
-        "comparison":{"class":"geometry-image","mode":"canonical","minimum_ssim_bits":format!("{:016x}",0.999f64.to_bits()),"changed_fraction":[1,400]},
-        "cases":cases});
-    audit_composition_changes(&result, record);
-    result
-}
-
 fn audit_composition_changes(actual: &Value, record: &Value) {
     let before = native_defect_pins();
     assert_eq!(rows(actual, "cases").len(), 46);
@@ -1699,10 +1673,83 @@ fn qualified_13_cells_first_display_contract() {
 }
 
 #[test]
+fn all_sample_pngs_match_reference() {
+    let (record, inputs) = evidence();
+    let mut checked = 0;
+    for row in rows(&record, "cases") {
+        let (bytes, actual_report) = render(&row["scene"], OutputFormat::Png);
+        assert_eq!(
+            actual_report,
+            report(OutputFormat::Png, false, row["frame_count"] == 2)
+        );
+        let failures = appearance(row, &inputs, OutputFormat::Png, &bytes);
+        assert!(failures.is_empty(), "{}: {failures:?}", row["id"]);
+        checked += 1;
+    }
+    assert_eq!(checked, 72);
+}
+
+#[test]
+fn nested_webp_png_preserves_draw_time_alpha_quantization() {
+    let (record, _) = evidence();
+    for row in rows(&record, "cases") {
+        let mut nested = row["scene"].clone();
+        let href = nested["files"]["asset"]["dataURL"].as_str().unwrap();
+        let svg = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="9" height="7"><image width="9" height="7" href="{href}"/></svg>"#
+        );
+        nested["files"]["asset"]["dataURL"] = json!(format!(
+            "data:image/svg+xml;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(svg)
+        ));
+        nested["files"]["asset"]["mimeType"] = json!("image/svg+xml");
+        let mut expected = row["scene"].clone();
+        let href = format!(
+            "data:image/png;base64,{}",
+            row["reference"]["png"].as_str().unwrap()
+        );
+        let svg = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="9" height="7"><image width="9" height="7" href="{href}"/></svg>"#
+        );
+        expected["files"]["asset"]["dataURL"] = json!(format!(
+            "data:image/svg+xml;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(svg)
+        ));
+        expected["files"]["asset"]["mimeType"] = json!("image/svg+xml");
+        let (direct, _) = render(&expected, OutputFormat::Png);
+        let (indirect, _) = render(&nested, OutputFormat::Png);
+        let direct = crate::common::raster::decode_png(&direct);
+        let indirect = crate::common::raster::decode_png(&indirect);
+        assert_eq!((indirect.width, indirect.height), (9, 7));
+        assert_eq!(indirect.rgba, direct.rgba, "{}", row["id"]);
+    }
+}
+
+#[test]
 fn issue_191_partial_12_cells_exact_native_defects() {
     let (record, inputs) = evidence();
     let pinned = composition_pins();
-    assert_composition_defects(&collect_native_defects(&record, &inputs), &pinned, &record);
+    // Keep the composition checkpoint immutable. Only the PNG projection of
+    // partial-alpha rows may improve; SVG and every PDF measurement stay exact.
+    assert_composition_defects(&pinned, &pinned, &record);
+    let mut corrected = 0;
+    for old in rows(&pinned, "cases") {
+        let row = by_id(&record, "cases", old["id"].as_str().unwrap());
+        for (i, format) in FORMATS.into_iter().enumerate() {
+            let (bytes, diagnostic) = render(&row["scene"], format);
+            let actual = measurement(row, &inputs, format, &bytes, &diagnostic);
+            if format == OutputFormat::Png && row["alpha"] == "partial" {
+                assert_eq!(actual["requirement_passed"], true);
+                assert!(appearance(row, &inputs, format, &bytes).is_empty());
+                assert_eq!(diagnostic, old["formats"][i]["diagnostic"]);
+                assert_eq!(actual["alpha"], old["formats"][i]["alpha"]);
+                corrected += 1;
+            } else {
+                assert_eq!(actual, old["formats"][i], "{} {format:?}", row["id"]);
+            }
+        }
+    }
+    assert_eq!(corrected, 24);
 }
 
 #[test]

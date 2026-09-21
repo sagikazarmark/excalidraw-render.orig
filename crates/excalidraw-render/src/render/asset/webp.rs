@@ -4,12 +4,13 @@
 //! decode with color normalization and orientation applied.
 
 use std::io::Cursor;
+use std::sync::Arc;
 
 use image_webp::{DecodingError as WebPDecodingError, WebPDecoder};
 
 use super::color::{finish_rgba, normalize_rgba, ColorNormalization};
 use super::orientation::{exif_orientation, orient_rgba, oriented_dimensions};
-use super::{decoder_workspace_bytes, DecodedRaster, ResolveError};
+use super::{decoder_workspace_bytes, try_copy, DecodedRaster, ResolveError};
 
 pub(super) const WEBP_RIFF_SIGNATURE: &[u8; 4] = b"RIFF";
 pub(super) const WEBP_SIGNATURE: &[u8; 4] = b"WEBP";
@@ -396,11 +397,28 @@ pub(super) fn decode_webp_default_frame(
         }
     }
     drop(decoded);
+    let untransformed = matches!(color_normalization, ColorNormalization::None);
     normalize_rgba(&mut rgba, color_normalization)?;
     if let Some(orientation) = orientation {
         rgba = orient_rgba(&rgba, source_width, source_height, orientation)?;
     }
-    finish_rgba(rgba)
+    if !untransformed {
+        return finish_rgba(rgba);
+    }
+    // Chromium's untransformed WebP path requests libwebp's premultiplied
+    // output, which truncates c*a/255. Keep the straight samples for PDF;
+    // color-transformed images continue through the ordinary rounded path.
+    let mut premultiplied_rgba = try_copy(&rgba)?;
+    for pixel in premultiplied_rgba.as_chunks_mut::<4>().0 {
+        let alpha = u16::from(pixel[3]);
+        for channel in &mut pixel[..3] {
+            *channel = (u16::from(*channel) * alpha / 255) as u8;
+        }
+    }
+    Ok(DecodedRaster {
+        rgba: Arc::new(rgba),
+        premultiplied_rgba: Arc::new(premultiplied_rgba),
+    })
 }
 
 pub(super) fn map_webp_error(error: WebPDecodingError) -> ResolveError {

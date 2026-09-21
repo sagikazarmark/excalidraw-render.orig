@@ -748,6 +748,35 @@ mod webp_codec {
     }
 
     #[test]
+    fn untransformed_webp_truncates_only_the_draw_time_copy() {
+        let source = [[1, 128, 128, 1], [255, 129, 65, 128]];
+        let webp = webp_with_metadata(2, 1, &source, None, Some(exif_orientation_with_header(6)));
+        let asset = decode("image/webp", &webp);
+        assert_eq!((asset.width, asset.height), (1, 2));
+        assert_eq!(pixels(&asset), source);
+        assert_eq!(
+            asset.premultiplied_rgba.as_deref().unwrap().as_slice(),
+            &[0, 0, 0, 1, 128, 64, 32, 128]
+        );
+        // A real color transform remains on the established rounded path.
+        let tagged = webp_with_metadata(
+            1,
+            1,
+            &[[128, 128, 128, 1]],
+            Some(linear_rgb_icc_profile()),
+            None,
+        );
+        let asset = decode("image/webp", &tagged);
+        let pixel = only_pixel(&asset);
+        assert_eq!(pixel[3], 1);
+        assert!(pixel[..3].iter().all(|c| c.abs_diff(188) <= 2));
+        assert_eq!(
+            asset.premultiplied_rgba.as_deref().unwrap().as_slice(),
+            &[1, 1, 1, 1]
+        );
+    }
+
+    #[test]
     fn a_lossy_webp_decodes_to_opaque_srgb() {
         let asset = decode("image/webp", &lossy_red_webp());
 
