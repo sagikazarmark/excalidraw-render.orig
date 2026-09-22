@@ -85,8 +85,8 @@ captures and verifies all six Velox executions, each twice.
 `reference.sh` runs the unchanged official export entry point in the profile-pinned
 offline Playwright container, twice in fresh browsers and reversed variant order.
 It verifies the reference profile before collection. `evidence.py` consumes that
-collection and an intact native capture, derives font resources through the
-existing Stage-4 asset adapter, executes two fresh processes for each SVG/PDF
+collection and an intact native capture, derives font resources through
+`viewer_assets.py` (below), executes two fresh processes for each SVG/PDF
 viewer, and compares with the actual `excalidraw-render-compare` library. The
 standalone comparator has its own exact lockfile; no approved comparator source
 or workspace manifest changes. It supports canonical whole/crop budgets only.
@@ -108,9 +108,10 @@ PDF harness using `tools/pdf-harness/install.sh`. Collection writes new director
 only. Failed collections have no terminal `viewers.json`. Compressed RGBA files
 retain exact canonical samples without resizing, alignment or color fitting.
 
-The current authored adapter supports **unrotated source crop anchors** and the
-existing Stage-4 **single covering embedded WOFF2 face** contract. Unsupported
-inputs fail explicitly; it is not yet a general representative admission adapter.
+The current authored adapter supports **unrotated source crop anchors**, any
+number of embedded WOFF2 faces, and observed substitutes for undeclared official
+families (see below). Unsupported inputs fail explicitly; it is not yet a
+general representative admission adapter.
 `regions.json` records source-bounds-plus-four-pixel-context crop proposals.
 
 Velox has fractional SVG dimensions. `svg-viewer.mjs` is a proposed, source-bound
@@ -132,6 +133,32 @@ LF admission and rejection of other numeric entities/external resources.
 `probe.py` localizes raw PNG channel differences. `diagnose.py` compares an
 expanded typography crop as a diagnostic only; it never rewrites original
 judgments, budgets or approvals.
+
+### Viewer font resources
+
+`viewer_assets.py` derives each SVG viewer's inputs and asset declarations. For
+single-face SVGs it reproduces the Stage-4 adapter (`stage4-viewer-assets.mjs`
+plus `xtask conformance candidate-prepare-assets`) byte for byte; the retained
+Velox resources are the regression test. It additionally declares every
+embedded face, so native SVGs may use more than one family.
+
+The official exporter does not embed every family it names: frame names use
+`Helvetica`. The canonical Chromium viewer rejects ambient platform fonts, so an
+undeclared official family is admitted only through an observed substitute.
+`font-resolution.mjs` loads the official SVG in the pinned reference browser and
+records the platform font CDP reports for each text node, alongside
+`fc-match`. Collection requires both to agree and the file to be a pinned
+reference-profile system font, retains those exact bytes, wraps them as WOFF2
+with the renderer's encoder settings (`viewer-fonts`, which uses the renderer's
+pinned `wuff`, `rustybuzz` and `ttf2woff2`), and injects one `@font-face` for the
+requested family into `official-substituted.svg`. Chromium renders that file;
+the Rust viewer inputs derive from it. In the pinned container, `Helvetica`
+resolves to Liberation Sans (`LiberationSans-Regular.ttf`). This substitution is
+a proposed adapter choice that needs review before it becomes canonical.
+
+```sh
+python3 -B tools/representative-intake/viewer_assets.py verify <viewer-variant-directory>
+```
 
 Verification requires the complete producer inventory, validates both viewer
 receipts against retained raw raster bytes, re-derives Rust origin clipping,

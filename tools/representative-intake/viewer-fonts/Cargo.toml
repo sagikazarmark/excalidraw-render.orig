@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+
+[package]
+name = "representative-intake-viewer-fonts"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.97"
+publish = false
+
+[dependencies]
+rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
+serde_json = "=1.0.141"
+sha2 = "=0.10.9"
+ttf2woff2 = { version = "=0.13.3", default-features = false, features = ["portable-float"] }
+wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
+
+[lints.rust]
+unsafe_code = "forbid"

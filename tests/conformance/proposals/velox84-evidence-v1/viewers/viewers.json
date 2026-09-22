@@ -16,7 +16,7 @@
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "e72ca3fee6ba",
+          "container_namespace": "82b51ff0d384",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -228,14 +228,14 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "14d2081c67dde6222a3ed0b5881c13b317dd34784e80fee1876a273af55f8650",
-          "virtual_time_ticks_base": 11345095.519,
+          "virtual_time_ticks_base": 12687465.516,
           "width": 1955
         },
         {
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "63844e76e911",
+          "container_namespace": "af09ed98e434",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -447,7 +447,7 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "14d2081c67dde6222a3ed0b5881c13b317dd34784e80fee1876a273af55f8650",
-          "virtual_time_ticks_base": 11346115.693,
+          "virtual_time_ticks_base": 12688491.4,
           "width": 1955
         }
       ],
@@ -469,7 +469,7 @@
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "d0fb8ce88c56",
+          "container_namespace": "5317a167a7ed",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -621,14 +621,14 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "163ad4da1a6235511885dd6f296120f7630c1813ca7aad00d7d30b02c9cc5d37",
-          "virtual_time_ticks_base": 11347201.815,
+          "virtual_time_ticks_base": 12689560.513,
           "width": 1955
         },
         {
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "5f64b632afdb",
+          "container_namespace": "d58a9cc9dc11",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -780,7 +780,7 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "163ad4da1a6235511885dd6f296120f7630c1813ca7aad00d7d30b02c9cc5d37",
-          "virtual_time_ticks_base": 11348205.526,
+          "virtual_time_ticks_base": 12690578.81,
           "width": 1955
         }
       ],
@@ -956,7 +956,7 @@
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "c9594c03d152",
+          "container_namespace": "760e37372b93",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -1168,14 +1168,14 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "a9a74b22acb09624135039389dcdafd5d336f6dedff73cf33c062628d88a3b3e",
-          "virtual_time_ticks_base": 11373303.472,
+          "virtual_time_ticks_base": 12704487.132,
           "width": 1955
         },
         {
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "2b9e7a9caa3a",
+          "container_namespace": "b3c8ee8270e3",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -1387,7 +1387,7 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "a9a74b22acb09624135039389dcdafd5d336f6dedff73cf33c062628d88a3b3e",
-          "virtual_time_ticks_base": 11374344.63,
+          "virtual_time_ticks_base": 12705502.654,
           "width": 1955
         }
       ],
@@ -1409,7 +1409,7 @@
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "f621c7bcafda",
+          "container_namespace": "a37b4165ad22",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -1561,14 +1561,14 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "c900ee21aee55fbf0cde4b170341bd330463f3544720ac3e014780a915329ffb",
-          "virtual_time_ticks_base": 11375435.461,
+          "virtual_time_ticks_base": 12706556.269,
           "width": 1955
         },
         {
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "f3de9b193d59",
+          "container_namespace": "24b38d433b54",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -1720,7 +1720,7 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "c900ee21aee55fbf0cde4b170341bd330463f3544720ac3e014780a915329ffb",
-          "virtual_time_ticks_base": 11376430.679,
+          "virtual_time_ticks_base": 12707575.168,
           "width": 1955
         }
       ],
@@ -2889,16 +2889,6 @@
   "schema": "excalidraw-render/representative-intake-viewers/v1",
   "sources": [
     {
-      "bytes": 60882,
-      "path": "Cargo.lock",
-      "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
-    },
-    {
-      "bytes": 4959,
-      "path": "Cargo.toml",
-      "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
-    },
-    {
       "bytes": 15174,
       "path": "crates/excalidraw-render-compare/src/comparison.rs",
       "sha256": "5988dd5f973171facf1ccc9712bef2e68e47af8f3947cd3213f21b1b320fb807"
@@ -2989,11 +2979,6 @@
       "sha256": "8857f2792a506163d150a5481122a4bb93b3646e356a57065770747a188d67fc"
     },
     {
-      "bytes": 2885,
-      "path": "tools/reference-oracle/scripts/stage4-viewer-assets.mjs",
-      "sha256": "bf4cc17d0ac7f71955dd1940d1b90645191430291dfbe57d8bbe147c9363291f"
-    },
-    {
       "bytes": 34890,
       "path": "tools/reference-oracle/scripts/svg-viewer.mjs",
       "sha256": "61968d7bca7fef68fa29af22368b5d7dfddda9be1c9a34e53f479cdb14c1a11b"
@@ -3024,9 +3009,14 @@
       "sha256": "4f247e8c76f2fc2609caddeb41d13bee0e49cd610c74a2016579fbe5e3e7c67e"
     },
     {
-      "bytes": 19797,
+      "bytes": 19760,
       "path": "tools/representative-intake/evidence.py",
-      "sha256": "a06317beca34ea567eefd53b2d4733b50a6fc797919fc28dfcdb23e8b9be4752"
+      "sha256": "ee9bb5e482856e6a39bad1e9c099274debd4bec2f55af045b611f06b2ebaf17b"
+    },
+    {
+      "bytes": 4566,
+      "path": "tools/representative-intake/font-resolution.mjs",
+      "sha256": "1f4299fffaad5383d37a4086057f55e49c6b06adcafa9b3fa90bd3bbb5853ff9"
     },
     {
       "bytes": 18764,
@@ -3054,6 +3044,26 @@
       "sha256": "dbfbeb93b0208499aa09c7fee409bac3432bc842684fdb18443854003e5c233f"
     },
     {
+      "bytes": 10323,
+      "path": "tools/representative-intake/viewer-fonts/Cargo.lock",
+      "sha256": "11668330eae6b5cee15abf25b0935a2f9ea39b6f7b72dcad0b8db78ccfb74fb2"
+    },
+    {
+      "bytes": 503,
+      "path": "tools/representative-intake/viewer-fonts/Cargo.toml",
+      "sha256": "bed43c29ef1f636cb90ee7d167ae84e5440a56a091cfb61e87348b4a819e8a6a"
+    },
+    {
+      "bytes": 3888,
+      "path": "tools/representative-intake/viewer-fonts/src/main.rs",
+      "sha256": "30db51d98ea19ae43b5bb4a280bebf1e14654c9b73e2bbd26b1faba788a47655"
+    },
+    {
+      "bytes": 13963,
+      "path": "tools/representative-intake/viewer_assets.py",
+      "sha256": "3a0006f329b55f9dc33652b4cdf69dcde38ea116581ce4041cde594c7a372731"
+    },
+    {
       "bytes": 17624,
       "path": "tools/svg-viewer-rust/Cargo.lock",
       "sha256": "987d8627af80014951265cdc527ef5f2716635d928a9348609292b87bdfd6c39"
@@ -3067,16 +3077,6 @@
       "bytes": 47655,
       "path": "tools/svg-viewer-rust/src/main.rs",
       "sha256": "2105e33e86647c8873487970b2bf06fe88b6f2db1bac473b4db221a3e936b722"
-    },
-    {
-      "bytes": 692,
-      "path": "xtask/Cargo.toml",
-      "sha256": "3fc1a64bf12c4061d2ad139607e3ee4b394f203e7ea303009a3b3ff1eea8038b"
-    },
-    {
-      "bytes": 18219,
-      "path": "xtask/src/conformance_candidate.rs",
-      "sha256": "f0f40795331e278ab0f4aa884f1b2e7eab4d02e12eb5a53063e6aedcdf92daf6"
     }
   ],
   "status": "pending-review",

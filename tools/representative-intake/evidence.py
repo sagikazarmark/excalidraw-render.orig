@@ -1,4 +1,4 @@
-"""Collect proposed Velox viewer evidence without changing approved registries."""
+"""Collect proposed representative viewer evidence without changing approved registries."""
 import argparse
 import json
 import math
@@ -9,6 +9,7 @@ import tempfile
 import zlib
 
 import intake
+import viewer_assets
 
 ROOT = Path(__file__).resolve().parents[2]
 COMPARISONS = {
@@ -21,8 +22,9 @@ COMPARISONS = {
 
 
 def producer_paths(reference):
-    paths = ["tools/representative-intake/" + name for name in ["evidence.py", "svg-viewer.mjs", "svg-viewer.sh", "intake.py", "reference.mjs", "reference.sh", "compare/src/main.rs", "compare/Cargo.toml", "compare/Cargo.lock"]]
-    paths += ["tools/reference-oracle/scripts/stage4-viewer-assets.mjs", "tools/reference-oracle/scripts/svg-viewer.mjs", "xtask/src/conformance_candidate.rs", "Cargo.lock", "Cargo.toml", "xtask/Cargo.toml", "tools/svg-viewer-rust/src/main.rs", "tools/svg-viewer-rust/Cargo.lock", "tools/svg-viewer-rust/Cargo.toml", "tools/pdf-harness/pdfium/render.py", "tools/pdf-harness/pdfjs/render.mjs", "tools/pdf-harness/run-pdfium.sh", "tools/pdf-harness/run-pdfjs.sh", "tools/pdf-harness/pdfium.lock.json", "tools/pdf-harness/pdfjs/package-lock.json", "tests/conformance/comparator-profiles/canonical-visual-v1.json"]
+    paths = ["tools/representative-intake/" + name for name in ["evidence.py", "svg-viewer.mjs", "svg-viewer.sh", "intake.py", "reference.mjs", "reference.sh", "compare/src/main.rs", "compare/Cargo.toml", "compare/Cargo.lock",
+                                                               "viewer_assets.py", "font-resolution.mjs", "viewer-fonts/src/main.rs", "viewer-fonts/Cargo.toml", "viewer-fonts/Cargo.lock"]]
+    paths += ["tools/reference-oracle/scripts/svg-viewer.mjs", "tools/svg-viewer-rust/src/main.rs", "tools/svg-viewer-rust/Cargo.lock", "tools/svg-viewer-rust/Cargo.toml", "tools/pdf-harness/pdfium/render.py", "tools/pdf-harness/pdfjs/render.mjs", "tools/pdf-harness/run-pdfium.sh", "tools/pdf-harness/run-pdfjs.sh", "tools/pdf-harness/pdfium.lock.json", "tools/pdf-harness/pdfjs/package-lock.json", "tests/conformance/comparator-profiles/canonical-visual-v1.json"]
     paths += [str(p.relative_to(ROOT)) for p in (ROOT / "crates/excalidraw-render-compare/src").glob("*.rs")]
     paths += [f"tests/conformance/viewer-profiles/{name}.json" for name in ["canonical-svg-chromium-v1", "canonical-svg-pure-rust-v1", "canonical-pdf-pdfium-v1", "canonical-pdf-pdfjs-v1"]]
     paths += [r["path"] for r in reference["sources"]]
@@ -113,11 +115,10 @@ def collect(bundle, reference_root, native, output, repeat=False):
             retain(directory / f"native-{fmt}-report.json", (native / f"{variant}-{fmt}-report.json").read_bytes())
         region_plan = regions(scene, plan, ref)
         retain(directory / "regions.json", intake.encode(region_plan))
-        run("node", "tools/reference-oracle/scripts/stage4-viewer-assets.mjs", relative(directory))
-        run("cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "candidate-prepare-assets", relative(directory))
+        viewer_assets.collect(directory)
         width, height = ref["width"], ref["height"]
         specs = [
-            (f"{kind}-chromium", ["bash", "tools/representative-intake/svg-viewer.sh", "render", relative(directory / f"{kind}.svg"), None, relative(directory / f"{kind}-assets.json")])
+            (f"{kind}-chromium", ["bash", "tools/representative-intake/svg-viewer.sh", "render", relative(viewer_assets.chromium_input(directory, kind)), None, relative(directory / f"{kind}-assets.json")])
             for kind in ("official", "native")]
         specs += [(f"native-{viewer}", ["bash", f"tools/pdf-harness/run-{viewer}.sh", "render", relative(directory / "native.pdf"), None, str(width), str(height)]) for viewer in ("pdfium", "pdfjs")]
         specs += [(f"{kind}-rust", ["cargo", "run", "--locked", "--manifest-path", "tools/svg-viewer-rust/Cargo.toml", "--", "render", relative(directory / f"{kind}-rust.svg"), None, relative(directory / f"{kind}-assets.json")]) for kind in ("official", "native")]
@@ -190,6 +191,7 @@ def verify(bundle, reference_root, native, output):
     expected = [(v["id"], name) for v in plan["variants"] for name in COMPARISONS]
     intake.require([(j["variant"], j["comparison"]) for j in record["judgments"]] == expected, "incomplete judgment inventory")
     for row in reference["rows"]:
+        viewer_assets.verify(output / row["variant"])
         path = output / row["variant"] / "regions.json"
         intake.require(json.loads(path.read_bytes()) == regions(scene, plan, row), "crop plan detached from source anchors")
         for name, expected_descriptor in row["files"].items():
