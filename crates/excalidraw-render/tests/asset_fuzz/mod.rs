@@ -370,41 +370,7 @@ fn inspect_svg(bytes: &[u8], depth: usize) {
 }
 
 fn inspect_css(source: &str) {
-    use cssparser::{Parser, ParserInput, Token};
-    fn tokens(
-        parser: &mut Parser<'_, '_>,
-        depth: usize,
-    ) -> Result<(), cssparser::ParseError<'static, ()>> {
-        assert!(depth <= 16, "output CSS exceeds bounded nesting");
-        while let Ok(token) = parser.next_including_whitespace_and_comments().cloned() {
-            match token {
-                Token::AtKeyword(name) => assert!(
-                    !name.eq_ignore_ascii_case("import") && !name.eq_ignore_ascii_case("font-face")
-                ),
-                Token::UnquotedUrl(url) => assert!(url.starts_with('#'), "external CSS URL: {url}"),
-                Token::Function(name) if name.eq_ignore_ascii_case("url") => {
-                    parser
-                        .parse_nested_block(|inner| {
-                            let url = inner.expect_string()?.clone();
-                            assert!(url.starts_with('#'), "external quoted CSS URL: {url}");
-                            Ok::<_, cssparser::ParseError<'_, ()>>(())
-                        })
-                        .expect("output URL is well formed");
-                }
-                Token::Function(_)
-                | Token::ParenthesisBlock
-                | Token::SquareBracketBlock
-                | Token::CurlyBracketBlock => {
-                    parser
-                        .parse_nested_block(|inner| tokens(inner, depth + 1))
-                        .expect("output CSS block");
-                }
-                _ => {}
-            }
-        }
-        Ok(())
-    }
-    tokens(&mut Parser::new(&mut ParserInput::new(source)), 0).unwrap();
+    crate::svg_resource_inspect::inspect_css(source, false);
 }
 
 fn replay(seed: &Seed, depth: usize, repeated: bool, mode: usize, forbid: bool, valid: bool) {

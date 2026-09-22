@@ -1,0 +1,69 @@
+"""
+Complete-render fuzzing is separate from the approval-pinned release pipeline.
+"""
+type RenderFuzz {
+  let container: Container!
+
+  new(ws: Workspace!) {
+    let sourceLock = ws.file("dagger.lock")
+    self.container = Dagger
+      .rust(
+        ws: ws,
+        version: "1.97.1-slim-trixie",
+        container: Dagger
+          .container(platform: "linux/amd64")
+          .from("rust:1.97.1-slim-trixie")
+          .withExec(["bash", "-eu", "-c", "apt-get update && apt-get install -y --no-install-recommends git"]),
+      )
+      .withEnvVariable("CARGO_BUILD_JOBS", "2")
+      .container
+      .withFile("/work/src/dagger.lock", sourceLock)
+    self
+  }
+
+  """
+  Exercise complete requests, metadata and atomic outcomes with debug assertions.
+  """
+  nightly(
+    """
+    Number of generated cases, in addition to mandatory reachability controls.
+    """
+    cases: String! = "4096",
+  ): String! {
+    self
+      .container
+      .withEnvVariable("EXCALIDRAW_RENDER_FUZZ_CASES", cases)
+      .withEnvVariable("EXCALIDRAW_RENDER_FUZZ_TRACE", "1")
+      .withExec([
+        "cargo", "test", "--locked",
+        "--package", "excalidraw-render", "--test", "render_fuzz",
+        "render_fuzz::nightly_complete_render_fuzz",
+        "--", "--ignored", "--exact", "--nocapture",
+      ])
+      .combinedOutput
+  }
+
+  """
+  Execute the same public-facade smoke in the manifest-pinned browser.
+  """
+  wasm: String! @check {
+    self
+      .container
+      .withExec(["bash", "-eu", "-c", "apt-get update && apt-get install -y --no-install-recommends jq curl unzip clang lld pkg-config libssl-dev libnss3 libatk-bridge2.0-0 libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libxkbcommon0 libgbm1 libasound2t64 libcups2 libpango-1.0-0 libcairo2"])
+      .withExec(["bash", "tools/ci/install-browser.sh"])
+      .withEnvVariable("CHROMEDRIVER", "/usr/local/bin/chromedriver")
+      .withEnvVariable("CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER", "wasm-bindgen-test-runner")
+      .withEnvVariable("CC_wasm32_unknown_unknown", "clang")
+      .withEnvVariable("FONTCONFIG_FILE", "/work/src/tests/package-consumer/fontconfig.xml")
+      .withEnvVariable("WASM_BINDGEN_TEST_TIMEOUT", "1800")
+      .withEnvVariable("WASM_BINDGEN_TEST_WEBDRIVER_JSON", "/work/src/tests/package-consumer/webdriver.json")
+      .withExec(["rustup", "target", "add", "wasm32-unknown-unknown"])
+      .withEnvVariable("CARGO_PROFILE_TEST_DEBUG", "0")
+      .withExec([
+        "cargo", "test", "--locked", "--target", "wasm32-unknown-unknown",
+        "-p", "excalidraw-render", "--test", "render_fuzz",
+        "wasm::complete_render_fuzz_smoke_in_wasm",
+      ])
+      .combinedOutput
+  }
+}

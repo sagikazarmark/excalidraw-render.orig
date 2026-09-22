@@ -15,6 +15,8 @@ mod png_stage4;
 #[allow(dead_code)]
 #[path = "common/png_stage4_reference.rs"]
 mod png_stage4_reference;
+#[path = "common/svg_resource_inspect.rs"]
+mod svg_resource_inspect;
 
 #[cfg(target_arch = "wasm32")]
 mod wasm {
