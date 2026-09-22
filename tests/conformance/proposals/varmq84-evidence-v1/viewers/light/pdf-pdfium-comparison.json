@@ -1,0 +1,52 @@
+{
+  "candidate": {
+    "bytes": 1281354,
+    "sha256": "cfbbeade7bae122411448502e1bc78928746c75ae9245a9a8eddf2eb3ddb571e"
+  },
+  "crops": [
+    {
+      "id": "queue-manager-typography",
+      "region": {
+        "area": 16115,
+        "changed_pixels": 11,
+        "changed_pixels_pass": true,
+        "height": 55,
+        "ssim_bits": "3fefc17216d8c415",
+        "ssim_pass": false,
+        "width": 293
+      }
+    },
+    {
+      "id": "worker-arrow",
+      "region": {
+        "area": 30401,
+        "changed_pixels": 12520,
+        "changed_pixels_pass": false,
+        "height": 301,
+        "ssim_bits": "3fe5f479b1596cf0",
+        "ssim_pass": false,
+        "width": 101
+      }
+    }
+  ],
+  "mode": "canonical",
+  "passed": false,
+  "plan": {
+    "bytes": 397,
+    "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+  },
+  "reference": {
+    "bytes": 2233973,
+    "sha256": "ca73d0c4c4bf476959bbe11477b84136a6d97b5b54e9372fb30738ce5dc57903"
+  },
+  "schema": "excalidraw-render/representative-intake-comparison/v1",
+  "whole": {
+    "area": 9772952,
+    "changed_pixels": 543794,
+    "changed_pixels_pass": false,
+    "height": 2996,
+    "ssim_bits": "3fee3d4188a14884",
+    "ssim_pass": false,
+    "width": 3262
+  }
+}

@@ -1,0 +1,326 @@
+{
+  "approval": null,
+  "rows": [
+    {
+      "device_width_px": 0.125,
+      "pdf": {
+        "bytes": 473,
+        "file": "stroke-0_125px.pdf",
+        "sha256": "f1f1220672d950d0fd60b315328361d58fd3994c061767496a9fc60e8ae92ead"
+      },
+      "viewers": {
+        "pdfium": {
+          "alpha_rows": [
+            [
+              49,
+              60
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0039,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "0a7093f6eecc48e1e82f6cedff9562732ddbcc139a827f45420df969c7e4121b"
+          }
+        },
+        "pdfjs": {
+          "alpha_rows": [
+            [
+              49,
+              59
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "9ed418b8edae4a1ea81d07d6ac075bed426ab285ee41716cd6e3b8f3c23a3a1f"
+          }
+        }
+      }
+    },
+    {
+      "device_width_px": 0.25,
+      "pdf": {
+        "bytes": 472,
+        "file": "stroke-0_25px.pdf",
+        "sha256": "8675f4c3128ead156b28204beb640440f42564f3f94678a5882ade1e6e170f8b"
+      },
+      "viewers": {
+        "pdfium": {
+          "alpha_rows": [
+            [
+              49,
+              60
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0039,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "0a7093f6eecc48e1e82f6cedff9562732ddbcc139a827f45420df969c7e4121b"
+          }
+        },
+        "pdfjs": {
+          "alpha_rows": [
+            [
+              49,
+              59
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "9ed418b8edae4a1ea81d07d6ac075bed426ab285ee41716cd6e3b8f3c23a3a1f"
+          }
+        }
+      }
+    },
+    {
+      "device_width_px": 0.5,
+      "pdf": {
+        "bytes": 471,
+        "file": "stroke-0_5px.pdf",
+        "sha256": "ad9ba8954d585d7c341b5e18b444ab9a5be69aa16d91b986dab98ca1712e032b"
+      },
+      "viewers": {
+        "pdfium": {
+          "alpha_rows": [
+            [
+              49,
+              60
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0039,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "0a7093f6eecc48e1e82f6cedff9562732ddbcc139a827f45420df969c7e4121b"
+          }
+        },
+        "pdfjs": {
+          "alpha_rows": [
+            [
+              49,
+              59
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "9ed418b8edae4a1ea81d07d6ac075bed426ab285ee41716cd6e3b8f3c23a3a1f"
+          }
+        }
+      }
+    },
+    {
+      "device_width_px": 0.75,
+      "pdf": {
+        "bytes": 472,
+        "file": "stroke-0_75px.pdf",
+        "sha256": "d67a22cbbde4298546f2a7635dd68e785436bbc857f2b76ebb3984f2edb00ac4"
+      },
+      "viewers": {
+        "pdfium": {
+          "alpha_rows": [
+            [
+              49,
+              60
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0039,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "0a7093f6eecc48e1e82f6cedff9562732ddbcc139a827f45420df969c7e4121b"
+          }
+        },
+        "pdfjs": {
+          "alpha_rows": [
+            [
+              49,
+              59
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "9ed418b8edae4a1ea81d07d6ac075bed426ab285ee41716cd6e3b8f3c23a3a1f"
+          }
+        }
+      }
+    },
+    {
+      "device_width_px": 1,
+      "pdf": {
+        "bytes": 470,
+        "file": "stroke-1px.pdf",
+        "sha256": "51a35eae187b8286d9320f05a237580e9f4e59fb2472896625678fdf0dd049e4"
+      },
+      "viewers": {
+        "pdfium": {
+          "alpha_rows": [
+            [
+              49,
+              60
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0039,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "0a7093f6eecc48e1e82f6cedff9562732ddbcc139a827f45420df969c7e4121b"
+          }
+        },
+        "pdfjs": {
+          "alpha_rows": [
+            [
+              49,
+              59
+            ],
+            [
+              50,
+              196
+            ]
+          ],
+          "coverage_px": 1.0,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "9ed418b8edae4a1ea81d07d6ac075bed426ab285ee41716cd6e3b8f3c23a3a1f"
+          }
+        }
+      }
+    },
+    {
+      "device_width_px": 1.5,
+      "pdf": {
+        "bytes": 471,
+        "file": "stroke-1_5px.pdf",
+        "sha256": "ae8b41c618d3eaafb8ca28146820f9338d67cd076c8ad0fea796b2d0d7360872"
+      },
+      "viewers": {
+        "pdfium": {
+          "alpha_rows": [
+            [
+              49,
+              124
+            ],
+            [
+              50,
+              255
+            ],
+            [
+              51,
+              4
+            ]
+          ],
+          "coverage_px": 1.502,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "31ef02b8ea1b613f7f073842138004de3dd0edb4d1ab1cd23ef74d6193a71961"
+          }
+        },
+        "pdfjs": {
+          "alpha_rows": [
+            [
+              49,
+              128
+            ],
+            [
+              50,
+              255
+            ]
+          ],
+          "coverage_px": 1.502,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "8c03e97b17dc10c778861c6d8d9d077f52154b3c4a70a0b57f33acc96405171f"
+          }
+        }
+      }
+    },
+    {
+      "device_width_px": 2,
+      "pdf": {
+        "bytes": 469,
+        "file": "stroke-2px.pdf",
+        "sha256": "e24ce83e0378ff8f6bf2356a889f26622e4dd57161e4014f03175049823b6984"
+      },
+      "viewers": {
+        "pdfium": {
+          "alpha_rows": [
+            [
+              49,
+              188
+            ],
+            [
+              50,
+              255
+            ],
+            [
+              51,
+              68
+            ]
+          ],
+          "coverage_px": 2.0039,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "7a010cf6f729424d80a206d5e6815b5ae14170f12bbb02e1b68aa52ee5cb6a1a"
+          }
+        },
+        "pdfjs": {
+          "alpha_rows": [
+            [
+              49,
+              191
+            ],
+            [
+              50,
+              255
+            ],
+            [
+              51,
+              64
+            ]
+          ],
+          "coverage_px": 2.0,
+          "raster": {
+            "bytes": 40000,
+            "sha256": "5888996d72879b79573cf1beaa5033cb0ffc7838515e7de7a347746debf3a3ef"
+          }
+        }
+      }
+    }
+  ],
+  "schema": "excalidraw-render/pdf-thin-line-controls/v1"
+}

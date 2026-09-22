@@ -168,3 +168,23 @@ and matches each report file to its canonical recomputation. Use
 changed original files and requires every existing artifact/judgment byte to
 remain identical before replacing process receipts. This is for producer
 verification changes, never for changing a crop, budget or failed measurement.
+
+## Compact retention
+
+Large scenes produce tens of megabytes of rasters, fonts and derived SVGs per
+collection. `compact.py retain` verifies a full collection, keeps only its JSON
+records and writes `compact.json`: a digest inventory of every file in the
+reference, native and viewer collections, plus receipt signatures with process
+receipts and executable/tool identity removed. `verify` checks the retained
+records offline and reports stale producers. `check` requires a fresh full
+collection at the recorded `target/` paths to reproduce every other digest.
+
+```sh
+python3 -B tools/representative-intake/compact.py retain <bundle> <reference> <native> <viewers> <new-proposal-dir>
+python3 -B tools/representative-intake/compact.py verify <proposal-dir>
+python3 -B tools/representative-intake/compact.py check <proposal-dir>
+```
+
+`pdf_thin_lines.py` renders hand-authored single-stroke PDFs in both pinned PDF
+viewers and records the coverage each paints; it is an independent control for
+sub-pixel stroke comparisons, not a judgment.

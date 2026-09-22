@@ -1,0 +1,56 @@
+{
+  "fonts": [
+    {
+      "css": {
+        "family": "Excalifont",
+        "stretch": "normal",
+        "style": "normal",
+        "unicode_range": [
+          "U+0-10FFFF"
+        ],
+        "weight": 400
+      },
+      "sfnt": {
+        "face_index": 0,
+        "family": "Excalifont",
+        "media_type": "font/ttf",
+        "path": "target/varmq-viewers-v1/dark/assets/native-font-0.sfnt",
+        "sha256": "3b6079c73defeadb4e1967840e8be9922dbb95d3cad1ebf06e3f8df72e9c0bda",
+        "stretch": "normal",
+        "style": "normal",
+        "weight": 400
+      },
+      "source": {
+        "media_type": "font/woff2",
+        "sha256": "e04c4642c1bfd313747928c4d7e3271ef6093f9ea6d14919b151e2d92d6d5084"
+      }
+    },
+    {
+      "css": {
+        "family": "ExcalidrawRender-9",
+        "stretch": "normal",
+        "style": "normal",
+        "unicode_range": [
+          "U+0-10FFFF"
+        ],
+        "weight": 400
+      },
+      "sfnt": {
+        "face_index": 0,
+        "family": "ExcalidrawRender-9",
+        "media_type": "font/ttf",
+        "path": "target/varmq-viewers-v1/dark/assets/native-font-1.sfnt",
+        "sha256": "c8cd640f2d91727a9f9334b44a542297e0e856d98750177dc2ca9874896e068f",
+        "stretch": "normal",
+        "style": "normal",
+        "weight": 400
+      },
+      "source": {
+        "media_type": "font/woff2",
+        "sha256": "3bf8449f3675ea0f071c2ee4b2a4fcd44e943c50778dc49a58fe020da8f05893"
+      }
+    }
+  ],
+  "images": [],
+  "schema": "excalidraw-render/svg-viewer-asset-declaration/v1"
+}
