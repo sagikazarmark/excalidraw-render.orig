@@ -1,0 +1,18 @@
+[package]
+name = "jpeg187-probe"
+version = "0.0.0"
+edition = "2021"
+
+# Copy this diagnostic directory to /tmp/opencode, with a patched stable
+# decoder sibling named jpeg187-zune-probe. This is not a workspace member.
+[workspace]
+
+[dependencies]
+zune-jpeg = { path = "../jpeg187-zune-probe", default-features = false, features = ["std"] }
+zune-core = "=0.5.1"
+stable-jpeg = { package = "zune-jpeg", version = "=0.5.15", default-features = false, features = ["std"] }
+jpeg-encoder = "=0.6.1"
+serde_json = "=1.0.141"
+base64 = "=0.22.1"
+png = "=0.17.16"
+excalidraw-render-compare = { path = "../../crates/excalidraw-render-compare" }

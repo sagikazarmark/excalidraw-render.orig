@@ -1,0 +1,51 @@
+--- a/src/mcu.rs
++++ b/src/mcu.rs
+@@ -191,6 +191,10 @@
+         let mut upsampler_scratch_space = vec![0; upsampler_scratch_size];
+ 
+         'sos: loop {
++            if !all_components_in_first_scan {
++                self.todo = self.restart_interval;
++                self.components.iter_mut().for_each(|component| component.dc_pred = 0);
++            }
+             trace!(
+                 "Baseline decoding of components: {:?}",
+                 &self.z_order[..usize::from(self.num_scans)]
+@@ -198,7 +202,13 @@
+ 
+             trace!("Decoding MCU width: {mcu_width}, height: {mcu_height}");
+ 
+-            for i in 0..mcu_height {
++            let scan_height = if !all_components_in_first_scan && self.num_scans == 1 {
++                let component = &self.components[self.z_order[0]];
++                (usize::from(self.info.height) * component.vertical_sample).div_ceil(self.v_max * 8)
++            } else {
++                mcu_height
++            };
++            for i in 0..scan_height {
+                 if stream.overread_by > 0 {
+                     pixels.get_mut(pixels_written..).map(|v| v.fill(128));
+                     if self.options.strict_mode() {
+@@ -491,7 +501,7 @@
+                 let qt_table = &component.quantization_table;
+                 let channel = if PROGRESSIVE {
+                     let offset =
+-                        mcu_height * component.width_stride * 8 * component.vertical_sample;
++                        mcu_height * component.width_stride * 8;
+                     // Small stopgap for https://github.com/etemesi254/zune-image/issues/362
+                     if offset >= progressive[k].len(){
+                         return Err(DecodeErrors::FormatStatic("Would panic on slice iteration"))
+@@ -607,6 +617,13 @@
+             }
+         }
+ 
++        if PROGRESSIVE && z_scans.len() == 1 {
++            let comp = &self.components[z_scans[0]];
++            let scan_height = (usize::from(self.info.height) * comp.vertical_sample).div_ceil(self.v_max * 8);
++            if mcu_height + 1 < scan_height {
++                return Ok(McuContinuation::Ok);
++            }
++        }
+         self.check_stream_marker_after_mcu_width(stream)
+     }
+ 

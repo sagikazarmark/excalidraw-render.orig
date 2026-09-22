@@ -1,0 +1,4 @@
+   Compiling zune-jpeg v0.5.15 (/tmp/opencode/jpeg187-reproduced/jpeg187-zune-probe)
+   Compiling jpeg187-probe v0.0.0 (/tmp/opencode/jpeg187-reproduced/probe)
+    Finished `dev` profile [unoptimized] target(s) in 0.72s
+     Running `target/debug/jpeg187-probe`
