@@ -1,0 +1,75 @@
+{
+  "approval": null,
+  "case_id": "representative.varmq-queue-diagram.v1",
+  "census": {
+    "assets": 0,
+    "bound_arrows": 11,
+    "bound_text": 29,
+    "element_types": {
+      "arrow": 11,
+      "diamond": 1,
+      "ellipse": 4,
+      "frame": 1,
+      "rectangle": 30,
+      "text": 42
+    },
+    "font_families": [
+      5
+    ],
+    "live_elements": 89
+  },
+  "eligible_executions": [],
+  "files": {
+    "LICENSE": {
+      "bytes": 1070,
+      "sha256": "2cda9ba44f79008e39421c8df3486d9864967365fb4f60bf462262672042ab8b"
+    },
+    "PROVENANCE.json": {
+      "bytes": 1492,
+      "sha256": "060073cc9b7c6992c285f652fbb5c890c6df1579fa2644a1ec85269f39eab5e4"
+    },
+    "plan.json": {
+      "bytes": 2383,
+      "sha256": "6b88dee9105b458f5edfa9bd5130df72d6e491ab1db47c81239d4c9425f1e849"
+    },
+    "scene.excalidraw": {
+      "bytes": 90886,
+      "sha256": "4874be31c2d4254e8a3375edd3a7e389c3cb2250beca8b152c2f6e4e653c279e"
+    }
+  },
+  "license": "MIT",
+  "pending": [
+    "sanitization-and-applicability-review",
+    "reference-and-viewer-evidence",
+    "independent-semantics-reports-notices",
+    "resource-outcomes",
+    "canonical-crops",
+    "exact-subject-approval",
+    "registry-and-target-integration"
+  ],
+  "proposed_executions": [
+    "representative.varmq-queue-diagram.v1:light:svg",
+    "representative.varmq-queue-diagram.v1:light:png",
+    "representative.varmq-queue-diagram.v1:light:pdf",
+    "representative.varmq-queue-diagram.v1:dark:svg",
+    "representative.varmq-queue-diagram.v1:dark:png",
+    "representative.varmq-queue-diagram.v1:dark:pdf"
+  ],
+  "sanitization": {
+    "operation": "reviewed-no-change",
+    "original_sha256": "4874be31c2d4254e8a3375edd3a7e389c3cb2250beca8b152c2f6e4e653c279e",
+    "retained_sha256": "4874be31c2d4254e8a3375edd3a7e389c3cb2250beca8b152c2f6e4e653c279e",
+    "review_notes": "Retain upstream bytes verbatim. The 42 text elements are technical labels for the varmq queue/worker architecture (including the upstream typos 'peneding' and 'Architechture', kept verbatim); there are no embedded assets. appState contains grid controls and the #fffce8 view background only. Reuses the pool content review in tests/public-scenes/README.md; promotion sign-off remains pending. No rendering-affecting fields or original number tokens were rewritten.",
+    "sign_off": null
+  },
+  "schema": "excalidraw-render/representative-intake/v1",
+  "source": {
+    "commit": "58458daaf9fdd545025c89837a79400ab55b0ee2",
+    "committed": "2025-06-28T16:14:24Z",
+    "path": "assets/diagrams/varmq.excalidraw",
+    "permalink": "https://github.com/goptics/varmq/blob/58458daaf9fdd545025c89837a79400ab55b0ee2/assets/diagrams/varmq.excalidraw",
+    "raw": "https://raw.githubusercontent.com/goptics/varmq/58458daaf9fdd545025c89837a79400ab55b0ee2/assets/diagrams/varmq.excalidraw",
+    "repository": "https://github.com/goptics/varmq"
+  },
+  "status": "pending-review"
+}

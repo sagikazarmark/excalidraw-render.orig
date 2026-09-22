@@ -1,0 +1,25 @@
+{
+  "schema": "excalidraw-render/representative-intake-plan/v1",
+  "case_id": "representative.varmq-queue-diagram.v1",
+  "source_identity": "varmq-queue-diagram",
+  "purpose": "A real concurrency architecture board inside one named frame on a tinted view background, with Excalifont (family 5) text throughout, rounded rectangles, ellipses, a diamond, labelled bound arrows and a cross-hatch fill, complementing Velox's white-background Comic Shanns coverage.",
+  "sanitization": {
+    "operation": "reviewed-no-change",
+    "review_notes": "Retain upstream bytes verbatim. The 42 text elements are technical labels for the varmq queue/worker architecture (including the upstream typos 'peneding' and 'Architechture', kept verbatim); there are no embedded assets. appState contains grid controls and the #fffce8 view background only. Reuses the pool content review in tests/public-scenes/README.md; promotion sign-off remains pending. No rendering-affecting fields or original number tokens were rewritten."
+  },
+  "variants": [
+    {"id": "light", "color_mode": "light", "include_background": true, "padding": 10, "scale": 0.5, "metadata": true},
+    {"id": "dark", "color_mode": "dark", "include_background": true, "padding": 10, "scale": 0.5, "metadata": true}
+  ],
+  "formats": ["svg", "png", "pdf"],
+  "applicability": {
+    "frame_exports": "Deferred: this intake proposes whole-scene exports only, where the single frame renders with clip, name and outline on and bounds every other element. Single-frame export variants require a frame-target intake extension.",
+    "assets": "Not applicable: files is empty and there are no image elements. The approved Stage-4 representative supplies complementary nested-SVG and raster coverage.",
+    "sizing": "Propose scale 0.5 with default padding for both modes. At scale one the native PNG requires a 6524x5993 surface (39098332 pixels) and fails with resource.raster-surface-exceeded against the default max_raster_surface_pixels 33554432; that deliberate resource outcome needs its own reviewed variant and is not proposed here."
+  },
+  "regions": [
+    {"id": "whole", "class": "mixed-representative", "element_ids": []},
+    {"id": "queue-manager-typography", "class": "typography", "element_ids": ["iPtn2zESldPLafRXkZJil"]},
+    {"id": "worker-arrow", "class": "geometry/image", "element_ids": ["jXAZOIFbxtCQhdyRm_5FN"]}
+  ]
+}
