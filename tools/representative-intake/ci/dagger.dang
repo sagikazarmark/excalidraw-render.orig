@@ -27,7 +27,9 @@ type RepresentativeIntake {
       .container
       .withExec(["cargo", "build", "--locked", "-p", "excalidraw-render-cli", "--target-dir", "/work/src/target"])
       .withEnvVariable("REPRESENTATIVE_RENDERER", "/work/src/target/debug/excalidraw-render")
-      .withExec(["python3", "-B", "-m", "unittest", "discover", "-s", "tools/representative-intake", "-p", "test_intake.py"])
+      .withExec(["cargo", "build", "--locked", "--manifest-path", "tools/representative-intake/compare/Cargo.toml", "--target-dir", "/work/src/target/intake-compare"])
+      .withEnvVariable("REPRESENTATIVE_COMPARE", "/work/src/target/intake-compare/debug/representative-intake-compare")
+      .withExec(["python3", "-B", "-m", "unittest", "discover", "-s", "tools/representative-intake", "-p", "test_*.py"])
       .withExec(["python3", "-B", "tools/representative-intake/intake.py", "verify", "tests/conformance/intake/velox-design-v1"])
       .withExec(["python3", "-B", "tools/representative-intake/intake.py", "capture", "tests/conformance/intake/velox-design-v1", "/work/src/target/debug/excalidraw-render", "/tmp/velox-intake-capture"])
       .withExec(["python3", "-B", "tools/representative-intake/intake.py", "verify-capture", "tests/conformance/intake/velox-design-v1", "/tmp/velox-intake-capture"])

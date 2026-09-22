@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+
+[package]
+name = "representative-intake-compare"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.97"
+publish = false
+
+[dependencies]
+excalidraw-render-compare = { path = "../../../crates/excalidraw-render-compare" }
+png = "=0.17.16"
+serde_json = "=1.0.141"
+sha2 = "=0.10.9"
+miniz_oxide = "=0.8.9"
+
+[lints.rust]
+unsafe_code = "forbid"

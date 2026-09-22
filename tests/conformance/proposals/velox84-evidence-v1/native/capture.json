@@ -1,0 +1,206 @@
+{
+  "approval": null,
+  "case_id": "representative.velox-design.v1",
+  "eligible_executions": [],
+  "files": {
+    "dark-pdf-report.json": {
+      "bytes": 418,
+      "sha256": "26f358e8b1c3a23005a7f8c028183e318b7b0022c1d2ff5f3ae774c2913f6dc6"
+    },
+    "dark-pdf.pdf": {
+      "bytes": 39214,
+      "sha256": "db3357470ad4dacf77cc31b564cc1352ce2149d0366db21fa04729bfd9c35636"
+    },
+    "dark-png-report.json": {
+      "bytes": 413,
+      "sha256": "a9b863bb6dc3f0a40c3f48ad21b54bfd6d1bb52f7c5cf2410b2d1a61d7214f99"
+    },
+    "dark-png.png": {
+      "bytes": 138114,
+      "sha256": "77df06269c64ae8fecf82d89da3d5f9f8215950ed1b1cc8241dc61c8e555750f"
+    },
+    "dark-svg-report.json": {
+      "bytes": 417,
+      "sha256": "a6131bca4705cfd71850c60a35b35de035fd52e39a29b4014da329a3dc2c58b8"
+    },
+    "dark-svg.svg": {
+      "bytes": 101679,
+      "sha256": "cd28b0d6525ea10dcdaec5cbf2b87208552e50f8548d0a84e9a8fbf071bc64d4"
+    },
+    "light-pdf-report.json": {
+      "bytes": 418,
+      "sha256": "28027eb776930bcde3e3447547718a62f06dce1d8143669005ca982b8e4c88c3"
+    },
+    "light-pdf.pdf": {
+      "bytes": 39189,
+      "sha256": "719ea14cdf80c14999971f292fe0f08bb046be3b0de1d8dd1687f6b5a2230ab2"
+    },
+    "light-png-report.json": {
+      "bytes": 413,
+      "sha256": "90cd0b24d7282020d88bd56de1ef52d5aa51faaed32555e2ad84c369ebdbd7f0"
+    },
+    "light-png.png": {
+      "bytes": 140758,
+      "sha256": "a981fe87f810a67eedb86a407d6af564205c8bfb86188493259c7504364178ff"
+    },
+    "light-svg-report.json": {
+      "bytes": 417,
+      "sha256": "c8256df8ff1ee6901af788f979d7293feebdcb569f406a5aa3845e8bbee44a5d"
+    },
+    "light-svg.svg": {
+      "bytes": 101679,
+      "sha256": "84734679b403a0073e1830e2be04d30535f39a4bba828da95d4a485e401b20ab"
+    }
+  },
+  "intake_manifest": {
+    "bytes": 2708,
+    "sha256": "525c0ac0fb97f405a42c905c1e61b243647b1d63e821dfce93bf0c6d89495929"
+  },
+  "renderer_binary": {
+    "bytes": 26790232,
+    "sha256": "47b973fe6bd23fffcc8940c555cd88caf019b90b4c89cc9499c5b8aad9a962e4"
+  },
+  "rows": [
+    {
+      "artifact": "light-svg.svg",
+      "format": "svg",
+      "fresh_process_runs": 2,
+      "report": "light-svg-report.json",
+      "request_args": [
+        "--format",
+        "svg",
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10",
+        "--scale",
+        "1",
+        "--report-format",
+        "json",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+      ],
+      "variant": "light"
+    },
+    {
+      "artifact": "light-png.png",
+      "format": "png",
+      "fresh_process_runs": 2,
+      "report": "light-png-report.json",
+      "request_args": [
+        "--format",
+        "png",
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10",
+        "--scale",
+        "1",
+        "--report-format",
+        "json",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+      ],
+      "variant": "light"
+    },
+    {
+      "artifact": "light-pdf.pdf",
+      "format": "pdf",
+      "fresh_process_runs": 2,
+      "report": "light-pdf-report.json",
+      "request_args": [
+        "--format",
+        "pdf",
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10",
+        "--scale",
+        "1",
+        "--report-format",
+        "json",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+      ],
+      "variant": "light"
+    },
+    {
+      "artifact": "dark-svg.svg",
+      "format": "svg",
+      "fresh_process_runs": 2,
+      "report": "dark-svg-report.json",
+      "request_args": [
+        "--format",
+        "svg",
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10",
+        "--scale",
+        "1",
+        "--report-format",
+        "json",
+        "--dark-mode",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+      ],
+      "variant": "dark"
+    },
+    {
+      "artifact": "dark-png.png",
+      "format": "png",
+      "fresh_process_runs": 2,
+      "report": "dark-png-report.json",
+      "request_args": [
+        "--format",
+        "png",
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10",
+        "--scale",
+        "1",
+        "--report-format",
+        "json",
+        "--dark-mode",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+      ],
+      "variant": "dark"
+    },
+    {
+      "artifact": "dark-pdf.pdf",
+      "format": "pdf",
+      "fresh_process_runs": 2,
+      "report": "dark-pdf-report.json",
+      "request_args": [
+        "--format",
+        "pdf",
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10",
+        "--scale",
+        "1",
+        "--report-format",
+        "json",
+        "--dark-mode",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+      ],
+      "variant": "dark"
+    }
+  ],
+  "schema": "excalidraw-render/representative-intake-capture/v1",
+  "status": "observed-unapproved",
+  "tool": {
+    "bytes": 18764,
+    "sha256": "354de6f91c79ce475fd5e86392f55d438cacd6554e1dca765844fe3bc1e2092d"
+  }
+}

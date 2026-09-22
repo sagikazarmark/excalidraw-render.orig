@@ -1,0 +1,46 @@
+[
+  {
+    "kind": "official",
+    "fonts": [
+      {
+        "woff2": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/assets/official-font-0.woff2",
+        "source": {
+          "media_type": "font/woff2",
+          "sha256": "bbf2fcc688beecaa9feafb8faaa5711ecd032417672fba340e6548f0fef1046e"
+        },
+        "css": {
+          "family": "Comic Shanns",
+          "style": "normal",
+          "weight": 400,
+          "stretch": "normal",
+          "unicode_range": [
+            "U+0-10FFFF"
+          ]
+        }
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "native",
+    "fonts": [
+      {
+        "woff2": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/assets/native-font-0.woff2",
+        "source": {
+          "media_type": "font/woff2",
+          "sha256": "1b9c2d83ed7f433975ce9865b05e86cae2367af8dfe3a3e234d3d90724a6f048"
+        },
+        "css": {
+          "family": "Comic Shanns",
+          "style": "normal",
+          "weight": 400,
+          "stretch": "normal",
+          "unicode_range": [
+            "U+0-10FFFF"
+          ]
+        }
+      }
+    ],
+    "images": []
+  }
+]

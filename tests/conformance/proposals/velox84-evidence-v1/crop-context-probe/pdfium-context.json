@@ -1,0 +1,40 @@
+{
+  "candidate": {
+    "bytes": 92948,
+    "sha256": "4c9b18b357bb6850bce6ae2c12ecb860878a9f66c70cc16eb1b42f3825f8d4db"
+  },
+  "crops": [
+    {
+      "id": "client-typography",
+      "region": {
+        "area": 6438,
+        "changed_pixels": 223,
+        "changed_pixels_pass": false,
+        "height": 37,
+        "ssim_bits": "3fed68a254d4dccf",
+        "ssim_pass": false,
+        "width": 174
+      }
+    }
+  ],
+  "mode": "canonical",
+  "passed": false,
+  "plan": {
+    "bytes": 180,
+    "sha256": "2ed0a8b6d282babf585c1c8aed356b71941557c176a35a1faf19801a8e9baf99"
+  },
+  "reference": {
+    "bytes": 96195,
+    "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+  },
+  "schema": "excalidraw-render/representative-intake-comparison/v1",
+  "whole": {
+    "area": 1006825,
+    "changed_pixels": 4235,
+    "changed_pixels_pass": true,
+    "height": 515,
+    "ssim_bits": "3fef7f2b6cb3c2d1",
+    "ssim_pass": false,
+    "width": 1955
+  }
+}

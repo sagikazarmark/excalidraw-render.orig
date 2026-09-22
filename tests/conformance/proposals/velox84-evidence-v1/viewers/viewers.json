@@ -1,0 +1,3084 @@
+{
+  "approval": null,
+  "captures": [
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "14d2081c67dde6222a3ed0b5881c13b317dd34784e80fee1876a273af55f8650"
+      },
+      "raster": {
+        "bytes": 96195,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/official-chromium.rgba.zlib",
+        "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "4b7842e43919",
+          "height": 515,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 21,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 20,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 19,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 26,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "official-chromium-0-raw.rgba.zlib",
+            "sha256": "14d2081c67dde6222a3ed0b5881c13b317dd34784e80fee1876a273af55f8650"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "14d2081c67dde6222a3ed0b5881c13b317dd34784e80fee1876a273af55f8650",
+          "virtual_time_ticks_base": 80457075.595,
+          "width": 1955
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "65b1571dff17",
+          "height": 515,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 21,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 20,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 19,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 26,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "official-chromium-1-raw.rgba.zlib",
+            "sha256": "14d2081c67dde6222a3ed0b5881c13b317dd34784e80fee1876a273af55f8650"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "14d2081c67dde6222a3ed0b5881c13b317dd34784e80fee1876a273af55f8650",
+          "virtual_time_ticks_base": 80458191.889,
+          "width": 1955
+        }
+      ],
+      "variant": "light",
+      "viewer": "official-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "163ad4da1a6235511885dd6f296120f7630c1813ca7aad00d7d30b02c9cc5d37"
+      },
+      "raster": {
+        "bytes": 96192,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/native-chromium.rgba.zlib",
+        "sha256": "4fae413e00098129a74ebe93032459eae0c1035e671ad22ac394a320b493248e"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 20,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "680e4e623d5d",
+          "height": 515,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 24,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 19,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 36,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 39,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 51,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-chromium-0-raw.rgba.zlib",
+            "sha256": "163ad4da1a6235511885dd6f296120f7630c1813ca7aad00d7d30b02c9cc5d37"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "163ad4da1a6235511885dd6f296120f7630c1813ca7aad00d7d30b02c9cc5d37",
+          "virtual_time_ticks_base": 80459347.909,
+          "width": 1955
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "8fe61690b058",
+          "height": 515,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 24,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 19,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 36,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 39,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 51,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-chromium-1-raw.rgba.zlib",
+            "sha256": "163ad4da1a6235511885dd6f296120f7630c1813ca7aad00d7d30b02c9cc5d37"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "163ad4da1a6235511885dd6f296120f7630c1813ca7aad00d7d30b02c9cc5d37",
+          "virtual_time_ticks_base": 80460410.63,
+          "width": 1955
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "d56a468a6c1caf50f8102f3f7fc09c9ec725a00b5c466adb9a3548ef49ef0e22"
+      },
+      "raster": {
+        "bytes": 92948,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/native-pdfium.rgba.zlib",
+        "sha256": "4c9b18b357bb6850bce6ae2c12ecb860878a9f66c70cc16eb1b42f3825f8d4db"
+      },
+      "runs": [
+        {
+          "byte_length": 4027300,
+          "height": 515,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-pdfium-0-raw.rgba.zlib",
+            "sha256": "d56a468a6c1caf50f8102f3f7fc09c9ec725a00b5c466adb9a3548ef49ef0e22"
+          },
+          "sha256": "d56a468a6c1caf50f8102f3f7fc09c9ec725a00b5c466adb9a3548ef49ef0e22",
+          "width": 1955
+        },
+        {
+          "byte_length": 4027300,
+          "height": 515,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-pdfium-1-raw.rgba.zlib",
+            "sha256": "d56a468a6c1caf50f8102f3f7fc09c9ec725a00b5c466adb9a3548ef49ef0e22"
+          },
+          "sha256": "d56a468a6c1caf50f8102f3f7fc09c9ec725a00b5c466adb9a3548ef49ef0e22",
+          "width": 1955
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-pdfium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "bb5da64282dd2422803a21bc74af8b6c735d31c1fbd018eb174973410cb3b019"
+      },
+      "raster": {
+        "bytes": 92860,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/native-pdfjs.rgba.zlib",
+        "sha256": "2a9195ea4d8fe4e1004d5b3fdbe3bffd44018f1c23402b067a7dbeb6c1c208d4"
+      },
+      "runs": [
+        {
+          "byte_length": 4027300,
+          "height": 515,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-pdfjs-0-raw.rgba.zlib",
+            "sha256": "bb5da64282dd2422803a21bc74af8b6c735d31c1fbd018eb174973410cb3b019"
+          },
+          "sha256": "bb5da64282dd2422803a21bc74af8b6c735d31c1fbd018eb174973410cb3b019",
+          "width": 1955
+        },
+        {
+          "byte_length": 4027300,
+          "height": 515,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-pdfjs-1-raw.rgba.zlib",
+            "sha256": "bb5da64282dd2422803a21bc74af8b6c735d31c1fbd018eb174973410cb3b019"
+          },
+          "sha256": "bb5da64282dd2422803a21bc74af8b6c735d31c1fbd018eb174973410cb3b019",
+          "width": 1955
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-pdfjs"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "d6e1809be4ed1b0ba866bf0f6b60ceb287b16b039d198f5074f55a1ec485b58b"
+      },
+      "raster": {
+        "bytes": 55351,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/official-rust.rgba.zlib",
+        "sha256": "740d6e3d1383a61a0080a0b75f5b73af3579c1b14ad62699a0e2accd8879b3f9"
+      },
+      "runs": [
+        {
+          "height": 516,
+          "raw_capture": {
+            "bytes": 4037184,
+            "file": "official-rust-0-raw.rgba.zlib",
+            "sha256": "ce6c00cc3053784bd1660bafcda4b3b63985a745ef3a49322ee0bd12e524ec6b"
+          },
+          "width": 1956
+        },
+        {
+          "height": 516,
+          "raw_capture": {
+            "bytes": 4037184,
+            "file": "official-rust-1-raw.rgba.zlib",
+            "sha256": "ce6c00cc3053784bd1660bafcda4b3b63985a745ef3a49322ee0bd12e524ec6b"
+          },
+          "width": 1956
+        }
+      ],
+      "variant": "light",
+      "viewer": "official-rust"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "d6e1809be4ed1b0ba866bf0f6b60ceb287b16b039d198f5074f55a1ec485b58b"
+      },
+      "raster": {
+        "bytes": 55351,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/native-rust.rgba.zlib",
+        "sha256": "740d6e3d1383a61a0080a0b75f5b73af3579c1b14ad62699a0e2accd8879b3f9"
+      },
+      "runs": [
+        {
+          "height": 516,
+          "raw_capture": {
+            "bytes": 4037184,
+            "file": "native-rust-0-raw.rgba.zlib",
+            "sha256": "ce6c00cc3053784bd1660bafcda4b3b63985a745ef3a49322ee0bd12e524ec6b"
+          },
+          "width": 1956
+        },
+        {
+          "height": 516,
+          "raw_capture": {
+            "bytes": 4037184,
+            "file": "native-rust-1-raw.rgba.zlib",
+            "sha256": "ce6c00cc3053784bd1660bafcda4b3b63985a745ef3a49322ee0bd12e524ec6b"
+          },
+          "width": 1956
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-rust"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "a9a74b22acb09624135039389dcdafd5d336f6dedff73cf33c062628d88a3b3e"
+      },
+      "raster": {
+        "bytes": 92290,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/official-chromium.rgba.zlib",
+        "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "8decbc13097e",
+          "height": 515,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 21,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 20,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 19,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 26,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "official-chromium-0-raw.rgba.zlib",
+            "sha256": "a9a74b22acb09624135039389dcdafd5d336f6dedff73cf33c062628d88a3b3e"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "a9a74b22acb09624135039389dcdafd5d336f6dedff73cf33c062628d88a3b3e",
+          "virtual_time_ticks_base": 80472922.291,
+          "width": 1955
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "4ead77253fb0",
+          "height": 515,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 21,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 20,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 19,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 26,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            },
+            {
+              "familyName": "Comic Shanns Regular",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "ComicShanns-Regular"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "official-chromium-1-raw.rgba.zlib",
+            "sha256": "a9a74b22acb09624135039389dcdafd5d336f6dedff73cf33c062628d88a3b3e"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "a9a74b22acb09624135039389dcdafd5d336f6dedff73cf33c062628d88a3b3e",
+          "virtual_time_ticks_base": 80473956.811,
+          "width": 1955
+        }
+      ],
+      "variant": "dark",
+      "viewer": "official-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "c900ee21aee55fbf0cde4b170341bd330463f3544720ac3e014780a915329ffb"
+      },
+      "raster": {
+        "bytes": 91181,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/native-chromium.rgba.zlib",
+        "sha256": "6d2f2e4385b96c3f4efc2a979151043c8734eb6fa68adac3ddbe3b5fb759d9d3"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "a4aa6419bb2a",
+          "height": 515,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 24,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 19,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 36,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 39,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 51,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-chromium-0-raw.rgba.zlib",
+            "sha256": "c900ee21aee55fbf0cde4b170341bd330463f3544720ac3e014780a915329ffb"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "c900ee21aee55fbf0cde4b170341bd330463f3544720ac3e014780a915329ffb",
+          "virtual_time_ticks_base": 80475075.893,
+          "width": 1955
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "7791dcfa9421",
+          "height": 515,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 24,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 19,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 36,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 2,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 39,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 51,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 15,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            },
+            {
+              "familyName": "Comic Shanns",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Comic-Shanns-Regular-386ebe13f1816eaa01e7f455c0a2e5ef"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-chromium-1-raw.rgba.zlib",
+            "sha256": "c900ee21aee55fbf0cde4b170341bd330463f3544720ac3e014780a915329ffb"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "c900ee21aee55fbf0cde4b170341bd330463f3544720ac3e014780a915329ffb",
+          "virtual_time_ticks_base": 80476153.718,
+          "width": 1955
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "e6f541ead02a7901255dc6241c2c11f81296eebf72286c6034a5398d700c8588"
+      },
+      "raster": {
+        "bytes": 89073,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/native-pdfium.rgba.zlib",
+        "sha256": "ee69eafbfc25b66d9af5662afb176f6098d642dce676930918358e732add2634"
+      },
+      "runs": [
+        {
+          "byte_length": 4027300,
+          "height": 515,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-pdfium-0-raw.rgba.zlib",
+            "sha256": "e6f541ead02a7901255dc6241c2c11f81296eebf72286c6034a5398d700c8588"
+          },
+          "sha256": "e6f541ead02a7901255dc6241c2c11f81296eebf72286c6034a5398d700c8588",
+          "width": 1955
+        },
+        {
+          "byte_length": 4027300,
+          "height": 515,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-pdfium-1-raw.rgba.zlib",
+            "sha256": "e6f541ead02a7901255dc6241c2c11f81296eebf72286c6034a5398d700c8588"
+          },
+          "sha256": "e6f541ead02a7901255dc6241c2c11f81296eebf72286c6034a5398d700c8588",
+          "width": 1955
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-pdfium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "7adc114e72bc3995a40722983d3d63312832dcaa2db83fde8645a1fd2a7ecf5f"
+      },
+      "raster": {
+        "bytes": 89549,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/native-pdfjs.rgba.zlib",
+        "sha256": "c988e27b9cb11ff96cd6538318f02c76a0e5d428da062c0ccb56f114632e9317"
+      },
+      "runs": [
+        {
+          "byte_length": 4027300,
+          "height": 515,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-pdfjs-0-raw.rgba.zlib",
+            "sha256": "7adc114e72bc3995a40722983d3d63312832dcaa2db83fde8645a1fd2a7ecf5f"
+          },
+          "sha256": "7adc114e72bc3995a40722983d3d63312832dcaa2db83fde8645a1fd2a7ecf5f",
+          "width": 1955
+        },
+        {
+          "byte_length": 4027300,
+          "height": 515,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 4027300,
+            "file": "native-pdfjs-1-raw.rgba.zlib",
+            "sha256": "7adc114e72bc3995a40722983d3d63312832dcaa2db83fde8645a1fd2a7ecf5f"
+          },
+          "sha256": "7adc114e72bc3995a40722983d3d63312832dcaa2db83fde8645a1fd2a7ecf5f",
+          "width": 1955
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-pdfjs"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "4803a44922b719ae613741afbb792139ed3b8d19a8155e846a06788b4ffb7349"
+      },
+      "raster": {
+        "bytes": 53626,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/official-rust.rgba.zlib",
+        "sha256": "4586fc26b16fade46b5c508d7748d3c0fa63fff750cf66000cbc34b946e45a73"
+      },
+      "runs": [
+        {
+          "height": 516,
+          "raw_capture": {
+            "bytes": 4037184,
+            "file": "official-rust-0-raw.rgba.zlib",
+            "sha256": "8828bd2205d6393e6cfbde016f69f4e1384e56819a141e991e5335e76842783c"
+          },
+          "width": 1956
+        },
+        {
+          "height": 516,
+          "raw_capture": {
+            "bytes": 4037184,
+            "file": "official-rust-1-raw.rgba.zlib",
+            "sha256": "8828bd2205d6393e6cfbde016f69f4e1384e56819a141e991e5335e76842783c"
+          },
+          "width": 1956
+        }
+      ],
+      "variant": "dark",
+      "viewer": "official-rust"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 4027300,
+        "sha256": "420229e0873b82006ccde4901b3ea68af91154bce62448c40cc461581224c22c"
+      },
+      "raster": {
+        "bytes": 53709,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/native-rust.rgba.zlib",
+        "sha256": "f27e9880704fbb097ea1350a410c92bf12922d766e568c6ab00c6e2027d99d08"
+      },
+      "runs": [
+        {
+          "height": 516,
+          "raw_capture": {
+            "bytes": 4037184,
+            "file": "native-rust-0-raw.rgba.zlib",
+            "sha256": "439ca7b0f34846f8c8e1193cc5fc2cef2f0478cbf5ff0e8544dd3a61d27212fe"
+          },
+          "width": 1956
+        },
+        {
+          "height": 516,
+          "raw_capture": {
+            "bytes": 4037184,
+            "file": "native-rust-1-raw.rgba.zlib",
+            "sha256": "439ca7b0f34846f8c8e1193cc5fc2cef2f0478cbf5ff0e8544dd3a61d27212fe"
+          },
+          "width": 1956
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-rust"
+    }
+  ],
+  "eligible_executions": [],
+  "files": {
+    "dark/assets/native-font-0.sfnt": {
+      "bytes": 10564,
+      "sha256": "d88c91e68647d374f1c1f82f151f54539ad386c08c075932421038b42c79ac19"
+    },
+    "dark/assets/native-font-0.woff2": {
+      "bytes": 5852,
+      "sha256": "1b9c2d83ed7f433975ce9865b05e86cae2367af8dfe3a3e234d3d90724a6f048"
+    },
+    "dark/assets/official-font-0.sfnt": {
+      "bytes": 10312,
+      "sha256": "4830aa5c5e61f8c9385a16cd308db9ee7a146656711eb59ca433f561c0d83f72"
+    },
+    "dark/assets/official-font-0.woff2": {
+      "bytes": 5760,
+      "sha256": "bbf2fcc688beecaa9feafb8faaa5711ecd032417672fba340e6548f0fef1046e"
+    },
+    "dark/native-assets.json": {
+      "bytes": 845,
+      "sha256": "2c3b24ca62f96cc5e632106eaf222e67aa2306beea3ffe0e3e093424279c5ef6"
+    },
+    "dark/native-chromium-0-raw.rgba.zlib": {
+      "bytes": 91181,
+      "sha256": "6d2f2e4385b96c3f4efc2a979151043c8734eb6fa68adac3ddbe3b5fb759d9d3"
+    },
+    "dark/native-chromium-1-raw.rgba.zlib": {
+      "bytes": 91181,
+      "sha256": "6d2f2e4385b96c3f4efc2a979151043c8734eb6fa68adac3ddbe3b5fb759d9d3"
+    },
+    "dark/native-chromium.rgba.zlib": {
+      "bytes": 91181,
+      "sha256": "6d2f2e4385b96c3f4efc2a979151043c8734eb6fa68adac3ddbe3b5fb759d9d3"
+    },
+    "dark/native-pdf-report.json": {
+      "bytes": 418,
+      "sha256": "26f358e8b1c3a23005a7f8c028183e318b7b0022c1d2ff5f3ae774c2913f6dc6"
+    },
+    "dark/native-pdfium-0-raw.rgba.zlib": {
+      "bytes": 89073,
+      "sha256": "ee69eafbfc25b66d9af5662afb176f6098d642dce676930918358e732add2634"
+    },
+    "dark/native-pdfium-1-raw.rgba.zlib": {
+      "bytes": 89073,
+      "sha256": "ee69eafbfc25b66d9af5662afb176f6098d642dce676930918358e732add2634"
+    },
+    "dark/native-pdfium.rgba.zlib": {
+      "bytes": 89073,
+      "sha256": "ee69eafbfc25b66d9af5662afb176f6098d642dce676930918358e732add2634"
+    },
+    "dark/native-pdfjs-0-raw.rgba.zlib": {
+      "bytes": 89549,
+      "sha256": "c988e27b9cb11ff96cd6538318f02c76a0e5d428da062c0ccb56f114632e9317"
+    },
+    "dark/native-pdfjs-1-raw.rgba.zlib": {
+      "bytes": 89549,
+      "sha256": "c988e27b9cb11ff96cd6538318f02c76a0e5d428da062c0ccb56f114632e9317"
+    },
+    "dark/native-pdfjs.rgba.zlib": {
+      "bytes": 89549,
+      "sha256": "c988e27b9cb11ff96cd6538318f02c76a0e5d428da062c0ccb56f114632e9317"
+    },
+    "dark/native-png-report.json": {
+      "bytes": 413,
+      "sha256": "a9b863bb6dc3f0a40c3f48ad21b54bfd6d1bb52f7c5cf2410b2d1a61d7214f99"
+    },
+    "dark/native-rust-0-raw.rgba.zlib": {
+      "bytes": 54503,
+      "sha256": "e482c7e3fbb656a4c2a35ed8c190e3e433e21ace7f5f94e3dce9275a472a8e73"
+    },
+    "dark/native-rust-1-raw.rgba.zlib": {
+      "bytes": 54503,
+      "sha256": "e482c7e3fbb656a4c2a35ed8c190e3e433e21ace7f5f94e3dce9275a472a8e73"
+    },
+    "dark/native-rust.rgba.zlib": {
+      "bytes": 53709,
+      "sha256": "f27e9880704fbb097ea1350a410c92bf12922d766e568c6ab00c6e2027d99d08"
+    },
+    "dark/native-rust.svg": {
+      "bytes": 101074,
+      "sha256": "b1eeba3fec41459e0118f01c3baae377124991a857e56be3c277cbeffbd4bb69"
+    },
+    "dark/native-svg-report.json": {
+      "bytes": 417,
+      "sha256": "a6131bca4705cfd71850c60a35b35de035fd52e39a29b4014da329a3dc2c58b8"
+    },
+    "dark/native-view.svg": {
+      "bytes": 101695,
+      "sha256": "3329a484bce6eadb70c9fce2abd110d673561441093dfd77ea11742b84d3ce4c"
+    },
+    "dark/native.pdf": {
+      "bytes": 39214,
+      "sha256": "db3357470ad4dacf77cc31b564cc1352ce2149d0366db21fa04729bfd9c35636"
+    },
+    "dark/native.png": {
+      "bytes": 138114,
+      "sha256": "77df06269c64ae8fecf82d89da3d5f9f8215950ed1b1cc8241dc61c8e555750f"
+    },
+    "dark/native.svg": {
+      "bytes": 101679,
+      "sha256": "cd28b0d6525ea10dcdaec5cbf2b87208552e50f8548d0a84e9a8fbf071bc64d4"
+    },
+    "dark/official-assets.json": {
+      "bytes": 855,
+      "sha256": "ba4a4a46a8f533cb17648a4a732e1096ab2e6c2c290420a6020375faddb3ef55"
+    },
+    "dark/official-chromium-0-raw.rgba.zlib": {
+      "bytes": 92290,
+      "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+    },
+    "dark/official-chromium-1-raw.rgba.zlib": {
+      "bytes": 92290,
+      "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+    },
+    "dark/official-chromium.rgba.zlib": {
+      "bytes": 92290,
+      "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+    },
+    "dark/official-png.rgba.zlib": {
+      "bytes": 87869,
+      "sha256": "06bec4d548eb13bed6787c162cd956a14398a8eade6c56db742096bbdafd698d"
+    },
+    "dark/official-rust-0-raw.rgba.zlib": {
+      "bytes": 54444,
+      "sha256": "a636f17614c4b7b2539b8b59ccc6f4de323ba14c96e403d095b386ad19a221d2"
+    },
+    "dark/official-rust-1-raw.rgba.zlib": {
+      "bytes": 54444,
+      "sha256": "a636f17614c4b7b2539b8b59ccc6f4de323ba14c96e403d095b386ad19a221d2"
+    },
+    "dark/official-rust.rgba.zlib": {
+      "bytes": 53626,
+      "sha256": "4586fc26b16fade46b5c508d7748d3c0fa63fff750cf66000cbc34b946e45a73"
+    },
+    "dark/official-rust.svg": {
+      "bytes": 61468,
+      "sha256": "fe1c8c743dee328bbc5f70c9d9d13a05055bb692f1695cc6218990c3b1a3b6f1"
+    },
+    "dark/official-view.svg": {
+      "bytes": 61996,
+      "sha256": "6d77cd4c9a0abde9f5748797fdc77794a6579bd34a8e949cf27d78fe1b827142"
+    },
+    "dark/official.png": {
+      "bytes": 157992,
+      "sha256": "b7d9d6f77e1da7cb9761ea30e17f7234b70c0ebfc9cdee1654a470c646a8f2f0"
+    },
+    "dark/official.svg": {
+      "bytes": 61980,
+      "sha256": "489793dd7d3e05469277f17a7f0133d2e0520cd3298771f6a9bdbf5055f9d274"
+    },
+    "dark/pdf-pdfium-comparison.json": {
+      "bytes": 1240,
+      "sha256": "7dd91fa694b84da85cefde864206960f9f100ef58b5769ed884bed4a705bcc4b"
+    },
+    "dark/pdf-pdfjs-comparison.json": {
+      "bytes": 1233,
+      "sha256": "97ec88da6e0bba5a4982061925a70c9a76514fd276f43c1c2a7e24c41164e4bc"
+    },
+    "dark/png-canvas-comparison.json": {
+      "bytes": 1231,
+      "sha256": "d59921b1eecf8d54f1df0a8fb95e833e625652e6485601883e7738dc16fc6cdd"
+    },
+    "dark/regions.json": {
+      "bytes": 388,
+      "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+    },
+    "dark/svg-chromium-comparison.json": {
+      "bytes": 1227,
+      "sha256": "6e9028f8bda66805995e0909f422abb1f3d2e73055773f8e5f8cf1343dcd91d8"
+    },
+    "dark/svg-rust-comparison.json": {
+      "bytes": 1222,
+      "sha256": "1090a782eeaf949829617e55447e9f5faeb77cdf2e9f497d558404bc997c056f"
+    },
+    "dark/viewer-assets-plan.json": {
+      "bytes": 1135,
+      "sha256": "408c898011d566a4dbb9074f7bb5fe4ce8d890ffa21d67c7603a4019a6ca16f6"
+    },
+    "light/assets/native-font-0.sfnt": {
+      "bytes": 10564,
+      "sha256": "d88c91e68647d374f1c1f82f151f54539ad386c08c075932421038b42c79ac19"
+    },
+    "light/assets/native-font-0.woff2": {
+      "bytes": 5852,
+      "sha256": "1b9c2d83ed7f433975ce9865b05e86cae2367af8dfe3a3e234d3d90724a6f048"
+    },
+    "light/assets/official-font-0.sfnt": {
+      "bytes": 10312,
+      "sha256": "4830aa5c5e61f8c9385a16cd308db9ee7a146656711eb59ca433f561c0d83f72"
+    },
+    "light/assets/official-font-0.woff2": {
+      "bytes": 5760,
+      "sha256": "bbf2fcc688beecaa9feafb8faaa5711ecd032417672fba340e6548f0fef1046e"
+    },
+    "light/native-assets.json": {
+      "bytes": 846,
+      "sha256": "4a36444b99f38f18a437e2816c5d004709c809ae82c85ac1b5e3fe40c097401c"
+    },
+    "light/native-chromium-0-raw.rgba.zlib": {
+      "bytes": 96192,
+      "sha256": "4fae413e00098129a74ebe93032459eae0c1035e671ad22ac394a320b493248e"
+    },
+    "light/native-chromium-1-raw.rgba.zlib": {
+      "bytes": 96192,
+      "sha256": "4fae413e00098129a74ebe93032459eae0c1035e671ad22ac394a320b493248e"
+    },
+    "light/native-chromium.rgba.zlib": {
+      "bytes": 96192,
+      "sha256": "4fae413e00098129a74ebe93032459eae0c1035e671ad22ac394a320b493248e"
+    },
+    "light/native-pdf-report.json": {
+      "bytes": 418,
+      "sha256": "28027eb776930bcde3e3447547718a62f06dce1d8143669005ca982b8e4c88c3"
+    },
+    "light/native-pdfium-0-raw.rgba.zlib": {
+      "bytes": 92948,
+      "sha256": "4c9b18b357bb6850bce6ae2c12ecb860878a9f66c70cc16eb1b42f3825f8d4db"
+    },
+    "light/native-pdfium-1-raw.rgba.zlib": {
+      "bytes": 92948,
+      "sha256": "4c9b18b357bb6850bce6ae2c12ecb860878a9f66c70cc16eb1b42f3825f8d4db"
+    },
+    "light/native-pdfium.rgba.zlib": {
+      "bytes": 92948,
+      "sha256": "4c9b18b357bb6850bce6ae2c12ecb860878a9f66c70cc16eb1b42f3825f8d4db"
+    },
+    "light/native-pdfjs-0-raw.rgba.zlib": {
+      "bytes": 92860,
+      "sha256": "2a9195ea4d8fe4e1004d5b3fdbe3bffd44018f1c23402b067a7dbeb6c1c208d4"
+    },
+    "light/native-pdfjs-1-raw.rgba.zlib": {
+      "bytes": 92860,
+      "sha256": "2a9195ea4d8fe4e1004d5b3fdbe3bffd44018f1c23402b067a7dbeb6c1c208d4"
+    },
+    "light/native-pdfjs.rgba.zlib": {
+      "bytes": 92860,
+      "sha256": "2a9195ea4d8fe4e1004d5b3fdbe3bffd44018f1c23402b067a7dbeb6c1c208d4"
+    },
+    "light/native-png-report.json": {
+      "bytes": 413,
+      "sha256": "90cd0b24d7282020d88bd56de1ef52d5aa51faaed32555e2ad84c369ebdbd7f0"
+    },
+    "light/native-rust-0-raw.rgba.zlib": {
+      "bytes": 56585,
+      "sha256": "528d8288b9e7b1ae859f12ed76352f70eecdd44e5ec9c9eef173054a497e29d3"
+    },
+    "light/native-rust-1-raw.rgba.zlib": {
+      "bytes": 56585,
+      "sha256": "528d8288b9e7b1ae859f12ed76352f70eecdd44e5ec9c9eef173054a497e29d3"
+    },
+    "light/native-rust.rgba.zlib": {
+      "bytes": 55351,
+      "sha256": "740d6e3d1383a61a0080a0b75f5b73af3579c1b14ad62699a0e2accd8879b3f9"
+    },
+    "light/native-rust.svg": {
+      "bytes": 101074,
+      "sha256": "35a01a47b2aa0cd8c49581fc0ced6558ecd90599cb89921937c45c3db490b976"
+    },
+    "light/native-svg-report.json": {
+      "bytes": 417,
+      "sha256": "c8256df8ff1ee6901af788f979d7293feebdcb569f406a5aa3845e8bbee44a5d"
+    },
+    "light/native-view.svg": {
+      "bytes": 101695,
+      "sha256": "99ce6dfc3c3d377583dc3f1381ee2d13a529f40d123f9feeeacf4c0421e76290"
+    },
+    "light/native.pdf": {
+      "bytes": 39189,
+      "sha256": "719ea14cdf80c14999971f292fe0f08bb046be3b0de1d8dd1687f6b5a2230ab2"
+    },
+    "light/native.png": {
+      "bytes": 140758,
+      "sha256": "a981fe87f810a67eedb86a407d6af564205c8bfb86188493259c7504364178ff"
+    },
+    "light/native.svg": {
+      "bytes": 101679,
+      "sha256": "84734679b403a0073e1830e2be04d30535f39a4bba828da95d4a485e401b20ab"
+    },
+    "light/official-assets.json": {
+      "bytes": 856,
+      "sha256": "331428c3d8e463ac8330bb98e3a1bffbd0a9c690d508631a9b60e0ebfd6e80cd"
+    },
+    "light/official-chromium-0-raw.rgba.zlib": {
+      "bytes": 96195,
+      "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+    },
+    "light/official-chromium-1-raw.rgba.zlib": {
+      "bytes": 96195,
+      "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+    },
+    "light/official-chromium.rgba.zlib": {
+      "bytes": 96195,
+      "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+    },
+    "light/official-png.rgba.zlib": {
+      "bytes": 91937,
+      "sha256": "3aac6ac7960e9fcd6925fdfb8ee6be626290ce364f9ba75cd2b90a3bfee40628"
+    },
+    "light/official-rust-0-raw.rgba.zlib": {
+      "bytes": 56585,
+      "sha256": "528d8288b9e7b1ae859f12ed76352f70eecdd44e5ec9c9eef173054a497e29d3"
+    },
+    "light/official-rust-1-raw.rgba.zlib": {
+      "bytes": 56585,
+      "sha256": "528d8288b9e7b1ae859f12ed76352f70eecdd44e5ec9c9eef173054a497e29d3"
+    },
+    "light/official-rust.rgba.zlib": {
+      "bytes": 55351,
+      "sha256": "740d6e3d1383a61a0080a0b75f5b73af3579c1b14ad62699a0e2accd8879b3f9"
+    },
+    "light/official-rust.svg": {
+      "bytes": 61428,
+      "sha256": "98a258d22c2888f8048d54fad9ebb2f93f45eb0d0099b522054a0055402d20b4"
+    },
+    "light/official-view.svg": {
+      "bytes": 61956,
+      "sha256": "8b72fc24a35818fd602f3aa5001ff31025d480861863d50886de1926bbde1910"
+    },
+    "light/official.png": {
+      "bytes": 159122,
+      "sha256": "aa3120e75d5af8a4500f692cdfc983b107d438a8ec5eef5380704500c37227ab"
+    },
+    "light/official.svg": {
+      "bytes": 61940,
+      "sha256": "33a6608dec14cea3dbfd8377b7ef612f9347d7fc0a42966c8d74cdfeffb7c943"
+    },
+    "light/pdf-pdfium-comparison.json": {
+      "bytes": 1240,
+      "sha256": "e70f8660593618083d6e7f945adbeeb9fc26408ba875e583a60e29f0bcf91d09"
+    },
+    "light/pdf-pdfjs-comparison.json": {
+      "bytes": 1233,
+      "sha256": "038a8ea7b00b894f3d05f1ed4f84d769d15cffeb74c8f6207a4fe7453936eb4b"
+    },
+    "light/png-canvas-comparison.json": {
+      "bytes": 1235,
+      "sha256": "6bfc4a551796deaf98a071330e50104474ffe60b17cd604a68d3f10864008f50"
+    },
+    "light/regions.json": {
+      "bytes": 388,
+      "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+    },
+    "light/svg-chromium-comparison.json": {
+      "bytes": 1227,
+      "sha256": "2e9f87d3db708fae6603634f17e6d88895e3915b4504df39f51116a5165b1698"
+    },
+    "light/svg-rust-comparison.json": {
+      "bytes": 1222,
+      "sha256": "ec315dd3396221b47e39b94b328f82a4d5ce0fdc1dcefaa16e61bd3f142e5c24"
+    },
+    "light/viewer-assets-plan.json": {
+      "bytes": 1137,
+      "sha256": "42eac7f3f8f84c44bac5504e8072f00ca7a9cd5450c29d4e79a69e0af2b10508"
+    }
+  },
+  "inputs": [
+    {
+      "bytes": 2708,
+      "path": "tests/conformance/intake/velox-design-v1/manifest.json",
+      "sha256": "525c0ac0fb97f405a42c905c1e61b243647b1d63e821dfce93bf0c6d89495929"
+    },
+    {
+      "bytes": 1930,
+      "path": "tests/conformance/intake/velox-design-v1/plan.json",
+      "sha256": "46fcfd04579300ec82b340aeface36209febb5f6ea1d6ff28697d4fbaed68b91"
+    },
+    {
+      "bytes": 54699,
+      "path": "tests/conformance/intake/velox-design-v1/scene.excalidraw",
+      "sha256": "3c4a336c41bf1ea0a41e7f8464430a1b7cb01baadc8720173972d2ebed9f1ead"
+    },
+    {
+      "bytes": 12018,
+      "path": "tests/conformance/proposals/velox84-evidence-v1/reference/reference.json",
+      "sha256": "8e12e79033ebf207167b8fc2b0cb9f6f4ab9b6a0d52a3511e186f56b8b2c4ae6"
+    },
+    {
+      "bytes": 5205,
+      "path": "tests/conformance/proposals/velox84-evidence-v1/native/capture.json",
+      "sha256": "7644c914028ff96e3dda88ecb5c5b102667f8f30238564c7aa019e4349f648ad"
+    }
+  ],
+  "judgments": [
+    {
+      "comparison": "svg-chromium",
+      "report": {
+        "bytes": 1227,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/svg-chromium-comparison.json",
+        "sha256": "2e9f87d3db708fae6603634f17e6d88895e3915b4504df39f51116a5165b1698"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 96192,
+          "sha256": "4fae413e00098129a74ebe93032459eae0c1035e671ad22ac394a320b493248e"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3feffffffffff66e",
+              "ssim_pass": true,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 161,
+              "ssim_bits": "3fefffffffffef7f",
+              "ssim_pass": true,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": true,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 96195,
+          "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3fefffffff52dd7f",
+          "ssim_pass": true,
+          "width": 1955
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "svg-rust",
+      "report": {
+        "bytes": 1222,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/svg-rust-comparison.json",
+        "sha256": "ec315dd3396221b47e39b94b328f82a4d5ce0fdc1dcefaa16e61bd3f142e5c24"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 55351,
+          "sha256": "740d6e3d1383a61a0080a0b75f5b73af3579c1b14ad62699a0e2accd8879b3f9"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3feffffffffff623",
+              "ssim_pass": true,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 161,
+              "ssim_bits": "3fefffffffffef77",
+              "ssim_pass": true,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "rust",
+        "passed": true,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 55351,
+          "sha256": "740d6e3d1383a61a0080a0b75f5b73af3579c1b14ad62699a0e2accd8879b3f9"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3ff0000000000000",
+          "ssim_pass": true,
+          "width": 1955
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "pdf-pdfium",
+      "report": {
+        "bytes": 1240,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/pdf-pdfium-comparison.json",
+        "sha256": "e70f8660593618083d6e7f945adbeeb9fc26408ba875e583a60e29f0bcf91d09"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 92948,
+          "sha256": "4c9b18b357bb6850bce6ae2c12ecb860878a9f66c70cc16eb1b42f3825f8d4db"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 395,
+              "changed_pixels_pass": false,
+              "height": 34,
+              "ssim_bits": "3fed3887b9b097f0",
+              "ssim_pass": false,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 719,
+              "changed_pixels_pass": false,
+              "height": 161,
+              "ssim_bits": "3fef272002ea3115",
+              "ssim_pass": false,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 96195,
+          "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 4235,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3fef7f2b6cb3c2d1",
+          "ssim_pass": false,
+          "width": 1955
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "pdf-pdfjs",
+      "report": {
+        "bytes": 1233,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/pdf-pdfjs-comparison.json",
+        "sha256": "038a8ea7b00b894f3d05f1ed4f84d769d15cffeb74c8f6207a4fe7453936eb4b"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 92860,
+          "sha256": "2a9195ea4d8fe4e1004d5b3fdbe3bffd44018f1c23402b067a7dbeb6c1c208d4"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 37,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3fef4319b00dd0e4",
+              "ssim_pass": false,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 213,
+              "changed_pixels_pass": true,
+              "height": 161,
+              "ssim_bits": "3fef9324868eaba1",
+              "ssim_pass": false,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "pdfjs",
+        "passed": false,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 96195,
+          "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 1655,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3fefbb88ea9c611c",
+          "ssim_pass": false,
+          "width": 1955
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "png-canvas",
+      "report": {
+        "bytes": 1235,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/light/png-canvas-comparison.json",
+        "sha256": "6bfc4a551796deaf98a071330e50104474ffe60b17cd604a68d3f10864008f50"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 140758,
+          "sha256": "a981fe87f810a67eedb86a407d6af564205c8bfb86188493259c7504364178ff"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 174,
+              "changed_pixels_pass": false,
+              "height": 34,
+              "ssim_bits": "3fefe60f592c84eb",
+              "ssim_pass": true,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 11,
+              "changed_pixels_pass": true,
+              "height": 161,
+              "ssim_bits": "3fefee4532dfe2b3",
+              "ssim_pass": false,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 91937,
+          "sha256": "3aac6ac7960e9fcd6925fdfb8ee6be626290ce364f9ba75cd2b90a3bfee40628"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 98,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3feff4adc80d9d43",
+          "ssim_pass": true,
+          "width": 1955
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "svg-chromium",
+      "report": {
+        "bytes": 1227,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/svg-chromium-comparison.json",
+        "sha256": "6e9028f8bda66805995e0909f422abb1f3d2e73055773f8e5f8cf1343dcd91d8"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 91181,
+          "sha256": "6d2f2e4385b96c3f4efc2a979151043c8734eb6fa68adac3ddbe3b5fb759d9d3"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3feff7fd94d15187",
+              "ssim_pass": true,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 161,
+              "ssim_bits": "3feffad4405a89ba",
+              "ssim_pass": true,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": true,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 92290,
+          "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3feff6fb29a40841",
+          "ssim_pass": true,
+          "width": 1955
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "svg-rust",
+      "report": {
+        "bytes": 1222,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/svg-rust-comparison.json",
+        "sha256": "1090a782eeaf949829617e55447e9f5faeb77cdf2e9f497d558404bc997c056f"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 53709,
+          "sha256": "f27e9880704fbb097ea1350a410c92bf12922d766e568c6ab00c6e2027d99d08"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3feffd99e571dcce",
+              "ssim_pass": true,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 161,
+              "ssim_bits": "3feffe40a5f15013",
+              "ssim_pass": true,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "rust",
+        "passed": true,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 53626,
+          "sha256": "4586fc26b16fade46b5c508d7748d3c0fa63fff750cf66000cbc34b946e45a73"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3fefff54aad84269",
+          "ssim_pass": true,
+          "width": 1955
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "pdf-pdfium",
+      "report": {
+        "bytes": 1240,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/pdf-pdfium-comparison.json",
+        "sha256": "7dd91fa694b84da85cefde864206960f9f100ef58b5769ed884bed4a705bcc4b"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 89073,
+          "sha256": "ee69eafbfc25b66d9af5662afb176f6098d642dce676930918358e732add2634"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 375,
+              "changed_pixels_pass": false,
+              "height": 34,
+              "ssim_bits": "3fed3545d20e4365",
+              "ssim_pass": false,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 638,
+              "changed_pixels_pass": false,
+              "height": 161,
+              "ssim_bits": "3fef2640ec8b4bad",
+              "ssim_pass": false,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 92290,
+          "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 3682,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3fef780dacbbe1d8",
+          "ssim_pass": false,
+          "width": 1955
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "pdf-pdfjs",
+      "report": {
+        "bytes": 1233,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/pdf-pdfjs-comparison.json",
+        "sha256": "97ec88da6e0bba5a4982061925a70c9a76514fd276f43c1c2a7e24c41164e4bc"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 89549,
+          "sha256": "c988e27b9cb11ff96cd6538318f02c76a0e5d428da062c0ccb56f114632e9317"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 29,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3fef43028fa2cc25",
+              "ssim_pass": false,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 190,
+              "changed_pixels_pass": true,
+              "height": 161,
+              "ssim_bits": "3fef917431c004bd",
+              "ssim_pass": false,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "pdfjs",
+        "passed": false,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 92290,
+          "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 1471,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3fefb3e169ff2413",
+          "ssim_pass": false,
+          "width": 1955
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "png-canvas",
+      "report": {
+        "bytes": 1231,
+        "path": "tests/conformance/proposals/velox84-evidence-v1/viewers/dark/png-canvas-comparison.json",
+        "sha256": "d59921b1eecf8d54f1df0a8fb95e833e625652e6485601883e7738dc16fc6cdd"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 138114,
+          "sha256": "77df06269c64ae8fecf82d89da3d5f9f8215950ed1b1cc8241dc61c8e555750f"
+        },
+        "crops": [
+          {
+            "id": "client-typography",
+            "region": {
+              "area": 5916,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3fefe63baec8c056",
+              "ssim_pass": true,
+              "width": 174
+            }
+          },
+          {
+            "id": "client-binding",
+            "region": {
+              "area": 107065,
+              "changed_pixels": 8,
+              "changed_pixels_pass": true,
+              "height": 161,
+              "ssim_bits": "3fefee4baa94ea51",
+              "ssim_pass": false,
+              "width": 665
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 388,
+          "sha256": "c9bf03d2bbb48f76a0b7ad7bedfe385cb891cb931495dffa606b0ff3cf005cde"
+        },
+        "reference": {
+          "bytes": 87869,
+          "sha256": "06bec4d548eb13bed6787c162cd956a14398a8eade6c56db742096bbdafd698d"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 1006825,
+          "changed_pixels": 62,
+          "changed_pixels_pass": true,
+          "height": 515,
+          "ssim_bits": "3feff491487a8b0c",
+          "ssim_pass": true,
+          "width": 1955
+        }
+      },
+      "variant": "dark"
+    }
+  ],
+  "native": {
+    "bytes": 5205,
+    "path": "tests/conformance/proposals/velox84-evidence-v1/native/capture.json",
+    "sha256": "7644c914028ff96e3dda88ecb5c5b102667f8f30238564c7aa019e4349f648ad"
+  },
+  "reference": {
+    "bytes": 12018,
+    "path": "tests/conformance/proposals/velox84-evidence-v1/reference/reference.json",
+    "sha256": "8e12e79033ebf207167b8fc2b0cb9f6f4ab9b6a0d52a3511e186f56b8b2c4ae6"
+  },
+  "schema": "excalidraw-render/representative-intake-viewers/v1",
+  "sources": [
+    {
+      "bytes": 60882,
+      "path": "Cargo.lock",
+      "sha256": "27717cb869ee8b99a6a401f0c14cb4953c3e19813a69033c9121d8beca513cd2"
+    },
+    {
+      "bytes": 4959,
+      "path": "Cargo.toml",
+      "sha256": "03f891d53e42c12cded9da242dd45e2e9040cf99fce89da02ed7a154e8acb357"
+    },
+    {
+      "bytes": 15174,
+      "path": "crates/excalidraw-render-compare/src/comparison.rs",
+      "sha256": "5988dd5f973171facf1ccc9712bef2e68e47af8f3947cd3213f21b1b320fb807"
+    },
+    {
+      "bytes": 4306,
+      "path": "crates/excalidraw-render-compare/src/lib.rs",
+      "sha256": "59f84c68a787c76ef19f2b95688201e926f0816637f247b9aa8c9ed2578bd312"
+    },
+    {
+      "bytes": 13171,
+      "path": "crates/excalidraw-render-compare/src/pixelmatch.rs",
+      "sha256": "1c505a0a266b0aa2779dcaa237483c28fe0bdbe4543cf43f88344844872d246d"
+    },
+    {
+      "bytes": 8186,
+      "path": "crates/excalidraw-render-compare/src/ssim.rs",
+      "sha256": "4746f89206960465784bbddf13176b865232b472b20f02335c468e2d61aab007"
+    },
+    {
+      "bytes": 4460,
+      "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
+      "sha256": "e969fd7a3bc49ff3014b2cd3b3622cd18abddbc9371744d4e47927d0484bcfc7"
+    },
+    {
+      "bytes": 4478,
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+      "sha256": "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
+    },
+    {
+      "bytes": 4072,
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+      "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
+    },
+    {
+      "bytes": 4902,
+      "path": "tests/conformance/viewer-profiles/canonical-svg-chromium-v1.json",
+      "sha256": "be1664b3ad79c09b99680ff5e8ca0e56a98fce703c94a13e19e889097c90426b"
+    },
+    {
+      "bytes": 4889,
+      "path": "tests/conformance/viewer-profiles/canonical-svg-pure-rust-v1.json",
+      "sha256": "8be13868942970480bb083b454ed003f5809b2b7f1725adbaaa7d5450b69316d"
+    },
+    {
+      "bytes": 47129,
+      "path": "tests/oracle/reference-profiles/revision-1-assets.json",
+      "sha256": "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a"
+    },
+    {
+      "bytes": 33524,
+      "path": "tests/oracle/reference-profiles/revision-1.json",
+      "sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
+    },
+    {
+      "bytes": 666,
+      "path": "tools/pdf-harness/pdfium.lock.json",
+      "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90"
+    },
+    {
+      "bytes": 6282,
+      "path": "tools/pdf-harness/pdfium/render.py",
+      "sha256": "f01b2b38bdd2341602ce9f333423c79be5188328184e274bdd7c8acb2f83df3a"
+    },
+    {
+      "bytes": 8850,
+      "path": "tools/pdf-harness/pdfjs/package-lock.json",
+      "sha256": "887c2194fe05e87250486f4e6c8da341d0fb51748e14c3b4cf94a16455740c60"
+    },
+    {
+      "bytes": 3416,
+      "path": "tools/pdf-harness/pdfjs/render.mjs",
+      "sha256": "7386887b7b697c49fbe2c1095a94df86315bb0c15353f51eb4d03d1ba9c9a1ad"
+    },
+    {
+      "bytes": 943,
+      "path": "tools/pdf-harness/run-pdfium.sh",
+      "sha256": "1f6ceb77d6f90bbeb5c7727279f13a37b1fe3d695744b82389631ba9e03bc819"
+    },
+    {
+      "bytes": 1141,
+      "path": "tools/pdf-harness/run-pdfjs.sh",
+      "sha256": "a944fd3b5e3e09daca96d372341585b3b17442b3421bf7697eb865d1abc8d82e"
+    },
+    {
+      "bytes": 151230,
+      "path": "tools/reference-oracle/package-lock.json",
+      "sha256": "8857f2792a506163d150a5481122a4bb93b3646e356a57065770747a188d67fc"
+    },
+    {
+      "bytes": 2885,
+      "path": "tools/reference-oracle/scripts/stage4-viewer-assets.mjs",
+      "sha256": "bf4cc17d0ac7f71955dd1940d1b90645191430291dfbe57d8bbe147c9363291f"
+    },
+    {
+      "bytes": 34890,
+      "path": "tools/reference-oracle/scripts/svg-viewer.mjs",
+      "sha256": "61968d7bca7fef68fa29af22368b5d7dfddda9be1c9a34e53f479cdb14c1a11b"
+    },
+    {
+      "bytes": 3671,
+      "path": "tools/reference-oracle/src/browser-entry.js",
+      "sha256": "85d261f4cf5a1000b128a52d0238c4697b31725dd1d00df765ae49a0c206c1d4"
+    },
+    {
+      "bytes": 369,
+      "path": "tools/reference-oracle/vite.config.mjs",
+      "sha256": "e408434b70fe73f5f45d404dd4b3e1e671d6159b0157e50a9531a312fd96a976"
+    },
+    {
+      "bytes": 7232,
+      "path": "tools/representative-intake/compare/Cargo.lock",
+      "sha256": "685b6dbdddd2b543633d37c4cf354229c912483e43062e41cfaf342fa7079c7f"
+    },
+    {
+      "bytes": 367,
+      "path": "tools/representative-intake/compare/Cargo.toml",
+      "sha256": "3e8fb41ec95cda08910b6203aef36cf8e05135bdf0b2fd8c46b181c7a8c18b75"
+    },
+    {
+      "bytes": 4954,
+      "path": "tools/representative-intake/compare/src/main.rs",
+      "sha256": "4f247e8c76f2fc2609caddeb41d13bee0e49cd610c74a2016579fbe5e3e7c67e"
+    },
+    {
+      "bytes": 19797,
+      "path": "tools/representative-intake/evidence.py",
+      "sha256": "a06317beca34ea567eefd53b2d4733b50a6fc797919fc28dfcdb23e8b9be4752"
+    },
+    {
+      "bytes": 18764,
+      "path": "tools/representative-intake/intake.py",
+      "sha256": "354de6f91c79ce475fd5e86392f55d438cacd6554e1dca765844fe3bc1e2092d"
+    },
+    {
+      "bytes": 7760,
+      "path": "tools/representative-intake/reference.mjs",
+      "sha256": "e9916c1b368dee936ae4daea2e6d42140a8629cc910275038ae5326b91b2d59c"
+    },
+    {
+      "bytes": 777,
+      "path": "tools/representative-intake/reference.sh",
+      "sha256": "7427e95728bf328683dab1a8ae01910126e1ad594a74b3e240a37c15dc2d57a8"
+    },
+    {
+      "bytes": 2032,
+      "path": "tools/representative-intake/svg-viewer.mjs",
+      "sha256": "448b9e566197c74907f74f63c6bfb4ac088fd4847fe81c61706f0e557265cea3"
+    },
+    {
+      "bytes": 531,
+      "path": "tools/representative-intake/svg-viewer.sh",
+      "sha256": "dbfbeb93b0208499aa09c7fee409bac3432bc842684fdb18443854003e5c233f"
+    },
+    {
+      "bytes": 17624,
+      "path": "tools/svg-viewer-rust/Cargo.lock",
+      "sha256": "987d8627af80014951265cdc527ef5f2716635d928a9348609292b87bdfd6c39"
+    },
+    {
+      "bytes": 740,
+      "path": "tools/svg-viewer-rust/Cargo.toml",
+      "sha256": "fcb2d6b7277899494ea30183c01e8463ef3fde8678266b5a0bf022980da7d75f"
+    },
+    {
+      "bytes": 47655,
+      "path": "tools/svg-viewer-rust/src/main.rs",
+      "sha256": "2105e33e86647c8873487970b2bf06fe88b6f2db1bac473b4db221a3e936b722"
+    },
+    {
+      "bytes": 692,
+      "path": "xtask/Cargo.toml",
+      "sha256": "3fc1a64bf12c4061d2ad139607e3ee4b394f203e7ea303009a3b3ff1eea8038b"
+    },
+    {
+      "bytes": 18219,
+      "path": "xtask/src/conformance_candidate.rs",
+      "sha256": "f0f40795331e278ab0f4aa884f1b2e7eab4d02e12eb5a53063e6aedcdf92daf6"
+    }
+  ],
+  "status": "pending-review",
+  "viewport_adapter": "truncate fractional viewport at origin; never resize or align; proposed, not approved"
+}
