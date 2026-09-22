@@ -67,12 +67,36 @@ also applies at scale one: `strokeWidth` 1 hachure is 0.5 px there.
 This is a demonstrated viewer rendering rule, not a PDF encoding defect. The
 decision is a product one:
 
-1. **Lower sub-pixel strokes to filled outlines in PDF.** Viewers antialias thin
+1. **Lower sub-pixel strokes to filled outlines in PDF** (prototyped, not adopted; see below). Viewers antialias thin
    fills by coverage, so PDF matches SVG at every zoom. Changes the PDF vector
    contract for affected strokes and increases size. Recommended for evaluation.
 2. **Scoped exception** for PDF comparisons of sub-pixel strokes, justified by
    these controls. Leaves the visible density difference in PDF viewers.
 3. Keep the gap as an explicit known-defect pin.
+
+## Follow-up: PDFium geometry loss (fixed after this collection)
+
+These measurements predate a renderer fix. In the stroked PDF, PDFium drew only
+one of the two cross-hatch directions. Hand-authored controls show PDFium
+silently drops geometry once one path gets too complex (2000 thin lines over a
+2000 px page lose one direction and a whole corner; 500 lines render
+completely). The PDF backend now splits opaque sketch fills across stroke
+operations of at most 500000 device pixels of length. PDFium then paints both
+directions and its `worker-arrow` SSIM moves from 0.686 to 0.799, in line with
+PDF.js (0.810). PDF.js output is unchanged, and PDF size grows by 18 bytes.
+Whole-page changed pixels rise (light PDFium 543794 to 910085) because the
+missing direction is now painted, still at the widened one-pixel width.
+
+A prototype drawing sketch fills as filled outlines
+(branch `pdf-sketch-outline-prototype`,
+`docs/research/pdf-sketch-fill-outline-prototype.md`) cut whole-page
+differences about tenfold but did not reach parity. Viewers combine
+overlapping sub-pixel geometry differently from Chromium, and PDFs grew 3–6×.
+It is not adopted. The remaining sub-pixel density difference awaits a
+scoped-exception decision.
+
+This compact record is bound to the pre-fix renderer. `compact.py check`
+correctly reports the changed native PDFs until the evidence is re-collected.
 
 ## Not yet diagnosed
 

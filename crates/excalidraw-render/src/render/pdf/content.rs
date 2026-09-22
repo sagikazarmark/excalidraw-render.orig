@@ -279,8 +279,12 @@ impl PdfPlan {
                                 )?;
                                 content.push_str(" w\n1 J\n/CS1 CS\n");
                                 push_color(&mut content, fill_color.rgb_f64(), "SCN")?;
-                                push_rough_path(&mut content, &fill.path)?;
-                                content.push_str("S\n");
+                                push_sketch_stroke(
+                                    &mut content,
+                                    &fill.path,
+                                    self.scale,
+                                    fill_opacity == 1.0,
+                                )?;
                             }
                         }
                         content.push_str("Q\n");
@@ -331,6 +335,7 @@ impl PdfPlan {
                             decoration_stroke_width,
                             *opacity,
                             opacity_resources,
+                            self.scale,
                         )?;
                     }
                     if let (Some(label), Some(color)) = (generated_label, generated_label_color) {
@@ -430,8 +435,12 @@ impl PdfPlan {
                                 )?;
                                 content.push_str(" w\n1 J\n/CS1 CS\n");
                                 push_color(&mut content, background_color.rgb_f64(), "SCN")?;
-                                push_rough_path(&mut content, &fill.path)?;
-                                content.push_str("S\n");
+                                push_sketch_stroke(
+                                    &mut content,
+                                    &fill.path,
+                                    self.scale,
+                                    fill_opacity == 1.0,
+                                )?;
                             }
                         }
                         content.push_str("Q\n");
@@ -756,6 +765,7 @@ fn push_pdf_drawing(
     source_stroke_width: f64,
     opacity: f64,
     opacity_resources: &[f64],
+    pixels_per_unit: f64,
 ) -> Result<(), FormatEncodeError> {
     output.push_str("q\n");
     if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
@@ -779,8 +789,7 @@ fn push_pdf_drawing(
                 push_pdf_number(output, source_stroke_width / 2.0, "PDF fill weight")?;
                 output.push_str(" w\n1 J\n/CS1 CS\n");
                 push_color(output, fill_color.rgb_f64(), "SCN")?;
-                push_rough_path(output, &fill.path)?;
-                output.push_str("S\n");
+                push_sketch_stroke(output, &fill.path, pixels_per_unit, fill_opacity == 1.0)?;
             }
         }
         output.push_str("Q\n");
@@ -812,42 +821,104 @@ fn push_pdf_drawing(
 
 fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeError> {
     for operation in &path.operations {
-        match operation {
+        push_rough_operation(output, operation)?;
+    }
+    Ok(())
+}
+
+/// Device-pixel length at 96 DPI that one sketch-fill stroke operation may
+/// carry. PDFium's rasterizer silently stops accumulating coverage once a
+/// single path exceeds its cell budget, dropping the geometry drawn last: a
+/// cross-hatch of about four thousand page-long lines loses its second
+/// direction (#84). Splitting at subpath boundaries keeps every operation far
+/// below that budget.
+const SKETCH_STROKE_LENGTH_BUDGET_PX: f64 = 500_000.0;
+
+/// Strokes a sketch fill with the stroke state already set, closing the
+/// operation and starting another at a subpath boundary once the running
+/// length exceeds the budget. Separate operations composite like one only
+/// when the paint is opaque, so `split` is false otherwise. Length is
+/// measured along the control polygon, an upper bound on the curve.
+fn push_sketch_stroke(
+    output: &mut String,
+    path: &Path,
+    pixels_per_unit: f64,
+    split: bool,
+) -> Result<(), FormatEncodeError> {
+    let budget = SKETCH_STROKE_LENGTH_BUDGET_PX / pixels_per_unit;
+    let distance =
+        |a: Point, b: Point| ((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)).sqrt();
+    let mut length = 0.0;
+    let mut current = None;
+    for operation in &path.operations {
+        match *operation {
             PathOperation::Move(point) => {
-                push_rough_number(output, point.x)?;
-                output.push(' ');
-                push_rough_number(output, point.y)?;
-                output.push_str(" m\n");
+                if split && length > budget {
+                    output.push_str("S\n");
+                    length = 0.0;
+                }
+                current = Some(point);
             }
             PathOperation::Line(point) => {
-                push_rough_number(output, point.x)?;
-                output.push(' ');
-                push_rough_number(output, point.y)?;
-                output.push_str(" l\n");
+                length += current.map_or(0.0, |start| distance(start, point));
+                current = Some(point);
             }
             PathOperation::Cubic {
                 control_1,
                 control_2,
                 end,
             } => {
-                for (index, value) in [
-                    control_1.x,
-                    control_1.y,
-                    control_2.x,
-                    control_2.y,
-                    end.x,
-                    end.y,
-                ]
-                .into_iter()
-                .enumerate()
-                {
-                    if index != 0 {
-                        output.push(' ');
-                    }
-                    push_rough_number(output, value)?;
-                }
-                output.push_str(" c\n");
+                length += current.map_or(0.0, |start| distance(start, control_1))
+                    + distance(control_1, control_2)
+                    + distance(control_2, end);
+                current = Some(end);
             }
+        }
+        push_rough_operation(output, operation)?;
+    }
+    output.push_str("S\n");
+    Ok(())
+}
+
+fn push_rough_operation(
+    output: &mut String,
+    operation: &PathOperation,
+) -> Result<(), FormatEncodeError> {
+    match operation {
+        PathOperation::Move(point) => {
+            push_rough_number(output, point.x)?;
+            output.push(' ');
+            push_rough_number(output, point.y)?;
+            output.push_str(" m\n");
+        }
+        PathOperation::Line(point) => {
+            push_rough_number(output, point.x)?;
+            output.push(' ');
+            push_rough_number(output, point.y)?;
+            output.push_str(" l\n");
+        }
+        PathOperation::Cubic {
+            control_1,
+            control_2,
+            end,
+        } => {
+            for (index, value) in [
+                control_1.x,
+                control_1.y,
+                control_2.x,
+                control_2.y,
+                end.x,
+                end.y,
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                if index != 0 {
+                    output.push(' ');
+                }
+                push_rough_number(output, value)?;
+            }
+            output.push_str(" c\n");
         }
     }
     Ok(())

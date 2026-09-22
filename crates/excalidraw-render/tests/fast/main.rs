@@ -84,6 +84,7 @@ mod scene_admission;
 mod scene_bounds_render;
 mod scene_surface_policy;
 mod scratch_dir;
+mod sketch_fill_pdf_split;
 mod soft_hyphen_render;
 mod stage4_interaction_contract;
 mod static_bmp_asset_render;
