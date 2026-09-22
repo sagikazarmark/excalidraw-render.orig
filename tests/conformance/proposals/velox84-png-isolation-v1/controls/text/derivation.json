@@ -1,0 +1,46 @@
+{
+  "approval": null,
+  "control": "text",
+  "eligible_executions": [],
+  "hidden_elements": [
+    "TQgY1veWt3TS0QhLqucyH",
+    "ehc7qTMuearlOTJjsDObw",
+    "zmn0HQb9Lpi-dAcRCscJX",
+    "5jtZRf2AbuQuhgW8Ia4AV",
+    "KzHYIM8OQZ4suYBqt-N-9",
+    "LbiwMYvX_aQmstn-olqVD",
+    "rFvm7jLimqN732F7Fe9Tu",
+    "ZKaznicnRLPIsAAY6uIiK",
+    "U8p_NCsPgJybLyUzKdueS",
+    "MPmwvZxLCXL4gH9DU55zs",
+    "m9ZSH5z498ffbdFB4VeIg",
+    "8NX6tIYP2wHnSL-Ik3OhC",
+    "GzZ5DxFQBXtgobCm4Ty_x",
+    "XEX37RMEtGGD-DeMrfv8s",
+    "SMA3MncosExMsFWjMkmm7",
+    "-DhZP45TBCn9BxnpAAULS",
+    "9aG4-eX9QAYSfO-X0-7ku",
+    "SFFkJQVxw6McXQwWw9bs6",
+    "WlpGNYMFAFg6QIXUxMDZg",
+    "BhF46CNWEvSVsAx5nxZqH",
+    "x-EpE1mbu3jf0p9702Rmj",
+    "JA6oetmfY2SJlwJcrO2cg",
+    "TP6JWjx3q52pg5568BYKN",
+    "0mUb4KTp469vcI2_S-BAz",
+    "bthnJOCYjRcvt71Bc6psJ",
+    "SDGtNWEAM6zEwYpd2l0Zc",
+    "nexxnWXIR-D_td8Vy1KFB",
+    "sb2DGxCxCYvWjsRAWi0zO",
+    "QOrbZ8uXCmw2MErkLFWup",
+    "reslMjHQA5R7LZZVKhZQG"
+  ],
+  "operation": "hide excluded paint; fill/stroke controls additionally hide rectangle stroke/fill",
+  "scene": {
+    "bytes": 54924,
+    "sha256": "a4c4b8515c91890ebbaab0e402c4adc8754b7358069f6fefaf0ec61479d4a2a6"
+  },
+  "source": {
+    "bytes": 54699,
+    "sha256": "3c4a336c41bf1ea0a41e7f8464430a1b7cb01baadc8720173972d2ebed9f1ead"
+  }
+}

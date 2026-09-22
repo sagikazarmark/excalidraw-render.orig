@@ -1,0 +1,50 @@
+{
+  "approval": null,
+  "control": "rectangles",
+  "eligible_executions": [],
+  "hidden_elements": [
+    "4DtfnoJqfqmS9i77PiZXB",
+    "mac-YPf5iuqtys3PZv03S",
+    "zmn0HQb9Lpi-dAcRCscJX",
+    "cWQt22ni6VtH1N_ijmRjK",
+    "n-a28VXuLHMdosxXP1-Qz",
+    "5rA9G37_6THK4h8Qjzfb3",
+    "LbiwMYvX_aQmstn-olqVD",
+    "U6ueHTWJcow_OQgPDYOQ7",
+    "ZKaznicnRLPIsAAY6uIiK",
+    "nadW3FjBfFBmwngDu_Vpd",
+    "UrtNI9N9B2lLfws2JwQBV",
+    "q_JCD3heKfcQCYTXgMn3-",
+    "pAhCB4D9wjh18Lr_uC5_m",
+    "wDd0eA_MPtiG6kEiEjJ_n",
+    "oBPYeRMFP5F1th30Lksdp",
+    "XEX37RMEtGGD-DeMrfv8s",
+    "c0RMyS_i8J4yUAux0I-cJ",
+    "ROrVOlHTpGcHQEXV_bmKd",
+    "mvlXfelSBMycHQ2mkS1Lg",
+    "fs9kdjdI5x9NBJNjLO82q",
+    "kZmEugfTk7Ghir_bKsJbn",
+    "SFFkJQVxw6McXQwWw9bs6",
+    "c4d6740EIywIKF552v8_7",
+    "ZatNdZqsjrNnNVyD2-AzJ",
+    "x-EpE1mbu3jf0p9702Rmj",
+    "ZdJGYGtZBlqlxeY7Gq6ad",
+    "L3V4RJgDtTbAOadW0CGRD",
+    "0mUb4KTp469vcI2_S-BAz",
+    "C4-_dMCWiYh9RghYhfhex",
+    "eegVlx8f76BiL3vJZ-F1t",
+    "nexxnWXIR-D_td8Vy1KFB",
+    "sb2DGxCxCYvWjsRAWi0zO",
+    "QOrbZ8uXCmw2MErkLFWup",
+    "reslMjHQA5R7LZZVKhZQG"
+  ],
+  "operation": "hide excluded paint; fill/stroke controls additionally hide rectangle stroke/fill",
+  "scene": {
+    "bytes": 54880,
+    "sha256": "55dd2ddd506ee6f3377883d899a955c3cd876212b8de8a60989a2e37d56f7d96"
+  },
+  "source": {
+    "bytes": 54699,
+    "sha256": "3c4a336c41bf1ea0a41e7f8464430a1b7cb01baadc8720173972d2ebed9f1ead"
+  }
+}

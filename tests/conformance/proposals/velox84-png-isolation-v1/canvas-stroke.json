@@ -1,0 +1,307 @@
+{
+  "schema": "excalidraw-render/canvas-stroke-phase-probe/v1",
+  "browser": "149.0.7827.55",
+  "fresh_process_runs": 2,
+  "script_sha256": "a4c6ba399e63abac9c827ac33e25d17ccb67433ff7c6f00ad3f4a2c9443ac907",
+  "profile_sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
+  "rows": [
+    {
+      "kind": "horizontal-line",
+      "phase": 0,
+      "alpha": [
+        0,
+        255,
+        255,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.125,
+      "alpha": [
+        0,
+        191,
+        255,
+        64,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.233470223713,
+      "alpha": [
+        0,
+        191,
+        255,
+        64,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.25,
+      "alpha": [
+        0,
+        191,
+        255,
+        64,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.375,
+      "alpha": [
+        0,
+        128,
+        255,
+        128,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.5,
+      "alpha": [
+        0,
+        128,
+        255,
+        128,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.632993081447,
+      "alpha": [
+        0,
+        64,
+        255,
+        191,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.75,
+      "alpha": [
+        0,
+        64,
+        255,
+        191,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.875,
+      "alpha": [
+        0,
+        0,
+        255,
+        255,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0,
+      "alpha": [
+        0,
+        255,
+        255,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.125,
+      "alpha": [
+        0,
+        223,
+        255,
+        31,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.233470223713,
+      "alpha": [
+        0,
+        195,
+        255,
+        59,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.25,
+      "alpha": [
+        0,
+        191,
+        255,
+        63,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.375,
+      "alpha": [
+        0,
+        159,
+        255,
+        95,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.5,
+      "alpha": [
+        0,
+        127,
+        255,
+        127,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.632993081447,
+      "alpha": [
+        0,
+        93,
+        255,
+        161,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.75,
+      "alpha": [
+        0,
+        63,
+        255,
+        191,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.875,
+      "alpha": [
+        0,
+        31,
+        255,
+        223,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0,
+      "alpha": [
+        0,
+        255,
+        255,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.125,
+      "alpha": [
+        0,
+        192,
+        255,
+        64,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.233470223713,
+      "alpha": [
+        0,
+        192,
+        255,
+        64,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.25,
+      "alpha": [
+        0,
+        192,
+        255,
+        64,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.375,
+      "alpha": [
+        0,
+        128,
+        255,
+        128,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.5,
+      "alpha": [
+        0,
+        128,
+        255,
+        128,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.632993081447,
+      "alpha": [
+        0,
+        64,
+        255,
+        192,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.75,
+      "alpha": [
+        0,
+        64,
+        255,
+        192,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.875,
+      "alpha": [
+        0,
+        0,
+        255,
+        255,
+        0
+      ]
+    }
+  ],
+  "approval": null
+}

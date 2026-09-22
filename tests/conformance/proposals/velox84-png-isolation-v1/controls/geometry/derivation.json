@@ -1,0 +1,39 @@
+{
+  "approval": null,
+  "control": "geometry",
+  "eligible_executions": [],
+  "hidden_elements": [
+    "4DtfnoJqfqmS9i77PiZXB",
+    "mac-YPf5iuqtys3PZv03S",
+    "cWQt22ni6VtH1N_ijmRjK",
+    "n-a28VXuLHMdosxXP1-Qz",
+    "5rA9G37_6THK4h8Qjzfb3",
+    "U6ueHTWJcow_OQgPDYOQ7",
+    "nadW3FjBfFBmwngDu_Vpd",
+    "UrtNI9N9B2lLfws2JwQBV",
+    "q_JCD3heKfcQCYTXgMn3-",
+    "pAhCB4D9wjh18Lr_uC5_m",
+    "wDd0eA_MPtiG6kEiEjJ_n",
+    "oBPYeRMFP5F1th30Lksdp",
+    "c0RMyS_i8J4yUAux0I-cJ",
+    "ROrVOlHTpGcHQEXV_bmKd",
+    "mvlXfelSBMycHQ2mkS1Lg",
+    "fs9kdjdI5x9NBJNjLO82q",
+    "kZmEugfTk7Ghir_bKsJbn",
+    "c4d6740EIywIKF552v8_7",
+    "ZatNdZqsjrNnNVyD2-AzJ",
+    "ZdJGYGtZBlqlxeY7Gq6ad",
+    "L3V4RJgDtTbAOadW0CGRD",
+    "C4-_dMCWiYh9RghYhfhex",
+    "eegVlx8f76BiL3vJZ-F1t"
+  ],
+  "operation": "hide excluded paint; fill/stroke controls additionally hide rectangle stroke/fill",
+  "scene": {
+    "bytes": 54808,
+    "sha256": "93ddbf9325a0457134606d5657bccbb1f4a8f57c7a34164f4a6584fbf455d87e"
+  },
+  "source": {
+    "bytes": 54699,
+    "sha256": "3c4a336c41bf1ea0a41e7f8464430a1b7cb01baadc8720173972d2ebed9f1ead"
+  }
+}

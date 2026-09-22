@@ -1,0 +1,26 @@
+{
+  "schema": "excalidraw-render/velox-stroke-primary-sources/v1",
+  "skia_revision": "53348aa333da02b77c4b5797e2de722f5abde7d0",
+  "chromium_deps": "https://chromium.googlesource.com/chromium/src/+/149.0.7827.55/DEPS",
+  "sources": [
+    {
+      "path": "src/core/SkAnalyticEdge.h",
+      "url": "https://raw.githubusercontent.com/google/skia/53348aa333da02b77c4b5797e2de722f5abde7d0/src/core/SkAnalyticEdge.h",
+      "bytes": 4826,
+      "sha256": "7bcbf3a912cec1a1225b82ab2e4fd79bbbe5448381ae2c83c1ba3210a0dee70e"
+    },
+    {
+      "path": "src/core/SkAnalyticEdge.cpp",
+      "url": "https://raw.githubusercontent.com/google/skia/53348aa333da02b77c4b5797e2de722f5abde7d0/src/core/SkAnalyticEdge.cpp",
+      "bytes": 29097,
+      "sha256": "53cd793514e542fb01acf7d4cd94b7981373eddcc0731ef2156c1a43f5c10912"
+    },
+    {
+      "path": "src/core/SkScan_AntiPath.cpp",
+      "url": "https://raw.githubusercontent.com/google/skia/53348aa333da02b77c4b5797e2de722f5abde7d0/src/core/SkScan_AntiPath.cpp",
+      "bytes": 5041,
+      "sha256": "a73a8b5484d144fcc99cba8873697619dc1f3ffd9c323f7a73263a960a4d8dc1"
+    }
+  ],
+  "approval": null
+}
