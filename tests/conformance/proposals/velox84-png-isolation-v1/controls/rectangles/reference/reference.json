@@ -11,7 +11,7 @@
   "sources": [
     {
       "path": "tools/representative-intake/reference.mjs",
-      "sha256": "e9916c1b368dee936ae4daea2e6d42140a8629cc910275038ae5326b91b2d59c"
+      "sha256": "84d6c4b381efb9415d994e9df8f9d9d1a330c59a8ab9e6aecfac65415be37d75"
     },
     {
       "path": "tools/reference-oracle/src/browser-entry.js",

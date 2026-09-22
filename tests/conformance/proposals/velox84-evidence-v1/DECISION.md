@@ -16,6 +16,12 @@ Rust 1.97.1 `--release --locked` CLI built from `d3b5da4`; `native/capture.json`
 binds its executable digest. This is an observation, not a packaged-source or
 cross-target qualification claim.
 
+Producer refresh: after `reference.mjs` switched its canvas transfer to
+base64, a fresh reference collection reproduced every official SVG, PNG and
+canvas RGBA byte for byte. Only `reference/reference.json`'s producer binding
+changed, and `--repeat-unapproved` refreshed the viewer receipts with every
+retained artifact and judgment unchanged.
+
 ## Proposed request/region scope
 
 - Light and dark whole-scene exports, background included, padding 10, scale 1,

@@ -81,9 +81,14 @@ async function render(variant) {
       const canvas = document.createElement("canvas"); canvas.width = image.width; canvas.height = image.height;
       const ctx = canvas.getContext("2d"); ctx.drawImage(image, 0, 0);
       const svg = new DOMParser().parseFromString(result.svg, "image/svg+xml").documentElement;
+      // Base64 keeps large canvases within Node's heap; a JSON number array does not.
+      const rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let binary = "";
+      for (let offset = 0; offset < rgba.length; offset += 0x8000)
+        binary += String.fromCharCode(...rgba.subarray(offset, offset + 0x8000));
       return {...result, width: canvas.width, height: canvas.height,
         svg_width: svg.getAttribute("width"), svg_height: svg.getAttribute("height"), view_box: svg.getAttribute("viewBox"),
-        rgba: Array.from(ctx.getImageData(0, 0, canvas.width, canvas.height).data)};
+        rgbaBase64: btoa(binary)};
     }, {scene, options});
     assert.deepEqual(errors, []);
     requests.sort((a, b) => a.url.localeCompare(b.url));
@@ -101,7 +106,7 @@ mkdirSync(output); // New-only; no completed evidence is overwritten.
 const rows = [];
 for (const variant of plan.variants) {
   const {value, options, requests} = collected.get(variant.id);
-  const files = {"official.svg": Buffer.from(value.svg), "official.png": Buffer.from(value.pngBase64, "base64"), "official-png.rgba.zlib": deflateSync(Buffer.from(value.rgba), {level:9})};
+  const files = {"official.svg": Buffer.from(value.svg), "official.png": Buffer.from(value.pngBase64, "base64"), "official-png.rgba.zlib": deflateSync(Buffer.from(value.rgbaBase64, "base64"), {level:9})};
   const dir = resolve(output, variant.id); mkdirSync(dir);
   for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(dir, name), bytes, {flag: "wx"});
   rows.push({variant: variant.id, width: value.width, height: value.height, svg_width: value.svg_width, svg_height: value.svg_height,

@@ -22,6 +22,11 @@ The executable digest and complete renderer Rust source bindings are retained
 in `controls/isolation.json`. Build provenance remains manually recorded:
 Rust 1.97.1, `cargo build --locked --release -p excalidraw-render-cli`.
 
+The collection was refreshed on top of `70ebc55` after `reference.mjs` switched its
+canvas transfer to base64. A fresh 12-control collection reproduced every
+result, reference output and native artifact byte for byte; only the producer
+source bindings and the retained executable digest changed.
+
 The original PNG comparison reproduces through the real canonical comparator:
 
 ```sh

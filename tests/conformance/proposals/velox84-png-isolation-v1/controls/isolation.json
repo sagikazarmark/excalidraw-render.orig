@@ -138,7 +138,7 @@
     },
     "arrows/reference/reference.json": {
       "bytes": 12016,
-      "sha256": "0ca8b79f79633cb9786bfb81c799f55bbd9c87473e56a96bbe0d34f209aab917"
+      "sha256": "4b417228a01535327a61e94fd0cf2d2504380e6facd1156c345f16667f22f9f1"
     },
     "arrows/scene.excalidraw": {
       "bytes": 54960,
@@ -266,7 +266,7 @@
     },
     "client-arrow/reference/reference.json": {
       "bytes": 12014,
-      "sha256": "86cd60f6fc17e78c06371d058c0d0c360dd9c22cb32e22643527c78362c95729"
+      "sha256": "c446fc2acdd76f14c4071c51e05958416134fe43b5a01f02cf60ede2a624a37b"
     },
     "client-arrow/scene.excalidraw": {
       "bytes": 55028,
@@ -394,7 +394,7 @@
     },
     "client-rectangle/reference/reference.json": {
       "bytes": 12014,
-      "sha256": "78385c88d6228cbee25e9c40cb5ffcf39461f93c013a036a456352454791f8b8"
+      "sha256": "733be3c1f55a1e61fa1e7702c6837d6f688ad91f927e1d513ef4c39f92287efe"
     },
     "client-rectangle/scene.excalidraw": {
       "bytes": 55024,
@@ -522,7 +522,7 @@
     },
     "connection-rectangle/reference/reference.json": {
       "bytes": 12014,
-      "sha256": "5ea39cc8f6d8832aef632ed8b75b673c46de3afd83aff874113a81e209dc7b45"
+      "sha256": "7506f695be0516cc16632c045e846ff8b410fd9556556da2b537ab2bca207ca7"
     },
     "connection-rectangle/scene.excalidraw": {
       "bytes": 55024,
@@ -650,7 +650,7 @@
     },
     "diff-rectangle/reference/reference.json": {
       "bytes": 12014,
-      "sha256": "95a5dff1b316818765cbbb8041a2f32d167d43f64adcdd43448f0fe74c701fdf"
+      "sha256": "67527f93a75af5d0af69e23dc09f9e4b40172d5ece3a44d92ffdd68909f3b8cf"
     },
     "diff-rectangle/scene.excalidraw": {
       "bytes": 55024,
@@ -778,7 +778,7 @@
     },
     "geometry/reference/reference.json": {
       "bytes": 12016,
-      "sha256": "42f2323b1628c32b6843cd650c4a086f5919ea7826e49ea99f72aa6831f410a4"
+      "sha256": "4e5210d99e530d39d1422d94069c9d18b886cea178f65f56f0e6414a5ad12fe3"
     },
     "geometry/scene.excalidraw": {
       "bytes": 54808,
@@ -906,7 +906,7 @@
     },
     "json-rectangle/reference/reference.json": {
       "bytes": 12014,
-      "sha256": "4b6abd520c306df65c71f58fc2dc1ddca40c2936ce8fb3d3e0b4bdae0bfcb1d6"
+      "sha256": "797a1cd96f55edaa8a1262f9e1644d0c6282e0554688dfa9ebc78158752ccc5f"
     },
     "json-rectangle/scene.excalidraw": {
       "bytes": 55024,
@@ -1034,7 +1034,7 @@
     },
     "minimal-rectangle/reference/reference.json": {
       "bytes": 8314,
-      "sha256": "a4f69f4c1b0bd1c13640c5d24410a7adfe5edfe4505a645626a1f9a6545b2e21"
+      "sha256": "5aeaf082a6cd946cec9c95652255633c6684271b9952001a6f31b0718ee2a201"
     },
     "minimal-rectangle/scene.excalidraw": {
       "bytes": 1761,
@@ -1162,7 +1162,7 @@
     },
     "rectangles-fill/reference/reference.json": {
       "bytes": 12016,
-      "sha256": "9f173bf81907656dd25972256c1fdbf5a27a9d413b42185a977c726c12d66813"
+      "sha256": "38aadaa538c80db02e912f0bc65143c49df4434db9a4ba89e7443c1a528dab83"
     },
     "rectangles-fill/scene.excalidraw": {
       "bytes": 54956,
@@ -1290,7 +1290,7 @@
     },
     "rectangles-stroke/reference/reference.json": {
       "bytes": 12016,
-      "sha256": "166de8ad41d07607b043a0a58b7405e0874e932eaf2291159d3c48444a1f130f"
+      "sha256": "3efbd6dd01fab88385a87343fa94bd24a37980f7206bed4b318c5356e223b134"
     },
     "rectangles-stroke/scene.excalidraw": {
       "bytes": 54956,
@@ -1418,7 +1418,7 @@
     },
     "rectangles/reference/reference.json": {
       "bytes": 12016,
-      "sha256": "9ce6207e06f465aca316a4b66f339d482bfe0c35d8de310797315ded1eed2efc"
+      "sha256": "0acb1c8a69f49baca1fb6e61fa25fc1e78baf9f872347b67b57ddc42913d0e07"
     },
     "rectangles/scene.excalidraw": {
       "bytes": 54880,
@@ -1546,7 +1546,7 @@
     },
     "text/reference/reference.json": {
       "bytes": 12018,
-      "sha256": "401ff9d563cdfa00c854721d80b92ae447a0060b8568c98f4034c36e1c685051"
+      "sha256": "6f3255bebfca24d72ca6f04386bd132d1011e2b9a97e7492ee77a31da4232a64"
     },
     "text/scene.excalidraw": {
       "bytes": 54924,
@@ -1554,8 +1554,8 @@
     }
   },
   "renderer_binary": {
-    "bytes": 26790232,
-    "sha256": "47b973fe6bd23fffcc8940c555cd88caf019b90b4c89cc9499c5b8aad9a962e4"
+    "bytes": 26788824,
+    "sha256": "8051e4b7c5242b46e00931a5574b29cf44c60216dcd46e2d810b7b70e2614596"
   },
   "results": [
     {
@@ -4467,7 +4467,7 @@
     {
       "bytes": 12018,
       "path": "tests/conformance/proposals/velox84-evidence-v1/reference/reference.json",
-      "sha256": "8e12e79033ebf207167b8fc2b0cb9f6f4ab9b6a0d52a3511e186f56b8b2c4ae6"
+      "sha256": "197b0597a84db0634a25eba769b35081cbeaa8308b59867c49f2e1ed2b1fb498"
     },
     {
       "bytes": 388,
@@ -4525,9 +4525,9 @@
       "sha256": "c41e08d31904467406c29726ccbdcc00ecda3573b5f277476d318bbf6800744c"
     },
     {
-      "bytes": 7760,
+      "bytes": 8062,
       "path": "tools/representative-intake/reference.mjs",
-      "sha256": "e9916c1b368dee936ae4daea2e6d42140a8629cc910275038ae5326b91b2d59c"
+      "sha256": "84d6c4b381efb9415d994e9df8f9d9d1a330c59a8ab9e6aecfac65415be37d75"
     }
   ]
 }

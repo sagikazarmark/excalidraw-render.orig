@@ -16,7 +16,7 @@
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "4b7842e43919",
+          "container_namespace": "e72ca3fee6ba",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -228,14 +228,14 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "14d2081c67dde6222a3ed0b5881c13b317dd34784e80fee1876a273af55f8650",
-          "virtual_time_ticks_base": 80457075.595,
+          "virtual_time_ticks_base": 11345095.519,
           "width": 1955
         },
         {
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "65b1571dff17",
+          "container_namespace": "63844e76e911",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -447,7 +447,7 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "14d2081c67dde6222a3ed0b5881c13b317dd34784e80fee1876a273af55f8650",
-          "virtual_time_ticks_base": 80458191.889,
+          "virtual_time_ticks_base": 11346115.693,
           "width": 1955
         }
       ],
@@ -467,9 +467,9 @@
       "runs": [
         {
           "animation_offset_microseconds": 0,
-          "browser_process_id": 20,
+          "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "680e4e623d5d",
+          "container_namespace": "d0fb8ce88c56",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -621,14 +621,14 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "163ad4da1a6235511885dd6f296120f7630c1813ca7aad00d7d30b02c9cc5d37",
-          "virtual_time_ticks_base": 80459347.909,
+          "virtual_time_ticks_base": 11347201.815,
           "width": 1955
         },
         {
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "8fe61690b058",
+          "container_namespace": "5f64b632afdb",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -780,7 +780,7 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "163ad4da1a6235511885dd6f296120f7630c1813ca7aad00d7d30b02c9cc5d37",
-          "virtual_time_ticks_base": 80460410.63,
+          "virtual_time_ticks_base": 11348205.526,
           "width": 1955
         }
       ],
@@ -956,7 +956,7 @@
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "8decbc13097e",
+          "container_namespace": "c9594c03d152",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -1168,14 +1168,14 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "a9a74b22acb09624135039389dcdafd5d336f6dedff73cf33c062628d88a3b3e",
-          "virtual_time_ticks_base": 80472922.291,
+          "virtual_time_ticks_base": 11373303.472,
           "width": 1955
         },
         {
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "4ead77253fb0",
+          "container_namespace": "2b9e7a9caa3a",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -1387,7 +1387,7 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "a9a74b22acb09624135039389dcdafd5d336f6dedff73cf33c062628d88a3b3e",
-          "virtual_time_ticks_base": 80473956.811,
+          "virtual_time_ticks_base": 11374344.63,
           "width": 1955
         }
       ],
@@ -1409,7 +1409,7 @@
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "a4aa6419bb2a",
+          "container_namespace": "f621c7bcafda",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -1561,14 +1561,14 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "c900ee21aee55fbf0cde4b170341bd330463f3544720ac3e014780a915329ffb",
-          "virtual_time_ticks_base": 80475075.893,
+          "virtual_time_ticks_base": 11375435.461,
           "width": 1955
         },
         {
           "animation_offset_microseconds": 0,
           "browser_process_id": 19,
           "browser_version": "149.0.7827.55",
-          "container_namespace": "7791dcfa9421",
+          "container_namespace": "f3de9b193d59",
           "height": 515,
           "lifecycle_updates": 2,
           "platform_fonts": [
@@ -1720,7 +1720,7 @@
             "http://reference.invalid/input.svg"
           ],
           "rgba_sha256": "c900ee21aee55fbf0cde4b170341bd330463f3544720ac3e014780a915329ffb",
-          "virtual_time_ticks_base": 80476153.718,
+          "virtual_time_ticks_base": 11376430.679,
           "width": 1955
         }
       ],
@@ -2256,7 +2256,7 @@
     {
       "bytes": 12018,
       "path": "tests/conformance/proposals/velox84-evidence-v1/reference/reference.json",
-      "sha256": "8e12e79033ebf207167b8fc2b0cb9f6f4ab9b6a0d52a3511e186f56b8b2c4ae6"
+      "sha256": "197b0597a84db0634a25eba769b35081cbeaa8308b59867c49f2e1ed2b1fb498"
     },
     {
       "bytes": 5205,
@@ -2884,7 +2884,7 @@
   "reference": {
     "bytes": 12018,
     "path": "tests/conformance/proposals/velox84-evidence-v1/reference/reference.json",
-    "sha256": "8e12e79033ebf207167b8fc2b0cb9f6f4ab9b6a0d52a3511e186f56b8b2c4ae6"
+    "sha256": "197b0597a84db0634a25eba769b35081cbeaa8308b59867c49f2e1ed2b1fb498"
   },
   "schema": "excalidraw-render/representative-intake-viewers/v1",
   "sources": [
@@ -3034,9 +3034,9 @@
       "sha256": "354de6f91c79ce475fd5e86392f55d438cacd6554e1dca765844fe3bc1e2092d"
     },
     {
-      "bytes": 7760,
+      "bytes": 8062,
       "path": "tools/representative-intake/reference.mjs",
-      "sha256": "e9916c1b368dee936ae4daea2e6d42140a8629cc910275038ae5326b91b2d59c"
+      "sha256": "84d6c4b381efb9415d994e9df8f9d9d1a330c59a8ab9e6aecfac65415be37d75"
     },
     {
       "bytes": 777,
