@@ -686,4 +686,25 @@ type Nightly {
       ])
       .combinedOutput
   }
+
+  """
+  Exercise every admitted raster family and nested SVG under semantic limits.
+  """
+  assetFuzz(
+    """
+    Number of mutated cases, in addition to the intact codec/profile seed pass.
+    """
+    cases: String! = "4096",
+  ): String! {
+    self
+      .container
+      .withEnvVariable("EXCALIDRAW_ASSET_FUZZ_CASES", cases)
+      .withExec([
+        "cargo", "test", "--locked", "--release",
+        "--package", "excalidraw-render", "--test", "asset_fuzz",
+        "asset_fuzz::nightly_asset_fuzz_is_bounded_and_deterministic",
+        "--", "--ignored", "--exact",
+      ])
+      .combinedOutput
+  }
 }

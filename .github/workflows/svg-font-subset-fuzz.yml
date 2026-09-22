@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [font-subset-fuzz, frame-batch-property, scene-fuzz]
+        task: [font-subset-fuzz, frame-batch-property, scene-fuzz, asset-fuzz]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77

@@ -80,7 +80,7 @@
     "status": "aggregated",
     "workflow": {
       "path": "dagger.dang",
-      "sha256": "942e5e6a296f2046b3e46f6dfab942554e2611e66ed3d0057bbacc349c35c6e7"
+      "sha256": "88b93b8a4c27d074fe113a5a35980f8ca6268bd4614c4da8782870b287abf232"
     }
   },
   "viewerEvidence": {

@@ -147,6 +147,10 @@ The PDF/nightly workflows only schedule Dagger calls. Target-evidence export is
 manual. Native and WASM qualification and
 packaged-facade checks still run on every push/PR through the generated adapter.
 
+Codec and nested-SVG mutation fuzzing runs through `dagger api call nightly
+asset-fuzz`; its PR smoke, seed matrix, resource envelope and failure-replay
+procedure are documented in [asset fuzzing](asset-fuzzing.md).
+
 ## Verification of this migration
 
 The following passed through Dagger on the working tree based on `11c1901`:
