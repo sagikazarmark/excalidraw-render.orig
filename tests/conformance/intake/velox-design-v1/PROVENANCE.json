@@ -1,0 +1,43 @@
+{
+  "identity": "velox-design",
+  "upstream": {
+    "repository": "https://github.com/jpillora/velox",
+    "path": "go/design.excalidraw",
+    "commit": "44995d4038b41e720168f6e8bb614288dcee9ccd",
+    "committed": "2025-04-24T12:39:46Z",
+    "permalink": "https://github.com/jpillora/velox/blob/44995d4038b41e720168f6e8bb614288dcee9ccd/go/design.excalidraw",
+    "raw": "https://raw.githubusercontent.com/jpillora/velox/44995d4038b41e720168f6e8bb614288dcee9ccd/go/design.excalidraw"
+  },
+  "license": {
+    "spdx": "MIT",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 54699,
+    "sha256": "3c4a336c41bf1ea0a41e7f8464430a1b7cb01baadc8720173972d2ebed9f1ead",
+    "source": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor",
+    "schema_version": 2,
+    "elements": 53,
+    "element_types": {
+      "arrow": 11,
+      "rectangle": 19,
+      "text": 23
+    },
+    "font_families": [
+      8
+    ],
+    "fill_styles": [
+      "solid"
+    ],
+    "roughness": [
+      0
+    ],
+    "files": 0,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "Comic Shanns fontFamily 8 throughout; rectangle/arrow/text architecture sketch"
+}

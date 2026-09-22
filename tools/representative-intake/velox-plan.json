@@ -1,0 +1,25 @@
+{
+  "schema": "excalidraw-render/representative-intake-plan/v1",
+  "case_id": "representative.velox-design.v1",
+  "source_identity": "velox-design",
+  "purpose": "A real architecture board with dense arrow endpoint bindings, bound Comic Shanns text and rounded rectangles, complementing the approved frames/text/assets representative.",
+  "sanitization": {
+    "operation": "reviewed-no-change",
+    "review_notes": "Retain upstream bytes verbatim. The 23 text elements describe the Velox client/server architecture; all element links are null, there are no embedded assets, and appState contains grid controls and a white background only. Reuses the pool content review in tests/public-scenes/README.md; promotion sign-off remains pending. No rendering-affecting fields or original number tokens were rewritten."
+  },
+  "variants": [
+    {"id": "light", "color_mode": "light", "include_background": true, "padding": 10, "scale": 1, "metadata": true},
+    {"id": "dark", "color_mode": "dark", "include_background": true, "padding": 10, "scale": 1, "metadata": true}
+  ],
+  "formats": ["svg", "png", "pdf"],
+  "applicability": {
+    "frame_exports": "Not applicable: this unchanged upstream board contains no ordinary or magic frames.",
+    "assets": "Not applicable: files is empty and there are no image elements. The approved Stage-4 representative supplies complementary nested-SVG and raster coverage.",
+    "sizing": "Propose native scale one and default padding for both modes. Additional sizing/resource variants are deferred until the first reference dimensions and whole/crop judgments are reviewed."
+  },
+  "regions": [
+    {"id": "whole", "class": "mixed-representative", "element_ids": []},
+    {"id": "client-typography", "class": "typography", "element_ids": ["4DtfnoJqfqmS9i77PiZXB"]},
+    {"id": "client-binding", "class": "geometry/image", "element_ids": ["TQgY1veWt3TS0QhLqucyH", "zmn0HQb9Lpi-dAcRCscJX"]}
+  ]
+}

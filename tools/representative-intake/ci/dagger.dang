@@ -1,0 +1,36 @@
+"""
+Verify representative intake independently of approval-pinned release machinery.
+"""
+type RepresentativeIntake {
+  let container: Container!
+
+  new(ws: Workspace!) {
+    self.container = Dagger
+      .rust(
+        ws: ws,
+        version: "1.97.1-slim-trixie",
+        container: Dagger
+          .container(platform: "linux/amd64")
+          .from("rust:1.97.1-slim-trixie")
+          .withExec(["bash", "-eu", "-c", "apt-get update && apt-get install -y --no-install-recommends git python3"]),
+      )
+      .withEnvVariable("CARGO_BUILD_JOBS", "2")
+      .container
+    self
+  }
+
+  """
+  Run command-boundary tests with a real renderer and validate retained intake.
+  """
+  verify: String! @check {
+    self
+      .container
+      .withExec(["cargo", "build", "--locked", "-p", "excalidraw-render-cli", "--target-dir", "/work/src/target"])
+      .withEnvVariable("REPRESENTATIVE_RENDERER", "/work/src/target/debug/excalidraw-render")
+      .withExec(["python3", "-B", "-m", "unittest", "discover", "-s", "tools/representative-intake", "-p", "test_intake.py"])
+      .withExec(["python3", "-B", "tools/representative-intake/intake.py", "verify", "tests/conformance/intake/velox-design-v1"])
+      .withExec(["python3", "-B", "tools/representative-intake/intake.py", "capture", "tests/conformance/intake/velox-design-v1", "/work/src/target/debug/excalidraw-render", "/tmp/velox-intake-capture"])
+      .withExec(["python3", "-B", "tools/representative-intake/intake.py", "verify-capture", "tests/conformance/intake/velox-design-v1", "/tmp/velox-intake-capture"])
+      .combinedOutput
+  }
+}
