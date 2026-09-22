@@ -1,0 +1,523 @@
+{
+  "approval": null,
+  "passed": 17,
+  "rows": [
+    {
+      "kind": "horizontal-line",
+      "phase": 0,
+      "reference": [
+        0,
+        255,
+        255,
+        0,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        255,
+        255,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.125,
+      "reference": [
+        0,
+        191,
+        255,
+        64,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        223,
+        255,
+        31,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.233470223713,
+      "reference": [
+        0,
+        191,
+        255,
+        64,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        196,
+        255,
+        58,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.25,
+      "reference": [
+        0,
+        191,
+        255,
+        64,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        191,
+        255,
+        63,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.375,
+      "reference": [
+        0,
+        128,
+        255,
+        128,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        159,
+        255,
+        95,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.5,
+      "reference": [
+        0,
+        128,
+        255,
+        128,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        127,
+        255,
+        127,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.632993081447,
+      "reference": [
+        0,
+        64,
+        255,
+        191,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        93,
+        255,
+        161,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.75,
+      "reference": [
+        0,
+        64,
+        255,
+        191,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        63,
+        255,
+        191,
+        0
+      ]
+    },
+    {
+      "kind": "horizontal-line",
+      "phase": 0.875,
+      "reference": [
+        0,
+        0,
+        255,
+        255,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        31,
+        255,
+        223,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0,
+      "reference": [
+        0,
+        255,
+        255,
+        0,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        255,
+        255,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.125,
+      "reference": [
+        0,
+        223,
+        255,
+        31,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        223,
+        255,
+        31,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.233470223713,
+      "reference": [
+        0,
+        195,
+        255,
+        59,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        196,
+        255,
+        58,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.25,
+      "reference": [
+        0,
+        191,
+        255,
+        63,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        191,
+        255,
+        63,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.375,
+      "reference": [
+        0,
+        159,
+        255,
+        95,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        159,
+        255,
+        95,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.5,
+      "reference": [
+        0,
+        127,
+        255,
+        127,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        127,
+        255,
+        127,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.632993081447,
+      "reference": [
+        0,
+        93,
+        255,
+        161,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        93,
+        255,
+        161,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.75,
+      "reference": [
+        0,
+        63,
+        255,
+        191,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        63,
+        255,
+        191,
+        0
+      ]
+    },
+    {
+      "kind": "vertical-line",
+      "phase": 0.875,
+      "reference": [
+        0,
+        31,
+        255,
+        223,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        31,
+        255,
+        223,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0,
+      "reference": [
+        0,
+        255,
+        255,
+        0,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        255,
+        255,
+        0,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.125,
+      "reference": [
+        0,
+        192,
+        255,
+        64,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        223,
+        255,
+        31,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.233470223713,
+      "reference": [
+        0,
+        192,
+        255,
+        64,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        196,
+        255,
+        58,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.25,
+      "reference": [
+        0,
+        192,
+        255,
+        64,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        191,
+        255,
+        63,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.375,
+      "reference": [
+        0,
+        128,
+        255,
+        128,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        159,
+        255,
+        95,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.5,
+      "reference": [
+        0,
+        128,
+        255,
+        128,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        127,
+        255,
+        127,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.632993081447,
+      "reference": [
+        0,
+        64,
+        255,
+        192,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        93,
+        255,
+        161,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.75,
+      "reference": [
+        0,
+        64,
+        255,
+        192,
+        0
+      ],
+      "within_one_alpha": true,
+      "zeno": [
+        0,
+        63,
+        255,
+        191,
+        0
+      ]
+    },
+    {
+      "kind": "rounded-rectangle",
+      "phase": 0.875,
+      "reference": [
+        0,
+        0,
+        255,
+        255,
+        0
+      ],
+      "within_one_alpha": false,
+      "zeno": [
+        0,
+        31,
+        255,
+        223,
+        0
+      ]
+    }
+  ],
+  "schema": "excalidraw-render/png-raster-reuse-probe/v1",
+  "stroke_expansion": "tiny-skia-path 0.11.4, resolution scale 4",
+  "total": 27,
+  "zeno": "0.3.3"
+}
