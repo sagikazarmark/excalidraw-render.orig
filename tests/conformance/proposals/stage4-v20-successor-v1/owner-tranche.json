@@ -1,0 +1,119 @@
+{
+  "schema": "excalidraw-render/ownership-tranche/v1",
+  "approval": null,
+  "exceptions_subject_sha256": "sha256:5cb51c8c0ee4175edb6c490d8417d1786437732a5d52adb00b37d04680a0446a",
+  "owners": [
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "bmp_row_order_is_its_only_orientation",
+      "ids": [
+        "codec:bmp:orientation"
+      ],
+      "rationale": "BMP orientation facet: BMP carries no orientation metadata; bottom-up and top-down row order, direct and run-length, match the reference exactly in all formats (9 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "bmp_color_spaces_apply_as_the_reference_applies_them",
+      "ids": [
+        "codec:bmp:color-profile"
+      ],
+      "rationale": "BMP color-profile facet: sRGB, Win, LINK and unknown color space types draw as sRGB; calibrated RGB is color-managed unless its endpoints are unusable; embedded ICC profiles apply, and one outside the file or unparseable rejects; matched against the reference in all formats (20 reference rows), three color-managed rows under approved exact-ceiling exceptions. See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "bmp_alpha_matches_the_reference",
+      "ids": [
+        "codec:bmp:alpha"
+      ],
+      "rationale": "BMP alpha facet: alpha only from a V3+ alpha mask or ALPHABITFIELDS, all-zero alpha drawn opaque, the first non-zero alpha clearing earlier zero-alpha pixels, transparent run-length holes, exact PDF alpha and soft mask (24 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "bmp_default_image_matches_the_reference",
+      "ids": [
+        "codec:bmp:default-frame"
+      ],
+      "rationale": "BMP default-frame facet: every accepted depth, compression and mask layout draws its one image exactly as the reference draws it in PNG and PDF (22 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "bmp_containers_and_malformed_payloads_match_the_reference",
+      "ids": [
+        "codec:bmp:malformed"
+      ],
+      "rationale": "BMP malformed facet: header, palette, mask and run-length faults the reference tolerates draw exactly as it draws them; faults it rejects, and pixel data it paints only partially (the declared divergence, #85), recover exactly as a missing asset in every format (42 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "bmp_svg_embeds_every_admitted_payload_exactly",
+      "ids": [
+        "codec:bmp:passthrough"
+      ],
+      "rationale": "BMP passthrough facet: direct SVG embeds the exact source octets of every row the reference draws, and recovers exactly for the rest (66 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_limit_contract",
+      "function": "bmp_limits_have_exact_boundaries_and_precedence",
+      "ids": [
+        "codec:bmp:limits"
+      ],
+      "rationale": "BMP limits facet: byte, dimension, pixel and work equality and first crossing with exact reports and missing-asset recovery for direct and RLE8 BMP in every format, and the 13.2 multi-crossing precedence. See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "ico_orientation_metadata_is_ignored_as_the_reference_ignores_it",
+      "ids": [
+        "codec:ico:orientation"
+      ],
+      "rationale": "ICO orientation facet: a PNG entry EXIF orientation is ignored and a top-down DIB entry draws upright, matching the reference exactly in all formats (6 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "ico_color_profiles_apply_as_png_entries_apply_them",
+      "ids": [
+        "codec:ico:color-profile"
+      ],
+      "rationale": "ICO color-profile facet: DIB entries are sRGB; PNG entries follow the PNG color rules and sRGB-equivalent ones match the reference exactly; a PNG entry needing a color transform, which the reference paints fully transparent, draws exactly as the same PNG standalone (the declared divergence) (12 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "ico_alpha_matches_the_reference",
+      "ids": [
+        "codec:ico:alpha"
+      ],
+      "rationale": "ICO alpha facet: 32-bit entry alpha, the AND mask where the alpha is all zero or the depth has none, exact PDF alpha and soft mask, matching the reference (9 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "ico_default_entry_matches_the_reference",
+      "ids": [
+        "codec:ico:default-frame"
+      ],
+      "rationale": "ICO default-frame facet: the largest entry, then the deepest, then the earliest, for icons and cursors, matching the reference selection and pixels (8 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "ico_containers_and_malformed_payloads_match_the_reference",
+      "ids": [
+        "codec:ico:malformed"
+      ],
+      "rationale": "ICO malformed facet: directory and entry faults the reference tolerates draw exactly as it draws them; faults it rejects, and entries it loads but cannot decode or paints partially (the declared divergence, #85), recover exactly as a missing asset (15 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_container_contract",
+      "function": "ico_svg_embeds_every_admitted_payload_exactly",
+      "ids": [
+        "codec:ico:passthrough"
+      ],
+      "rationale": "ICO passthrough facet: direct SVG embeds the exact source octets of every row the reference draws, and recovers exactly for the rest (38 reference rows). See docs/research/bmp-ico-umbrella-facets.md."
+    },
+    {
+      "module": "bmp_ico_limit_contract",
+      "function": "ico_limits_have_exact_boundaries_and_precedence",
+      "ids": [
+        "codec:ico:limits"
+      ],
+      "rationale": "ICO limits facet: byte, dimension, pixel and work equality and first crossing with exact reports and missing-asset recovery for DIB and PNG icons, measured on the selected entry, and the 13.2 multi-crossing precedence. See docs/research/bmp-ico-umbrella-facets.md."
+    }
+  ]
+}
