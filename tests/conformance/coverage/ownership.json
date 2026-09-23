@@ -44105,8 +44105,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44163,8 +44163,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44279,8 +44279,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44337,8 +44337,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44366,8 +44366,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44395,8 +44395,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44501,8 +44501,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44559,8 +44559,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44733,8 +44733,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44762,8 +44762,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -44791,8 +44791,8 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
           },
-          "binary": "fast",
           "function": "corrected_composition_cells_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -48554,177 +48554,639 @@
     {
       "id": "exception:focused.arrow-suite.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.bidi-alignment.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.bidi-text.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.bound-text-containers.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.cartoonist-arrowheads.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.cartoonist-roughness.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.cjk-propagation.v1:max-dimension-200:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.dark-mode-frames.v1:dark-mode:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.dark-mode-frames.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.ellipse-diamond-fills.v1:dark-mode:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.ellipse-diamond-fills.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.embeddable-links.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.emoji-fallback.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.font-families-virgil-lilita-comic.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.frame-name-truncation.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.freedraw-loop-fills.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.helvetica-text.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.iframe-element.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.legacy-line-height.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.missing-glyph.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.rough-fillers-dashed-zigzag-line.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
       "id": "exception:focused.roundness-records.v1:default:png:whole",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Case approval exists, but the ownership adapter must bind the format/viewer/region comparator and stale-exception assertion before assigning this obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
+            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+          },
+          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "binary": "parity_registered_case_png",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "parity_registered_case_png",
+            "every_registered_scene_case_matches_its_official_direct_png",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -48820,16 +49282,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v14",
+            "case": "representative.stage4-frames-text-assets.v15",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "359467c8127accf9b6073524ddabed023be0358e67087d80fc903e9d589d173f"
+              "sha256": "84fbaedca323d120d2e16f84c58b157f34bf513fe09e4215230efbfa2febb54c"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v14/manifest.json",
-              "sha256": "28a50a1ae71119a035b3b529e12128fda24bb6685ed7e3494794d2b10b73808e"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v15/manifest.json",
+              "sha256": "4466e141c86a6d721a46611fa727e463857af9a79f7bd434a678dc5e1c4b9911"
             },
-            "approval_subject_sha256": "sha256:0b9f6a7d6eb1fd176d412855aecdb63b309ed260ae4d552054dbef794deb74ba",
+            "approval_subject_sha256": "sha256:d4a1cd3430d038c1e6d219de22e9f6ceb021eceb43d76af42a25887476b5e30e",
             "command": [
               "cargo",
               "run",
@@ -48840,7 +49302,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v14"
+              "tests/conformance/candidates/stage4-frames-text-assets-v15"
             ]
           }
         },

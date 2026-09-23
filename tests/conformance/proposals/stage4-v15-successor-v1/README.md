@@ -1,6 +1,10 @@
-# Stage-4 representative V15 and exception-owner tranche — pending approval
+# Stage-4 representative V15 and exception-owner tranche — approved and applied
 
-Two exact subjects for one #85 decision. Nothing here is approved or applied.
+Two exact subjects for one #85 decision, approved by the user on 2026-09-23
+([#85 comment](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5795346165))
+and applied with `apply.py`. After application `candidate-verify` for V15, all
+xtask tests and `verify-ownership` (2343 assigned/excluded, 75 gaps) passed.
+The rest of this README preserves the reviewed proposal.
 
 | Subject | SHA-256 |
 | --- | --- |
