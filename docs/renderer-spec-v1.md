@@ -761,6 +761,18 @@ counts as absent, the first valid one wins, and `mDCV` must precede `PLTE`.
 Content whose peak does not exceed the 203-nit reference white is not tone
 mapped.
 
+WebP is read as the pinned reference's demuxer reads it:
+- Bytes after the declared RIFF end are ignored.
+- A reserved VP8X flag bit rejects the file. Reserved VP8X bytes and reserved
+  `ANMF` bits are ignored.
+- A frame's size is its bitstream's.
+- `EXIF`, `XMP ` and unknown chunks are ignored, whatever the VP8X flags
+  declare.
+
+WebP has no orientation: its EXIF is never applied. An embedded ICC profile
+applies only to a still image whose VP8X ICC flag is set, and only when it
+parses as an RGB profile; otherwise it is ignored silently.
+
 PNG and PDF emit one informational `image.animation-flattened` occurrence for
 each actually rendered multi-frame asset occurrence. Static, one-frame, and
 unreferenced assets remain silent. PDF uses the same default-frame, orientation,

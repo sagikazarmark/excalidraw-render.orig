@@ -750,9 +750,10 @@ mod webp_codec {
     #[test]
     fn untransformed_webp_truncates_only_the_draw_time_copy() {
         let source = [[1, 128, 128, 1], [255, 129, 65, 128]];
+        // The EXIF orientation is ignored, as the reference ignores it.
         let webp = webp_with_metadata(2, 1, &source, None, Some(exif_orientation_with_header(6)));
         let asset = decode("image/webp", &webp);
-        assert_eq!((asset.width, asset.height), (1, 2));
+        assert_eq!((asset.width, asset.height), (2, 1));
         assert_eq!(pixels(&asset), source);
         assert_eq!(
             asset.premultiplied_rgba.as_deref().unwrap().as_slice(),
@@ -817,7 +818,8 @@ mod webp_codec {
     }
 
     #[test]
-    fn exif_orientation_swaps_the_dimensions_and_turns_the_pixels() {
+    fn exif_orientation_is_ignored_as_the_reference_ignores_it() {
+        // Blink's WebP decoder never applies EXIF orientation.
         let webp = webp_with_metadata(
             4,
             1,
@@ -827,7 +829,7 @@ mod webp_codec {
         );
 
         let asset = decode("image/webp", &webp);
-        assert_eq!((asset.width, asset.height), (1, 4));
+        assert_eq!((asset.width, asset.height), (4, 1));
         assert_eq!(pixels(&asset), [RED, RED, BLUE, BLUE]);
 
         let validated = resolve_for_svg("image/webp", &webp);
@@ -859,7 +861,8 @@ mod webp_codec {
     }
 
     #[test]
-    fn later_frames_outside_the_canvas_reserved_flags_and_a_missing_alpha_flag_are_rejected() {
+    fn later_frames_outside_the_canvas_are_rejected_but_reserved_frame_bits_and_the_alpha_flag_are_not(
+    ) {
         let animated = animated_webp(
             1,
             1,
@@ -872,16 +875,20 @@ mod webp_codec {
 
         let mut outside_canvas = animated.clone();
         outside_canvas[second_frame] = 1;
+        assert_eq!(
+            failure_for("image/webp", &outside_canvas, OutputFormat::Svg),
+            ResolveError::WebPDecodeFailed
+        );
+        // libwebp's demuxer ignores reserved ANMF bits, and Blink draws an
+        // animation whatever its VP8X alpha flag says.
         let mut reserved_frame_flag = animated.clone();
         reserved_frame_flag[second_frame + 15] |= 0x80;
         let mut missing_alpha_flag = animated;
         missing_alpha_flag[20] &= !0x10;
-
-        for webp in [outside_canvas, reserved_frame_flag, missing_alpha_flag] {
-            assert_eq!(
-                failure_for("image/webp", &webp, OutputFormat::Svg),
-                ResolveError::WebPDecodeFailed
-            );
+        for webp in [reserved_frame_flag, missing_alpha_flag] {
+            let resolution = resolve_for_png("image/webp", &webp);
+            assert!(resolution.animated);
+            assert_eq!(only_pixel(&resolution.asset), RED);
         }
     }
 }

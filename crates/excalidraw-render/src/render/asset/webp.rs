@@ -1,24 +1,170 @@
 //! The WebP codec: RIFF chunk walking that validates the container and each
-//! animation frame as a standalone image, the animation work estimate,
-//! EXIF-orientation and ICC reads through `image-webp`, and the default frame
-//! decode with color normalization and orientation applied.
+//! animation frame as a standalone image, the animation work estimate, the
+//! embedded ICC profile, and the default frame decode with color
+//! normalization applied.
+//!
+//! The pinned reference reads WebP through libwebp's demuxer and Blink's
+//! `WEBPImageDecoder`. `canonical_webp` reduces a container to what they
+//! interpret before `image-webp` sees it: bytes after the declared RIFF end are
+//! ignored, a VP8X reserved flag bit rejects the file, reserved ANMF flag bits
+//! are ignored, a frame's size is its bitstream's, and ICCP, EXIF, XMP and
+//! unknown chunks and their flags are dropped. Blink never applies WebP EXIF
+//! orientation. It applies an ICC profile only for a still image whose VP8X
+//! ICC flag is set, and only when the profile parses as an RGB profile;
+//! otherwise the profile is ignored.
 
+use std::borrow::Cow;
 use std::io::Cursor;
 use std::sync::Arc;
 
 use image_webp::{DecodingError as WebPDecodingError, WebPDecoder};
 
 use super::color::{finish_rgba, normalize_rgba, ColorNormalization};
-use super::orientation::{exif_orientation, orient_rgba, oriented_dimensions};
 use super::{decoder_workspace_bytes, try_copy, DecodedRaster, ResolveError};
 
 pub(super) const WEBP_RIFF_SIGNATURE: &[u8; 4] = b"RIFF";
 pub(super) const WEBP_SIGNATURE: &[u8; 4] = b"WEBP";
 
+const VP8X_VALID_FLAGS: u8 = 0x3e;
+const VP8X_ICC_FLAG: u8 = 0x20;
+const VP8X_ALPHA_FLAG: u8 = 0x10;
+const VP8X_ANIMATION_FLAG: u8 = 0x02;
+
 #[derive(Clone, Copy)]
 pub(super) struct WebPSemantics {
     pub(super) animation_frames: u32,
-    pub(super) orientation: Option<u8>,
+}
+
+/// The declared RIFF extent; libwebp's demuxer never reads past it.
+fn riff_extent(bytes: &[u8]) -> Result<&[u8], ResolveError> {
+    let riff_size = u32::from_le_bytes(
+        bytes
+            .get(4..8)
+            .ok_or(ResolveError::WebPDecodeFailed)?
+            .try_into()
+            .map_err(|_| ResolveError::WebPDecodeFailed)?,
+    );
+    if riff_size < 8 {
+        return Err(ResolveError::WebPDecodeFailed);
+    }
+    let end = usize::try_from(riff_size)
+        .ok()
+        .and_then(|size| size.checked_add(8))
+        .ok_or(ResolveError::WebPDecodeFailed)?;
+    bytes.get(..end).ok_or(ResolveError::WebPDecodeFailed)
+}
+
+/// The bitstream's own frame size: VP8L's 14-bit fields, or a VP8 key frame's.
+fn bitstream_dimensions(chunks: &[u8]) -> Option<(u32, u32)> {
+    let (kind, data, next) = webp_chunk_at(chunks, 0).ok()?;
+    let (kind, data) = if kind == *b"ALPH" {
+        let (kind, data, _) = webp_chunk_at(chunks, next).ok()?;
+        (kind, data)
+    } else {
+        (kind, data)
+    };
+    match &kind {
+        b"VP8L" if data.first() == Some(&0x2f) => {
+            let bits = u32::from_le_bytes(data.get(1..5)?.try_into().ok()?);
+            Some(((bits & 0x3fff) + 1, ((bits >> 14) & 0x3fff) + 1))
+        }
+        b"VP8 " if data.get(3..6) == Some(&[0x9d, 0x01, 0x2a]) => {
+            let size = |at: usize| {
+                Some(u32::from(
+                    u16::from_le_bytes(data.get(at..at + 2)?.try_into().ok()?) & 0x3fff,
+                ))
+            };
+            Some((size(6)?, size(8)?))
+        }
+        _ => None,
+    }
+}
+
+/// The container as the pinned reference interprets it (see the module
+/// documentation). Simple-format files only lose bytes past the RIFF end.
+pub(super) fn canonical_webp(bytes: &[u8]) -> Result<Cow<'_, [u8]>, ResolveError> {
+    let bytes = riff_extent(bytes)?;
+    let (first, vp8x, _) = webp_chunk_at(bytes, 12)?;
+    if first != *b"VP8X" {
+        return Ok(Cow::Borrowed(bytes));
+    }
+    let flags = *vp8x.first().ok_or(ResolveError::WebPDecodeFailed)?;
+    if flags & !VP8X_VALID_FLAGS != 0 {
+        return Err(ResolveError::WebPDecodeFailed);
+    }
+    let mut body = Vec::new();
+    body.try_reserve_exact(bytes.len())
+        .map_err(|_| ResolveError::Memory)?;
+    body.extend_from_slice(b"WEBP");
+    let mut offset = 12_usize;
+    while offset < bytes.len() {
+        let (kind, data, next) = webp_chunk_at(bytes, offset)?;
+        let mut data = Cow::Borrowed(data);
+        match &kind {
+            b"VP8X" => {
+                let data = data.to_mut();
+                data[0] = flags & (VP8X_ALPHA_FLAG | VP8X_ANIMATION_FLAG);
+            }
+            b"ANMF" => {
+                if data.len() < 16 {
+                    return Err(ResolveError::WebPDecodeFailed);
+                }
+                let dimensions = bitstream_dimensions(&data[16..]);
+                let data = data.to_mut();
+                data[15] &= 0x03;
+                if let Some((width, height)) = dimensions {
+                    data[6..9].copy_from_slice(&(width - 1).to_le_bytes()[..3]);
+                    data[9..12].copy_from_slice(&(height - 1).to_le_bytes()[..3]);
+                }
+            }
+            b"ANIM" | b"ALPH" | b"VP8 " | b"VP8L" => {}
+            _ => {
+                offset = next;
+                continue;
+            }
+        }
+        let length = u32::try_from(data.len()).map_err(|_| ResolveError::WebPDecodeFailed)?;
+        body.extend_from_slice(&kind);
+        body.extend_from_slice(&length.to_le_bytes());
+        body.extend_from_slice(&data);
+        if data.len() & 1 == 1 {
+            body.push(0);
+        }
+        offset = next;
+    }
+    let riff_size = u32::try_from(body.len()).map_err(|_| ResolveError::WebPDecodeFailed)?;
+    let mut canonical = Vec::new();
+    canonical
+        .try_reserve_exact(body.len() + 8)
+        .map_err(|_| ResolveError::Memory)?;
+    canonical.extend_from_slice(b"RIFF");
+    canonical.extend_from_slice(&riff_size.to_le_bytes());
+    canonical.extend_from_slice(&body);
+    Ok(Cow::Owned(canonical))
+}
+
+/// The ICC profile Blink applies: the first ICCP chunk of a still extended
+/// image whose VP8X ICC flag is set.
+pub(super) fn webp_icc_profile(bytes: &[u8]) -> Result<Option<&[u8]>, ResolveError> {
+    let bytes = riff_extent(bytes)?;
+    let (first, vp8x, _) = webp_chunk_at(bytes, 12)?;
+    let flags = if first == *b"VP8X" {
+        vp8x.first().copied()
+    } else {
+        None
+    };
+    if flags.is_none_or(|flags| flags & VP8X_ICC_FLAG == 0 || flags & VP8X_ANIMATION_FLAG != 0) {
+        return Ok(None);
+    }
+    let mut offset = 12_usize;
+    while offset < bytes.len() {
+        let (kind, data, next) = webp_chunk_at(bytes, offset)?;
+        if kind == *b"ICCP" {
+            return Ok(Some(data));
+        }
+        offset = next;
+    }
+    Ok(None)
 }
 
 pub(super) fn webp_decoder(bytes: &[u8]) -> Result<WebPDecoder<Cursor<&[u8]>>, ResolveError> {
@@ -35,7 +181,8 @@ pub(super) fn read_webp_dimensions(bytes: &[u8]) -> Result<(u32, u32), ResolveEr
     if !bytes.starts_with(WEBP_RIFF_SIGNATURE) || bytes.get(8..12) != Some(WEBP_SIGNATURE) {
         return Err(ResolveError::Unsupported);
     }
-    let decoder = webp_decoder(bytes)?;
+    let bytes = canonical_webp(bytes)?;
+    let decoder = webp_decoder(&bytes)?;
     let dimensions = decoder.dimensions();
     if dimensions.0 == 0 || dimensions.1 == 0 {
         return Err(ResolveError::WebPDecodeFailed);
@@ -44,8 +191,9 @@ pub(super) fn read_webp_dimensions(bytes: &[u8]) -> Result<(u32, u32), ResolveEr
 }
 
 pub(super) fn webp_animation_validation_work(bytes: &[u8]) -> Result<u64, ResolveError> {
-    let decoder = webp_decoder(bytes)?;
-    let (frames, additional_frame_pixels, _) = scan_webp_animation(bytes, decoder.dimensions())?;
+    let bytes = canonical_webp(bytes)?;
+    let decoder = webp_decoder(&bytes)?;
+    let (frames, additional_frame_pixels) = scan_webp_animation(&bytes, decoder.dimensions())?;
     if frames != decoder.num_frames() {
         return Err(ResolveError::WebPDecodeFailed);
     }
@@ -56,7 +204,7 @@ pub(super) fn webp_animation_validation_work(bytes: &[u8]) -> Result<u64, Resolv
         })
 }
 
-fn scan_webp_animation(bytes: &[u8], canvas: (u32, u32)) -> Result<(u32, u64, bool), ResolveError> {
+fn scan_webp_animation(bytes: &[u8], canvas: (u32, u32)) -> Result<(u32, u64), ResolveError> {
     let declared_size = usize::try_from(u32::from_le_bytes(
         bytes
             .get(4..8)
@@ -71,14 +219,10 @@ fn scan_webp_animation(bytes: &[u8], canvas: (u32, u32)) -> Result<(u32, u64, bo
     let mut offset = 12_usize;
     let mut frames = 0_u32;
     let mut additional_frame_pixels = 0_u64;
-    let mut animation_has_alpha = false;
     while offset < bytes.len() {
         let (kind, data, next) = webp_chunk_at(bytes, offset)?;
         if kind == *b"ANMF" {
             let frame_header = data.get(..16).ok_or(ResolveError::WebPDecodeFailed)?;
-            if frame_header[15] & !0x03 != 0 {
-                return Err(ResolveError::WebPDecodeFailed);
-            }
             let x = read_webp_u24(&frame_header[..3])?.saturating_mul(2);
             let y = read_webp_u24(&frame_header[3..6])?.saturating_mul(2);
             let width = u64::from(read_webp_u24(&frame_header[6..9])?).saturating_add(1);
@@ -88,8 +232,7 @@ fn scan_webp_animation(bytes: &[u8], canvas: (u32, u32)) -> Result<(u32, u64, bo
             {
                 return Err(ResolveError::WebPDecodeFailed);
             }
-            animation_has_alpha |=
-                validate_webp_frame_chunks(data.get(16..).ok_or(ResolveError::WebPDecodeFailed)?)?;
+            validate_webp_frame_chunks(data.get(16..).ok_or(ResolveError::WebPDecodeFailed)?)?;
             frames = frames
                 .checked_add(1)
                 .ok_or(ResolveError::WebPDecodeFailed)?;
@@ -108,7 +251,7 @@ fn scan_webp_animation(bytes: &[u8], canvas: (u32, u32)) -> Result<(u32, u64, bo
     if offset != bytes.len() {
         return Err(ResolveError::WebPDecodeFailed);
     }
-    Ok((frames, additional_frame_pixels, animation_has_alpha))
+    Ok((frames, additional_frame_pixels))
 }
 
 fn webp_chunk_at(bytes: &[u8], offset: usize) -> Result<([u8; 4], &[u8], usize), ResolveError> {
@@ -189,19 +332,13 @@ fn read_webp_u24(bytes: &[u8]) -> Result<u32, ResolveError> {
 }
 
 pub(super) fn validate_webp(bytes: &[u8]) -> Result<(u32, u32, WebPSemantics), ResolveError> {
+    let bytes = canonical_webp(bytes)?;
+    let bytes = bytes.as_ref();
     let mut decoder = webp_decoder(bytes)?;
     let (width, height) = decoder.dimensions();
     let animation_frames = decoder.num_frames().max(1);
-    let orientation = decoder
-        .exif_metadata()
-        .map_err(map_webp_error)?
-        .as_deref()
-        .and_then(webp_exif_orientation);
     if decoder.is_animated() {
-        let (_, _, frames_have_alpha) = scan_webp_animation(bytes, (width, height))?;
-        if decoder.has_alpha() != frames_have_alpha {
-            return Err(ResolveError::WebPDecodeFailed);
-        }
+        scan_webp_animation(bytes, (width, height))?;
         validate_webp_animation_frames(bytes)?;
     } else {
         let output_size = decoder.output_buffer_size().ok_or(ResolveError::Memory)?;
@@ -212,15 +349,7 @@ pub(super) fn validate_webp(bytes: &[u8]) -> Result<(u32, u32, WebPSemantics), R
         output.resize(output_size, 0);
         decoder.read_image(&mut output).map_err(map_webp_error)?;
     }
-    let (width, height) = oriented_dimensions(width, height, orientation.unwrap_or(1));
-    Ok((
-        width,
-        height,
-        WebPSemantics {
-            animation_frames,
-            orientation,
-        },
-    ))
+    Ok((width, height, WebPSemantics { animation_frames }))
 }
 
 fn validate_webp_animation_frames(bytes: &[u8]) -> Result<(), ResolveError> {
@@ -252,9 +381,6 @@ fn validate_webp_animation_frame(frame: &[u8]) -> Result<(), ResolveError> {
 
 fn standalone_webp_frame(frame: &[u8]) -> Result<(Vec<u8>, u32, u32), ResolveError> {
     let frame_header = frame.get(..16).ok_or(ResolveError::WebPDecodeFailed)?;
-    if frame_header[15] & !0x03 != 0 {
-        return Err(ResolveError::WebPDecodeFailed);
-    }
     let width = read_webp_u24(&frame_header[6..9])?.saturating_add(1);
     let height = read_webp_u24(&frame_header[9..12])?.saturating_add(1);
     let chunks = frame.get(16..).ok_or(ResolveError::WebPDecodeFailed)?;
@@ -287,18 +413,15 @@ fn standalone_webp_frame(frame: &[u8]) -> Result<(Vec<u8>, u32, u32), ResolveErr
     Ok((standalone, width, height))
 }
 
-fn webp_exif_orientation(exif: &[u8]) -> Option<u8> {
-    exif_orientation(exif.strip_prefix(b"Exif\0\0").unwrap_or(exif))
-}
-
 pub(super) fn decode_webp_default_frame(
     bytes: &[u8],
     source_width: u32,
     source_height: u32,
     pixels: u64,
     color_normalization: ColorNormalization,
-    orientation: Option<u8>,
 ) -> Result<DecodedRaster, ResolveError> {
+    let bytes = canonical_webp(bytes)?;
+    let bytes = bytes.as_ref();
     let decoder = webp_decoder(bytes)?;
     // Frame zero is drawn onto transparent black. Do not delegate this to the
     // animation compositor: opaque source channels do not imply an opaque
@@ -399,9 +522,6 @@ pub(super) fn decode_webp_default_frame(
     drop(decoded);
     let untransformed = matches!(color_normalization, ColorNormalization::None);
     normalize_rgba(&mut rgba, color_normalization)?;
-    if let Some(orientation) = orientation {
-        rgba = orient_rgba(&rgba, source_width, source_height, orientation)?;
-    }
     if !untransformed {
         return finish_rgba(rgba);
     }

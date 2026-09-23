@@ -1900,16 +1900,16 @@ fn corrected_composition_cells_match_reference() {
 }
 
 #[test]
-fn malformed_10_controls_exact_recovery() {
-    // Source-bound rejection characterization, not normative WebP conformance:
-    // scan_webp_animation/validate_webp_animation_frame reject ANMF reserved
-    // bits, even though the container spec tells readers to ignore them.
+fn malformed_controls_reject_exactly_as_the_reference_rejects_them() {
+    // The pinned reference rejects these nine controls (libwebp's demuxer,
+    // including its VP8X valid-flag mask), and so does the renderer, with
+    // exact decode-failed recovery. The accepted three are below.
     let (record, _) = evidence();
     let selected: Vec<_> = rows(&record, "controls")
         .iter()
-        .filter(|c| !c["id"].as_str().unwrap().starts_with("vp8x-reserved-"))
+        .filter(|c| !ACCEPTED_CONTROLS.contains(&c["id"].as_str().unwrap()))
         .collect();
-    assert_eq!(selected.len(), 10);
+    assert_eq!(selected.len(), 9);
     for c in selected {
         let source = scene(&packed(&c["webp"]));
         for format in FORMATS {
@@ -1946,20 +1946,24 @@ fn malformed_10_controls_exact_recovery() {
     }
 }
 
+/// Controls the pinned reference accepts: libwebp's demuxer skips the
+/// reserved VP8X bytes, ignores reserved ANMF bits and takes a frame's size
+/// from its bitstream, so each draws exactly like its base.
+const ACCEPTED_CONTROLS: [&str; 3] = [
+    "vp8x-reserved-byte",
+    "anmf-reserved-flag",
+    "intrinsic-frame-mismatch",
+];
+
 #[test]
-fn reserved_vp8x_controls_are_accepted_characterization() {
-    // These controls are uncollected. The container specification tells readers
-    // to ignore reserved fields (Extended File Format, VP8X):
-    // https://developers.google.com/speed/webp/docs/riff_container
-    // The author's intended_strict is not evidence
-    // of a production reject policy. Pin acceptance, not browser color parity.
+fn reserved_and_intrinsic_controls_are_accepted_as_the_reference_accepts_them() {
     let (record, _) = evidence();
     let base = by_id(
         &record,
         "cases",
         "lossless-partial-anim-sub-blend-d1-opaque-ramp",
     );
-    for id in ["vp8x-reserved-flag", "vp8x-reserved-byte"] {
+    for id in ACCEPTED_CONTROLS {
         let c = by_id(&record, "controls", id);
         let wire = packed(&c["webp"]);
         for format in FORMATS {
@@ -1971,7 +1975,7 @@ fn reserved_vp8x_controls_are_accepted_characterization() {
                 assert_eq!(
                     bytes,
                     render(&base["scene"], format).0,
-                    "{id}: ignored reserved field"
+                    "{id}: draws like its base"
                 );
             }
         }

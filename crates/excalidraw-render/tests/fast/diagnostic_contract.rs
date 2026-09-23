@@ -1460,7 +1460,8 @@ fn invalid_image_profiles_report_unsupported_recovery() {
                     json!([element]),
                     json!({"file":{"id":"file","created":1,"mimeType":mime,"dataURL":data}}),
                 );
-                let rows = if format == OutputFormat::Svg {
+                // Blink ignores a WebP profile it cannot parse (#85).
+                let rows = if format == OutputFormat::Svg || mime == "image/webp" {
                     json!([])
                 } else {
                     json!([image_expected(

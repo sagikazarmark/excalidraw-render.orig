@@ -48,9 +48,8 @@ use png::{
     PngSemantics, PNG_SIGNATURE,
 };
 use webp::{
-    decode_webp_default_frame, map_webp_error, read_webp_dimensions, validate_webp,
-    webp_animation_validation_work, webp_decoder, WebPSemantics, WEBP_RIFF_SIGNATURE,
-    WEBP_SIGNATURE,
+    decode_webp_default_frame, read_webp_dimensions, validate_webp, webp_animation_validation_work,
+    webp_icc_profile, WebPSemantics, WEBP_RIFF_SIGNATURE, WEBP_SIGNATURE,
 };
 
 use std::collections::BTreeMap;
@@ -286,7 +285,7 @@ impl RasterSemantics {
             Self::Png(semantics) => semantics.orientation,
             Self::Jpeg(semantics) => semantics.orientation,
             Self::Gif(_) => None,
-            Self::WebP(semantics) => semantics.orientation,
+            Self::WebP(_) => None,
             Self::Bmp(_) => None,
             Self::Ico(_) => None,
         }
@@ -660,7 +659,6 @@ impl Cache {
                     validated.source_height,
                     pixels,
                     color_normalization,
-                    validated.semantics.orientation(),
                 ),
                 MediaKind::Bmp => decode_bmp(&validated.bytes, &validated.semantics),
                 MediaKind::Ico => decode_ico(
@@ -1060,7 +1058,6 @@ fn normalize_nested_raster(
             validated.source_height,
             validated.pixels,
             color_normalization,
-            validated.semantics.orientation(),
         ),
         MediaKind::Bmp => decode_bmp(bytes, &validated.semantics),
         MediaKind::Ico => decode_ico(
@@ -1343,15 +1340,24 @@ fn prepare_color_normalization(
                 })
         }
         RasterSemantics::Gif(_) => Ok(ColorNormalization::None),
-        RasterSemantics::WebP(_) => {
-            let mut decoder = webp_decoder(bytes)?;
-            decoder
-                .icc_profile()
-                .map_err(map_webp_error)?
-                .map_or(Ok(ColorNormalization::None), |profile| {
-                    color::parse_icc_profile(&profile)
-                })
-        }
+        RasterSemantics::WebP(_) => match webp_icc_profile(bytes)? {
+            // Blink keeps only a profile that parses as an RGB profile and
+            // otherwise ignores it; only a physical allocation failure stays.
+            Some(profile) => match color::parse_icc_profile(profile) {
+                Ok(ColorNormalization::Profile(profile))
+                    if profile.color_space != moxcms::DataColorSpace::Rgb =>
+                {
+                    Ok(ColorNormalization::None)
+                }
+                Ok(ColorNormalization::Lut(lut)) if lut.first().is_some_and(|lut| lut.gray()) => {
+                    Ok(ColorNormalization::None)
+                }
+                Err(ResolveError::Memory) => Err(ResolveError::Memory),
+                Err(_) => Ok(ColorNormalization::None),
+                other => other,
+            },
+            None => Ok(ColorNormalization::None),
+        },
         RasterSemantics::Bmp(_) => Ok(ColorNormalization::None),
         RasterSemantics::Ico(semantics) => match &semantics.payload {
             IcoPayloadSemantics::Png(png) => {
