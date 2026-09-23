@@ -3340,6 +3340,19 @@ A tolerance exception names one case, variant, format, viewer, and region;
 documents a non-defect cause and immutable approval; and sets ceilings to the
 exact observed count and binary64 score with no margin.
 
+Representative cases (layer 3) apply one further rule before exceptions
+(ADR-0014, #195). A region that fails its class budget still passes when it is
+no larger, on both metrics, than the worst **identical-input control** at that
+same region. Controls are pairs of canonical renderings of the same input:
+the official SVG in the canonical Chromium viewer vs the pure-Rust viewer, the
+official SVG vs the official canvas raster, and, for PDF, the candidate PDF in
+PDFium vs PDF.js. They are computed in the same verification run and through
+the same comparator and crops, never stored as tolerances. The rule
+admits only disagreement the reference authorities and canonical viewers
+themselves show at that spot; the class budgets, and their use for every other
+layer, are unchanged. A region beyond its controls needs an exception, and an
+exception whose region passes by budget or controls is dead and rejected.
+
 Canonical renderer-owned snapshots are generated on
 `x86_64-unknown-linux-gnu` with the pinned Rust toolchain, `--release --locked`,
 and only the public API. Every corpus variant renders twice through fresh

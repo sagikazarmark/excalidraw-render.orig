@@ -31,6 +31,7 @@ import sys
 import tempfile
 import zlib
 
+import controls
 import evidence
 import intake
 
@@ -82,7 +83,7 @@ def materialize(output, bundle, reference, case_id, formats, semantics, reports,
               "intake": {"path": relative(bundle), **intake.descriptor((bundle / "manifest.json").read_bytes())},
               "evidence_record": {"path": relative(evidence_record), **intake.descriptor(evidence_record.read_bytes())},
               "variants": [variant["id"] for variant in plan["variants"]], "formats": formats, "comparisons": comparisons,
-              "semantic_expectations": semantics, "exceptions": exceptions,
+              "judgment_rule": JUDGMENT_RULE, "semantic_expectations": semantics, "exceptions": exceptions,
               "files": inventory(output), "approval": None}
     validate(record, output)
     (output / "case.json").write_bytes(intake.encode(record))
@@ -91,6 +92,7 @@ def materialize(output, bundle, reference, case_id, formats, semantics, reports,
 
 def validate(case, directory):
     intake.require(case["schema"] == SCHEMA and case["layer"] == "representative", "invalid case schema")
+    intake.require(case.get("judgment_rule") == JUDGMENT_RULE, "unsupported judgment rule")
     intake.require(case["files"] == inventory(directory), "retained case files changed")
     bundle = ROOT / case["intake"]["path"]
     intake.require(intake.descriptor((bundle / "manifest.json").read_bytes()) == {k: case["intake"][k] for k in ("bytes", "sha256")},
@@ -135,11 +137,28 @@ def semantics(artifacts, expectations):
             intake.require([box.group(1).decode(), box.group(2).decode()] == expected["pdf_media_box"], f"{key}: PDF MediaBox")
 
 
+JUDGMENT_RULE = "canonical-budget-or-identical-input-controls-or-exception/v1"
+
+
+def control_envelopes(collection, variant, comparison):
+    """Per-region worst case of the identical-input controls for a comparison
+    (`controls.CONTROLS`): changed pixels and SSIM of the canonical viewers and
+    reference authorities rendering the same input."""
+    directory = collection / variant
+    regions = intake.decode((directory / "regions.json").read_bytes())
+    measured = [controls.compare(directory, left, right, "canonical", regions)
+                for left, right in controls.CONTROLS[COMPARISON_FORMATS[comparison]]]
+    return {region: (max(m[region]["changed_pixels"] for m in measured),
+                     min(controls.ssim(m[region]["ssim_bits"]) for m in measured)) for region in measured[0]}
+
+
 def judge(case, collection):
-    """Every registered comparison passes its budget or a matching exception; no exception is dead."""
+    """Each failing region passes by its identical-input control envelope or a
+    matching exact-ceiling exception, in that order; an exception the controls
+    or the budget already cover is dead."""
     record = intake.decode((collection / "viewers.json").read_bytes())
     exceptions = {(e["variant"], e["comparison_id"], e["region"]): e for e in case["exceptions"]}
-    used, failures = set(), []
+    used, controlled, failures, envelopes = set(), [], [], {}
     for judgment in record["judgments"]:
         key = (judgment["variant"], judgment["comparison"])
         if judgment["comparison"] not in case["comparisons"]:
@@ -149,18 +168,25 @@ def judge(case, collection):
         for region, measured in regions:
             if measured["changed_pixels_pass"] and measured["ssim_pass"]:
                 continue
+            ssim = controls.ssim(measured["ssim_bits"])
+            if key not in envelopes:
+                envelopes[key] = control_envelopes(collection, *key)
+            envelope_changed, envelope_ssim = envelopes[key][region]
+            if measured["changed_pixels"] <= envelope_changed and ssim >= envelope_ssim:
+                controlled.append((*key, region))
+                continue
             exception = exceptions.get((*key, region))
-            ssim = struct.unpack(">d", bytes.fromhex(measured["ssim_bits"]))[0]
             if exception and measured["changed_pixels"] <= exception["max_changed_pixels"] \
-                    and ssim >= struct.unpack(">d", bytes.fromhex(exception["minimum_ssim_bits"]))[0]:
+                    and ssim >= controls.ssim(exception["minimum_ssim_bits"]):
                 used.add((*key, region))
             else:
                 failures.append({"variant": key[0], "comparison": key[1], "region": region,
-                                 "changed_pixels": measured["changed_pixels"], "ssim": ssim})
+                                 "changed_pixels": measured["changed_pixels"], "ssim": ssim,
+                                 "control_changed_pixels": envelope_changed, "control_ssim": envelope_ssim})
     dead = sorted(set(exceptions) - used)
     intake.require(not failures, f"comparisons fail: {failures}")
     intake.require(not dead, f"dead exceptions: {dead}")
-    return len(used)
+    return {"within_controls": len(controlled), "exceptions_applied": len(used)}
 
 
 def verify(directory, renderer=None, viewers=False):
@@ -189,7 +215,7 @@ def verify(directory, renderer=None, viewers=False):
         if viewers:
             collection = Path(temporary) / "viewers"
             evidence.collect(bundle, directory / "reference", native, collection)
-            summary["exceptions_applied"] = judge(case, collection)
+            summary.update(judge(case, collection))
             summary["viewers"] = "every registered comparison passes its budget or approved exception"
     print(json.dumps(summary))
 
@@ -254,7 +280,7 @@ def main():
     elif args.command == "judge":
         case = intake.decode((args.directory / "case.json").read_bytes())
         validate(case, args.directory)
-        print(json.dumps({"case_id": case["case_id"], "exceptions_applied": judge(case, args.collection)}))
+        print(json.dumps({"case_id": case["case_id"], **judge(case, args.collection)}))
     elif args.command == "record-approval":
         record_approval(args.directory, args.login, args.date, args.url, args.subject)
     else:

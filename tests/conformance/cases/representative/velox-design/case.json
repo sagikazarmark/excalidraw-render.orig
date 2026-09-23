@@ -1,14 +1,16 @@
 {
   "approval": {
-    "approval_subject_sha256": "sha256:e81cf8568b1343b1aff4e1b898256d209b62e94751de85ad5f1cdd863faa49b2",
-    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5792528837",
+    "approval_subject_sha256": "sha256:656e4f8fa2cdd41c1e21330700a05d3b7aae1540c4d1346199abc5a6df2dfae6",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5793791941",
     "approved_at": "2026-09-23",
     "approved_by": "sagikazarmark"
   },
   "case_id": "representative.velox-design.v2",
   "comparisons": [
     "svg-chromium",
-    "svg-rust"
+    "svg-rust",
+    "pdf-pdfium",
+    "pdf-pdfjs"
   ],
   "compatibility_revision": 1,
   "evidence_record": {
@@ -16,8 +18,93 @@
     "path": "tests/conformance/proposals/velox84-evidence-v2/compact.json",
     "sha256": "a1193922f750b32243f40830a39b446622303a8edab2c6f97308472e40f0f25e"
   },
-  "exceptions": [],
+  "exceptions": [
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 4235,
+      "minimum_ssim_bits": "3fef7f2b6cb3c2d1",
+      "reason": "PDFium rasterization: it sums the overlapping partial coverage of Rough.js double strokes (a horizontal 2 px edge paints about 0.74+1+1 px where Chromium and PDF.js paint 0.25+1+0.78; controls in ../varmq84-pdf-subpixel-exception-v1) and rasterizes Comic Shanns glyphs differently; geometry, colors and glyph positions are correct, and PDF.js matches the official edge exactly.",
+      "region": "whole",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 395,
+      "minimum_ssim_bits": "3fed3887b9b097f0",
+      "reason": "PDFium rasterization: it sums the overlapping partial coverage of Rough.js double strokes (a horizontal 2 px edge paints about 0.74+1+1 px where Chromium and PDF.js paint 0.25+1+0.78; controls in ../varmq84-pdf-subpixel-exception-v1) and rasterizes Comic Shanns glyphs differently; geometry, colors and glyph positions are correct, and PDF.js matches the official edge exactly.",
+      "region": "client-typography",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 719,
+      "minimum_ssim_bits": "3fef272002ea3115",
+      "reason": "PDFium rasterization: it sums the overlapping partial coverage of Rough.js double strokes (a horizontal 2 px edge paints about 0.74+1+1 px where Chromium and PDF.js paint 0.25+1+0.78; controls in ../varmq84-pdf-subpixel-exception-v1) and rasterizes Comic Shanns glyphs differently; geometry, colors and glyph positions are correct, and PDF.js matches the official edge exactly.",
+      "region": "client-binding",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 20,
+      "minimum_ssim_bits": "3fef664e420c84f7",
+      "reason": "PDFium rasterization: it sums the overlapping partial coverage of Rough.js double strokes (a horizontal 2 px edge paints about 0.74+1+1 px where Chromium and PDF.js paint 0.25+1+0.78; controls in ../varmq84-pdf-subpixel-exception-v1) and rasterizes Comic Shanns glyphs differently; geometry, colors and glyph positions are correct, and PDF.js matches the official edge exactly.",
+      "region": "client-arrow",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 3662,
+      "minimum_ssim_bits": "3fef7fce778b1b83",
+      "reason": "PDFium rasterization: it sums the overlapping partial coverage of Rough.js double strokes (a horizontal 2 px edge paints about 0.74+1+1 px where Chromium and PDF.js paint 0.25+1+0.78; controls in ../varmq84-pdf-subpixel-exception-v1) and rasterizes Comic Shanns glyphs differently; geometry, colors and glyph positions are correct, and PDF.js matches the official edge exactly.",
+      "region": "whole",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 375,
+      "minimum_ssim_bits": "3fed3533360d6f81",
+      "reason": "PDFium rasterization: it sums the overlapping partial coverage of Rough.js double strokes (a horizontal 2 px edge paints about 0.74+1+1 px where Chromium and PDF.js paint 0.25+1+0.78; controls in ../varmq84-pdf-subpixel-exception-v1) and rasterizes Comic Shanns glyphs differently; geometry, colors and glyph positions are correct, and PDF.js matches the official edge exactly.",
+      "region": "client-typography",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 632,
+      "minimum_ssim_bits": "3fef2a288680ff1a",
+      "reason": "PDFium rasterization: it sums the overlapping partial coverage of Rough.js double strokes (a horizontal 2 px edge paints about 0.74+1+1 px where Chromium and PDF.js paint 0.25+1+0.78; controls in ../varmq84-pdf-subpixel-exception-v1) and rasterizes Comic Shanns glyphs differently; geometry, colors and glyph positions are correct, and PDF.js matches the official edge exactly.",
+      "region": "client-binding",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 17,
+      "minimum_ssim_bits": "3fef634a3d4ac363",
+      "reason": "PDFium rasterization: it sums the overlapping partial coverage of Rough.js double strokes (a horizontal 2 px edge paints about 0.74+1+1 px where Chromium and PDF.js paint 0.25+1+0.78; controls in ../varmq84-pdf-subpixel-exception-v1) and rasterizes Comic Shanns glyphs differently; geometry, colors and glyph positions are correct, and PDF.js matches the official edge exactly.",
+      "region": "client-arrow",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    }
+  ],
   "files": {
+    "expected-report-pdf.json": {
+      "bytes": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
     "expected-report-svg.json": {
       "bytes": 37,
       "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
@@ -52,13 +139,15 @@
     }
   },
   "formats": [
-    "svg"
+    "svg",
+    "pdf"
   ],
   "intake": {
     "bytes": 2708,
     "path": "tests/conformance/intake/velox-design-v2",
     "sha256": "8619c6c4b720583c63a0fbbaf39dbbd56196b3d3f173556ed94ca70e828ff466"
   },
+  "judgment_rule": "canonical-budget-or-identical-input-controls-or-exception/v1",
   "layer": "representative",
   "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/84",
   "schema": "excalidraw-render/representative-case/v1",

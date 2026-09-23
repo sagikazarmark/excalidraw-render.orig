@@ -1,0 +1,202 @@
+{
+  "approval": {
+    "approval_subject_sha256": "sha256:a18e7fdae9c3e43d274db229c352cef79ddfaa6a9b8548ba858d94f93ebd882e",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5793791941",
+    "approved_at": "2026-09-23",
+    "approved_by": "sagikazarmark"
+  },
+  "case_id": "representative.varmq-queue-diagram.v1",
+  "comparisons": [
+    "svg-chromium",
+    "svg-rust",
+    "pdf-pdfium",
+    "pdf-pdfjs",
+    "png-canvas"
+  ],
+  "compatibility_revision": 1,
+  "evidence_record": {
+    "bytes": 185711,
+    "path": "tests/conformance/proposals/varmq84-evidence-v3/compact.json",
+    "sha256": "ca50b7c6422e3c7cf3abe145c21fa5808b83e0bc0e1ba6fb620f94de657a071a"
+  },
+  "exceptions": [
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 910085,
+      "minimum_ssim_bits": "3feeb7dd4fccb07e",
+      "reason": "Sub-pixel sketch strokes: the cross-hatch lines are 0.25 device px, encoded with the native SVG's exact geometry; both pinned PDF viewers widen every stroke narrower than one device pixel to one pixel (controls in ../../proposals/varmq84-pdf-subpixel-exception-v1), far beyond the identical-input controls. PDFium additionally sums overlapping coverage.",
+      "region": "whole",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 18886,
+      "minimum_ssim_bits": "3fe98f674257a6fe",
+      "reason": "Sub-pixel sketch strokes: the cross-hatch lines are 0.25 device px, encoded with the native SVG's exact geometry; both pinned PDF viewers widen every stroke narrower than one device pixel to one pixel (controls in ../../proposals/varmq84-pdf-subpixel-exception-v1), far beyond the identical-input controls. PDFium additionally sums overlapping coverage.",
+      "region": "worker-arrow",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfjs",
+      "max_changed_pixels": 713345,
+      "minimum_ssim_bits": "3feebeb90023f060",
+      "reason": "Sub-pixel sketch strokes: the cross-hatch lines are 0.25 device px, encoded with the native SVG's exact geometry; both pinned PDF viewers widen every stroke narrower than one device pixel to one pixel (controls in ../../proposals/varmq84-pdf-subpixel-exception-v1), far beyond the identical-input controls. PDFium additionally sums overlapping coverage.",
+      "region": "whole",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfjs-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfjs",
+      "max_changed_pixels": 15156,
+      "minimum_ssim_bits": "3fe9e824845e5a96",
+      "reason": "Sub-pixel sketch strokes: the cross-hatch lines are 0.25 device px, encoded with the native SVG's exact geometry; both pinned PDF viewers widen every stroke narrower than one device pixel to one pixel (controls in ../../proposals/varmq84-pdf-subpixel-exception-v1), far beyond the identical-input controls. PDFium additionally sums overlapping coverage.",
+      "region": "worker-arrow",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfjs-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 732920,
+      "minimum_ssim_bits": "3feea3938041c3f4",
+      "reason": "Sub-pixel sketch strokes as in light (both PDF viewers widen sub-pixel strokes to one device pixel), plus the dark-mode compositing-order difference no PDF lowering can remove (ADR-0012).",
+      "region": "whole",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 15046,
+      "minimum_ssim_bits": "3fe8e74c90d77b09",
+      "reason": "Sub-pixel sketch strokes as in light (both PDF viewers widen sub-pixel strokes to one device pixel), plus the dark-mode compositing-order difference no PDF lowering can remove (ADR-0012).",
+      "region": "worker-arrow",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfjs",
+      "max_changed_pixels": 459713,
+      "minimum_ssim_bits": "3feeb164c46c4ab7",
+      "reason": "Sub-pixel sketch strokes as in light (both PDF viewers widen sub-pixel strokes to one device pixel), plus the dark-mode compositing-order difference no PDF lowering can remove (ADR-0012).",
+      "region": "whole",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfjs-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfjs",
+      "max_changed_pixels": 9392,
+      "minimum_ssim_bits": "3fe96a417030f893",
+      "reason": "Sub-pixel sketch strokes as in light (both PDF viewers widen sub-pixel strokes to one device pixel), plus the dark-mode compositing-order difference no PDF lowering can remove (ADR-0012).",
+      "region": "worker-arrow",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfjs-v1"
+    }
+  ],
+  "files": {
+    "expected-report-pdf.json": {
+      "bytes": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
+    "expected-report-png.json": {
+      "bytes": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
+    "expected-report-svg.json": {
+      "bytes": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
+    "reference/dark/official-png.rgba.zlib": {
+      "bytes": 2099107,
+      "sha256": "e02d72e0e3536ff07f004dc2e8daa9b6305181754870e88baf2b526f0a1b6635"
+    },
+    "reference/dark/official.png": {
+      "bytes": 3077134,
+      "sha256": "fffd3882903d83d4fd84691f3e6b8e7daf143ac128f009996d9dc0420c90240b"
+    },
+    "reference/dark/official.svg": {
+      "bytes": 366780,
+      "sha256": "3176ff1b4fd722932fd889a61033f7d4724e3bb6260c5311302be39ddc60643d"
+    },
+    "reference/light/official-png.rgba.zlib": {
+      "bytes": 2329080,
+      "sha256": "263e9394261ba0788d85183a8e5e3bfd3884524298e2ea2b2c19a0a321b2eae4"
+    },
+    "reference/light/official.png": {
+      "bytes": 3373741,
+      "sha256": "d32ef657abce5acfc7b14223e43515d0d7b69e17f3a52ec21cc01f3f85e0d692"
+    },
+    "reference/light/official.svg": {
+      "bytes": 366740,
+      "sha256": "46a74d826e9fef635efcfb18c8ea13cd3b77711eecfbcae09f4f8907f690edeb"
+    },
+    "reference/reference.json": {
+      "bytes": 12031,
+      "sha256": "1fbe5535cbe1e09c19632eb44c8d6efe245f1ea2b71a27d909a82621e9744107"
+    }
+  },
+  "formats": [
+    "svg",
+    "png",
+    "pdf"
+  ],
+  "intake": {
+    "bytes": 2917,
+    "path": "tests/conformance/intake/varmq-queue-diagram-v1",
+    "sha256": "9f36514571ef943937dadf80e10191918e10e0f4fcd14df94927b312b790c64b"
+  },
+  "judgment_rule": "canonical-budget-or-identical-input-controls-or-exception/v1",
+  "layer": "representative",
+  "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/84",
+  "schema": "excalidraw-render/representative-case/v1",
+  "semantic_expectations": {
+    "dark": {
+      "embedded_scene": true,
+      "links": 0,
+      "min_text_elements": 43,
+      "pdf_media_box": [
+        "2446.6689862187136",
+        "2247.4458992401787"
+      ],
+      "png_size": [
+        3262,
+        2996
+      ],
+      "root_theme_filter": true,
+      "svg_size": [
+        "3262.225314958285",
+        "2996.5945323202386"
+      ]
+    },
+    "light": {
+      "embedded_scene": true,
+      "links": 0,
+      "min_text_elements": 43,
+      "pdf_media_box": [
+        "2446.6689862187136",
+        "2247.4458992401787"
+      ],
+      "png_size": [
+        3262,
+        2996
+      ],
+      "root_theme_filter": false,
+      "svg_size": [
+        "3262.225314958285",
+        "2996.5945323202386"
+      ]
+    }
+  },
+  "variants": [
+    "light",
+    "dark"
+  ]
+}
