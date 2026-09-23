@@ -26,7 +26,8 @@ use super::super::text::{ResolvedLabel, ResolvedTextAlign, ResolvedTextRun, FRAM
 use super::super::{freedraw, FormatEncodeError};
 use super::sink::SvgSink;
 use super::{
-    SvgElement, SvgElementKind, SvgFrameName, SvgImageFilterDefinition, SvgImageSymbol, SvgPlan,
+    SvgElement, SvgElementKind, SvgFrameName, SvgImageSymbol, SvgPlan,
+    IMAGE_INVERT_FILTER_DEFINITION, IMAGE_INVERT_FILTER_ID, THEME_FILTER,
 };
 
 /// Every frame clip the plan references, in first-use order, each defined once
@@ -328,6 +329,10 @@ impl SvgPlan {
         push_svg_number(svg, self.output_width, "scaled SVG width")?;
         svg.push_str("\" height=\"");
         push_svg_number(svg, self.output_height, "scaled SVG height")?;
+        if self.dark_mode {
+            svg.push_str("\" filter=\"");
+            svg.push_str(THEME_FILTER);
+        }
         svg.push_str("\">");
         let scene_wrapper = self
             .metadata
@@ -377,8 +382,8 @@ impl SvgPlan {
         for symbol in &self.image_symbols {
             push_image_symbol_definition(&mut svg, symbol)?;
         }
-        for filter in self.image_filters() {
-            svg.push_str(filter.definition());
+        if self.uses_image_invert_filter() {
+            svg.push_str(IMAGE_INVERT_FILTER_DEFINITION);
         }
         self.font_bundle.write_style(svg, push_base64)?;
         svg.push_str("</defs>");
@@ -838,7 +843,7 @@ impl SvgPlan {
                 SvgElementKind::Image {
                     source,
                     symbol_source_index,
-                    dark_mode_filter,
+                    image_invert_filter,
                     corner_radius,
                     projection,
                     scale,
@@ -942,9 +947,9 @@ impl SvgPlan {
                     push_svg_number(&mut svg, content_width, "SVG image width")?;
                     svg.push_str("\" height=\"");
                     push_svg_number(&mut svg, content_height, "SVG image height")?;
-                    if let Some(filter) = dark_mode_filter {
+                    if *image_invert_filter {
                         svg.push_str("\" filter=\"url(#");
-                        svg.push_str(filter.id());
+                        svg.push_str(IMAGE_INVERT_FILTER_ID);
                         svg.push(')');
                     }
                     svg.push_str("\"/>");

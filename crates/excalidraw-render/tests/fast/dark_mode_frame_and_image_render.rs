@@ -3,8 +3,9 @@
 //! `THEME_FILTER` (`invert(93%) hue-rotate(180deg)`) on its root and
 //! `IMAGE_INVERT_FILTER` (`invert(100%) hue-rotate(180deg) saturate(1.25)`) on
 //! each raster image's `<use>`; its canvas export sets `THEME_FILTER` on the
-//! context and resets the filter to `none` for raster images. So a frame
-//! outline is `#bbb` through the theme filter in every format, the canvas
+//! context and resets the filter to `none` for raster images. SVG carries the
+//! same root filter and paints light colors under it; PNG and PDF lower it. So
+//! a frame outline is `#bbb` through the theme filter in every format, the canvas
 //! recolors a magic frame's outline by theme before that filter, a nested-SVG
 //! image inverts with the theme filter alone, a raster image keeps its pixels
 //! in PNG but compresses its contrast in SVG and, following the SVG authority,
@@ -44,15 +45,19 @@ fn dark_mode_frame_outlines_pass_through_the_theme_filter_in_every_format() {
     let svg = render(&scene, OutputFormat::Svg, ColorMode::Dark);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     // The reference SVG paints every frame kind with `FRAME_STYLE.strokeColor`
-    // under the root filter, magic frames included.
+    // under the root filter, magic frames included; so does this one.
+    assert!(
+        root(svg).ends_with(" filter=\"invert(93%) hue-rotate(180deg)\">"),
+        "the root carries THEME_FILTER: {}",
+        root(svg)
+    );
     for id in ["plain", "magic"] {
         let outline = frame_outline(svg, id);
         assert!(
-            outline.contains("stroke=\"#4c4c4c\""),
-            "{id} outline is not the filtered #bbb: {outline}"
+            outline.contains("stroke=\"#bbbbbb\""),
+            "{id} outline is not #bbb under the root filter: {outline}"
         );
     }
-    assert!(!svg.contains("#bbbbbb"), "light-mode frame stroke survives");
 
     let png = render_png(&scene, ColorMode::Dark);
     assert_eq!((png.width, png.height), (200, 80));
@@ -111,9 +116,9 @@ fn light_mode_frame_outlines_keep_the_reference_light_constants() {
 }
 
 /// The reference SVG puts `IMAGE_INVERT_FILTER` on a raster image's `<use>`
-/// and only the root `THEME_FILTER` on a nested-SVG image's; both filters are
-/// lowered into the artifact as `<defs>` filters so the payload bytes stay the
-/// validated octets (spec section 8.2). The literals are worked from the Filter
+/// under its root `THEME_FILTER`, which a nested-SVG image receives alone. The
+/// artifact carries the same root filter and defines the image filter in
+/// `<defs>`, so the payload bytes stay the validated octets (spec section 8.2). The literals are worked from the Filter
 /// Effects equivalents of the official filter functions, in their order:
 /// `invert(a)` is `feComponentTransfer` with the table `a, 1 - a` on each
 /// channel, `hue-rotate(180deg)` is `feColorMatrix hueRotate 180`, and
@@ -123,8 +128,8 @@ fn light_mode_frame_outlines_keep_the_reference_light_constants() {
 /// SVG 1.1 domain is `[0, 1]` and which usvg/resvg clamp to the identity
 /// (#161); all in sRGB like the functions. They pin the serialization the spec
 /// (section 8.4) promises; the viewer tests below check what it paints.
-const RASTER_IMAGE_FILTER: &str = concat!(
-    "<filter id=\"dark-mode-raster-image\" color-interpolation-filters=\"sRGB\">",
+const IMAGE_INVERT_FILTER: &str = concat!(
+    "<filter id=\"dark-mode-image-invert\" color-interpolation-filters=\"sRGB\">",
     "<feComponentTransfer>",
     "<feFuncR type=\"table\" tableValues=\"1 0\"/>",
     "<feFuncG type=\"table\" tableValues=\"1 0\"/>",
@@ -136,29 +141,13 @@ const RASTER_IMAGE_FILTER: &str = concat!(
     "-0.05325 1.07125 -0.018 0 0 ",
     "-0.05325 -0.17875 1.232 0 0 ",
     "0 0 0 1 0\"/>",
-    "<feComponentTransfer>",
-    "<feFuncR type=\"table\" tableValues=\"0.93 0.07\"/>",
-    "<feFuncG type=\"table\" tableValues=\"0.93 0.07\"/>",
-    "<feFuncB type=\"table\" tableValues=\"0.93 0.07\"/>",
-    "</feComponentTransfer>",
-    "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
-    "</filter>",
-);
-const NESTED_SVG_IMAGE_FILTER: &str = concat!(
-    "<filter id=\"dark-mode-nested-svg-image\" color-interpolation-filters=\"sRGB\">",
-    "<feComponentTransfer>",
-    "<feFuncR type=\"table\" tableValues=\"0.93 0.07\"/>",
-    "<feFuncG type=\"table\" tableValues=\"0.93 0.07\"/>",
-    "<feFuncB type=\"table\" tableValues=\"0.93 0.07\"/>",
-    "</feComponentTransfer>",
-    "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
     "</filter>",
 );
 
 #[test]
 fn dark_mode_svg_filters_raster_and_nested_svg_images_like_the_reference_export() {
-    // The raster image is rounded, so its corner clip shows where the filters
-    // sit in <defs>: after the clips, raster before nested-SVG.
+    // The raster image is rounded, so its corner clip shows where the filter
+    // sits in <defs>: after the clips and the shared images.
     let scene = image_scene(&[
         ImageFixture {
             media_type: "image/png",
@@ -172,7 +161,7 @@ fn dark_mode_svg_filters_raster_and_nested_svg_images_like_the_reference_export(
     let dark = std::str::from_utf8(&dark).expect("SVG is UTF-8");
     let defs = defs(dark);
     // <defs> order (spec 8.4): the image clip, the shared image definitions
-    // in first-use order, then the filters, raster before nested-SVG.
+    // in first-use order, then the image filter.
     let symbols_end = defs
         .rfind("</symbol>")
         .expect("defs define the shared images")
@@ -184,25 +173,30 @@ fn dark_mode_svg_filters_raster_and_nested_svg_images_like_the_reference_export(
     );
     assert_eq!(
         &defs[symbols_end..],
-        format!("{RASTER_IMAGE_FILTER}{NESTED_SVG_IMAGE_FILTER}"),
-        "the filters follow the shared images in <defs>: {defs}"
+        IMAGE_INVERT_FILTER,
+        "the image filter follows the shared images in <defs>: {defs}"
     );
-    // Each element's `<use>` carries the filter, where the reference puts
-    // `IMAGE_INVERT_FILTER`; the shared `<image>` inside the symbol carries
-    // none.
+    // A raster element's `<use>` carries the image filter, where the
+    // reference puts `IMAGE_INVERT_FILTER`; the shared `<image>` inside the
+    // symbol carries none, and a nested-SVG image inverts with the root.
     assert!(
         !defs.contains(" filter="),
         "a shared image carries a filter"
     );
     let raster_use = use_element(dark, 0);
     assert!(
-        raster_use.ends_with("filter=\"url(#dark-mode-raster-image)\"/>"),
+        raster_use.ends_with("filter=\"url(#dark-mode-image-invert)\"/>"),
         "raster image: {raster_use}"
     );
     let nested_use = use_element(dark, 1);
     assert!(
-        nested_use.ends_with("filter=\"url(#dark-mode-nested-svg-image)\"/>"),
+        !nested_use.contains(" filter="),
         "nested-SVG image: {nested_use}"
+    );
+    assert!(
+        root(dark).ends_with(" filter=\"invert(93%) hue-rotate(180deg)\">"),
+        "the root carries THEME_FILTER: {}",
+        root(dark)
     );
 
     let light = render(&scene, OutputFormat::Svg, ColorMode::Light);
@@ -247,11 +241,12 @@ fn a_viewer_applies_the_dark_mode_svg_image_filters_to_the_reference_values() {
 
     // White through the image filter and the root filter is #ededed; the
     // nested SVG's #1e1e1e through the root filter alone is #d3d3d3, the same
-    // as a scene stroke of that color. Viewers quantize each primitive, so
-    // allow one level per channel.
-    assert_rgb_near(sample(20, 20), [0xed, 0xed, 0xed]);
-    assert_rgb_near(sample(60, 20), [0xd3, 0xd3, 0xd3]);
-    assert_eq!(sample(2, 2), [0x11, 0x11, 0x11], "background");
+    // as a scene stroke of that color; the white background through the root
+    // filter is 17.85 per channel, which Chromium rounds to #121212. resvg
+    // floors each filter function, so allow two levels per channel.
+    assert_rgb_near(sample(20, 20), [0xed, 0xed, 0xed], 2);
+    assert_rgb_near(sample(60, 20), [0xd3, 0xd3, 0xd3], 2);
+    assert_rgb_near(sample(2, 2), [0x12, 0x12, 0x12], 2);
 }
 
 #[test]
@@ -304,12 +299,13 @@ fn a_viewer_applies_the_saturate_step_of_the_dark_mode_raster_image_filter() {
 }
 
 #[test]
-fn dark_mode_svg_defines_only_the_image_filters_it_references() {
+fn dark_mode_svg_defines_only_the_image_filter_it_references() {
+    // A nested-SVG image inverts with the root filter and needs no definition.
     let scene = image_scene(&[nested_svg_fixture(r#""x":0,"y":0,"width":20,"height":20"#)]);
     let svg = render(&scene, OutputFormat::Svg, ColorMode::Dark);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
-    assert!(defs(svg).contains(NESTED_SVG_IMAGE_FILTER));
-    assert!(!svg.contains("dark-mode-raster-image"), "{svg}");
+    assert!(!defs(svg).contains("<filter"), "{svg}");
+    assert!(root(svg).contains(" filter=\"invert(93%) hue-rotate(180deg)\""));
 }
 
 #[test]
@@ -381,13 +377,14 @@ fn dark_mode_pdf_lowers_the_reference_svg_image_filters_into_raster_pixels() {
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Dark);
     let (rgb, alpha) = image_xobject_streams(&pdf);
     // Official SVG is PDF's visual authority: each opaque pixel is the image
-    // filter then the root filter; an invisible pixel keeps its canonical zero
-    // RGB and the soft mask is untouched.
+    // filter then the root filter, rounded as the browser rounds it; an
+    // invisible pixel keeps its canonical zero RGB and the soft mask is
+    // untouched.
     assert_eq!(
         rgb,
         [
             [0xed, 0xed, 0xed],
-            [0x11, 0x11, 0x11],
+            [0x12, 0x12, 0x12],
             [0xac, 0x4a, 0x4a],
             [0, 0, 0]
         ]
@@ -413,13 +410,14 @@ fn dark_mode_pdf_still_embeds_nested_svg_vector_content_in_light_colors_until_15
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Dark);
     let pdf = pdf_text(&pdf);
     // svg2pdf spells the nested rectangle's #1e1e1e fill as 30/255 in f32; the
-    // lowered #d3d3d3 would be 211/255. The page background is lowered.
+    // lowered #d3d3d3 would be 211/255. The page background is lowered, and
+    // rounded as the official SVG's root filter rounds.
     assert!(
         pdf.contains("0.11764706 0.11764706 0.11764706 scn\n"),
         "{pdf}"
     );
     assert!(!pdf.contains("0.827451 0.827451 0.827451 scn"), "{pdf}");
-    assert!(pdf.contains("0.06666666666666667 0.06666666666666667 0.06666666666666667 scn\n"));
+    assert!(pdf.contains("0.07058823529411765 0.07058823529411765 0.07058823529411765 scn\n"));
 }
 
 /// A 1x1 nested SVG filled with the text color `#1e1e1e`.
@@ -535,6 +533,11 @@ fn data_url<'a>(svg: &'a str, media_type: &str) -> &'a str {
     &element[start..end]
 }
 
+/// The root `<svg …>` start tag.
+fn root(svg: &str) -> &str {
+    &svg[..svg.find('>').expect("the root tag closes") + 1]
+}
+
 fn frame_outline<'a>(svg: &'a str, id: &str) -> &'a str {
     let marker = format!("<rect data-frame-outline=\"{id}\"");
     let start = svg
@@ -583,10 +586,10 @@ fn rgba([red, green, blue]: [u8; 3]) -> [u8; 4] {
     [red, green, blue, 255]
 }
 
-fn assert_rgb_near(actual: [u8; 3], expected: [u8; 3]) {
+fn assert_rgb_near(actual: [u8; 3], expected: [u8; 3], tolerance: u8) {
     for (actual_channel, expected_channel) in actual.into_iter().zip(expected) {
         assert!(
-            actual_channel.abs_diff(expected_channel) <= 1,
+            actual_channel.abs_diff(expected_channel) <= tolerance,
             "{actual:?} differs from {expected:?}"
         );
     }

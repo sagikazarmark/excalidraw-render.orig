@@ -16,7 +16,7 @@ pub(super) use write::push_rough_path;
 use std::sync::Arc;
 
 use crate::normalization::NormalizedElementSource;
-use crate::{color::CanonicalColor, RenderRequest, Sizing};
+use crate::{color::CanonicalColor, ColorMode, RenderRequest, Sizing};
 
 use super::metadata::ArtifactMetadata;
 use super::notices::MandatoryNotices;
@@ -70,6 +70,9 @@ pub(super) struct SvgPlan {
     mandatory_notices: Option<MandatoryNotices>,
     metadata: Option<ArtifactMetadata>,
     elements: Vec<SvgElement>,
+    /// Whether the root carries [`THEME_FILTER`]: a dark-mode export, whose
+    /// colors stay unlowered beneath it.
+    dark_mode: bool,
     /// Every distinct image asset the plan draws, in first-use paint order,
     /// each defined once in `<defs>` and referenced by every element that
     /// draws it.
@@ -105,72 +108,42 @@ macro_rules! saturate_1_25_matrix {
     };
 }
 
-/// The `<defs>` filter standing in for the reference filters a dark-mode image
-/// passes through ([`DarkModeImageFilter`]): the renderer lowers the root
-/// `THEME_FILTER` into its vector colors and carries no root filter, so each
-/// image references the whole chain it needs. The definitions spell the CSS
-/// filter functions as the Filter Effects primitives they are defined as, in
-/// sRGB like the functions, so a viewer without filter-function support still
-/// applies them.
-trait SvgImageFilterDefinition {
-    fn id(self) -> &'static str;
+/// The reference export's dark-mode filter, `THEME_FILTER`. Its SVG carries it
+/// on the root element, where the browser applies it to the composited image;
+/// the root filter here is that same attribute value, so every viewer that
+/// filters the reference's SVG filters this one identically.
+pub(super) const THEME_FILTER: &str = "invert(93%) hue-rotate(180deg)";
 
-    /// The definition, primitive by primitive in filter-function order.
-    fn definition(self) -> &'static str;
-}
+/// The id of [`IMAGE_INVERT_FILTER_DEFINITION`].
+const IMAGE_INVERT_FILTER_ID: &str = "dark-mode-image-invert";
 
-impl SvgImageFilterDefinition for DarkModeImageFilter {
-    fn id(self) -> &'static str {
-        match self {
-            Self::RasterImage => "dark-mode-raster-image",
-            Self::NestedSvgImage => "dark-mode-nested-svg-image",
-        }
-    }
-
-    fn definition(self) -> &'static str {
-        match self {
-            Self::RasterImage => concat!(
-                "<filter id=\"dark-mode-raster-image\" color-interpolation-filters=\"sRGB\">",
-                // invert(100%)
-                "<feComponentTransfer>",
-                "<feFuncR type=\"table\" tableValues=\"1 0\"/>",
-                "<feFuncG type=\"table\" tableValues=\"1 0\"/>",
-                "<feFuncB type=\"table\" tableValues=\"1 0\"/>",
-                "</feComponentTransfer>",
-                // hue-rotate(180deg) saturate(1.25). The saturate step is
-                // spelled as the explicit Filter Effects saturate matrix for
-                // s = 1.25 rather than `type="saturate" values="1.25"`: the
-                // primitive's SVG 1.1 domain is [0, 1], and usvg/resvg clamp
-                // a larger value to 1, the identity, where the CSS function
-                // the reference uses keeps any positive amount (#161). Every
-                // viewer evaluates a literal matrix as written.
-                "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
-                "<feColorMatrix type=\"matrix\" values=\"",
-                saturate_1_25_matrix!(),
-                "\"/>",
-                // invert(93%) hue-rotate(180deg)
-                "<feComponentTransfer>",
-                "<feFuncR type=\"table\" tableValues=\"0.93 0.07\"/>",
-                "<feFuncG type=\"table\" tableValues=\"0.93 0.07\"/>",
-                "<feFuncB type=\"table\" tableValues=\"0.93 0.07\"/>",
-                "</feComponentTransfer>",
-                "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
-                "</filter>",
-            ),
-            Self::NestedSvgImage => concat!(
-                "<filter id=\"dark-mode-nested-svg-image\" color-interpolation-filters=\"sRGB\">",
-                // invert(93%) hue-rotate(180deg)
-                "<feComponentTransfer>",
-                "<feFuncR type=\"table\" tableValues=\"0.93 0.07\"/>",
-                "<feFuncG type=\"table\" tableValues=\"0.93 0.07\"/>",
-                "<feFuncB type=\"table\" tableValues=\"0.93 0.07\"/>",
-                "</feComponentTransfer>",
-                "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
-                "</filter>",
-            ),
-        }
-    }
-}
+/// The `<defs>` filter standing in for the reference's `IMAGE_INVERT_FILTER`
+/// (`invert(100%) hue-rotate(180deg) saturate(1.25)`), which it puts on a
+/// raster image's `<use>` under the root `THEME_FILTER`. A nested-SVG image
+/// gets no filter of its own and inverts with the root. The definition spells
+/// the CSS filter functions as the Filter Effects primitives they are defined
+/// as, in sRGB like the functions, so a viewer without filter-function support
+/// still applies them.
+const IMAGE_INVERT_FILTER_DEFINITION: &str = concat!(
+    "<filter id=\"dark-mode-image-invert\" color-interpolation-filters=\"sRGB\">",
+    // invert(100%)
+    "<feComponentTransfer>",
+    "<feFuncR type=\"table\" tableValues=\"1 0\"/>",
+    "<feFuncG type=\"table\" tableValues=\"1 0\"/>",
+    "<feFuncB type=\"table\" tableValues=\"1 0\"/>",
+    "</feComponentTransfer>",
+    // hue-rotate(180deg) saturate(1.25). The saturate step is spelled as the
+    // explicit Filter Effects saturate matrix for s = 1.25 rather than
+    // `type="saturate" values="1.25"`: the primitive's SVG 1.1 domain is
+    // [0, 1], and usvg/resvg clamp a larger value to 1, the identity, where
+    // the CSS function the reference uses keeps any positive amount (#161).
+    // Every viewer evaluates a literal matrix as written.
+    "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
+    "<feColorMatrix type=\"matrix\" values=\"",
+    saturate_1_25_matrix!(),
+    "\"/>",
+    "</filter>",
+);
 
 /// One SVG plan element: the shared header in SVG units and the kind.
 type SvgElement = PlannedElement<SvgTransform, ResolvedClip, SvgElementKind>;
@@ -223,9 +196,9 @@ enum SvgElementKind {
         /// The source index keying the `<symbol>` in `<defs>` that holds this
         /// element's asset: the first element in paint order that draws it.
         symbol_source_index: usize,
-        /// The dark-mode filter the element's `<use>` references, defined in
-        /// `<defs>`.
-        dark_mode_filter: Option<DarkModeImageFilter>,
+        /// Whether the element's `<use>` references the dark-mode image
+        /// inversion defined in `<defs>`: a raster image in dark mode.
+        image_invert_filter: bool,
         /// The image's rounded-corner clip radius when it has a roundness
         /// record; the SVG defines the clip as a `<rect rx ry>`.
         corner_radius: Option<f64>,
@@ -395,7 +368,8 @@ impl SvgPlan {
                         kind: SvgElementKind::Image {
                             source: image.source,
                             symbol_source_index,
-                            dark_mode_filter: image.dark_mode_filter,
+                            image_invert_filter: image.dark_mode_filter
+                                == Some(DarkModeImageFilter::RasterImage),
                             corner_radius: image.corner_clip.map(|clip| clip.radius),
                             projection: image.projection,
                             scale: image.scale,
@@ -432,25 +406,22 @@ impl SvgPlan {
             mandatory_notices,
             metadata: None,
             elements,
+            dark_mode: request.color_mode() == ColorMode::Dark,
             image_symbols,
         })
     }
 
-    /// The dark-mode image filters the plan references, each once, raster
-    /// before nested-SVG.
-    fn image_filters(&self) -> impl Iterator<Item = DarkModeImageFilter> + '_ {
-        [
-            DarkModeImageFilter::RasterImage,
-            DarkModeImageFilter::NestedSvgImage,
-        ]
-        .into_iter()
-        .filter(move |filter| {
-            self.elements.iter().any(|element| {
-                matches!(
-                    &element.kind,
-                    SvgElementKind::Image { dark_mode_filter: Some(referenced), .. } if referenced == filter
-                )
-            })
+    /// Whether any image references the dark-mode image inversion, which
+    /// `<defs>` then defines once.
+    fn uses_image_invert_filter(&self) -> bool {
+        self.elements.iter().any(|element| {
+            matches!(
+                element.kind,
+                SvgElementKind::Image {
+                    image_invert_filter: true,
+                    ..
+                }
+            )
         })
     }
 

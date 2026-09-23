@@ -66,7 +66,7 @@ pub(super) fn resolve_geometry(
     let transform = context.transform(source.x, source.y, source.angle, center_x, center_y);
     let stroke_color = color::parse_css(&source.stroke_color)
         .ok_or(ResolveSceneError::InvalidColor)?
-        .for_mode(context.request.color_mode());
+        .lowered(context.request.color_lowering());
     let common = OutlineCommon {
         transform,
         stroke_color,
@@ -166,7 +166,7 @@ pub(super) fn resolve_embeddable_label(
         &source.stroke_color
     })
     .ok_or(ResolveSceneError::InvalidColor)?
-    .for_mode(context.request.color_mode());
+    .lowered(context.request.color_lowering());
     Ok((laid_out, label_color, offset_y))
 }
 
@@ -198,7 +198,7 @@ fn resolve_outline(
         fill_color: (source.background_color != "transparent")
             .then(|| color::parse_css(&source.background_color))
             .flatten()
-            .map(|color| color.for_mode(context.request.color_mode())),
+            .map(|color| color.lowered(context.request.color_lowering())),
         stroke_width: if source.stroke_style == "solid" {
             source.stroke_width
         } else {
@@ -254,7 +254,7 @@ fn resolve_freedraw(
         background_color: (source.background_color != "transparent")
             .then(|| color::parse_css(&source.background_color))
             .flatten()
-            .map(|color| color.for_mode(context.request.color_mode())),
+            .map(|color| color.lowered(context.request.color_lowering())),
         source_stroke_width: source.stroke_width,
         opacity: source.opacity / 100.0 * membership.opacity,
         link: source.link,

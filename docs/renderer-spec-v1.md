@@ -703,13 +703,20 @@ cartoonist `crowfoot_one` is as rough as its shaft.
 
 Dark mode is the reference export's `THEME_FILTER`,
 `invert(93%) hue-rotate(180deg)`, which the reference SVG carries on its root
-element and the reference canvas sets on its context. The renderer emits no
-filter for it; it lowers the filter into every color it paints — scene colors,
-renderer-owned fallbacks, frame outlines and names, and the PNG image
-placeholder — evaluated as the pinned browser evaluates CSS filter functions:
-in gamma-encoded sRGB, with the Filter Effects hue-rotation matrix, each
-function's result clamped to the channel range, and the result floored to
-8 bits; alpha is untouched. Images are the exception: Section 8.2 records how
+element and the reference canvas sets on its context. Both apply it to the
+composited image, so an antialiased pixel is the filter of a blended color,
+which no per-color lowering reproduces where the filter clamps or rounds (#84).
+SVG therefore carries the same root filter, as the attribute value
+`filter="invert(93%) hue-rotate(180deg)"` on the root `<svg>`, and paints light
+colors beneath it; only the frame name switches to the dark-theme constant, as
+the reference SVG's does. PNG and PDF emit no filter and lower it into every
+color they paint — scene colors, renderer-owned fallbacks, frame outlines and
+names, and the PNG image placeholder — evaluated as the pinned browser
+evaluates CSS filter functions: in gamma-encoded sRGB, with the Filter Effects
+hue-rotation matrix, and each function's result clamped to the channel range.
+PNG, whose authority is the canvas, floors the result to 8 bits; PDF, whose
+authority is the official SVG, rounds it, as the pinned browser does for the
+official SVG's root filter. Alpha is untouched. Images are the exception: Section 8.2 records how
 each format lowers dark mode onto them.
 
 Safe absolute and relative links are preserved under the pinned sanitizer and
@@ -850,17 +857,19 @@ nested-SVG image receives the root filter alone and inverts with the scene. The
 reference canvas export resets its filter to `none` for a raster image
 (`shouldResetImageFilter`) and keeps the theme filter for a nested-SVG image
 and for the image placeholder. Each format follows its authority: SVG defines
-the two filter chains once in `<defs>` as Filter Effects primitives in sRGB
-(Section 8.4) and references them from each image element's `<use>`, where the
-reference puts `IMAGE_INVERT_FILTER`, leaving the shared payload octets exactly
-as validated; PNG leaves raster pixels alone, passes the pixels
+the image filter once in `<defs>` as Filter Effects primitives in sRGB (Section
+8.4) and references it from each raster image element's `<use>`, where the
+reference puts `IMAGE_INVERT_FILTER`, under the root theme filter, leaving the
+shared payload octets exactly as validated; a nested-SVG image has no filter of
+its own and inverts with the root; PNG leaves raster pixels alone, passes the pixels
 it rasterizes from a nested-SVG image through the theme filter, and lowers the
 placeholder's `#E7E7E7` rectangle and `#888` glyph the same way; PDF, whose
 authority is official SVG (Section 8.6), lowers the image filter followed by
 the theme filter into each visible raster pixel it embeds, leaving invisible
 RGB at its canonical zero and the soft mask untouched, rounding the image
 filter's result to 8 bits as the browser's intermediate surface does before the
-theme filter reads it; an SVG viewer evaluates the defined chain itself. None of
+theme filter reads it, and rounding the theme filter's result as Section 8.1
+describes; an SVG viewer evaluates the filters itself. None of
 this changes the semantic resource ledger: like every other color lowering, it
 is not a charged event. Revision 1 does not lower dark mode into a nested-SVG
 image's vector content in PDF; that content is embedded in its light-mode
@@ -1283,21 +1292,22 @@ children would expose the divergence there too.
 
 The frame clips are followed in `<defs>` by each rounded image's corner clip
 (Section 8.2), in paint order, keyed `image-clip-<source index>`; then by the
-shared image definitions; and then, in a dark-mode export that has images, by
-the dark-mode image filters it references (Section 8.2), each defined once:
-`dark-mode-raster-image` (the image filter followed by the theme filter) before
-`dark-mode-nested-svg-image` (the theme filter alone). Each filter spells its
-CSS filter functions as the Filter Effects primitives they are defined as —
-`feComponentTransfer` tables for `invert`, `feColorMatrix` `hueRotate` for
+shared image definitions; and then, in a dark-mode export with a raster image,
+by the dark-mode image filter `dark-mode-image-invert`, defined once and
+standing for `IMAGE_INVERT_FILTER` (Section 8.2). It spells its CSS filter
+functions as the Filter Effects primitives they are defined as —
+`feComponentTransfer` tables for `invert(100%)`, `feColorMatrix` `hueRotate` for
 `hue-rotate(180deg)`, and for `saturate(1.25)` an explicit `feColorMatrix
 type="matrix"` carrying the Filter Effects saturate matrix at `s = 1.25`
 (`1.19675 -0.17875 -0.018 0 0 -0.05325 1.07125 -0.018 0 0 -0.05325 -0.17875
 1.232 0 0 0 0 0 1 0`), never `type="saturate"`, whose SVG 1.1 domain is
 `[0, 1]` and which `usvg`-based viewers clamp to the identity while the CSS
 function keeps any positive amount (#161) — with
-`color-interpolation-filters="sRGB"`, and each image element's `<use>`
-references its filter by `filter="url(#…)"`. A light-mode export defines and
-references no filter.
+`color-interpolation-filters="sRGB"`, and each raster image element's `<use>`
+references it by `filter="url(#…)"`. A dark-mode export's root `<svg>` carries
+`filter="invert(93%) hue-rotate(180deg)"` after its `height`, the reference's
+own spelling (Section 8.1); a viewer that ignores CSS filter functions shows the
+light-mode colors. A light-mode export defines and references no filter.
 
 Every accepted image asset is defined once, as the reference's `reuseImages`
 export defines it (#151): `<symbol id="image-<source index>"><image
@@ -1548,8 +1558,8 @@ Every project-owned operation remains native PDF content:
   `ActualText` contract.
 - Safe URI annotations over deterministic transformed bounds.
 
-Dark mode is lowered into vector colors and image pixels before this matrix
-(Sections 8.1 and 8.2); nested-SVG vector content is the revision-1 exception
+Dark mode is lowered into vector colors and image pixels before this matrix,
+rounded as the official SVG's root filter rounds (Sections 8.1 and 8.2); nested-SVG vector content is the revision-1 exception
 Section 8.2 records. Failure to encode a required operation is fatal, never
 fallback. Admitted scene raster pixels are lossless image XObjects and inherent
 source content.

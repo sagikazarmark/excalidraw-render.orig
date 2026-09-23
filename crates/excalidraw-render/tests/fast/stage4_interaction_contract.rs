@@ -104,7 +104,7 @@ fn nested_svg_pdf_dark_mode_retains_the_specified_154_limitation() {
                     let l=crate::common::raster::decode_png(light.artifact().bytes());let d=crate::common::raster::decode_png(dark.artifact().bytes());
                     assert_eq!((d.width,d.height),(20,20));assert_eq!(l.pixel(10,10),[30,30,30,255]);assert_eq!(d.pixel(10,10),[211,211,211,255]);
                 }
-                OutputFormat::Svg=>{let s=std::str::from_utf8(dark.artifact().bytes()).unwrap();assert!(s.contains("filter=\"url(#dark-mode-nested-svg-image)\""));assert_ne!(dark.artifact().bytes(),light.artifact().bytes());}
+                OutputFormat::Svg=>{let s=std::str::from_utf8(dark.artifact().bytes()).unwrap();assert!(s.contains(" filter=\"invert(93%) hue-rotate(180deg)\">"));assert!(!s.contains("filter=\"url(#"));assert_ne!(dark.artifact().bytes(),light.artifact().bytes());}
                 _=>unreachable!(),
             }
         }

@@ -4,6 +4,7 @@ use std::fmt;
 
 use serde::Serialize;
 
+use crate::color::ColorLowering;
 use crate::{ErrorCode, ErrorDescriptor, ErrorDetails, ResourceLimits};
 
 /// Indicates that a render request could not be validated.
@@ -449,6 +450,20 @@ impl RenderRequest {
     /// Returns the selected color mode.
     pub const fn color_mode(&self) -> ColorMode {
         self.color_mode
+    }
+
+    /// How the dark-mode filter is lowered into painted colors. The
+    /// reference's SVG carries `THEME_FILTER` on its root and filters the
+    /// composited image, which no per-color lowering reproduces at antialiased
+    /// pixels, so SVG carries the same root filter and lowers nothing. PNG
+    /// lowers as the canvas floors and PDF as the official SVG rounds (spec
+    /// section 8.1).
+    pub(crate) fn color_lowering(&self) -> ColorLowering {
+        match (self.format(), self.color_mode()) {
+            (OutputFormat::Svg, _) | (_, ColorMode::Light) => ColorLowering::None,
+            (OutputFormat::Png, ColorMode::Dark) => ColorLowering::Floor,
+            (OutputFormat::Pdf, ColorMode::Dark) => ColorLowering::Round,
+        }
     }
 
     /// Returns the frame controls.

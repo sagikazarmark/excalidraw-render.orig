@@ -359,17 +359,34 @@ fn frame_name_is_left_aligned_helvetica_text_above_the_frame() {
 
 #[test]
 fn frame_name_uses_the_dark_theme_name_color_in_dark_mode() {
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .color_mode(ColorMode::Dark)
-        .build()
-        .expect("dark request is valid");
-    let resolved = resolve_with(&scene(NAMED_FRAME_SCENE), &request);
-    let name = frame(&resolved, "clip-frame")
-        .name
-        .as_ref()
-        .expect("the frame resolves its name");
-    // `FRAME_STYLE.nameColorDarkTheme` #7a7a7a through the dark-mode filter.
-    assert_eq!(name.color, CanonicalColor::from_rgb8(0x84, 0x84, 0x84));
+    for (format, expected) in [
+        // SVG keeps `FRAME_STYLE.nameColorDarkTheme` #7a7a7a under its root
+        // filter, as the reference SVG does.
+        (
+            OutputFormat::Svg,
+            CanonicalColor::from_rgb8(0x7a, 0x7a, 0x7a),
+        ),
+        // PNG and PDF lower the dark-mode filter into it.
+        (
+            OutputFormat::Png,
+            CanonicalColor::from_rgb8(0x84, 0x84, 0x84),
+        ),
+        (
+            OutputFormat::Pdf,
+            CanonicalColor::from_rgb8(0x84, 0x84, 0x84),
+        ),
+    ] {
+        let request = RenderRequest::builder(format)
+            .color_mode(ColorMode::Dark)
+            .build()
+            .expect("dark request is valid");
+        let resolved = resolve_with(&scene(NAMED_FRAME_SCENE), &request);
+        let name = frame(&resolved, "clip-frame")
+            .name
+            .as_ref()
+            .expect("the frame resolves its name");
+        assert_eq!(name.color, expected, "{format:?}");
+    }
 }
 
 #[test]

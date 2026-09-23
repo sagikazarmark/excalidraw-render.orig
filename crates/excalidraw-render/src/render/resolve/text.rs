@@ -168,7 +168,7 @@ pub(super) fn resolve_text(
         transform,
         color: color::parse_css(&source.stroke_color)
             .ok_or(ResolveSceneError::InvalidColor)?
-            .for_mode(context.request.color_mode()),
+            .lowered(context.request.color_lowering()),
         opacity: source.opacity / 100.0 * membership.opacity,
         render: true,
         coordinate_failure: None,

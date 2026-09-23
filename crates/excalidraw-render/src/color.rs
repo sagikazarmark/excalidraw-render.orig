@@ -56,7 +56,24 @@ impl CanonicalColor {
     pub(crate) fn for_mode(self, mode: ColorMode) -> Self {
         match mode {
             ColorMode::Light => self,
-            ColorMode::Dark => self.darkened(),
+            ColorMode::Dark => self.lowered(ColorLowering::Floor),
+        }
+    }
+
+    /// The color after the dark-mode filter is lowered into it the way one
+    /// format's authority quantizes it (see [`ColorLowering`]).
+    pub(crate) fn lowered(self, lowering: ColorLowering) -> Self {
+        let filter = match lowering {
+            ColorLowering::None => return self,
+            ColorLowering::Floor => theme_filter,
+            ColorLowering::Round => theme_filter_rounded,
+        };
+        let [red, green, blue] = filter(self.rgb8());
+        Self {
+            red,
+            green,
+            blue,
+            alpha: self.alpha,
         }
     }
 
@@ -92,16 +109,6 @@ impl CanonicalColor {
             self.red, self.green, self.blue
         )
     }
-
-    fn darkened(self) -> Self {
-        let [red, green, blue] = theme_filter(self.rgb8());
-        Self {
-            red,
-            green,
-            blue,
-            alpha: self.alpha,
-        }
-    }
 }
 
 /// The reference export's dark-mode filter, `THEME_FILTER`
@@ -120,6 +127,26 @@ pub(crate) fn theme_filter(rgb: [u8; 3]) -> [u8; 3] {
     [red, green, blue].map(|value| value.clamp(0.0, 255.0).floor() as u8)
 }
 
+/// [`theme_filter`] rounded to the nearest 8-bit value, as the pinned browser
+/// quantizes the reference SVG's root filter: the rounded exact filter of the
+/// composited light image reproduces its dark raster (varmq #84), where
+/// flooring is one level low in any channel with a fraction of one half or
+/// more. PDF, whose authority is the official SVG, lowers with it.
+pub(crate) fn theme_filter_rounded(rgb: [u8; 3]) -> [u8; 3] {
+    let [red, green, blue] = hue_rotate_180(invert(rgb.map(f64::from), [0.93, 0.07]));
+    [red, green, blue].map(|value| value.clamp(0.0, 255.0).round() as u8)
+}
+
+/// How one format lowers the dark-mode filter into the colors it paints. SVG
+/// carries the reference's root filter and lowers nothing; PNG follows the
+/// canvas, which floors; PDF follows the official SVG, which rounds.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ColorLowering {
+    None,
+    Floor,
+    Round,
+}
+
 /// The filter the reference's SVG export puts on a raster image's `<use>` in
 /// dark mode, `IMAGE_INVERT_FILTER`
 /// (`invert(100%) hue-rotate(180deg) saturate(1.25)`), on one opaque or
@@ -134,12 +161,12 @@ pub(crate) fn image_invert_filter(rgb: [u8; 3]) -> [u8; 3] {
 }
 
 /// A raster image pixel as the reference's dark-mode SVG export shows it: the
-/// image filter, then the root filter. Official SVG is the visual authority
-/// for PDF (spec section 8.6), so PDF lowers this into its image pixels; the
-/// reference's canvas export resets the filter for raster images and PNG
-/// leaves their pixels alone.
+/// image filter, then the root filter, rounded as the browser rounds it.
+/// Official SVG is the visual authority for PDF (spec section 8.6), so PDF
+/// lowers this into its image pixels; the reference's canvas export resets the
+/// filter for raster images and PNG leaves their pixels alone.
 pub(crate) fn dark_mode_raster_image_pixel(rgb: [u8; 3]) -> [u8; 3] {
-    theme_filter(image_invert_filter(rgb))
+    theme_filter_rounded(image_invert_filter(rgb))
 }
 
 /// `invert(amount)`: `feComponentTransfer` with the table `amount, 1 - amount`
@@ -934,17 +961,38 @@ mod tests {
     }
 
     /// A raster pixel in a dark-mode SVG export passes through the image
-    /// filter and then the root filter: its contrast lands in `#111111` to
-    /// `#ededed` and its hue survives.
+    /// filter and then the root filter, rounded as the browser rounds it: its
+    /// contrast lands in `#121212` to `#ededed` and its hue survives.
     #[test]
     fn a_dark_mode_raster_image_pixel_keeps_its_hue_with_compressed_contrast() {
         assert_eq!(dark_mode_raster_image_pixel(rgb(0xffffff)), rgb(0xededed));
-        assert_eq!(dark_mode_raster_image_pixel(rgb(0x000000)), rgb(0x111111));
-        assert_eq!(dark_mode_raster_image_pixel(rgb(0x808080)), rgb(0x7f7f7f));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0x000000)), rgb(0x121212));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0x808080)), rgb(0x808080));
         assert_eq!(dark_mode_raster_image_pixel(rgb(0xff0000)), rgb(0xac4a4a));
         assert_eq!(dark_mode_raster_image_pixel(rgb(0x00ff00)), rgb(0x2db32d));
-        assert_eq!(dark_mode_raster_image_pixel(rgb(0x0000ff)), rgb(0x2d2d4c));
-        assert_eq!(dark_mode_raster_image_pixel(rgb(0x1e1e1e)), rgb(0x2b2b2b));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0x0000ff)), rgb(0x2d2d4d));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0x1e1e1e)), rgb(0x2c2c2c));
+    }
+
+    /// The official SVG's root filter rounds where the canvas floors: the
+    /// varmq background `#fffce8` filters to (24.39, 21.81, 4.61), which the
+    /// pinned browser shows as `#181605` (#84).
+    #[test]
+    fn rounded_lowering_matches_the_official_svg_where_floor_is_one_low() {
+        assert_eq!(theme_filter_rounded(rgb(0xfffce8)), rgb(0x181605));
+        assert_eq!(theme_filter(rgb(0xfffce8)), rgb(0x181504));
+        assert_eq!(theme_filter_rounded(rgb(0xa5d8ff)), rgb(0x154163));
+        let color = CanonicalColor::from_rgba(0xa5, 0xd8, 0xff, 0.5);
+        assert_eq!(color.lowered(ColorLowering::None), color);
+        assert_eq!(
+            color.lowered(ColorLowering::Floor),
+            color.for_mode(ColorMode::Dark)
+        );
+        assert_eq!(
+            color.lowered(ColorLowering::Round).rgb8(),
+            [0x15, 0x41, 0x63]
+        );
+        assert_eq!(color.lowered(ColorLowering::Round).alpha(), 0.5);
     }
 
     /// `parse_css(value)` written back as the SVG hex the renderer emits, or

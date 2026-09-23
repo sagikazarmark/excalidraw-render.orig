@@ -3,7 +3,7 @@
 //! opacity resolve from, and one `ResolvedFrame` per emitted frame with its
 //! name and outline.
 
-use crate::color::CanonicalColor;
+use crate::color::{CanonicalColor, ColorLowering};
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::ColorMode;
 
@@ -79,15 +79,16 @@ pub(super) fn semantic_frame_sources(
     Ok(semantic_frames)
 }
 
-/// `FRAME_STYLE.nameColorLightTheme` or `nameColorDarkTheme` for the mode, then
-/// lowered into the mode like every other color the reference paints under
-/// its dark-mode filter.
-fn frame_name_color(mode: ColorMode) -> CanonicalColor {
-    match mode {
+/// `FRAME_STYLE.nameColorLightTheme` or `nameColorDarkTheme` for the theme,
+/// then lowered like every other color the reference paints under its
+/// dark-mode filter. SVG keeps the dark-theme color unlowered under its root
+/// filter, as the reference SVG does.
+fn frame_name_color(theme: ColorMode, lowering: ColorLowering) -> CanonicalColor {
+    match theme {
         ColorMode::Light => FRAME_NAME_COLOR_LIGHT,
         ColorMode::Dark => FRAME_NAME_COLOR_DARK,
     }
-    .for_mode(mode)
+    .lowered(lowering)
 }
 
 /// One frame as a scene export emits it — with the synthesized name taken out
@@ -115,7 +116,10 @@ pub(super) fn resolve_frame(
                 name.width / 2.0,
                 FRAME_NAME_BOX_HEIGHT / 2.0,
             ),
-            color: frame_name_color(context.request.color_mode()),
+            color: frame_name_color(
+                context.request.color_mode(),
+                context.request.color_lowering(),
+            ),
             label: name.label,
         });
     let outline = context
@@ -127,6 +131,7 @@ pub(super) fn resolve_frame(
                 source.height,
                 matches!(source.kind, NormalizedElementKind::MagicFrame(_)),
                 context.request.color_mode(),
+                context.request.color_lowering(),
             )
         })
         .transpose()?;

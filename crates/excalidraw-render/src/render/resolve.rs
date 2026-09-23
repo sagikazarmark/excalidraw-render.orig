@@ -29,7 +29,7 @@ use outline::resolve_geometry;
 pub(super) use text::live_text_occurrence;
 use text::{resolve_fonts, resolve_text};
 
-use crate::color::{self, CanonicalColor};
+use crate::color::{self, CanonicalColor, ColorLowering};
 use crate::diagnostic_registry::{DiagnosticKind, LocalLimit, LocalRecovery};
 use crate::normalization::{NormalizedElement, NormalizedElementKind, NormalizedElementSource};
 use crate::outcome::PendingDiagnostic;
@@ -431,8 +431,8 @@ impl ResolvedScene {
             include_background: request.include_background(),
             background_color: color::parse_css(background_color)
                 .ok_or(ResolveSceneError::InvalidColor)?
-                .for_mode(request.color_mode()),
-            fallback_colors: FallbackColors::for_mode(request.color_mode()),
+                .lowered(request.color_lowering()),
+            fallback_colors: FallbackColors::lowered(request.color_lowering()),
             elements: Vec::new(),
             fallback_font_woff2: None,
             fallback_font_sfnt: None,
@@ -599,7 +599,7 @@ impl ResolvedScene {
         )?;
         let background_color = color::parse_css(background_color)
             .ok_or(ResolveSceneError::InvalidColor)?
-            .for_mode(request.color_mode());
+            .lowered(request.color_lowering());
         let semantic_frames = semantic_frame_sources(&outlines)?;
         let fallback_frame_clips = fallback_frame_clip_sources(&fallbacks, frame_rendering)?;
         let mut has_label = false;
@@ -743,7 +743,7 @@ impl ResolvedScene {
             logical_height,
             include_background: request.include_background(),
             background_color,
-            fallback_colors: FallbackColors::for_mode(request.color_mode()),
+            fallback_colors: FallbackColors::lowered(request.color_lowering()),
             elements,
             fallback_font_woff2,
             fallback_font_sfnt,
@@ -882,13 +882,14 @@ pub(super) struct ResolvedImage {
 /// filter for a nested-SVG image.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DarkModeImageFilter {
-    /// `IMAGE_INVERT_FILTER` followed by `THEME_FILTER`. SVG references it and
-    /// PDF, whose authority is official SVG, lowers it into the pixels; PNG
-    /// follows the canvas and leaves a raster image's pixels alone.
+    /// `IMAGE_INVERT_FILTER` followed by `THEME_FILTER`. SVG references the
+    /// image filter under its root theme filter and PDF, whose authority is
+    /// official SVG, lowers both into the pixels; PNG follows the canvas and
+    /// leaves a raster image's pixels alone.
     RasterImage,
-    /// `THEME_FILTER` alone. SVG references it and PNG lowers it into the
-    /// pixels it rasterizes; PDF embeds the nested SVG's vector content
-    /// unlowered until #154 decides the mechanism.
+    /// `THEME_FILTER` alone. SVG applies it through its root filter and PNG
+    /// lowers it into the pixels it rasterizes; PDF embeds the nested SVG's
+    /// vector content unlowered until #154 decides the mechanism.
     NestedSvgImage,
 }
 
@@ -1179,14 +1180,17 @@ impl ResolvedFrameOutline {
         width: f64,
         height: f64,
         magic: bool,
-        mode: crate::ColorMode,
+        theme: crate::ColorMode,
+        lowering: ColorLowering,
     ) -> Result<Self, ResolveSceneError> {
-        let stroke_color = FRAME_OUTLINE_STROKE_COLOR.for_mode(mode);
+        let stroke_color = FRAME_OUTLINE_STROKE_COLOR.lowered(lowering);
         Ok(Self {
             path: resolved_frame_outline(width, height)?,
             stroke_color,
+            // Only PNG paints the canvas color, and PNG lowers exactly when
+            // the theme is dark.
             canvas_stroke_color: if magic {
-                magic_frame_canvas_outline_stroke_color(mode)
+                magic_frame_canvas_outline_stroke_color(theme)
             } else {
                 stroke_color
             },
@@ -1250,11 +1254,11 @@ pub(super) struct FallbackColors {
 }
 
 impl FallbackColors {
-    pub(super) fn for_mode(mode: crate::ColorMode) -> Self {
+    pub(super) fn lowered(lowering: ColorLowering) -> Self {
         Self {
-            fill: CanonicalColor::from_rgb8(0xf1, 0xf3, 0xf5).for_mode(mode),
-            stroke: CanonicalColor::from_rgb8(0x86, 0x8e, 0x96).for_mode(mode),
-            label: CanonicalColor::from_rgb8(0x49, 0x50, 0x57).for_mode(mode),
+            fill: CanonicalColor::from_rgb8(0xf1, 0xf3, 0xf5).lowered(lowering),
+            stroke: CanonicalColor::from_rgb8(0x86, 0x8e, 0x96).lowered(lowering),
+            label: CanonicalColor::from_rgb8(0x49, 0x50, 0x57).lowered(lowering),
         }
     }
 }

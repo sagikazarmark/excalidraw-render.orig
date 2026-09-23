@@ -143,6 +143,9 @@ pub(super) fn element_opacity_multiplies_color_alpha_in_every_projection() {
 
 #[test]
 pub(super) fn dark_mode_lowers_scene_colors_before_every_projection() {
+    // SVG carries the reference's root filter over light colors; PNG floors
+    // the lowered filter as the canvas does and PDF rounds it as the official
+    // SVG's root filter does (spec section 8.1).
     let source = br##"{
         "type":"excalidraw",
         "version":2,
@@ -161,8 +164,9 @@ pub(super) fn dark_mode_lowers_scene_colors_before_every_projection() {
 
     let dark_svg = render_dark(source, OutputFormat::Svg);
     let svg = std::str::from_utf8(dark_svg.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(svg.contains("fill=\"#111111\""));
-    assert!(svg.contains("stroke=\"#d3d3d3\""));
+    assert!(svg.contains(" filter=\"invert(93%) hue-rotate(180deg)\">"));
+    assert!(svg.contains("fill=\"#ffffff\""));
+    assert!(svg.contains("stroke=\"#1e1e1e\""));
 
     let dark_png = render_dark(source, OutputFormat::Png);
     let rgba = decode_png(dark_png.artifact().bytes()).rgba;
@@ -171,7 +175,7 @@ pub(super) fn dark_mode_lowers_scene_colors_before_every_projection() {
 
     let dark_pdf = render_dark(source, OutputFormat::Pdf);
     let content = stream_text(dark_pdf.artifact().bytes(), b"4 0 obj");
-    assert!(content.contains("0.06666666666666667 0.06666666666666667 0.06666666666666667 scn"));
+    assert!(content.contains("0.07058823529411765 0.07058823529411765 0.07058823529411765 scn"));
     assert!(content.contains("0.8274509803921568 0.8274509803921568 0.8274509803921568 SCN"));
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
@@ -200,10 +204,11 @@ fn renderer_owned_fallback_colors_follow_dark_mode() {
 
     let svg = render_dark(source, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(svg.contains("fill=\"#1a1c1e\""));
-    assert!(svg.contains("stroke=\"#6e747b\""));
+    assert!(svg.contains(" filter=\"invert(93%) hue-rotate(180deg)\">"));
+    assert!(svg.contains("fill=\"#f1f3f5\""));
+    assert!(svg.contains("stroke=\"#868e96\""));
     assert!(svg.contains(&format!(
-        "fill=\"#a4aab0\" {}",
+        "fill=\"#495057\" {}",
         font_family_attribute(LIBERATION_FAMILIES)
     )));
 
@@ -213,8 +218,8 @@ fn renderer_owned_fallback_colors_follow_dark_mode() {
 
     let pdf = render_dark(source, OutputFormat::Pdf);
     let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
-    assert!(content.contains("0.10196078431372549 0.10980392156862745 0.11764705882352941 scn"));
-    assert!(content.contains("0.43137254901960786 0.4549019607843137 0.4823529411764706 SCN"));
+    assert!(content.contains("0.10588235294117647 0.11372549019607843 0.11764705882352941 scn"));
+    assert!(content.contains("0.43137254901960786 0.4588235294117647 0.48627450980392156 SCN"));
 }
 
 #[test]
