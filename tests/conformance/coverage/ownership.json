@@ -43944,65 +43944,233 @@
     {
       "id": "codec:webp:alpha",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_container_contract.rs",
+            "sha256": "fa909afa3be4a3c5f21785caa1dff523be76488352a22594249306354cbd77f8"
+          },
+          "function": "webp_alpha_matches_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_container_contract::webp_alpha_matches_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "WebP alpha facet: the VP8X alpha flag against the bitstream's alpha (Blink's straight-as-premultiplied buffer, ignored lossy ALPH), exact PDF alpha, and the sample matrix's opaque, binary and partial alpha, soft mask, transparent RGB zero, draw-time truncation and approved #191 PDF exceptions. One flag-clear plus transforming-ICC row is a pinned divergence (#197). See docs/research/webp-umbrella-facets.md."
       }
     },
     {
       "id": "codec:webp:animation",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_container_contract.rs",
+            "sha256": "fa909afa3be4a3c5f21785caa1dff523be76488352a22594249306354cbd77f8"
+          },
+          "function": "webp_default_frame_and_animation_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_container_contract::webp_default_frame_and_animation_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "WebP default-frame and animation facets: every frame validates; the first frame draws on a transparent canvas for three and five frames, reserved frame bits, either alpha flag, EXIF and duplicate ANIM; PNG/PDF report one informational flattening and SVG keeps the animation; with the 60-vector sample animation matrix. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
       "id": "codec:webp:color-profile",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_container_contract.rs",
+            "sha256": "fa909afa3be4a3c5f21785caa1dff523be76488352a22594249306354cbd77f8"
+          },
+          "function": "webp_color_profiles_apply_as_the_reference_applies_them",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_container_contract::webp_color_profiles_apply_as_the_reference_applies_them",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "WebP color-profile facet: v2/v4 matrix, LUT and Lab-LUT RGB profiles apply only to a still image with the ICC flag set; gray, CMYK, Lab-model and unparseable profiles, a clear flag, a missing chunk and animations are ignored; sRGB-equivalent profiles snap to sRGB as Skia does; duplicate, trailing and oversized profiles follow the demuxer (50 reference rows, 34 approved exact-ceiling small-artifact exceptions), with the untagged VP8/VP8L sample matrix. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
       "id": "codec:webp:default-frame",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_container_contract.rs",
+            "sha256": "fa909afa3be4a3c5f21785caa1dff523be76488352a22594249306354cbd77f8"
+          },
+          "function": "webp_default_frame_and_animation_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_container_contract::webp_default_frame_and_animation_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "WebP default-frame and animation facets: every frame validates; the first frame draws on a transparent canvas for three and five frames, reserved frame bits, either alpha flag, EXIF and duplicate ANIM; PNG/PDF report one informational flattening and SVG keeps the animation; with the 60-vector sample animation matrix. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
       "id": "codec:webp:limits",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_limit_contract.rs",
+            "sha256": "f626379e08ca7700b97dd77e453099e357d28a45b2eea120ed98f024153d4c80"
+          },
+          "function": "webp_limits_have_exact_boundaries_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_limit_contract::webp_limits_have_exact_boundaries_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "WebP limits facet: byte, dimension, pixel and work equality and exact first crossing (the attempted total) for lossless, lossy and animated WebP in every format with exact reports and recovery, and the spec 13.2 multi-crossing precedence. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
       "id": "codec:webp:malformed",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_container_contract.rs",
+            "sha256": "fa909afa3be4a3c5f21785caa1dff523be76488352a22594249306354cbd77f8"
+          },
+          "function": "webp_containers_and_malformed_payloads_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_container_contract::webp_containers_and_malformed_payloads_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "WebP malformed facet: container faults the reference rejects recover exactly; faults its demuxer tolerates (trailing bytes, reserved bytes and frame bits, missing and unknown chunks, oversized metadata) draw like their base; 48 reference container rows plus the 12 reference-collected #191 controls and their owners. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
       "id": "codec:webp:orientation",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_container_contract.rs",
+            "sha256": "fa909afa3be4a3c5f21785caa1dff523be76488352a22594249306354cbd77f8"
+          },
+          "function": "webp_orientation_metadata_is_ignored_as_the_reference_ignores_it",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_container_contract::webp_orientation_metadata_is_ignored_as_the_reference_ignores_it",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "WebP orientation facet: EXIF orientation 0-9, prefixed, flag-clear and garbage EXIF over lossless, lossy, alpha and animated bases are never applied, matching the reference exactly in all formats (52 reference rows). See docs/research/webp-umbrella-facets.md."
       }
     },
     {
       "id": "codec:webp:passthrough",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/webp_container_contract.rs",
+            "sha256": "fa909afa3be4a3c5f21785caa1dff523be76488352a22594249306354cbd77f8"
+          },
+          "function": "webp_svg_embeds_every_admitted_payload_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "webp_container_contract::webp_svg_embeds_every_admitted_payload_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "WebP passthrough facet: direct SVG embeds the exact source octets of every admitted row of the 195-row record, whatever its metadata, trailing bytes or unknown chunks, and rejects what the reference rejects. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -44015,7 +44183,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "reserved_and_intrinsic_controls_are_accepted_as_the_reference_accepts_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -44026,12 +44194,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::reserved_and_intrinsic_controls_are_accepted_as_the_reference_accepts_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The three #191 controls the pinned reference accepts (libwebp skips reserved VP8X bytes, ignores reserved ANMF bits and takes a frame's size from its bitstream) draw exactly like their base in PNG/PDF and keep their octets in SVG. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -44044,7 +44212,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "malformed_controls_reject_exactly_as_the_reference_rejects_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -44055,12 +44223,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::malformed_controls_reject_exactly_as_the_reference_rejects_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The nine #191 controls the pinned reference rejects (reference-collected in tests/oracle/webp-container, including libwebp's VP8X valid-flag mask) recover exactly as a missing asset in SVG/PNG/PDF, with exact reports, extents and replay. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -44073,7 +44241,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "malformed_controls_reject_exactly_as_the_reference_rejects_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -44084,12 +44252,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::malformed_controls_reject_exactly_as_the_reference_rejects_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The nine #191 controls the pinned reference rejects (reference-collected in tests/oracle/webp-container, including libwebp's VP8X valid-flag mask) recover exactly as a missing asset in SVG/PNG/PDF, with exact reports, extents and replay. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -44102,7 +44270,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "malformed_controls_reject_exactly_as_the_reference_rejects_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -44113,12 +44281,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::malformed_controls_reject_exactly_as_the_reference_rejects_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The nine #191 controls the pinned reference rejects (reference-collected in tests/oracle/webp-container, including libwebp's VP8X valid-flag mask) recover exactly as a missing asset in SVG/PNG/PDF, with exact reports, extents and replay. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -44131,7 +44299,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "reserved_and_intrinsic_controls_are_accepted_as_the_reference_accepts_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -44142,12 +44310,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::reserved_and_intrinsic_controls_are_accepted_as_the_reference_accepts_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The three #191 controls the pinned reference accepts (libwebp skips reserved VP8X bytes, ignores reserved ANMF bits and takes a frame's size from its bitstream) draw exactly like their base in PNG/PDF and keep their octets in SVG. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -44160,7 +44328,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "malformed_controls_reject_exactly_as_the_reference_rejects_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -44171,12 +44339,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::malformed_controls_reject_exactly_as_the_reference_rejects_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The nine #191 controls the pinned reference rejects (reference-collected in tests/oracle/webp-container, including libwebp's VP8X valid-flag mask) recover exactly as a missing asset in SVG/PNG/PDF, with exact reports, extents and replay. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -45233,7 +45401,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "malformed_controls_reject_exactly_as_the_reference_rejects_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -45244,12 +45412,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::malformed_controls_reject_exactly_as_the_reference_rejects_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The nine #191 controls the pinned reference rejects (reference-collected in tests/oracle/webp-container, including libwebp's VP8X valid-flag mask) recover exactly as a missing asset in SVG/PNG/PDF, with exact reports, extents and replay. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -45262,7 +45430,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "malformed_controls_reject_exactly_as_the_reference_rejects_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -45273,12 +45441,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::malformed_controls_reject_exactly_as_the_reference_rejects_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The nine #191 controls the pinned reference rejects (reference-collected in tests/oracle/webp-container, including libwebp's VP8X valid-flag mask) recover exactly as a missing asset in SVG/PNG/PDF, with exact reports, extents and replay. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -45291,7 +45459,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "malformed_controls_reject_exactly_as_the_reference_rejects_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -45302,12 +45470,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::malformed_controls_reject_exactly_as_the_reference_rejects_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The nine #191 controls the pinned reference rejects (reference-collected in tests/oracle/webp-container, including libwebp's VP8X valid-flag mask) recover exactly as a missing asset in SVG/PNG/PDF, with exact reports, extents and replay. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -45320,7 +45488,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "malformed_10_controls_exact_recovery",
+          "function": "malformed_controls_reject_exactly_as_the_reference_rejects_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -45331,12 +45499,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::malformed_10_controls_exact_recovery",
+            "webp_sample_contract::malformed_controls_reject_exactly_as_the_reference_rejects_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The nine #191 controls the pinned reference rejects (reference-collected in tests/oracle/webp-container, including libwebp's VP8X valid-flag mask) recover exactly as a missing asset in SVG/PNG/PDF, with exact reports, extents and replay. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -45349,7 +45517,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "reserved_vp8x_controls_are_accepted_characterization",
+          "function": "reserved_and_intrinsic_controls_are_accepted_as_the_reference_accepts_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -45360,12 +45528,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::reserved_vp8x_controls_are_accepted_characterization",
+            "webp_sample_contract::reserved_and_intrinsic_controls_are_accepted_as_the_reference_accepts_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The three #191 controls the pinned reference accepts (libwebp skips reserved VP8X bytes, ignores reserved ANMF bits and takes a frame's size from its bitstream) draw exactly like their base in PNG/PDF and keep their octets in SVG. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -45378,7 +45546,7 @@
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
             "sha256": "9f8593aab80bfb53e9370251695c672419602b7c1cd09cbd043578cb93dd02e3"
           },
-          "function": "reserved_vp8x_controls_are_accepted_characterization",
+          "function": "malformed_controls_reject_exactly_as_the_reference_rejects_them",
           "binary": "fast",
           "command": [
             "cargo",
@@ -45389,12 +45557,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "webp_sample_contract::reserved_vp8x_controls_are_accepted_characterization",
+            "webp_sample_contract::malformed_controls_reject_exactly_as_the_reference_rejects_them",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned libwebp source encoding/browser observations with exact RIFF reconstruction and source/extent/alpha/report/replay gates. Qualified sample cells pass canonical visual gates; strict recovery/reserved-ignore controls are bounded characterizations. #191 sample failures remain gaps. See docs/research/webp-sample-qualification.md."
+        "rationale": "The nine #191 controls the pinned reference rejects (reference-collected in tests/oracle/webp-container, including libwebp's VP8X valid-flag mask) recover exactly as a missing asset in SVG/PNG/PDF, with exact reports, extents and replay. See docs/research/webp-umbrella-facets.md."
       }
     },
     {
@@ -49618,16 +49786,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v17",
+            "case": "representative.stage4-frames-text-assets.v18",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "ffae1845a61ab086e3c53c31a10c1c7f5a1ebb0ac6cd1772aa03376e8c17bc17"
+              "sha256": "a8a7f17430e69972a2f69158cd7356dcc7701964e61c0a8eb90e26d1dc18ebb3"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v17/manifest.json",
-              "sha256": "456db5daf947ff3bae611f9f810d560242bf121ad64070ede45634f600b10c05"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v18/manifest.json",
+              "sha256": "83480500cb7d6ea6a4272d7e8f729a96a02f0fcfda028839e1849136e84a543c"
             },
-            "approval_subject_sha256": "sha256:f7c47c5ba6f8d4af3fa2a4d62630efe7771a577ea36a04f9f1a4371590df5df5",
+            "approval_subject_sha256": "sha256:6b88396cffe18ac6bb47c68fa5eedc0dee3f69514b311440374e3b78c49d91a7",
             "command": [
               "cargo",
               "run",
@@ -49638,7 +49806,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v17"
+              "tests/conformance/candidates/stage4-frames-text-assets-v18"
             ]
           }
         },

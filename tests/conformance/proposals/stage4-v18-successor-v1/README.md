@@ -1,6 +1,10 @@
-# WebP umbrella facets, ICC exceptions and V18 successor — pending approval
+# WebP umbrella facets, ICC exceptions and V18 successor — approved and applied
 
-Three exact subjects for one #85 decision. Nothing here is approved or applied.
+Three exact subjects for one #85 decision, approved by the user on 2026-09-23
+([#85 comment](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5800006309))
+and applied with `apply.py`. After application, V18 `candidate-verify`, all
+WebP and xtask tests and `verify-ownership` (2367 assigned/excluded, 51 gaps)
+passed. The rest of this README preserves the reviewed proposal.
 
 | Subject | SHA-256 |
 | --- | --- |

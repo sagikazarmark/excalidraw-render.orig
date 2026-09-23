@@ -1,6 +1,11 @@
 {
   "schema": "excalidraw-render/webp-icc-exceptions/v1",
-  "approval": null,
+  "approval": {
+    "approved_by": "sagikazarmark",
+    "approved_at": "2026-09-23",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5800006309",
+    "approval_subject_sha256": "sha256:e8f408e8263f78f9e9ece56546a7253b50d53c988cae507c493501b85a38da66"
+  },
   "reason": "Color-managed WebP views: the renderer applies the embedded RGB ICC profile with its pinned CMS (moxcms matrix/TRC and LUT evaluation, rounded premultiplication), while the reference draws through Skia/skcms float arithmetic at draw time. The results differ by at most a few channel units on some pixels. On the 9x7 external libwebp vectors, the canonical small-artifact rule turns those rounding differences into failures that a larger image would pass under the geometry/image budget, as the PNG ICC matrices do. Each exception holds its view at the exact observed Pixelmatch count, differing pixels and maximum channel difference (spec section 14.4, small-artifact form).",
   "comparison": "canonical geometry/image against the pinned reference PNG; PDF only for opaque views",
   "exceptions": [
