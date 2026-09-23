@@ -95,8 +95,10 @@ overlapping sub-pixel geometry differently from Chromium, and PDFs grew 3–6×.
 It is not adopted. The remaining sub-pixel density difference awaits a
 scoped-exception decision.
 
-This compact record is bound to the pre-fix renderer. `compact.py check`
-correctly reports the changed native PDFs until the evidence is re-collected.
+This compact record is bound to the pre-fix renderer; `compact.py check`
+correctly reports the changed native PDFs. The re-collected evidence is
+`../varmq84-evidence-v2`, and the proposed light PDF `worker-arrow` exceptions
+are in `../varmq84-pdf-subpixel-exception-v1`.
 
 ## Not yet diagnosed
 

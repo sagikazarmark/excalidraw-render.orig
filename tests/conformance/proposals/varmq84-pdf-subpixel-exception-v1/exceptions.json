@@ -1,0 +1,51 @@
+{
+  "approval": null,
+  "evidence": {
+    "attribution": {
+      "path": "tests/conformance/proposals/varmq84-pdf-subpixel-exception-v1/attribution-light.json",
+      "sha256": "06cbc5ffd33c8ee61aefe28d0908e7ee032ff2c3041915d05cb2f4a0ff998dba"
+    },
+    "compact_record": {
+      "path": "tests/conformance/proposals/varmq84-evidence-v2/compact.json",
+      "sha256": "107463d201efbf392c40f4ef955bf91e25c365e4e76de59260b89198bdbfae86"
+    },
+    "controls": {
+      "path": "tests/conformance/proposals/varmq84-pdf-subpixel-exception-v1/controls/thin-lines.json",
+      "sha256": "7955bfb452263b3783bf7320917d3cc78187557634f2fb324e3e0b22e105e81a"
+    }
+  },
+  "exceptions": [
+    {
+      "approving_issue": null,
+      "case": "representative.varmq-queue-diagram.v1",
+      "format": "pdf",
+      "judgment": {
+        "path": "tests/conformance/proposals/varmq84-evidence-v2/viewers/light/pdf-pdfium-comparison.json",
+        "sha256": "a7fa4f5148916ee5d8df147f1922af8c486c19409ea88f649cdab62666b82bdf"
+      },
+      "max_changed_pixels": 18886,
+      "minimum_ssim_bits": "3fe98f674257a6fe",
+      "reason": "Viewer rasterization of sub-pixel sketch strokes: the crop's cross-hatch is stroked at 0.25 device px with geometry number-for-number identical to the native SVG, which passes this crop in Chromium with zero changed pixels. Both pinned PDF viewers widen every stroke narrower than one device pixel to one pixel, and PDFium additionally sums overlapping partial coverage (controls/thin-lines.json).",
+      "region": "worker-arrow",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": null,
+      "case": "representative.varmq-queue-diagram.v1",
+      "format": "pdf",
+      "judgment": {
+        "path": "tests/conformance/proposals/varmq84-evidence-v2/viewers/light/pdf-pdfjs-comparison.json",
+        "sha256": "193fe65a82c2f44bc9f1bc41886bdad4bb812f76b1092e6e33c108a498ea051e"
+      },
+      "max_changed_pixels": 15156,
+      "minimum_ssim_bits": "3fe9e824845e5a96",
+      "reason": "Viewer rasterization of sub-pixel sketch strokes: the crop's cross-hatch is stroked at 0.25 device px with geometry number-for-number identical to the native SVG, which passes this crop in Chromium with zero changed pixels. Both pinned PDF viewers widen every stroke narrower than one device pixel to one pixel, and PDFium additionally sums overlapping partial coverage (controls/thin-lines.json).",
+      "region": "worker-arrow",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfjs-v1"
+    }
+  ],
+  "schema": "excalidraw-render/tolerance-exception-proposal/v1",
+  "status": "pending-review"
+}

@@ -1,0 +1,647 @@
+{
+  "schema": "excalidraw-render/representative-font-resolution/v1",
+  "status": "observed-unapproved",
+  "approval": null,
+  "input": {
+    "path": "target/varmq-viewers-v2/light/official.svg",
+    "sha256": "46a74d826e9fef635efcfb18c8ea13cd3b77711eecfbcae09f4f8907f690edeb"
+  },
+  "browser": "149.0.7827.55",
+  "fontconfig": "2.15.0",
+  "undeclared": [
+    {
+      "requested_family": "Helvetica",
+      "chromium": {
+        "familyName": "Liberation Sans",
+        "postScriptName": "LiberationSans",
+        "isCustomFont": false,
+        "glyphCount": 25
+      },
+      "fontconfig": {
+        "file": "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "postscript_name": "LiberationSans"
+      },
+      "agrees": true,
+      "system_font": {
+        "bytes": 410820,
+        "path": "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+      },
+      "text_nodes": 1
+    }
+  ],
+  "usages": [
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Goroutine",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 9
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "yes",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 3
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Queue 1",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Queue 2",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Queue 3",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Worker Pool",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 11
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 1",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 1",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 1",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 2",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 2",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 2",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 3",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 3",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 3",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 4",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 4",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item 4",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 6
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "channel Pool",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 12
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "channel",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "1",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "channel",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "2",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "channel",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "3",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "channel",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "4",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "concurrency 4",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 13
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Goroutines",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 10
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Worker 3",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 8
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Worker 4",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 8
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Worker 1",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 8
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Worker 2",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 8
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Process next job",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 16
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Queue Manager",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 13
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "job",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 3
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Item",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Event",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 5
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Loop",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 4
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "check peneding",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 14
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "item in queue",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 13
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "and Channel",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 11
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "Pool is free",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 12
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "dequeue",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "dequeue",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "dequeue",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 7
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "4",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "2",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "3",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    {
+      "font_family": "Excalifont, Xiaolai, Segoe UI Emoji",
+      "text": "1",
+      "fonts": [
+        {
+          "familyName": "Excalifont",
+          "postScriptName": "Excalifont-Regular",
+          "isCustomFont": true,
+          "glyphCount": 1
+        }
+      ]
+    },
+    {
+      "font_family": "Helvetica, Segoe UI Emoji",
+      "text": "Concurrency Architechture",
+      "fonts": [
+        {
+          "familyName": "Liberation Sans",
+          "postScriptName": "LiberationSans",
+          "isCustomFont": false,
+          "glyphCount": 25
+        }
+      ]
+    }
+  ]
+}
