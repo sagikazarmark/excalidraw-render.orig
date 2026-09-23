@@ -185,7 +185,14 @@ until those discrepancies are fixed. See [the findings](../../../docs/research/w
 
 ### Canonical baseline approval and replay
 
-`native-baseline/revision-1.json` contains the approved clean `59fda62` recollection
+`native-baseline/revision-1.json` contains the approved clean `4713c2e` recollection
+after PDF began lowering dark mode into nested-SVG content (ADR-0013, #154).
+Exactly one key changed, `focused.dark-mode-images.v1` dark-mode PDF, with its
+report unchanged. It was approved on 2026-09-23 in
+[#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5789983701),
+subject `sha256:e4dc77872c6479036b811c4641ab5ccafd14cd3d733e8b0a7494fecc2531c399`.
+
+The preceding baseline contains the approved clean `59fda62` recollection
 after the dark-mode root filter change (ADR-0012). 42 keys changed against the
 prior baseline: the dark-mode SVG and PDF of four cases, isolated against a
 parent-commit collection, and 34 keys from the approved WebP composition and
