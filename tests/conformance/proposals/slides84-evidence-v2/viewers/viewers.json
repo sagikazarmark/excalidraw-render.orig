@@ -1,0 +1,2596 @@
+{
+  "approval": null,
+  "captures": [
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d"
+      },
+      "raster": {
+        "bytes": 268271,
+        "path": "target/slides-viewers-v2/light/official-chromium.rgba.zlib",
+        "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 129,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "6e0fe9910212",
+          "height": 3847,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Virgil",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 32,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 33,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 64,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "official-chromium-0-raw.rgba.zlib",
+            "sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d",
+          "virtual_time_ticks_base": 41292454.933,
+          "width": 2831
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 136,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "054a5c405056",
+          "height": 3847,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Virgil",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 32,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 33,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 64,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "official-chromium-1-raw.rgba.zlib",
+            "sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d",
+          "virtual_time_ticks_base": 41295542.286,
+          "width": 2831
+        }
+      ],
+      "variant": "light",
+      "viewer": "official-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e"
+      },
+      "raster": {
+        "bytes": 268189,
+        "path": "target/slides-viewers-v2/light/native-chromium.rgba.zlib",
+        "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 136,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "817d7f80450b",
+          "height": 3847,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 32,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 33,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 64,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-chromium-0-raw.rgba.zlib",
+            "sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e",
+          "virtual_time_ticks_base": 41298823.178,
+          "width": 2831
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 128,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "9de3e7534f21",
+          "height": 3847,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 32,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 33,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 64,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-chromium-1-raw.rgba.zlib",
+            "sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e",
+          "virtual_time_ticks_base": 41301817.779,
+          "width": 2831
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a"
+      },
+      "raster": {
+        "bytes": 274210,
+        "path": "target/slides-viewers-v2/light/native-pdfium.rgba.zlib",
+        "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+      },
+      "runs": [
+        {
+          "byte_length": 43563428,
+          "height": 3847,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-pdfium-0-raw.rgba.zlib",
+            "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a"
+          },
+          "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a",
+          "width": 2831
+        },
+        {
+          "byte_length": 43563428,
+          "height": 3847,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-pdfium-1-raw.rgba.zlib",
+            "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a"
+          },
+          "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a",
+          "width": 2831
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-pdfium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136"
+      },
+      "raster": {
+        "bytes": 258800,
+        "path": "target/slides-viewers-v2/light/native-pdfjs.rgba.zlib",
+        "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+      },
+      "runs": [
+        {
+          "byte_length": 43563428,
+          "height": 3847,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-pdfjs-0-raw.rgba.zlib",
+            "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136"
+          },
+          "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136",
+          "width": 2831
+        },
+        {
+          "byte_length": 43563428,
+          "height": 3847,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-pdfjs-1-raw.rgba.zlib",
+            "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136"
+          },
+          "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136",
+          "width": 2831
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-pdfjs"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "91c0c0af63daf05869ee898a1e642b54622c060760c98adaf247ea76dc5e70dc"
+      },
+      "raster": {
+        "bytes": 210845,
+        "path": "target/slides-viewers-v2/light/official-rust.rgba.zlib",
+        "sha256": "717bfb9594049f77a3467c8d17c61341b6283ca25909eaa59d05b6c9437be658"
+      },
+      "runs": [
+        {
+          "height": 3847,
+          "raw_capture": {
+            "bytes": 43578816,
+            "file": "official-rust-0-raw.rgba.zlib",
+            "sha256": "60eea5453c8046fc21cc4e9f1dd2a35844014d4acb6d6e5c3ecd13a2c52feb3b"
+          },
+          "width": 2832
+        },
+        {
+          "height": 3847,
+          "raw_capture": {
+            "bytes": 43578816,
+            "file": "official-rust-1-raw.rgba.zlib",
+            "sha256": "60eea5453c8046fc21cc4e9f1dd2a35844014d4acb6d6e5c3ecd13a2c52feb3b"
+          },
+          "width": 2832
+        }
+      ],
+      "variant": "light",
+      "viewer": "official-rust"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "641307e3958b77039a30ad8070e98956bd3009a5c48fbeb412e54d5792b6b202"
+      },
+      "raster": {
+        "bytes": 210856,
+        "path": "target/slides-viewers-v2/light/native-rust.rgba.zlib",
+        "sha256": "45ec4beebcbc3597ea403bfb54cd654d7ce388a2610dc0ec3a7bc75c68f79b08"
+      },
+      "runs": [
+        {
+          "height": 3847,
+          "raw_capture": {
+            "bytes": 43578816,
+            "file": "native-rust-0-raw.rgba.zlib",
+            "sha256": "cc0274aa113fc719ca1ed32791e4b6dae01e3beac9569f231d7b30b1654a9a18"
+          },
+          "width": 2832
+        },
+        {
+          "height": 3847,
+          "raw_capture": {
+            "bytes": 43578816,
+            "file": "native-rust-1-raw.rgba.zlib",
+            "sha256": "cc0274aa113fc719ca1ed32791e4b6dae01e3beac9569f231d7b30b1654a9a18"
+          },
+          "width": 2832
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-rust"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f"
+      },
+      "raster": {
+        "bytes": 252829,
+        "path": "target/slides-viewers-v2/dark/official-chromium.rgba.zlib",
+        "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 126,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "16a7be7f027b",
+          "height": 3847,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Virgil",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 32,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 33,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 64,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "official-chromium-0-raw.rgba.zlib",
+            "sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f",
+          "virtual_time_ticks_base": 41404729.569,
+          "width": 2831
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 129,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "d9e01efd9207",
+          "height": 3847,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Virgil",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 32,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 33,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 64,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Virgil",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "Virgil-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "official-chromium-1-raw.rgba.zlib",
+            "sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f",
+          "virtual_time_ticks_base": 41408247.283,
+          "width": 2831
+        }
+      ],
+      "variant": "dark",
+      "viewer": "official-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664"
+      },
+      "raster": {
+        "bytes": 252819,
+        "path": "target/slides-viewers-v2/dark/native-chromium.rgba.zlib",
+        "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 127,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "155ac8607744",
+          "height": 3847,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 32,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 33,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 64,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-chromium-0-raw.rgba.zlib",
+            "sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664",
+          "virtual_time_ticks_base": 41411699.298,
+          "width": 2831
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 130,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "fb6aa344ff74",
+          "height": 3847,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 32,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 33,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 64,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 42,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-1",
+              "glyphCount": 22,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-chromium-1-raw.rgba.zlib",
+            "sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664",
+          "virtual_time_ticks_base": 41414740.725,
+          "width": 2831
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d"
+      },
+      "raster": {
+        "bytes": 259754,
+        "path": "target/slides-viewers-v2/dark/native-pdfium.rgba.zlib",
+        "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+      },
+      "runs": [
+        {
+          "byte_length": 43563428,
+          "height": 3847,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-pdfium-0-raw.rgba.zlib",
+            "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d"
+          },
+          "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d",
+          "width": 2831
+        },
+        {
+          "byte_length": 43563428,
+          "height": 3847,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-pdfium-1-raw.rgba.zlib",
+            "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d"
+          },
+          "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d",
+          "width": 2831
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-pdfium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c"
+      },
+      "raster": {
+        "bytes": 249559,
+        "path": "target/slides-viewers-v2/dark/native-pdfjs.rgba.zlib",
+        "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+      },
+      "runs": [
+        {
+          "byte_length": 43563428,
+          "height": 3847,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-pdfjs-0-raw.rgba.zlib",
+            "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c"
+          },
+          "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c",
+          "width": 2831
+        },
+        {
+          "byte_length": 43563428,
+          "height": 3847,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 43563428,
+            "file": "native-pdfjs-1-raw.rgba.zlib",
+            "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c"
+          },
+          "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c",
+          "width": 2831
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-pdfjs"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "b4d07c0f49bb3e1ead904623d680d57cc6a86b2ccb33fc2144eb8ba463e9d842"
+      },
+      "raster": {
+        "bytes": 200910,
+        "path": "target/slides-viewers-v2/dark/official-rust.rgba.zlib",
+        "sha256": "6dbca51f3295a985da03da8ef48f48ad3bff95775c9fb6c07b59b0d4773de5ed"
+      },
+      "runs": [
+        {
+          "height": 3847,
+          "raw_capture": {
+            "bytes": 43578816,
+            "file": "official-rust-0-raw.rgba.zlib",
+            "sha256": "6ee71e9ceb325c7349612e54a9d944683f499726d9028df1ba0219ba236779db"
+          },
+          "width": 2832
+        },
+        {
+          "height": 3847,
+          "raw_capture": {
+            "bytes": 43578816,
+            "file": "official-rust-1-raw.rgba.zlib",
+            "sha256": "6ee71e9ceb325c7349612e54a9d944683f499726d9028df1ba0219ba236779db"
+          },
+          "width": 2832
+        }
+      ],
+      "variant": "dark",
+      "viewer": "official-rust"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 43563428,
+        "sha256": "3fe5eb9727766d3acfae55dd118177d3c60e169fc427cfced139220868a45faa"
+      },
+      "raster": {
+        "bytes": 200928,
+        "path": "target/slides-viewers-v2/dark/native-rust.rgba.zlib",
+        "sha256": "cb337d57e9e2411d81a63b3f0cf23e56d0fe9aeef93df259a4c0acd6c827b8cc"
+      },
+      "runs": [
+        {
+          "height": 3847,
+          "raw_capture": {
+            "bytes": 43578816,
+            "file": "native-rust-0-raw.rgba.zlib",
+            "sha256": "940c10143ef4e4b4fbcdb2905055bc9fd117b06c2b379ef60e4a6e2e84177c37"
+          },
+          "width": 2832
+        },
+        {
+          "height": 3847,
+          "raw_capture": {
+            "bytes": 43578816,
+            "file": "native-rust-1-raw.rgba.zlib",
+            "sha256": "940c10143ef4e4b4fbcdb2905055bc9fd117b06c2b379ef60e4a6e2e84177c37"
+          },
+          "width": 2832
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-rust"
+    }
+  ],
+  "eligible_executions": [],
+  "files": {
+    "dark/assets/native-font-0.sfnt": {
+      "bytes": 18204,
+      "sha256": "5ae422e7f1381c375aa5a8aa0b9b533eda35096ec2326b10760bc189f931df26"
+    },
+    "dark/assets/native-font-0.woff2": {
+      "bytes": 7848,
+      "sha256": "e7088e2db172d8a541a4549e4dd569d6c919ac4b49fe90e54896d99981bc59b6"
+    },
+    "dark/assets/native-font-1.sfnt": {
+      "bytes": 8464,
+      "sha256": "6d416f83f06ecc4f4eff773ca6659ef6b68a41eef9a589de906e20ac588d762f"
+    },
+    "dark/assets/native-font-1.woff2": {
+      "bytes": 5304,
+      "sha256": "b5f1414431cd5744eababdf3a1bbc33cc74b486a0cba5739b676a83af8e50dc7"
+    },
+    "dark/assets/native-image-0.svg": {
+      "bytes": 5663,
+      "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+    },
+    "dark/assets/native-image-1.svg": {
+      "bytes": 7322,
+      "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+    },
+    "dark/assets/official-font-0.sfnt": {
+      "bytes": 9200,
+      "sha256": "835285f2eb5e78c874be5a25dae28cf5396e9dbb243ebbb373673f9865786286"
+    },
+    "dark/assets/official-font-0.woff2": {
+      "bytes": 5772,
+      "sha256": "aa4a70cd82476062015d34b22cae31f25ff093cc7587f612bf4d4823beba3509"
+    },
+    "dark/assets/official-font-1.sfnt": {
+      "bytes": 410792,
+      "sha256": "ff1b6dd524120cf3c1b8ba8343065b57853abb522cd453b95ed0ed02decf5cae"
+    },
+    "dark/assets/official-font-1.woff2": {
+      "bytes": 147436,
+      "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+    },
+    "dark/assets/official-image-0.svg": {
+      "bytes": 7282,
+      "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+    },
+    "dark/assets/official-image-1.svg": {
+      "bytes": 5605,
+      "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+    },
+    "dark/assets/official-substitute-0.ttf": {
+      "bytes": 410820,
+      "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+    },
+    "dark/native-assets.json": {
+      "bytes": 2338,
+      "sha256": "3a8f36f77b657c46ca576b4d34ed1067eec92776ee63afb2c67bed5c0748a8ab"
+    },
+    "dark/native-chromium-0-raw.rgba.zlib": {
+      "bytes": 252819,
+      "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+    },
+    "dark/native-chromium-1-raw.rgba.zlib": {
+      "bytes": 252819,
+      "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+    },
+    "dark/native-chromium.rgba.zlib": {
+      "bytes": 252819,
+      "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+    },
+    "dark/native-pdf-report.json": {
+      "bytes": 419,
+      "sha256": "5e4536f7fa5ac0708b6548cbc7f3a6ea0a8ac41d1f6030296741686d5d3f96e9"
+    },
+    "dark/native-pdfium-0-raw.rgba.zlib": {
+      "bytes": 259754,
+      "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+    },
+    "dark/native-pdfium-1-raw.rgba.zlib": {
+      "bytes": 259754,
+      "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+    },
+    "dark/native-pdfium.rgba.zlib": {
+      "bytes": 259754,
+      "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+    },
+    "dark/native-pdfjs-0-raw.rgba.zlib": {
+      "bytes": 249559,
+      "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+    },
+    "dark/native-pdfjs-1-raw.rgba.zlib": {
+      "bytes": 249559,
+      "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+    },
+    "dark/native-pdfjs.rgba.zlib": {
+      "bytes": 249559,
+      "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+    },
+    "dark/native-png-report.json": {
+      "bytes": 413,
+      "sha256": "b0f2a321d894ebde57dc34cd1077e65363ad598b8131cf623d95c486f8cc504f"
+    },
+    "dark/native-rust-0-raw.rgba.zlib": {
+      "bytes": 206139,
+      "sha256": "d446b300a26741a178487eaa0fbb25e0dc4a9b616351c843c381f564e77c5649"
+    },
+    "dark/native-rust-1-raw.rgba.zlib": {
+      "bytes": 206139,
+      "sha256": "d446b300a26741a178487eaa0fbb25e0dc4a9b616351c843c381f564e77c5649"
+    },
+    "dark/native-rust.rgba.zlib": {
+      "bytes": 200928,
+      "sha256": "cb337d57e9e2411d81a63b3f0cf23e56d0fe9aeef93df259a4c0acd6c827b8cc"
+    },
+    "dark/native-rust.svg": {
+      "bytes": 109768,
+      "sha256": "dff71b7f3f583b578b1a23fd0b750581c7cba53c07e76f6979a7d20df441a923"
+    },
+    "dark/native-svg-report.json": {
+      "bytes": 417,
+      "sha256": "d4993bd12fc7d69a0ea5b275fdec2d3685881e9a1a3ba3a32e86b0f86506079d"
+    },
+    "dark/native-view.svg": {
+      "bytes": 110504,
+      "sha256": "04eda0f9df296cd1f6eec61cc4b04a204a4869d81ab7447d292890fd2bc27a0b"
+    },
+    "dark/native.pdf": {
+      "bytes": 204897,
+      "sha256": "1923530a2550d832541351c413a99bafce2123e32414c244204b1d4c4aa50d4a"
+    },
+    "dark/native.png": {
+      "bytes": 326285,
+      "sha256": "de0702c9f775b8ecfd4f803ff714e8c6da21bf2e518e30232027e16d927eb565"
+    },
+    "dark/native.svg": {
+      "bytes": 110472,
+      "sha256": "729247c64d15985a5348bdcda7fe8b681251223c12d17070f0c6099bff94e348"
+    },
+    "dark/official-assets.json": {
+      "bytes": 2310,
+      "sha256": "3ffa8ef04f0be0314066a46818c6ce5ba1e1f7e2ec1941a65fed2917b990b91b"
+    },
+    "dark/official-chromium-0-raw.rgba.zlib": {
+      "bytes": 252829,
+      "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+    },
+    "dark/official-chromium-1-raw.rgba.zlib": {
+      "bytes": 252829,
+      "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+    },
+    "dark/official-chromium.rgba.zlib": {
+      "bytes": 252829,
+      "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+    },
+    "dark/official-font-resolution.json": {
+      "bytes": 5669,
+      "sha256": "df63aa5a2f069433b5b9b055c7716d6744bf079e593044036f0c6951406dc332"
+    },
+    "dark/official-png.rgba.zlib": {
+      "bytes": 255038,
+      "sha256": "d32b14b9ddafad1425bc25a186975309a83c892a2349fd29ee9c44c979f34cc6"
+    },
+    "dark/official-rust-0-raw.rgba.zlib": {
+      "bytes": 206120,
+      "sha256": "ae0290fcd1a55adfd1a9aa3161cf3d1e36252f94a88d62207d89687063cf6edd"
+    },
+    "dark/official-rust-1-raw.rgba.zlib": {
+      "bytes": 206120,
+      "sha256": "ae0290fcd1a55adfd1a9aa3161cf3d1e36252f94a88d62207d89687063cf6edd"
+    },
+    "dark/official-rust.rgba.zlib": {
+      "bytes": 200910,
+      "sha256": "6dbca51f3295a985da03da8ef48f48ad3bff95775c9fb6c07b59b0d4773de5ed"
+    },
+    "dark/official-rust.svg": {
+      "bytes": 257740,
+      "sha256": "ffff883f52bae9d5d9bc231f02449fba585664ac4de9192767e9d92072aef6fc"
+    },
+    "dark/official-substituted.svg": {
+      "bytes": 257980,
+      "sha256": "ba1dcbfb01611ea07c34026759e8ede40a201fdc753dd7491a786c27c0761444"
+    },
+    "dark/official-view.svg": {
+      "bytes": 257996,
+      "sha256": "1b3ff92b007556b4ab448b2bd57fe90fe1cce9772a279904c9282b9e4e9dfe4a"
+    },
+    "dark/official.png": {
+      "bytes": 539796,
+      "sha256": "dd4c736aa94bf7b3b0bc28fd21d5ab21c80eae1ea21317b20c5af92e395df71b"
+    },
+    "dark/official.svg": {
+      "bytes": 61300,
+      "sha256": "de0dd674669d8a3cb442a7134165860fb486757538aaa599a5c239202f9e0e3d"
+    },
+    "dark/pdf-pdfium-comparison.json": {
+      "bytes": 1234,
+      "sha256": "c135ceadd75e41dc32192a19f2e2037fb24564ffada04347af4dee20c80135b5"
+    },
+    "dark/pdf-pdfjs-comparison.json": {
+      "bytes": 1228,
+      "sha256": "41a2728b4f3f4471fd6c4cab9431a6b5373e97d9980d1daab50dbb3afaad8b0a"
+    },
+    "dark/png-canvas-comparison.json": {
+      "bytes": 1231,
+      "sha256": "82d171752d2dde75b54d949f69ddeb9d6360d04d9a19778640b83aaccf7c75af"
+    },
+    "dark/regions.json": {
+      "bytes": 389,
+      "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+    },
+    "dark/svg-chromium-comparison.json": {
+      "bytes": 1230,
+      "sha256": "3686b0c4d0bd1abf4e39b283e902d610deacae499e4351ff5df27bd119c952c2"
+    },
+    "dark/svg-rust-comparison.json": {
+      "bytes": 1224,
+      "sha256": "f49adf06d3f0fe77a7839548fd48a727825b8c0f0096c10bc4e0b2b51353b641"
+    },
+    "dark/viewer-assets-plan.json": {
+      "bytes": 4517,
+      "sha256": "63f89e0b592e6ee57f84904cc680c67aeae7d6bb78a62b156e079f1af11d2898"
+    },
+    "light/assets/native-font-0.sfnt": {
+      "bytes": 18204,
+      "sha256": "5ae422e7f1381c375aa5a8aa0b9b533eda35096ec2326b10760bc189f931df26"
+    },
+    "light/assets/native-font-0.woff2": {
+      "bytes": 7848,
+      "sha256": "e7088e2db172d8a541a4549e4dd569d6c919ac4b49fe90e54896d99981bc59b6"
+    },
+    "light/assets/native-font-1.sfnt": {
+      "bytes": 8464,
+      "sha256": "6d416f83f06ecc4f4eff773ca6659ef6b68a41eef9a589de906e20ac588d762f"
+    },
+    "light/assets/native-font-1.woff2": {
+      "bytes": 5304,
+      "sha256": "b5f1414431cd5744eababdf3a1bbc33cc74b486a0cba5739b676a83af8e50dc7"
+    },
+    "light/assets/native-image-0.svg": {
+      "bytes": 5663,
+      "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+    },
+    "light/assets/native-image-1.svg": {
+      "bytes": 7322,
+      "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+    },
+    "light/assets/official-font-0.sfnt": {
+      "bytes": 9200,
+      "sha256": "835285f2eb5e78c874be5a25dae28cf5396e9dbb243ebbb373673f9865786286"
+    },
+    "light/assets/official-font-0.woff2": {
+      "bytes": 5772,
+      "sha256": "aa4a70cd82476062015d34b22cae31f25ff093cc7587f612bf4d4823beba3509"
+    },
+    "light/assets/official-font-1.sfnt": {
+      "bytes": 410792,
+      "sha256": "ff1b6dd524120cf3c1b8ba8343065b57853abb522cd453b95ed0ed02decf5cae"
+    },
+    "light/assets/official-font-1.woff2": {
+      "bytes": 147436,
+      "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+    },
+    "light/assets/official-image-0.svg": {
+      "bytes": 7282,
+      "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+    },
+    "light/assets/official-image-1.svg": {
+      "bytes": 5605,
+      "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+    },
+    "light/assets/official-substitute-0.ttf": {
+      "bytes": 410820,
+      "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+    },
+    "light/native-assets.json": {
+      "bytes": 2342,
+      "sha256": "02ad83801c65ff6e95867d0a2d22169f2273ca0aa30909002e93598a44dd0565"
+    },
+    "light/native-chromium-0-raw.rgba.zlib": {
+      "bytes": 268189,
+      "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+    },
+    "light/native-chromium-1-raw.rgba.zlib": {
+      "bytes": 268189,
+      "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+    },
+    "light/native-chromium.rgba.zlib": {
+      "bytes": 268189,
+      "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+    },
+    "light/native-pdf-report.json": {
+      "bytes": 419,
+      "sha256": "f16205118ca888591eaf6cc99e04060aac8b7c0fa3ae6f39f8526e3d1806c81f"
+    },
+    "light/native-pdfium-0-raw.rgba.zlib": {
+      "bytes": 274210,
+      "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+    },
+    "light/native-pdfium-1-raw.rgba.zlib": {
+      "bytes": 274210,
+      "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+    },
+    "light/native-pdfium.rgba.zlib": {
+      "bytes": 274210,
+      "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+    },
+    "light/native-pdfjs-0-raw.rgba.zlib": {
+      "bytes": 258800,
+      "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+    },
+    "light/native-pdfjs-1-raw.rgba.zlib": {
+      "bytes": 258800,
+      "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+    },
+    "light/native-pdfjs.rgba.zlib": {
+      "bytes": 258800,
+      "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+    },
+    "light/native-png-report.json": {
+      "bytes": 413,
+      "sha256": "3e4286dc1e06f93e7d76e215e1f7a453a8852454102e7917a4a20d006cfb6f5c"
+    },
+    "light/native-rust-0-raw.rgba.zlib": {
+      "bytes": 219032,
+      "sha256": "e7cb73e1614e26d7f6544406d2e66dab0fab44b8f96067d6831109241504482a"
+    },
+    "light/native-rust-1-raw.rgba.zlib": {
+      "bytes": 219032,
+      "sha256": "e7cb73e1614e26d7f6544406d2e66dab0fab44b8f96067d6831109241504482a"
+    },
+    "light/native-rust.rgba.zlib": {
+      "bytes": 210856,
+      "sha256": "45ec4beebcbc3597ea403bfb54cd654d7ce388a2610dc0ec3a7bc75c68f79b08"
+    },
+    "light/native-rust.svg": {
+      "bytes": 109728,
+      "sha256": "4943a0503d10c7f23eb974fb5e7d97a65e893cb991b0fe8a6b28e4a635d95a58"
+    },
+    "light/native-svg-report.json": {
+      "bytes": 417,
+      "sha256": "1ba7ed24ad86bc14c8367795ae910a3393f079d7d464594f30b4ec3603ecc394"
+    },
+    "light/native-view.svg": {
+      "bytes": 110464,
+      "sha256": "a82e5799188960cadf6768ff976e5e939198c19d216b2dae11996b2ebd715093"
+    },
+    "light/native.pdf": {
+      "bytes": 204890,
+      "sha256": "0878c04dfbc6d84dc4949bd9dd40d14a2a26bd5ab2f42848ae940332aa9e5fb5"
+    },
+    "light/native.png": {
+      "bytes": 320445,
+      "sha256": "2a1739e0aad5d7b98b56b3d23562f067b91302c70020e839188d58744b46a376"
+    },
+    "light/native.svg": {
+      "bytes": 110432,
+      "sha256": "f6a85202c7a6b4dc1b4221c7ed64e45846ffd683dc06e5cba068273a49643f93"
+    },
+    "light/official-assets.json": {
+      "bytes": 2314,
+      "sha256": "55a7b74e55b43bad3cf2088743a126203b3a3af7f116d51038cba750e7a637e5"
+    },
+    "light/official-chromium-0-raw.rgba.zlib": {
+      "bytes": 268271,
+      "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+    },
+    "light/official-chromium-1-raw.rgba.zlib": {
+      "bytes": 268271,
+      "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+    },
+    "light/official-chromium.rgba.zlib": {
+      "bytes": 268271,
+      "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+    },
+    "light/official-font-resolution.json": {
+      "bytes": 5670,
+      "sha256": "705cb5c6191c76cad55a58510bc7c7873558bb1df42915a0085bb47da270051c"
+    },
+    "light/official-png.rgba.zlib": {
+      "bytes": 263199,
+      "sha256": "14a048aa0cf5bdaa38c6053e829f4e66594e646d649bcd8eca5a2c298207b0da"
+    },
+    "light/official-rust-0-raw.rgba.zlib": {
+      "bytes": 218998,
+      "sha256": "066dc14b828ef34b4c0c38398df3d1af9beac762c736ac286e06229873b9b037"
+    },
+    "light/official-rust-1-raw.rgba.zlib": {
+      "bytes": 218998,
+      "sha256": "066dc14b828ef34b4c0c38398df3d1af9beac762c736ac286e06229873b9b037"
+    },
+    "light/official-rust.rgba.zlib": {
+      "bytes": 210845,
+      "sha256": "717bfb9594049f77a3467c8d17c61341b6283ca25909eaa59d05b6c9437be658"
+    },
+    "light/official-rust.svg": {
+      "bytes": 257700,
+      "sha256": "cb591ca4350edcbd4748c18f3d03bb0a03e9e167173e907338a0a6f6db83c954"
+    },
+    "light/official-substituted.svg": {
+      "bytes": 257940,
+      "sha256": "d3c9f2c12c5c1a6861a3a6fe1ad3a59832f4a9e45b192dcac91ca9c59fff3734"
+    },
+    "light/official-view.svg": {
+      "bytes": 257956,
+      "sha256": "0acb9f0d8e5e29eabce1b6e36fdbb47c5605c551fa701e4a12f75649650b8522"
+    },
+    "light/official.png": {
+      "bytes": 539249,
+      "sha256": "c229712255139e4fecd7ad7fa2e3d01bf8f07ec671539962a940f4e753265ad2"
+    },
+    "light/official.svg": {
+      "bytes": 61260,
+      "sha256": "0ded9e3c9cf95d6234be80377c1fa2d0d136a1a33acfd8f061c2d5df0827c6b6"
+    },
+    "light/pdf-pdfium-comparison.json": {
+      "bytes": 1234,
+      "sha256": "679036ddeba61b8896b3f1049ef7d900f2a1885b7977a3b1b7bf5a5b16a50487"
+    },
+    "light/pdf-pdfjs-comparison.json": {
+      "bytes": 1228,
+      "sha256": "804764ba670b1bcc207eb28cfc55ed9a0e09a054894a83fe2bb337c56f58d590"
+    },
+    "light/png-canvas-comparison.json": {
+      "bytes": 1231,
+      "sha256": "45336de76ef4925aec7508d1004bf3625762d61567541931b21c5a1c2ca67e46"
+    },
+    "light/regions.json": {
+      "bytes": 389,
+      "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+    },
+    "light/svg-chromium-comparison.json": {
+      "bytes": 1229,
+      "sha256": "ef76b0beeb10c9c8bdecf550e704eff208de3d69ca086917986c0589172440b8"
+    },
+    "light/svg-rust-comparison.json": {
+      "bytes": 1224,
+      "sha256": "07000da85de8f7b1281b8180a27b8264bf8360088f6cb651751daca20e2055a4"
+    },
+    "light/viewer-assets-plan.json": {
+      "bytes": 4527,
+      "sha256": "f6e6773cce94b7101076e773947cf3dbf429ed3c7d909df4bf4bdf04c2d95138"
+    }
+  },
+  "inputs": [
+    {
+      "bytes": 3143,
+      "path": "tests/conformance/intake/excali-local-slides-v1/manifest.json",
+      "sha256": "eae1f16fac9ba6f9efb56692c37902b7118b947ba805726a76a812ad72a8991c"
+    },
+    {
+      "bytes": 3009,
+      "path": "tests/conformance/intake/excali-local-slides-v1/plan.json",
+      "sha256": "749f9404af017ea65d66b25231f456f312cd6c5487a1274bf830fab0637d3d42"
+    },
+    {
+      "bytes": 45446,
+      "path": "tests/conformance/intake/excali-local-slides-v1/scene.excalidraw",
+      "sha256": "c75f223f079c7bccb69cb7bcf0a6a4996571e358cf4730bb9fb72c0f864366ab"
+    },
+    {
+      "bytes": 11865,
+      "path": "target/slides-reference-v1/reference.json",
+      "sha256": "3244ac4e2d0936ce786e400f2ba35ed07e8073de326aaabe8521ebefa75ad611"
+    },
+    {
+      "bytes": 5214,
+      "path": "target/slides-native-v2/capture.json",
+      "sha256": "23b6e242c5c6532fa860eea02ba9a65bc7fb00bb856a539fe8dfc74f63eb49e9"
+    }
+  ],
+  "judgments": [
+    {
+      "comparison": "svg-chromium",
+      "report": {
+        "bytes": 1229,
+        "path": "target/slides-viewers-v2/light/svg-chromium-comparison.json",
+        "sha256": "ef76b0beeb10c9c8bdecf550e704eff208de3d69ca086917986c0589172440b8"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 268189,
+          "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": true,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 268271,
+          "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feffff4a0632ce8",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "svg-rust",
+      "report": {
+        "bytes": 1224,
+        "path": "target/slides-viewers-v2/light/svg-rust-comparison.json",
+        "sha256": "07000da85de8f7b1281b8180a27b8264bf8360088f6cb651751daca20e2055a4"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 210856,
+          "sha256": "45ec4beebcbc3597ea403bfb54cd654d7ce388a2610dc0ec3a7bc75c68f79b08"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "rust",
+        "passed": true,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 210845,
+          "sha256": "717bfb9594049f77a3467c8d17c61341b6283ca25909eaa59d05b6c9437be658"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feffffdd6f701a3",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "pdf-pdfium",
+      "report": {
+        "bytes": 1234,
+        "path": "target/slides-viewers-v2/light/pdf-pdfium-comparison.json",
+        "sha256": "679036ddeba61b8896b3f1049ef7d900f2a1885b7977a3b1b7bf5a5b16a50487"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 274210,
+          "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 8,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3feff97875eb0604",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3feff378e3937646",
+              "ssim_pass": false,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 268271,
+          "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 3880,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feff2d385208715",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "pdf-pdfjs",
+      "report": {
+        "bytes": 1228,
+        "path": "target/slides-viewers-v2/light/pdf-pdfjs-comparison.json",
+        "sha256": "804764ba670b1bcc207eb28cfc55ed9a0e09a054894a83fe2bb337c56f58d590"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 258800,
+          "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 7,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3feff7226815e0ef",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3feff886cd67f7b6",
+              "ssim_pass": true,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "pdfjs",
+        "passed": true,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 268271,
+          "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 1520,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feff47a02b8fe9d",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "png-canvas",
+      "report": {
+        "bytes": 1231,
+        "path": "target/slides-viewers-v2/light/png-canvas-comparison.json",
+        "sha256": "45336de76ef4925aec7508d1004bf3625762d61567541931b21c5a1c2ca67e46"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 320445,
+          "sha256": "2a1739e0aad5d7b98b56b3d23562f067b91302c70020e839188d58744b46a376"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3fefff2b51984a9e",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3feff9439ccfb161",
+              "ssim_pass": true,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": true,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 263199,
+          "sha256": "14a048aa0cf5bdaa38c6053e829f4e66594e646d649bcd8eca5a2c298207b0da"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 150,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feffe575972b359",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "svg-chromium",
+      "report": {
+        "bytes": 1230,
+        "path": "target/slides-viewers-v2/dark/svg-chromium-comparison.json",
+        "sha256": "3686b0c4d0bd1abf4e39b283e902d610deacae499e4351ff5df27bd119c952c2"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 252819,
+          "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3feffffffffffff5",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3fefffffffffffff",
+              "ssim_pass": true,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": true,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 252829,
+          "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 13,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feffff40222ec42",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "svg-rust",
+      "report": {
+        "bytes": 1224,
+        "path": "target/slides-viewers-v2/dark/svg-rust-comparison.json",
+        "sha256": "f49adf06d3f0fe77a7839548fd48a727825b8c0f0096c10bc4e0b2b51353b641"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 200928,
+          "sha256": "cb337d57e9e2411d81a63b3f0cf23e56d0fe9aeef93df259a4c0acd6c827b8cc"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "rust",
+        "passed": true,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 200910,
+          "sha256": "6dbca51f3295a985da03da8ef48f48ad3bff95775c9fb6c07b59b0d4773de5ed"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feffffdb9335bca",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "pdf-pdfium",
+      "report": {
+        "bytes": 1234,
+        "path": "target/slides-viewers-v2/dark/pdf-pdfium-comparison.json",
+        "sha256": "c135ceadd75e41dc32192a19f2e2037fb24564ffada04347af4dee20c80135b5"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 259754,
+          "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 6,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3feffa0d9a3999ad",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3feff4fa706910a9",
+              "ssim_pass": false,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 252829,
+          "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 3440,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feff33d55585054",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "pdf-pdfjs",
+      "report": {
+        "bytes": 1228,
+        "path": "target/slides-viewers-v2/dark/pdf-pdfjs-comparison.json",
+        "sha256": "41a2728b4f3f4471fd6c4cab9431a6b5373e97d9980d1daab50dbb3afaad8b0a"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 249559,
+          "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 7,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3feff7847cb17834",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3feff90cd8fbaa7f",
+              "ssim_pass": true,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "pdfjs",
+        "passed": true,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 252829,
+          "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 1363,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feff4f359a3c9cc",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "png-canvas",
+      "report": {
+        "bytes": 1231,
+        "path": "target/slides-viewers-v2/dark/png-canvas-comparison.json",
+        "sha256": "82d171752d2dde75b54d949f69ddeb9d6360d04d9a19778640b83aaccf7c75af"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 326285,
+          "sha256": "de0702c9f775b8ecfd4f803ff714e8c6da21bf2e518e30232027e16d927eb565"
+        },
+        "crops": [
+          {
+            "id": "slide1-typography",
+            "region": {
+              "area": 7922,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 34,
+              "ssim_bits": "3fefff2ff45bf98c",
+              "ssim_pass": true,
+              "width": 233
+            }
+          },
+          {
+            "id": "slide1-avatar",
+            "region": {
+              "area": 61504,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 248,
+              "ssim_bits": "3feff90ee8041cb4",
+              "ssim_pass": true,
+              "width": 248
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": true,
+        "plan": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "reference": {
+          "bytes": 255038,
+          "sha256": "d32b14b9ddafad1425bc25a186975309a83c892a2349fd29ee9c44c979f34cc6"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 10890857,
+          "changed_pixels": 134,
+          "changed_pixels_pass": true,
+          "height": 3847,
+          "ssim_bits": "3feffe48e871e098",
+          "ssim_pass": true,
+          "width": 2831
+        }
+      },
+      "variant": "dark"
+    }
+  ],
+  "native": {
+    "bytes": 5214,
+    "path": "target/slides-native-v2/capture.json",
+    "sha256": "23b6e242c5c6532fa860eea02ba9a65bc7fb00bb856a539fe8dfc74f63eb49e9"
+  },
+  "reference": {
+    "bytes": 11865,
+    "path": "target/slides-reference-v1/reference.json",
+    "sha256": "3244ac4e2d0936ce786e400f2ba35ed07e8073de326aaabe8521ebefa75ad611"
+  },
+  "schema": "excalidraw-render/representative-intake-viewers/v1",
+  "sources": [
+    {
+      "bytes": 15174,
+      "path": "crates/excalidraw-render-compare/src/comparison.rs",
+      "sha256": "5988dd5f973171facf1ccc9712bef2e68e47af8f3947cd3213f21b1b320fb807"
+    },
+    {
+      "bytes": 4306,
+      "path": "crates/excalidraw-render-compare/src/lib.rs",
+      "sha256": "59f84c68a787c76ef19f2b95688201e926f0816637f247b9aa8c9ed2578bd312"
+    },
+    {
+      "bytes": 13171,
+      "path": "crates/excalidraw-render-compare/src/pixelmatch.rs",
+      "sha256": "1c505a0a266b0aa2779dcaa237483c28fe0bdbe4543cf43f88344844872d246d"
+    },
+    {
+      "bytes": 8186,
+      "path": "crates/excalidraw-render-compare/src/ssim.rs",
+      "sha256": "4746f89206960465784bbddf13176b865232b472b20f02335c468e2d61aab007"
+    },
+    {
+      "bytes": 4460,
+      "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
+      "sha256": "e969fd7a3bc49ff3014b2cd3b3622cd18abddbc9371744d4e47927d0484bcfc7"
+    },
+    {
+      "bytes": 4478,
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+      "sha256": "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
+    },
+    {
+      "bytes": 4072,
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+      "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
+    },
+    {
+      "bytes": 4902,
+      "path": "tests/conformance/viewer-profiles/canonical-svg-chromium-v1.json",
+      "sha256": "be1664b3ad79c09b99680ff5e8ca0e56a98fce703c94a13e19e889097c90426b"
+    },
+    {
+      "bytes": 4889,
+      "path": "tests/conformance/viewer-profiles/canonical-svg-pure-rust-v1.json",
+      "sha256": "8be13868942970480bb083b454ed003f5809b2b7f1725adbaaa7d5450b69316d"
+    },
+    {
+      "bytes": 47129,
+      "path": "tests/oracle/reference-profiles/revision-1-assets.json",
+      "sha256": "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a"
+    },
+    {
+      "bytes": 33524,
+      "path": "tests/oracle/reference-profiles/revision-1.json",
+      "sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
+    },
+    {
+      "bytes": 666,
+      "path": "tools/pdf-harness/pdfium.lock.json",
+      "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90"
+    },
+    {
+      "bytes": 6282,
+      "path": "tools/pdf-harness/pdfium/render.py",
+      "sha256": "f01b2b38bdd2341602ce9f333423c79be5188328184e274bdd7c8acb2f83df3a"
+    },
+    {
+      "bytes": 8850,
+      "path": "tools/pdf-harness/pdfjs/package-lock.json",
+      "sha256": "887c2194fe05e87250486f4e6c8da341d0fb51748e14c3b4cf94a16455740c60"
+    },
+    {
+      "bytes": 3416,
+      "path": "tools/pdf-harness/pdfjs/render.mjs",
+      "sha256": "7386887b7b697c49fbe2c1095a94df86315bb0c15353f51eb4d03d1ba9c9a1ad"
+    },
+    {
+      "bytes": 943,
+      "path": "tools/pdf-harness/run-pdfium.sh",
+      "sha256": "1f6ceb77d6f90bbeb5c7727279f13a37b1fe3d695744b82389631ba9e03bc819"
+    },
+    {
+      "bytes": 1141,
+      "path": "tools/pdf-harness/run-pdfjs.sh",
+      "sha256": "a944fd3b5e3e09daca96d372341585b3b17442b3421bf7697eb865d1abc8d82e"
+    },
+    {
+      "bytes": 151230,
+      "path": "tools/reference-oracle/package-lock.json",
+      "sha256": "8857f2792a506163d150a5481122a4bb93b3646e356a57065770747a188d67fc"
+    },
+    {
+      "bytes": 34890,
+      "path": "tools/reference-oracle/scripts/svg-viewer.mjs",
+      "sha256": "61968d7bca7fef68fa29af22368b5d7dfddda9be1c9a34e53f479cdb14c1a11b"
+    },
+    {
+      "bytes": 3671,
+      "path": "tools/reference-oracle/src/browser-entry.js",
+      "sha256": "85d261f4cf5a1000b128a52d0238c4697b31725dd1d00df765ae49a0c206c1d4"
+    },
+    {
+      "bytes": 369,
+      "path": "tools/reference-oracle/vite.config.mjs",
+      "sha256": "e408434b70fe73f5f45d404dd4b3e1e671d6159b0157e50a9531a312fd96a976"
+    },
+    {
+      "bytes": 7232,
+      "path": "tools/representative-intake/compare/Cargo.lock",
+      "sha256": "685b6dbdddd2b543633d37c4cf354229c912483e43062e41cfaf342fa7079c7f"
+    },
+    {
+      "bytes": 367,
+      "path": "tools/representative-intake/compare/Cargo.toml",
+      "sha256": "3e8fb41ec95cda08910b6203aef36cf8e05135bdf0b2fd8c46b181c7a8c18b75"
+    },
+    {
+      "bytes": 4954,
+      "path": "tools/representative-intake/compare/src/main.rs",
+      "sha256": "4f247e8c76f2fc2609caddeb41d13bee0e49cd610c74a2016579fbe5e3e7c67e"
+    },
+    {
+      "bytes": 19760,
+      "path": "tools/representative-intake/evidence.py",
+      "sha256": "ee9bb5e482856e6a39bad1e9c099274debd4bec2f55af045b611f06b2ebaf17b"
+    },
+    {
+      "bytes": 4566,
+      "path": "tools/representative-intake/font-resolution.mjs",
+      "sha256": "1f4299fffaad5383d37a4086057f55e49c6b06adcafa9b3fa90bd3bbb5853ff9"
+    },
+    {
+      "bytes": 24102,
+      "path": "tools/representative-intake/intake.py",
+      "sha256": "b062ea9d434ce6d5f288666f7b21eb118685fe109f6334bf1964fe7df710350f"
+    },
+    {
+      "bytes": 8062,
+      "path": "tools/representative-intake/reference.mjs",
+      "sha256": "84d6c4b381efb9415d994e9df8f9d9d1a330c59a8ab9e6aecfac65415be37d75"
+    },
+    {
+      "bytes": 777,
+      "path": "tools/representative-intake/reference.sh",
+      "sha256": "7427e95728bf328683dab1a8ae01910126e1ad594a74b3e240a37c15dc2d57a8"
+    },
+    {
+      "bytes": 2032,
+      "path": "tools/representative-intake/svg-viewer.mjs",
+      "sha256": "448b9e566197c74907f74f63c6bfb4ac088fd4847fe81c61706f0e557265cea3"
+    },
+    {
+      "bytes": 531,
+      "path": "tools/representative-intake/svg-viewer.sh",
+      "sha256": "dbfbeb93b0208499aa09c7fee409bac3432bc842684fdb18443854003e5c233f"
+    },
+    {
+      "bytes": 10323,
+      "path": "tools/representative-intake/viewer-fonts/Cargo.lock",
+      "sha256": "11668330eae6b5cee15abf25b0935a2f9ea39b6f7b72dcad0b8db78ccfb74fb2"
+    },
+    {
+      "bytes": 503,
+      "path": "tools/representative-intake/viewer-fonts/Cargo.toml",
+      "sha256": "bed43c29ef1f636cb90ee7d167ae84e5440a56a091cfb61e87348b4a819e8a6a"
+    },
+    {
+      "bytes": 3888,
+      "path": "tools/representative-intake/viewer-fonts/src/main.rs",
+      "sha256": "30db51d98ea19ae43b5bb4a280bebf1e14654c9b73e2bbd26b1faba788a47655"
+    },
+    {
+      "bytes": 14611,
+      "path": "tools/representative-intake/viewer_assets.py",
+      "sha256": "4f077667529d93dbd97302742b12989931eaecf9adf959993142ceaca8cbad67"
+    },
+    {
+      "bytes": 17624,
+      "path": "tools/svg-viewer-rust/Cargo.lock",
+      "sha256": "987d8627af80014951265cdc527ef5f2716635d928a9348609292b87bdfd6c39"
+    },
+    {
+      "bytes": 740,
+      "path": "tools/svg-viewer-rust/Cargo.toml",
+      "sha256": "fcb2d6b7277899494ea30183c01e8463ef3fde8678266b5a0bf022980da7d75f"
+    },
+    {
+      "bytes": 47655,
+      "path": "tools/svg-viewer-rust/src/main.rs",
+      "sha256": "2105e33e86647c8873487970b2bf06fe88b6f2db1bac473b4db221a3e936b722"
+    }
+  ],
+  "status": "pending-review",
+  "viewport_adapter": "truncate fractional viewport at origin; never resize or align; proposed, not approved"
+}

@@ -1,0 +1,79 @@
+{
+  "fonts": [
+    {
+      "css": {
+        "family": "ExcalidrawRender-1",
+        "stretch": "normal",
+        "style": "normal",
+        "unicode_range": [
+          "U+0-10FFFF"
+        ],
+        "weight": 400
+      },
+      "sfnt": {
+        "face_index": 0,
+        "family": "ExcalidrawRender-1",
+        "media_type": "font/ttf",
+        "path": "target/slides-viewers-v2/light/assets/native-font-0.sfnt",
+        "sha256": "5ae422e7f1381c375aa5a8aa0b9b533eda35096ec2326b10760bc189f931df26",
+        "stretch": "normal",
+        "style": "normal",
+        "weight": 400
+      },
+      "source": {
+        "media_type": "font/woff2",
+        "sha256": "e7088e2db172d8a541a4549e4dd569d6c919ac4b49fe90e54896d99981bc59b6"
+      }
+    },
+    {
+      "css": {
+        "family": "ExcalidrawRender-9",
+        "stretch": "normal",
+        "style": "normal",
+        "unicode_range": [
+          "U+0-10FFFF"
+        ],
+        "weight": 400
+      },
+      "sfnt": {
+        "face_index": 0,
+        "family": "ExcalidrawRender-9",
+        "media_type": "font/ttf",
+        "path": "target/slides-viewers-v2/light/assets/native-font-1.sfnt",
+        "sha256": "6d416f83f06ecc4f4eff773ca6659ef6b68a41eef9a589de906e20ac588d762f",
+        "stretch": "normal",
+        "style": "normal",
+        "weight": 400
+      },
+      "source": {
+        "media_type": "font/woff2",
+        "sha256": "b5f1414431cd5744eababdf3a1bbc33cc74b486a0cba5739b676a83af8e50dc7"
+      }
+    }
+  ],
+  "images": [
+    {
+      "canonical": {
+        "media_type": "image/svg+xml",
+        "path": "target/slides-viewers-v2/light/assets/native-image-0.svg",
+        "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+      },
+      "source": {
+        "media_type": "image/svg+xml",
+        "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+      }
+    },
+    {
+      "canonical": {
+        "media_type": "image/svg+xml",
+        "path": "target/slides-viewers-v2/light/assets/native-image-1.svg",
+        "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+      },
+      "source": {
+        "media_type": "image/svg+xml",
+        "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+      }
+    }
+  ],
+  "schema": "excalidraw-render/svg-viewer-asset-declaration/v1"
+}

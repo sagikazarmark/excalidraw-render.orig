@@ -32,6 +32,8 @@ Exact measurements are in `viewers/{light,dark}/*-comparison.json`.
 
 ## Findings
 
+Superseded for dark PDF by `../slides84-evidence-v2` (#154 resolved; 8 of 10 pass).
+
 - **Dark SVG passes in both viewers,** including sixteen nested-SVG images
   that invert with the root filter (ADR-0012). Under the previous per-color
   lowering they carried a separate image filter.

@@ -1,0 +1,79 @@
+{
+  "fonts": [
+    {
+      "css": {
+        "family": "Virgil",
+        "stretch": "normal",
+        "style": "normal",
+        "unicode_range": [
+          "U+0-10FFFF"
+        ],
+        "weight": 400
+      },
+      "sfnt": {
+        "face_index": 0,
+        "family": "Virgil",
+        "media_type": "font/ttf",
+        "path": "target/slides-viewers-v2/dark/assets/official-font-0.sfnt",
+        "sha256": "835285f2eb5e78c874be5a25dae28cf5396e9dbb243ebbb373673f9865786286",
+        "stretch": "normal",
+        "style": "normal",
+        "weight": 400
+      },
+      "source": {
+        "media_type": "font/woff2",
+        "sha256": "aa4a70cd82476062015d34b22cae31f25ff093cc7587f612bf4d4823beba3509"
+      }
+    },
+    {
+      "css": {
+        "family": "Helvetica",
+        "stretch": "normal",
+        "style": "normal",
+        "unicode_range": [
+          "U+0-10FFFF"
+        ],
+        "weight": 400
+      },
+      "sfnt": {
+        "face_index": 0,
+        "family": "Liberation Sans",
+        "media_type": "font/ttf",
+        "path": "target/slides-viewers-v2/dark/assets/official-font-1.sfnt",
+        "sha256": "ff1b6dd524120cf3c1b8ba8343065b57853abb522cd453b95ed0ed02decf5cae",
+        "stretch": "normal",
+        "style": "normal",
+        "weight": 400
+      },
+      "source": {
+        "media_type": "font/woff2",
+        "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+      }
+    }
+  ],
+  "images": [
+    {
+      "canonical": {
+        "media_type": "image/svg+xml",
+        "path": "target/slides-viewers-v2/dark/assets/official-image-0.svg",
+        "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+      },
+      "source": {
+        "media_type": "image/svg+xml",
+        "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+      }
+    },
+    {
+      "canonical": {
+        "media_type": "image/svg+xml",
+        "path": "target/slides-viewers-v2/dark/assets/official-image-1.svg",
+        "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+      },
+      "source": {
+        "media_type": "image/svg+xml",
+        "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+      }
+    }
+  ],
+  "schema": "excalidraw-render/svg-viewer-asset-declaration/v1"
+}

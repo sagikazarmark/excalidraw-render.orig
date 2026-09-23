@@ -1,0 +1,3448 @@
+{
+  "approval": null,
+  "bundle": "tests/conformance/intake/excali-local-slides-v1",
+  "case_id": "representative.excali-local-slides.v1",
+  "eligible_executions": [],
+  "inventory": {
+    "native": {
+      "capture.json": {
+        "bytes": 5214,
+        "sha256": "23b6e242c5c6532fa860eea02ba9a65bc7fb00bb856a539fe8dfc74f63eb49e9"
+      },
+      "dark-pdf-report.json": {
+        "bytes": 419,
+        "sha256": "5e4536f7fa5ac0708b6548cbc7f3a6ea0a8ac41d1f6030296741686d5d3f96e9"
+      },
+      "dark-pdf.pdf": {
+        "bytes": 204897,
+        "sha256": "1923530a2550d832541351c413a99bafce2123e32414c244204b1d4c4aa50d4a"
+      },
+      "dark-png-report.json": {
+        "bytes": 413,
+        "sha256": "b0f2a321d894ebde57dc34cd1077e65363ad598b8131cf623d95c486f8cc504f"
+      },
+      "dark-png.png": {
+        "bytes": 326285,
+        "sha256": "de0702c9f775b8ecfd4f803ff714e8c6da21bf2e518e30232027e16d927eb565"
+      },
+      "dark-svg-report.json": {
+        "bytes": 417,
+        "sha256": "d4993bd12fc7d69a0ea5b275fdec2d3685881e9a1a3ba3a32e86b0f86506079d"
+      },
+      "dark-svg.svg": {
+        "bytes": 110472,
+        "sha256": "729247c64d15985a5348bdcda7fe8b681251223c12d17070f0c6099bff94e348"
+      },
+      "light-pdf-report.json": {
+        "bytes": 419,
+        "sha256": "f16205118ca888591eaf6cc99e04060aac8b7c0fa3ae6f39f8526e3d1806c81f"
+      },
+      "light-pdf.pdf": {
+        "bytes": 204890,
+        "sha256": "0878c04dfbc6d84dc4949bd9dd40d14a2a26bd5ab2f42848ae940332aa9e5fb5"
+      },
+      "light-png-report.json": {
+        "bytes": 413,
+        "sha256": "3e4286dc1e06f93e7d76e215e1f7a453a8852454102e7917a4a20d006cfb6f5c"
+      },
+      "light-png.png": {
+        "bytes": 320445,
+        "sha256": "2a1739e0aad5d7b98b56b3d23562f067b91302c70020e839188d58744b46a376"
+      },
+      "light-svg-report.json": {
+        "bytes": 417,
+        "sha256": "1ba7ed24ad86bc14c8367795ae910a3393f079d7d464594f30b4ec3603ecc394"
+      },
+      "light-svg.svg": {
+        "bytes": 110432,
+        "sha256": "f6a85202c7a6b4dc1b4221c7ed64e45846ffd683dc06e5cba068273a49643f93"
+      }
+    },
+    "reference": {
+      "dark/official-png.rgba.zlib": {
+        "bytes": 255038,
+        "sha256": "d32b14b9ddafad1425bc25a186975309a83c892a2349fd29ee9c44c979f34cc6"
+      },
+      "dark/official.png": {
+        "bytes": 539796,
+        "sha256": "dd4c736aa94bf7b3b0bc28fd21d5ab21c80eae1ea21317b20c5af92e395df71b"
+      },
+      "dark/official.svg": {
+        "bytes": 61300,
+        "sha256": "de0dd674669d8a3cb442a7134165860fb486757538aaa599a5c239202f9e0e3d"
+      },
+      "light/official-png.rgba.zlib": {
+        "bytes": 263199,
+        "sha256": "14a048aa0cf5bdaa38c6053e829f4e66594e646d649bcd8eca5a2c298207b0da"
+      },
+      "light/official.png": {
+        "bytes": 539249,
+        "sha256": "c229712255139e4fecd7ad7fa2e3d01bf8f07ec671539962a940f4e753265ad2"
+      },
+      "light/official.svg": {
+        "bytes": 61260,
+        "sha256": "0ded9e3c9cf95d6234be80377c1fa2d0d136a1a33acfd8f061c2d5df0827c6b6"
+      },
+      "reference.json": {
+        "bytes": 11865,
+        "sha256": "3244ac4e2d0936ce786e400f2ba35ed07e8073de326aaabe8521ebefa75ad611"
+      }
+    },
+    "viewers": {
+      "dark/assets/native-font-0.sfnt": {
+        "bytes": 18204,
+        "sha256": "5ae422e7f1381c375aa5a8aa0b9b533eda35096ec2326b10760bc189f931df26"
+      },
+      "dark/assets/native-font-0.woff2": {
+        "bytes": 7848,
+        "sha256": "e7088e2db172d8a541a4549e4dd569d6c919ac4b49fe90e54896d99981bc59b6"
+      },
+      "dark/assets/native-font-1.sfnt": {
+        "bytes": 8464,
+        "sha256": "6d416f83f06ecc4f4eff773ca6659ef6b68a41eef9a589de906e20ac588d762f"
+      },
+      "dark/assets/native-font-1.woff2": {
+        "bytes": 5304,
+        "sha256": "b5f1414431cd5744eababdf3a1bbc33cc74b486a0cba5739b676a83af8e50dc7"
+      },
+      "dark/assets/native-image-0.svg": {
+        "bytes": 5663,
+        "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+      },
+      "dark/assets/native-image-1.svg": {
+        "bytes": 7322,
+        "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+      },
+      "dark/assets/official-font-0.sfnt": {
+        "bytes": 9200,
+        "sha256": "835285f2eb5e78c874be5a25dae28cf5396e9dbb243ebbb373673f9865786286"
+      },
+      "dark/assets/official-font-0.woff2": {
+        "bytes": 5772,
+        "sha256": "aa4a70cd82476062015d34b22cae31f25ff093cc7587f612bf4d4823beba3509"
+      },
+      "dark/assets/official-font-1.sfnt": {
+        "bytes": 410792,
+        "sha256": "ff1b6dd524120cf3c1b8ba8343065b57853abb522cd453b95ed0ed02decf5cae"
+      },
+      "dark/assets/official-font-1.woff2": {
+        "bytes": 147436,
+        "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+      },
+      "dark/assets/official-image-0.svg": {
+        "bytes": 7282,
+        "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+      },
+      "dark/assets/official-image-1.svg": {
+        "bytes": 5605,
+        "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+      },
+      "dark/assets/official-substitute-0.ttf": {
+        "bytes": 410820,
+        "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+      },
+      "dark/native-assets.json": {
+        "bytes": 2338,
+        "sha256": "3a8f36f77b657c46ca576b4d34ed1067eec92776ee63afb2c67bed5c0748a8ab"
+      },
+      "dark/native-chromium-0-raw.rgba.zlib": {
+        "bytes": 252819,
+        "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+      },
+      "dark/native-chromium-1-raw.rgba.zlib": {
+        "bytes": 252819,
+        "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+      },
+      "dark/native-chromium.rgba.zlib": {
+        "bytes": 252819,
+        "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+      },
+      "dark/native-pdf-report.json": {
+        "bytes": 419,
+        "sha256": "5e4536f7fa5ac0708b6548cbc7f3a6ea0a8ac41d1f6030296741686d5d3f96e9"
+      },
+      "dark/native-pdfium-0-raw.rgba.zlib": {
+        "bytes": 259754,
+        "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+      },
+      "dark/native-pdfium-1-raw.rgba.zlib": {
+        "bytes": 259754,
+        "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+      },
+      "dark/native-pdfium.rgba.zlib": {
+        "bytes": 259754,
+        "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+      },
+      "dark/native-pdfjs-0-raw.rgba.zlib": {
+        "bytes": 249559,
+        "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+      },
+      "dark/native-pdfjs-1-raw.rgba.zlib": {
+        "bytes": 249559,
+        "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+      },
+      "dark/native-pdfjs.rgba.zlib": {
+        "bytes": 249559,
+        "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+      },
+      "dark/native-png-report.json": {
+        "bytes": 413,
+        "sha256": "b0f2a321d894ebde57dc34cd1077e65363ad598b8131cf623d95c486f8cc504f"
+      },
+      "dark/native-rust-0-raw.rgba.zlib": {
+        "bytes": 206139,
+        "sha256": "d446b300a26741a178487eaa0fbb25e0dc4a9b616351c843c381f564e77c5649"
+      },
+      "dark/native-rust-1-raw.rgba.zlib": {
+        "bytes": 206139,
+        "sha256": "d446b300a26741a178487eaa0fbb25e0dc4a9b616351c843c381f564e77c5649"
+      },
+      "dark/native-rust.rgba.zlib": {
+        "bytes": 200928,
+        "sha256": "cb337d57e9e2411d81a63b3f0cf23e56d0fe9aeef93df259a4c0acd6c827b8cc"
+      },
+      "dark/native-rust.svg": {
+        "bytes": 109768,
+        "sha256": "dff71b7f3f583b578b1a23fd0b750581c7cba53c07e76f6979a7d20df441a923"
+      },
+      "dark/native-svg-report.json": {
+        "bytes": 417,
+        "sha256": "d4993bd12fc7d69a0ea5b275fdec2d3685881e9a1a3ba3a32e86b0f86506079d"
+      },
+      "dark/native-view.svg": {
+        "bytes": 110504,
+        "sha256": "04eda0f9df296cd1f6eec61cc4b04a204a4869d81ab7447d292890fd2bc27a0b"
+      },
+      "dark/native.pdf": {
+        "bytes": 204897,
+        "sha256": "1923530a2550d832541351c413a99bafce2123e32414c244204b1d4c4aa50d4a"
+      },
+      "dark/native.png": {
+        "bytes": 326285,
+        "sha256": "de0702c9f775b8ecfd4f803ff714e8c6da21bf2e518e30232027e16d927eb565"
+      },
+      "dark/native.svg": {
+        "bytes": 110472,
+        "sha256": "729247c64d15985a5348bdcda7fe8b681251223c12d17070f0c6099bff94e348"
+      },
+      "dark/official-assets.json": {
+        "bytes": 2310,
+        "sha256": "3ffa8ef04f0be0314066a46818c6ce5ba1e1f7e2ec1941a65fed2917b990b91b"
+      },
+      "dark/official-chromium-0-raw.rgba.zlib": {
+        "bytes": 252829,
+        "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+      },
+      "dark/official-chromium-1-raw.rgba.zlib": {
+        "bytes": 252829,
+        "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+      },
+      "dark/official-chromium.rgba.zlib": {
+        "bytes": 252829,
+        "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+      },
+      "dark/official-font-resolution.json": {
+        "bytes": 5669,
+        "sha256": "df63aa5a2f069433b5b9b055c7716d6744bf079e593044036f0c6951406dc332"
+      },
+      "dark/official-png.rgba.zlib": {
+        "bytes": 255038,
+        "sha256": "d32b14b9ddafad1425bc25a186975309a83c892a2349fd29ee9c44c979f34cc6"
+      },
+      "dark/official-rust-0-raw.rgba.zlib": {
+        "bytes": 206120,
+        "sha256": "ae0290fcd1a55adfd1a9aa3161cf3d1e36252f94a88d62207d89687063cf6edd"
+      },
+      "dark/official-rust-1-raw.rgba.zlib": {
+        "bytes": 206120,
+        "sha256": "ae0290fcd1a55adfd1a9aa3161cf3d1e36252f94a88d62207d89687063cf6edd"
+      },
+      "dark/official-rust.rgba.zlib": {
+        "bytes": 200910,
+        "sha256": "6dbca51f3295a985da03da8ef48f48ad3bff95775c9fb6c07b59b0d4773de5ed"
+      },
+      "dark/official-rust.svg": {
+        "bytes": 257740,
+        "sha256": "ffff883f52bae9d5d9bc231f02449fba585664ac4de9192767e9d92072aef6fc"
+      },
+      "dark/official-substituted.svg": {
+        "bytes": 257980,
+        "sha256": "ba1dcbfb01611ea07c34026759e8ede40a201fdc753dd7491a786c27c0761444"
+      },
+      "dark/official-view.svg": {
+        "bytes": 257996,
+        "sha256": "1b3ff92b007556b4ab448b2bd57fe90fe1cce9772a279904c9282b9e4e9dfe4a"
+      },
+      "dark/official.png": {
+        "bytes": 539796,
+        "sha256": "dd4c736aa94bf7b3b0bc28fd21d5ab21c80eae1ea21317b20c5af92e395df71b"
+      },
+      "dark/official.svg": {
+        "bytes": 61300,
+        "sha256": "de0dd674669d8a3cb442a7134165860fb486757538aaa599a5c239202f9e0e3d"
+      },
+      "dark/pdf-pdfium-comparison.json": {
+        "bytes": 1234,
+        "sha256": "c135ceadd75e41dc32192a19f2e2037fb24564ffada04347af4dee20c80135b5"
+      },
+      "dark/pdf-pdfjs-comparison.json": {
+        "bytes": 1228,
+        "sha256": "41a2728b4f3f4471fd6c4cab9431a6b5373e97d9980d1daab50dbb3afaad8b0a"
+      },
+      "dark/png-canvas-comparison.json": {
+        "bytes": 1231,
+        "sha256": "82d171752d2dde75b54d949f69ddeb9d6360d04d9a19778640b83aaccf7c75af"
+      },
+      "dark/regions.json": {
+        "bytes": 389,
+        "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+      },
+      "dark/svg-chromium-comparison.json": {
+        "bytes": 1230,
+        "sha256": "3686b0c4d0bd1abf4e39b283e902d610deacae499e4351ff5df27bd119c952c2"
+      },
+      "dark/svg-rust-comparison.json": {
+        "bytes": 1224,
+        "sha256": "f49adf06d3f0fe77a7839548fd48a727825b8c0f0096c10bc4e0b2b51353b641"
+      },
+      "dark/viewer-assets-plan.json": {
+        "bytes": 4517,
+        "sha256": "63f89e0b592e6ee57f84904cc680c67aeae7d6bb78a62b156e079f1af11d2898"
+      },
+      "light/assets/native-font-0.sfnt": {
+        "bytes": 18204,
+        "sha256": "5ae422e7f1381c375aa5a8aa0b9b533eda35096ec2326b10760bc189f931df26"
+      },
+      "light/assets/native-font-0.woff2": {
+        "bytes": 7848,
+        "sha256": "e7088e2db172d8a541a4549e4dd569d6c919ac4b49fe90e54896d99981bc59b6"
+      },
+      "light/assets/native-font-1.sfnt": {
+        "bytes": 8464,
+        "sha256": "6d416f83f06ecc4f4eff773ca6659ef6b68a41eef9a589de906e20ac588d762f"
+      },
+      "light/assets/native-font-1.woff2": {
+        "bytes": 5304,
+        "sha256": "b5f1414431cd5744eababdf3a1bbc33cc74b486a0cba5739b676a83af8e50dc7"
+      },
+      "light/assets/native-image-0.svg": {
+        "bytes": 5663,
+        "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+      },
+      "light/assets/native-image-1.svg": {
+        "bytes": 7322,
+        "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+      },
+      "light/assets/official-font-0.sfnt": {
+        "bytes": 9200,
+        "sha256": "835285f2eb5e78c874be5a25dae28cf5396e9dbb243ebbb373673f9865786286"
+      },
+      "light/assets/official-font-0.woff2": {
+        "bytes": 5772,
+        "sha256": "aa4a70cd82476062015d34b22cae31f25ff093cc7587f612bf4d4823beba3509"
+      },
+      "light/assets/official-font-1.sfnt": {
+        "bytes": 410792,
+        "sha256": "ff1b6dd524120cf3c1b8ba8343065b57853abb522cd453b95ed0ed02decf5cae"
+      },
+      "light/assets/official-font-1.woff2": {
+        "bytes": 147436,
+        "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+      },
+      "light/assets/official-image-0.svg": {
+        "bytes": 7282,
+        "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+      },
+      "light/assets/official-image-1.svg": {
+        "bytes": 5605,
+        "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+      },
+      "light/assets/official-substitute-0.ttf": {
+        "bytes": 410820,
+        "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+      },
+      "light/native-assets.json": {
+        "bytes": 2342,
+        "sha256": "02ad83801c65ff6e95867d0a2d22169f2273ca0aa30909002e93598a44dd0565"
+      },
+      "light/native-chromium-0-raw.rgba.zlib": {
+        "bytes": 268189,
+        "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+      },
+      "light/native-chromium-1-raw.rgba.zlib": {
+        "bytes": 268189,
+        "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+      },
+      "light/native-chromium.rgba.zlib": {
+        "bytes": 268189,
+        "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+      },
+      "light/native-pdf-report.json": {
+        "bytes": 419,
+        "sha256": "f16205118ca888591eaf6cc99e04060aac8b7c0fa3ae6f39f8526e3d1806c81f"
+      },
+      "light/native-pdfium-0-raw.rgba.zlib": {
+        "bytes": 274210,
+        "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+      },
+      "light/native-pdfium-1-raw.rgba.zlib": {
+        "bytes": 274210,
+        "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+      },
+      "light/native-pdfium.rgba.zlib": {
+        "bytes": 274210,
+        "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+      },
+      "light/native-pdfjs-0-raw.rgba.zlib": {
+        "bytes": 258800,
+        "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+      },
+      "light/native-pdfjs-1-raw.rgba.zlib": {
+        "bytes": 258800,
+        "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+      },
+      "light/native-pdfjs.rgba.zlib": {
+        "bytes": 258800,
+        "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+      },
+      "light/native-png-report.json": {
+        "bytes": 413,
+        "sha256": "3e4286dc1e06f93e7d76e215e1f7a453a8852454102e7917a4a20d006cfb6f5c"
+      },
+      "light/native-rust-0-raw.rgba.zlib": {
+        "bytes": 219032,
+        "sha256": "e7cb73e1614e26d7f6544406d2e66dab0fab44b8f96067d6831109241504482a"
+      },
+      "light/native-rust-1-raw.rgba.zlib": {
+        "bytes": 219032,
+        "sha256": "e7cb73e1614e26d7f6544406d2e66dab0fab44b8f96067d6831109241504482a"
+      },
+      "light/native-rust.rgba.zlib": {
+        "bytes": 210856,
+        "sha256": "45ec4beebcbc3597ea403bfb54cd654d7ce388a2610dc0ec3a7bc75c68f79b08"
+      },
+      "light/native-rust.svg": {
+        "bytes": 109728,
+        "sha256": "4943a0503d10c7f23eb974fb5e7d97a65e893cb991b0fe8a6b28e4a635d95a58"
+      },
+      "light/native-svg-report.json": {
+        "bytes": 417,
+        "sha256": "1ba7ed24ad86bc14c8367795ae910a3393f079d7d464594f30b4ec3603ecc394"
+      },
+      "light/native-view.svg": {
+        "bytes": 110464,
+        "sha256": "a82e5799188960cadf6768ff976e5e939198c19d216b2dae11996b2ebd715093"
+      },
+      "light/native.pdf": {
+        "bytes": 204890,
+        "sha256": "0878c04dfbc6d84dc4949bd9dd40d14a2a26bd5ab2f42848ae940332aa9e5fb5"
+      },
+      "light/native.png": {
+        "bytes": 320445,
+        "sha256": "2a1739e0aad5d7b98b56b3d23562f067b91302c70020e839188d58744b46a376"
+      },
+      "light/native.svg": {
+        "bytes": 110432,
+        "sha256": "f6a85202c7a6b4dc1b4221c7ed64e45846ffd683dc06e5cba068273a49643f93"
+      },
+      "light/official-assets.json": {
+        "bytes": 2314,
+        "sha256": "55a7b74e55b43bad3cf2088743a126203b3a3af7f116d51038cba750e7a637e5"
+      },
+      "light/official-chromium-0-raw.rgba.zlib": {
+        "bytes": 268271,
+        "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+      },
+      "light/official-chromium-1-raw.rgba.zlib": {
+        "bytes": 268271,
+        "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+      },
+      "light/official-chromium.rgba.zlib": {
+        "bytes": 268271,
+        "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+      },
+      "light/official-font-resolution.json": {
+        "bytes": 5670,
+        "sha256": "705cb5c6191c76cad55a58510bc7c7873558bb1df42915a0085bb47da270051c"
+      },
+      "light/official-png.rgba.zlib": {
+        "bytes": 263199,
+        "sha256": "14a048aa0cf5bdaa38c6053e829f4e66594e646d649bcd8eca5a2c298207b0da"
+      },
+      "light/official-rust-0-raw.rgba.zlib": {
+        "bytes": 218998,
+        "sha256": "066dc14b828ef34b4c0c38398df3d1af9beac762c736ac286e06229873b9b037"
+      },
+      "light/official-rust-1-raw.rgba.zlib": {
+        "bytes": 218998,
+        "sha256": "066dc14b828ef34b4c0c38398df3d1af9beac762c736ac286e06229873b9b037"
+      },
+      "light/official-rust.rgba.zlib": {
+        "bytes": 210845,
+        "sha256": "717bfb9594049f77a3467c8d17c61341b6283ca25909eaa59d05b6c9437be658"
+      },
+      "light/official-rust.svg": {
+        "bytes": 257700,
+        "sha256": "cb591ca4350edcbd4748c18f3d03bb0a03e9e167173e907338a0a6f6db83c954"
+      },
+      "light/official-substituted.svg": {
+        "bytes": 257940,
+        "sha256": "d3c9f2c12c5c1a6861a3a6fe1ad3a59832f4a9e45b192dcac91ca9c59fff3734"
+      },
+      "light/official-view.svg": {
+        "bytes": 257956,
+        "sha256": "0acb9f0d8e5e29eabce1b6e36fdbb47c5605c551fa701e4a12f75649650b8522"
+      },
+      "light/official.png": {
+        "bytes": 539249,
+        "sha256": "c229712255139e4fecd7ad7fa2e3d01bf8f07ec671539962a940f4e753265ad2"
+      },
+      "light/official.svg": {
+        "bytes": 61260,
+        "sha256": "0ded9e3c9cf95d6234be80377c1fa2d0d136a1a33acfd8f061c2d5df0827c6b6"
+      },
+      "light/pdf-pdfium-comparison.json": {
+        "bytes": 1234,
+        "sha256": "679036ddeba61b8896b3f1049ef7d900f2a1885b7977a3b1b7bf5a5b16a50487"
+      },
+      "light/pdf-pdfjs-comparison.json": {
+        "bytes": 1228,
+        "sha256": "804764ba670b1bcc207eb28cfc55ed9a0e09a054894a83fe2bb337c56f58d590"
+      },
+      "light/png-canvas-comparison.json": {
+        "bytes": 1231,
+        "sha256": "45336de76ef4925aec7508d1004bf3625762d61567541931b21c5a1c2ca67e46"
+      },
+      "light/regions.json": {
+        "bytes": 389,
+        "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+      },
+      "light/svg-chromium-comparison.json": {
+        "bytes": 1229,
+        "sha256": "ef76b0beeb10c9c8bdecf550e704eff208de3d69ca086917986c0589172440b8"
+      },
+      "light/svg-rust-comparison.json": {
+        "bytes": 1224,
+        "sha256": "07000da85de8f7b1281b8180a27b8264bf8360088f6cb651751daca20e2055a4"
+      },
+      "light/viewer-assets-plan.json": {
+        "bytes": 4527,
+        "sha256": "f6e6773cce94b7101076e773947cf3dbf429ed3c7d909df4bf4bdf04c2d95138"
+      },
+      "viewers.json": {
+        "bytes": 89211,
+        "sha256": "c23c0f994cc251d545ba8c614f8e8e7a7b108a704696d6b4fe7d1955c4fee483"
+      }
+    }
+  },
+  "retained": {
+    "native": [
+      "capture.json",
+      "dark-pdf-report.json",
+      "dark-png-report.json",
+      "dark-svg-report.json",
+      "light-pdf-report.json",
+      "light-png-report.json",
+      "light-svg-report.json"
+    ],
+    "reference": [
+      "reference.json"
+    ],
+    "viewers": [
+      "dark/native-assets.json",
+      "dark/native-pdf-report.json",
+      "dark/native-png-report.json",
+      "dark/native-svg-report.json",
+      "dark/official-assets.json",
+      "dark/official-font-resolution.json",
+      "dark/pdf-pdfium-comparison.json",
+      "dark/pdf-pdfjs-comparison.json",
+      "dark/png-canvas-comparison.json",
+      "dark/regions.json",
+      "dark/svg-chromium-comparison.json",
+      "dark/svg-rust-comparison.json",
+      "dark/viewer-assets-plan.json",
+      "light/native-assets.json",
+      "light/native-pdf-report.json",
+      "light/native-png-report.json",
+      "light/native-svg-report.json",
+      "light/official-assets.json",
+      "light/official-font-resolution.json",
+      "light/pdf-pdfium-comparison.json",
+      "light/pdf-pdfjs-comparison.json",
+      "light/png-canvas-comparison.json",
+      "light/regions.json",
+      "light/svg-chromium-comparison.json",
+      "light/svg-rust-comparison.json",
+      "light/viewer-assets-plan.json",
+      "viewers.json"
+    ]
+  },
+  "roots": {
+    "native": "target/slides-native-v2",
+    "reference": "target/slides-reference-v1",
+    "viewers": "target/slides-viewers-v2"
+  },
+  "schema": "excalidraw-render/representative-compact-evidence/v1",
+  "signatures": {
+    "native": {
+      "approval": null,
+      "case_id": "representative.excali-local-slides.v1",
+      "eligible_executions": [],
+      "files": {
+        "dark-pdf-report.json": {
+          "bytes": 419,
+          "sha256": "5e4536f7fa5ac0708b6548cbc7f3a6ea0a8ac41d1f6030296741686d5d3f96e9"
+        },
+        "dark-pdf.pdf": {
+          "bytes": 204897,
+          "sha256": "1923530a2550d832541351c413a99bafce2123e32414c244204b1d4c4aa50d4a"
+        },
+        "dark-png-report.json": {
+          "bytes": 413,
+          "sha256": "b0f2a321d894ebde57dc34cd1077e65363ad598b8131cf623d95c486f8cc504f"
+        },
+        "dark-png.png": {
+          "bytes": 326285,
+          "sha256": "de0702c9f775b8ecfd4f803ff714e8c6da21bf2e518e30232027e16d927eb565"
+        },
+        "dark-svg-report.json": {
+          "bytes": 417,
+          "sha256": "d4993bd12fc7d69a0ea5b275fdec2d3685881e9a1a3ba3a32e86b0f86506079d"
+        },
+        "dark-svg.svg": {
+          "bytes": 110472,
+          "sha256": "729247c64d15985a5348bdcda7fe8b681251223c12d17070f0c6099bff94e348"
+        },
+        "light-pdf-report.json": {
+          "bytes": 419,
+          "sha256": "f16205118ca888591eaf6cc99e04060aac8b7c0fa3ae6f39f8526e3d1806c81f"
+        },
+        "light-pdf.pdf": {
+          "bytes": 204890,
+          "sha256": "0878c04dfbc6d84dc4949bd9dd40d14a2a26bd5ab2f42848ae940332aa9e5fb5"
+        },
+        "light-png-report.json": {
+          "bytes": 413,
+          "sha256": "3e4286dc1e06f93e7d76e215e1f7a453a8852454102e7917a4a20d006cfb6f5c"
+        },
+        "light-png.png": {
+          "bytes": 320445,
+          "sha256": "2a1739e0aad5d7b98b56b3d23562f067b91302c70020e839188d58744b46a376"
+        },
+        "light-svg-report.json": {
+          "bytes": 417,
+          "sha256": "1ba7ed24ad86bc14c8367795ae910a3393f079d7d464594f30b4ec3603ecc394"
+        },
+        "light-svg.svg": {
+          "bytes": 110432,
+          "sha256": "f6a85202c7a6b4dc1b4221c7ed64e45846ffd683dc06e5cba068273a49643f93"
+        }
+      },
+      "intake_manifest": {
+        "bytes": 3143,
+        "sha256": "eae1f16fac9ba6f9efb56692c37902b7118b947ba805726a76a812ad72a8991c"
+      },
+      "rows": [
+        {
+          "artifact": "light-svg.svg",
+          "format": "svg",
+          "fresh_process_runs": 2,
+          "report": "light-svg-report.json",
+          "request_args": [
+            "--format",
+            "svg",
+            "--compatibility-revision",
+            "1",
+            "--padding",
+            "10",
+            "--scale",
+            "1",
+            "--report-format",
+            "json",
+            "--embed-scene",
+            "--embed-provenance",
+            "--embed-diagnostics"
+          ],
+          "variant": "light"
+        },
+        {
+          "artifact": "light-png.png",
+          "format": "png",
+          "fresh_process_runs": 2,
+          "report": "light-png-report.json",
+          "request_args": [
+            "--format",
+            "png",
+            "--compatibility-revision",
+            "1",
+            "--padding",
+            "10",
+            "--scale",
+            "1",
+            "--report-format",
+            "json",
+            "--embed-scene",
+            "--embed-provenance",
+            "--embed-diagnostics"
+          ],
+          "variant": "light"
+        },
+        {
+          "artifact": "light-pdf.pdf",
+          "format": "pdf",
+          "fresh_process_runs": 2,
+          "report": "light-pdf-report.json",
+          "request_args": [
+            "--format",
+            "pdf",
+            "--compatibility-revision",
+            "1",
+            "--padding",
+            "10",
+            "--scale",
+            "1",
+            "--report-format",
+            "json",
+            "--embed-scene",
+            "--embed-provenance",
+            "--embed-diagnostics"
+          ],
+          "variant": "light"
+        },
+        {
+          "artifact": "dark-svg.svg",
+          "format": "svg",
+          "fresh_process_runs": 2,
+          "report": "dark-svg-report.json",
+          "request_args": [
+            "--format",
+            "svg",
+            "--compatibility-revision",
+            "1",
+            "--padding",
+            "10",
+            "--scale",
+            "1",
+            "--report-format",
+            "json",
+            "--dark-mode",
+            "--embed-scene",
+            "--embed-provenance",
+            "--embed-diagnostics"
+          ],
+          "variant": "dark"
+        },
+        {
+          "artifact": "dark-png.png",
+          "format": "png",
+          "fresh_process_runs": 2,
+          "report": "dark-png-report.json",
+          "request_args": [
+            "--format",
+            "png",
+            "--compatibility-revision",
+            "1",
+            "--padding",
+            "10",
+            "--scale",
+            "1",
+            "--report-format",
+            "json",
+            "--dark-mode",
+            "--embed-scene",
+            "--embed-provenance",
+            "--embed-diagnostics"
+          ],
+          "variant": "dark"
+        },
+        {
+          "artifact": "dark-pdf.pdf",
+          "format": "pdf",
+          "fresh_process_runs": 2,
+          "report": "dark-pdf-report.json",
+          "request_args": [
+            "--format",
+            "pdf",
+            "--compatibility-revision",
+            "1",
+            "--padding",
+            "10",
+            "--scale",
+            "1",
+            "--report-format",
+            "json",
+            "--dark-mode",
+            "--embed-scene",
+            "--embed-provenance",
+            "--embed-diagnostics"
+          ],
+          "variant": "dark"
+        }
+      ],
+      "schema": "excalidraw-render/representative-intake-capture/v1",
+      "status": "observed-unapproved"
+    },
+    "reference": {
+      "approval": null,
+      "browser": "149.0.7827.55",
+      "case_id": "representative.excali-local-slides.v1",
+      "eligible_executions": [],
+      "network": "none",
+      "plan_sha256": "749f9404af017ea65d66b25231f456f312cd6c5487a1274bf830fab0637d3d42",
+      "rows": [
+        {
+          "files": {
+            "official-png.rgba.zlib": {
+              "bytes": 263199,
+              "sha256": "14a048aa0cf5bdaa38c6053e829f4e66594e646d649bcd8eca5a2c298207b0da"
+            },
+            "official.png": {
+              "bytes": 539249,
+              "sha256": "c229712255139e4fecd7ad7fa2e3d01bf8f07ec671539962a940f4e753265ad2"
+            },
+            "official.svg": {
+              "bytes": 61260,
+              "sha256": "0ded9e3c9cf95d6234be80377c1fa2d0d136a1a33acfd8f061c2d5df0827c6b6"
+            }
+          },
+          "fresh_browser_runs": 2,
+          "height": 3847,
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": true,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          },
+          "requests": [
+            {
+              "sha256": "f6310cdb4004944e68d62b536788d6912c500d74bb0b59a3d32feb71d6053691",
+              "url": "http://reference.invalid/"
+            },
+            {
+              "sha256": "2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+              "url": "http://reference.invalid/assets/fonts/Virgil/Virgil-Regular.woff2"
+            },
+            {
+              "sha256": "2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+              "url": "http://reference.invalid/assets/fonts/Virgil/Virgil-Regular.woff2"
+            },
+            {
+              "sha256": "570a65b02702cc581db72c1069292253c7f8e5013d10d4db6c85666b70415c6b",
+              "url": "http://reference.invalid/bundle/assets/chunk-6U3AYISY-C6-Mtja1.js"
+            },
+            {
+              "sha256": "3e509b682c980358918b13c79ede48ab0749df0c5f84a9b97bed13fb9dfb6c9f",
+              "url": "http://reference.invalid/bundle/assets/chunk-EIO257PC-BVFaMmOE.js"
+            },
+            {
+              "sha256": "3e509b682c980358918b13c79ede48ab0749df0c5f84a9b97bed13fb9dfb6c9f",
+              "url": "http://reference.invalid/bundle/assets/chunk-EIO257PC-BVFaMmOE.js"
+            },
+            {
+              "sha256": "523b3abb0fe82695acef7e63fb2483db9bfa44eae7dcea9f3ab044d0a127ab07",
+              "url": "http://reference.invalid/bundle/assets/chunk-K2UTITRG-DDJPO6zg.js"
+            },
+            {
+              "sha256": "10161f2994c66b61ba7b109779a37477affc2ed082f9de0c4dae1913b0aeb7f5",
+              "url": "http://reference.invalid/bundle/assets/chunk-SRAX5OIU-Bu4quN-h.js"
+            },
+            {
+              "sha256": "10161f2994c66b61ba7b109779a37477affc2ed082f9de0c4dae1913b0aeb7f5",
+              "url": "http://reference.invalid/bundle/assets/chunk-SRAX5OIU-Bu4quN-h.js"
+            },
+            {
+              "sha256": "8592b9a36f6fdb5b26af52827ea88dc01ca236a080e2f9ccd2ef0f29daf4bb30",
+              "url": "http://reference.invalid/bundle/assets/chunk-Z3N5DIM6-D9TMVU7m.js"
+            },
+            {
+              "sha256": "4585eef3cdd56d3f4f42e029dca8202b12f45af483d57459e178cc1c030402fe",
+              "url": "http://reference.invalid/bundle/assets/directory-open-01563666-D4xXyWb_.js"
+            },
+            {
+              "sha256": "3e3360391f1105779278c06e5f4ce8cc94e3f682e8e4ccd483293214721a9635",
+              "url": "http://reference.invalid/bundle/assets/file-open-7c801643-DZtJT5zp.js"
+            },
+            {
+              "sha256": "f2f560e89a3129740ced91d435a4ffce5c5e8eaa5e6b89825687116e2686b44e",
+              "url": "http://reference.invalid/bundle/assets/file-save-3189631c-CO9S4HFW.js"
+            },
+            {
+              "sha256": "b906a944c972664e83f1d69d81440f2ebf5c80e459985ca73b88a7e59ec3704e",
+              "url": "http://reference.invalid/bundle/assets/index-yMQU-8ps.js"
+            },
+            {
+              "sha256": "a3a28a2b36b87ae3e3ea95d3254b1a9616885b974e7463f677c7ab061b612545",
+              "url": "http://reference.invalid/bundle/assets/preload-helper-BScOTl7O.js"
+            },
+            {
+              "sha256": "7593586269357eb13be9c7d8625b3eb74f36b357c831f19bb8e670fbb4e10fa7",
+              "url": "http://reference.invalid/bundle/assets/prod-DOu80Pat.js"
+            },
+            {
+              "sha256": "e17cabe5e25f3c66777c529f01df0ae562f11671a8506eb583d8799eaceeb149",
+              "url": "http://reference.invalid/bundle/assets/rolldown-runtime-BHe-jwch.js"
+            },
+            {
+              "sha256": "e17cabe5e25f3c66777c529f01df0ae562f11671a8506eb583d8799eaceeb149",
+              "url": "http://reference.invalid/bundle/assets/rolldown-runtime-BHe-jwch.js"
+            },
+            {
+              "sha256": "ccf01c7cc65a083b982cd638cb77884ebb4b4c54e5356769412d96056910930c",
+              "url": "http://reference.invalid/bundle/assets/subset-shared.chunk-Dvgc9Dd4.js"
+            },
+            {
+              "sha256": "2c091e19ab4f77c7c7600428c1f8b819eaa7f55ca45192d7528685dd65dde692",
+              "url": "http://reference.invalid/bundle/assets/subset-worker.chunk-LDr8ApKL.js"
+            },
+            {
+              "sha256": "2c091e19ab4f77c7c7600428c1f8b819eaa7f55ca45192d7528685dd65dde692",
+              "url": "http://reference.invalid/bundle/assets/subset-worker.chunk-LDr8ApKL.js"
+            }
+          ],
+          "svg_height": "3847.1666666666665",
+          "svg_width": "2831.6666666666665",
+          "variant": "light",
+          "view_box": "0 0 2831.6666666666665 3847.1666666666665",
+          "width": 2831
+        },
+        {
+          "files": {
+            "official-png.rgba.zlib": {
+              "bytes": 255038,
+              "sha256": "d32b14b9ddafad1425bc25a186975309a83c892a2349fd29ee9c44c979f34cc6"
+            },
+            "official.png": {
+              "bytes": 539796,
+              "sha256": "dd4c736aa94bf7b3b0bc28fd21d5ab21c80eae1ea21317b20c5af92e395df71b"
+            },
+            "official.svg": {
+              "bytes": 61300,
+              "sha256": "de0dd674669d8a3cb442a7134165860fb486757538aaa599a5c239202f9e0e3d"
+            }
+          },
+          "fresh_browser_runs": 2,
+          "height": 3847,
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": true,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": true,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          },
+          "requests": [
+            {
+              "sha256": "f6310cdb4004944e68d62b536788d6912c500d74bb0b59a3d32feb71d6053691",
+              "url": "http://reference.invalid/"
+            },
+            {
+              "sha256": "2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+              "url": "http://reference.invalid/assets/fonts/Virgil/Virgil-Regular.woff2"
+            },
+            {
+              "sha256": "2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+              "url": "http://reference.invalid/assets/fonts/Virgil/Virgil-Regular.woff2"
+            },
+            {
+              "sha256": "570a65b02702cc581db72c1069292253c7f8e5013d10d4db6c85666b70415c6b",
+              "url": "http://reference.invalid/bundle/assets/chunk-6U3AYISY-C6-Mtja1.js"
+            },
+            {
+              "sha256": "3e509b682c980358918b13c79ede48ab0749df0c5f84a9b97bed13fb9dfb6c9f",
+              "url": "http://reference.invalid/bundle/assets/chunk-EIO257PC-BVFaMmOE.js"
+            },
+            {
+              "sha256": "3e509b682c980358918b13c79ede48ab0749df0c5f84a9b97bed13fb9dfb6c9f",
+              "url": "http://reference.invalid/bundle/assets/chunk-EIO257PC-BVFaMmOE.js"
+            },
+            {
+              "sha256": "523b3abb0fe82695acef7e63fb2483db9bfa44eae7dcea9f3ab044d0a127ab07",
+              "url": "http://reference.invalid/bundle/assets/chunk-K2UTITRG-DDJPO6zg.js"
+            },
+            {
+              "sha256": "10161f2994c66b61ba7b109779a37477affc2ed082f9de0c4dae1913b0aeb7f5",
+              "url": "http://reference.invalid/bundle/assets/chunk-SRAX5OIU-Bu4quN-h.js"
+            },
+            {
+              "sha256": "10161f2994c66b61ba7b109779a37477affc2ed082f9de0c4dae1913b0aeb7f5",
+              "url": "http://reference.invalid/bundle/assets/chunk-SRAX5OIU-Bu4quN-h.js"
+            },
+            {
+              "sha256": "8592b9a36f6fdb5b26af52827ea88dc01ca236a080e2f9ccd2ef0f29daf4bb30",
+              "url": "http://reference.invalid/bundle/assets/chunk-Z3N5DIM6-D9TMVU7m.js"
+            },
+            {
+              "sha256": "4585eef3cdd56d3f4f42e029dca8202b12f45af483d57459e178cc1c030402fe",
+              "url": "http://reference.invalid/bundle/assets/directory-open-01563666-D4xXyWb_.js"
+            },
+            {
+              "sha256": "3e3360391f1105779278c06e5f4ce8cc94e3f682e8e4ccd483293214721a9635",
+              "url": "http://reference.invalid/bundle/assets/file-open-7c801643-DZtJT5zp.js"
+            },
+            {
+              "sha256": "f2f560e89a3129740ced91d435a4ffce5c5e8eaa5e6b89825687116e2686b44e",
+              "url": "http://reference.invalid/bundle/assets/file-save-3189631c-CO9S4HFW.js"
+            },
+            {
+              "sha256": "b906a944c972664e83f1d69d81440f2ebf5c80e459985ca73b88a7e59ec3704e",
+              "url": "http://reference.invalid/bundle/assets/index-yMQU-8ps.js"
+            },
+            {
+              "sha256": "a3a28a2b36b87ae3e3ea95d3254b1a9616885b974e7463f677c7ab061b612545",
+              "url": "http://reference.invalid/bundle/assets/preload-helper-BScOTl7O.js"
+            },
+            {
+              "sha256": "7593586269357eb13be9c7d8625b3eb74f36b357c831f19bb8e670fbb4e10fa7",
+              "url": "http://reference.invalid/bundle/assets/prod-DOu80Pat.js"
+            },
+            {
+              "sha256": "e17cabe5e25f3c66777c529f01df0ae562f11671a8506eb583d8799eaceeb149",
+              "url": "http://reference.invalid/bundle/assets/rolldown-runtime-BHe-jwch.js"
+            },
+            {
+              "sha256": "e17cabe5e25f3c66777c529f01df0ae562f11671a8506eb583d8799eaceeb149",
+              "url": "http://reference.invalid/bundle/assets/rolldown-runtime-BHe-jwch.js"
+            },
+            {
+              "sha256": "ccf01c7cc65a083b982cd638cb77884ebb4b4c54e5356769412d96056910930c",
+              "url": "http://reference.invalid/bundle/assets/subset-shared.chunk-Dvgc9Dd4.js"
+            },
+            {
+              "sha256": "2c091e19ab4f77c7c7600428c1f8b819eaa7f55ca45192d7528685dd65dde692",
+              "url": "http://reference.invalid/bundle/assets/subset-worker.chunk-LDr8ApKL.js"
+            },
+            {
+              "sha256": "2c091e19ab4f77c7c7600428c1f8b819eaa7f55ca45192d7528685dd65dde692",
+              "url": "http://reference.invalid/bundle/assets/subset-worker.chunk-LDr8ApKL.js"
+            }
+          ],
+          "svg_height": "3847.1666666666665",
+          "svg_width": "2831.6666666666665",
+          "variant": "dark",
+          "view_box": "0 0 2831.6666666666665 3847.1666666666665",
+          "width": 2831
+        }
+      ],
+      "scene_sha256": "c75f223f079c7bccb69cb7bcf0a6a4996571e358cf4730bb9fb72c0f864366ab",
+      "schema": "excalidraw-render/representative-intake-reference/v1",
+      "sources": [
+        {
+          "path": "tools/representative-intake/reference.mjs",
+          "sha256": "84d6c4b381efb9415d994e9df8f9d9d1a330c59a8ab9e6aecfac65415be37d75"
+        },
+        {
+          "path": "tools/reference-oracle/src/browser-entry.js",
+          "sha256": "85d261f4cf5a1000b128a52d0238c4697b31725dd1d00df765ae49a0c206c1d4"
+        },
+        {
+          "path": "tools/reference-oracle/package-lock.json",
+          "sha256": "8857f2792a506163d150a5481122a4bb93b3646e356a57065770747a188d67fc"
+        },
+        {
+          "path": "tools/reference-oracle/vite.config.mjs",
+          "sha256": "e408434b70fe73f5f45d404dd4b3e1e671d6159b0157e50a9531a312fd96a976"
+        },
+        {
+          "path": "tests/oracle/reference-profiles/revision-1.json",
+          "sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
+        },
+        {
+          "path": "tests/oracle/reference-profiles/revision-1-assets.json",
+          "sha256": "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a"
+        }
+      ],
+      "status": "observed-unapproved"
+    },
+    "viewers": {
+      "approval": null,
+      "captures": [
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d"
+          },
+          "raster": {
+            "bytes": 268271,
+            "path": "target/slides-viewers-v2/light/official-chromium.rgba.zlib",
+            "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+          },
+          "runs": [
+            {
+              "animation_offset_microseconds": 0,
+              "browser_version": "149.0.7827.55",
+              "height": 3847,
+              "lifecycle_updates": 2,
+              "platform_fonts": [
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 32,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 33,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 64,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                }
+              ],
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "official-chromium-0-raw.rgba.zlib",
+                "sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d"
+              },
+              "requests": [
+                "http://reference.invalid/input.svg"
+              ],
+              "rgba_sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d",
+              "width": 2831
+            },
+            {
+              "animation_offset_microseconds": 0,
+              "browser_version": "149.0.7827.55",
+              "height": 3847,
+              "lifecycle_updates": 2,
+              "platform_fonts": [
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 32,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 33,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 64,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                }
+              ],
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "official-chromium-1-raw.rgba.zlib",
+                "sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d"
+              },
+              "requests": [
+                "http://reference.invalid/input.svg"
+              ],
+              "rgba_sha256": "801c962765ed3976e07ef442601a00d8d35cd4259ad9a358851fa218dc7e0d2d",
+              "width": 2831
+            }
+          ],
+          "variant": "light",
+          "viewer": "official-chromium"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e"
+          },
+          "raster": {
+            "bytes": 268189,
+            "path": "target/slides-viewers-v2/light/native-chromium.rgba.zlib",
+            "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+          },
+          "runs": [
+            {
+              "animation_offset_microseconds": 0,
+              "browser_version": "149.0.7827.55",
+              "height": 3847,
+              "lifecycle_updates": 2,
+              "platform_fonts": [
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 32,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 33,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 64,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                }
+              ],
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-chromium-0-raw.rgba.zlib",
+                "sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e"
+              },
+              "requests": [
+                "http://reference.invalid/input.svg"
+              ],
+              "rgba_sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e",
+              "width": 2831
+            },
+            {
+              "animation_offset_microseconds": 0,
+              "browser_version": "149.0.7827.55",
+              "height": 3847,
+              "lifecycle_updates": 2,
+              "platform_fonts": [
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 32,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 33,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 64,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                }
+              ],
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-chromium-1-raw.rgba.zlib",
+                "sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e"
+              },
+              "requests": [
+                "http://reference.invalid/input.svg"
+              ],
+              "rgba_sha256": "7403982ac49e86e5ae9431fd885c5da2c280c262e88bcf5dc9ff30d03e76a69e",
+              "width": 2831
+            }
+          ],
+          "variant": "light",
+          "viewer": "native-chromium"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a"
+          },
+          "raster": {
+            "bytes": 274210,
+            "path": "target/slides-viewers-v2/light/native-pdfium.rgba.zlib",
+            "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+          },
+          "runs": [
+            {
+              "byte_length": 43563428,
+              "height": 3847,
+              "layout": "top-left-row-major",
+              "pdfium": "152.0.7947.0",
+              "pixel_format": "straight-alpha-srgb-rgba8",
+              "pypdfium2": "5.12.1",
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-pdfium-0-raw.rgba.zlib",
+                "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a"
+              },
+              "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a",
+              "width": 2831
+            },
+            {
+              "byte_length": 43563428,
+              "height": 3847,
+              "layout": "top-left-row-major",
+              "pdfium": "152.0.7947.0",
+              "pixel_format": "straight-alpha-srgb-rgba8",
+              "pypdfium2": "5.12.1",
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-pdfium-1-raw.rgba.zlib",
+                "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a"
+              },
+              "sha256": "82febb32725846d1f3f2c017276c6f094b1d8dff825d31bf526d1ecab5b8e91a",
+              "width": 2831
+            }
+          ],
+          "variant": "light",
+          "viewer": "native-pdfium"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136"
+          },
+          "raster": {
+            "bytes": 258800,
+            "path": "target/slides-viewers-v2/light/native-pdfjs.rgba.zlib",
+            "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+          },
+          "runs": [
+            {
+              "byte_length": 43563428,
+              "height": 3847,
+              "layout": "top-left-row-major",
+              "pdfjs": "6.1.200",
+              "pixel_format": "straight-alpha-srgb-rgba8",
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-pdfjs-0-raw.rgba.zlib",
+                "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136"
+              },
+              "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136",
+              "width": 2831
+            },
+            {
+              "byte_length": 43563428,
+              "height": 3847,
+              "layout": "top-left-row-major",
+              "pdfjs": "6.1.200",
+              "pixel_format": "straight-alpha-srgb-rgba8",
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-pdfjs-1-raw.rgba.zlib",
+                "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136"
+              },
+              "sha256": "1293e3ec49013baddad40ade3fdd70058d368f381e05ac6de4b7227d196dd136",
+              "width": 2831
+            }
+          ],
+          "variant": "light",
+          "viewer": "native-pdfjs"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "91c0c0af63daf05869ee898a1e642b54622c060760c98adaf247ea76dc5e70dc"
+          },
+          "raster": {
+            "bytes": 210845,
+            "path": "target/slides-viewers-v2/light/official-rust.rgba.zlib",
+            "sha256": "717bfb9594049f77a3467c8d17c61341b6283ca25909eaa59d05b6c9437be658"
+          },
+          "runs": [
+            {
+              "height": 3847,
+              "raw_capture": {
+                "bytes": 43578816,
+                "file": "official-rust-0-raw.rgba.zlib",
+                "sha256": "60eea5453c8046fc21cc4e9f1dd2a35844014d4acb6d6e5c3ecd13a2c52feb3b"
+              },
+              "width": 2832
+            },
+            {
+              "height": 3847,
+              "raw_capture": {
+                "bytes": 43578816,
+                "file": "official-rust-1-raw.rgba.zlib",
+                "sha256": "60eea5453c8046fc21cc4e9f1dd2a35844014d4acb6d6e5c3ecd13a2c52feb3b"
+              },
+              "width": 2832
+            }
+          ],
+          "variant": "light",
+          "viewer": "official-rust"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "641307e3958b77039a30ad8070e98956bd3009a5c48fbeb412e54d5792b6b202"
+          },
+          "raster": {
+            "bytes": 210856,
+            "path": "target/slides-viewers-v2/light/native-rust.rgba.zlib",
+            "sha256": "45ec4beebcbc3597ea403bfb54cd654d7ce388a2610dc0ec3a7bc75c68f79b08"
+          },
+          "runs": [
+            {
+              "height": 3847,
+              "raw_capture": {
+                "bytes": 43578816,
+                "file": "native-rust-0-raw.rgba.zlib",
+                "sha256": "cc0274aa113fc719ca1ed32791e4b6dae01e3beac9569f231d7b30b1654a9a18"
+              },
+              "width": 2832
+            },
+            {
+              "height": 3847,
+              "raw_capture": {
+                "bytes": 43578816,
+                "file": "native-rust-1-raw.rgba.zlib",
+                "sha256": "cc0274aa113fc719ca1ed32791e4b6dae01e3beac9569f231d7b30b1654a9a18"
+              },
+              "width": 2832
+            }
+          ],
+          "variant": "light",
+          "viewer": "native-rust"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f"
+          },
+          "raster": {
+            "bytes": 252829,
+            "path": "target/slides-viewers-v2/dark/official-chromium.rgba.zlib",
+            "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+          },
+          "runs": [
+            {
+              "animation_offset_microseconds": 0,
+              "browser_version": "149.0.7827.55",
+              "height": 3847,
+              "lifecycle_updates": 2,
+              "platform_fonts": [
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 32,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 33,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 64,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                }
+              ],
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "official-chromium-0-raw.rgba.zlib",
+                "sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f"
+              },
+              "requests": [
+                "http://reference.invalid/input.svg"
+              ],
+              "rgba_sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f",
+              "width": 2831
+            },
+            {
+              "animation_offset_microseconds": 0,
+              "browser_version": "149.0.7827.55",
+              "height": 3847,
+              "lifecycle_updates": 2,
+              "platform_fonts": [
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 32,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 33,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 64,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Virgil",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "Virgil-Regular"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                },
+                {
+                  "familyName": "Liberation Sans",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "LiberationSans"
+                }
+              ],
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "official-chromium-1-raw.rgba.zlib",
+                "sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f"
+              },
+              "requests": [
+                "http://reference.invalid/input.svg"
+              ],
+              "rgba_sha256": "49f1558510943dd37aa8f8321344f7af071acbd1d296f9ee465e91e8cf55757f",
+              "width": 2831
+            }
+          ],
+          "variant": "dark",
+          "viewer": "official-chromium"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664"
+          },
+          "raster": {
+            "bytes": 252819,
+            "path": "target/slides-viewers-v2/dark/native-chromium.rgba.zlib",
+            "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+          },
+          "runs": [
+            {
+              "animation_offset_microseconds": 0,
+              "browser_version": "149.0.7827.55",
+              "height": 3847,
+              "lifecycle_updates": 2,
+              "platform_fonts": [
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 32,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 33,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 64,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                }
+              ],
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-chromium-0-raw.rgba.zlib",
+                "sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664"
+              },
+              "requests": [
+                "http://reference.invalid/input.svg"
+              ],
+              "rgba_sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664",
+              "width": 2831
+            },
+            {
+              "animation_offset_microseconds": 0,
+              "browser_version": "149.0.7827.55",
+              "height": 3847,
+              "lifecycle_updates": 2,
+              "platform_fonts": [
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 32,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 33,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 64,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 42,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-1",
+                  "glyphCount": 22,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-1-Regular-01f644b974513ecadfe580019ba7f5fa"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                },
+                {
+                  "familyName": "ExcalidrawRender-9",
+                  "glyphCount": 7,
+                  "isCustomFont": true,
+                  "postScriptName": "ExcalidrawRender-9-Regular-f09026a30c106fd9bad9d7cb4b794fee"
+                }
+              ],
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-chromium-1-raw.rgba.zlib",
+                "sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664"
+              },
+              "requests": [
+                "http://reference.invalid/input.svg"
+              ],
+              "rgba_sha256": "769aeccfc2b713df04795b6abaf7bd4ac9764a9728bdc0e829af163a0657b664",
+              "width": 2831
+            }
+          ],
+          "variant": "dark",
+          "viewer": "native-chromium"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d"
+          },
+          "raster": {
+            "bytes": 259754,
+            "path": "target/slides-viewers-v2/dark/native-pdfium.rgba.zlib",
+            "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+          },
+          "runs": [
+            {
+              "byte_length": 43563428,
+              "height": 3847,
+              "layout": "top-left-row-major",
+              "pdfium": "152.0.7947.0",
+              "pixel_format": "straight-alpha-srgb-rgba8",
+              "pypdfium2": "5.12.1",
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-pdfium-0-raw.rgba.zlib",
+                "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d"
+              },
+              "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d",
+              "width": 2831
+            },
+            {
+              "byte_length": 43563428,
+              "height": 3847,
+              "layout": "top-left-row-major",
+              "pdfium": "152.0.7947.0",
+              "pixel_format": "straight-alpha-srgb-rgba8",
+              "pypdfium2": "5.12.1",
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-pdfium-1-raw.rgba.zlib",
+                "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d"
+              },
+              "sha256": "af3e5ac55cc269441e00549e6ce7bd6b64010ac4952299ba108f68aabb1a644d",
+              "width": 2831
+            }
+          ],
+          "variant": "dark",
+          "viewer": "native-pdfium"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c"
+          },
+          "raster": {
+            "bytes": 249559,
+            "path": "target/slides-viewers-v2/dark/native-pdfjs.rgba.zlib",
+            "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+          },
+          "runs": [
+            {
+              "byte_length": 43563428,
+              "height": 3847,
+              "layout": "top-left-row-major",
+              "pdfjs": "6.1.200",
+              "pixel_format": "straight-alpha-srgb-rgba8",
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-pdfjs-0-raw.rgba.zlib",
+                "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c"
+              },
+              "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c",
+              "width": 2831
+            },
+            {
+              "byte_length": 43563428,
+              "height": 3847,
+              "layout": "top-left-row-major",
+              "pdfjs": "6.1.200",
+              "pixel_format": "straight-alpha-srgb-rgba8",
+              "raw_capture": {
+                "bytes": 43563428,
+                "file": "native-pdfjs-1-raw.rgba.zlib",
+                "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c"
+              },
+              "sha256": "d7bbcc77c1995f9800051b408fb597480c58b0979492227a16516c80ce6bcb5c",
+              "width": 2831
+            }
+          ],
+          "variant": "dark",
+          "viewer": "native-pdfjs"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "b4d07c0f49bb3e1ead904623d680d57cc6a86b2ccb33fc2144eb8ba463e9d842"
+          },
+          "raster": {
+            "bytes": 200910,
+            "path": "target/slides-viewers-v2/dark/official-rust.rgba.zlib",
+            "sha256": "6dbca51f3295a985da03da8ef48f48ad3bff95775c9fb6c07b59b0d4773de5ed"
+          },
+          "runs": [
+            {
+              "height": 3847,
+              "raw_capture": {
+                "bytes": 43578816,
+                "file": "official-rust-0-raw.rgba.zlib",
+                "sha256": "6ee71e9ceb325c7349612e54a9d944683f499726d9028df1ba0219ba236779db"
+              },
+              "width": 2832
+            },
+            {
+              "height": 3847,
+              "raw_capture": {
+                "bytes": 43578816,
+                "file": "official-rust-1-raw.rgba.zlib",
+                "sha256": "6ee71e9ceb325c7349612e54a9d944683f499726d9028df1ba0219ba236779db"
+              },
+              "width": 2832
+            }
+          ],
+          "variant": "dark",
+          "viewer": "official-rust"
+        },
+        {
+          "canonical_pixels": {
+            "bytes": 43563428,
+            "sha256": "3fe5eb9727766d3acfae55dd118177d3c60e169fc427cfced139220868a45faa"
+          },
+          "raster": {
+            "bytes": 200928,
+            "path": "target/slides-viewers-v2/dark/native-rust.rgba.zlib",
+            "sha256": "cb337d57e9e2411d81a63b3f0cf23e56d0fe9aeef93df259a4c0acd6c827b8cc"
+          },
+          "runs": [
+            {
+              "height": 3847,
+              "raw_capture": {
+                "bytes": 43578816,
+                "file": "native-rust-0-raw.rgba.zlib",
+                "sha256": "940c10143ef4e4b4fbcdb2905055bc9fd117b06c2b379ef60e4a6e2e84177c37"
+              },
+              "width": 2832
+            },
+            {
+              "height": 3847,
+              "raw_capture": {
+                "bytes": 43578816,
+                "file": "native-rust-1-raw.rgba.zlib",
+                "sha256": "940c10143ef4e4b4fbcdb2905055bc9fd117b06c2b379ef60e4a6e2e84177c37"
+              },
+              "width": 2832
+            }
+          ],
+          "variant": "dark",
+          "viewer": "native-rust"
+        }
+      ],
+      "eligible_executions": [],
+      "files": {
+        "dark/assets/native-font-0.sfnt": {
+          "bytes": 18204,
+          "sha256": "5ae422e7f1381c375aa5a8aa0b9b533eda35096ec2326b10760bc189f931df26"
+        },
+        "dark/assets/native-font-0.woff2": {
+          "bytes": 7848,
+          "sha256": "e7088e2db172d8a541a4549e4dd569d6c919ac4b49fe90e54896d99981bc59b6"
+        },
+        "dark/assets/native-font-1.sfnt": {
+          "bytes": 8464,
+          "sha256": "6d416f83f06ecc4f4eff773ca6659ef6b68a41eef9a589de906e20ac588d762f"
+        },
+        "dark/assets/native-font-1.woff2": {
+          "bytes": 5304,
+          "sha256": "b5f1414431cd5744eababdf3a1bbc33cc74b486a0cba5739b676a83af8e50dc7"
+        },
+        "dark/assets/native-image-0.svg": {
+          "bytes": 5663,
+          "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+        },
+        "dark/assets/native-image-1.svg": {
+          "bytes": 7322,
+          "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+        },
+        "dark/assets/official-font-0.sfnt": {
+          "bytes": 9200,
+          "sha256": "835285f2eb5e78c874be5a25dae28cf5396e9dbb243ebbb373673f9865786286"
+        },
+        "dark/assets/official-font-0.woff2": {
+          "bytes": 5772,
+          "sha256": "aa4a70cd82476062015d34b22cae31f25ff093cc7587f612bf4d4823beba3509"
+        },
+        "dark/assets/official-font-1.sfnt": {
+          "bytes": 410792,
+          "sha256": "ff1b6dd524120cf3c1b8ba8343065b57853abb522cd453b95ed0ed02decf5cae"
+        },
+        "dark/assets/official-font-1.woff2": {
+          "bytes": 147436,
+          "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+        },
+        "dark/assets/official-image-0.svg": {
+          "bytes": 7282,
+          "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+        },
+        "dark/assets/official-image-1.svg": {
+          "bytes": 5605,
+          "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+        },
+        "dark/assets/official-substitute-0.ttf": {
+          "bytes": 410820,
+          "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+        },
+        "dark/native-assets.json": {
+          "bytes": 2338,
+          "sha256": "3a8f36f77b657c46ca576b4d34ed1067eec92776ee63afb2c67bed5c0748a8ab"
+        },
+        "dark/native-chromium-0-raw.rgba.zlib": {
+          "bytes": 252819,
+          "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+        },
+        "dark/native-chromium-1-raw.rgba.zlib": {
+          "bytes": 252819,
+          "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+        },
+        "dark/native-chromium.rgba.zlib": {
+          "bytes": 252819,
+          "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+        },
+        "dark/native-pdf-report.json": {
+          "bytes": 419,
+          "sha256": "5e4536f7fa5ac0708b6548cbc7f3a6ea0a8ac41d1f6030296741686d5d3f96e9"
+        },
+        "dark/native-pdfium-0-raw.rgba.zlib": {
+          "bytes": 259754,
+          "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+        },
+        "dark/native-pdfium-1-raw.rgba.zlib": {
+          "bytes": 259754,
+          "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+        },
+        "dark/native-pdfium.rgba.zlib": {
+          "bytes": 259754,
+          "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+        },
+        "dark/native-pdfjs-0-raw.rgba.zlib": {
+          "bytes": 249559,
+          "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+        },
+        "dark/native-pdfjs-1-raw.rgba.zlib": {
+          "bytes": 249559,
+          "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+        },
+        "dark/native-pdfjs.rgba.zlib": {
+          "bytes": 249559,
+          "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+        },
+        "dark/native-png-report.json": {
+          "bytes": 413,
+          "sha256": "b0f2a321d894ebde57dc34cd1077e65363ad598b8131cf623d95c486f8cc504f"
+        },
+        "dark/native-rust-0-raw.rgba.zlib": {
+          "bytes": 206139,
+          "sha256": "d446b300a26741a178487eaa0fbb25e0dc4a9b616351c843c381f564e77c5649"
+        },
+        "dark/native-rust-1-raw.rgba.zlib": {
+          "bytes": 206139,
+          "sha256": "d446b300a26741a178487eaa0fbb25e0dc4a9b616351c843c381f564e77c5649"
+        },
+        "dark/native-rust.rgba.zlib": {
+          "bytes": 200928,
+          "sha256": "cb337d57e9e2411d81a63b3f0cf23e56d0fe9aeef93df259a4c0acd6c827b8cc"
+        },
+        "dark/native-rust.svg": {
+          "bytes": 109768,
+          "sha256": "dff71b7f3f583b578b1a23fd0b750581c7cba53c07e76f6979a7d20df441a923"
+        },
+        "dark/native-svg-report.json": {
+          "bytes": 417,
+          "sha256": "d4993bd12fc7d69a0ea5b275fdec2d3685881e9a1a3ba3a32e86b0f86506079d"
+        },
+        "dark/native-view.svg": {
+          "bytes": 110504,
+          "sha256": "04eda0f9df296cd1f6eec61cc4b04a204a4869d81ab7447d292890fd2bc27a0b"
+        },
+        "dark/native.pdf": {
+          "bytes": 204897,
+          "sha256": "1923530a2550d832541351c413a99bafce2123e32414c244204b1d4c4aa50d4a"
+        },
+        "dark/native.png": {
+          "bytes": 326285,
+          "sha256": "de0702c9f775b8ecfd4f803ff714e8c6da21bf2e518e30232027e16d927eb565"
+        },
+        "dark/native.svg": {
+          "bytes": 110472,
+          "sha256": "729247c64d15985a5348bdcda7fe8b681251223c12d17070f0c6099bff94e348"
+        },
+        "dark/official-assets.json": {
+          "bytes": 2310,
+          "sha256": "3ffa8ef04f0be0314066a46818c6ce5ba1e1f7e2ec1941a65fed2917b990b91b"
+        },
+        "dark/official-chromium-0-raw.rgba.zlib": {
+          "bytes": 252829,
+          "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+        },
+        "dark/official-chromium-1-raw.rgba.zlib": {
+          "bytes": 252829,
+          "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+        },
+        "dark/official-chromium.rgba.zlib": {
+          "bytes": 252829,
+          "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+        },
+        "dark/official-font-resolution.json": {
+          "bytes": 5669,
+          "sha256": "df63aa5a2f069433b5b9b055c7716d6744bf079e593044036f0c6951406dc332"
+        },
+        "dark/official-png.rgba.zlib": {
+          "bytes": 255038,
+          "sha256": "d32b14b9ddafad1425bc25a186975309a83c892a2349fd29ee9c44c979f34cc6"
+        },
+        "dark/official-rust-0-raw.rgba.zlib": {
+          "bytes": 206120,
+          "sha256": "ae0290fcd1a55adfd1a9aa3161cf3d1e36252f94a88d62207d89687063cf6edd"
+        },
+        "dark/official-rust-1-raw.rgba.zlib": {
+          "bytes": 206120,
+          "sha256": "ae0290fcd1a55adfd1a9aa3161cf3d1e36252f94a88d62207d89687063cf6edd"
+        },
+        "dark/official-rust.rgba.zlib": {
+          "bytes": 200910,
+          "sha256": "6dbca51f3295a985da03da8ef48f48ad3bff95775c9fb6c07b59b0d4773de5ed"
+        },
+        "dark/official-rust.svg": {
+          "bytes": 257740,
+          "sha256": "ffff883f52bae9d5d9bc231f02449fba585664ac4de9192767e9d92072aef6fc"
+        },
+        "dark/official-substituted.svg": {
+          "bytes": 257980,
+          "sha256": "ba1dcbfb01611ea07c34026759e8ede40a201fdc753dd7491a786c27c0761444"
+        },
+        "dark/official-view.svg": {
+          "bytes": 257996,
+          "sha256": "1b3ff92b007556b4ab448b2bd57fe90fe1cce9772a279904c9282b9e4e9dfe4a"
+        },
+        "dark/official.png": {
+          "bytes": 539796,
+          "sha256": "dd4c736aa94bf7b3b0bc28fd21d5ab21c80eae1ea21317b20c5af92e395df71b"
+        },
+        "dark/official.svg": {
+          "bytes": 61300,
+          "sha256": "de0dd674669d8a3cb442a7134165860fb486757538aaa599a5c239202f9e0e3d"
+        },
+        "dark/pdf-pdfium-comparison.json": {
+          "bytes": 1234,
+          "sha256": "c135ceadd75e41dc32192a19f2e2037fb24564ffada04347af4dee20c80135b5"
+        },
+        "dark/pdf-pdfjs-comparison.json": {
+          "bytes": 1228,
+          "sha256": "41a2728b4f3f4471fd6c4cab9431a6b5373e97d9980d1daab50dbb3afaad8b0a"
+        },
+        "dark/png-canvas-comparison.json": {
+          "bytes": 1231,
+          "sha256": "82d171752d2dde75b54d949f69ddeb9d6360d04d9a19778640b83aaccf7c75af"
+        },
+        "dark/regions.json": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "dark/svg-chromium-comparison.json": {
+          "bytes": 1230,
+          "sha256": "3686b0c4d0bd1abf4e39b283e902d610deacae499e4351ff5df27bd119c952c2"
+        },
+        "dark/svg-rust-comparison.json": {
+          "bytes": 1224,
+          "sha256": "f49adf06d3f0fe77a7839548fd48a727825b8c0f0096c10bc4e0b2b51353b641"
+        },
+        "dark/viewer-assets-plan.json": {
+          "bytes": 4517,
+          "sha256": "63f89e0b592e6ee57f84904cc680c67aeae7d6bb78a62b156e079f1af11d2898"
+        },
+        "light/assets/native-font-0.sfnt": {
+          "bytes": 18204,
+          "sha256": "5ae422e7f1381c375aa5a8aa0b9b533eda35096ec2326b10760bc189f931df26"
+        },
+        "light/assets/native-font-0.woff2": {
+          "bytes": 7848,
+          "sha256": "e7088e2db172d8a541a4549e4dd569d6c919ac4b49fe90e54896d99981bc59b6"
+        },
+        "light/assets/native-font-1.sfnt": {
+          "bytes": 8464,
+          "sha256": "6d416f83f06ecc4f4eff773ca6659ef6b68a41eef9a589de906e20ac588d762f"
+        },
+        "light/assets/native-font-1.woff2": {
+          "bytes": 5304,
+          "sha256": "b5f1414431cd5744eababdf3a1bbc33cc74b486a0cba5739b676a83af8e50dc7"
+        },
+        "light/assets/native-image-0.svg": {
+          "bytes": 5663,
+          "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+        },
+        "light/assets/native-image-1.svg": {
+          "bytes": 7322,
+          "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+        },
+        "light/assets/official-font-0.sfnt": {
+          "bytes": 9200,
+          "sha256": "835285f2eb5e78c874be5a25dae28cf5396e9dbb243ebbb373673f9865786286"
+        },
+        "light/assets/official-font-0.woff2": {
+          "bytes": 5772,
+          "sha256": "aa4a70cd82476062015d34b22cae31f25ff093cc7587f612bf4d4823beba3509"
+        },
+        "light/assets/official-font-1.sfnt": {
+          "bytes": 410792,
+          "sha256": "ff1b6dd524120cf3c1b8ba8343065b57853abb522cd453b95ed0ed02decf5cae"
+        },
+        "light/assets/official-font-1.woff2": {
+          "bytes": 147436,
+          "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+        },
+        "light/assets/official-image-0.svg": {
+          "bytes": 7282,
+          "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+        },
+        "light/assets/official-image-1.svg": {
+          "bytes": 5605,
+          "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+        },
+        "light/assets/official-substitute-0.ttf": {
+          "bytes": 410820,
+          "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+        },
+        "light/native-assets.json": {
+          "bytes": 2342,
+          "sha256": "02ad83801c65ff6e95867d0a2d22169f2273ca0aa30909002e93598a44dd0565"
+        },
+        "light/native-chromium-0-raw.rgba.zlib": {
+          "bytes": 268189,
+          "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+        },
+        "light/native-chromium-1-raw.rgba.zlib": {
+          "bytes": 268189,
+          "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+        },
+        "light/native-chromium.rgba.zlib": {
+          "bytes": 268189,
+          "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+        },
+        "light/native-pdf-report.json": {
+          "bytes": 419,
+          "sha256": "f16205118ca888591eaf6cc99e04060aac8b7c0fa3ae6f39f8526e3d1806c81f"
+        },
+        "light/native-pdfium-0-raw.rgba.zlib": {
+          "bytes": 274210,
+          "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+        },
+        "light/native-pdfium-1-raw.rgba.zlib": {
+          "bytes": 274210,
+          "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+        },
+        "light/native-pdfium.rgba.zlib": {
+          "bytes": 274210,
+          "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+        },
+        "light/native-pdfjs-0-raw.rgba.zlib": {
+          "bytes": 258800,
+          "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+        },
+        "light/native-pdfjs-1-raw.rgba.zlib": {
+          "bytes": 258800,
+          "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+        },
+        "light/native-pdfjs.rgba.zlib": {
+          "bytes": 258800,
+          "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+        },
+        "light/native-png-report.json": {
+          "bytes": 413,
+          "sha256": "3e4286dc1e06f93e7d76e215e1f7a453a8852454102e7917a4a20d006cfb6f5c"
+        },
+        "light/native-rust-0-raw.rgba.zlib": {
+          "bytes": 219032,
+          "sha256": "e7cb73e1614e26d7f6544406d2e66dab0fab44b8f96067d6831109241504482a"
+        },
+        "light/native-rust-1-raw.rgba.zlib": {
+          "bytes": 219032,
+          "sha256": "e7cb73e1614e26d7f6544406d2e66dab0fab44b8f96067d6831109241504482a"
+        },
+        "light/native-rust.rgba.zlib": {
+          "bytes": 210856,
+          "sha256": "45ec4beebcbc3597ea403bfb54cd654d7ce388a2610dc0ec3a7bc75c68f79b08"
+        },
+        "light/native-rust.svg": {
+          "bytes": 109728,
+          "sha256": "4943a0503d10c7f23eb974fb5e7d97a65e893cb991b0fe8a6b28e4a635d95a58"
+        },
+        "light/native-svg-report.json": {
+          "bytes": 417,
+          "sha256": "1ba7ed24ad86bc14c8367795ae910a3393f079d7d464594f30b4ec3603ecc394"
+        },
+        "light/native-view.svg": {
+          "bytes": 110464,
+          "sha256": "a82e5799188960cadf6768ff976e5e939198c19d216b2dae11996b2ebd715093"
+        },
+        "light/native.pdf": {
+          "bytes": 204890,
+          "sha256": "0878c04dfbc6d84dc4949bd9dd40d14a2a26bd5ab2f42848ae940332aa9e5fb5"
+        },
+        "light/native.png": {
+          "bytes": 320445,
+          "sha256": "2a1739e0aad5d7b98b56b3d23562f067b91302c70020e839188d58744b46a376"
+        },
+        "light/native.svg": {
+          "bytes": 110432,
+          "sha256": "f6a85202c7a6b4dc1b4221c7ed64e45846ffd683dc06e5cba068273a49643f93"
+        },
+        "light/official-assets.json": {
+          "bytes": 2314,
+          "sha256": "55a7b74e55b43bad3cf2088743a126203b3a3af7f116d51038cba750e7a637e5"
+        },
+        "light/official-chromium-0-raw.rgba.zlib": {
+          "bytes": 268271,
+          "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+        },
+        "light/official-chromium-1-raw.rgba.zlib": {
+          "bytes": 268271,
+          "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+        },
+        "light/official-chromium.rgba.zlib": {
+          "bytes": 268271,
+          "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+        },
+        "light/official-font-resolution.json": {
+          "bytes": 5670,
+          "sha256": "705cb5c6191c76cad55a58510bc7c7873558bb1df42915a0085bb47da270051c"
+        },
+        "light/official-png.rgba.zlib": {
+          "bytes": 263199,
+          "sha256": "14a048aa0cf5bdaa38c6053e829f4e66594e646d649bcd8eca5a2c298207b0da"
+        },
+        "light/official-rust-0-raw.rgba.zlib": {
+          "bytes": 218998,
+          "sha256": "066dc14b828ef34b4c0c38398df3d1af9beac762c736ac286e06229873b9b037"
+        },
+        "light/official-rust-1-raw.rgba.zlib": {
+          "bytes": 218998,
+          "sha256": "066dc14b828ef34b4c0c38398df3d1af9beac762c736ac286e06229873b9b037"
+        },
+        "light/official-rust.rgba.zlib": {
+          "bytes": 210845,
+          "sha256": "717bfb9594049f77a3467c8d17c61341b6283ca25909eaa59d05b6c9437be658"
+        },
+        "light/official-rust.svg": {
+          "bytes": 257700,
+          "sha256": "cb591ca4350edcbd4748c18f3d03bb0a03e9e167173e907338a0a6f6db83c954"
+        },
+        "light/official-substituted.svg": {
+          "bytes": 257940,
+          "sha256": "d3c9f2c12c5c1a6861a3a6fe1ad3a59832f4a9e45b192dcac91ca9c59fff3734"
+        },
+        "light/official-view.svg": {
+          "bytes": 257956,
+          "sha256": "0acb9f0d8e5e29eabce1b6e36fdbb47c5605c551fa701e4a12f75649650b8522"
+        },
+        "light/official.png": {
+          "bytes": 539249,
+          "sha256": "c229712255139e4fecd7ad7fa2e3d01bf8f07ec671539962a940f4e753265ad2"
+        },
+        "light/official.svg": {
+          "bytes": 61260,
+          "sha256": "0ded9e3c9cf95d6234be80377c1fa2d0d136a1a33acfd8f061c2d5df0827c6b6"
+        },
+        "light/pdf-pdfium-comparison.json": {
+          "bytes": 1234,
+          "sha256": "679036ddeba61b8896b3f1049ef7d900f2a1885b7977a3b1b7bf5a5b16a50487"
+        },
+        "light/pdf-pdfjs-comparison.json": {
+          "bytes": 1228,
+          "sha256": "804764ba670b1bcc207eb28cfc55ed9a0e09a054894a83fe2bb337c56f58d590"
+        },
+        "light/png-canvas-comparison.json": {
+          "bytes": 1231,
+          "sha256": "45336de76ef4925aec7508d1004bf3625762d61567541931b21c5a1c2ca67e46"
+        },
+        "light/regions.json": {
+          "bytes": 389,
+          "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+        },
+        "light/svg-chromium-comparison.json": {
+          "bytes": 1229,
+          "sha256": "ef76b0beeb10c9c8bdecf550e704eff208de3d69ca086917986c0589172440b8"
+        },
+        "light/svg-rust-comparison.json": {
+          "bytes": 1224,
+          "sha256": "07000da85de8f7b1281b8180a27b8264bf8360088f6cb651751daca20e2055a4"
+        },
+        "light/viewer-assets-plan.json": {
+          "bytes": 4527,
+          "sha256": "f6e6773cce94b7101076e773947cf3dbf429ed3c7d909df4bf4bdf04c2d95138"
+        }
+      },
+      "inputs": [
+        {
+          "bytes": 3143,
+          "path": "tests/conformance/intake/excali-local-slides-v1/manifest.json",
+          "sha256": "eae1f16fac9ba6f9efb56692c37902b7118b947ba805726a76a812ad72a8991c"
+        },
+        {
+          "bytes": 3009,
+          "path": "tests/conformance/intake/excali-local-slides-v1/plan.json",
+          "sha256": "749f9404af017ea65d66b25231f456f312cd6c5487a1274bf830fab0637d3d42"
+        },
+        {
+          "bytes": 45446,
+          "path": "tests/conformance/intake/excali-local-slides-v1/scene.excalidraw",
+          "sha256": "c75f223f079c7bccb69cb7bcf0a6a4996571e358cf4730bb9fb72c0f864366ab"
+        },
+        {
+          "bytes": 11865,
+          "path": "target/slides-reference-v1/reference.json",
+          "sha256": "3244ac4e2d0936ce786e400f2ba35ed07e8073de326aaabe8521ebefa75ad611"
+        },
+        {
+          "path": "target/slides-native-v2/capture.json"
+        }
+      ],
+      "judgments": [
+        {
+          "comparison": "svg-chromium",
+          "report": {
+            "bytes": 1229,
+            "path": "target/slides-viewers-v2/light/svg-chromium-comparison.json",
+            "sha256": "ef76b0beeb10c9c8bdecf550e704eff208de3d69ca086917986c0589172440b8"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 268189,
+              "sha256": "82ddc41c13206efe7bf1add6facebac0e33ccb9feaba4f5a3fe1568aa0653138"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3ff0000000000000",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3ff0000000000000",
+                  "ssim_pass": true,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "canonical",
+            "passed": true,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 268271,
+              "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feffff4a0632ce8",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "light"
+        },
+        {
+          "comparison": "svg-rust",
+          "report": {
+            "bytes": 1224,
+            "path": "target/slides-viewers-v2/light/svg-rust-comparison.json",
+            "sha256": "07000da85de8f7b1281b8180a27b8264bf8360088f6cb651751daca20e2055a4"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 210856,
+              "sha256": "45ec4beebcbc3597ea403bfb54cd654d7ce388a2610dc0ec3a7bc75c68f79b08"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3ff0000000000000",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3ff0000000000000",
+                  "ssim_pass": true,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "rust",
+            "passed": true,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 210845,
+              "sha256": "717bfb9594049f77a3467c8d17c61341b6283ca25909eaa59d05b6c9437be658"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feffffdd6f701a3",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "light"
+        },
+        {
+          "comparison": "pdf-pdfium",
+          "report": {
+            "bytes": 1234,
+            "path": "target/slides-viewers-v2/light/pdf-pdfium-comparison.json",
+            "sha256": "679036ddeba61b8896b3f1049ef7d900f2a1885b7977a3b1b7bf5a5b16a50487"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 274210,
+              "sha256": "2b545f07fcd4d7a8c3204bba3ebca273cffc3be9ceb64bec2781c2cd03a3572d"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 8,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3feff97875eb0604",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3feff378e3937646",
+                  "ssim_pass": false,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "canonical",
+            "passed": false,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 268271,
+              "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 3880,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feff2d385208715",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "light"
+        },
+        {
+          "comparison": "pdf-pdfjs",
+          "report": {
+            "bytes": 1228,
+            "path": "target/slides-viewers-v2/light/pdf-pdfjs-comparison.json",
+            "sha256": "804764ba670b1bcc207eb28cfc55ed9a0e09a054894a83fe2bb337c56f58d590"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 258800,
+              "sha256": "bf7633fae00b45d95face5abfb32d9672b5889e03f0acded34c1fbacf933baad"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 7,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3feff7226815e0ef",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3feff886cd67f7b6",
+                  "ssim_pass": true,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "pdfjs",
+            "passed": true,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 268271,
+              "sha256": "6411fbbdc9c14dae3033dffbb1a5e579a05733a5f66386b5565c80f035977ce0"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 1520,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feff47a02b8fe9d",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "light"
+        },
+        {
+          "comparison": "png-canvas",
+          "report": {
+            "bytes": 1231,
+            "path": "target/slides-viewers-v2/light/png-canvas-comparison.json",
+            "sha256": "45336de76ef4925aec7508d1004bf3625762d61567541931b21c5a1c2ca67e46"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 320445,
+              "sha256": "2a1739e0aad5d7b98b56b3d23562f067b91302c70020e839188d58744b46a376"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3fefff2b51984a9e",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3feff9439ccfb161",
+                  "ssim_pass": true,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "canonical",
+            "passed": true,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 263199,
+              "sha256": "14a048aa0cf5bdaa38c6053e829f4e66594e646d649bcd8eca5a2c298207b0da"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 150,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feffe575972b359",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "light"
+        },
+        {
+          "comparison": "svg-chromium",
+          "report": {
+            "bytes": 1230,
+            "path": "target/slides-viewers-v2/dark/svg-chromium-comparison.json",
+            "sha256": "3686b0c4d0bd1abf4e39b283e902d610deacae499e4351ff5df27bd119c952c2"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 252819,
+              "sha256": "03eba3358d2aa141d42806ff9a04e3db40b15335784f86ae2fccd751eaed2c9e"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3feffffffffffff5",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3fefffffffffffff",
+                  "ssim_pass": true,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "canonical",
+            "passed": true,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 252829,
+              "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 13,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feffff40222ec42",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "dark"
+        },
+        {
+          "comparison": "svg-rust",
+          "report": {
+            "bytes": 1224,
+            "path": "target/slides-viewers-v2/dark/svg-rust-comparison.json",
+            "sha256": "f49adf06d3f0fe77a7839548fd48a727825b8c0f0096c10bc4e0b2b51353b641"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 200928,
+              "sha256": "cb337d57e9e2411d81a63b3f0cf23e56d0fe9aeef93df259a4c0acd6c827b8cc"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3ff0000000000000",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3ff0000000000000",
+                  "ssim_pass": true,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "rust",
+            "passed": true,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 200910,
+              "sha256": "6dbca51f3295a985da03da8ef48f48ad3bff95775c9fb6c07b59b0d4773de5ed"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feffffdb9335bca",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "dark"
+        },
+        {
+          "comparison": "pdf-pdfium",
+          "report": {
+            "bytes": 1234,
+            "path": "target/slides-viewers-v2/dark/pdf-pdfium-comparison.json",
+            "sha256": "c135ceadd75e41dc32192a19f2e2037fb24564ffada04347af4dee20c80135b5"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 259754,
+              "sha256": "3f5a9283b81de4b1066409398f413b1a0e040eab44b138db8ceb057e479b1ac7"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 6,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3feffa0d9a3999ad",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3feff4fa706910a9",
+                  "ssim_pass": false,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "canonical",
+            "passed": false,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 252829,
+              "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 3440,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feff33d55585054",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "dark"
+        },
+        {
+          "comparison": "pdf-pdfjs",
+          "report": {
+            "bytes": 1228,
+            "path": "target/slides-viewers-v2/dark/pdf-pdfjs-comparison.json",
+            "sha256": "41a2728b4f3f4471fd6c4cab9431a6b5373e97d9980d1daab50dbb3afaad8b0a"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 249559,
+              "sha256": "d83aa83007a9820fb3f638ff9e06e89772b176ff3da42cd313ff0d2b2abbf8d6"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 7,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3feff7847cb17834",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3feff90cd8fbaa7f",
+                  "ssim_pass": true,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "pdfjs",
+            "passed": true,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 252829,
+              "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 1363,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feff4f359a3c9cc",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "dark"
+        },
+        {
+          "comparison": "png-canvas",
+          "report": {
+            "bytes": 1231,
+            "path": "target/slides-viewers-v2/dark/png-canvas-comparison.json",
+            "sha256": "82d171752d2dde75b54d949f69ddeb9d6360d04d9a19778640b83aaccf7c75af"
+          },
+          "result": {
+            "candidate": {
+              "bytes": 326285,
+              "sha256": "de0702c9f775b8ecfd4f803ff714e8c6da21bf2e518e30232027e16d927eb565"
+            },
+            "crops": [
+              {
+                "id": "slide1-typography",
+                "region": {
+                  "area": 7922,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 34,
+                  "ssim_bits": "3fefff2ff45bf98c",
+                  "ssim_pass": true,
+                  "width": 233
+                }
+              },
+              {
+                "id": "slide1-avatar",
+                "region": {
+                  "area": 61504,
+                  "changed_pixels": 0,
+                  "changed_pixels_pass": true,
+                  "height": 248,
+                  "ssim_bits": "3feff90ee8041cb4",
+                  "ssim_pass": true,
+                  "width": 248
+                }
+              }
+            ],
+            "mode": "canonical",
+            "passed": true,
+            "plan": {
+              "bytes": 389,
+              "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+            },
+            "reference": {
+              "bytes": 255038,
+              "sha256": "d32b14b9ddafad1425bc25a186975309a83c892a2349fd29ee9c44c979f34cc6"
+            },
+            "schema": "excalidraw-render/representative-intake-comparison/v1",
+            "whole": {
+              "area": 10890857,
+              "changed_pixels": 134,
+              "changed_pixels_pass": true,
+              "height": 3847,
+              "ssim_bits": "3feffe48e871e098",
+              "ssim_pass": true,
+              "width": 2831
+            }
+          },
+          "variant": "dark"
+        }
+      ],
+      "reference": {
+        "bytes": 11865,
+        "path": "target/slides-reference-v1/reference.json",
+        "sha256": "3244ac4e2d0936ce786e400f2ba35ed07e8073de326aaabe8521ebefa75ad611"
+      },
+      "schema": "excalidraw-render/representative-intake-viewers/v1",
+      "status": "pending-review",
+      "viewport_adapter": "truncate fractional viewport at origin; never resize or align; proposed, not approved"
+    }
+  },
+  "status": "pending-review"
+}
