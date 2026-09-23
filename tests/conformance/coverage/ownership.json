@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "d468c32392eaf585ae3e310b3519bac9dc55ab4ef58e333638a29881f5beac65",
+  "catalog_sha256": "7dd3d8ef59b8c36324f23e647dbaa51a68c4f96a57b3bba1ea4527570cb0f2f8",
   "approval": null,
   "assignments": [
     {
@@ -1923,7 +1923,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -1952,7 +1952,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -1981,7 +1981,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2010,7 +2010,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2039,7 +2039,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2068,7 +2068,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2097,7 +2097,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2126,7 +2126,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2155,7 +2155,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2184,7 +2184,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2213,7 +2213,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2242,7 +2242,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2271,7 +2271,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2300,7 +2300,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2329,7 +2329,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2358,7 +2358,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2387,7 +2387,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2416,7 +2416,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2445,7 +2445,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2474,7 +2474,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "malformed_early_and_late_frames_have_exact_recovery",
           "binary": "fast",
@@ -2503,7 +2503,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2532,7 +2532,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2561,7 +2561,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2590,7 +2590,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2619,7 +2619,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2648,7 +2648,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2677,7 +2677,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2706,7 +2706,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2735,7 +2735,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2764,7 +2764,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2793,7 +2793,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2822,7 +2822,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2851,7 +2851,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2880,7 +2880,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2909,7 +2909,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2938,7 +2938,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2967,7 +2967,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -2996,7 +2996,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3025,7 +3025,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3054,7 +3054,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3083,7 +3083,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3112,7 +3112,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3141,7 +3141,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3170,7 +3170,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3199,7 +3199,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3228,7 +3228,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3257,7 +3257,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3286,7 +3286,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3315,7 +3315,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3344,7 +3344,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3373,7 +3373,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3402,7 +3402,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
-            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+            "sha256": "d0e704ca9eaafa76823aefb4a42947b6d0b8754facc92bb156dc7263e6717ac0"
           },
           "function": "controls_match_frozen_reference_first_display",
           "binary": "fast",
@@ -3439,7 +3439,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -3468,7 +3468,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3497,7 +3497,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3526,7 +3526,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3555,7 +3555,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3584,7 +3584,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3613,7 +3613,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3642,7 +3642,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3671,7 +3671,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3700,7 +3700,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3729,7 +3729,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3758,7 +3758,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3787,7 +3787,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3816,7 +3816,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3845,7 +3845,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3874,7 +3874,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3903,7 +3903,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3932,7 +3932,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3961,7 +3961,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -3990,7 +3990,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4019,7 +4019,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4048,7 +4048,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4077,7 +4077,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4106,7 +4106,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4135,7 +4135,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4164,7 +4164,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4193,7 +4193,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4222,7 +4222,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4251,7 +4251,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4280,7 +4280,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4309,7 +4309,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4338,7 +4338,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4367,7 +4367,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4396,7 +4396,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4425,7 +4425,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4454,7 +4454,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4483,7 +4483,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4512,7 +4512,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4541,7 +4541,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4570,7 +4570,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4599,7 +4599,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4628,7 +4628,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -4657,7 +4657,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -4686,7 +4686,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4715,7 +4715,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4744,7 +4744,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4773,7 +4773,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4802,7 +4802,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4831,7 +4831,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4860,7 +4860,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4889,7 +4889,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4918,7 +4918,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4947,7 +4947,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -4976,7 +4976,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5005,7 +5005,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5034,7 +5034,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5063,7 +5063,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5092,7 +5092,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5121,7 +5121,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5150,7 +5150,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5179,7 +5179,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5208,7 +5208,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5237,7 +5237,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5266,7 +5266,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5295,7 +5295,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5324,7 +5324,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5353,7 +5353,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5382,7 +5382,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5411,7 +5411,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5440,7 +5440,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5469,7 +5469,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5498,7 +5498,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5527,7 +5527,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5556,7 +5556,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5585,7 +5585,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5614,7 +5614,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5643,7 +5643,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5672,7 +5672,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5701,7 +5701,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5730,7 +5730,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5759,7 +5759,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5788,7 +5788,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5817,7 +5817,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -5846,7 +5846,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "huge_header_controls_are_preempted_by_bounded_validation_work",
           "binary": "fast",
@@ -5875,7 +5875,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "huge_header_controls_are_preempted_by_bounded_validation_work",
           "binary": "fast",
@@ -5904,7 +5904,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "byte_pixel_dimension_and_prepaid_work_boundaries_are_exact",
           "binary": "fast",
@@ -5933,7 +5933,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -5962,7 +5962,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -5991,7 +5991,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6020,7 +6020,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6049,7 +6049,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6078,7 +6078,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6107,7 +6107,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6136,7 +6136,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6165,7 +6165,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6194,7 +6194,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6223,7 +6223,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6252,7 +6252,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6281,7 +6281,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6310,7 +6310,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6339,7 +6339,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6368,7 +6368,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6397,7 +6397,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6426,7 +6426,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6455,7 +6455,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6484,7 +6484,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6513,7 +6513,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6542,7 +6542,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6571,7 +6571,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6600,7 +6600,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6629,7 +6629,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6658,7 +6658,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6687,7 +6687,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6716,7 +6716,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6745,7 +6745,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6774,7 +6774,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6803,7 +6803,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6832,7 +6832,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6861,7 +6861,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6890,7 +6890,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6919,7 +6919,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6948,7 +6948,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -6977,7 +6977,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -7006,7 +7006,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -7035,7 +7035,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -7064,7 +7064,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -7093,7 +7093,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -7122,7 +7122,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "valid_first_frame_matrix_matches_frozen_reference_exactly",
           "binary": "fast",
@@ -7151,7 +7151,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "byte_pixel_dimension_and_prepaid_work_boundaries_are_exact",
           "binary": "fast",
@@ -7180,7 +7180,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -7209,7 +7209,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -7238,7 +7238,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -7267,7 +7267,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -7296,7 +7296,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -7325,7 +7325,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -7354,7 +7354,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_first_frame_contract.rs",
-            "sha256": "daba7e9f5dac0da1da56946341461d83efdcef717f48298d3fdff5a7e937d0ca"
+            "sha256": "c6cd0bfd750c71a5d64eb5c12553fc5c4d87eab02c66a3602ab213876792f572"
           },
           "function": "authored_malformed_controls_have_exact_decode_recovery",
           "binary": "fast",
@@ -7391,7 +7391,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -7420,7 +7420,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -7449,7 +7449,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7478,7 +7478,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7507,7 +7507,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7536,7 +7536,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7565,7 +7565,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7594,7 +7594,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7623,7 +7623,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7652,7 +7652,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7681,7 +7681,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -7710,7 +7710,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -7739,7 +7739,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -7768,7 +7768,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -7797,7 +7797,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -7826,7 +7826,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -7855,7 +7855,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -7884,7 +7884,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7913,7 +7913,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7942,7 +7942,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -7971,7 +7971,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8000,7 +8000,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8029,7 +8029,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8058,7 +8058,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8087,7 +8087,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8116,7 +8116,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8145,7 +8145,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8174,7 +8174,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8203,7 +8203,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8232,7 +8232,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8261,7 +8261,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8290,7 +8290,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8319,7 +8319,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8348,7 +8348,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8377,7 +8377,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8406,7 +8406,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8435,7 +8435,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8464,7 +8464,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8493,7 +8493,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8522,7 +8522,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8551,7 +8551,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8580,7 +8580,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8609,7 +8609,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8638,7 +8638,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8667,7 +8667,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8696,7 +8696,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8725,7 +8725,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8754,7 +8754,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8783,7 +8783,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8812,7 +8812,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8841,7 +8841,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8870,7 +8870,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8899,7 +8899,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "valid_lzw_matrix_and_extensions_match_frozen_reference_exactly",
           "binary": "fast",
@@ -8928,7 +8928,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -8957,7 +8957,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -8986,7 +8986,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/gif_lzw_contract.rs",
-            "sha256": "69ecfe09a3d972c2400b2d1c07fd13e6fb587e72907a71c96e622b5f8be134d1"
+            "sha256": "106e378d7b7ef6d580851112307857d2ab2a6ac847c570c044c7aca59f8d2947"
           },
           "function": "malformed_lzw_controls_have_exact_decode_failed_recovery",
           "binary": "fast",
@@ -45573,7 +45573,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "malformed_file_contract_in_every_format",
           "binary": "fast",
@@ -45602,7 +45602,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "malformed_file_contract_in_every_format",
           "binary": "fast",
@@ -45631,7 +45631,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "malformed_file_contract_in_every_format",
           "binary": "fast",
@@ -45660,7 +45660,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "media_type_contract_in_every_format",
           "binary": "fast",
@@ -45689,7 +45689,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "media_type_contract_in_every_format",
           "binary": "fast",
@@ -45718,7 +45718,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "media_type_contract_in_every_format",
           "binary": "fast",
@@ -45747,7 +45747,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "supplement_conflicts_report_authority_once_in_every_format",
           "binary": "fast",
@@ -45776,7 +45776,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "supplement_conflicts_report_authority_once_in_every_format",
           "binary": "fast",
@@ -45805,7 +45805,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "supplement_conflicts_report_authority_once_in_every_format",
           "binary": "fast",
@@ -45834,7 +45834,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -45863,7 +45863,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -45892,7 +45892,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -46068,7 +46068,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -46097,7 +46097,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -46126,7 +46126,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -46242,7 +46242,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -46271,7 +46271,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -46300,7 +46300,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -46329,7 +46329,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -46358,7 +46358,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -46387,7 +46387,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -46416,7 +46416,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -46445,7 +46445,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -46474,7 +46474,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -46503,7 +46503,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -46532,7 +46532,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -46561,7 +46561,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -46590,7 +46590,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "animation_flattening_contract_in_every_format",
           "binary": "fast",
@@ -46619,7 +46619,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "animation_flattening_contract_in_every_format",
           "binary": "fast",
@@ -46648,7 +46648,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "decode_failures_cover_every_codec_and_authority",
           "binary": "fast",
@@ -46677,7 +46677,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "decode_failures_cover_every_codec_and_authority",
           "binary": "fast",
@@ -46706,7 +46706,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "decode_failures_cover_every_codec_and_authority",
           "binary": "fast",
@@ -46822,7 +46822,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -46851,7 +46851,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -46880,7 +46880,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -46996,7 +46996,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "unsupported_image_contract_in_every_format",
           "binary": "fast",
@@ -47025,7 +47025,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "unsupported_image_contract_in_every_format",
           "binary": "fast",
@@ -47054,7 +47054,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "unsupported_image_contract_in_every_format",
           "binary": "fast",
@@ -47903,7 +47903,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -47932,7 +47932,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -47961,7 +47961,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -47990,7 +47990,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -48019,7 +48019,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -48048,7 +48048,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -48077,7 +48077,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -48106,7 +48106,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -48135,7 +48135,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "63b6cbbd99172e329934e3c53de18c57199ebca0c811194de269f83c85e44739"
+            "sha256": "bc159bdb894abd7bcf220be71515ace3465cd2cc2a77dd88ba502f8d1ee4b7ed"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
