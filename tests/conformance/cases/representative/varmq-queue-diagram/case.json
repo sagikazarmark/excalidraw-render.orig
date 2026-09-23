@@ -1,7 +1,7 @@
 {
   "approval": {
-    "approval_subject_sha256": "sha256:a18e7fdae9c3e43d274db229c352cef79ddfaa6a9b8548ba858d94f93ebd882e",
-    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5793791941",
+    "approval_subject_sha256": "sha256:a7c9e22348b02ad9c7edd25d8414fc7e44f591aa79526fa131d355c97ad05914",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5794971177",
     "approved_at": "2026-09-23",
     "approved_by": "sagikazarmark"
   },
@@ -156,12 +156,87 @@
   "judgment_rule": "canonical-budget-or-identical-input-controls-or-exception/v1",
   "layer": "representative",
   "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/84",
+  "resource_outcomes": [
+    {
+      "expected_report": {
+        "artifact": null,
+        "diagnostics": [],
+        "error": {
+          "category": "resource_limit",
+          "code": "resource.raster-surface-exceeded",
+          "details": {
+            "configured": 33554432,
+            "field": "max_raster_surface_pixels",
+            "kind": "resource_limit",
+            "measurement": {
+              "kind": "attempted",
+              "value": 39098332
+            },
+            "recovery": null,
+            "value_kind": "pixels"
+          },
+          "element_id": null,
+          "family": "render",
+          "format": "png",
+          "json_pointer": ""
+        },
+        "format": "png",
+        "schema_version": 1,
+        "status": "failure"
+      },
+      "format": "png",
+      "id": "light-png-scale-1",
+      "overrides": {
+        "scale": 1
+      },
+      "variant": "light"
+    },
+    {
+      "expected_report": {
+        "artifact": null,
+        "diagnostics": [],
+        "error": {
+          "category": "resource_limit",
+          "code": "resource.raster-surface-exceeded",
+          "details": {
+            "configured": 33554432,
+            "field": "max_raster_surface_pixels",
+            "kind": "resource_limit",
+            "measurement": {
+              "kind": "attempted",
+              "value": 39098332
+            },
+            "recovery": null,
+            "value_kind": "pixels"
+          },
+          "element_id": null,
+          "family": "render",
+          "format": "png",
+          "json_pointer": ""
+        },
+        "format": "png",
+        "schema_version": 1,
+        "status": "failure"
+      },
+      "format": "png",
+      "id": "dark-png-scale-1",
+      "overrides": {
+        "scale": 1
+      },
+      "variant": "dark"
+    }
+  ],
   "schema": "excalidraw-render/representative-case/v1",
   "semantic_expectations": {
     "dark": {
       "embedded_scene": true,
       "links": 0,
       "min_text_elements": 43,
+      "notices": [
+        "font.excalifont.ofl-1.1",
+        "font.liberation-sans.ofl-1.1",
+        "license.ofl-1.1"
+      ],
       "pdf_media_box": [
         "2446.6689862187136",
         "2247.4458992401787"
@@ -180,6 +255,11 @@
       "embedded_scene": true,
       "links": 0,
       "min_text_elements": 43,
+      "notices": [
+        "font.excalifont.ofl-1.1",
+        "font.liberation-sans.ofl-1.1",
+        "license.ofl-1.1"
+      ],
       "pdf_media_box": [
         "2446.6689862187136",
         "2247.4458992401787"

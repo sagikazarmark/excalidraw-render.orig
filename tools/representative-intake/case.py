@@ -13,7 +13,9 @@ A case directory `tests/conformance/cases/representative/<name>/` holds:
 
 `verify` checks the retained bytes and approval subject offline. With
 `--renderer` it renders the intake twice in fresh processes (exact repeat bytes,
-reports, dimensions, semantics). With `--viewers` it also runs every canonical
+reports, dimensions, semantics including mandatory notices) and checks every
+declared resource outcome (a failing render, no artifact, a repeated report
+matching its authored fields). With `--viewers` it also runs every canonical
 viewer through `evidence.py` and requires each registered comparison to pass
 its budget or a matching exception. An exception that no failing region uses
 is rejected as dead. Nothing here grants approval; `record-approval` binds a
@@ -61,7 +63,7 @@ def subject(case):
     return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
 
 
-def materialize(output, bundle, reference, case_id, formats, semantics, reports, exceptions, evidence_record):
+def materialize(output, bundle, reference, case_id, formats, semantics, reports, exceptions, evidence_record, resource_outcomes=()):
     """Create a new case directory from a verified intake bundle and collection."""
     manifest = intake.verify(bundle)
     plan = intake.decode((bundle / "plan.json").read_bytes())
@@ -84,6 +86,7 @@ def materialize(output, bundle, reference, case_id, formats, semantics, reports,
               "evidence_record": {"path": relative(evidence_record), **intake.descriptor(evidence_record.read_bytes())},
               "variants": [variant["id"] for variant in plan["variants"]], "formats": formats, "comparisons": comparisons,
               "judgment_rule": JUDGMENT_RULE, "semantic_expectations": semantics, "exceptions": exceptions,
+              "resource_outcomes": list(resource_outcomes),
               "files": inventory(output), "approval": None}
     validate(record, output)
     (output / "case.json").write_bytes(intake.encode(record))
@@ -107,6 +110,12 @@ def validate(case, directory):
         intake.require(exception["variant"] in case["variants"] and exception["comparison_id"] in case["comparisons"], "exception outside the case")
         intake.require(exception["viewer_profile"] == VIEWER_PROFILES[exception["comparison_id"]], "exception viewer profile")
         intake.require(re.fullmatch(r"[0-9a-f]{16}", exception["minimum_ssim_bits"]) and exception["reason"].strip(), "invalid exception ceiling")
+    for outcome in case.get("resource_outcomes", []):
+        intake.require(set(outcome) == {"id", "variant", "format", "overrides", "expected_report"}, "invalid resource outcome fields")
+        intake.require(outcome["variant"] in case["variants"] and outcome["format"] in intake.FORMATS, "resource outcome outside the case")
+        intake.require(set(outcome["overrides"]) <= {"scale", "padding"}, "unsupported resource outcome override")
+        intake.require(outcome["expected_report"]["status"] == "failure" and outcome["expected_report"]["artifact"] is None,
+                       "a resource outcome expects a failed render")
     keys = [(e["variant"], e["comparison_id"], e["region"]) for e in case["exceptions"]]
     intake.require(len(keys) == len(set(keys)), "duplicate exception")
     approval = case["approval"]
@@ -114,6 +123,21 @@ def validate(case, directory):
         intake.require(set(approval) == APPROVAL_KEYS and approval["approval_subject_sha256"] == f"sha256:{subject(case)}",
                        "approval does not bind the exact case subject")
         intake.require(approval["approval_url"].startswith(ISSUE_85) and approval["approval_url"][len(ISSUE_85):].isdigit(), "approval URL")
+
+
+def notices(artifact):
+    """The font and license notice identities an SVG or PDF artifact's manifest
+    carries (PDF streams inflated); per-artifact subset identities excluded."""
+    text = artifact
+    if artifact.startswith(b"%PDF-"):
+        inflated = []
+        for match in re.finditer(rb"stream\r?\n", artifact):
+            try:
+                inflated.append(zlib.decompress(artifact[match.end():artifact.find(b"endstream", match.end())]))
+            except zlib.error:
+                continue
+        text = artifact + b"".join(inflated)
+    return sorted({identity.decode() for identity in re.findall(rb'"asset_identity":"((?:font|license)\.[^"]+)"', text)})
 
 
 def semantics(artifacts, expectations):
@@ -130,9 +154,11 @@ def semantics(artifacts, expectations):
             intake.require(artifact.count(b"<a ") == expected["links"], f"{key}: links")
             dark = b'filter="invert(93%) hue-rotate(180deg)"' in re.match(rb"<svg[^>]*>", artifact).group(0)
             intake.require(dark == expected["root_theme_filter"], f"{key}: root theme filter")
+            intake.require(notices(artifact) == expected["notices"], f"{key}: mandatory notices {notices(artifact)}")
         elif fmt == "png":
             intake.require(list(struct.unpack(">II", artifact[16:24])) == expected["png_size"], f"{key}: PNG size")
         else:
+            intake.require(notices(artifact) == expected["notices"], f"{key}: mandatory notices {notices(artifact)}")
             box = re.search(rb"/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]", artifact)
             intake.require([box.group(1).decode(), box.group(2).decode()] == expected["pdf_media_box"], f"{key}: PDF MediaBox")
 
@@ -189,6 +215,34 @@ def judge(case, collection):
     return {"within_controls": len(controlled), "exceptions_applied": len(used)}
 
 
+def resource_outcomes(case, bundle, renderer, temporary):
+    """Render each declared outcome twice in fresh processes: the CLI must fail,
+    write no artifact, repeat its report exactly, and match every authored field
+    of the expected report."""
+    plan = intake.decode((bundle / "plan.json").read_bytes())
+    scene = temporary / "outcome-scene.excalidraw"
+    scene.write_bytes((bundle / "scene.excalidraw").read_bytes())
+    for outcome in case["resource_outcomes"]:
+        variant = next(v for v in plan["variants"] if v["id"] == outcome["variant"])
+        arguments = intake.request_args({**variant, **outcome["overrides"]}, outcome["format"])
+        reports = []
+        for run in range(2):
+            artifact = temporary / f"{outcome['id']}-{run}.{outcome['format']}"
+            report = temporary / f"{outcome['id']}-{run}-report.json"
+            process = subprocess.run([str(renderer), str(scene), "--output", str(artifact), "--report-output", str(report),
+                                      *arguments], capture_output=True, timeout=900)
+            intake.require(process.returncode != 0, f"{outcome['id']}: render succeeded")
+            intake.require(not artifact.exists(), f"{outcome['id']}: a failed render wrote an artifact")
+            reports.append(report.read_bytes())
+        intake.require(reports[0] == reports[1], f"{outcome['id']}: report differs between fresh processes")
+        observed = intake.decode(reports[0])
+        expected = outcome["expected_report"]
+        mismatched = [key for key in expected if key != "error" and observed.get(key) != expected[key]]
+        mismatched += [f"error.{key}" for key in expected.get("error", {}) if observed["error"].get(key) != expected["error"][key]]
+        intake.require(not mismatched, f"{outcome['id']}: report differs from its expectation in {mismatched}")
+    return len(case["resource_outcomes"])
+
+
 def verify(directory, renderer=None, viewers=False):
     case = intake.decode((directory / "case.json").read_bytes())
     validate(case, directory)
@@ -212,6 +266,8 @@ def verify(directory, renderer=None, viewers=False):
                 artifacts[(variant, fmt)] = (artifact, report)
         semantics(artifacts, case["semantic_expectations"])
         summary["native"] = "repeatable; reports, dimensions and semantics match"
+        if case.get("resource_outcomes"):
+            summary["resource_outcomes"] = resource_outcomes(case, bundle, renderer, Path(temporary))
         if viewers:
             collection = Path(temporary) / "viewers"
             evidence.collect(bundle, directory / "reference", native, collection)
@@ -269,7 +325,8 @@ def main():
     if args.command == "materialize":
         spec = intake.decode(args.spec.read_bytes())
         materialize(args.output, args.intake, args.reference, spec["case_id"], spec["formats"],
-                    spec["semantic_expectations"], spec["expected_reports"], spec["exceptions"], args.evidence_record)
+                    spec["semantic_expectations"], spec["expected_reports"], spec["exceptions"], args.evidence_record,
+                    spec.get("resource_outcomes", []))
     elif args.command == "verify":
         intake.require(args.renderer or not args.viewers, "--viewers requires --renderer")
         verify(args.directory, args.renderer, args.viewers)

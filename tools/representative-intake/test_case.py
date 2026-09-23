@@ -12,6 +12,7 @@ import zlib
 ROOT = Path(__file__).resolve().parents[2]
 SLIDES = ROOT / "tests/conformance/cases/representative/excali-local-slides"
 SIZE = 32
+RENDERER = ROOT / "target/release/excalidraw-render"
 RASTERS = ("official-chromium", "official-rust", "official-png", "native-chromium", "native-rust", "native-pdfium", "native-pdfjs")
 
 
@@ -92,6 +93,26 @@ class CaseTest(unittest.TestCase):
                             "approval_subject_sha256": "sha256:" + "0" * 64}
         (copy / "case.json").write_text(json.dumps(case))
         self.assertIn("approval does not bind the exact case subject", run("verify", copy).stderr)
+
+    def outcome(self, status="failure", scale=1):
+        return {"id": "light-png", "variant": "light", "format": "png", "overrides": {"scale": scale},
+                "expected_report": {"status": status, "artifact": None, "error": {"code": "resource.raster-surface-exceeded"}}}
+
+    def with_outcomes(self, outcomes):
+        copy = self.case_copy(self.case["exceptions"])
+        case = json.loads((copy / "case.json").read_text())
+        case["resource_outcomes"] = outcomes
+        (copy / "case.json").write_text(json.dumps(case))
+        return copy
+
+    def test_resource_outcomes_expect_failed_renders(self):
+        self.assertIn("a resource outcome expects a failed render", run("verify", self.with_outcomes([self.outcome("success")])).stderr)
+
+    @unittest.skipUnless(RENDERER.exists(), "requires a built release CLI")
+    def test_a_resource_outcome_that_renders_successfully_is_rejected(self):
+        # slides at scale 1 fits the default raster limits, so the declared failure does not occur.
+        result = run("verify", self.with_outcomes([self.outcome()]), "--renderer", RENDERER)
+        self.assertIn("light-png: render succeeded", result.stderr)
 
     def test_a_failing_region_within_its_identical_input_controls_passes_without_an_exception(self):
         judged = run("judge", self.case_copy([]), self.collection(region(3, 0.99), noisy_reference=True))

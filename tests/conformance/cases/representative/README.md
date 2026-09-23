@@ -11,6 +11,16 @@ authored from the reference and the scene, not copied from native output:
 - PDF `MediaBox` is the SVG size × 0.75.
 - The embedded scene follows the metadata option.
 - Links and text counts come from the scene.
+- Mandatory notices, in SVG and PDF, are the font and license identities of
+  the scene's font families; Helvetica frame names are shaped with Liberation
+  Sans. PNG embeds no font programs.
+
+A case can also declare **resource outcomes**: a variant and format with
+request overrides that must fail, with no artifact written and an identical
+report in two fresh processes. The report must match independently authored
+fields. varmq pins its scale-1 PNG failure,
+`resource.raster-surface-exceeded`, at 6524 × 5993 = 39098332 attempted pixels,
+the official SVG size at scale 1.
 
 `tools/representative-intake/case.py` is the verifier (see its docstring):
 

@@ -1,7 +1,7 @@
 {
   "approval": {
-    "approval_subject_sha256": "sha256:656e4f8fa2cdd41c1e21330700a05d3b7aae1540c4d1346199abc5a6df2dfae6",
-    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5793791941",
+    "approval_subject_sha256": "sha256:8e434e8b2d6bcce6a907ebfa81dc8a826949fb1a69d616be5ce8e1ea5ac7dd5d",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5794971177",
     "approved_at": "2026-09-23",
     "approved_by": "sagikazarmark"
   },
@@ -150,12 +150,17 @@
   "judgment_rule": "canonical-budget-or-identical-input-controls-or-exception/v1",
   "layer": "representative",
   "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/84",
+  "resource_outcomes": [],
   "schema": "excalidraw-render/representative-case/v1",
   "semantic_expectations": {
     "dark": {
       "embedded_scene": true,
       "links": 0,
       "min_text_elements": 23,
+      "notices": [
+        "font.comic-shanns.mit",
+        "license.comic-shanns.mit"
+      ],
       "pdf_media_box": [
         "1466.782790268982",
         "386.89078096611183"
@@ -174,6 +179,10 @@
       "embedded_scene": true,
       "links": 0,
       "min_text_elements": 23,
+      "notices": [
+        "font.comic-shanns.mit",
+        "license.comic-shanns.mit"
+      ],
       "pdf_media_box": [
         "1466.782790268982",
         "386.89078096611183"
