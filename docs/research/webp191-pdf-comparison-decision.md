@@ -1,6 +1,15 @@
 # #191 PDF partial-alpha comparison boundary — decision proposal
 
 Status: proposed, no policy/spec/owner changes and no closure claimed.
+
+**Decision (2026-09-23):** the user chose exact-ceiling tolerance exceptions
+instead of keeping the gaps. The 48 failing black/white PDF views of the 24
+partial-alpha vectors carry exceptions at their exact observed ceilings
+(`tests/oracle/webp-sample/pdf-partial-alpha-exceptions.json`), spec section 14.4
+gains the small-artifact exception form, and
+`webp_sample_contract::partial_alpha_cells_match_reference_under_approved_pdf_exceptions`
+owns the twelve cells. It rejects growth and dead exceptions. No comparator,
+budget or production change.
 Base: `1776fc6`; approved PDFium profile subject `c393a0dd…`, representative V14.
 
 ## Recommendation

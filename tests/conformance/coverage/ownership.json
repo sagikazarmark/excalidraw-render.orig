@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "d96bf7fae368eed608da4974cb8fee23fb941472e0013a793d925fdaacbfddbd",
+  "catalog_sha256": "437c678c4542aa215f44c00c6865f8db93af2e0a5b725db202d7559196c7b04a",
   "approval": null,
   "assignments": [
     {
@@ -43929,7 +43929,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -43958,7 +43958,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -43987,7 +43987,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44016,7 +44016,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44045,7 +44045,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44074,7 +44074,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44103,7 +44103,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44132,7 +44132,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44161,7 +44161,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44190,7 +44190,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44219,7 +44219,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44248,7 +44248,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44277,7 +44277,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44306,7 +44306,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44335,7 +44335,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44364,7 +44364,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44393,7 +44393,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44422,7 +44422,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44499,7 +44499,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44528,7 +44528,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44557,7 +44557,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44586,7 +44586,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44615,7 +44615,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44644,7 +44644,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44673,7 +44673,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44702,7 +44702,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44731,7 +44731,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44760,7 +44760,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44789,7 +44789,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "corrected_composition_cells_match_reference",
           "binary": "fast",
@@ -44818,7 +44818,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "qualified_13_cells_first_display_contract",
           "binary": "fast",
@@ -44895,7 +44895,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44924,7 +44924,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44953,7 +44953,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -44982,7 +44982,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "malformed_10_controls_exact_recovery",
           "binary": "fast",
@@ -45011,7 +45011,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "reserved_vp8x_controls_are_accepted_characterization",
           "binary": "fast",
@@ -45040,7 +45040,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/webp_sample_contract.rs",
-            "sha256": "91abd137e46ba11b7f3d658bf9d11e7a8e8c5bdb875931d932dfa1dd7574ed7b"
+            "sha256": "19af5fe674eee9fadfeb06207409e492e5afa13749bfc4fc471f348e321fce8b"
           },
           "function": "reserved_vp8x_controls_are_accepted_characterization",
           "binary": "fast",

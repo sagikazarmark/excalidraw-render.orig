@@ -3338,7 +3338,11 @@ reproducibility, approval presence, and scope but makes no judgment or rewrite.
 
 A tolerance exception names one case, variant, format, viewer, and region;
 documents a non-defect cause and immutable approval; and sets ceilings to the
-exact observed count and binary64 score with no margin.
+exact observed count and binary64 score with no margin. A complete artifact
+smaller than 11x11 has no score (Section 14.3); its exception instead records,
+per failing view, the exact Pixelmatch count, the exact count of differing
+view pixels and the exact maximum channel difference, and holds the
+small-artifact mismatch outcome itself.
 
 Representative cases (layer 3) apply one further rule before exceptions
 (ADR-0014, #195). A region that fails its class budget still passes when it is

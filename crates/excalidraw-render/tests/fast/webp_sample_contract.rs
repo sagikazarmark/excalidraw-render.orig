@@ -1,8 +1,10 @@
 //! Frozen v1 external-libwebp/browser observations. No codec is invoked to
 //! manufacture expectations. Small artifacts retain the canonical comparator's
 //! exact projected-view rule. Composition corrects 11 of #191's original 23
-//! gaps; the 12 partial-alpha cells retain exact native defect pins. Synthetic
-//! PDF projection failures are not measurements of any PDF viewer.
+//! gaps; the 12 partial-alpha cells retain exact native defect pins, and their
+//! only failing views, the PDF black/white composites, pass under approved
+//! exact-ceiling tolerance exceptions (spec section 14.4). Synthetic PDF
+//! projection failures are not measurements of any PDF viewer.
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
@@ -1750,6 +1752,146 @@ fn issue_191_partial_12_cells_exact_native_defects() {
         }
     }
     assert_eq!(corrected, 24);
+}
+
+const PDF_EXCEPTIONS: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../tests/oracle/webp-sample/pdf-partial-alpha-exceptions.json"
+));
+const PDF_SAMPLE_VIEWER: &str = "pdf-straight-sample-projection";
+
+/// The approved partial-alpha PDF exceptions. The approval binds the record
+/// without its approval object, so any change to a ceiling or reason needs a
+/// new approval.
+fn approved_pdf_exceptions() -> Value {
+    let mut record: Value = serde_json::from_slice(PDF_EXCEPTIONS).unwrap();
+    let approval = record["approval"].take();
+    let subject = format!("sha256:{}", hash(&serde_json::to_vec(&record).unwrap()));
+    assert!(
+        approval["approval_url"]
+            .as_str()
+            .is_some_and(|url| url.starts_with(
+                "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-"
+            )),
+        "partial-alpha PDF exceptions have no recorded approval; subject {subject}"
+    );
+    assert_eq!(
+        approval["approval_subject_sha256"], subject,
+        "approval does not bind the exact exception record"
+    );
+    record
+}
+
+fn within_pdf_exception(view: &Value, exception: &Value) -> bool {
+    view["canonical"]["ssim"] == json!({"kind":"small-artifact-mismatch"})
+        && n(&view["canonical"]["changed_pixels"]) <= n(&exception["max_pixelmatch_changed_pixels"])
+        && n(&view["exact_changed_pixels"]) <= n(&exception["max_differing_pixels"])
+        && n(&view["maximum_rgb_delta"]) <= n(&exception["max_rgb_delta"])
+}
+
+/// The 12 partial-alpha cells: SVG and PNG match the reference outright, and
+/// PDF keeps exact alpha and exact lossless straight samples. Each failing
+/// black/white composite is held at its approved exact ceilings, and an
+/// exception whose view passes the canonical comparator is rejected as dead.
+#[test]
+fn partial_alpha_cells_match_reference_under_approved_pdf_exceptions() {
+    let (record, inputs) = evidence();
+    let exceptions = approved_pdf_exceptions();
+    let mut unused = BTreeSet::new();
+    for exception in rows(&exceptions, "exceptions") {
+        assert_eq!(
+            [
+                &exception["format"],
+                &exception["region"],
+                &exception["viewer"],
+                &exception["ssim_outcome"]
+            ],
+            [
+                &json!("pdf"),
+                &json!("whole"),
+                &json!(PDF_SAMPLE_VIEWER),
+                &json!("small-artifact-mismatch")
+            ]
+        );
+        assert!(RESIDUAL_CELLS.contains(&exception["cell"].as_str().unwrap()));
+        assert!(unused.insert((
+            exception["vector"].to_string(),
+            exception["view"].to_string()
+        )));
+    }
+    let selected: Vec<_> = rows(&record, "cases")
+        .iter()
+        .filter(|row| RESIDUAL_CELLS.contains(&row["cell"].as_str().unwrap()))
+        .collect();
+    assert_eq!(selected.len(), RESIDUAL_CELLS.len() * 2);
+    for row in selected {
+        for format in FORMATS {
+            let (bytes, diagnostic) = render(&row["scene"], format);
+            let measured = measurement(row, &inputs, format, &bytes, &diagnostic);
+            if format != OutputFormat::Pdf {
+                assert!(
+                    appearance(row, &inputs, format, &bytes).is_empty(),
+                    "{} {format:?}",
+                    row["id"]
+                );
+                continue;
+            }
+            assert_eq!(measured["alpha"]["passed"], true, "{}", row["id"]);
+            for view in rows(&measured, "views") {
+                let exception = rows(&exceptions, "exceptions")
+                    .iter()
+                    .find(|e| e["vector"] == row["id"] && e["view"] == view["name"]);
+                let Some(exception) = exception else {
+                    assert_eq!(
+                        view["requirement_passed"], true,
+                        "{} {}",
+                        row["id"], view["name"]
+                    );
+                    continue;
+                };
+                unused.remove(&(row["id"].to_string(), view["name"].to_string()));
+                assert_eq!(exception["cell"], row["cell"]);
+                assert_eq!(
+                    view["canonical"]["passed"], false,
+                    "dead exception {} {}: the view passes the canonical comparator",
+                    row["id"], view["name"]
+                );
+                assert!(
+                    within_pdf_exception(view, exception),
+                    "{} {} exceeds its exception: {view}",
+                    row["id"],
+                    view["name"]
+                );
+            }
+        }
+    }
+    assert!(
+        unused.is_empty(),
+        "exceptions without a measured view: {unused:?}"
+    );
+}
+
+#[test]
+fn pdf_exception_ceilings_are_exact_and_reject_growth() {
+    let exceptions: Value = serde_json::from_slice(PDF_EXCEPTIONS).unwrap();
+    let exception = &rows(&exceptions, "exceptions")[0];
+    let view = json!({"canonical":{"ssim":{"kind":"small-artifact-mismatch"},
+        "changed_pixels":exception["max_pixelmatch_changed_pixels"]},
+        "exact_changed_pixels":exception["max_differing_pixels"],"maximum_rgb_delta":exception["max_rgb_delta"]});
+    assert!(within_pdf_exception(&view, exception));
+    for pointer in [
+        "/canonical/changed_pixels",
+        "/exact_changed_pixels",
+        "/maximum_rgb_delta",
+    ] {
+        let mut grown = view.clone();
+        let value = grown.pointer_mut(pointer).unwrap();
+        *value = json!(n(value) + 1);
+        assert!(!within_pdf_exception(&grown, exception), "{pointer}");
+    }
+    let mut scored = view.clone();
+    scored["canonical"]["ssim"] = json!({"kind":"score","bits":"3fefffffffffffff"});
+    assert!(!within_pdf_exception(&scored, exception));
 }
 
 #[test]
