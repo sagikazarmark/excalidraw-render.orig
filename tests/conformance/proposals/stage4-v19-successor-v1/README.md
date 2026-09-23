@@ -1,6 +1,10 @@
-# GIF umbrella facets and V19 successor — pending approval
+# GIF umbrella facets and V19 successor — approved and applied
 
-Two exact subjects for one #85 decision. Nothing here is approved or applied.
+Two exact subjects for one #85 decision, approved by the user on 2026-09-23
+([#85 comment](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5801963416))
+and applied with `apply.py`. After application, V19 `candidate-verify`, all
+xtask tests and `verify-ownership` (2375 assigned/excluded, 43 gaps) passed.
+The rest of this README preserves the reviewed proposal.
 
 | Subject | SHA-256 |
 | --- | --- |
