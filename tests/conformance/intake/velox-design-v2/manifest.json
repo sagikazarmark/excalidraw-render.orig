@@ -1,0 +1,72 @@
+{
+  "approval": null,
+  "case_id": "representative.velox-design.v2",
+  "census": {
+    "assets": 0,
+    "bound_arrows": 11,
+    "bound_text": 20,
+    "element_types": {
+      "arrow": 11,
+      "rectangle": 19,
+      "text": 23
+    },
+    "font_families": [
+      8
+    ],
+    "live_elements": 53
+  },
+  "eligible_executions": [],
+  "files": {
+    "LICENSE": {
+      "bytes": 1081,
+      "sha256": "048b252033c0c357931c3fd0619b978b05a3e51700b55d61cb1cedddaf997f89"
+    },
+    "PROVENANCE.json": {
+      "bytes": 1368,
+      "sha256": "277964a202ffb9678aff177033c66e54548e91f2764b17c4a4e7c1f16804dff4"
+    },
+    "plan.json": {
+      "bytes": 2279,
+      "sha256": "9d547a0c7b1643d75544066abe96db25c25028a0bca639305ccdff2ae1dd95e2"
+    },
+    "scene.excalidraw": {
+      "bytes": 54699,
+      "sha256": "3c4a336c41bf1ea0a41e7f8464430a1b7cb01baadc8720173972d2ebed9f1ead"
+    }
+  },
+  "license": "MIT",
+  "pending": [
+    "sanitization-and-applicability-review",
+    "reference-and-viewer-evidence",
+    "independent-semantics-reports-notices",
+    "resource-outcomes",
+    "canonical-crops",
+    "exact-subject-approval",
+    "registry-and-target-integration"
+  ],
+  "proposed_executions": [
+    "representative.velox-design.v2:light:svg",
+    "representative.velox-design.v2:light:png",
+    "representative.velox-design.v2:light:pdf",
+    "representative.velox-design.v2:dark:svg",
+    "representative.velox-design.v2:dark:png",
+    "representative.velox-design.v2:dark:pdf"
+  ],
+  "sanitization": {
+    "operation": "reviewed-no-change",
+    "original_sha256": "3c4a336c41bf1ea0a41e7f8464430a1b7cb01baadc8720173972d2ebed9f1ead",
+    "retained_sha256": "3c4a336c41bf1ea0a41e7f8464430a1b7cb01baadc8720173972d2ebed9f1ead",
+    "review_notes": "Retain upstream bytes verbatim. The 23 text elements describe the Velox client/server architecture; all element links are null, there are no embedded assets, and appState contains grid controls and a white background only. Reuses the pool content review in tests/public-scenes/README.md; promotion sign-off remains pending. No rendering-affecting fields or original number tokens were rewritten.",
+    "sign_off": null
+  },
+  "schema": "excalidraw-render/representative-intake/v1",
+  "source": {
+    "commit": "44995d4038b41e720168f6e8bb614288dcee9ccd",
+    "committed": "2025-04-24T12:39:46Z",
+    "path": "go/design.excalidraw",
+    "permalink": "https://github.com/jpillora/velox/blob/44995d4038b41e720168f6e8bb614288dcee9ccd/go/design.excalidraw",
+    "raw": "https://raw.githubusercontent.com/jpillora/velox/44995d4038b41e720168f6e8bb614288dcee9ccd/go/design.excalidraw",
+    "repository": "https://github.com/jpillora/velox"
+  },
+  "status": "pending-review"
+}

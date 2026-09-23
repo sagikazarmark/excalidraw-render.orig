@@ -1,0 +1,596 @@
+{
+  "approval": null,
+  "pairs": [
+    {
+      "candidate": {
+        "file": "light/official-rust.rgba.zlib",
+        "sha256": "740d6e3d1383a61a0080a0b75f5b73af3579c1b14ad62699a0e2accd8879b3f9"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 37,
+            "changed_pixels_pass": true,
+            "height": 34,
+            "ssim_bits": "3fef4a14e16ab662",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 184,
+            "changed_pixels_pass": true,
+            "height": 161,
+            "ssim_bits": "3fef967bda098892",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 5,
+            "changed_pixels_pass": true,
+            "height": 70,
+            "ssim_bits": "3fefe576c5a05061",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "canonical",
+      "reference": {
+        "file": "light/official-chromium.rgba.zlib",
+        "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+      },
+      "variant": "light",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 1571,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fefb951e0150222",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    },
+    {
+      "candidate": {
+        "file": "light/official-png.rgba.zlib",
+        "sha256": "3aac6ac7960e9fcd6925fdfb8ee6be626290ce364f9ba75cd2b90a3bfee40628"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 69,
+            "changed_pixels_pass": true,
+            "height": 34,
+            "ssim_bits": "3fef286e938af04f",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 198,
+            "changed_pixels_pass": true,
+            "height": 161,
+            "ssim_bits": "3fefaf6690414d6b",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 8,
+            "changed_pixels_pass": true,
+            "height": 70,
+            "ssim_bits": "3fefd591936ee253",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "canonical",
+      "reference": {
+        "file": "light/official-chromium.rgba.zlib",
+        "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+      },
+      "variant": "light",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 1172,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fefd079b03d783d",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    },
+    {
+      "candidate": {
+        "file": "light/native-pdfjs.rgba.zlib",
+        "sha256": "2a9195ea4d8fe4e1004d5b3fdbe3bffd44018f1c23402b067a7dbeb6c1c208d4"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 316,
+            "changed_pixels_pass": false,
+            "height": 34,
+            "ssim_bits": "3fee621ea847617d",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 470,
+            "changed_pixels_pass": false,
+            "height": 161,
+            "ssim_bits": "3fef7da1db13ba3c",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 32,
+            "changed_pixels_pass": false,
+            "height": 70,
+            "ssim_bits": "3fef925ffefc4e1b",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "canonical",
+      "reference": {
+        "file": "light/native-pdfium.rgba.zlib",
+        "sha256": "4c9b18b357bb6850bce6ae2c12ecb860878a9f66c70cc16eb1b42f3825f8d4db"
+      },
+      "variant": "light",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 3887,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fef88e2077cea14",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    },
+    {
+      "candidate": {
+        "file": "light/native-pdfjs.rgba.zlib",
+        "sha256": "2a9195ea4d8fe4e1004d5b3fdbe3bffd44018f1c23402b067a7dbeb6c1c208d4"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 37,
+            "changed_pixels_pass": true,
+            "height": 34,
+            "ssim_bits": "3fef4319b00dd0e4",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 213,
+            "changed_pixels_pass": true,
+            "height": 161,
+            "ssim_bits": "3fef9324868eaba1",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 4,
+            "changed_pixels_pass": true,
+            "height": 70,
+            "ssim_bits": "3fefd67962e6ad20",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "pdfjs",
+      "reference": {
+        "file": "light/official-chromium.rgba.zlib",
+        "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+      },
+      "variant": "light",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 1655,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fefbb88ea9c611c",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    },
+    {
+      "candidate": {
+        "file": "light/native-pdfium.rgba.zlib",
+        "sha256": "4c9b18b357bb6850bce6ae2c12ecb860878a9f66c70cc16eb1b42f3825f8d4db"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 395,
+            "changed_pixels_pass": false,
+            "height": 34,
+            "ssim_bits": "3fed3887b9b097f0",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 719,
+            "changed_pixels_pass": false,
+            "height": 161,
+            "ssim_bits": "3fef272002ea3115",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 20,
+            "changed_pixels_pass": true,
+            "height": 70,
+            "ssim_bits": "3fef664e420c84f7",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "canonical",
+      "reference": {
+        "file": "light/official-chromium.rgba.zlib",
+        "sha256": "4b7502faf2a6b16efdb4b2ee2d1af6c51a7590e33b2f88e2ce7c04c1bea4f262"
+      },
+      "variant": "light",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 4235,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fef7f2b6cb3c2d1",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    },
+    {
+      "candidate": {
+        "file": "dark/official-rust.rgba.zlib",
+        "sha256": "4586fc26b16fade46b5c508d7748d3c0fa63fff750cf66000cbc34b946e45a73"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 32,
+            "changed_pixels_pass": true,
+            "height": 34,
+            "ssim_bits": "3fef4779f0bc4c83",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 166,
+            "changed_pixels_pass": true,
+            "height": 161,
+            "ssim_bits": "3fef91ac82d4b658",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 4,
+            "changed_pixels_pass": true,
+            "height": 70,
+            "ssim_bits": "3fefd6bae855fa39",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "canonical",
+      "reference": {
+        "file": "dark/official-chromium.rgba.zlib",
+        "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+      },
+      "variant": "dark",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 1386,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fefaf165e43a49c",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    },
+    {
+      "candidate": {
+        "file": "dark/official-png.rgba.zlib",
+        "sha256": "06bec4d548eb13bed6787c162cd956a14398a8eade6c56db742096bbdafd698d"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 65,
+            "changed_pixels_pass": true,
+            "height": 34,
+            "ssim_bits": "3fef28692448f86f",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 178,
+            "changed_pixels_pass": true,
+            "height": 161,
+            "ssim_bits": "3fefad699dd359e3",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 6,
+            "changed_pixels_pass": true,
+            "height": 70,
+            "ssim_bits": "3fefc914b9714adc",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "canonical",
+      "reference": {
+        "file": "dark/official-chromium.rgba.zlib",
+        "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+      },
+      "variant": "dark",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 1047,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fefc87d58282a9d",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    },
+    {
+      "candidate": {
+        "file": "dark/native-pdfjs.rgba.zlib",
+        "sha256": "ec6a5d2344b05800a0e6716bf86974aedc3f5018bedb5b1199fdddc7876e4e7b"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 305,
+            "changed_pixels_pass": false,
+            "height": 34,
+            "ssim_bits": "3fee612ce6756e17",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 411,
+            "changed_pixels_pass": false,
+            "height": 161,
+            "ssim_bits": "3fef7f14d27175b7",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 28,
+            "changed_pixels_pass": false,
+            "height": 70,
+            "ssim_bits": "3fef913953c8a8e7",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "canonical",
+      "reference": {
+        "file": "dark/native-pdfium.rgba.zlib",
+        "sha256": "7c1cc224b37f4270b7952791b0d6f1d1ca056120c52da334251348cc784b503d"
+      },
+      "variant": "dark",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 3340,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fef8943ad80ecae",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    },
+    {
+      "candidate": {
+        "file": "dark/native-pdfjs.rgba.zlib",
+        "sha256": "ec6a5d2344b05800a0e6716bf86974aedc3f5018bedb5b1199fdddc7876e4e7b"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 29,
+            "changed_pixels_pass": true,
+            "height": 34,
+            "ssim_bits": "3fef43264c05e7a1",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 191,
+            "changed_pixels_pass": true,
+            "height": 161,
+            "ssim_bits": "3fef957f8a950024",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 3,
+            "changed_pixels_pass": true,
+            "height": 70,
+            "ssim_bits": "3fefd50df8cc70e5",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "pdfjs",
+      "reference": {
+        "file": "dark/official-chromium.rgba.zlib",
+        "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+      },
+      "variant": "dark",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 1468,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fefbc3ed8e22910",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    },
+    {
+      "candidate": {
+        "file": "dark/native-pdfium.rgba.zlib",
+        "sha256": "7c1cc224b37f4270b7952791b0d6f1d1ca056120c52da334251348cc784b503d"
+      },
+      "crops": [
+        {
+          "id": "client-typography",
+          "region": {
+            "area": 5916,
+            "changed_pixels": 375,
+            "changed_pixels_pass": false,
+            "height": 34,
+            "ssim_bits": "3fed3533360d6f81",
+            "ssim_pass": false,
+            "width": 174
+          }
+        },
+        {
+          "id": "client-binding",
+          "region": {
+            "area": 107065,
+            "changed_pixels": 632,
+            "changed_pixels_pass": false,
+            "height": 161,
+            "ssim_bits": "3fef2a288680ff1a",
+            "ssim_pass": false,
+            "width": 665
+          }
+        },
+        {
+          "id": "client-arrow",
+          "region": {
+            "area": 10780,
+            "changed_pixels": 17,
+            "changed_pixels_pass": true,
+            "height": 70,
+            "ssim_bits": "3fef634a3d4ac363",
+            "ssim_pass": false,
+            "width": 154
+          }
+        }
+      ],
+      "mode": "canonical",
+      "reference": {
+        "file": "dark/official-chromium.rgba.zlib",
+        "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+      },
+      "variant": "dark",
+      "whole": {
+        "area": 1006825,
+        "changed_pixels": 3662,
+        "changed_pixels_pass": true,
+        "height": 515,
+        "ssim_bits": "3fef7fce778b1b83",
+        "ssim_pass": false,
+        "width": 1955
+      }
+    }
+  ],
+  "schema": "excalidraw-render/rasterizer-pair-controls/v1"
+}

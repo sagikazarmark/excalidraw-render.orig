@@ -1,0 +1,64 @@
+{
+  "candidate": {
+    "bytes": 89324,
+    "sha256": "ec6a5d2344b05800a0e6716bf86974aedc3f5018bedb5b1199fdddc7876e4e7b"
+  },
+  "crops": [
+    {
+      "id": "client-typography",
+      "region": {
+        "area": 5916,
+        "changed_pixels": 29,
+        "changed_pixels_pass": true,
+        "height": 34,
+        "ssim_bits": "3fef43264c05e7a1",
+        "ssim_pass": false,
+        "width": 174
+      }
+    },
+    {
+      "id": "client-binding",
+      "region": {
+        "area": 107065,
+        "changed_pixels": 191,
+        "changed_pixels_pass": true,
+        "height": 161,
+        "ssim_bits": "3fef957f8a950024",
+        "ssim_pass": false,
+        "width": 665
+      }
+    },
+    {
+      "id": "client-arrow",
+      "region": {
+        "area": 10780,
+        "changed_pixels": 3,
+        "changed_pixels_pass": true,
+        "height": 70,
+        "ssim_bits": "3fefd50df8cc70e5",
+        "ssim_pass": false,
+        "width": 154
+      }
+    }
+  ],
+  "mode": "pdfjs",
+  "passed": false,
+  "plan": {
+    "bytes": 533,
+    "sha256": "9ae7b20c03b594b561805d9100b2b99549afa3347da7a99bb7c01a3bf67d8827"
+  },
+  "reference": {
+    "bytes": 92290,
+    "sha256": "8f485241237780293907d6a5c07a3836670b5f0cd7ff420bb458369756c95982"
+  },
+  "schema": "excalidraw-render/representative-intake-comparison/v1",
+  "whole": {
+    "area": 1006825,
+    "changed_pixels": 1468,
+    "changed_pixels_pass": true,
+    "height": 515,
+    "ssim_bits": "3fefbc3ed8e22910",
+    "ssim_pass": false,
+    "width": 1955
+  }
+}

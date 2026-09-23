@@ -1,0 +1,31 @@
+{
+  "fonts": [
+    {
+      "css": {
+        "family": "Comic Shanns",
+        "stretch": "normal",
+        "style": "normal",
+        "unicode_range": [
+          "U+0-10FFFF"
+        ],
+        "weight": 400
+      },
+      "sfnt": {
+        "face_index": 0,
+        "family": "Comic Shanns Regular",
+        "media_type": "font/ttf",
+        "path": "target/velox2-viewers/dark/assets/official-font-0.sfnt",
+        "sha256": "4830aa5c5e61f8c9385a16cd308db9ee7a146656711eb59ca433f561c0d83f72",
+        "stretch": "normal",
+        "style": "normal",
+        "weight": 400
+      },
+      "source": {
+        "media_type": "font/woff2",
+        "sha256": "bbf2fcc688beecaa9feafb8faaa5711ecd032417672fba340e6548f0fef1046e"
+      }
+    }
+  ],
+  "images": [],
+  "schema": "excalidraw-render/svg-viewer-asset-declaration/v1"
+}

@@ -1,0 +1,31 @@
+{
+  "crops": [
+    {
+      "class": "typography",
+      "height": 34,
+      "id": "client-typography",
+      "width": 174,
+      "x": 1310,
+      "y": 35
+    },
+    {
+      "class": "geometry/image",
+      "height": 161,
+      "id": "client-binding",
+      "width": 665,
+      "x": 944,
+      "y": 30
+    },
+    {
+      "class": "geometry/image",
+      "height": 70,
+      "id": "client-arrow",
+      "width": 154,
+      "x": 944,
+      "y": 121
+    }
+  ],
+  "height": 515,
+  "whole_class": "mixed-representative",
+  "width": 1955
+}
