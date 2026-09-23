@@ -1,0 +1,144 @@
+[
+  {
+    "kind": "official",
+    "fonts": [
+      {
+        "woff2": "target/slides-viewers-v1/light/assets/official-font-0.woff2",
+        "source": {
+          "media_type": "font/woff2",
+          "sha256": "aa4a70cd82476062015d34b22cae31f25ff093cc7587f612bf4d4823beba3509"
+        },
+        "css": {
+          "family": "Virgil",
+          "style": "normal",
+          "weight": 400,
+          "stretch": "normal",
+          "unicode_range": [
+            "U+0-10FFFF"
+          ]
+        }
+      },
+      {
+        "woff2": "target/slides-viewers-v1/light/assets/official-font-1.woff2",
+        "source": {
+          "media_type": "font/woff2",
+          "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+        },
+        "css": {
+          "family": "Helvetica",
+          "style": "normal",
+          "weight": 400,
+          "stretch": "normal",
+          "unicode_range": [
+            "U+0-10FFFF"
+          ]
+        },
+        "substitution": {
+          "requested_family": "Helvetica",
+          "system_font": {
+            "bytes": 410820,
+            "path": "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+          },
+          "chromium": {
+            "familyName": "Liberation Sans",
+            "postScriptName": "LiberationSans",
+            "isCustomFont": false,
+            "glyphCount": 7
+          },
+          "retained": "target/slides-viewers-v1/light/assets/official-substitute-0.ttf",
+          "resolution": {
+            "path": "target/slides-viewers-v1/light/official-font-resolution.json",
+            "bytes": 5670,
+            "sha256": "4aeeeb2553acf515557be9b3319a65e3daedcf30b465ef1436b35d46cf0f5280"
+          }
+        }
+      }
+    ],
+    "images": [
+      {
+        "source": {
+          "media_type": "image/svg+xml",
+          "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+        },
+        "canonical": {
+          "path": "target/slides-viewers-v1/light/assets/official-image-0.svg",
+          "media_type": "image/svg+xml",
+          "sha256": "eaf6062f4f5742d361e2462ea95d008726a5d51de69ff1015fd8ab8d63fdf07b"
+        }
+      },
+      {
+        "source": {
+          "media_type": "image/svg+xml",
+          "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+        },
+        "canonical": {
+          "path": "target/slides-viewers-v1/light/assets/official-image-1.svg",
+          "media_type": "image/svg+xml",
+          "sha256": "b1d101ce6e9661181dd997c53d4be73b83033df32b29f7789a3be6f372d840ab"
+        }
+      }
+    ]
+  },
+  {
+    "kind": "native",
+    "fonts": [
+      {
+        "woff2": "target/slides-viewers-v1/light/assets/native-font-0.woff2",
+        "source": {
+          "media_type": "font/woff2",
+          "sha256": "e7088e2db172d8a541a4549e4dd569d6c919ac4b49fe90e54896d99981bc59b6"
+        },
+        "css": {
+          "family": "ExcalidrawRender-1",
+          "style": "normal",
+          "weight": 400,
+          "stretch": "normal",
+          "unicode_range": [
+            "U+0-10FFFF"
+          ]
+        }
+      },
+      {
+        "woff2": "target/slides-viewers-v1/light/assets/native-font-1.woff2",
+        "source": {
+          "media_type": "font/woff2",
+          "sha256": "b5f1414431cd5744eababdf3a1bbc33cc74b486a0cba5739b676a83af8e50dc7"
+        },
+        "css": {
+          "family": "ExcalidrawRender-9",
+          "style": "normal",
+          "weight": 400,
+          "stretch": "normal",
+          "unicode_range": [
+            "U+0-10FFFF"
+          ]
+        }
+      }
+    ],
+    "images": [
+      {
+        "source": {
+          "media_type": "image/svg+xml",
+          "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+        },
+        "canonical": {
+          "path": "target/slides-viewers-v1/light/assets/native-image-0.svg",
+          "media_type": "image/svg+xml",
+          "sha256": "46b9d0c595c746fd2c669b8758aae698e30def7badb85fafd0fdca054896133b"
+        }
+      },
+      {
+        "source": {
+          "media_type": "image/svg+xml",
+          "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+        },
+        "canonical": {
+          "path": "target/slides-viewers-v1/light/assets/native-image-1.svg",
+          "media_type": "image/svg+xml",
+          "sha256": "11f9feb8b7830e8c8668c588907dc45e3fdd357141377b6f3d88fa102ba085fc"
+        }
+      }
+    ]
+  }
+]

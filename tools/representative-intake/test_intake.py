@@ -66,6 +66,35 @@ class IntakeTest(unittest.TestCase):
         self.assertEqual(len(manifest["proposed_executions"]), 3)
         self.run_tool("verify", self.bundle)
 
+    def use_unindexed_scene(self, elements):
+        self.scene = ('{"type":"excalidraw","version":2,"elements":[' + ",".join(elements)
+                      + '],"appState":{},"files":{}}\n').encode()
+        (self.source / "scene.excalidraw").write_bytes(self.scene)
+        self.provenance["scene"].update(bytes=len(self.scene), sha256=hashlib.sha256(self.scene).hexdigest())
+        (self.source / "PROVENANCE.json").write_text(json.dumps(self.provenance))
+        self.plan["sanitization"] = {"operation": "reviewed-index-repair", "review_notes": "Legacy export without indices."}
+        self.plan_path.write_text(json.dumps(self.plan))
+
+    def test_index_repair_inserts_restore_keys_and_nothing_else(self):
+        # 1.10 keeps its source spelling; only the index members are new.
+        self.use_unindexed_scene(['{"id":"a","type":"rectangle","x":1.10}', ' {"id":"b","type":"ellipse"}'])
+        self.prepare()
+        retained = (self.bundle / "scene.excalidraw").read_bytes()
+        self.assertEqual(retained, self.scene.replace(b'[{"id":"a"', b'[{"index":"a0","id":"a"')
+                                             .replace(b' {"id":"b"', b' {"index":"a1","id":"b"'))
+        manifest = json.loads((self.bundle / "manifest.json").read_text())
+        self.assertEqual(manifest["sanitization"]["original_sha256"], hashlib.sha256(self.scene).hexdigest())
+        self.assertEqual(manifest["sanitization"]["retained_sha256"], hashlib.sha256(retained).hexdigest())
+        self.run_tool("verify", self.bundle)
+        # Any other edit to the retained scene no longer reverses to the pinned original.
+        (self.bundle / "scene.excalidraw").write_bytes(retained.replace(b"1.10", b"1.1"))
+        self.run_tool("verify", self.bundle, success=False)
+
+    def test_index_repair_refuses_partially_indexed_scenes(self):
+        self.use_unindexed_scene(['{"id":"a","type":"rectangle","index":"a0"}', '{"id":"b","type":"ellipse"}'])
+        self.prepare(success=False)
+        self.assertFalse(self.bundle.exists())
+
     def test_incomplete_or_unknown_plan_fields_are_rejected_before_writing(self):
         for change in ({"formats": ["svg", "png"]}, {"approval": {"approved_by": "invented"}},
                        {"variants": self.plan["variants"] * 2},

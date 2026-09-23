@@ -1,0 +1,59 @@
+{
+  "schema": "excalidraw-render/representative-intake-plan/v1",
+  "case_id": "representative.excali-local-slides.v1",
+  "source_identity": "excali-local-slides",
+  "purpose": "A real slide deck board with eight named frames clipping sixteen nested-SVG image occurrences (two distinct assets) and framed Virgil text across a large canvas, complementing Velox's frameless binding/typography coverage and exercising many clipped children per frame.",
+  "sanitization": {
+    "operation": "reviewed-index-repair",
+    "review_notes": "The upstream export predates fractional indices: none of its 32 elements has an `index`, which the pinned reference oracle requires and Excalidraw's restore assigns in array order. The retained scene inserts exactly `\"index\":\"<key>\",` after each element's opening brace, with the keys fractional-indexing 3.2.0 generateNKeysBetween(null, null, 32) produces (a0..aV); every other byte, including number spelling, is the upstream file. Content review otherwise unchanged: the eight text elements are short conversational chat lines; the two embedded image/svg+xml payloads are cartoon avatars with no marks (tests/public-scenes/README.md). Frame names are 'Slide N' labels, including the upstream typo 'Sldie 4', kept verbatim. Promotion sign-off remains pending."
+  },
+  "variants": [
+    {
+      "id": "light",
+      "color_mode": "light",
+      "include_background": true,
+      "padding": 10,
+      "scale": 1,
+      "metadata": true
+    },
+    {
+      "id": "dark",
+      "color_mode": "dark",
+      "include_background": true,
+      "padding": 10,
+      "scale": 1,
+      "metadata": true
+    }
+  ],
+  "formats": [
+    "svg",
+    "png",
+    "pdf"
+  ],
+  "applicability": {
+    "frame_exports": "Deferred: this intake proposes whole-scene exports only, where all eight frames render with clip, name and outline on. Single-frame export variants remain covered by focused.frame-export and require a frame-target intake extension before they can be proposed here.",
+    "assets": "Applicable: two distinct image/svg+xml assets occur sixteen times, exercising nested-SVG sanitization, occurrence-versus-identity reuse and frame clipping. Dark mode inverts them through the reference root filter; PDF lowering of nested-SVG vector content in dark mode is the documented #154 limitation, so the dark PDF observation is expected to expose it.",
+    "sizing": "Propose native scale one and default padding for both modes on the large multi-frame canvas. Additional sizing/resource variants are deferred until the first reference dimensions and whole/crop judgments are reviewed."
+  },
+  "regions": [
+    {
+      "id": "whole",
+      "class": "mixed-representative",
+      "element_ids": []
+    },
+    {
+      "id": "slide1-typography",
+      "class": "typography",
+      "element_ids": [
+        "bBNDd6FxrRPHPgCLryC40"
+      ]
+    },
+    {
+      "id": "slide1-avatar",
+      "class": "geometry/image",
+      "element_ids": [
+        "zyiUpF9L0qjLJDWVjwmMt"
+      ]
+    }
+  ]
+}

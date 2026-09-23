@@ -1,0 +1,72 @@
+{
+  "approval": null,
+  "case_id": "representative.excali-local-slides.v1",
+  "census": {
+    "assets": 2,
+    "bound_arrows": 0,
+    "bound_text": 0,
+    "element_types": {
+      "frame": 8,
+      "image": 16,
+      "text": 8
+    },
+    "font_families": [
+      1
+    ],
+    "live_elements": 32
+  },
+  "eligible_executions": [],
+  "files": {
+    "LICENSE": {
+      "bytes": 1061,
+      "sha256": "1dc9273e5ef3d632341c469b672c33ce32b79ba3e5f1ee24bb692d003e49ce26"
+    },
+    "PROVENANCE.json": {
+      "bytes": 1325,
+      "sha256": "3dfcb42449d20ea3e779d8877ff5e5a8485b5fb8cbb2b4f0eead7ec97facb288"
+    },
+    "plan.json": {
+      "bytes": 3009,
+      "sha256": "749f9404af017ea65d66b25231f456f312cd6c5487a1274bf830fab0637d3d42"
+    },
+    "scene.excalidraw": {
+      "bytes": 45446,
+      "sha256": "c75f223f079c7bccb69cb7bcf0a6a4996571e358cf4730bb9fb72c0f864366ab"
+    }
+  },
+  "license": "MIT",
+  "pending": [
+    "sanitization-and-applicability-review",
+    "reference-and-viewer-evidence",
+    "independent-semantics-reports-notices",
+    "resource-outcomes",
+    "canonical-crops",
+    "exact-subject-approval",
+    "registry-and-target-integration"
+  ],
+  "proposed_executions": [
+    "representative.excali-local-slides.v1:light:svg",
+    "representative.excali-local-slides.v1:light:png",
+    "representative.excali-local-slides.v1:light:pdf",
+    "representative.excali-local-slides.v1:dark:svg",
+    "representative.excali-local-slides.v1:dark:png",
+    "representative.excali-local-slides.v1:dark:pdf"
+  ],
+  "sanitization": {
+    "operation": "reviewed-index-repair",
+    "original_sha256": "47c485a978bcb96f80f050baa11b16075c7c5cfbcc23b574fc83321aefa1c755",
+    "retained_sha256": "c75f223f079c7bccb69cb7bcf0a6a4996571e358cf4730bb9fb72c0f864366ab",
+    "review_notes": "The upstream export predates fractional indices: none of its 32 elements has an `index`, which the pinned reference oracle requires and Excalidraw's restore assigns in array order. The retained scene inserts exactly `\"index\":\"<key>\",` after each element's opening brace, with the keys fractional-indexing 3.2.0 generateNKeysBetween(null, null, 32) produces (a0..aV); every other byte, including number spelling, is the upstream file. Content review otherwise unchanged: the eight text elements are short conversational chat lines; the two embedded image/svg+xml payloads are cartoon avatars with no marks (tests/public-scenes/README.md). Frame names are 'Slide N' labels, including the upstream typo 'Sldie 4', kept verbatim. Promotion sign-off remains pending.",
+    "sign_off": null
+  },
+  "schema": "excalidraw-render/representative-intake/v1",
+  "source": {
+    "commit": "5f63d1941ab85fe9343fea64f6d0b1225e0ef51d",
+    "committed": "2024-12-05T00:06:43Z",
+    "path": "demos/slides.excalidraw",
+    "permalink": "https://github.com/azzgo/excali-local/blob/5f63d1941ab85fe9343fea64f6d0b1225e0ef51d/demos/slides.excalidraw",
+    "raw": "https://raw.githubusercontent.com/azzgo/excali-local/5f63d1941ab85fe9343fea64f6d0b1225e0ef51d/demos/slides.excalidraw",
+    "repository": "https://github.com/azzgo/excali-local"
+  },
+  "status": "pending-review"
+}

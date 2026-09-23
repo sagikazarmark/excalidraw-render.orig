@@ -26,9 +26,17 @@ python3 -B tools/representative-intake/intake.py verify \
 Preparation refuses an existing destination. Verification recomputes the full
 manifest from its bound inputs, checks fixed local filenames, upstream commit
 and digest, complete format/variant inventory and valid source-element anchors.
-Only `reviewed-no-change` sanitization is implemented: a later case requiring
-redaction needs an explicit reviewed transformation contract, not an implicit
-rewrite. A second scene can use the same plan schema and command path.
+Two sanitization operations are implemented. `reviewed-no-change` retains the
+upstream bytes. `reviewed-index-repair` is for exports that predate fractional
+indices, which the pinned reference oracle requires. It inserts
+`"index":"<key>",` after each element's opening brace, in array order, with the
+keys Excalidraw's restore assigns (`fractional-indexing` 3.2.0
+`generateNKeysBetween(null, null, n)`; `a0`, `a1`, …), and refuses a scene in
+which any element already has an index. Every other byte, number spelling
+included, is the upstream file. Verification removes exactly those members and
+requires the pinned upstream digest, so only the repaired scene is retained.
+Redaction or any other rewrite needs its own explicit reviewed transformation
+contract, never an implicit rewrite.
 
 ## Native observations
 

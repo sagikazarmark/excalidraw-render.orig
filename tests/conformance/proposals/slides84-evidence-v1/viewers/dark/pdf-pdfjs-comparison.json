@@ -1,0 +1,52 @@
+{
+  "candidate": {
+    "bytes": 271488,
+    "sha256": "560193946a968dec9170a54d386f35d6c481b60a37a25be9d49bc86c1c8349a5"
+  },
+  "crops": [
+    {
+      "id": "slide1-typography",
+      "region": {
+        "area": 7922,
+        "changed_pixels": 7,
+        "changed_pixels_pass": true,
+        "height": 34,
+        "ssim_bits": "3feff7847cb17834",
+        "ssim_pass": true,
+        "width": 233
+      }
+    },
+    {
+      "id": "slide1-avatar",
+      "region": {
+        "area": 61504,
+        "changed_pixels": 12037,
+        "changed_pixels_pass": false,
+        "height": 248,
+        "ssim_bits": "3fe88a2406d404c3",
+        "ssim_pass": false,
+        "width": 248
+      }
+    }
+  ],
+  "mode": "pdfjs",
+  "passed": false,
+  "plan": {
+    "bytes": 389,
+    "sha256": "f92550c9c40523548082c6ca36b7671e8433fa3a03dfe537bc7bf135fd189172"
+  },
+  "reference": {
+    "bytes": 252829,
+    "sha256": "02d4672b35e61ee99f95ee7cf7b41d5344f8a914c679652cb414eba70743df19"
+  },
+  "schema": "excalidraw-render/representative-intake-comparison/v1",
+  "whole": {
+    "area": 10890857,
+    "changed_pixels": 205628,
+    "changed_pixels_pass": false,
+    "height": 3847,
+    "ssim_bits": "3fef39a4a45f95b4",
+    "ssim_pass": false,
+    "width": 2831
+  }
+}

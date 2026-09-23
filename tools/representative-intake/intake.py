@@ -46,6 +46,134 @@ def read(root, name):
     return path.read_bytes()
 
 
+BASE_62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+
+def fractional_index_keys(count):
+    """`generateNKeysBetween(null, null, count)` of fractional-indexing 3.2.0,
+    the keys Excalidraw's restore assigns a scene with no valid indices."""
+    keys, key = [], "a0"
+    for _ in range(count):
+        keys.append(key)
+        head, digits = key[0], list(key[1:])
+        for position in reversed(range(len(digits))):
+            value = BASE_62.index(digits[position]) + 1
+            if value < 62:
+                digits[position] = BASE_62[value]
+                break
+            digits[position] = "0"
+        else:
+            require(head < "z", "fractional index keys exhausted")
+            head = chr(ord(head) + 1)
+            digits = ["0"] * (ord(head) - ord("a") + 1)
+        key = head + "".join(digits)
+    return keys
+
+
+def element_offsets(data):
+    """Byte offsets of each object's opening brace in the top-level `elements`
+    array, so a repair edits the original bytes without re-serializing them."""
+    text = data.decode()
+    position = 0
+
+    def skip_whitespace():
+        nonlocal position
+        while position < len(text) and text[position] in " \t\r\n":
+            position += 1
+
+    def skip_string():
+        nonlocal position
+        start = position
+        position += 1
+        while text[position] != '"':
+            position += 2 if text[position] == "\\" else 1
+        position += 1
+        return text[start:position]
+
+    def skip_value():
+        nonlocal position
+        skip_whitespace()
+        character = text[position]
+        if character == '"':
+            skip_string()
+        elif character in "{[":
+            closing = "}" if character == "{" else "]"
+            position += 1
+            skip_whitespace()
+            while text[position] != closing:
+                if character == "{":
+                    skip_string()
+                    skip_whitespace()
+                    position += 1  # colon
+                skip_value()
+                skip_whitespace()
+                if text[position] == ",":
+                    position += 1
+                    skip_whitespace()
+            position += 1
+        else:
+            while position < len(text) and text[position] not in ",}] \t\r\n":
+                position += 1
+
+    skip_whitespace()
+    require(text[position] == "{", "scene is not a JSON object")
+    position += 1
+    while True:
+        skip_whitespace()
+        key = json.loads(skip_string())
+        skip_whitespace()
+        position += 1
+        skip_whitespace()
+        if key == "elements":
+            require(text[position] == "[", "elements is not an array")
+            position += 1
+            offsets = []
+            skip_whitespace()
+            while text[position] != "]":
+                require(text[position] == "{", "element is not an object")
+                offsets.append(len(text[:position].encode()))
+                skip_value()
+                skip_whitespace()
+                if text[position] == ",":
+                    position += 1
+                    skip_whitespace()
+            return offsets
+        skip_value()
+        skip_whitespace()
+        require(text[position] == ",", "scene has no elements array")
+        position += 1
+
+
+def index_repair(original):
+    """Insert `"index":"<key>",` after each element's opening brace, in array
+    order, leaving every other byte, number spelling included, untouched."""
+    scene = decode(original)
+    require(all(isinstance(e, dict) and "index" not in e for e in scene["elements"]),
+            "index repair covers only scenes in which no element has an index")
+    offsets = element_offsets(original)
+    require(len(offsets) == len(scene["elements"]), "element scan disagrees with the parsed scene")
+    repaired, cursor = bytearray(), 0
+    for offset, key in zip(offsets, fractional_index_keys(len(offsets))):
+        repaired += original[cursor:offset + 1] + f'"index":"{key}",'.encode()
+        cursor = offset + 1
+    return bytes(repaired + original[cursor:])
+
+
+def index_unrepair(retained):
+    """The original bytes of an index-repaired scene: every inserted member removed."""
+    offsets = element_offsets(retained)
+    original, cursor = bytearray(), 0
+    for offset, key in zip(offsets, fractional_index_keys(len(offsets))):
+        inserted = f'"index":"{key}",'.encode()
+        require(retained[offset + 1:offset + 1 + len(inserted)] == inserted, "retained scene is not an exact index repair")
+        original += retained[cursor:offset + 1]
+        cursor = offset + 1 + len(inserted)
+    return bytes(original + retained[cursor:])
+
+
+SANITIZATIONS = ("reviewed-no-change", "reviewed-index-repair")
+
+
 def census(scene):
     counts = {}
     live = [element for element in scene["elements"] if not element.get("isDeleted", False)]
@@ -66,7 +194,7 @@ def validate_plan(plan, scene, provenance):
     require(re.fullmatch(r"representative\.[a-z0-9-]+\.v[1-9][0-9]*", plan["case_id"]), "invalid case identity")
     require(plan["source_identity"] == provenance["identity"], "source identity mismatch")
     require(plan["purpose"].strip(), "missing representative purpose")
-    require(plan["sanitization"]["operation"] == "reviewed-no-change", "only reviewed-no-change intake is supported")
+    require(plan["sanitization"]["operation"] in SANITIZATIONS, "unsupported sanitization operation")
     require(plan["sanitization"]["review_notes"].strip(), "missing sanitization review notes")
     require(plan["formats"] == FORMATS, "intake requires SVG, PNG and PDF")
     require(plan["variants"], "missing variants")
@@ -100,10 +228,16 @@ def materialize(files):
     provenance = decode(files["PROVENANCE.json"])
     plan = decode(files["plan.json"])
     scene = decode(files["scene.excalidraw"])
+    operation = plan["sanitization"]["operation"]
+    # The retained scene must be the declared transformation of the pinned
+    # upstream bytes: an index repair is reversed exactly and re-applied.
+    original = index_unrepair(files["scene.excalidraw"]) if operation == "reviewed-index-repair" else files["scene.excalidraw"]
+    if operation == "reviewed-index-repair":
+        require(index_repair(original) == files["scene.excalidraw"], "retained scene is not the index repair of its original")
     require(scene["type"] == "excalidraw" and scene["version"] == 2, "scene envelope")
     require(isinstance(scene["elements"], list) and isinstance(scene["appState"], dict) and isinstance(scene["files"], dict), "scene envelope")
     require(provenance["scene"]["file"] == "scene.excalidraw" and provenance["license"]["text"] == "LICENSE", "source file names must be local fixed names")
-    require(descriptor(files["scene.excalidraw"]) == {key: provenance["scene"][key] for key in ("bytes", "sha256")}, "upstream scene digest/length mismatch")
+    require(descriptor(original) == {key: provenance["scene"][key] for key in ("bytes", "sha256")}, "upstream scene digest/length mismatch")
     upstream = provenance["upstream"]
     require(re.fullmatch(r"[0-9a-f]{40}", upstream["commit"]), "upstream commit must be immutable")
     require(upstream["repository"].startswith("https://github.com/") and upstream["permalink"] == f'{upstream["repository"]}/blob/{upstream["commit"]}/{upstream["path"]}', "upstream permalink mismatch")
@@ -112,7 +246,7 @@ def materialize(files):
     return {"schema": SCHEMA, "case_id": plan["case_id"], "status": "pending-review", "approval": None,
             "eligible_executions": [], "files": {name: descriptor(data) for name, data in files.items()},
             "source": upstream, "license": provenance["license"]["spdx"],
-            "sanitization": {**plan["sanitization"], "original_sha256": descriptor(files["scene.excalidraw"])["sha256"],
+            "sanitization": {**plan["sanitization"], "original_sha256": descriptor(original)["sha256"],
                              "retained_sha256": descriptor(files["scene.excalidraw"])["sha256"], "sign_off": None},
             "census": census(scene),
             "proposed_executions": [f'{plan["case_id"]}:{v["id"]}:{f}' for v in plan["variants"] for f in FORMATS],
@@ -123,6 +257,8 @@ def materialize(files):
 def prepare(source, plan, output):
     files = {name: read(source, name) for name in FILES if name != "plan.json"}
     files["plan.json"] = plan.read_bytes()
+    if decode(files["plan.json"])["sanitization"]["operation"] == "reviewed-index-repair":
+        files["scene.excalidraw"] = index_repair(files["scene.excalidraw"])
     manifest = materialize(files)
     # Validate everything before creating any destination, and never overwrite
     # an existing bundle. The manifest is written last as the completion marker.
