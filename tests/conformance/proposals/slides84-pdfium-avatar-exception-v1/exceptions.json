@@ -1,0 +1,47 @@
+{
+  "approval": null,
+  "evidence": {
+    "compact_record": {
+      "path": "tests/conformance/proposals/slides84-evidence-v2/compact.json",
+      "sha256": "7779f6fab3c20510cc03acb2eab884451dc8418cabfd954dd0937bb562226c14"
+    },
+    "rasterizer_pairs": {
+      "path": "tests/conformance/proposals/slides84-pdfium-avatar-exception-v1/rasterizer-pairs.json",
+      "sha256": "c2a5e26b6f76b1cdcf9a378dcf17012cf8bf8814e67fd0cab0a9ff63e4b5a994"
+    }
+  },
+  "exceptions": [
+    {
+      "approving_issue": null,
+      "case": "representative.excali-local-slides.v1",
+      "format": "pdf",
+      "judgment": {
+        "path": "tests/conformance/proposals/slides84-evidence-v2/viewers/light/pdf-pdfium-comparison.json",
+        "sha256": "679036ddeba61b8896b3f1049ef7d900f2a1885b7977a3b1b7bf5a5b16a50487"
+      },
+      "max_changed_pixels": 0,
+      "minimum_ssim_bits": "3feff378e3937646",
+      "reason": "Viewer rasterization of the nested-SVG avatar's fine vector detail: 0 changed pixels, and canonical rasterizers disagree as much on identical input (official SVG Chromium vs pure Rust; this PDF PDFium vs PDF.js).",
+      "region": "slide1-avatar",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": null,
+      "case": "representative.excali-local-slides.v1",
+      "format": "pdf",
+      "judgment": {
+        "path": "tests/conformance/proposals/slides84-evidence-v2/viewers/dark/pdf-pdfium-comparison.json",
+        "sha256": "c135ceadd75e41dc32192a19f2e2037fb24564ffada04347af4dee20c80135b5"
+      },
+      "max_changed_pixels": 0,
+      "minimum_ssim_bits": "3feff4fa706910a9",
+      "reason": "Viewer rasterization of the nested-SVG avatar's fine vector detail: 0 changed pixels, and canonical rasterizers disagree as much on identical input (official SVG Chromium vs pure Rust; this PDF PDFium vs PDF.js).",
+      "region": "slide1-avatar",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    }
+  ],
+  "schema": "excalidraw-render/tolerance-exception-proposal/v1",
+  "status": "pending-review"
+}
