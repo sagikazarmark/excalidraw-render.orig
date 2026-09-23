@@ -1,6 +1,10 @@
-# PNG umbrella-facet owners and V17 successor — pending approval
+# PNG umbrella-facet owners and V17 successor — approved and applied
 
-Two exact subjects for one #85 decision. Nothing here is approved or applied.
+Two exact subjects for one #85 decision, approved by the user on 2026-09-23
+([#85 comment](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5798002256))
+and applied with `apply.py`. After application, V17 `candidate-verify`, all xtask
+tests and `verify-ownership` (2359 assigned/excluded, 59 gaps) passed. The rest
+of this README preserves the reviewed proposal.
 
 | Subject | SHA-256 |
 | --- | --- |
