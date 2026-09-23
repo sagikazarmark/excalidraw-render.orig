@@ -1,0 +1,192 @@
+{
+  "approval": null,
+  "failing_regions": [
+    {
+      "changed_pixels": 910085,
+      "class": "mixed-representative",
+      "comparison": "pdf-pdfium",
+      "control_changed_pixels": 54466,
+      "control_ssim": 0.9738274364857957,
+      "controls": {
+        "native-pdfium vs native-pdfjs": {
+          "changed_pixels": 54466,
+          "ssim": 0.9795900469338347
+        },
+        "official-chromium vs official-png": {
+          "changed_pixels": 42842,
+          "ssim": 0.9738274364857957
+        },
+        "official-chromium vs official-rust": {
+          "changed_pixels": 39125,
+          "ssim": 0.9758907408284119
+        }
+      },
+      "region": "whole",
+      "ssim": 0.9599443968377412,
+      "verdict": "beyond"
+    },
+    {
+      "changed_pixels": 11,
+      "class": "typography",
+      "comparison": "pdf-pdfium",
+      "control_changed_pixels": 20,
+      "control_ssim": 0.9821311806750319,
+      "controls": {
+        "native-pdfium vs native-pdfjs": {
+          "changed_pixels": 20,
+          "ssim": 0.9821311806750319
+        },
+        "official-chromium vs official-png": {
+          "changed_pixels": 0,
+          "ssim": 0.9946078108254784
+        },
+        "official-chromium vs official-rust": {
+          "changed_pixels": 1,
+          "ssim": 0.988380630922365
+        }
+      },
+      "region": "queue-manager-typography",
+      "ssim": 0.9923639723039083,
+      "verdict": "within"
+    },
+    {
+      "changed_pixels": 18886,
+      "class": "geometry/image",
+      "comparison": "pdf-pdfium",
+      "control_changed_pixels": 808,
+      "control_ssim": 0.8957176053436302,
+      "controls": {
+        "native-pdfium vs native-pdfjs": {
+          "changed_pixels": 808,
+          "ssim": 0.8957176053436302
+        },
+        "official-chromium vs official-png": {
+          "changed_pixels": 361,
+          "ssim": 0.9192625726214134
+        },
+        "official-chromium vs official-rust": {
+          "changed_pixels": 383,
+          "ssim": 0.9187363043786112
+        }
+      },
+      "region": "worker-arrow",
+      "ssim": 0.7987552924871293,
+      "verdict": "beyond"
+    },
+    {
+      "changed_pixels": 713345,
+      "class": "mixed-representative",
+      "comparison": "pdf-pdfjs",
+      "control_changed_pixels": 54466,
+      "control_ssim": 0.9738274364857957,
+      "controls": {
+        "native-pdfium vs native-pdfjs": {
+          "changed_pixels": 54466,
+          "ssim": 0.9795900469338347
+        },
+        "official-chromium vs official-png": {
+          "changed_pixels": 42842,
+          "ssim": 0.9738274364857957
+        },
+        "official-chromium vs official-rust": {
+          "changed_pixels": 39125,
+          "ssim": 0.9758907408284119
+        }
+      },
+      "region": "whole",
+      "ssim": 0.960781574510758,
+      "verdict": "beyond"
+    },
+    {
+      "changed_pixels": 2,
+      "class": "typography",
+      "comparison": "pdf-pdfjs",
+      "control_changed_pixels": 20,
+      "control_ssim": 0.9821311806750319,
+      "controls": {
+        "native-pdfium vs native-pdfjs": {
+          "changed_pixels": 20,
+          "ssim": 0.9821311806750319
+        },
+        "official-chromium vs official-png": {
+          "changed_pixels": 0,
+          "ssim": 0.9946078108254784
+        },
+        "official-chromium vs official-rust": {
+          "changed_pixels": 1,
+          "ssim": 0.988380630922365
+        }
+      },
+      "region": "queue-manager-typography",
+      "ssim": 0.9881282415484127,
+      "verdict": "within"
+    },
+    {
+      "changed_pixels": 15156,
+      "class": "geometry/image",
+      "comparison": "pdf-pdfjs",
+      "control_changed_pixels": 808,
+      "control_ssim": 0.8957176053436302,
+      "controls": {
+        "native-pdfium vs native-pdfjs": {
+          "changed_pixels": 808,
+          "ssim": 0.8957176053436302
+        },
+        "official-chromium vs official-png": {
+          "changed_pixels": 361,
+          "ssim": 0.9192625726214134
+        },
+        "official-chromium vs official-rust": {
+          "changed_pixels": 383,
+          "ssim": 0.9187363043786112
+        }
+      },
+      "region": "worker-arrow",
+      "ssim": 0.8095877251933696,
+      "verdict": "beyond"
+    },
+    {
+      "changed_pixels": 34769,
+      "class": "mixed-representative",
+      "comparison": "png-canvas",
+      "control_changed_pixels": 42842,
+      "control_ssim": 0.9738274364857967,
+      "controls": {
+        "official-png vs official-chromium": {
+          "changed_pixels": 42842,
+          "ssim": 0.9738274364857967
+        },
+        "official-png vs official-rust": {
+          "changed_pixels": 4522,
+          "ssim": 0.9968056104559334
+        }
+      },
+      "region": "whole",
+      "ssim": 0.98830564571848,
+      "verdict": "within"
+    },
+    {
+      "changed_pixels": 311,
+      "class": "geometry/image",
+      "comparison": "png-canvas",
+      "control_changed_pixels": 361,
+      "control_ssim": 0.919262572621415,
+      "controls": {
+        "official-png vs official-chromium": {
+          "changed_pixels": 361,
+          "ssim": 0.919262572621415
+        },
+        "official-png vs official-rust": {
+          "changed_pixels": 0,
+          "ssim": 0.9967208707947431
+        }
+      },
+      "region": "worker-arrow",
+      "ssim": 0.9832179237030355,
+      "verdict": "within"
+    }
+  ],
+  "schema": "excalidraw-render/identical-input-controls/v1",
+  "tiles": null,
+  "variant": "target/varmq-viewers-v3/light"
+}
