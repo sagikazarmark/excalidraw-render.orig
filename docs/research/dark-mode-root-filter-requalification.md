@@ -56,3 +56,27 @@ cargo run --locked -p xtask -- conformance verify-native-baseline
 
 The approval covers these 8 dark-mode keys together with whatever the pending
 approvals already cover.
+
+## Staged candidate (ready for approval, not approved)
+
+A clean collection at `59fda62` (only proposal records and documentation changed
+after `a9d9e5e`), `target/native-snapshots-clean`, verified all 168 candidates
+("source clean"). `stage-native-baseline` produced `target/new-native-baseline`:
+
+- 168 expectations; subject **`sha256:46e23f43096064aef51dcd9f539ab7d31525aab610a520b2b41b410ee0d46965`**
+- identical to the `a9d9e5e` collection in every key
+- 42 keys differ from the approved baseline: the 8 dark-mode keys above and 34
+  from the earlier requalifications pending on #85
+
+Approving this subject approves all 42 changes, so the pending #85 packets
+should be decided first. To record:
+
+```sh
+rm -r tests/conformance/coverage/native-baseline
+cp -r target/new-native-baseline tests/conformance/coverage/native-baseline
+cargo run --locked -p xtask -- conformance native-baseline-approval-subject   # must print the subject above
+# maintainer posts the decision on #85, then:
+cargo run --locked -p xtask -- conformance record-native-baseline-approval \
+  <login> <UTC-date> <#85 comment URL> sha256:46e23f43096064aef51dcd9f539ab7d31525aab610a520b2b41b410ee0d46965
+cargo run --locked -p xtask -- conformance verify-native-baseline
+```
