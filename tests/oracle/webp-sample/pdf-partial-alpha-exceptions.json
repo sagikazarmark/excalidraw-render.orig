@@ -1,7 +1,12 @@
 {
   "schema": "excalidraw-render/webp-pdf-partial-alpha-exceptions/v1",
   "issue": 191,
-  "approval": null,
+  "approval": {
+    "approved_by": "sagikazarmark",
+    "approved_at": "2026-09-23",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5796115385",
+    "approval_subject_sha256": "sha256:db59f3eb97375586589fd1b6934542a92b23a938c17c891dea9680a03e52af3c"
+  },
   "reason": "Partial-alpha WebP in PDF: the renderer embeds the exact straight samples an independent libwebp decode produces, and both pinned PDF viewers composite them to the rounded black/white projection of those samples (spec section 14.3). The pinned browser canvas truncates partial-alpha premultiplication at decode, so its composites differ by at most one channel unit at partially transparent pixels. Independent hand-authored DeviceRGB/SMask PDFs made only from external libwebp samples render byte-identically to production in both viewers. Not a renderer defect; matching would require altering PDF samples to imitate canvas rounding.",
   "viewer_evidence": {
     "pdf-straight-sample-projection": "The owning test's projection of the extracted PDF samples; pinned PDFium and PDF.js black/white buffers equal it for all 24 vectors."

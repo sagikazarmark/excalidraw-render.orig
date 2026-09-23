@@ -1,6 +1,10 @@
-# #191 partial-alpha PDF exceptions, owner tranche and V16 successor — pending approval
+# #191 partial-alpha PDF exceptions, owner tranche and V16 successor — approved and applied
 
-Three exact subjects for one #85 decision. Nothing here is approved or applied.
+Three exact subjects for one #85 decision, approved by the user on 2026-09-23
+([#85 comment](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5796115385))
+and applied with `apply.py`. After application, the WebP contract, V16
+`candidate-verify`, all xtask tests and `verify-ownership` (2355 assigned/excluded,
+63 gaps) passed. The rest of this README preserves the reviewed proposal.
 
 | Subject | SHA-256 |
 | --- | --- |
