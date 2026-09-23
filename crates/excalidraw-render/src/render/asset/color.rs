@@ -305,9 +305,59 @@ fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, Resolve
             // otherwise valid saturation-only space is not selected.
             return png_legacy_color_profile(info);
         }
+        // Skia tags a profile it snaps to sRGB as sRGB, and Blink then needs
+        // no transform: the pixels draw untransformed.
+        if profile.color_space == DataColorSpace::Rgb && super::skia_srgb::snaps_to_srgb(&profile) {
+            return Ok(ColorNormalization::None);
+        }
         return Ok(ColorNormalization::Profile(Box::new(profile)));
     }
     png_legacy_color_profile(info)
+}
+
+/// A BMP V4/V5 calibrated-RGB colour space: `to_xyz_d50` holds the red, green
+/// and blue colorants as columns, and each channel decodes with the 16.16
+/// fixed-point exponent Blink reads (`SkFixedToFloat`). Skia draws the tagged
+/// image with its gamma stage, which maps 0 and 1 to themselves and a zero
+/// exponent to 1 elsewhere; a negative exponent names no usable curve.
+pub(super) fn calibrated_rgb_normalization(
+    to_xyz_d50: &[[f32; 3]; 3],
+    gammas: [u32; 3],
+) -> Result<ColorNormalization, ResolveError> {
+    let mut profile = ColorProfile::new_srgb();
+    profile.cicp = None;
+    let colorant = |column: usize| {
+        Xyzd::new(
+            f64::from(to_xyz_d50[0][column]),
+            f64::from(to_xyz_d50[1][column]),
+            f64::from(to_xyz_d50[2][column]),
+        )
+    };
+    profile.red_colorant = colorant(0);
+    profile.green_colorant = colorant(1);
+    profile.blue_colorant = colorant(2);
+    let mut curves = Vec::with_capacity(3);
+    for gamma in gammas {
+        let gamma = gamma as i32 as f32 * (1.0 / 65536.0);
+        if gamma < 0.0 {
+            return Err(ResolveError::Unsupported);
+        }
+        curves.push(if gamma == 0.0 {
+            let mut table = vec![u16::MAX; 256];
+            table[0] = 0;
+            ToneReprCurve::Lut(table)
+        } else {
+            ToneReprCurve::Parametric(vec![gamma])
+        });
+    }
+    let mut curves = curves.into_iter();
+    profile.red_trc = curves.next();
+    profile.green_trc = curves.next();
+    profile.blue_trc = curves.next();
+    if super::skia_srgb::snaps_to_srgb(&profile) {
+        return Ok(ColorNormalization::None);
+    }
+    Ok(ColorNormalization::Profile(Box::new(profile)))
 }
 
 pub(super) fn parse_icc_profile(bytes: &[u8]) -> Result<ColorNormalization, ResolveError> {

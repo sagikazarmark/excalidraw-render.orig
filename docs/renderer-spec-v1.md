@@ -792,6 +792,47 @@ GIF is read as the pinned reference's decoder reads it:
   paints the partial frame.
 - Later frames only count; their data is not decoded.
 
+BMP is read as the pinned reference's BMP reader reads it:
+- Headers:
+  - The file header needs only its signature and pixel-data offset.
+  - The accepted info headers are OS/2 1.x, Windows V3 and later, and OS/2
+    2.x, each with the depths and compressions the reference accepts.
+  - A width or height of 65536 or more rejects the file.
+- Pixels:
+  - A palette index outside the palette is opaque black.
+  - Channel masks may be empty and keep a wider channel's top eight bits.
+  - Alpha comes only from a V3 or later alpha mask. An alpha channel that is
+    zero throughout is opaque.
+  - Run-length holes and anything after an early end of bitmap are
+    transparent. A stream that ends or turns invalid keeps what it drew.
+- Color:
+  - Calibrated RGB is color managed, and an embedded ICC profile applies. An
+    embedded profile that lies outside the file or does not parse rejects the
+    file.
+  - Every other color space type is sRGB.
+- Non-run-length pixel data that ends before the last row, or masks that
+  overlap or have gaps, reject the file with the usual decode-failed recovery,
+  although the reference loads it and paints what it could decode.
+
+ICO and CUR are read as the pinned reference's icon decoder reads them:
+- Directory:
+  - The directory's reserved fields, planes, byte sizes and bit counts may
+    disagree with the images.
+  - Every entry's image must start after the directory.
+- Selection: the largest area wins, then the larger bit count, then the
+  earlier entry. Only the selected entry is decoded.
+- Entries:
+  - An entry must decode to exactly the directory's size.
+  - A DIB entry is read as BMP. Its AND mask applies unless a 32-bit entry
+    has non-zero alpha.
+  - A PNG entry follows the PNG rules, but its EXIF orientation is ignored.
+- Divergences:
+  - An entry that fails, or whose image lies outside the file, rejects the
+    file with the usual decode-failed recovery, although the reference paints
+    it transparent.
+  - A PNG entry that needs a color transform draws as the same PNG would
+    standalone, although the reference paints it fully transparent.
+
 PNG and PDF emit one informational `image.animation-flattened` occurrence for
 each actually rendered multi-frame asset occurrence. Static, one-frame, and
 unreferenced assets remain silent. PDF uses the same default-frame, orientation,

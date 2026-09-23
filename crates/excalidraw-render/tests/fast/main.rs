@@ -20,6 +20,8 @@ mod common;
 mod admission_identity_contract;
 mod arrow_render;
 mod artifact_metadata;
+mod bmp_ico_container_contract;
+mod bmp_ico_limit_contract;
 mod bound_text_render;
 mod compatibility_fallback_render;
 mod compatibility_identity;

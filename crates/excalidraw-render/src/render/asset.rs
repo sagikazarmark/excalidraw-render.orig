@@ -67,6 +67,7 @@ use super::resolve::ResolvedImageAsset;
 
 const BMP_SIGNATURE: &[u8; 2] = b"BM";
 const ICO_SIGNATURE: &[u8; 4] = b"\0\0\x01\0";
+const CUR_SIGNATURE: &[u8; 4] = b"\0\0\x02\0";
 const IDENTITY_DOMAIN: &[u8] = b"excalidraw-render:semantic-asset:v1\0";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -305,16 +306,16 @@ impl RasterSemantics {
 }
 
 #[derive(Clone)]
-struct IcoSemantics {
-    offset: usize,
-    length: usize,
-    payload: IcoPayloadSemantics,
-}
-
-#[derive(Clone)]
-enum IcoPayloadSemantics {
-    Png(PngSemantics),
-    Dib(ico::DibInfo),
+enum IcoSemantics {
+    /// The PNG entry's octets within the file and its semantics, without an
+    /// orientation: the reference draws an icon's PNG unrotated.
+    Png {
+        offset: usize,
+        length: usize,
+        semantics: PngSemantics,
+    },
+    /// The DIB entry, read in place with offsets into the whole file.
+    Dib(bmp::Info),
 }
 
 struct DecodedRaster {
@@ -661,7 +662,9 @@ impl Cache {
                     pixels,
                     color_normalization,
                 ),
-                MediaKind::Bmp => decode_bmp(&validated.bytes, &validated.semantics),
+                MediaKind::Bmp => {
+                    decode_bmp(&validated.bytes, color_normalization, &validated.semantics)
+                }
                 MediaKind::Ico => decode_ico(
                     &validated.bytes,
                     pixels,
@@ -1060,7 +1063,7 @@ fn normalize_nested_raster(
             validated.pixels,
             color_normalization,
         ),
-        MediaKind::Bmp => decode_bmp(bytes, &validated.semantics),
+        MediaKind::Bmp => decode_bmp(bytes, color_normalization, &validated.semantics),
         MediaKind::Ico => decode_ico(
             bytes,
             validated.pixels,
@@ -1205,7 +1208,7 @@ fn sniff_media_kind(bytes: &[u8]) -> Result<MediaKind, ResolveError> {
         Ok(MediaKind::WebP)
     } else if bytes.starts_with(BMP_SIGNATURE) {
         Ok(MediaKind::Bmp)
-    } else if bytes.starts_with(ICO_SIGNATURE) {
+    } else if bytes.starts_with(ICO_SIGNATURE) || bytes.starts_with(CUR_SIGNATURE) {
         Ok(MediaKind::Ico)
     } else {
         Err(ResolveError::Unsupported)
@@ -1218,83 +1221,102 @@ fn read_bmp_dimensions(bytes: &[u8]) -> Result<(u32, u32), ResolveError> {
 
 fn validate_bmp(bytes: &[u8]) -> Result<(u32, u32, bmp::Info), ResolveError> {
     let info = bmp::validate(bytes).map_err(|_| ResolveError::BmpDecodeFailed)?;
+    // Blink fails the whole image when an embedded profile does not parse,
+    // before it reports a size; direct SVG must reject it as well.
+    if let Some(profile) = info.embedded_profile(bytes) {
+        bmp_embedded_normalization(profile)?;
+    }
     Ok((info.width, info.height, info))
 }
 
-fn decode_bmp(bytes: &[u8], semantics: &RasterSemantics) -> Result<DecodedRaster, ResolveError> {
+/// The normalization an `MBED` profile selects. A profile that does not parse
+/// fails the image; one Skia snaps to sRGB draws untransformed; a parsed
+/// non-RGB profile keeps the project's strict unsupported recovery.
+fn bmp_embedded_normalization(profile: &[u8]) -> Result<ColorNormalization, ResolveError> {
+    match color::parse_icc_profile(profile) {
+        Ok(ColorNormalization::Profile(profile))
+            if profile.color_space != moxcms::DataColorSpace::Rgb =>
+        {
+            Err(ResolveError::Unsupported)
+        }
+        Ok(ColorNormalization::Profile(profile)) if skia_srgb::snaps_to_srgb(&profile) => {
+            Ok(ColorNormalization::None)
+        }
+        Ok(ColorNormalization::Lut(lut)) if lut.first().is_none_or(|lut| lut.gray()) => {
+            Err(ResolveError::Unsupported)
+        }
+        Err(ResolveError::Memory) => Err(ResolveError::Memory),
+        Err(_) => Err(ResolveError::BmpDecodeFailed),
+        other => other,
+    }
+}
+
+fn decode_bmp(
+    bytes: &[u8],
+    color_normalization: ColorNormalization,
+    semantics: &RasterSemantics,
+) -> Result<DecodedRaster, ResolveError> {
     let RasterSemantics::Bmp(info) = semantics else {
         return Err(ResolveError::BmpDecodeFailed);
     };
-    finish_rgba(bmp::decode(bytes, info).map_err(|_| ResolveError::BmpDecodeFailed)?)
+    let mut rgba = bmp::decode(bytes, info).map_err(|_| ResolveError::BmpDecodeFailed)?;
+    color::normalize_rgba(&mut rgba, color_normalization)?;
+    finish_rgba(rgba)
 }
 
 fn read_ico_dimensions(bytes: &[u8]) -> Result<(u32, u32), ResolveError> {
-    let selected = selected_ico_entry(bytes)?;
-    let payload = bytes
-        .get(selected.offset..selected.offset + selected.length)
-        .ok_or(ResolveError::IcoDecodeFailed)?;
-    if payload.starts_with(PNG_SIGNATURE) {
-        let dimensions = read_png_ihdr(payload).map_err(|_| ResolveError::IcoDecodeFailed)?;
-        if dimensions != (selected.width, selected.height) {
-            return Err(ResolveError::IcoDecodeFailed);
+    let selected = ico::selected_entry(bytes).map_err(|_| ResolveError::IcoDecodeFailed)?;
+    match ico::payload(bytes, selected).map_err(|_| ResolveError::IcoDecodeFailed)? {
+        ico::Payload::Png => {
+            let payload =
+                ico::png_bytes(bytes, selected).map_err(|_| ResolveError::IcoDecodeFailed)?;
+            let dimensions = read_png_ihdr(payload).map_err(|_| ResolveError::IcoDecodeFailed)?;
+            if dimensions != (selected.width, selected.height) {
+                return Err(ResolveError::IcoDecodeFailed);
+            }
         }
-    } else {
-        ico::dib_dimensions(payload, selected).map_err(|_| ResolveError::IcoDecodeFailed)?;
+        ico::Payload::Dib => {
+            ico::dib_dimensions(bytes, selected).map_err(|_| ResolveError::IcoDecodeFailed)?;
+        }
     }
     Ok((selected.width, selected.height))
 }
 
+/// Validates the entry the reference selects; the other entries' images are
+/// never read.
 fn validate_ico(bytes: &[u8]) -> Result<(u32, u32, IcoSemantics), ResolveError> {
-    let entries = ico::entries(bytes).map_err(|_| ResolveError::IcoDecodeFailed)?;
-    let selected = selected_ico_entry_from(&entries)?;
-    let mut selected_payload = None;
-    for entry in entries {
-        let payload = bytes
-            .get(entry.offset..entry.offset + entry.length)
-            .ok_or(ResolveError::IcoDecodeFailed)?;
-        let semantics = if payload.starts_with(PNG_SIGNATURE) {
-            let (width, height, semantics) =
-                validate_static_png(payload).map_err(|_| ResolveError::IcoDecodeFailed)?;
-            if width != entry.width || height != entry.height {
-                return Err(ResolveError::IcoDecodeFailed);
+    let selected = ico::selected_entry(bytes).map_err(|_| ResolveError::IcoDecodeFailed)?;
+    let semantics =
+        match ico::payload(bytes, selected).map_err(|_| ResolveError::IcoDecodeFailed)? {
+            ico::Payload::Png => {
+                let payload =
+                    ico::png_bytes(bytes, selected).map_err(|_| ResolveError::IcoDecodeFailed)?;
+                let (_, _, mut semantics) =
+                    validate_static_png(payload).map_err(|_| ResolveError::IcoDecodeFailed)?;
+                if read_png_ihdr(payload).map_err(|_| ResolveError::IcoDecodeFailed)?
+                    != (selected.width, selected.height)
+                {
+                    return Err(ResolveError::IcoDecodeFailed);
+                }
+                semantics.orientation = None;
+                IcoSemantics::Png {
+                    offset: selected.offset,
+                    length: payload.len(),
+                    semantics,
+                }
             }
-            IcoPayloadSemantics::Png(semantics)
-        } else {
-            IcoPayloadSemantics::Dib(
-                ico::validate_dib(payload, entry).map_err(|_| ResolveError::IcoDecodeFailed)?,
-            )
+            ico::Payload::Dib => {
+                let info = ico::validate_dib(bytes, selected)
+                    .map_err(|_| ResolveError::IcoDecodeFailed)?;
+                // As for a BMP, an embedded profile that does not parse fails the
+                // image.
+                if info.embedded_profile(bytes).is_some() {
+                    bmp_color_normalization(bytes, &info, ResolveError::IcoDecodeFailed)?;
+                }
+                IcoSemantics::Dib(info)
+            }
         };
-        if entry.index == selected.index {
-            selected_payload = Some(semantics);
-        }
-    }
-    Ok((
-        selected.width,
-        selected.height,
-        IcoSemantics {
-            offset: selected.offset,
-            length: selected.length,
-            payload: selected_payload.ok_or(ResolveError::IcoDecodeFailed)?,
-        },
-    ))
-}
-
-fn selected_ico_entry(bytes: &[u8]) -> Result<ico::Entry, ResolveError> {
-    ico::selected_entry(bytes).map_err(|_| ResolveError::IcoDecodeFailed)
-}
-
-fn selected_ico_entry_from(entries: &[ico::Entry]) -> Result<ico::Entry, ResolveError> {
-    entries
-        .iter()
-        .max_by_key(|entry| {
-            (
-                u64::from(entry.width) * u64::from(entry.height),
-                entry.depth,
-                std::cmp::Reverse(entry.index),
-            )
-        })
-        .copied()
-        .ok_or(ResolveError::IcoDecodeFailed)
+    Ok((selected.width, selected.height, semantics))
 }
 
 fn decode_ico(
@@ -1306,16 +1328,22 @@ fn decode_ico(
     let RasterSemantics::Ico(semantics) = semantics else {
         return Err(ResolveError::IcoDecodeFailed);
     };
-    let payload = bytes
-        .get(semantics.offset..semantics.offset + semantics.length)
-        .ok_or(ResolveError::IcoDecodeFailed)?;
-    match &semantics.payload {
-        IcoPayloadSemantics::Png(png) => {
-            decode_static_png(payload, pixels, color_normalization, png.orientation)
+    match semantics {
+        IcoSemantics::Png {
+            offset,
+            length,
+            semantics,
+        } => {
+            let payload = bytes
+                .get(*offset..offset + length)
+                .ok_or(ResolveError::IcoDecodeFailed)?;
+            decode_static_png(payload, pixels, color_normalization, semantics.orientation)
                 .map_err(|_| ResolveError::IcoDecodeFailed)
         }
-        IcoPayloadSemantics::Dib(info) => {
-            finish_rgba(ico::decode_dib(payload, info).map_err(|_| ResolveError::IcoDecodeFailed)?)
+        IcoSemantics::Dib(info) => {
+            let mut rgba = bmp::decode(bytes, info).map_err(|_| ResolveError::IcoDecodeFailed)?;
+            color::normalize_rgba(&mut rgba, color_normalization)?;
+            finish_rgba(rgba)
         }
     }
 }
@@ -1361,16 +1389,50 @@ fn prepare_color_normalization(
             },
             None => Ok(ColorNormalization::None),
         },
-        RasterSemantics::Bmp(_) => Ok(ColorNormalization::None),
-        RasterSemantics::Ico(semantics) => match &semantics.payload {
-            IcoPayloadSemantics::Png(png) => {
-                let payload = bytes
-                    .get(semantics.offset..semantics.offset + semantics.length)
-                    .ok_or(ResolveError::IcoDecodeFailed)?;
-                prepare_png_color_normalization(payload, png, workspace_bytes)
-                    .map_err(|_| ResolveError::IcoDecodeFailed)
-            }
-            IcoPayloadSemantics::Dib(_) => Ok(ColorNormalization::None),
+        RasterSemantics::Bmp(info) => {
+            bmp_color_normalization(bytes, info, ResolveError::BmpDecodeFailed)
+        }
+        // Declared divergence: the reference paints a PNG entry whose colour
+        // needs a real transform fully transparent; the project renders it
+        // colour-managed as the same PNG renders standalone.
+        RasterSemantics::Ico(IcoSemantics::Png {
+            offset,
+            length,
+            semantics,
+        }) => {
+            let payload = bytes
+                .get(*offset..offset + length)
+                .ok_or(ResolveError::IcoDecodeFailed)?;
+            prepare_png_color_normalization(payload, semantics, workspace_bytes)
+                .map_err(|_| ResolveError::IcoDecodeFailed)
+        }
+        RasterSemantics::Ico(IcoSemantics::Dib(info)) => {
+            bmp_color_normalization(bytes, info, ResolveError::IcoDecodeFailed)
+        }
+    }
+}
+
+/// The normalization a DIB's V4/V5 colour space selects, for a BMP or an ICO
+/// entry; a failing embedded profile reports as `failure`.
+fn bmp_color_normalization(
+    bytes: &[u8],
+    info: &bmp::Info,
+    failure: ResolveError,
+) -> Result<ColorNormalization, ResolveError> {
+    match &info.color_space {
+        bmp::ColorSpace::Srgb => Ok(ColorNormalization::None),
+        bmp::ColorSpace::Calibrated { to_xyz_d50, gammas } => {
+            color::calibrated_rgb_normalization(to_xyz_d50, *gammas)
+        }
+        bmp::ColorSpace::Embedded { .. } => match info.embedded_profile(bytes) {
+            Some(profile) => bmp_embedded_normalization(profile).map_err(|error| {
+                if matches!(error, ResolveError::BmpDecodeFailed) {
+                    failure
+                } else {
+                    error
+                }
+            }),
+            None => Err(failure),
         },
     }
 }

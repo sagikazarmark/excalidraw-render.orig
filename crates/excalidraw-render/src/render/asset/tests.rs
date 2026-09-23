@@ -910,23 +910,106 @@ mod bmp_codec {
     }
 
     #[test]
-    fn rle8_delta_skips_leave_palette_index_zero() {
+    fn rle8_delta_skips_stay_transparent() {
         let asset = decode("image/bmp", &bmp_rle8());
 
         assert_eq!((asset.width, asset.height), (2, 1));
-        assert_eq!(pixels(&asset), [RED, BLUE]);
+        assert_eq!(pixels(&asset), [[0, 0, 0, 0], BLUE]);
     }
 
     #[test]
-    fn alpha_bitfields_need_storage_for_the_alpha_mask() {
+    fn a_52_byte_alpha_bitfields_header_has_no_alpha_mask_and_draws_opaque() {
         assert_eq!(
-            failure_for(
-                "image/bmp",
-                &bmp32_without_alpha_mask_storage(),
-                OutputFormat::Svg
-            ),
+            only_pixel(&decode("image/bmp", &bmp32_without_alpha_mask_storage())),
+            [24, 96, 208, 255]
+        );
+    }
+
+    #[test]
+    fn an_all_zero_alpha_channel_draws_opaque() {
+        assert_eq!(
+            only_pixel(&decode("image/bmp", &bmp32([24, 96, 208, 0], true))),
+            [24, 96, 208, 255]
+        );
+    }
+
+    #[test]
+    fn file_size_and_reserved_fields_are_ignored() {
+        let mut bmp = bmp24(1, 1, &[[24, 96, 208]]);
+        bmp[2..10].copy_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);
+
+        assert_eq!(only_pixel(&decode("image/bmp", &bmp)), [24, 96, 208, 255]);
+    }
+
+    #[test]
+    fn palette_indices_beyond_the_used_colors_draw_opaque_black() {
+        let asset = decode("image/bmp", &bmp_rle8_with_colors_used(1));
+
+        assert_eq!(pixels(&asset), [[0, 0, 0, 0], [0, 0, 0, 255]]);
+    }
+
+    #[test]
+    fn dimensions_of_65536_are_rejected_for_every_target() {
+        let bmp = bmp24(65536, 1, &vec![[24, 96, 208]; 65536]);
+
+        assert_eq!(
+            failure_for("image/bmp", &bmp, OutputFormat::Svg),
             ResolveError::BmpDecodeFailed
         );
+    }
+
+    #[test]
+    fn an_os2_core_header_admits_only_the_universal_depths() {
+        let mut bmp = bmp24(1, 1, &[[24, 96, 208]]);
+        // Rewrite the 40-byte header as a 12-byte OS/2 1.x header.
+        let core = [12, 0, 0, 0, 1, 0, 1, 0, 1, 0, 24, 0];
+        bmp.splice(14..54, core);
+        bmp[10..14].copy_from_slice(&26_u32.to_le_bytes());
+        assert_eq!(only_pixel(&decode("image/bmp", &bmp)), [24, 96, 208, 255]);
+
+        bmp[24] = 32;
+        bmp.push(0);
+        assert_eq!(
+            failure_for("image/bmp", &bmp, OutputFormat::Svg),
+            ResolveError::BmpDecodeFailed
+        );
+    }
+
+    #[test]
+    fn an_embedded_profile_that_does_not_parse_fails_every_target() {
+        let bmp = bmp_v5_embedded_profile(b"not an icc profile");
+
+        assert_eq!(
+            failure_for("image/bmp", &bmp, OutputFormat::Svg),
+            ResolveError::BmpDecodeFailed
+        );
+    }
+
+    #[test]
+    fn calibrated_rgb_with_unusable_endpoints_draws_as_srgb() {
+        assert_eq!(
+            only_pixel(&decode("image/bmp", &bmp_v4_calibrated([0; 6], 2 << 16))),
+            [24, 96, 208, 255]
+        );
+    }
+
+    #[test]
+    fn calibrated_rgb_converts_through_its_endpoints_and_gamma() {
+        // Rec. 709 primaries with a 2.2 decoding gamma: a mid grey stays grey
+        // but is re-encoded from gamma 2.2 to the sRGB curve.
+        let primaries =
+            [0.64, 0.33, 0.30, 0.60, 0.15, 0.06].map(|v| (v * f64::from(1 << 30)) as u32);
+        let [red, green, blue, alpha] = only_pixel(&decode(
+            "image/bmp",
+            &bmp_v4_calibrated_pixel(primaries, 144_179, [128, 128, 128]),
+        ));
+
+        assert_eq!(alpha, 255);
+        assert!(
+            red.max(green).max(blue) - red.min(green).min(blue) <= 1,
+            "{red} {green} {blue}"
+        );
+        assert!((126..=129).contains(&red), "{red}");
     }
 
     #[test]
@@ -939,12 +1022,122 @@ mod bmp_codec {
             ResolveError::BmpDecodeFailed
         );
     }
+
+    /// The one-pixel [`bmp_rle8`] fixture with `colors` palette entries in use.
+    fn bmp_rle8_with_colors_used(colors: u32) -> Vec<u8> {
+        let mut bmp = bmp_rle8();
+        bmp[46..50].copy_from_slice(&colors.to_le_bytes());
+        bmp
+    }
+
+    /// A one-pixel 24-bit BMP with a `header_size`-byte V4/V5 header of colour
+    /// space `space`, the `extra` header fields from offset 60 and `trailer`
+    /// after the pixel row.
+    fn bmp_v4_like(
+        header_size: u32,
+        space: &[u8; 4],
+        extra: &[u8],
+        pixel: [u8; 3],
+        trailer: &[u8],
+    ) -> Vec<u8> {
+        let pixel_offset = 14 + header_size;
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b"BM");
+        bytes.extend_from_slice(&(pixel_offset + 4).to_le_bytes());
+        bytes.extend_from_slice(&[0; 4]);
+        bytes.extend_from_slice(&pixel_offset.to_le_bytes());
+        let mut header = vec![0_u8; header_size as usize];
+        header[0..4].copy_from_slice(&header_size.to_le_bytes());
+        header[4..8].copy_from_slice(&1_i32.to_le_bytes());
+        header[8..12].copy_from_slice(&1_i32.to_le_bytes());
+        header[12..14].copy_from_slice(&1_u16.to_le_bytes());
+        header[14..16].copy_from_slice(&24_u16.to_le_bytes());
+        header[56..60].copy_from_slice(space);
+        header[60..60 + extra.len()].copy_from_slice(extra);
+        bytes.extend_from_slice(&header);
+        bytes.extend_from_slice(&[pixel[2], pixel[1], pixel[0], 0]);
+        bytes.extend_from_slice(trailer);
+        bytes
+    }
+
+    /// A V4 calibrated-RGB BMP of the [24, 96, 208] pixel with the red, green
+    /// and blue endpoints' 2.30 X/Y values and a 16.16 gamma for every channel.
+    fn bmp_v4_calibrated(primaries: [u32; 6], gamma: u32) -> Vec<u8> {
+        bmp_v4_calibrated_pixel(primaries, gamma, [24, 96, 208])
+    }
+
+    fn bmp_v4_calibrated_pixel(primaries: [u32; 6], gamma: u32, pixel: [u8; 3]) -> Vec<u8> {
+        let mut extra = [0_u8; 48];
+        for (index, offset) in [0, 4, 12, 16, 24, 28].into_iter().enumerate() {
+            extra[offset..offset + 4].copy_from_slice(&primaries[index].to_le_bytes());
+        }
+        for offset in [36, 40, 44] {
+            extra[offset..offset + 4].copy_from_slice(&gamma.to_le_bytes());
+        }
+        bmp_v4_like(108, &0_u32.to_le_bytes(), &extra, pixel, &[])
+    }
+
+    /// A V5 BMP whose `MBED` colour space names `profile`, stored after the
+    /// pixel row.
+    fn bmp_v5_embedded_profile(profile: &[u8]) -> Vec<u8> {
+        let mut extra = [0_u8; 64];
+        // The profile offset counts from the info header: header plus pixel row.
+        extra[52..56].copy_from_slice(&(124_u32 + 4).to_le_bytes());
+        extra[56..60].copy_from_slice(&(profile.len() as u32).to_le_bytes());
+        bmp_v4_like(124, b"DEBM", &extra, [24, 96, 208], profile)
+    }
 }
 
 // --- ICO -------------------------------------------------------------------
 
 mod ico_codec {
     use super::*;
+
+    /// A 32 bpp `BI_RGB` icon DIB `width` wide whose header stores
+    /// `stored_height` (colour rows plus mask rows, negative for top-down),
+    /// followed by `rows` of BGRA pixels in storage order and `mask`.
+    fn dib32_rows(width: i32, stored_height: i32, rows: &[[u8; 4]], mask: &[u8]) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&40_u32.to_le_bytes());
+        bytes.extend_from_slice(&width.to_le_bytes());
+        bytes.extend_from_slice(&stored_height.to_le_bytes());
+        bytes.extend_from_slice(&1_u16.to_le_bytes());
+        bytes.extend_from_slice(&32_u16.to_le_bytes());
+        bytes.extend_from_slice(&[0; 24]);
+        for [r, g, b, a] in rows {
+            bytes.extend_from_slice(&[*b, *g, *r, *a]);
+        }
+        bytes.extend_from_slice(mask);
+        bytes
+    }
+
+    /// The offset of directory entry `index`'s field at `field`.
+    fn entry_field(index: usize, field: usize) -> usize {
+        6 + index * 16 + field
+    }
+
+    /// A PNG whose `iCCP` profile Skia snaps to sRGB: sRGB colorants with the
+    /// sRGB parametric curve.
+    fn srgb_parametric_icc_png(color: [u8; 4]) -> Vec<u8> {
+        let mut profile = linear_rgb_icc_profile();
+        profile.truncate(296);
+        profile.extend_from_slice(b"para\0\0\0\0\0\x04\0\0");
+        for value in [0x0002_6666_u32, 0xf2a7, 0x0d59, 0x13d0, 0x0a5b, 0, 0] {
+            profile.extend_from_slice(&value.to_be_bytes());
+        }
+        let size = u32::try_from(profile.len()).expect("profile size fits");
+        profile[..4].copy_from_slice(&size.to_be_bytes());
+        for tag in 4..7 {
+            let at = 132 + tag * 12 + 8;
+            profile[at..at + 4].copy_from_slice(&40_u32.to_be_bytes());
+        }
+        let chunk = [
+            b"srgb\0\0".as_slice(),
+            &miniz_oxide::deflate::compress_to_vec_zlib(&profile, 6),
+        ]
+        .concat();
+        png_with_chunks_before_idat(&solid_png(1, 1, color), &[(*b"iCCP", chunk)])
+    }
 
     #[test]
     fn the_largest_entry_is_selected_before_the_deepest() {
@@ -972,15 +1165,150 @@ mod ico_codec {
     }
 
     #[test]
+    fn a_missing_bit_count_ranks_by_the_colour_count() {
+        // Entry one's zero bit count means 16 colours, four bits; entry zero
+        // declares two.
+        let mut ico = ico(&[
+            (1, 1, 2, solid_png(1, 1, BLUE)),
+            (1, 1, 0, solid_png(1, 1, RED)),
+        ]);
+        ico[entry_field(1, 2)] = 16;
+
+        assert_eq!(only_pixel(&decode("image/x-icon", &ico)), RED);
+    }
+
+    #[test]
+    fn a_cursor_decodes_like_an_icon_but_ranks_by_the_colour_count() {
+        // A cursor's bit-count field holds its hotspot: both entries rank as
+        // eight bits, so the first wins the tie.
+        let mut cursor = ico(&[
+            (1, 1, 8, solid_png(1, 1, BLUE)),
+            (1, 1, 32, solid_png(1, 1, RED)),
+        ]);
+        cursor[2] = 2;
+        let resolution = resolve_for_png("image/x-icon", &cursor);
+
+        assert_eq!(resolution.media_kind, MediaKind::Ico);
+        assert_eq!(only_pixel(&resolution.asset), BLUE);
+    }
+
+    #[test]
     fn a_dib_entry_keeps_meaningful_alpha_and_falls_back_to_the_and_mask() {
         let translucent = ico(&[(1, 1, 32, dib32([24, 96, 208, 128], false))]);
         let masked = ico(&[(1, 1, 32, dib32([24, 96, 208, 0], true))]);
+        let unmasked = ico(&[(1, 1, 32, dib32([24, 96, 208, 0], false))]);
 
         assert_eq!(
             only_pixel(&decode("image/x-icon", &translucent)),
             [24, 96, 208, 128]
         );
         assert_eq!(only_pixel(&decode("image/x-icon", &masked)), [0, 0, 0, 0]);
+        assert_eq!(
+            only_pixel(&decode("image/x-icon", &unmasked)),
+            [24, 96, 208, 255]
+        );
+    }
+
+    #[test]
+    fn a_non_zero_alpha_channel_ignores_the_and_mask() {
+        let ico = ico(&[(1, 1, 32, dib32([24, 96, 208, 128], true))]);
+
+        assert_eq!(
+            only_pixel(&decode("image/x-icon", &ico)),
+            [24, 96, 208, 128]
+        );
+    }
+
+    #[test]
+    fn a_dib_without_alpha_reads_its_and_mask() {
+        // A 24 bpp DIB 1x1: one padded colour row, then one mask row.
+        let mut dib = dib32([24, 96, 208, 0], true);
+        dib[14..16].copy_from_slice(&24_u16.to_le_bytes());
+        dib.splice(40..44, [208, 96, 24, 0]);
+        let masked = ico(&[(1, 1, 24, dib.clone())]);
+        dib[44] = 0;
+        let unmasked = ico(&[(1, 1, 24, dib)]);
+
+        assert_eq!(only_pixel(&decode("image/x-icon", &masked)), [0, 0, 0, 0]);
+        assert_eq!(
+            only_pixel(&decode("image/x-icon", &unmasked)),
+            [24, 96, 208, 255]
+        );
+    }
+
+    #[test]
+    fn a_top_down_dib_and_its_mask_run_from_the_top_row() {
+        let dib = dib32_rows(
+            1,
+            -4,
+            &[[255, 0, 0, 0], [0, 0, 255, 0]],
+            &[0x80, 0, 0, 0, 0, 0, 0, 0],
+        );
+        let asset = decode("image/x-icon", &ico(&[(1, 2, 32, dib)]));
+
+        assert_eq!(pixels(&asset), [[0, 0, 0, 0], BLUE]);
+    }
+
+    #[test]
+    fn an_odd_stored_height_halves_down() {
+        let dib = dib32_rows(1, 5, &[BLUE, RED], &[0; 8]);
+        let asset = decode("image/x-icon", &ico(&[(1, 2, 32, dib)]));
+
+        assert_eq!(pixels(&asset), [RED, BLUE]);
+    }
+
+    #[test]
+    fn the_dib_size_must_equal_the_directory_size_but_its_depth_need_not() {
+        let deeper = ico(&[(1, 1, 24, dib32([24, 96, 208, 255], false))]);
+        let larger = ico(&[(2, 1, 32, dib32([24, 96, 208, 255], false))]);
+
+        assert_eq!(
+            only_pixel(&decode("image/x-icon", &deeper)),
+            [24, 96, 208, 255]
+        );
+        assert_eq!(
+            failure_for("image/x-icon", &larger, OutputFormat::Svg),
+            ResolveError::IcoDecodeFailed
+        );
+    }
+
+    #[test]
+    fn an_rle_dib_reads_its_mask_from_the_end_of_bitmap_marker() {
+        // 16x1 RLE8, blue palette entry one: a 16-pixel run, then the
+        // end-of-bitmap marker `00 01`, whose second byte masks pixel 15.
+        let mut dib = Vec::new();
+        dib.extend_from_slice(&40_u32.to_le_bytes());
+        dib.extend_from_slice(&16_i32.to_le_bytes());
+        dib.extend_from_slice(&2_i32.to_le_bytes());
+        dib.extend_from_slice(&1_u16.to_le_bytes());
+        dib.extend_from_slice(&8_u16.to_le_bytes());
+        dib.extend_from_slice(&1_u32.to_le_bytes());
+        dib.extend_from_slice(&[0; 12]);
+        dib.extend_from_slice(&2_u32.to_le_bytes());
+        dib.extend_from_slice(&[0; 4]);
+        dib.extend_from_slice(&[0, 0, 255, 0, 255, 0, 0, 0]);
+        dib.extend_from_slice(&[16, 1, 0, 1, 0, 0]);
+        let asset = decode("image/x-icon", &ico(&[(16, 1, 8, dib)]));
+
+        assert_eq!(pixel(&asset, 14, 0), BLUE);
+        assert_eq!(pixel(&asset, 15, 0), [0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn a_truncated_and_mask_fails_only_where_it_is_read() {
+        let mut read = dib32([24, 96, 208, 0], false);
+        read.truncate(44);
+        let mut unread = dib32([24, 96, 208, 128], false);
+        unread.truncate(44);
+
+        assert_eq!(
+            failure("image/x-icon", &ico(&[(1, 1, 32, read)])),
+            ResolveError::IcoDecodeFailed
+        );
+        assert_eq!(
+            only_pixel(&decode("image/x-icon", &ico(&[(1, 1, 32, unread)]))),
+            [24, 96, 208, 128]
+        );
     }
 
     #[test]
@@ -993,16 +1321,103 @@ mod ico_codec {
     }
 
     #[test]
-    fn a_malformed_entry_fails_the_icon_even_when_it_is_not_selected() {
+    fn an_unselected_entry_is_never_read() {
         let mut malformed = solid_png(1, 1, BLUE);
         let last = malformed.len() - 1;
         malformed[last] ^= 1;
-        let ico = ico(&[(2, 1, 32, solid_png(2, 1, RED)), (1, 1, 8, malformed)]);
+        let ico = ico(&[
+            (2, 1, 32, solid_png(2, 1, RED)),
+            (1, 1, 8, malformed),
+            (1, 1, 8, b"garbage".to_vec()),
+        ]);
+
+        assert_eq!(pixels(&decode("image/x-icon", &ico)), [RED, RED]);
+    }
+
+    #[test]
+    fn any_entry_offset_inside_the_directory_fails_the_icon() {
+        let mut ico = ico(&[
+            (2, 1, 32, solid_png(2, 1, RED)),
+            (1, 1, 8, solid_png(1, 1, BLUE)),
+        ]);
+        let at = entry_field(1, 12);
+        ico[at..at + 4].copy_from_slice(&37_u32.to_le_bytes());
 
         assert_eq!(
             failure_for("image/x-icon", &ico, OutputFormat::Svg),
             ResolveError::IcoDecodeFailed
         );
+    }
+
+    #[test]
+    fn reserved_fields_planes_and_the_byte_size_are_ignored() {
+        let mut ico = ico(&[(1, 1, 32, dib32([24, 96, 208, 128], false))]);
+        ico[entry_field(0, 3)] = 9;
+        ico[entry_field(0, 4)] = 7;
+        for byte_size in [0_u32, 10, 5000] {
+            let at = entry_field(0, 8);
+            ico[at..at + 4].copy_from_slice(&byte_size.to_le_bytes());
+
+            assert_eq!(
+                only_pixel(&decode("image/x-icon", &ico)),
+                [24, 96, 208, 128]
+            );
+        }
+    }
+
+    #[test]
+    fn a_png_entry_runs_to_its_iend_whatever_its_byte_size() {
+        let mut ico = ico(&[(1, 1, 32, solid_png(1, 1, RED))]);
+        let at = entry_field(0, 8);
+        ico[at..at + 4].copy_from_slice(&4_u32.to_le_bytes());
+        ico.extend_from_slice(b"trailing octets");
+
+        assert_eq!(only_pixel(&decode("image/x-icon", &ico)), RED);
+    }
+
+    #[test]
+    fn a_png_entry_must_report_the_directory_size() {
+        let ico = ico(&[(1, 1, 32, solid_png(2, 1, RED))]);
+
+        assert_eq!(
+            failure_for("image/x-icon", &ico, OutputFormat::Svg),
+            ResolveError::IcoDecodeFailed
+        );
+    }
+
+    #[test]
+    fn a_png_entry_draws_without_its_exif_orientation() {
+        let png = png_with_chunks_before_idat(
+            &png_rgba(2, 1, &[RED, BLUE]),
+            &[(*b"eXIf", exif_orientation_tiff(6))],
+        );
+        let asset = decode("image/x-icon", &ico(&[(2, 1, 32, png)]));
+
+        assert_eq!(pixels(&asset), [RED, BLUE]);
+    }
+
+    #[test]
+    fn a_png_entry_is_colour_managed_as_the_same_png_standalone() {
+        // Declared divergence: the reference paints a transforming entry
+        // transparent.
+        let linear = png_with_chunks_before_idat(
+            &png_rgba(1, 1, &[GREY_128]),
+            &[(*b"gAMA", 100_000_u32.to_be_bytes().to_vec())],
+        );
+        let snapped = srgb_parametric_icc_png(GREY_128);
+
+        assert_eq!(
+            only_pixel(&decode("image/x-icon", &ico(&[(1, 1, 32, linear.clone())]))),
+            only_pixel(&decode("image/png", &linear))
+        );
+        assert_eq!(
+            only_pixel(&decode(
+                "image/x-icon",
+                &ico(&[(1, 1, 32, snapped.clone())])
+            )),
+            GREY_128
+        );
+        assert_eq!(only_pixel(&decode("image/png", &snapped)), GREY_128);
     }
 
     #[test]

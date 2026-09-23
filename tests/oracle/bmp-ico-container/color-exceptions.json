@@ -1,0 +1,50 @@
+{
+  "schema": "excalidraw-render/bmp-color-exceptions/v1",
+  "approval": null,
+  "reason": "Color-managed BMP views: the renderer applies calibrated RGB and embedded ICC profiles with its pinned CMS (moxcms, 16-bit quantized evaluation), while the reference draws through Skia/skcms float arithmetic at draw time. The results differ by at most one channel unit on single pixels. On the 4x3 vectors, the canonical small-artifact rule turns those rounding differences into failures that a larger image would pass under the geometry/image budget. Each exception holds its view at the exact observed Pixelmatch count, differing pixels and maximum channel difference (spec section 14.4, small-artifact form).",
+  "comparison": "canonical geometry/image against the pinned reference PNG; PDF only for opaque views",
+  "exceptions": [
+    {
+      "row": "bmp-v4-calibrated-srgbish",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 1,
+      "max_rgb_delta": 1
+    },
+    {
+      "row": "bmp-v4-calibrated-srgbish",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 1,
+      "max_rgb_delta": 1
+    },
+    {
+      "row": "bmp-v5-mbed-p3",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 1,
+      "max_rgb_delta": 1
+    },
+    {
+      "row": "bmp-v5-mbed-p3",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 1,
+      "max_rgb_delta": 1
+    },
+    {
+      "row": "bmp-v5-mbed-linear",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 1,
+      "max_rgb_delta": 1
+    },
+    {
+      "row": "bmp-v5-mbed-linear",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 1,
+      "max_rgb_delta": 1
+    }
+  ]
+}
