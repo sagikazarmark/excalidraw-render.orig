@@ -562,8 +562,8 @@
     {
       "id": "interaction:dark-mode-nested-svg-pdf",
       "category": "interaction",
-      "criterion": "Own the currently specified nested-SVG PDF dark-mode limitation; do not silently treat #154 as fixed.",
-      "spec_anchor": "colors until #154 decides the mechanism."
+      "criterion": "Own the specified nested-SVG PDF dark-mode lowering (#154): paints, gradient stops and nested raster pixels take the rounded theme filter.",
+      "spec_anchor": "PDF also lowers dark mode into a nested-SVG image's"
     },
     {
       "id": "interaction:diagnostic-order",

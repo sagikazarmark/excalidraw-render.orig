@@ -12,6 +12,11 @@ pub use reconciliation::reconcile_stage4_bindings;
 const POLICY: &str = "tests/conformance/coverage/ownership-policy.json";
 const LEDGER: &str = "tests/conformance/coverage/ownership.json";
 const SCHEMA: &str = "excalidraw-render/coverage-ownership/v1";
+/// The one root test target an owner may select: registered-case direct PNG
+/// parity, which holds each whole-artifact PNG tolerance exception at its exact
+/// ceilings and fails a stale one that the canonical budget would pass.
+const EXCEPTION_BINARY: &str = "parity_registered_case_png";
+const EXCEPTION_FUNCTION: &str = "every_registered_scene_case_matches_its_official_direct_png";
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -374,6 +379,11 @@ fn executable_test(
     {
         return Err("test owner module has unsupported attributes".into());
     }
+    crate_root_test(source, function)
+}
+
+/// The selected function is an unconditional top-level test of `source`.
+fn crate_root_test(source: &str, function: &str) -> Result<(), String> {
     let source = syn::parse_file(source).map_err(|e| format!("invalid test owner source: {e}"))?;
     check_test_attribute_scope(&source)?;
     if source.attrs.iter().any(|attr| !attr.path().is_ident("doc")) {
@@ -428,6 +438,10 @@ fn owner_test_command(binary: &str, module: &str, function: &str) -> Vec<String>
     .collect();
     if binary == "lib" {
         args.push("--lib".into());
+    } else if binary == EXCEPTION_BINARY {
+        args.extend(["--test".into(), binary.into(), function.into()]);
+        args.extend(["--".into(), "--exact".into()]);
+        return args;
     } else {
         args.extend(["--test".into(), "fast".into()]);
     }
@@ -491,6 +505,50 @@ fn library_layout(package: &str, workspace: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// The exception adapter's scope: the obligation's exception is the only
+/// whole-artifact direct PNG exception of an existing variant of a registered
+/// scene case, with no viewer profile, which is exactly what the owning test
+/// selects and judges.
+fn exception_scope(row: &Obligation) -> Result<(), String> {
+    let invalid = || format!("exception outside the direct PNG adapter scope: {}", row.id);
+    if descriptor(&row.authority.path)? != row.authority {
+        return Err(format!("stale exception authority for {}", row.id));
+    }
+    let manifest: Value = parse(&read(&row.authority.path)?)?;
+    let exception = manifest.pointer(&row.pointer).ok_or_else(invalid)?;
+    let variant = string(exception, "variant")?;
+    let [case] = row.candidates.as_slice() else {
+        return Err(invalid());
+    };
+    let registry: Value = parse(&read(REGISTRY)?)?;
+    let scene = array(&registry, "cases")?.iter().any(|entry| {
+        entry["id"] == case.as_str()
+            && entry["kind"] == "scene"
+            && entry["path"]
+                .as_str()
+                .map(|path| format!("{path}/manifest.json"))
+                == Some(row.authority.path.clone())
+    });
+    let scoped =
+        |e: &Value| e["variant"] == variant && e["format"] == "png" && e["region"] == "whole";
+    if !scene
+        || !scoped(exception)
+        || !exception["viewer_profile"].is_null()
+        || row.id != format!("exception:{case}:{variant}:png:whole")
+        || array(&manifest, "exceptions")?
+            .iter()
+            .filter(|e| scoped(e))
+            .count()
+            != 1
+        || !array(&manifest, "variants")?
+            .iter()
+            .any(|v| v["id"] == variant)
+    {
+        return Err(invalid());
+    }
+    Ok(())
+}
+
 fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, String> {
     if ledger.schema != SCHEMA
         || ledger.compatibility_revision != 1
@@ -522,6 +580,17 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
             Disposition::Owned { owner, rationale } => {
                 if !nonempty(rationale) {
                     return Err("ownership rationale is empty".into());
+                }
+                let exception_owner = matches!(owner, Owner::Test { binary, function, .. }
+                    if binary == EXCEPTION_BINARY && function == EXCEPTION_FUNCTION);
+                if (row.category == "tolerance-exception") != exception_owner {
+                    return Err(format!(
+                        "tolerance exceptions are owned only by {EXCEPTION_BINARY}::{EXCEPTION_FUNCTION}: {}",
+                        row.id
+                    ));
+                }
+                if exception_owner {
+                    exception_scope(row)?;
                 }
                 match owner {
                     Owner::Representative { binding } => {
@@ -563,6 +632,8 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
                             return Err("invalid test owner selector".into());
                         }
                         let (prefix, entry, library) = match binary.as_str() {
+                            // A root test target is its own crate root.
+                            EXCEPTION_BINARY => ("crates/excalidraw-render/tests/", "", false),
                             "fast" => (
                                 "crates/excalidraw-render/tests/fast/",
                                 "crates/excalidraw-render/tests/fast/main.rs",
@@ -597,15 +668,23 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
                         if !valid_name(module) {
                             return Err("nested test module must have an explicit adapter".into());
                         }
-                        let main = String::from_utf8(read(entry)?).map_err(|e| e.to_string())?;
                         if descriptor(&source.path)? != *source {
                             return Err("stale ownership evidence".into());
                         }
                         let source_text =
                             String::from_utf8(read(&source.path)?).map_err(|e| e.to_string())?;
-                        if library {
+                        if entry.is_empty() {
+                            if module != binary {
+                                return Err("unsupported executable owner path/binary".into());
+                            }
+                            crate_root_test(&source_text, function)?;
+                        } else if library {
+                            let main =
+                                String::from_utf8(read(entry)?).map_err(|e| e.to_string())?;
                             executable_test(&source_text, &main, module, function, true)?;
                         } else {
+                            let main =
+                                String::from_utf8(read(entry)?).map_err(|e| e.to_string())?;
                             unconditional_test(&source_text, &main, module, function)?;
                         }
                         let args = owner_test_command(binary, module, function);
@@ -780,6 +859,27 @@ pub fn record_library_test_owner(
 ) -> Result<(), String> {
     record_owner("lib", module, function, rationale, ids)
 }
+/// Assign tolerance exceptions to the registered-case direct PNG test, which
+/// holds each at its exact ceilings and rejects it once stale.
+pub fn record_exception_test_owner(rationale: &str, ids: &[String]) -> Result<(), String> {
+    record_owner(
+        EXCEPTION_BINARY,
+        EXCEPTION_BINARY,
+        EXCEPTION_FUNCTION,
+        rationale,
+        ids,
+    )
+}
+pub fn refresh_exception_test_owner_source() -> Result<(), String> {
+    refresh_owner_source(EXCEPTION_BINARY, EXCEPTION_BINARY)
+}
+fn owner_source(binary: &str, module: &str) -> String {
+    match binary {
+        "lib" => format!("crates/excalidraw-render/src/{module}.rs"),
+        EXCEPTION_BINARY => format!("crates/excalidraw-render/tests/{module}.rs"),
+        _ => format!("crates/excalidraw-render/tests/fast/{module}.rs"),
+    }
+}
 pub fn verify_representative_owner(case: &str) -> Result<(), String> {
     representative::approved_owner(case).map(|_| ())
 }
@@ -825,10 +925,7 @@ fn record_owner(
         return Err("select nonempty, unique ownership identities".into());
     }
     let owner = Owner::Test {
-        source: descriptor(&format!(
-            "crates/excalidraw-render/{}/{module}.rs",
-            if binary == "lib" { "src" } else { "tests/fast" }
-        ))?,
+        source: descriptor(&owner_source(binary, module))?,
         function: function.into(),
         binary: binary.into(),
         command: owner_test_command(binary, module, function),
@@ -869,10 +966,7 @@ fn refresh_owner_source(binary: &str, module: &str) -> Result<(), String> {
             "approved ownership requires explicit review before refreshing test sources".into(),
         );
     }
-    let source = descriptor(&format!(
-        "crates/excalidraw-render/{}/{module}.rs",
-        if binary == "lib" { "src" } else { "tests/fast" }
-    ))?;
+    let source = descriptor(&owner_source(binary, module))?;
     let mut count = 0;
     for assignment in &mut ledger.assignments {
         if let Disposition::Owned {
@@ -1054,6 +1148,114 @@ mod tests {
                 "--exact"
             ]
         );
+    }
+
+    fn exception_owner() -> Owner {
+        Owner::Test {
+            source: descriptor(&owner_source(EXCEPTION_BINARY, EXCEPTION_BINARY)).unwrap(),
+            function: EXCEPTION_FUNCTION.into(),
+            binary: EXCEPTION_BINARY.into(),
+            command: owner_test_command(EXCEPTION_BINARY, EXCEPTION_BINARY, EXCEPTION_FUNCTION),
+        }
+    }
+
+    fn assigned(ledger: &Ledger, id: &str, owner: Owner) -> Ledger {
+        let mut ledger = ledger.clone();
+        let row = ledger.assignments.iter_mut().find(|r| r.id == id).unwrap();
+        row.disposition = Disposition::Owned {
+            owner,
+            rationale: "test".into(),
+        };
+        ledger
+    }
+
+    #[test]
+    fn tolerance_exceptions_are_owned_only_by_the_direct_png_exception_test() {
+        let (catalog, ledger) = load().unwrap();
+        let exception = catalog
+            .obligations
+            .iter()
+            .find(|r| r.category == "tolerance-exception")
+            .unwrap();
+        validate(
+            &catalog,
+            &assigned(&ledger, &exception.id, exception_owner()),
+            false,
+        )
+        .unwrap();
+        let other = catalog
+            .obligations
+            .iter()
+            .find(|r| r.category != "tolerance-exception")
+            .unwrap();
+        assert!(validate(
+            &catalog,
+            &assigned(&ledger, &other.id, exception_owner()),
+            false
+        )
+        .is_err());
+        let Owner::Test { source, .. } = exception_owner() else {
+            unreachable!()
+        };
+        for (function, binary) in [
+            ("another_test", EXCEPTION_BINARY),
+            (EXCEPTION_FUNCTION, "fast"),
+        ] {
+            let owner = Owner::Test {
+                source: source.clone(),
+                function: function.into(),
+                binary: binary.into(),
+                command: owner_test_command(binary, EXCEPTION_BINARY, function),
+            };
+            assert!(validate(&catalog, &assigned(&ledger, &exception.id, owner), false).is_err());
+        }
+        assert_eq!(
+            owner_test_command(EXCEPTION_BINARY, EXCEPTION_BINARY, EXCEPTION_FUNCTION),
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--release",
+                "-p",
+                "excalidraw-render",
+                "--test",
+                EXCEPTION_BINARY,
+                EXCEPTION_FUNCTION,
+                "--",
+                "--exact"
+            ]
+        );
+    }
+
+    #[test]
+    fn the_exception_adapter_binds_its_exact_direct_png_scope() {
+        let (catalog, _) = load().unwrap();
+        let row = catalog
+            .obligations
+            .iter()
+            .find(|r| r.category == "tolerance-exception")
+            .unwrap();
+        exception_scope(row).unwrap();
+        let mut renamed = row.clone();
+        renamed.id = renamed.id.replace(":png:whole", ":svg:whole");
+        let mut moved = row.clone();
+        moved.pointer = "/exceptions/99".into();
+        let mut foreign = row.clone();
+        foreign.candidates = vec!["focused.another.v1".into()];
+        let mut stale = row.clone();
+        stale.authority.sha256 = "0".repeat(64);
+        for row in [renamed, moved, foreign, stale] {
+            assert!(exception_scope(&row).is_err(), "{row:?}");
+        }
+        let source = "//! doc\nmod common;\nuse std::fs;\n#[test]\nfn example() {}";
+        crate_root_test(source, "example").unwrap();
+        for source in [
+            "#![cfg(any())]\n#[test]\nfn example() {}",
+            "#[ignore]\n#[test]\nfn example() {}",
+            "mod inner {\n#[test]\nfn example() {}\n}",
+        ] {
+            assert!(crate_root_test(source, "example").is_err(), "{source}");
+        }
     }
 
     #[test]

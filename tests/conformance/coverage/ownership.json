@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "ed159793c5342322af74e208cd3fbcc21b2f5915f055f0dc21119e9a41f4dcd4",
+  "catalog_sha256": "d96bf7fae368eed608da4974cb8fee23fb941472e0013a793d925fdaacbfddbd",
   "approval": null,
   "assignments": [
     {
@@ -48735,9 +48735,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/stage4_interaction_contract.rs",
-            "sha256": "c3e66fc5b07d0fd969b9b170aed56db83391238a16fabe39880139a371cb3c93"
+            "sha256": "cb5f205ccca3cbea84a48303e5fe616e93fef0aa05ac3bb58ec7348adcd4d626"
           },
-          "function": "nested_svg_pdf_dark_mode_retains_the_specified_154_limitation",
+          "function": "nested_svg_dark_mode_inverts_nested_content_in_every_format",
           "binary": "fast",
           "command": [
             "cargo",
@@ -48748,12 +48748,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "stage4_interaction_contract::nested_svg_pdf_dark_mode_retains_the_specified_154_limitation",
+            "stage4_interaction_contract::nested_svg_dark_mode_inverts_nested_content_in_every_format",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Stage 4: nested solid, raster and gradient content retains exact original PDF artifact colors under dark mode while SVG carries its declared filter and PNG paints independent exact dark anchors; complete silent reports and repeatability own the current limitation without closing issue 154. See docs/research/png-stage4-ownership.md."
+        "rationale": "Stage 4: nested solid, raster and gradient content is lowered into exact dark PDF artifact colors (#154, ADR-0013) while SVG carries the root theme filter and PNG paints independent exact dark anchors; complete silent reports and repeatability. See docs/research/png-stage4-ownership.md."
       }
     },
     {
@@ -48792,7 +48792,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/stage4_interaction_contract.rs",
-            "sha256": "c3e66fc5b07d0fd969b9b170aed56db83391238a16fabe39880139a371cb3c93"
+            "sha256": "cb5f205ccca3cbea84a48303e5fe616e93fef0aa05ac3bb58ec7348adcd4d626"
           },
           "function": "lazy_frames_reset_limits_replay_assets_and_keep_errors_atomic",
           "binary": "fast",
