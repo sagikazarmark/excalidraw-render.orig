@@ -28,11 +28,8 @@ maintainer comment on #85.
 | Case | Formats | Exceptions |
 | --- | --- | --- |
 | `representative.excali-local-slides.v1` | SVG, PNG, PDF (light, dark) | PDFium `slide1-avatar`, light and dark (`../../proposals/slides84-pdfium-avatar-exception-v1`) |
+| `representative.velox-design.v2` | SVG (light, dark) | none; PDF deferred to #195, PNG to #194 |
 
-Pending, not registered:
-
-- `velox-design` (plan v2, SVG and PDF): materialized and verified. Its 16 PDF
-  exceptions await a decision (`../../proposals/velox84-pdf-exception-v1`); PNG
-  waits on #194.
-- varmq: undiagnosed PDF, dark SVG Chromium and PNG differences
-  (`../../proposals/varmq84-*`).
+Pending, not registered: varmq, which has undiagnosed PDF, dark SVG Chromium and
+PNG differences (`../../proposals/varmq84-*`). Velox PDF awaits the budget
+recalibration in #195 (`../../proposals/velox84-pdf-exception-v1`).

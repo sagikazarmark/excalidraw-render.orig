@@ -3,7 +3,9 @@
 **Status: pending review. Not approved, not applied.** The case
 `tests/conformance/cases/representative/velox-design` (subject
 `sha256:14937dda9e20fae9cb723c0835e15418f87d46f3b5b49fc8a4b603c96fc36c79`)
-is materialized and verified end to end, but **unapproved and not registered**.
+was verified with these exceptions but not approved. Velox is registered for
+SVG only (subject `sha256:e81cf856…49b2`), and PDF waits on the budget
+recalibration in #195.
 
 `exceptions.json` holds 16 exact-ceiling entries: every region (`whole`,
 `client-typography`, `client-binding`, `client-arrow`) × light/dark × PDFium/PDF.js,

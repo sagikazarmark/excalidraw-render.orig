@@ -4,6 +4,10 @@
     {
       "case_id": "representative.excali-local-slides.v1",
       "path": "tests/conformance/cases/representative/excali-local-slides"
+    },
+    {
+      "case_id": "representative.velox-design.v2",
+      "path": "tests/conformance/cases/representative/velox-design"
     }
   ]
 }
