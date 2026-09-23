@@ -1,0 +1,1080 @@
+{
+  "approval_status": "not_evaluated",
+  "approval_subject_sha256": null,
+  "eligible_executions": [],
+  "failed_comparisons": [],
+  "inspection_only": true,
+  "judgments": {
+    "approval_status": "not_evaluated",
+    "canonical": {
+      "rows": [
+        {
+          "candidate": "native-chromium",
+          "crops": [
+            {
+              "id": "typography",
+              "region": {
+                "area": 5084,
+                "changed_mask_sha256": "34f39334b29f1a0cb9dbf024d05b03b023cc95aca9eba3ce39f234a507ce4f17",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 41,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 124
+              }
+            },
+            {
+              "id": "raster",
+              "region": {
+                "area": 968,
+                "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 44,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 22
+              }
+            },
+            {
+              "id": "nested-svg",
+              "region": {
+                "area": 1008,
+                "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 28,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 36
+              }
+            }
+          ],
+          "id": "svg-chromium",
+          "passed": true,
+          "reference": "official-chromium",
+          "whole": {
+            "area": 24000,
+            "changed_mask_sha256": "151ff79f29e96d211576b9a2e3e78f518b26109916616945d50cdee82dd2ba8b",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 120,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 200
+          }
+        },
+        {
+          "candidate": "native-rust",
+          "crops": [
+            {
+              "id": "typography",
+              "region": {
+                "area": 5084,
+                "changed_mask_sha256": "34f39334b29f1a0cb9dbf024d05b03b023cc95aca9eba3ce39f234a507ce4f17",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 41,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 124
+              }
+            },
+            {
+              "id": "raster",
+              "region": {
+                "area": 968,
+                "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 44,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 22
+              }
+            },
+            {
+              "id": "nested-svg",
+              "region": {
+                "area": 1008,
+                "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 28,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 36
+              }
+            }
+          ],
+          "id": "svg-rust",
+          "passed": true,
+          "reference": "official-rust",
+          "whole": {
+            "area": 24000,
+            "changed_mask_sha256": "151ff79f29e96d211576b9a2e3e78f518b26109916616945d50cdee82dd2ba8b",
+            "changed_pixels": 0,
+            "changed_pixels_pass": true,
+            "height": 120,
+            "ssim_bits": "3ff0000000000000",
+            "ssim_pass": true,
+            "width": 200
+          }
+        },
+        {
+          "candidate": "native-pdfium",
+          "crops": [
+            {
+              "id": "typography",
+              "region": {
+                "area": 5084,
+                "changed_mask_sha256": "f7eb7f18beac960937e82347166f78beedadf253619667b2263b615049345929",
+                "changed_pixels": 118,
+                "changed_pixels_pass": true,
+                "height": 41,
+                "ssim_bits": "3fee1f978eeaac28",
+                "ssim_pass": false,
+                "width": 124
+              }
+            },
+            {
+              "id": "raster",
+              "region": {
+                "area": 968,
+                "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 44,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 22
+              }
+            },
+            {
+              "id": "nested-svg",
+              "region": {
+                "area": 1008,
+                "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 28,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 36
+              }
+            }
+          ],
+          "id": "pdf-pdfium",
+          "passed": false,
+          "reference": "official-chromium",
+          "whole": {
+            "area": 24000,
+            "changed_mask_sha256": "7f23c193e9ae9c6f3ad5b0e898e4b32bb7c8ea65563a85fa7919bff1041d19f3",
+            "changed_pixels": 118,
+            "changed_pixels_pass": false,
+            "height": 120,
+            "ssim_bits": "3fefacd49b980278",
+            "ssim_pass": false,
+            "width": 200
+          }
+        },
+        {
+          "candidate": "native-pdfjs",
+          "crops": [
+            {
+              "id": "typography",
+              "region": {
+                "area": 5084,
+                "changed_mask_sha256": "4159ac56668532e1c5afb8c9f428d853d9b4ab86e45ac8a276a82036b0753a3d",
+                "changed_pixels": 16,
+                "changed_pixels_pass": true,
+                "height": 41,
+                "ssim_bits": "3fefbe7a57566bff",
+                "ssim_pass": true,
+                "width": 124
+              }
+            },
+            {
+              "id": "raster",
+              "region": {
+                "area": 968,
+                "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 44,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 22
+              }
+            },
+            {
+              "id": "nested-svg",
+              "region": {
+                "area": 1008,
+                "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 28,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 36
+              }
+            }
+          ],
+          "id": "pdf-pdfjs",
+          "passed": false,
+          "reference": "official-chromium",
+          "whole": {
+            "area": 24000,
+            "changed_mask_sha256": "5caaeb64a12900b62e57a5976e2ad4d3ddb0bec95eb9d08078d65bb2d21954f7",
+            "changed_pixels": 16,
+            "changed_pixels_pass": true,
+            "height": 120,
+            "ssim_bits": "3feff3e226be27cf",
+            "ssim_pass": false,
+            "width": 200
+          }
+        },
+        {
+          "crops": [
+            {
+              "id": "typography",
+              "region": {
+                "area": 5084,
+                "changed_mask_sha256": "97769ee2c69f32d3525dbe150bee4b639c5dcd93a84becf89939174c989d5090",
+                "changed_pixels": 2,
+                "changed_pixels_pass": true,
+                "height": 41,
+                "ssim_bits": "3fefea3f469eca2c",
+                "ssim_pass": true,
+                "width": 124
+              }
+            },
+            {
+              "id": "raster",
+              "region": {
+                "area": 968,
+                "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 44,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 22
+              }
+            },
+            {
+              "id": "nested-svg",
+              "region": {
+                "area": 1008,
+                "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+                "changed_pixels": 0,
+                "changed_pixels_pass": true,
+                "height": 28,
+                "ssim_bits": "3ff0000000000000",
+                "ssim_pass": true,
+                "width": 36
+              }
+            }
+          ],
+          "id": "png-canvas",
+          "passed": true,
+          "whole": {
+            "area": 24000,
+            "changed_mask_sha256": "a5bbf5779060f91199eaa5c60dd30d25013c0905737f42f1229973ee91a97ce4",
+            "changed_pixels": 2,
+            "changed_pixels_pass": true,
+            "height": 120,
+            "ssim_bits": "3feffc22b89a7fb2",
+            "ssim_pass": true,
+            "width": 200
+          }
+        }
+      ],
+      "schema": "excalidraw-render/representative-comparison-results/v1"
+    },
+    "exception_proposal": {
+      "case_id": "representative.stage4-frames-text-assets.v15",
+      "colour_binding_bridge": {
+        "diagnosed_pdf": {
+          "byte_length": 42926,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/native.pdf",
+          "sha256": "95c399f0eaaee5bd0b2ae13a50a1a68171c0d5abaeab0b71bdf8816abda5817b"
+        },
+        "fixed_pdf": {
+          "byte_length": 42939,
+          "path": "native.pdf",
+          "sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265"
+        },
+        "record": {
+          "byte_length": 31059,
+          "path": "tests/conformance/candidates/stage4-pdf-colorspace-bridge-v9/bridge.json",
+          "sha256": "f2cf7aeff65d3f00e4d21c0ca587c78dace8bccbf4f6b7b23b77b37125053ffb"
+        },
+        "structural_changes": {
+          "all_raw_streams_fonts_text_coordinates_and_other_objects_identical": true,
+          "changed_image_objects": [
+            "obj:18 0 R"
+          ],
+          "permitted_changes": [
+            "image ColorSpace resource alias to original ICCBased array",
+            "derived trailer IDs/xref offsets"
+          ]
+        },
+        "viewers": [
+          {
+            "byte_identical": true,
+            "diagnosed": {
+              "byte_length": 96000,
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfium.rgba",
+              "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"
+            },
+            "fixed": {
+              "byte_length": 96000,
+              "path": "pdfium.rgba",
+              "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"
+            },
+            "metrics": {
+              "typography": {
+                "canonical_passed": false,
+                "changed_pixels": 118,
+                "ssim_bits": "3fee1f978eeaac28"
+              },
+              "whole": {
+                "changed_pixels": 118,
+                "ssim_bits": "3fefacd49b980278"
+              }
+            },
+            "repeat": {
+              "byte_length": 96000,
+              "path": "pdfium-repeat.rgba",
+              "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"
+            },
+            "viewer": "pdfium"
+          },
+          {
+            "byte_identical": true,
+            "diagnosed": {
+              "byte_length": 96000,
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfjs.rgba",
+              "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"
+            },
+            "fixed": {
+              "byte_length": 96000,
+              "path": "pdfjs.rgba",
+              "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"
+            },
+            "metrics": {
+              "typography": {
+                "canonical_passed": true,
+                "changed_pixels": 16,
+                "ssim_bits": "3fefbe7a57566bff"
+              },
+              "whole": {
+                "changed_pixels": 16,
+                "ssim_bits": "3feff3e226be27cf"
+              }
+            },
+            "repeat": {
+              "byte_length": 96000,
+              "path": "pdfjs-repeat.rgba",
+              "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"
+            },
+            "viewer": "pdfjs"
+          }
+        ]
+      },
+      "comparator": {
+        "byte_length": 4460,
+        "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
+        "sha256": "e969fd7a3bc49ff3014b2cd3b3622cd18abddbc9371744d4e47927d0484bcfc7"
+      },
+      "diagnosis": [
+        {
+          "byte_length": 12267,
+          "path": "docs/research/stage4-pdf-typography-diagnosis.md",
+          "sha256": "8bba3edd8b7b3928aed1794e53bda1b2f21b42b449e01c87d1087be68571b766"
+        },
+        {
+          "byte_length": 13379,
+          "path": "docs/research/stage4-pdf-typography-evidence.json",
+          "sha256": "5efa8854d7cecd731427b3a18ce69d728e791e2d420ba8d5d06640a7357ace72"
+        }
+      ],
+      "diagnosis_producer_chain": [
+        {
+          "byte_length": 3774,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/scene.json",
+          "sha256": "f9b7d01d634a222effe360a172ceec9183de72390a43d5fd73d9a39872094dc4"
+        },
+        {
+          "byte_length": 42926,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/native.pdf",
+          "sha256": "95c399f0eaaee5bd0b2ae13a50a1a68171c0d5abaeab0b71bdf8816abda5817b"
+        },
+        {
+          "byte_length": 7063,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/official.svg",
+          "sha256": "c076a107dcbf6cdc235e464a13db0d890fd52c34bc3502448e0deb4bfbf762d3"
+        },
+        {
+          "byte_length": 299,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/judgment-plan.json",
+          "sha256": "73b8e2333b62ea403b05542b4ab8d363638cc6665928b6814e2fc0457d82b97f"
+        },
+        {
+          "byte_length": 5418,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/judgments.json",
+          "sha256": "db68683786feee02ae43ad979b34102522c74e4b1b75d88ebc5533e99470f287"
+        },
+        {
+          "byte_length": 2359,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/chromium-text-profile.json",
+          "sha256": "af37ecb5905bb47897d45b0592ee3cd2640f7c11a9982ce849c95ce16ee30c42"
+        },
+        {
+          "byte_length": 12966,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/collection.json",
+          "sha256": "881df9d46170d6e9dc341d0cecf5532a207f8e27fca824e66bce1e4b03d95020"
+        },
+        {
+          "byte_length": 96000,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/official-chromium.rgba",
+          "sha256": "100d99704264561daea15731b1809b5f1a3ea52b700235957faa2c22d7bb6f27"
+        },
+        {
+          "byte_length": 96000,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/official-chromium.repeat.rgba",
+          "sha256": "100d99704264561daea15731b1809b5f1a3ea52b700235957faa2c22d7bb6f27"
+        },
+        {
+          "byte_length": 96000,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfium.rgba",
+          "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"
+        },
+        {
+          "byte_length": 96000,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfium.repeat.rgba",
+          "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"
+        },
+        {
+          "byte_length": 96000,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfjs.rgba",
+          "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"
+        },
+        {
+          "byte_length": 96000,
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfjs.repeat.rgba",
+          "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"
+        },
+        {
+          "byte_length": 15075,
+          "path": "tools/pdf-harness/diagnostics/stage4-typography.py",
+          "sha256": "dd168deb66a8027c3088a24eaabc68f204bd391193c72c5c564527e005b6791b"
+        },
+        {
+          "byte_length": 1833,
+          "path": "tools/pdf-harness/diagnostics/stage4-typography-compare.rs",
+          "sha256": "12c6210e44c1bc62d85f631c42dd30f910b48a6bc81417d6ff9c921e7223317d"
+        },
+        {
+          "byte_length": 6188,
+          "path": "tools/pdf-harness/pdfium/render.py",
+          "sha256": "2b3f28ba7633f739cdd1b8617361f8d1a82f51f62204286598e38a5d29ad1c6d"
+        },
+        {
+          "byte_length": 63,
+          "path": "tools/pdf-harness/pdfium/empty-fonts/.keep",
+          "sha256": "214f294fd6c8df5b4b53d84fd437aee8c30edbee74b929863e40ec2e6b3cf621"
+        },
+        {
+          "byte_length": 666,
+          "path": "tools/pdf-harness/pdfium.lock.json",
+          "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90"
+        },
+        {
+          "byte_length": 3416,
+          "path": "tools/pdf-harness/pdfjs/render.mjs",
+          "sha256": "7386887b7b697c49fbe2c1095a94df86315bb0c15353f51eb4d03d1ba9c9a1ad"
+        },
+        {
+          "byte_length": 8850,
+          "path": "tools/pdf-harness/pdfjs/package-lock.json",
+          "sha256": "887c2194fe05e87250486f4e6c8da341d0fb51748e14c3b4cf94a16455740c60"
+        },
+        {
+          "byte_length": 4159,
+          "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+          "sha256": "9267d525bd682a338a5d7927747d508bfca17447598f7d3454c9137b091c99ad"
+        },
+        {
+          "byte_length": 4072,
+          "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+          "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
+        },
+        {
+          "byte_length": 4460,
+          "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
+          "sha256": "e969fd7a3bc49ff3014b2cd3b3622cd18abddbc9371744d4e47927d0484bcfc7"
+        },
+        {
+          "byte_length": 4306,
+          "path": "crates/excalidraw-render-compare/src/lib.rs",
+          "sha256": "59f84c68a787c76ef19f2b95688201e926f0816637f247b9aa8c9ed2578bd312"
+        },
+        {
+          "byte_length": 15174,
+          "path": "crates/excalidraw-render-compare/src/comparison.rs",
+          "sha256": "5988dd5f973171facf1ccc9712bef2e68e47af8f3947cd3213f21b1b320fb807"
+        },
+        {
+          "byte_length": 13171,
+          "path": "crates/excalidraw-render-compare/src/pixelmatch.rs",
+          "sha256": "1c505a0a266b0aa2779dcaa237483c28fe0bdbe4543cf43f88344844872d246d"
+        },
+        {
+          "byte_length": 8186,
+          "path": "crates/excalidraw-render-compare/src/ssim.rs",
+          "sha256": "4746f89206960465784bbddf13176b865232b472b20f02335c468e2d61aab007"
+        }
+      ],
+      "diagnosis_upstream_sources": [
+        {
+          "byte_length": 62640,
+          "path": "core/fxge/cfx_renderdevice.cpp",
+          "project": "pdfium",
+          "revision": "d3e62278db7489af9e0b686835d1c8aca218c3d7",
+          "sha256": "c589662e9217ed1c4bc51749812092ecbe58bafdaf3c081efbaa0c0d71dc323a",
+          "url": "https://pdfium.googlesource.com/pdfium/+/d3e62278db7489af9e0b686835d1c8aca218c3d7/core/fxge/cfx_renderdevice.cpp"
+        },
+        {
+          "byte_length": 48473,
+          "path": "core/fxge/cfx_face.cpp",
+          "project": "pdfium",
+          "revision": "d3e62278db7489af9e0b686835d1c8aca218c3d7",
+          "sha256": "ecee300c385d266cc64ff1da3fc4c9518dd03499c2890ba3702cc97b21484d84",
+          "url": "https://pdfium.googlesource.com/pdfium/+/d3e62278db7489af9e0b686835d1c8aca218c3d7/core/fxge/cfx_face.cpp"
+        },
+        {
+          "byte_length": 24994,
+          "path": "src/core/SkGlyph.h",
+          "project": "skia",
+          "revision": "53348aa333da02b77c4b5797e2de722f5abde7d0",
+          "sha256": "802e7787862184685be89e2aa56e9cb5a9d6b7fdf44b5d6c3ad8f9ad2233eae9",
+          "url": "https://skia.googlesource.com/skia/+/53348aa333da02b77c4b5797e2de722f5abde7d0/src/core/SkGlyph.h"
+        },
+        {
+          "byte_length": 19440,
+          "path": "src/core/SkGlyphRunPainter.cpp",
+          "project": "skia",
+          "revision": "53348aa333da02b77c4b5797e2de722f5abde7d0",
+          "sha256": "b2967f101af176e5e889125bd8f74941cb95c725086a4230dcdb780d9e501930",
+          "url": "https://skia.googlesource.com/skia/+/53348aa333da02b77c4b5797e2de722f5abde7d0/src/core/SkGlyphRunPainter.cpp"
+        },
+        {
+          "byte_length": 8830,
+          "path": "src/core/SkStrikeSpec.cpp",
+          "project": "skia",
+          "revision": "53348aa333da02b77c4b5797e2de722f5abde7d0",
+          "sha256": "55c7add963fec51349375c75ff4c5e55a8de7fa3e44de26f2fd24ceeeae3bd88",
+          "url": "https://skia.googlesource.com/skia/+/53348aa333da02b77c4b5797e2de722f5abde7d0/src/core/SkStrikeSpec.cpp"
+        },
+        {
+          "byte_length": 187522,
+          "path": "DEPS",
+          "project": "chromium",
+          "revision": "149.0.7827.55",
+          "sha256": "c4ab905e7b7970c39bce296ed0f86d89b782cb5d93ab07969c0aa68b683f31a7",
+          "url": "https://chromium.googlesource.com/chromium/src/+/149.0.7827.55/DEPS"
+        }
+      ],
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+          "bounds": [
+            0,
+            0,
+            200,
+            120
+          ],
+          "case_id": "representative.stage4-frames-text-assets.v15",
+          "comparison_id": "pdf-pdfium",
+          "format": "pdf",
+          "max_changed_pixels": 118,
+          "minimum_ssim_bits": "3fefacd49b980278",
+          "reason": "Pinned PDFium rasterizes the correctly embedded and exactly positioned Excalifont text using whole-device-Y glyph origins, LCD-mask X phases and its text-coverage pipeline; Chromium uses quarter-pixel glyph phases. Geometry and the font program are correct. The diagnosis does not claim an independently quantified gamma contribution.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": {
+            "descriptor": {
+              "byte_length": 4478,
+              "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+              "sha256": "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
+            },
+            "id": "canonical-pdf.pdfium.v1"
+          }
+        },
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+          "bounds": [
+            10,
+            12,
+            124,
+            41
+          ],
+          "case_id": "representative.stage4-frames-text-assets.v15",
+          "comparison_id": "pdf-pdfium",
+          "format": "pdf",
+          "max_changed_pixels": 118,
+          "minimum_ssim_bits": "3fee1f978eeaac28",
+          "reason": "Pinned PDFium rasterizes the correctly embedded and exactly positioned Excalifont text using whole-device-Y glyph origins, LCD-mask X phases and its text-coverage pipeline; Chromium uses quarter-pixel glyph phases. Geometry and the font program are correct. The diagnosis does not claim an independently quantified gamma contribution.",
+          "region": "typography",
+          "variant": "default",
+          "viewer_profile": {
+            "descriptor": {
+              "byte_length": 4478,
+              "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+              "sha256": "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
+            },
+            "id": "canonical-pdf.pdfium.v1"
+          }
+        },
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+          "bounds": [
+            0,
+            0,
+            200,
+            120
+          ],
+          "case_id": "representative.stage4-frames-text-assets.v15",
+          "comparison_id": "pdf-pdfjs",
+          "format": "pdf",
+          "max_changed_pixels": 16,
+          "minimum_ssim_bits": "3feff3e226be27cf",
+          "reason": "The pinned PDF.js disableFontFace path-font renderer paints exact fractional glyph origins, unlike Chromium quarter-pixel mask placement. Independently applying the quarter-pixel rule in a diagnostic-only PDF removes the changed pixels; production PDF geometry remains full-f64.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": {
+            "descriptor": {
+              "byte_length": 4072,
+              "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+              "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
+            },
+            "id": "canonical-pdf.pdfjs.v1"
+          }
+        }
+      ],
+      "inputs": [
+        {
+          "byte_length": 3774,
+          "path": "scene.json",
+          "sha256": "f9b7d01d634a222effe360a172ceec9183de72390a43d5fd73d9a39872094dc4"
+        },
+        {
+          "byte_length": 42939,
+          "path": "native.pdf",
+          "sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265"
+        },
+        {
+          "byte_length": 7063,
+          "path": "official.svg",
+          "sha256": "c076a107dcbf6cdc235e464a13db0d890fd52c34bc3502448e0deb4bfbf762d3"
+        },
+        {
+          "byte_length": 299,
+          "path": "judgment-plan.json",
+          "sha256": "73b8e2333b62ea403b05542b4ab8d363638cc6665928b6814e2fc0457d82b97f"
+        },
+        {
+          "byte_length": 96000,
+          "path": "viewer-evidence/official-chromium.rgba",
+          "sha256": "100d99704264561daea15731b1809b5f1a3ea52b700235957faa2c22d7bb6f27"
+        },
+        {
+          "byte_length": 96000,
+          "path": "viewer-evidence/native-pdfium.rgba",
+          "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"
+        },
+        {
+          "byte_length": 96000,
+          "path": "viewer-evidence/native-pdfjs.rgba",
+          "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"
+        }
+      ],
+      "schema": "excalidraw-render/representative-exception-proposal/v1",
+      "status": "proposed-not-approved"
+    },
+    "rows": [
+      {
+        "candidate": "native-chromium",
+        "crops": [
+          {
+            "id": "typography",
+            "region": {
+              "area": 5084,
+              "changed_mask_sha256": "34f39334b29f1a0cb9dbf024d05b03b023cc95aca9eba3ce39f234a507ce4f17",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 41,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 124
+            }
+          },
+          {
+            "id": "raster",
+            "region": {
+              "area": 968,
+              "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 44,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 22
+            }
+          },
+          {
+            "id": "nested-svg",
+            "region": {
+              "area": 1008,
+              "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 28,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 36
+            }
+          }
+        ],
+        "id": "svg-chromium",
+        "passed": true,
+        "reference": "official-chromium",
+        "whole": {
+          "area": 24000,
+          "changed_mask_sha256": "151ff79f29e96d211576b9a2e3e78f518b26109916616945d50cdee82dd2ba8b",
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 120,
+          "ssim_bits": "3ff0000000000000",
+          "ssim_pass": true,
+          "width": 200
+        }
+      },
+      {
+        "candidate": "native-rust",
+        "crops": [
+          {
+            "id": "typography",
+            "region": {
+              "area": 5084,
+              "changed_mask_sha256": "34f39334b29f1a0cb9dbf024d05b03b023cc95aca9eba3ce39f234a507ce4f17",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 41,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 124
+            }
+          },
+          {
+            "id": "raster",
+            "region": {
+              "area": 968,
+              "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 44,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 22
+            }
+          },
+          {
+            "id": "nested-svg",
+            "region": {
+              "area": 1008,
+              "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 28,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 36
+            }
+          }
+        ],
+        "id": "svg-rust",
+        "passed": true,
+        "reference": "official-rust",
+        "whole": {
+          "area": 24000,
+          "changed_mask_sha256": "151ff79f29e96d211576b9a2e3e78f518b26109916616945d50cdee82dd2ba8b",
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 120,
+          "ssim_bits": "3ff0000000000000",
+          "ssim_pass": true,
+          "width": 200
+        }
+      },
+      {
+        "candidate": "native-pdfium",
+        "crops": [
+          {
+            "id": "typography",
+            "region": {
+              "area": 5084,
+              "changed_mask_sha256": "f7eb7f18beac960937e82347166f78beedadf253619667b2263b615049345929",
+              "changed_pixels": 118,
+              "changed_pixels_pass": true,
+              "height": 41,
+              "ssim_bits": "3fee1f978eeaac28",
+              "ssim_pass": true,
+              "width": 124
+            }
+          },
+          {
+            "id": "raster",
+            "region": {
+              "area": 968,
+              "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 44,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 22
+            }
+          },
+          {
+            "id": "nested-svg",
+            "region": {
+              "area": 1008,
+              "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 28,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 36
+            }
+          }
+        ],
+        "id": "pdf-pdfium",
+        "passed": true,
+        "reference": "official-chromium",
+        "whole": {
+          "area": 24000,
+          "changed_mask_sha256": "7f23c193e9ae9c6f3ad5b0e898e4b32bb7c8ea65563a85fa7919bff1041d19f3",
+          "changed_pixels": 118,
+          "changed_pixels_pass": true,
+          "height": 120,
+          "ssim_bits": "3fefacd49b980278",
+          "ssim_pass": true,
+          "width": 200
+        }
+      },
+      {
+        "candidate": "native-pdfjs",
+        "crops": [
+          {
+            "id": "typography",
+            "region": {
+              "area": 5084,
+              "changed_mask_sha256": "4159ac56668532e1c5afb8c9f428d853d9b4ab86e45ac8a276a82036b0753a3d",
+              "changed_pixels": 16,
+              "changed_pixels_pass": true,
+              "height": 41,
+              "ssim_bits": "3fefbe7a57566bff",
+              "ssim_pass": true,
+              "width": 124
+            }
+          },
+          {
+            "id": "raster",
+            "region": {
+              "area": 968,
+              "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 44,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 22
+            }
+          },
+          {
+            "id": "nested-svg",
+            "region": {
+              "area": 1008,
+              "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 28,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 36
+            }
+          }
+        ],
+        "id": "pdf-pdfjs",
+        "passed": true,
+        "reference": "official-chromium",
+        "whole": {
+          "area": 24000,
+          "changed_mask_sha256": "5caaeb64a12900b62e57a5976e2ad4d3ddb0bec95eb9d08078d65bb2d21954f7",
+          "changed_pixels": 16,
+          "changed_pixels_pass": true,
+          "height": 120,
+          "ssim_bits": "3feff3e226be27cf",
+          "ssim_pass": true,
+          "width": 200
+        }
+      },
+      {
+        "crops": [
+          {
+            "id": "typography",
+            "region": {
+              "area": 5084,
+              "changed_mask_sha256": "97769ee2c69f32d3525dbe150bee4b639c5dcd93a84becf89939174c989d5090",
+              "changed_pixels": 2,
+              "changed_pixels_pass": true,
+              "height": 41,
+              "ssim_bits": "3fefea3f469eca2c",
+              "ssim_pass": true,
+              "width": 124
+            }
+          },
+          {
+            "id": "raster",
+            "region": {
+              "area": 968,
+              "changed_mask_sha256": "a038ee252f6057f767a2e97566457a8ade06fc1203c8e9be326a5c29181df5ba",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 44,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 22
+            }
+          },
+          {
+            "id": "nested-svg",
+            "region": {
+              "area": 1008,
+              "changed_mask_sha256": "a9e080790cc3b9e7a988324b4ec1cc1432a8f43cf897c78318943a0670f171f6",
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 28,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 36
+            }
+          }
+        ],
+        "id": "png-canvas",
+        "passed": true,
+        "whole": {
+          "area": 24000,
+          "changed_mask_sha256": "a5bbf5779060f91199eaa5c60dd30d25013c0905737f42f1229973ee91a97ce4",
+          "changed_pixels": 2,
+          "changed_pixels_pass": true,
+          "height": 120,
+          "ssim_bits": "3feffc22b89a7fb2",
+          "ssim_pass": true,
+          "width": 200
+        }
+      }
+    ],
+    "schema": "excalidraw-render/representative-judgments/v2"
+  },
+  "native_replay": {
+    "build": {
+      "build_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "-p",
+        "excalidraw-render-cli",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "cargo_profile": {
+        "debug_assertions": false,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": false,
+        "test": false
+      },
+      "codegen_units": 1,
+      "debug": 0,
+      "executable_sha256": "70c10d727d357b6fbf39cf78d3b1b4531f6e2dbc86e112e857a71cf0bfd7a43e",
+      "incremental": false,
+      "lto": true,
+      "panic": "abort",
+      "profile": "release",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+      "rustflags": []
+    },
+    "rows": [
+      {
+        "artifact_sha256": "6d27f04f4dad351ca4330895d90a6ab68a5e05e2d6e39f2e21cccffc72171743",
+        "format": "svg",
+        "fresh_process_runs": 2,
+        "report_sha256": "28d4485b1e107a379f99e3b6bbbe0c21506fa6df6361e1958841b8451c1be521"
+      },
+      {
+        "artifact_sha256": "e6c206a45e03e4f1f634275d7537f096f53f2b22d990e39a820e47dd90757d93",
+        "format": "png",
+        "fresh_process_runs": 2,
+        "report_sha256": "5a1fa744c59f4b9ebfdbc8ab4c92ca84f15cc6b68db2755fd6b81c1a4e357f70"
+      },
+      {
+        "artifact_sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265",
+        "format": "pdf",
+        "fresh_process_runs": 2,
+        "report_sha256": "28bf56d68a29bc7bebc0ab0d75a2913c40cced818845a63ce374705020db32cb"
+      }
+    ],
+    "schema": "excalidraw-render/candidate-native-replay/v1"
+  },
+  "schema": "excalidraw-render/representative-inspection/v1",
+  "semantics": {
+    "pdf": {
+      "attached_alpha_samples": 1600,
+      "embedded_scene_preserved": true,
+      "image_count": 2,
+      "links": {
+        "https://example.com/raster": [
+          135.0,
+          30.0,
+          150.0,
+          60.0
+        ],
+        "https://example.com/text": [
+          8.182279349193683,
+          50.712783867389795,
+          99.81772065080632,
+          80.53721613261021
+        ]
+      },
+      "nested_vector_form": true,
+      "output_intent_bound": true,
+      "page_count": 1,
+      "text": "Stage four"
+    },
+    "schema": "excalidraw-render/representative-semantics/v1",
+    "svg": {
+      "both_links_bound": true,
+      "frame_clip_used": true,
+      "source_raster_octets_preserved": true
+    }
+  },
+  "status": "ready_for_approval_check"
+}

@@ -119,10 +119,12 @@ fn authority_migration_cli_only_previews_authenticated_metadata_and_preserves_li
     ]);
     if !output.status.success() {
         // Once a reviewed rebind is applied, the old base no longer authenticates
-        // the ledger. The planner must refuse that stale transition as well.
+        // the ledger, and once the spec moves past the reviewed amendment the
+        // transition is no longer confined to it. The planner must refuse both.
+        let stderr = String::from_utf8_lossy(&output.stderr);
         assert!(
-            String::from_utf8_lossy(&output.stderr)
-                .contains("previous catalog is not authenticated"),
+            stderr.contains("previous catalog is not authenticated")
+                || stderr.contains("authority migration must be confined"),
             "{}",
             String::from_utf8_lossy(&output.stderr)
         );
