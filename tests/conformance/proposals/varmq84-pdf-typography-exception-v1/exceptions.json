@@ -1,0 +1,47 @@
+{
+  "approval": null,
+  "evidence": {
+    "compact_record": {
+      "path": "tests/conformance/proposals/varmq84-evidence-v3/compact.json",
+      "sha256": "ca50b7c6422e3c7cf3abe145c21fa5808b83e0bc0e1ba6fb620f94de657a071a"
+    },
+    "rasterizer_pairs": {
+      "path": "tests/conformance/proposals/varmq84-pdf-typography-exception-v1/rasterizer-pairs.json",
+      "sha256": "1680d4ccfb19a1904390539818d57d5a60f56cd1ef95291bdb2dc3062724f282"
+    }
+  },
+  "exceptions": [
+    {
+      "approving_issue": null,
+      "case": "representative.varmq-queue-diagram.v1",
+      "format": "pdf",
+      "judgment": {
+        "path": "tests/conformance/proposals/varmq84-evidence-v3/viewers/light/pdf-pdfium-comparison.json",
+        "sha256": "a7fa4f5148916ee5d8df147f1922af8c486c19409ea88f649cdab62666b82bdf"
+      },
+      "max_changed_pixels": 11,
+      "minimum_ssim_bits": "3fefc17216d8c415",
+      "reason": "Viewer glyph rasterization: the PDF places every glyph with a full-precision absolute text matrix at the native SVG's positions, which pass this crop in Chromium exactly; canonical rasterizers disagree by as much on identical input (official SVG, Chromium vs pure Rust SSIM 0.988381; this PDF, PDFium vs PDF.js 0.982131).",
+      "region": "queue-manager-typography",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": null,
+      "case": "representative.varmq-queue-diagram.v1",
+      "format": "pdf",
+      "judgment": {
+        "path": "tests/conformance/proposals/varmq84-evidence-v3/viewers/light/pdf-pdfjs-comparison.json",
+        "sha256": "193fe65a82c2f44bc9f1bc41886bdad4bb812f76b1092e6e33c108a498ea051e"
+      },
+      "max_changed_pixels": 2,
+      "minimum_ssim_bits": "3fef9ebf1e368a9e",
+      "reason": "Viewer glyph rasterization: the PDF places every glyph with a full-precision absolute text matrix at the native SVG's positions, which pass this crop in Chromium exactly; canonical rasterizers disagree by as much on identical input (official SVG, Chromium vs pure Rust SSIM 0.988381; this PDF, PDFium vs PDF.js 0.982131).",
+      "region": "queue-manager-typography",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfjs-v1"
+    }
+  ],
+  "schema": "excalidraw-render/tolerance-exception-proposal/v1",
+  "status": "pending-review"
+}
