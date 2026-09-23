@@ -1198,7 +1198,7 @@ fn negative_helpers(record: &Value) {
 fn ordered_reports(record: &Value) {
     for malformed in [false, true] {
         let row = if malformed {
-            by_id(record, "controls", "late-undefined-lzw")
+            by_id(record, "controls", "early-undefined-lzw")
         } else {
             by_id(record, "cases", BASE)
         };
@@ -1330,18 +1330,18 @@ fn explicit_late_and_eoi_controls() {
             out[..16].copy_from_slice(&pixels(&[0; 4], &p, None));
             out
         };
-        for (bytes, malformed) in [(&valid, false), (&invalid, true)] {
+        // All pixels precede the missing EOI, so the reference draws both
+        // exactly like the valid file (gif-container missing-eoi-after-full).
+        for (bytes, missing_eoi) in [(&valid, false), (&invalid, true)] {
             for format in FORMATS {
                 let source = scene(&encode(bytes));
                 let (artifact_bytes, actual_report) = render(&source, format);
                 assert_eq!(
                     actual_report,
-                    report(format, malformed, late),
-                    "isolated EOI late={late} malformed={malformed} {format:?}"
+                    report(format, false, late),
+                    "isolated EOI late={late} missing_eoi={missing_eoi} {format:?}"
                 );
-                if malformed {
-                    recovery(&artifact_bytes, format, &source);
-                } else {
+                {
                     artifact(&artifact_bytes, format, bytes, &expected);
                 }
                 surfaces += 1;
@@ -1353,7 +1353,7 @@ fn explicit_late_and_eoi_controls() {
 }
 
 #[test]
-fn controls_match_frozen_reference_first_display() {
+pub(super) fn controls_match_frozen_reference_first_display() {
     let record = evidence();
     let (mut vectors, mut surfaces) = (0, 0);
     let mut cells = BTreeMap::<String, bool>::new();
@@ -1413,7 +1413,12 @@ fn malformed_early_and_late_frames_have_exact_recovery() {
             );
         }
     }
-    for row in record["controls"].as_array().unwrap() {
+    // Only controls the pinned reference rejects, or whose first frame it
+    // paints partially (the declared divergence), still recover; the others
+    // draw like the reference (gif_container_contract).
+    for row in record["controls"].as_array().unwrap().iter().filter(|row| {
+        super::gif_container_contract::strictly_rejected("control", row["id"].as_str().unwrap())
+    }) {
         let source = scene(&row["gif_base64"]);
         let mut passed = true;
         for format in FORMATS {
@@ -1431,7 +1436,8 @@ fn malformed_early_and_late_frames_have_exact_recovery() {
         }
         cells += usize::from(passed);
     }
-    eprintln!("GIF malformed: {cells}/20 cells, {surfaces}/60 surfaces fresh-replayed; 16 valid late witnesses/48 surfaces; strict-policy controls, not browser evidence");
+    eprintln!("GIF malformed: {cells}/7 strict cells, {surfaces}/21 surfaces fresh-replayed; 16 valid late witnesses/48 surfaces");
+    assert_eq!(cells, 7);
     assert!(
         failures.is_empty(),
         "unqualified malformed surfaces: {failures:?}"

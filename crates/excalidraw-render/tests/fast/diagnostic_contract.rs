@@ -1081,7 +1081,7 @@ pub(super) fn decode_failures_cover_every_codec_and_authority() {
     let valid = [
         ("image/png", png.clone(), b"\x89PNG\r\n\x1a\ninvalid".to_vec()),
         ("image/jpeg", fixtures::jpeg_rgb(1,1,&[[255,0,0]]), b"\xff\xd8\xffinvalid".to_vec()),
-        ("image/gif", fixtures::gif(&[fixtures::gif_frame(&[0],1,1,&[255,0,0,0,0,0],None)]), b"GIF89ainvalid".to_vec()),
+        ("image/gif", fixtures::gif(&[fixtures::gif_frame(&[0],1,1,&[255,0,0,0,0,0],None)]), b"GIF89ainv".to_vec()),
         ("image/webp", fixtures::webp_rgba(1,1,&[[255,0,0,255]]), b"RIFF\0\0\0\0WEBPinvalid".to_vec()),
         ("image/bmp", fixtures::bmp24(1,1,&[[255,0,0]]), b"BMinvalid".to_vec()),
         ("image/x-icon", fixtures::ico(&[(1,1,32,png)]), b"\0\0\x01\0invalid".to_vec()),
@@ -1093,6 +1093,10 @@ pub(super) fn decode_failures_cover_every_codec_and_authority() {
         let mut damaged = good.clone();
         if mime == "image/png" {
             fixtures::mutate_first_png_chunk(&mut damaged, *b"IDAT", |data| data[0] ^= 0xff);
+        } else if mime == "image/gif" {
+            // The reference ignores a missing trailer; end the first frame's
+            // data before its pixels instead (the declared divergence).
+            damaged.truncate(fixtures::gif_image_descriptor_offset(&damaged) + 11);
         } else {
             damaged.truncate(damaged.len().saturating_sub(2));
         }

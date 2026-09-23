@@ -1266,20 +1266,22 @@ fn isolated_eoi_pair() {
     let encode = |bytes: &[u8]| json!(base64::engine::general_purpose::STANDARD.encode(bytes));
     let row = json!({"width":4,"height":1,"gif_base64":encode(&valid),
         "expected_first":{"rgba_base64":encode(&expected)}});
+    let mut missing_row = row.clone();
+    missing_row["gif_base64"] = encode(&invalid);
     let positive = scene(&row["gif_base64"], 4, 1);
-    let negative = scene(&encode(&invalid), 4, 1);
+    let negative = scene(&missing_row["gif_base64"], 4, 1);
     let mut failed = Vec::new();
-    for (label, source) in [("valid EOI", &positive), ("missing EOI", &negative)] {
+    for (label, source, row) in [
+        ("valid EOI", &positive, &row),
+        ("missing EOI", &negative, &missing_row),
+    ] {
         for format in FORMATS {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let (bytes, report) = render(source, format);
-                if label == "valid EOI" {
-                    assert_eq!(report, json!({"schema_version":1,"diagnostics":[]}));
-                    artifact(&bytes, format, &row);
-                } else {
-                    assert_eq!(report, decode_report(format), "isolated EOI: {format:?}");
-                    recovery_artifact_at_extent(&bytes, format, source, 4, 1);
-                }
+                // All four pixels precede the missing EOI, so the reference
+                // draws the complete frame (gif-container missing-eoi-after-full).
+                assert_eq!(report, json!({"schema_version":1,"diagnostics":[]}));
+                artifact(&bytes, format, row);
             }));
             if result.is_err() {
                 failed.push(format!("{label}: {format:?}"));
@@ -1340,7 +1342,13 @@ fn malformed_lzw_controls_have_exact_decode_failed_recovery() {
     let mut failed = Vec::new();
     let mut cells = 0;
     let mut surfaces = 0;
-    for id in MALFORMED {
+    // Only controls the pinned reference rejects, or whose first frame it
+    // paints partially (the declared divergence), still recover; the others
+    // draw like the reference (gif_container_contract).
+    for id in MALFORMED
+        .into_iter()
+        .filter(|id| super::gif_container_contract::strictly_rejected("lzw", id))
+    {
         let row = by_id(&record, "controls", id);
         // Controls use a fixed 12,513-pixel display viewport, independently of
         // the binary GIF's 49,601-pixel intrinsic screen and malformed descriptor.
@@ -1363,7 +1371,8 @@ fn malformed_lzw_controls_have_exact_decode_failed_recovery() {
             cells += 1;
         }
     }
-    eprintln!("GIF LZW malformed qualified: {cells}/12 cells; {surfaces}/36 surfaces (each fresh-replayed); strict-policy controls, not browser observations");
+    eprintln!("GIF LZW malformed qualified: {cells}/7 strict cells; {surfaces}/21 surfaces (each fresh-replayed)");
+    assert_eq!(cells, 7);
     assert!(
         failed.is_empty(),
         "unqualified malformed surfaces: {failed:?}"

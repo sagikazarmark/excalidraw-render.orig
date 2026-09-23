@@ -654,21 +654,30 @@ mod gif_codec {
     }
 
     #[test]
-    fn every_frame_is_validated_before_svg_passthrough() {
-        let mut gif = gif(&[
+    fn a_truncated_later_frame_keeps_the_first_while_a_truncated_first_frame_fails() {
+        // The reference (Wuffs) draws a complete first frame whatever follows.
+        let mut animated = gif(&[
             gif_frame(&[0], 1, 1, &RED_BLUE_PALETTE, None),
             gif_frame(&[1], 1, 1, &RED_BLUE_PALETTE, None),
         ]);
-        gif.truncate(gif.len() - 3);
+        animated.truncate(animated.len() - 3);
+        let resolution = resolve_for_png("image/gif", &animated);
+        assert!(resolution.animated);
+        assert_eq!(only_pixel(&resolution.asset), RED);
 
+        // A first frame whose data ends before its pixels are complete is the
+        // declared divergence: the reference paints it partially.
+        let mut single = gif(&[gif_frame(&[0, 1, 0, 1], 4, 1, &RED_BLUE_PALETTE, None)]);
+        let descriptor = gif_image_descriptor_offset(&single);
+        single.truncate(descriptor + 12);
         assert_eq!(
-            failure_for("image/gif", &gif, OutputFormat::Svg),
+            failure_for("image/gif", &single, OutputFormat::Svg),
             ResolveError::GifDecodeFailed
         );
     }
 
     #[test]
-    fn palette_references_outside_the_palette_and_misdeclared_extensions_are_rejected() {
+    fn out_of_palette_background_and_transparent_indices_are_ignored() {
         let mut invalid_background = gif_with_screen(
             1,
             1,
@@ -682,50 +691,26 @@ mod gif_codec {
         let control = gif_graphic_control_offset(&invalid_transparency);
         invalid_transparency[control + 6] = 2;
 
-        let mut malformed_application = gif_with_screen(
-            1,
-            1,
-            &[],
-            Some(Repeat::Infinite),
-            &[gif_frame(&[0], 1, 1, &RED_BLUE_PALETTE, None)],
-        );
-        let application = gif_application_extension_offset(&malformed_application);
-        malformed_application[application + 2] = 10;
-
-        for malformed in [
-            invalid_background,
-            invalid_transparency,
-            malformed_application,
-        ] {
-            assert_eq!(
-                failure_for("image/gif", &malformed, OutputFormat::Svg),
-                ResolveError::GifDecodeFailed
-            );
+        // A background index and a transparent index past the palette are
+        // ignored. (Extension block sizes are covered by the reference record.)
+        for gif in [invalid_background, invalid_transparency] {
+            assert_eq!(only_pixel(&decode("image/gif", &gif)), RED);
         }
     }
 
     #[test]
-    fn a_reserved_disposal_method_is_rejected() {
-        let mut gif = gif(&[gif_frame(&[0], 1, 1, &RED_BLUE_PALETTE, None)]);
-        let control = gif_graphic_control_offset(&gif);
-        gif[control + 3] = 4 << 2;
+    fn reserved_disposal_methods_and_descriptor_bits_are_ignored() {
+        let mut disposal = gif(&[gif_frame(&[0], 1, 1, &RED_BLUE_PALETTE, None)]);
+        let control = gif_graphic_control_offset(&disposal);
+        disposal[control + 3] = 4 << 2;
 
-        assert_eq!(
-            failure_for("image/gif", &gif, OutputFormat::Svg),
-            ResolveError::GifDecodeFailed
-        );
-    }
+        let mut reserved = gif(&[gif_frame(&[0], 1, 1, &RED_BLUE_PALETTE, None)]);
+        let descriptor = gif_image_descriptor_offset(&reserved);
+        reserved[descriptor + 9] |= 0x08;
 
-    #[test]
-    fn reserved_image_descriptor_bits_are_rejected() {
-        let mut gif = gif(&[gif_frame(&[0], 1, 1, &RED_BLUE_PALETTE, None)]);
-        let descriptor = gif_image_descriptor_offset(&gif);
-        gif[descriptor + 9] |= 0x08;
-
-        assert_eq!(
-            failure_for("image/gif", &gif, OutputFormat::Svg),
-            ResolveError::GifDecodeFailed
-        );
+        for gif in [disposal, reserved] {
+            assert_eq!(only_pixel(&decode("image/gif", &gif)), RED);
+        }
     }
 }
 

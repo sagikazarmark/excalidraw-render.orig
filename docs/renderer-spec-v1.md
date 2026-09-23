@@ -773,6 +773,25 @@ WebP has no orientation: its EXIF is never applied. An embedded ICC profile
 applies only to a still image whose VP8X ICC flag is set, and only when it
 parses as an RGB profile; otherwise it is ignored silently.
 
+GIF is read as the pinned reference's decoder reads it:
+- Blocks:
+  - Any extension is skipped whatever its label or block size, also in
+    GIF87a.
+  - Application data such as ICC or XMP is never applied.
+  - A byte other than an extension or image introducer ends the stream.
+  - A malformed graphic control extension rejects the file before the first
+    image; after it, anything malformed ends the frame count.
+  - Reserved bits, disposal values and the background index are ignored.
+- Canvas: the logical screen grown to the first frame's extent. A zero-size
+  first frame, or no image at all, draws a transparent screen.
+- Pixels: an index outside the palette, or any index without a palette, is
+  opaque black unless it is the transparent index.
+- First frame: once its pixels are complete, the rest of its data is ignored.
+  Where its data ends or fails before the pixels are complete, the file is
+  rejected with the usual decode-failed recovery, although the reference
+  paints the partial frame.
+- Later frames only count; their data is not decoded.
+
 PNG and PDF emit one informational `image.animation-flattened` occurrence for
 each actually rendered multi-frame asset occurrence. Static, one-frame, and
 unreferenced assets remain silent. PDF uses the same default-frame, orientation,

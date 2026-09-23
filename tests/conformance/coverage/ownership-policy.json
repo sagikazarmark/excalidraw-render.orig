@@ -2590,73 +2590,73 @@
     {
       "id": "codec:gif:first-frame:bad-palette-index",
       "category": "codec-profile",
-      "criterion": "GIF bad-palette-index: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF bad-palette-index: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:later-stream-invalid-code",
       "category": "codec-profile",
-      "criterion": "GIF later-stream-invalid-code: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF later-stream-invalid-code: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:missing-trailer",
       "category": "codec-profile",
-      "criterion": "GIF missing-trailer: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF missing-trailer: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:invalid-gce-size",
       "category": "codec-profile",
-      "criterion": "GIF invalid-gce-size: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF invalid-gce-size: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:reserved-gce-bits",
       "category": "codec-profile",
-      "criterion": "GIF reserved-gce-bits: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF reserved-gce-bits: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:reserved-image-bits",
       "category": "codec-profile",
-      "criterion": "GIF reserved-image-bits: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF reserved-image-bits: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:reserved-disposal-4",
       "category": "codec-profile",
-      "criterion": "GIF reserved-disposal-4: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF reserved-disposal-4: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:first-stream-invalid-code",
       "category": "codec-profile",
-      "criterion": "GIF first-stream-invalid-code: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF first-stream-invalid-code: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:truncated-image-data",
       "category": "codec-profile",
-      "criterion": "GIF truncated-image-data: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF truncated-image-data: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:missing-color-table",
       "category": "codec-profile",
-      "criterion": "GIF missing-color-table: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF missing-color-table: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:zero-logical-width",
       "category": "codec-profile",
-      "criterion": "GIF zero-logical-width: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF zero-logical-width: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:first-frame:frame-outside-screen",
       "category": "codec-profile",
-      "criterion": "GIF frame-outside-screen: independently reconstructed authored malformed control: exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay; not browser admission evidence. Every owner executes closed matrix, source reconstruction and negative/discrimination gates.",
+      "criterion": "GIF frame-outside-screen: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
@@ -2950,73 +2950,73 @@
     {
       "id": "codec:gif:lzw:minimum-code-size-1",
       "category": "codec-profile",
-      "criterion": "GIF minimum-code-size-1: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF minimum-code-size-1: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:minimum-code-size-9",
       "category": "codec-profile",
-      "criterion": "GIF minimum-code-size-9: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF minimum-code-size-9: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:undefined-initial-code",
       "category": "codec-profile",
-      "criterion": "GIF undefined-initial-code: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF undefined-initial-code: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:undefined-after-literal",
       "category": "codec-profile",
-      "criterion": "GIF undefined-after-literal: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF undefined-after-literal: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:missing-eoi",
       "category": "codec-profile",
-      "criterion": "GIF missing-eoi: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF missing-eoi: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:truncated-subblock",
       "category": "codec-profile",
-      "criterion": "GIF truncated-subblock: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF truncated-subblock: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:missing-subblock-terminator",
       "category": "codec-profile",
-      "criterion": "GIF missing-subblock-terminator: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF missing-subblock-terminator: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:early-eoi",
       "category": "codec-profile",
-      "criterion": "GIF early-eoi: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF early-eoi: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:excess-pixels",
       "category": "codec-profile",
-      "criterion": "GIF excess-pixels: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF excess-pixels: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:missing-trailer",
       "category": "codec-profile",
-      "criterion": "GIF missing-trailer: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF missing-trailer: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:gif87a-comment",
       "category": "codec-profile",
-      "criterion": "GIF gif87a-comment: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF gif87a-comment: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:lzw:gif87a-application",
       "category": "codec-profile",
-      "criterion": "GIF gif87a-application: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
+      "criterion": "GIF gif87a-application: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
@@ -3214,121 +3214,121 @@
     {
       "id": "codec:gif:control:early-bad-palette-index",
       "category": "codec-profile",
-      "criterion": "GIF early-bad-palette-index: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-bad-palette-index: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-bad-palette-index",
       "category": "codec-profile",
-      "criterion": "GIF late-bad-palette-index: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-bad-palette-index: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:early-undefined-lzw",
       "category": "codec-profile",
-      "criterion": "GIF early-undefined-lzw: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-undefined-lzw: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-undefined-lzw",
       "category": "codec-profile",
-      "criterion": "GIF late-undefined-lzw: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-undefined-lzw: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:early-truncated-gce",
       "category": "codec-profile",
-      "criterion": "GIF early-truncated-gce: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-truncated-gce: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-truncated-gce",
       "category": "codec-profile",
-      "criterion": "GIF late-truncated-gce: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-truncated-gce: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:early-out-of-bounds",
       "category": "codec-profile",
-      "criterion": "GIF early-out-of-bounds: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-out-of-bounds: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-out-of-bounds",
       "category": "codec-profile",
-      "criterion": "GIF late-out-of-bounds: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-out-of-bounds: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:early-truncated-subblocks",
       "category": "codec-profile",
-      "criterion": "GIF early-truncated-subblocks: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-truncated-subblocks: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-truncated-subblocks",
       "category": "codec-profile",
-      "criterion": "GIF late-truncated-subblocks: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-truncated-subblocks: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:early-invalid-end",
       "category": "codec-profile",
-      "criterion": "GIF early-invalid-end: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-invalid-end: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-invalid-end",
       "category": "codec-profile",
-      "criterion": "GIF late-invalid-end: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-invalid-end: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:early-minimum-code-size-1",
       "category": "codec-profile",
-      "criterion": "GIF early-minimum-code-size-1: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-minimum-code-size-1: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-minimum-code-size-1",
       "category": "codec-profile",
-      "criterion": "GIF late-minimum-code-size-1: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-minimum-code-size-1: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:early-early-eoi",
       "category": "codec-profile",
-      "criterion": "GIF early-early-eoi: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-early-eoi: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-early-eoi",
       "category": "codec-profile",
-      "criterion": "GIF late-early-eoi: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-early-eoi: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:early-missing-eoi",
       "category": "codec-profile",
-      "criterion": "GIF early-missing-eoi: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-missing-eoi: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-missing-eoi",
       "category": "codec-profile",
-      "criterion": "GIF late-missing-eoi: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-missing-eoi: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:early-truncated-palette",
       "category": "codec-profile",
-      "criterion": "GIF early-truncated-palette: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF early-truncated-palette: independently reconstructed control that the pinned reference rejects, or whose first frame it paints only partially (reference-collected in tests/oracle/gif-container; the declared divergence, #85), has exact all-format decode-failed reports, missing-asset artifact equivalence, extents and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:gif:control:late-truncated-palette",
       "category": "codec-profile",
-      "criterion": "GIF late-truncated-palette: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "criterion": "GIF late-truncated-palette: independently reconstructed control that the pinned reference draws completely (reference-collected in tests/oracle/gif-container) draws exactly like the reference in PNG and PDF at its natural size and keeps its source octets in SVG, with exact reports and replay.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {

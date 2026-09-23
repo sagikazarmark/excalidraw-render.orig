@@ -1087,7 +1087,7 @@ fn negative_oracles(record: &Value) {
 }
 
 #[test]
-fn valid_first_frame_matrix_matches_frozen_reference_exactly() {
+pub(super) fn valid_first_frame_matrix_matches_frozen_reference_exactly() {
     let record = evidence();
     for row in record["cases"].as_array().unwrap() {
         for format in FORMATS {
@@ -1132,8 +1132,16 @@ fn repeated_occurrences(record: &Value) {
 
 #[test]
 fn authored_malformed_controls_have_exact_decode_recovery() {
+    // Only controls the pinned reference rejects, or whose first frame it
+    // paints partially (the declared divergence), still recover; the others
+    // draw like the reference (gif_container_contract).
     let record = evidence();
+    let mut strict = 0;
     for id in MALFORMED {
+        if !super::gif_container_contract::strictly_rejected("first-frame", id) {
+            continue;
+        }
+        strict += 1;
         let row = by_id(&record, "controls", id);
         let source = scene(&row["gif_base64"]);
         for format in FORMATS {
@@ -1142,25 +1150,7 @@ fn authored_malformed_controls_have_exact_decode_recovery() {
             recovery_artifact(&bytes, format, &source);
         }
     }
-    // The authored two-entry GCT control also retains background index 3.
-    // Repair that independent fault so rejection must reach the out-of-table
-    // decoded literals, rather than qualifying palette-index validation from
-    // an earlier logical-screen error. This adds no browser vector/cell.
-    let mut bytes = decode(&by_id(&record, "controls", "bad-palette-index")["gif_base64"]);
-    bytes[11] = 0;
-    assert_eq!(inspect(&bytes), Err("palette index"));
-    let source = scene(&json!(
-        base64::engine::general_purpose::STANDARD.encode(bytes)
-    ));
-    for format in FORMATS {
-        let (bytes, report) = render(&source, &request(format, ResourceLimits::default()));
-        assert_eq!(
-            report,
-            decode_report(format),
-            "isolated palette-index fault: {format:?}"
-        );
-        recovery_artifact(&bytes, format, &source);
-    }
+    assert_eq!(strict, 3);
 }
 
 #[derive(Clone, Copy)]
