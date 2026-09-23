@@ -9,7 +9,7 @@ use crate::{
 use serde_json::{json, Value};
 use std::{fs, path::Path, process::Command};
 type Result<T> = std::result::Result<T, String>;
-pub const DIRECTORY: &str = "tests/conformance/candidates/stage4-pdf-colorspace-bridge-v13";
+pub const DIRECTORY: &str = "tests/conformance/candidates/stage4-pdf-colorspace-bridge-v14";
 const OLD: &str = "tests/conformance/candidates/stage4-frames-text-assets-v4";
 const OLD_HASH: &str = "95c399f0eaaee5bd0b2ae13a50a1a68171c0d5abaeab0b71bdf8816abda5817b";
 fn model(path: &Path) -> Result<Value> {
