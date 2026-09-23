@@ -1,0 +1,4052 @@
+{
+  "approval": null,
+  "captures": [
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "f7ddd0e3fc1e9db9632c6620882b01a9f680ee77947793a49792834a80b1081a"
+      },
+      "raster": {
+        "bytes": 2233973,
+        "path": "target/varmq-viewers-v3/light/official-chromium.rgba.zlib",
+        "sha256": "ca73d0c4c4bf476959bbe11477b84136a6d97b5b54e9372fb30738ce5dc57903"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "6ba3d7a89471",
+          "height": 2996,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 14,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "official-chromium-0-raw.rgba.zlib",
+            "sha256": "f7ddd0e3fc1e9db9632c6620882b01a9f680ee77947793a49792834a80b1081a"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "f7ddd0e3fc1e9db9632c6620882b01a9f680ee77947793a49792834a80b1081a",
+          "virtual_time_ticks_base": 23703349.6,
+          "width": 3262
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "e8ce06e649ad",
+          "height": 2996,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 14,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "official-chromium-1-raw.rgba.zlib",
+            "sha256": "f7ddd0e3fc1e9db9632c6620882b01a9f680ee77947793a49792834a80b1081a"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "f7ddd0e3fc1e9db9632c6620882b01a9f680ee77947793a49792834a80b1081a",
+          "virtual_time_ticks_base": 23706535.196,
+          "width": 3262
+        }
+      ],
+      "variant": "light",
+      "viewer": "official-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "0723da0d8e12480c3a2f4ff5ddfdee3f8b33a23eeb1a3d0637da38b0e605b3f4"
+      },
+      "raster": {
+        "bytes": 2246588,
+        "path": "target/varmq-viewers-v3/light/native-chromium.rgba.zlib",
+        "sha256": "317a021698d3c81352a18cea24b0f5ffdb5855b246e32a85ce7b53d08674041d"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "e2302b7909a0",
+          "height": 2996,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 50,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-7c3a80a91bab22fbeb0a2c6914ad2f62"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-chromium-0-raw.rgba.zlib",
+            "sha256": "0723da0d8e12480c3a2f4ff5ddfdee3f8b33a23eeb1a3d0637da38b0e605b3f4"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "0723da0d8e12480c3a2f4ff5ddfdee3f8b33a23eeb1a3d0637da38b0e605b3f4",
+          "virtual_time_ticks_base": 23710437.32,
+          "width": 3262
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "9e14be2df658",
+          "height": 2996,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 50,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-7c3a80a91bab22fbeb0a2c6914ad2f62"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-chromium-1-raw.rgba.zlib",
+            "sha256": "0723da0d8e12480c3a2f4ff5ddfdee3f8b33a23eeb1a3d0637da38b0e605b3f4"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "0723da0d8e12480c3a2f4ff5ddfdee3f8b33a23eeb1a3d0637da38b0e605b3f4",
+          "virtual_time_ticks_base": 23714131.717,
+          "width": 3262
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "07455941400aa491cf531fe5c75fb5a5c8d95258712749ee3c8d8ff54468e475"
+      },
+      "raster": {
+        "bytes": 1172198,
+        "path": "target/varmq-viewers-v3/light/native-pdfium.rgba.zlib",
+        "sha256": "db3d2631e4ab5a034f19bbc05a10bb2461d37043b01756c333bc5dde3c05e8c7"
+      },
+      "runs": [
+        {
+          "byte_length": 39091808,
+          "height": 2996,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-pdfium-0-raw.rgba.zlib",
+            "sha256": "07455941400aa491cf531fe5c75fb5a5c8d95258712749ee3c8d8ff54468e475"
+          },
+          "sha256": "07455941400aa491cf531fe5c75fb5a5c8d95258712749ee3c8d8ff54468e475",
+          "width": 3262
+        },
+        {
+          "byte_length": 39091808,
+          "height": 2996,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-pdfium-1-raw.rgba.zlib",
+            "sha256": "07455941400aa491cf531fe5c75fb5a5c8d95258712749ee3c8d8ff54468e475"
+          },
+          "sha256": "07455941400aa491cf531fe5c75fb5a5c8d95258712749ee3c8d8ff54468e475",
+          "width": 3262
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-pdfium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "6a680096be85b25cbbb765311c847fb4833e5c1c2edba1beedbcb8d7f5b39360"
+      },
+      "raster": {
+        "bytes": 1983380,
+        "path": "target/varmq-viewers-v3/light/native-pdfjs.rgba.zlib",
+        "sha256": "dd774542006a09e69481c4a465df5bcce338ee9e4a91f91a92762aa7aad4aab9"
+      },
+      "runs": [
+        {
+          "byte_length": 39091808,
+          "height": 2996,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-pdfjs-0-raw.rgba.zlib",
+            "sha256": "6a680096be85b25cbbb765311c847fb4833e5c1c2edba1beedbcb8d7f5b39360"
+          },
+          "sha256": "6a680096be85b25cbbb765311c847fb4833e5c1c2edba1beedbcb8d7f5b39360",
+          "width": 3262
+        },
+        {
+          "byte_length": 39091808,
+          "height": 2996,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-pdfjs-1-raw.rgba.zlib",
+            "sha256": "6a680096be85b25cbbb765311c847fb4833e5c1c2edba1beedbcb8d7f5b39360"
+          },
+          "sha256": "6a680096be85b25cbbb765311c847fb4833e5c1c2edba1beedbcb8d7f5b39360",
+          "width": 3262
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-pdfjs"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "8424a7f303b849185bf3b7d86ac74433e65f94da9e134406b3ee8d342a170707"
+      },
+      "raster": {
+        "bytes": 2139034,
+        "path": "target/varmq-viewers-v3/light/official-rust.rgba.zlib",
+        "sha256": "e8e6e44f06bda9ead2890423fe844ea9ae9987e46c6389962b716f643dc56272"
+      },
+      "runs": [
+        {
+          "height": 2997,
+          "raw_capture": {
+            "bytes": 39104856,
+            "file": "official-rust-0-raw.rgba.zlib",
+            "sha256": "0f263566a7978364197be1933373256b092f6bac48b9178c701fcb9798d8f574"
+          },
+          "width": 3262
+        },
+        {
+          "height": 2997,
+          "raw_capture": {
+            "bytes": 39104856,
+            "file": "official-rust-1-raw.rgba.zlib",
+            "sha256": "0f263566a7978364197be1933373256b092f6bac48b9178c701fcb9798d8f574"
+          },
+          "width": 3262
+        }
+      ],
+      "variant": "light",
+      "viewer": "official-rust"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "6865da048f34c3466f1e955921e91e19f25764e10fff263e6c9cab230164be39"
+      },
+      "raster": {
+        "bytes": 2139022,
+        "path": "target/varmq-viewers-v3/light/native-rust.rgba.zlib",
+        "sha256": "0884475adb034f353b406a8e6dc1e5be0a78d5efad0b4a327a1172fbeba43af8"
+      },
+      "runs": [
+        {
+          "height": 2997,
+          "raw_capture": {
+            "bytes": 39104856,
+            "file": "native-rust-0-raw.rgba.zlib",
+            "sha256": "9b178f7d578548d58f5a186c402955324ba41270e01c21b06326c74147c650a2"
+          },
+          "width": 3262
+        },
+        {
+          "height": 2997,
+          "raw_capture": {
+            "bytes": 39104856,
+            "file": "native-rust-1-raw.rgba.zlib",
+            "sha256": "9b178f7d578548d58f5a186c402955324ba41270e01c21b06326c74147c650a2"
+          },
+          "width": 3262
+        }
+      ],
+      "variant": "light",
+      "viewer": "native-rust"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "f09bbb37bd27efacc8fa21447c6c13d6822c176aecf67cf2b0b6adcded6d6572"
+      },
+      "raster": {
+        "bytes": 2078674,
+        "path": "target/varmq-viewers-v3/dark/official-chromium.rgba.zlib",
+        "sha256": "7fcb5e53986cea3b4653a25970b9392b430610babe02db3d4c2b3f0d1b72ce3d"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "55468a82dfb3",
+          "height": 2996,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 14,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "official-chromium-0-raw.rgba.zlib",
+            "sha256": "f09bbb37bd27efacc8fa21447c6c13d6822c176aecf67cf2b0b6adcded6d6572"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "f09bbb37bd27efacc8fa21447c6c13d6822c176aecf67cf2b0b6adcded6d6572",
+          "virtual_time_ticks_base": 23861226.816,
+          "width": 3262
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "0f55a44ce77c",
+          "height": 2996,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 5,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 14,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular"
+            },
+            {
+              "familyName": "Liberation Sans",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "LiberationSans"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "official-chromium-1-raw.rgba.zlib",
+            "sha256": "f09bbb37bd27efacc8fa21447c6c13d6822c176aecf67cf2b0b6adcded6d6572"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "f09bbb37bd27efacc8fa21447c6c13d6822c176aecf67cf2b0b6adcded6d6572",
+          "virtual_time_ticks_base": 23864478.711,
+          "width": 3262
+        }
+      ],
+      "variant": "dark",
+      "viewer": "official-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "fea2e5106c7661ab5a1bffce08669c93cd3961767290d524ed174142556ede07"
+      },
+      "raster": {
+        "bytes": 2086290,
+        "path": "target/varmq-viewers-v3/dark/native-chromium.rgba.zlib",
+        "sha256": "c42ee998d2d56b00af8155b55feeebc0afc1b7630da7d3640c68db50f0ec449b"
+      },
+      "runs": [
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "d814229fa307",
+          "height": 2996,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 50,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-7c3a80a91bab22fbeb0a2c6914ad2f62"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-chromium-0-raw.rgba.zlib",
+            "sha256": "fea2e5106c7661ab5a1bffce08669c93cd3961767290d524ed174142556ede07"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "fea2e5106c7661ab5a1bffce08669c93cd3961767290d524ed174142556ede07",
+          "virtual_time_ticks_base": 23868355.763,
+          "width": 3262
+        },
+        {
+          "animation_offset_microseconds": 0,
+          "browser_process_id": 19,
+          "browser_version": "149.0.7827.55",
+          "container_namespace": "73879b0a8176",
+          "height": 2996,
+          "lifecycle_updates": 2,
+          "platform_fonts": [
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 11,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 6,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 12,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 10,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 8,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 16,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 13,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 3,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 4,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 9,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 50,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 7,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "Excalifont",
+              "glyphCount": 1,
+              "isCustomFont": true,
+              "postScriptName": "Excalifont-Regular-0f5eacc0926ee560e3f672856bff6098"
+            },
+            {
+              "familyName": "ExcalidrawRender-9",
+              "glyphCount": 25,
+              "isCustomFont": true,
+              "postScriptName": "ExcalidrawRender-9-Regular-7c3a80a91bab22fbeb0a2c6914ad2f62"
+            }
+          ],
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-chromium-1-raw.rgba.zlib",
+            "sha256": "fea2e5106c7661ab5a1bffce08669c93cd3961767290d524ed174142556ede07"
+          },
+          "requests": [
+            "http://reference.invalid/input.svg"
+          ],
+          "rgba_sha256": "fea2e5106c7661ab5a1bffce08669c93cd3961767290d524ed174142556ede07",
+          "virtual_time_ticks_base": 23872054.93,
+          "width": 3262
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-chromium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "4a0c117743d1ae3d44fec445c6937624caa27d11135bf407f5d3cdf5523730af"
+      },
+      "raster": {
+        "bytes": 1142965,
+        "path": "target/varmq-viewers-v3/dark/native-pdfium.rgba.zlib",
+        "sha256": "21b07c96873eb519d3616ff8eba9518a1c3088a2d9b23a0655faf07051f202d6"
+      },
+      "runs": [
+        {
+          "byte_length": 39091808,
+          "height": 2996,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-pdfium-0-raw.rgba.zlib",
+            "sha256": "4a0c117743d1ae3d44fec445c6937624caa27d11135bf407f5d3cdf5523730af"
+          },
+          "sha256": "4a0c117743d1ae3d44fec445c6937624caa27d11135bf407f5d3cdf5523730af",
+          "width": 3262
+        },
+        {
+          "byte_length": 39091808,
+          "height": 2996,
+          "layout": "top-left-row-major",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "pypdfium2": "5.12.1",
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-pdfium-1-raw.rgba.zlib",
+            "sha256": "4a0c117743d1ae3d44fec445c6937624caa27d11135bf407f5d3cdf5523730af"
+          },
+          "sha256": "4a0c117743d1ae3d44fec445c6937624caa27d11135bf407f5d3cdf5523730af",
+          "width": 3262
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-pdfium"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "1286a44a61f012f092d04d7c12fd1640b84a796f468bdba1a3dc08ac2d06bdbd"
+      },
+      "raster": {
+        "bytes": 1944640,
+        "path": "target/varmq-viewers-v3/dark/native-pdfjs.rgba.zlib",
+        "sha256": "19817d6e3d54a51105b8d82be7b316f6538be0be65330f560008594363f38c9e"
+      },
+      "runs": [
+        {
+          "byte_length": 39091808,
+          "height": 2996,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-pdfjs-0-raw.rgba.zlib",
+            "sha256": "1286a44a61f012f092d04d7c12fd1640b84a796f468bdba1a3dc08ac2d06bdbd"
+          },
+          "sha256": "1286a44a61f012f092d04d7c12fd1640b84a796f468bdba1a3dc08ac2d06bdbd",
+          "width": 3262
+        },
+        {
+          "byte_length": 39091808,
+          "height": 2996,
+          "layout": "top-left-row-major",
+          "pdfjs": "6.1.200",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "raw_capture": {
+            "bytes": 39091808,
+            "file": "native-pdfjs-1-raw.rgba.zlib",
+            "sha256": "1286a44a61f012f092d04d7c12fd1640b84a796f468bdba1a3dc08ac2d06bdbd"
+          },
+          "sha256": "1286a44a61f012f092d04d7c12fd1640b84a796f468bdba1a3dc08ac2d06bdbd",
+          "width": 3262
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-pdfjs"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "4616faf287e0853a589e014518d8b33dae7d4b86dab544b2b606b591e8e6cb48"
+      },
+      "raster": {
+        "bytes": 2003552,
+        "path": "target/varmq-viewers-v3/dark/official-rust.rgba.zlib",
+        "sha256": "217986c8ce5c675828af55143a6c19c117e016b48b81e8b36c756ff1a35cf1aa"
+      },
+      "runs": [
+        {
+          "height": 2997,
+          "raw_capture": {
+            "bytes": 39104856,
+            "file": "official-rust-0-raw.rgba.zlib",
+            "sha256": "8e997001495dfc018f9dd66f5d6678b325c5eeb17ead65241baca7a53cb02a6b"
+          },
+          "width": 3262
+        },
+        {
+          "height": 2997,
+          "raw_capture": {
+            "bytes": 39104856,
+            "file": "official-rust-1-raw.rgba.zlib",
+            "sha256": "8e997001495dfc018f9dd66f5d6678b325c5eeb17ead65241baca7a53cb02a6b"
+          },
+          "width": 3262
+        }
+      ],
+      "variant": "dark",
+      "viewer": "official-rust"
+    },
+    {
+      "canonical_pixels": {
+        "bytes": 39091808,
+        "sha256": "1902cf8cea05907611dde930bbded955f5581b47d9a2f6096088c7cffa1452ad"
+      },
+      "raster": {
+        "bytes": 2003553,
+        "path": "target/varmq-viewers-v3/dark/native-rust.rgba.zlib",
+        "sha256": "e3a76bddf5ea9560b0db0b736027747f021a9d13de8748383492f86682bfa3de"
+      },
+      "runs": [
+        {
+          "height": 2997,
+          "raw_capture": {
+            "bytes": 39104856,
+            "file": "native-rust-0-raw.rgba.zlib",
+            "sha256": "e3c7a7c01033678645b361efa9e6303e856c69a1d1a6b9e0553cb408ccca2f40"
+          },
+          "width": 3262
+        },
+        {
+          "height": 2997,
+          "raw_capture": {
+            "bytes": 39104856,
+            "file": "native-rust-1-raw.rgba.zlib",
+            "sha256": "e3c7a7c01033678645b361efa9e6303e856c69a1d1a6b9e0553cb408ccca2f40"
+          },
+          "width": 3262
+        }
+      ],
+      "variant": "dark",
+      "viewer": "native-rust"
+    }
+  ],
+  "eligible_executions": [],
+  "files": {
+    "dark/assets/native-font-0.sfnt": {
+      "bytes": 11992,
+      "sha256": "3b6079c73defeadb4e1967840e8be9922dbb95d3cad1ebf06e3f8df72e9c0bda"
+    },
+    "dark/assets/native-font-0.woff2": {
+      "bytes": 6876,
+      "sha256": "e04c4642c1bfd313747928c4d7e3271ef6093f9ea6d14919b151e2d92d6d5084"
+    },
+    "dark/assets/native-font-1.sfnt": {
+      "bytes": 8432,
+      "sha256": "c8cd640f2d91727a9f9334b44a542297e0e856d98750177dc2ca9874896e068f"
+    },
+    "dark/assets/native-font-1.woff2": {
+      "bytes": 5040,
+      "sha256": "3bf8449f3675ea0f071c2ee4b2a4fcd44e943c50778dc49a58fe020da8f05893"
+    },
+    "dark/assets/official-font-0.sfnt": {
+      "bytes": 11716,
+      "sha256": "65742b267d4e9d0eac7891aaa486ae5b8babbc6e6d1567b2cf9d3b4310e7131c"
+    },
+    "dark/assets/official-font-0.woff2": {
+      "bytes": 6792,
+      "sha256": "631fca29bd639afecb222df2e393c016bee50cf2115be58fe6bcc69356b67b4f"
+    },
+    "dark/assets/official-font-1.sfnt": {
+      "bytes": 410792,
+      "sha256": "ff1b6dd524120cf3c1b8ba8343065b57853abb522cd453b95ed0ed02decf5cae"
+    },
+    "dark/assets/official-font-1.woff2": {
+      "bytes": 147436,
+      "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+    },
+    "dark/assets/official-substitute-0.ttf": {
+      "bytes": 410820,
+      "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+    },
+    "dark/native-assets.json": {
+      "bytes": 1534,
+      "sha256": "002a813ce774e20f3ced79fccf0dda4b4554635a497b7fdb2a00ab0c61eaf374"
+    },
+    "dark/native-chromium-0-raw.rgba.zlib": {
+      "bytes": 2086290,
+      "sha256": "c42ee998d2d56b00af8155b55feeebc0afc1b7630da7d3640c68db50f0ec449b"
+    },
+    "dark/native-chromium-1-raw.rgba.zlib": {
+      "bytes": 2086290,
+      "sha256": "c42ee998d2d56b00af8155b55feeebc0afc1b7630da7d3640c68db50f0ec449b"
+    },
+    "dark/native-chromium.rgba.zlib": {
+      "bytes": 2086290,
+      "sha256": "c42ee998d2d56b00af8155b55feeebc0afc1b7630da7d3640c68db50f0ec449b"
+    },
+    "dark/native-pdf-report.json": {
+      "bytes": 419,
+      "sha256": "62c83b99f3ab3d601764fd5141011fe1ec5ede2e6470f773b733c29bde6d80bb"
+    },
+    "dark/native-pdfium-0-raw.rgba.zlib": {
+      "bytes": 1142965,
+      "sha256": "21b07c96873eb519d3616ff8eba9518a1c3088a2d9b23a0655faf07051f202d6"
+    },
+    "dark/native-pdfium-1-raw.rgba.zlib": {
+      "bytes": 1142965,
+      "sha256": "21b07c96873eb519d3616ff8eba9518a1c3088a2d9b23a0655faf07051f202d6"
+    },
+    "dark/native-pdfium.rgba.zlib": {
+      "bytes": 1142965,
+      "sha256": "21b07c96873eb519d3616ff8eba9518a1c3088a2d9b23a0655faf07051f202d6"
+    },
+    "dark/native-pdfjs-0-raw.rgba.zlib": {
+      "bytes": 1944640,
+      "sha256": "19817d6e3d54a51105b8d82be7b316f6538be0be65330f560008594363f38c9e"
+    },
+    "dark/native-pdfjs-1-raw.rgba.zlib": {
+      "bytes": 1944640,
+      "sha256": "19817d6e3d54a51105b8d82be7b316f6538be0be65330f560008594363f38c9e"
+    },
+    "dark/native-pdfjs.rgba.zlib": {
+      "bytes": 1944640,
+      "sha256": "19817d6e3d54a51105b8d82be7b316f6538be0be65330f560008594363f38c9e"
+    },
+    "dark/native-png-report.json": {
+      "bytes": 414,
+      "sha256": "c659bdffaaea2a869cbcd5ea91933a5d2c5c8d70c539e549ee7c2d3bcc90aa26"
+    },
+    "dark/native-rust-0-raw.rgba.zlib": {
+      "bytes": 2003571,
+      "sha256": "b6b093d182b7a015acf0977d4e4e83fa0c3dc8cad890e45c4fbc74eafb5c7c5c"
+    },
+    "dark/native-rust-1-raw.rgba.zlib": {
+      "bytes": 2003571,
+      "sha256": "b6b093d182b7a015acf0977d4e4e83fa0c3dc8cad890e45c4fbc74eafb5c7c5c"
+    },
+    "dark/native-rust.rgba.zlib": {
+      "bytes": 2003553,
+      "sha256": "e3a76bddf5ea9560b0db0b736027747f021a9d13de8748383492f86682bfa3de"
+    },
+    "dark/native-rust.svg": {
+      "bytes": 442460,
+      "sha256": "6deb0372986a96b5c1383ffb41e81257301cbf4750822eb6f0f67b3a2f524c52"
+    },
+    "dark/native-svg-report.json": {
+      "bytes": 417,
+      "sha256": "d1106cf1afa87c83f5538aaf3645db504b93cf12356881618b631a4bbb6cb042"
+    },
+    "dark/native-view.svg": {
+      "bytes": 444070,
+      "sha256": "852869b2bad8b9cb22535f7599ce20e8a284f71025c63e9301cf508dde11a3c0"
+    },
+    "dark/native.pdf": {
+      "bytes": 246865,
+      "sha256": "e93f10f84d475bf04dd702fbb93bd2847cba7008354893ca94353face349243e"
+    },
+    "dark/native.png": {
+      "bytes": 1880617,
+      "sha256": "2ae2e1624973abc8e051b7f846b2c7ba4f2a617d04dd67d9ab645a1f4c52d04d"
+    },
+    "dark/native.svg": {
+      "bytes": 444038,
+      "sha256": "7ff8d083953af1a59d43ffdb1cd208faf7834a492201dd6104afd952afae5262"
+    },
+    "dark/official-assets.json": {
+      "bytes": 1526,
+      "sha256": "6ffe28f0334c5eb6187c482a018166677d3c90f10c819c17fb3a7667012d2efb"
+    },
+    "dark/official-chromium-0-raw.rgba.zlib": {
+      "bytes": 2078674,
+      "sha256": "7fcb5e53986cea3b4653a25970b9392b430610babe02db3d4c2b3f0d1b72ce3d"
+    },
+    "dark/official-chromium-1-raw.rgba.zlib": {
+      "bytes": 2078674,
+      "sha256": "7fcb5e53986cea3b4653a25970b9392b430610babe02db3d4c2b3f0d1b72ce3d"
+    },
+    "dark/official-chromium.rgba.zlib": {
+      "bytes": 2078674,
+      "sha256": "7fcb5e53986cea3b4653a25970b9392b430610babe02db3d4c2b3f0d1b72ce3d"
+    },
+    "dark/official-font-resolution.json": {
+      "bytes": 15771,
+      "sha256": "aae0120eb9bb36f952b4968b16e266434019c70abe8db22e0865cebc1e1dba74"
+    },
+    "dark/official-png.rgba.zlib": {
+      "bytes": 2099107,
+      "sha256": "e02d72e0e3536ff07f004dc2e8daa9b6305181754870e88baf2b526f0a1b6635"
+    },
+    "dark/official-rust-0-raw.rgba.zlib": {
+      "bytes": 2003571,
+      "sha256": "4f3035a8f4ae5bd5e6403bffdfee9670c6e82ddab1e419f49d85f27ba25968c8"
+    },
+    "dark/official-rust-1-raw.rgba.zlib": {
+      "bytes": 2003571,
+      "sha256": "4f3035a8f4ae5bd5e6403bffdfee9670c6e82ddab1e419f49d85f27ba25968c8"
+    },
+    "dark/official-rust.rgba.zlib": {
+      "bytes": 2003552,
+      "sha256": "217986c8ce5c675828af55143a6c19c117e016b48b81e8b36c756ff1a35cf1aa"
+    },
+    "dark/official-rust.svg": {
+      "bytes": 562210,
+      "sha256": "31f4f53a34d810091143fea9586ef48bdfd518cff52d3df063e153de9fb43901"
+    },
+    "dark/official-substituted.svg": {
+      "bytes": 563460,
+      "sha256": "e8fecba0503f10f81185c5a58e9333df81c88bbeb4d60be1518f2eee9876292c"
+    },
+    "dark/official-view.svg": {
+      "bytes": 563476,
+      "sha256": "725a8ddf4745a21fb373c6c8b0a0eafcb6096f0fda4086235678bcd1a1d155ba"
+    },
+    "dark/official.png": {
+      "bytes": 3077134,
+      "sha256": "fffd3882903d83d4fd84691f3e6b8e7daf143ac128f009996d9dc0420c90240b"
+    },
+    "dark/official.svg": {
+      "bytes": 366780,
+      "sha256": "3176ff1b4fd722932fd889a61033f7d4724e3bb6260c5311302be39ddc60643d"
+    },
+    "dark/pdf-pdfium-comparison.json": {
+      "bytes": 1253,
+      "sha256": "7c9067affdcb240749e40e380af784281395fe2badb155f95e302385d2092884"
+    },
+    "dark/pdf-pdfjs-comparison.json": {
+      "bytes": 1247,
+      "sha256": "52ecd2aad6bf4394406fb6d98546de4dc4714275349238a2a4081e206daa08c8"
+    },
+    "dark/png-canvas-comparison.json": {
+      "bytes": 1247,
+      "sha256": "d0ba3d1cc871a2e29a16ac34a8a4fc0e1e7d3070466f49f4dbda8b15793a7fef"
+    },
+    "dark/regions.json": {
+      "bytes": 397,
+      "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+    },
+    "dark/svg-chromium-comparison.json": {
+      "bytes": 1240,
+      "sha256": "cfd72b7431de189281d786d4c5fce8d717b92eaacc118da4837598b00c49589b"
+    },
+    "dark/svg-rust-comparison.json": {
+      "bytes": 1232,
+      "sha256": "dac6dd94f909164c80a3d6caf0dd873b46fe14eecf675913c8d275f6e2a59391"
+    },
+    "dark/viewer-assets-plan.json": {
+      "bytes": 2841,
+      "sha256": "49d792fa5c3967a72683e3a3660c364ca340ed0182f8f3ff6f5f6ca3b5303b3c"
+    },
+    "light/assets/native-font-0.sfnt": {
+      "bytes": 11992,
+      "sha256": "3b6079c73defeadb4e1967840e8be9922dbb95d3cad1ebf06e3f8df72e9c0bda"
+    },
+    "light/assets/native-font-0.woff2": {
+      "bytes": 6876,
+      "sha256": "e04c4642c1bfd313747928c4d7e3271ef6093f9ea6d14919b151e2d92d6d5084"
+    },
+    "light/assets/native-font-1.sfnt": {
+      "bytes": 8432,
+      "sha256": "c8cd640f2d91727a9f9334b44a542297e0e856d98750177dc2ca9874896e068f"
+    },
+    "light/assets/native-font-1.woff2": {
+      "bytes": 5040,
+      "sha256": "3bf8449f3675ea0f071c2ee4b2a4fcd44e943c50778dc49a58fe020da8f05893"
+    },
+    "light/assets/official-font-0.sfnt": {
+      "bytes": 11716,
+      "sha256": "65742b267d4e9d0eac7891aaa486ae5b8babbc6e6d1567b2cf9d3b4310e7131c"
+    },
+    "light/assets/official-font-0.woff2": {
+      "bytes": 6792,
+      "sha256": "631fca29bd639afecb222df2e393c016bee50cf2115be58fe6bcc69356b67b4f"
+    },
+    "light/assets/official-font-1.sfnt": {
+      "bytes": 410792,
+      "sha256": "ff1b6dd524120cf3c1b8ba8343065b57853abb522cd453b95ed0ed02decf5cae"
+    },
+    "light/assets/official-font-1.woff2": {
+      "bytes": 147436,
+      "sha256": "b729629dfda0650528a7767bfb49d953ea7826ea9c98a6f6fdcb8c5c64d8bdf5"
+    },
+    "light/assets/official-substitute-0.ttf": {
+      "bytes": 410820,
+      "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144"
+    },
+    "light/native-assets.json": {
+      "bytes": 1536,
+      "sha256": "3b90cde811bed1fc7c3c39e3cf3c499008e2c1253b64f32176c5403f9b4b568c"
+    },
+    "light/native-chromium-0-raw.rgba.zlib": {
+      "bytes": 2246588,
+      "sha256": "317a021698d3c81352a18cea24b0f5ffdb5855b246e32a85ce7b53d08674041d"
+    },
+    "light/native-chromium-1-raw.rgba.zlib": {
+      "bytes": 2246588,
+      "sha256": "317a021698d3c81352a18cea24b0f5ffdb5855b246e32a85ce7b53d08674041d"
+    },
+    "light/native-chromium.rgba.zlib": {
+      "bytes": 2246588,
+      "sha256": "317a021698d3c81352a18cea24b0f5ffdb5855b246e32a85ce7b53d08674041d"
+    },
+    "light/native-pdf-report.json": {
+      "bytes": 419,
+      "sha256": "a9e183da9c7bae4424aacdfdd0793f107477512972ca1d4c3394aa7b7a303fa4"
+    },
+    "light/native-pdfium-0-raw.rgba.zlib": {
+      "bytes": 1172198,
+      "sha256": "db3d2631e4ab5a034f19bbc05a10bb2461d37043b01756c333bc5dde3c05e8c7"
+    },
+    "light/native-pdfium-1-raw.rgba.zlib": {
+      "bytes": 1172198,
+      "sha256": "db3d2631e4ab5a034f19bbc05a10bb2461d37043b01756c333bc5dde3c05e8c7"
+    },
+    "light/native-pdfium.rgba.zlib": {
+      "bytes": 1172198,
+      "sha256": "db3d2631e4ab5a034f19bbc05a10bb2461d37043b01756c333bc5dde3c05e8c7"
+    },
+    "light/native-pdfjs-0-raw.rgba.zlib": {
+      "bytes": 1983380,
+      "sha256": "dd774542006a09e69481c4a465df5bcce338ee9e4a91f91a92762aa7aad4aab9"
+    },
+    "light/native-pdfjs-1-raw.rgba.zlib": {
+      "bytes": 1983380,
+      "sha256": "dd774542006a09e69481c4a465df5bcce338ee9e4a91f91a92762aa7aad4aab9"
+    },
+    "light/native-pdfjs.rgba.zlib": {
+      "bytes": 1983380,
+      "sha256": "dd774542006a09e69481c4a465df5bcce338ee9e4a91f91a92762aa7aad4aab9"
+    },
+    "light/native-png-report.json": {
+      "bytes": 414,
+      "sha256": "abca6751563d4c989a92d314f1a6f680a34fa7a7148e6ca2b3db6a8016a72d90"
+    },
+    "light/native-rust-0-raw.rgba.zlib": {
+      "bytes": 2139041,
+      "sha256": "a82d5c2d8a40fff3137f90dbfb856ecaa2723fe4f3860c83447488fcc735f454"
+    },
+    "light/native-rust-1-raw.rgba.zlib": {
+      "bytes": 2139041,
+      "sha256": "a82d5c2d8a40fff3137f90dbfb856ecaa2723fe4f3860c83447488fcc735f454"
+    },
+    "light/native-rust.rgba.zlib": {
+      "bytes": 2139022,
+      "sha256": "0884475adb034f353b406a8e6dc1e5be0a78d5efad0b4a327a1172fbeba43af8"
+    },
+    "light/native-rust.svg": {
+      "bytes": 442420,
+      "sha256": "cbc9895ea417db75376496e17b14a070b3fdb81b54b0e61dc6562e9fa551f9f8"
+    },
+    "light/native-svg-report.json": {
+      "bytes": 417,
+      "sha256": "c7fc3184fdf85131bc02b060f4ecda9486a114e264235069bb5e8072972caea5"
+    },
+    "light/native-view.svg": {
+      "bytes": 444030,
+      "sha256": "48d293f744ea0b74677581155a652dc48bc2b8a95010dad6679630ff5e50d9b2"
+    },
+    "light/native.pdf": {
+      "bytes": 246798,
+      "sha256": "785bfbb14d955586bc3f90a15bdfa1f2f2a4cd8ffeb448d500960f899fa0882a"
+    },
+    "light/native.png": {
+      "bytes": 1851214,
+      "sha256": "a48b0d924cf0afeca756950539285b260e2f14ee1cb3776f8caa2a351fabf82c"
+    },
+    "light/native.svg": {
+      "bytes": 443998,
+      "sha256": "6721600f35ff8aed3bfa77100f6c5abef2e0e5b7b4d87f78482c9f8dc383e6d2"
+    },
+    "light/official-assets.json": {
+      "bytes": 1528,
+      "sha256": "f86f650e1b7fb6f86046b49a9337a234b682e9e84765defc407f8402fe1da7cd"
+    },
+    "light/official-chromium-0-raw.rgba.zlib": {
+      "bytes": 2233973,
+      "sha256": "ca73d0c4c4bf476959bbe11477b84136a6d97b5b54e9372fb30738ce5dc57903"
+    },
+    "light/official-chromium-1-raw.rgba.zlib": {
+      "bytes": 2233973,
+      "sha256": "ca73d0c4c4bf476959bbe11477b84136a6d97b5b54e9372fb30738ce5dc57903"
+    },
+    "light/official-chromium.rgba.zlib": {
+      "bytes": 2233973,
+      "sha256": "ca73d0c4c4bf476959bbe11477b84136a6d97b5b54e9372fb30738ce5dc57903"
+    },
+    "light/official-font-resolution.json": {
+      "bytes": 15772,
+      "sha256": "fcdf2f93091a8d5b5c9d864207459bdb2382347439e4b5f8329311d2c3152d55"
+    },
+    "light/official-png.rgba.zlib": {
+      "bytes": 2329080,
+      "sha256": "263e9394261ba0788d85183a8e5e3bfd3884524298e2ea2b2c19a0a321b2eae4"
+    },
+    "light/official-rust-0-raw.rgba.zlib": {
+      "bytes": 2139053,
+      "sha256": "2c046df5bf272665c61240a04df5cac0e8bdb46c377fc2686a4b62604b0457f7"
+    },
+    "light/official-rust-1-raw.rgba.zlib": {
+      "bytes": 2139053,
+      "sha256": "2c046df5bf272665c61240a04df5cac0e8bdb46c377fc2686a4b62604b0457f7"
+    },
+    "light/official-rust.rgba.zlib": {
+      "bytes": 2139034,
+      "sha256": "e8e6e44f06bda9ead2890423fe844ea9ae9987e46c6389962b716f643dc56272"
+    },
+    "light/official-rust.svg": {
+      "bytes": 562170,
+      "sha256": "67010cf920fe8549876edda91a0f28e03dc17708139a33cd93b5ecb2442e536f"
+    },
+    "light/official-substituted.svg": {
+      "bytes": 563420,
+      "sha256": "9bb265cb5bdc3b86ad2b214a4419c7230f0c0fa08241d9a5a985e755accef811"
+    },
+    "light/official-view.svg": {
+      "bytes": 563436,
+      "sha256": "0bc0576b7e98305b3e272aa60d1b81089b5b252787987a17d5d2c4ab830ce1f0"
+    },
+    "light/official.png": {
+      "bytes": 3373741,
+      "sha256": "d32ef657abce5acfc7b14223e43515d0d7b69e17f3a52ec21cc01f3f85e0d692"
+    },
+    "light/official.svg": {
+      "bytes": 366740,
+      "sha256": "46a74d826e9fef635efcfb18c8ea13cd3b77711eecfbcae09f4f8907f690edeb"
+    },
+    "light/pdf-pdfium-comparison.json": {
+      "bytes": 1253,
+      "sha256": "a7fa4f5148916ee5d8df147f1922af8c486c19409ea88f649cdab62666b82bdf"
+    },
+    "light/pdf-pdfjs-comparison.json": {
+      "bytes": 1248,
+      "sha256": "193fe65a82c2f44bc9f1bc41886bdad4bb812f76b1092e6e33c108a498ea051e"
+    },
+    "light/png-canvas-comparison.json": {
+      "bytes": 1247,
+      "sha256": "f8463f74e9d129da653891fca8629da4334213b57d3998ac5dbb7bd1bf0ede1e"
+    },
+    "light/regions.json": {
+      "bytes": 397,
+      "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+    },
+    "light/svg-chromium-comparison.json": {
+      "bytes": 1237,
+      "sha256": "1e70e28f3b1a6a7d6c00659aeab6ce30fef74c73812c204fcdeb1bc4eb19dd51"
+    },
+    "light/svg-rust-comparison.json": {
+      "bytes": 1232,
+      "sha256": "4755e1c4b841d580b1fcd074b2a720c9d733a4b9fcc19022bc569120e3ed8757"
+    },
+    "light/viewer-assets-plan.json": {
+      "bytes": 2847,
+      "sha256": "022820c397561001af03293085888e97738f011e31e0972de07c2467c116ddbf"
+    }
+  },
+  "inputs": [
+    {
+      "bytes": 2917,
+      "path": "tests/conformance/intake/varmq-queue-diagram-v1/manifest.json",
+      "sha256": "9f36514571ef943937dadf80e10191918e10e0f4fcd14df94927b312b790c64b"
+    },
+    {
+      "bytes": 2383,
+      "path": "tests/conformance/intake/varmq-queue-diagram-v1/plan.json",
+      "sha256": "6b88dee9105b458f5edfa9bd5130df72d6e491ab1db47c81239d4c9425f1e849"
+    },
+    {
+      "bytes": 90886,
+      "path": "tests/conformance/intake/varmq-queue-diagram-v1/scene.excalidraw",
+      "sha256": "4874be31c2d4254e8a3375edd3a7e389c3cb2250beca8b152c2f6e4e653c279e"
+    },
+    {
+      "bytes": 12031,
+      "path": "target/varmq-reference-v1/reference.json",
+      "sha256": "1fbe5535cbe1e09c19632eb44c8d6efe245f1ea2b71a27d909a82621e9744107"
+    },
+    {
+      "bytes": 5228,
+      "path": "target/varmq-native-v3/capture.json",
+      "sha256": "329606bb5692735ed0f68f82a63322801e585a4b5333077c992f3395f509cf02"
+    }
+  ],
+  "judgments": [
+    {
+      "comparison": "svg-chromium",
+      "report": {
+        "bytes": 1237,
+        "path": "target/varmq-viewers-v3/light/svg-chromium-comparison.json",
+        "sha256": "1e70e28f3b1a6a7d6c00659aeab6ce30fef74c73812c204fcdeb1bc4eb19dd51"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 2246588,
+          "sha256": "317a021698d3c81352a18cea24b0f5ffdb5855b246e32a85ce7b53d08674041d"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 301,
+              "ssim_bits": "3feffffffffffef5",
+              "ssim_pass": true,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": true,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2233973,
+          "sha256": "ca73d0c4c4bf476959bbe11477b84136a6d97b5b54e9372fb30738ce5dc57903"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 4,
+          "changed_pixels_pass": true,
+          "height": 2996,
+          "ssim_bits": "3fefffcc4b81ad91",
+          "ssim_pass": true,
+          "width": 3262
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "svg-rust",
+      "report": {
+        "bytes": 1232,
+        "path": "target/varmq-viewers-v3/light/svg-rust-comparison.json",
+        "sha256": "4755e1c4b841d580b1fcd074b2a720c9d733a4b9fcc19022bc569120e3ed8757"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 2139022,
+          "sha256": "0884475adb034f353b406a8e6dc1e5be0a78d5efad0b4a327a1172fbeba43af8"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3ff0000000000000",
+              "ssim_pass": true,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 301,
+              "ssim_bits": "3feffffffffffeff",
+              "ssim_pass": true,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "rust",
+        "passed": true,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2139034,
+          "sha256": "e8e6e44f06bda9ead2890423fe844ea9ae9987e46c6389962b716f643dc56272"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 2996,
+          "ssim_bits": "3fefffff9306bfa3",
+          "ssim_pass": true,
+          "width": 3262
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "pdf-pdfium",
+      "report": {
+        "bytes": 1253,
+        "path": "target/varmq-viewers-v3/light/pdf-pdfium-comparison.json",
+        "sha256": "a7fa4f5148916ee5d8df147f1922af8c486c19409ea88f649cdab62666b82bdf"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 1172198,
+          "sha256": "db3d2631e4ab5a034f19bbc05a10bb2461d37043b01756c333bc5dde3c05e8c7"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 11,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3fefc17216d8c415",
+              "ssim_pass": false,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 18886,
+              "changed_pixels_pass": false,
+              "height": 301,
+              "ssim_bits": "3fe98f674257a6fe",
+              "ssim_pass": false,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2233973,
+          "sha256": "ca73d0c4c4bf476959bbe11477b84136a6d97b5b54e9372fb30738ce5dc57903"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 910085,
+          "changed_pixels_pass": false,
+          "height": 2996,
+          "ssim_bits": "3feeb7dd4fccb07e",
+          "ssim_pass": false,
+          "width": 3262
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "pdf-pdfjs",
+      "report": {
+        "bytes": 1248,
+        "path": "target/varmq-viewers-v3/light/pdf-pdfjs-comparison.json",
+        "sha256": "193fe65a82c2f44bc9f1bc41886bdad4bb812f76b1092e6e33c108a498ea051e"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 1983380,
+          "sha256": "dd774542006a09e69481c4a465df5bcce338ee9e4a91f91a92762aa7aad4aab9"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 2,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3fef9ebf1e368a9e",
+              "ssim_pass": false,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 15156,
+              "changed_pixels_pass": false,
+              "height": 301,
+              "ssim_bits": "3fe9e824845e5a96",
+              "ssim_pass": false,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "pdfjs",
+        "passed": false,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2233973,
+          "sha256": "ca73d0c4c4bf476959bbe11477b84136a6d97b5b54e9372fb30738ce5dc57903"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 713345,
+          "changed_pixels_pass": false,
+          "height": 2996,
+          "ssim_bits": "3feebeb90023f060",
+          "ssim_pass": false,
+          "width": 3262
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "png-canvas",
+      "report": {
+        "bytes": 1247,
+        "path": "target/varmq-viewers-v3/light/png-canvas-comparison.json",
+        "sha256": "f8463f74e9d129da653891fca8629da4334213b57d3998ac5dbb7bd1bf0ede1e"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 1851214,
+          "sha256": "a48b0d924cf0afeca756950539285b260e2f14ee1cb3776f8caa2a351fabf82c"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3feff47182118cca",
+              "ssim_pass": true,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 311,
+              "changed_pixels_pass": false,
+              "height": 301,
+              "ssim_bits": "3fef76856f64a86f",
+              "ssim_pass": false,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2329080,
+          "sha256": "263e9394261ba0788d85183a8e5e3bfd3884524298e2ea2b2c19a0a321b2eae4"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 34769,
+          "changed_pixels_pass": true,
+          "height": 2996,
+          "ssim_bits": "3fefa033295a0460",
+          "ssim_pass": false,
+          "width": 3262
+        }
+      },
+      "variant": "light"
+    },
+    {
+      "comparison": "svg-chromium",
+      "report": {
+        "bytes": 1240,
+        "path": "target/varmq-viewers-v3/dark/svg-chromium-comparison.json",
+        "sha256": "cfd72b7431de189281d786d4c5fce8d717b92eaacc118da4837598b00c49589b"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 2086290,
+          "sha256": "c42ee998d2d56b00af8155b55feeebc0afc1b7630da7d3640c68db50f0ec449b"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3feffffffffffff1",
+              "ssim_pass": true,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 301,
+              "ssim_bits": "3fefeb3fc37856c9",
+              "ssim_pass": false,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2078674,
+          "sha256": "7fcb5e53986cea3b4653a25970b9392b430610babe02db3d4c2b3f0d1b72ce3d"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 18,
+          "changed_pixels_pass": true,
+          "height": 2996,
+          "ssim_bits": "3feffc7f34846f91",
+          "ssim_pass": true,
+          "width": 3262
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "svg-rust",
+      "report": {
+        "bytes": 1232,
+        "path": "target/varmq-viewers-v3/dark/svg-rust-comparison.json",
+        "sha256": "dac6dd94f909164c80a3d6caf0dd873b46fe14eecf675913c8d275f6e2a59391"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 2003553,
+          "sha256": "e3a76bddf5ea9560b0db0b736027747f021a9d13de8748383492f86682bfa3de"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3feffffffffffff1",
+              "ssim_pass": true,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 301,
+              "ssim_bits": "3fefffffffffffc2",
+              "ssim_pass": true,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "rust",
+        "passed": true,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2003552,
+          "sha256": "217986c8ce5c675828af55143a6c19c117e016b48b81e8b36c756ff1a35cf1aa"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 0,
+          "changed_pixels_pass": true,
+          "height": 2996,
+          "ssim_bits": "3fefffff8c140941",
+          "ssim_pass": true,
+          "width": 3262
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "pdf-pdfium",
+      "report": {
+        "bytes": 1253,
+        "path": "target/varmq-viewers-v3/dark/pdf-pdfium-comparison.json",
+        "sha256": "7c9067affdcb240749e40e380af784281395fe2badb155f95e302385d2092884"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 1142965,
+          "sha256": "21b07c96873eb519d3616ff8eba9518a1c3088a2d9b23a0655faf07051f202d6"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 17,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3fefc351f7b47517",
+              "ssim_pass": false,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 15046,
+              "changed_pixels_pass": false,
+              "height": 301,
+              "ssim_bits": "3fe8e74c90d77b09",
+              "ssim_pass": false,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2078674,
+          "sha256": "7fcb5e53986cea3b4653a25970b9392b430610babe02db3d4c2b3f0d1b72ce3d"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 732920,
+          "changed_pixels_pass": false,
+          "height": 2996,
+          "ssim_bits": "3feea3938041c3f4",
+          "ssim_pass": false,
+          "width": 3262
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "pdf-pdfjs",
+      "report": {
+        "bytes": 1247,
+        "path": "target/varmq-viewers-v3/dark/pdf-pdfjs-comparison.json",
+        "sha256": "52ecd2aad6bf4394406fb6d98546de4dc4714275349238a2a4081e206daa08c8"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 1944640,
+          "sha256": "19817d6e3d54a51105b8d82be7b316f6538be0be65330f560008594363f38c9e"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 2,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3fef9e9363f9eb85",
+              "ssim_pass": false,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 9392,
+              "changed_pixels_pass": false,
+              "height": 301,
+              "ssim_bits": "3fe96a417030f893",
+              "ssim_pass": false,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "pdfjs",
+        "passed": false,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2078674,
+          "sha256": "7fcb5e53986cea3b4653a25970b9392b430610babe02db3d4c2b3f0d1b72ce3d"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 459713,
+          "changed_pixels_pass": false,
+          "height": 2996,
+          "ssim_bits": "3feeb164c46c4ab7",
+          "ssim_pass": false,
+          "width": 3262
+        }
+      },
+      "variant": "dark"
+    },
+    {
+      "comparison": "png-canvas",
+      "report": {
+        "bytes": 1247,
+        "path": "target/varmq-viewers-v3/dark/png-canvas-comparison.json",
+        "sha256": "d0ba3d1cc871a2e29a16ac34a8a4fc0e1e7d3070466f49f4dbda8b15793a7fef"
+      },
+      "result": {
+        "candidate": {
+          "bytes": 1880617,
+          "sha256": "2ae2e1624973abc8e051b7f846b2c7ba4f2a617d04dd67d9ab645a1f4c52d04d"
+        },
+        "crops": [
+          {
+            "id": "queue-manager-typography",
+            "region": {
+              "area": 16115,
+              "changed_pixels": 0,
+              "changed_pixels_pass": true,
+              "height": 55,
+              "ssim_bits": "3feff4600b028bce",
+              "ssim_pass": true,
+              "width": 293
+            }
+          },
+          {
+            "id": "worker-arrow",
+            "region": {
+              "area": 30401,
+              "changed_pixels": 246,
+              "changed_pixels_pass": false,
+              "height": 301,
+              "ssim_bits": "3fef80d40d2a5305",
+              "ssim_pass": false,
+              "width": 101
+            }
+          }
+        ],
+        "mode": "canonical",
+        "passed": false,
+        "plan": {
+          "bytes": 397,
+          "sha256": "b10dbade989c6bf3a116b5b80eedf9bab27ead5b193fd3c2759b97542405cc33"
+        },
+        "reference": {
+          "bytes": 2099107,
+          "sha256": "e02d72e0e3536ff07f004dc2e8daa9b6305181754870e88baf2b526f0a1b6635"
+        },
+        "schema": "excalidraw-render/representative-intake-comparison/v1",
+        "whole": {
+          "area": 9772952,
+          "changed_pixels": 32175,
+          "changed_pixels_pass": true,
+          "height": 2996,
+          "ssim_bits": "3fefa396237c38a9",
+          "ssim_pass": false,
+          "width": 3262
+        }
+      },
+      "variant": "dark"
+    }
+  ],
+  "native": {
+    "bytes": 5228,
+    "path": "target/varmq-native-v3/capture.json",
+    "sha256": "329606bb5692735ed0f68f82a63322801e585a4b5333077c992f3395f509cf02"
+  },
+  "reference": {
+    "bytes": 12031,
+    "path": "target/varmq-reference-v1/reference.json",
+    "sha256": "1fbe5535cbe1e09c19632eb44c8d6efe245f1ea2b71a27d909a82621e9744107"
+  },
+  "schema": "excalidraw-render/representative-intake-viewers/v1",
+  "sources": [
+    {
+      "bytes": 15174,
+      "path": "crates/excalidraw-render-compare/src/comparison.rs",
+      "sha256": "5988dd5f973171facf1ccc9712bef2e68e47af8f3947cd3213f21b1b320fb807"
+    },
+    {
+      "bytes": 4306,
+      "path": "crates/excalidraw-render-compare/src/lib.rs",
+      "sha256": "59f84c68a787c76ef19f2b95688201e926f0816637f247b9aa8c9ed2578bd312"
+    },
+    {
+      "bytes": 13171,
+      "path": "crates/excalidraw-render-compare/src/pixelmatch.rs",
+      "sha256": "1c505a0a266b0aa2779dcaa237483c28fe0bdbe4543cf43f88344844872d246d"
+    },
+    {
+      "bytes": 8186,
+      "path": "crates/excalidraw-render-compare/src/ssim.rs",
+      "sha256": "4746f89206960465784bbddf13176b865232b472b20f02335c468e2d61aab007"
+    },
+    {
+      "bytes": 4460,
+      "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
+      "sha256": "e969fd7a3bc49ff3014b2cd3b3622cd18abddbc9371744d4e47927d0484bcfc7"
+    },
+    {
+      "bytes": 4478,
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+      "sha256": "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
+    },
+    {
+      "bytes": 4072,
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+      "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
+    },
+    {
+      "bytes": 4902,
+      "path": "tests/conformance/viewer-profiles/canonical-svg-chromium-v1.json",
+      "sha256": "be1664b3ad79c09b99680ff5e8ca0e56a98fce703c94a13e19e889097c90426b"
+    },
+    {
+      "bytes": 4889,
+      "path": "tests/conformance/viewer-profiles/canonical-svg-pure-rust-v1.json",
+      "sha256": "8be13868942970480bb083b454ed003f5809b2b7f1725adbaaa7d5450b69316d"
+    },
+    {
+      "bytes": 47129,
+      "path": "tests/oracle/reference-profiles/revision-1-assets.json",
+      "sha256": "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a"
+    },
+    {
+      "bytes": 33524,
+      "path": "tests/oracle/reference-profiles/revision-1.json",
+      "sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
+    },
+    {
+      "bytes": 666,
+      "path": "tools/pdf-harness/pdfium.lock.json",
+      "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90"
+    },
+    {
+      "bytes": 6282,
+      "path": "tools/pdf-harness/pdfium/render.py",
+      "sha256": "f01b2b38bdd2341602ce9f333423c79be5188328184e274bdd7c8acb2f83df3a"
+    },
+    {
+      "bytes": 8850,
+      "path": "tools/pdf-harness/pdfjs/package-lock.json",
+      "sha256": "887c2194fe05e87250486f4e6c8da341d0fb51748e14c3b4cf94a16455740c60"
+    },
+    {
+      "bytes": 3416,
+      "path": "tools/pdf-harness/pdfjs/render.mjs",
+      "sha256": "7386887b7b697c49fbe2c1095a94df86315bb0c15353f51eb4d03d1ba9c9a1ad"
+    },
+    {
+      "bytes": 943,
+      "path": "tools/pdf-harness/run-pdfium.sh",
+      "sha256": "1f6ceb77d6f90bbeb5c7727279f13a37b1fe3d695744b82389631ba9e03bc819"
+    },
+    {
+      "bytes": 1141,
+      "path": "tools/pdf-harness/run-pdfjs.sh",
+      "sha256": "a944fd3b5e3e09daca96d372341585b3b17442b3421bf7697eb865d1abc8d82e"
+    },
+    {
+      "bytes": 151230,
+      "path": "tools/reference-oracle/package-lock.json",
+      "sha256": "8857f2792a506163d150a5481122a4bb93b3646e356a57065770747a188d67fc"
+    },
+    {
+      "bytes": 34890,
+      "path": "tools/reference-oracle/scripts/svg-viewer.mjs",
+      "sha256": "61968d7bca7fef68fa29af22368b5d7dfddda9be1c9a34e53f479cdb14c1a11b"
+    },
+    {
+      "bytes": 3671,
+      "path": "tools/reference-oracle/src/browser-entry.js",
+      "sha256": "85d261f4cf5a1000b128a52d0238c4697b31725dd1d00df765ae49a0c206c1d4"
+    },
+    {
+      "bytes": 369,
+      "path": "tools/reference-oracle/vite.config.mjs",
+      "sha256": "e408434b70fe73f5f45d404dd4b3e1e671d6159b0157e50a9531a312fd96a976"
+    },
+    {
+      "bytes": 7232,
+      "path": "tools/representative-intake/compare/Cargo.lock",
+      "sha256": "685b6dbdddd2b543633d37c4cf354229c912483e43062e41cfaf342fa7079c7f"
+    },
+    {
+      "bytes": 367,
+      "path": "tools/representative-intake/compare/Cargo.toml",
+      "sha256": "3e8fb41ec95cda08910b6203aef36cf8e05135bdf0b2fd8c46b181c7a8c18b75"
+    },
+    {
+      "bytes": 4954,
+      "path": "tools/representative-intake/compare/src/main.rs",
+      "sha256": "4f247e8c76f2fc2609caddeb41d13bee0e49cd610c74a2016579fbe5e3e7c67e"
+    },
+    {
+      "bytes": 19760,
+      "path": "tools/representative-intake/evidence.py",
+      "sha256": "ee9bb5e482856e6a39bad1e9c099274debd4bec2f55af045b611f06b2ebaf17b"
+    },
+    {
+      "bytes": 4566,
+      "path": "tools/representative-intake/font-resolution.mjs",
+      "sha256": "1f4299fffaad5383d37a4086057f55e49c6b06adcafa9b3fa90bd3bbb5853ff9"
+    },
+    {
+      "bytes": 18764,
+      "path": "tools/representative-intake/intake.py",
+      "sha256": "354de6f91c79ce475fd5e86392f55d438cacd6554e1dca765844fe3bc1e2092d"
+    },
+    {
+      "bytes": 8062,
+      "path": "tools/representative-intake/reference.mjs",
+      "sha256": "84d6c4b381efb9415d994e9df8f9d9d1a330c59a8ab9e6aecfac65415be37d75"
+    },
+    {
+      "bytes": 777,
+      "path": "tools/representative-intake/reference.sh",
+      "sha256": "7427e95728bf328683dab1a8ae01910126e1ad594a74b3e240a37c15dc2d57a8"
+    },
+    {
+      "bytes": 2032,
+      "path": "tools/representative-intake/svg-viewer.mjs",
+      "sha256": "448b9e566197c74907f74f63c6bfb4ac088fd4847fe81c61706f0e557265cea3"
+    },
+    {
+      "bytes": 531,
+      "path": "tools/representative-intake/svg-viewer.sh",
+      "sha256": "dbfbeb93b0208499aa09c7fee409bac3432bc842684fdb18443854003e5c233f"
+    },
+    {
+      "bytes": 10323,
+      "path": "tools/representative-intake/viewer-fonts/Cargo.lock",
+      "sha256": "11668330eae6b5cee15abf25b0935a2f9ea39b6f7b72dcad0b8db78ccfb74fb2"
+    },
+    {
+      "bytes": 503,
+      "path": "tools/representative-intake/viewer-fonts/Cargo.toml",
+      "sha256": "bed43c29ef1f636cb90ee7d167ae84e5440a56a091cfb61e87348b4a819e8a6a"
+    },
+    {
+      "bytes": 3888,
+      "path": "tools/representative-intake/viewer-fonts/src/main.rs",
+      "sha256": "30db51d98ea19ae43b5bb4a280bebf1e14654c9b73e2bbd26b1faba788a47655"
+    },
+    {
+      "bytes": 14611,
+      "path": "tools/representative-intake/viewer_assets.py",
+      "sha256": "4f077667529d93dbd97302742b12989931eaecf9adf959993142ceaca8cbad67"
+    },
+    {
+      "bytes": 17624,
+      "path": "tools/svg-viewer-rust/Cargo.lock",
+      "sha256": "987d8627af80014951265cdc527ef5f2716635d928a9348609292b87bdfd6c39"
+    },
+    {
+      "bytes": 740,
+      "path": "tools/svg-viewer-rust/Cargo.toml",
+      "sha256": "fcb2d6b7277899494ea30183c01e8463ef3fde8678266b5a0bf022980da7d75f"
+    },
+    {
+      "bytes": 47655,
+      "path": "tools/svg-viewer-rust/src/main.rs",
+      "sha256": "2105e33e86647c8873487970b2bf06fe88b6f2db1bac473b4db221a3e936b722"
+    }
+  ],
+  "status": "pending-review",
+  "viewport_adapter": "truncate fractional viewport at origin; never resize or align; proposed, not approved"
+}

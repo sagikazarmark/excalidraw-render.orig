@@ -10,3 +10,7 @@ draws both cross-hatch directions; see `../varmq84-evidence-v1/DECISION.md`
 (follow-up section) for the diagnosis and remaining open work, and
 `../varmq84-pdf-subpixel-exception-v1/PROPOSAL.md` for the proposed light PDF
 `worker-arrow` exceptions.
+
+Superseded by `../varmq84-evidence-v3` after the dark-mode root filter change.
+Its light judgments are identical there; `compact.py check` of this record now
+correctly reports the changed dark SVG and PDF.

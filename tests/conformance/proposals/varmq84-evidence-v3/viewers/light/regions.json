@@ -1,0 +1,23 @@
+{
+  "crops": [
+    {
+      "class": "typography",
+      "height": 55,
+      "id": "queue-manager-typography",
+      "width": 293,
+      "x": 1745,
+      "y": 933
+    },
+    {
+      "class": "geometry/image",
+      "height": 301,
+      "id": "worker-arrow",
+      "width": 101,
+      "x": 454,
+      "y": 2155
+    }
+  ],
+  "height": 2996,
+  "whole_class": "mixed-representative",
+  "width": 3262
+}

@@ -17,8 +17,10 @@ count and binary64 score with no margin. Two are proposed:
 
 Ceilings are copied from the judgments in
 `tests/conformance/proposals/varmq84-evidence-v2` (renderer at `ca5c3a2`,
-including the PDFium geometry-loss fix). They are bound by report digest in
-`exceptions.json`.
+including the PDFium geometry-loss fix) and are identical in
+`tests/conformance/proposals/varmq84-evidence-v3` (renderer at `a9d9e5e`, after
+the dark-mode root filter change). `exceptions.json` binds them to the v3 report
+digests.
 
 ## Non-defect cause
 
@@ -55,9 +57,11 @@ Chromium, and PDFs grew 3–6×. It is not adopted.
 
 ## Deliberately excluded
 
-- **Dark variant.** The native *SVG* already fails this crop in dark mode (SSIM
-  0.989 with 0 changed pixels, in both SVG viewers). That cause is undiagnosed,
-  so a dark PDF exception cannot claim a single non-defect cause yet.
+- **Dark variant.** Dark mode adds a second cause to the PDF crop: the
+  reference filters the composited image, while a PDF can only composite
+  lowered colors (`../varmq84-dark-diagnosis-v1/DIAGNOSIS.md`, ADR-0012). A dark
+  PDF exception would cite both causes and needs its own proposal. The dark SVG
+  crop now differs only in Chromium, by the recorded frame-clip divergence.
 - **Whole-page PDF comparisons.** Besides the hatch, about 73000 pixels per
   viewer differ outside the cross-hatch rectangle for undiagnosed reasons.
 - **`queue-manager-typography`.** PDF text differs for an unrelated,
@@ -83,13 +87,13 @@ pass.
 ## Reproduction
 
 ```sh
-python3 -B tools/representative-intake/compact.py check tests/conformance/proposals/varmq84-evidence-v2
+python3 -B tools/representative-intake/compact.py check tests/conformance/proposals/varmq84-evidence-v3
 python3 -B tools/representative-intake/pdf_thin_lines.py <new-dir>
-python3 -B tools/representative-intake/pdf_subpixel_attribution.py target/varmq-viewers-v2/light \
+python3 -B tools/representative-intake/pdf_subpixel_attribution.py target/varmq-viewers-v3/light \
   --stroke-width 0.5 --patch 470 2250 30 40 --red 255 165 --control <control.rgba.zlib> <out.json>
 ```
 
-The one-pixel control is `target/varmq-viewers-v2/light/official-substituted.svg`
+The one-pixel control is `target/varmq-viewers-v3/light/official-substituted.svg`
 with its single `stroke-width="0.5"` changed to `"2"` (one device pixel at
 scale 0.5), rendered with `tools/representative-intake/svg-viewer.sh` and the
 official asset declaration, and clipped to the 3262×2996 grid.
