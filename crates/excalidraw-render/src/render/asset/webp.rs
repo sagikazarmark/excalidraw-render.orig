@@ -92,6 +92,28 @@ pub(super) fn canonical_webp(bytes: &[u8]) -> Result<Cow<'_, [u8]>, ResolveError
     if flags & !VP8X_VALID_FLAGS != 0 {
         return Err(ResolveError::WebPDecodeFailed);
     }
+    // image-webp decodes the alpha the flag declares; the declared flag itself
+    // only selects Blink's premultiplication (`webp_declares_alpha`), so the
+    // canonical flag states whether the bitstream carries alpha.
+    let mut bitstream_alpha = false;
+    let mut offset = 12_usize;
+    let mut first = true;
+    while offset < bytes.len() {
+        let (kind, data, next) = webp_chunk_at(bytes, offset)?;
+        match &kind {
+            b"VP8X" if !first => return Err(ResolveError::WebPDecodeFailed),
+            b"ALPH" => bitstream_alpha = true,
+            b"VP8L" => bitstream_alpha |= webp_lossless_has_alpha(data)?,
+            b"ANMF" => {
+                bitstream_alpha |= validate_webp_frame_chunks(
+                    data.get(16..).ok_or(ResolveError::WebPDecodeFailed)?,
+                )?;
+            }
+            _ => {}
+        }
+        first = false;
+        offset = next;
+    }
     let mut body = Vec::new();
     body.try_reserve_exact(bytes.len())
         .map_err(|_| ResolveError::Memory)?;
@@ -103,7 +125,8 @@ pub(super) fn canonical_webp(bytes: &[u8]) -> Result<Cow<'_, [u8]>, ResolveError
         match &kind {
             b"VP8X" => {
                 let data = data.to_mut();
-                data[0] = flags & (VP8X_ALPHA_FLAG | VP8X_ANIMATION_FLAG);
+                data[0] = (flags & VP8X_ANIMATION_FLAG)
+                    | if bitstream_alpha { VP8X_ALPHA_FLAG } else { 0 };
             }
             b"ANMF" => {
                 if data.len() < 16 {
@@ -141,6 +164,19 @@ pub(super) fn canonical_webp(bytes: &[u8]) -> Result<Cow<'_, [u8]>, ResolveError
     canonical.extend_from_slice(&riff_size.to_le_bytes());
     canonical.extend_from_slice(&body);
     Ok(Cow::Owned(canonical))
+}
+
+/// Whether Blink premultiplies the decoded samples: the VP8X alpha flag of an
+/// extended file, and always for a simple file, whose demuxed flags carry the
+/// bitstream's alpha. With the flag clear Blink decodes straight samples into
+/// a buffer it treats as premultiplied.
+pub(super) fn webp_declares_alpha(bytes: &[u8]) -> Result<bool, ResolveError> {
+    let bytes = riff_extent(bytes)?;
+    let (first, vp8x, _) = webp_chunk_at(bytes, 12)?;
+    Ok(first != *b"VP8X"
+        || vp8x
+            .first()
+            .is_some_and(|flags| flags & VP8X_ALPHA_FLAG != 0))
 }
 
 /// The ICC profile Blink applies: the first ICCP chunk of a still extended
@@ -414,14 +450,20 @@ fn standalone_webp_frame(frame: &[u8]) -> Result<(Vec<u8>, u32, u32), ResolveErr
 }
 
 pub(super) fn decode_webp_default_frame(
-    bytes: &[u8],
+    original: &[u8],
     source_width: u32,
     source_height: u32,
     pixels: u64,
     color_normalization: ColorNormalization,
 ) -> Result<DecodedRaster, ResolveError> {
-    let bytes = canonical_webp(bytes)?;
+    let declares_alpha = webp_declares_alpha(original)?;
+    let bytes = canonical_webp(original)?;
     let bytes = bytes.as_ref();
+    // With the alpha flag clear, the reference drops a still lossy image's
+    // ALPH chunk: the image is opaque with its raw VP8 colors. Lossless
+    // in-bitstream alpha and an animation frame's alpha stay (see the
+    // reinterpretation below).
+    let mut lossy_alpha = false;
     let decoder = webp_decoder(bytes)?;
     // Frame zero is drawn onto transparent black. Do not delegate this to the
     // animation compositor: opaque source channels do not imply an opaque
@@ -455,7 +497,15 @@ pub(super) fn decode_webp_default_frame(
         if first_frame.is_none() {
             return Err(ResolveError::WebPDecodeFailed);
         }
+    } else {
+        let mut offset = 12;
+        while offset < bytes.len() {
+            let (kind, _, next) = webp_chunk_at(bytes, offset)?;
+            lossy_alpha |= kind == *b"ALPH";
+            offset = next;
+        }
     }
+    let drop_alpha = !declares_alpha && lossy_alpha;
     let mut decoder = if let Some(frame) = &first_frame {
         drop(decoder);
         let decoder = webp_decoder(frame)?;
@@ -514,16 +564,43 @@ pub(super) fn decode_webp_default_frame(
             .get_mut(start..end)
             .ok_or(ResolveError::WebPDecodeFailed)?;
         target[..3].copy_from_slice(&pixel[..3]);
-        target[3] = if channels == 4 { pixel[3] } else { 255 };
+        target[3] = if channels == 4 && !drop_alpha {
+            pixel[3]
+        } else {
+            255
+        };
         if target[3] == 0 {
             target.fill(0);
         }
     }
     drop(decoded);
+    // With the alpha flag clear, Blink's buffer holds straight samples it
+    // treats as premultiplied: the drawn color is their unpremultiplication,
+    // clamped, and an untransformed draw uses the samples themselves.
+    let reinterpreted = if !declares_alpha && channels == 4 && !drop_alpha {
+        let samples = try_copy(&rgba)?;
+        for pixel in rgba.as_chunks_mut::<4>().0 {
+            let alpha = u32::from(pixel[3]);
+            for channel in &mut pixel[..3] {
+                *channel = (u32::from(*channel) * 255 + alpha / 2)
+                    .checked_div(alpha)
+                    .map_or(0, |value| value.min(255) as u8);
+            }
+        }
+        Some(samples)
+    } else {
+        None
+    };
     let untransformed = matches!(color_normalization, ColorNormalization::None);
     normalize_rgba(&mut rgba, color_normalization)?;
     if !untransformed {
         return finish_rgba(rgba);
+    }
+    if let Some(samples) = reinterpreted {
+        return Ok(DecodedRaster {
+            rgba: Arc::new(rgba),
+            premultiplied_rgba: Arc::new(samples),
+        });
     }
     // Chromium's untransformed WebP path requests libwebp's premultiplied
     // output, which truncates c*a/255. Keep the straight samples for PDF;

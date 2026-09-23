@@ -22,6 +22,7 @@ mod jpeg;
 mod orientation;
 mod payload;
 mod png;
+mod skia_srgb;
 pub(super) mod svg;
 mod svg_coordinates;
 #[cfg(test)]
@@ -1344,8 +1345,10 @@ fn prepare_color_normalization(
             // Blink keeps only a profile that parses as an RGB profile and
             // otherwise ignores it; only a physical allocation failure stays.
             Some(profile) => match color::parse_icc_profile(profile) {
+                // Skia draws a profile it snaps to sRGB untransformed.
                 Ok(ColorNormalization::Profile(profile))
-                    if profile.color_space != moxcms::DataColorSpace::Rgb =>
+                    if profile.color_space != moxcms::DataColorSpace::Rgb
+                        || skia_srgb::snaps_to_srgb(&profile) =>
                 {
                     Ok(ColorNormalization::None)
                 }

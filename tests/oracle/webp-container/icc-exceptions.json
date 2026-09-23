@@ -1,0 +1,280 @@
+{
+  "schema": "excalidraw-render/webp-icc-exceptions/v1",
+  "approval": null,
+  "reason": "Color-managed WebP views: the renderer applies the embedded RGB ICC profile with its pinned CMS (moxcms matrix/TRC and LUT evaluation, rounded premultiplication), while the reference draws through Skia/skcms float arithmetic at draw time. The results differ by at most a few channel units on some pixels. On the 9x7 external libwebp vectors, the canonical small-artifact rule turns those rounding differences into failures that a larger image would pass under the geometry/image budget, as the PNG ICC matrices do. Each exception holds its view at the exact observed Pixelmatch count, differing pixels and maximum channel difference (spec section 14.4, small-artifact form).",
+  "comparison": "canonical geometry/image against the pinned reference PNG; PDF only for opaque views",
+  "exceptions": [
+    {
+      "row": "color-profile-lossless-opaque-icc-after-image",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 9,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-after-image",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 9,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-duplicate-linear-then-p3",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 9,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-duplicate-linear-then-p3",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 9,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-lut-lab-mab",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 5,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-lut-lab-mab",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 5,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-lut-mft1",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 10,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-lut-mft1",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 10,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-v2-linear",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 9,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-v2-linear",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 9,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-v2-linear-oversized",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 9,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-v2-linear-oversized",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 9,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-v2-p3",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 5,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-opaque-icc-v2-p3",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 5,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-partial-icc-lut-lab-mab",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 3,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-partial-icc-lut-mft1",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 5,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-partial-icc-v2-linear",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 11,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-partial-icc-v2-p3",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 10,
+      "max_rgb_delta": 4,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossless-partial-icc-v4-param2",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 11,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-lut-lab-mab",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 2,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-lut-lab-mab",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 2,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-lut-mft1",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 2,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-lut-mft1",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 2,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-v2-linear",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 5,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-v2-linear",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 5,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-v2-p3",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 4,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-v2-p3",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 4,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-v4-param2",
+      "format": "pdf",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 1,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-opaque-icc-v4-param2",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 1,
+      "max_rgb_delta": 1,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-partial-icc-lut-lab-mab",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 2,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-partial-icc-lut-mft1",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 2,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-partial-icc-v2-linear",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 12,
+      "max_rgb_delta": 4,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-partial-icc-v2-p3",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 8,
+      "max_rgb_delta": 2,
+      "ssim_outcome": "small-artifact-mismatch"
+    },
+    {
+      "row": "color-profile-lossy-partial-icc-v4-param2",
+      "format": "png",
+      "max_pixelmatch_changed_pixels": 0,
+      "max_differing_pixels": 12,
+      "max_rgb_delta": 4,
+      "ssim_outcome": "small-artifact-mismatch"
+    }
+  ]
+}

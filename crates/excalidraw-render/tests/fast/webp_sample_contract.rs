@@ -833,7 +833,7 @@ fn evidence() -> (Value, Value) {
     (record, inputs)
 }
 
-fn svg(text: &str, source: Option<&[u8]>) {
+pub(super) fn svg(text: &str, source: Option<&[u8]>) {
     let doc = roxmltree::Document::parse(text).unwrap();
     let root = doc.root_element();
     for (key, value) in [("width", "9"), ("height", "7"), ("viewBox", "0 0 9 7")] {
@@ -900,7 +900,7 @@ fn pdf_extent(b: &[u8]) {
     }
     assert!(!page.contains("/Rotate") && !page.contains("/UserUnit"));
 }
-fn render(source: &Value, format: OutputFormat) -> (Vec<u8>, Value) {
+pub(super) fn render(source: &Value, format: OutputFormat) -> (Vec<u8>, Value) {
     let request = RenderRequest::builder(format)
         .padding(0.0)
         .include_background(false)
@@ -926,7 +926,7 @@ fn render(source: &Value, format: OutputFormat) -> (Vec<u8>, Value) {
     }
     (first.artifact().bytes().to_vec(), report)
 }
-fn report(format: OutputFormat, malformed: bool, animated: bool) -> Value {
+pub(super) fn report(format: OutputFormat, malformed: bool, animated: bool) -> Value {
     let ds = if malformed {
         json!([{"code":"image.decode-failed","severity":"warning","format":format.as_str(),"effects":["visual"],"element_id":"image","json_pointer":"/files/asset/dataURL","details":{"kind":"asset","asset_id":"asset","claimed_media_type":null,"validated_media_type":"image/webp","recovery":if format==OutputFormat::Png {"placeholder"} else {"omitted"},"recipe_id":if format==OutputFormat::Png {json!("official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d")} else {Value::Null}}}])
     } else if animated && format != OutputFormat::Svg {
@@ -1670,12 +1670,12 @@ fn qualified_first_display_partition(cells: &[&str]) {
 }
 
 #[test]
-fn qualified_13_cells_first_display_contract() {
+pub(super) fn qualified_13_cells_first_display_contract() {
     qualified_first_display_partition(&QUALIFIED_CELLS);
 }
 
 #[test]
-fn all_sample_pngs_match_reference() {
+pub(super) fn all_sample_pngs_match_reference() {
     let (record, inputs) = evidence();
     let mut checked = 0;
     for row in rows(&record, "cases") {
@@ -1692,7 +1692,7 @@ fn all_sample_pngs_match_reference() {
 }
 
 #[test]
-fn nested_webp_png_preserves_draw_time_alpha_quantization() {
+pub(super) fn nested_webp_png_preserves_draw_time_alpha_quantization() {
     let (record, _) = evidence();
     for row in rows(&record, "cases") {
         let mut nested = row["scene"].clone();
@@ -1794,7 +1794,7 @@ fn within_pdf_exception(view: &Value, exception: &Value) -> bool {
 /// black/white composite is held at its approved exact ceilings, and an
 /// exception whose view passes the canonical comparator is rejected as dead.
 #[test]
-fn partial_alpha_cells_match_reference_under_approved_pdf_exceptions() {
+pub(super) fn partial_alpha_cells_match_reference_under_approved_pdf_exceptions() {
     let (record, inputs) = evidence();
     let exceptions = approved_pdf_exceptions();
     let mut unused = BTreeSet::new();
@@ -1895,12 +1895,12 @@ fn pdf_exception_ceilings_are_exact_and_reject_growth() {
 }
 
 #[test]
-fn corrected_composition_cells_match_reference() {
+pub(super) fn corrected_composition_cells_match_reference() {
     qualified_first_display_partition(&CORRECTED_CELLS);
 }
 
 #[test]
-fn malformed_controls_reject_exactly_as_the_reference_rejects_them() {
+pub(super) fn malformed_controls_reject_exactly_as_the_reference_rejects_them() {
     // The pinned reference rejects these nine controls (libwebp's demuxer,
     // including its VP8X valid-flag mask), and so does the renderer, with
     // exact decode-failed recovery. The accepted three are below.
@@ -1956,7 +1956,7 @@ const ACCEPTED_CONTROLS: [&str; 3] = [
 ];
 
 #[test]
-fn reserved_and_intrinsic_controls_are_accepted_as_the_reference_accepts_them() {
+pub(super) fn reserved_and_intrinsic_controls_are_accepted_as_the_reference_accepts_them() {
     let (record, _) = evidence();
     let base = by_id(
         &record,
