@@ -83,12 +83,12 @@ fn silent(report: &excalidraw_render::CompatibilityReport) {
 }
 
 #[test]
-fn nested_svg_pdf_dark_mode_retains_the_specified_154_limitation() {
-    for content in [
+fn nested_svg_dark_mode_inverts_nested_content_in_every_format() {
+    for (index, content) in [
         r##"<rect width="20" height="20" fill="#1e1e1e"/>"##.to_owned(),
         format!(r#"<image width="20" height="20" href="{}"/>"#,file(&crate::common::codec_fixtures::solid_png(2,2,[30,30,30,255]),"image/png")["dataURL"].as_str().unwrap()),
         r##"<defs><linearGradient id="g"><stop stop-color="#1e1e1e"/><stop offset="1" stop-color="#1e1e1e"/></linearGradient></defs><rect width="20" height="20" fill="url(#g)"/>"##.to_owned(),
-    ] {
+    ].into_iter().enumerate() {
         let nested=format!(r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">{content}</svg>"#);
         let source=json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":20,"height":20,"fileId":"asset","status":"saved","scale":[1,1],"updated":1}],"appState":{},"files":{"asset":file(nested.as_bytes(),"image/svg+xml")}});
         for format in FORMATS {
@@ -97,7 +97,10 @@ fn nested_svg_pdf_dark_mode_retains_the_specified_154_limitation() {
             silent(light.report());silent(dark.report());assert_eq!(dark.report(),again.report());assert_eq!(dark.artifact().bytes(),again.artifact().bytes());
             match format {
                 OutputFormat::Pdf=>{
-                    assert_eq!(light.artifact().bytes(),dark.artifact().bytes(),"#154 must remain explicit");
+                    // #154: PDF lowers dark mode into the nested content, vector
+                    // paints, gradient stops and nested raster pixels alike.
+                    assert_ne!(light.artifact().bytes(),dark.artifact().bytes(),"nested content stays light");
+                    if index != 1 {let text=crate::common::pdf_inspect::pdf_text(dark.artifact().bytes());assert!(text.contains("0.827451 0.827451 0.827451"),"lowered #d3d3d3 missing");}
                     let pdf=crate::common::pdf_inspect::pdf_text(dark.artifact().bytes());assert!(pdf.contains("/Subtype /Form"));
                 }
                 OutputFormat::Png=>{

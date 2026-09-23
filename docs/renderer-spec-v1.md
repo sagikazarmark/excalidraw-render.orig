@@ -871,9 +871,16 @@ filter's result to 8 bits as the browser's intermediate surface does before the
 theme filter reads it, and rounding the theme filter's result as Section 8.1
 describes; an SVG viewer evaluates the filters itself. None of
 this changes the semantic resource ledger: like every other color lowering, it
-is not a charged event. Revision 1 does not lower dark mode into a nested-SVG
-image's vector content in PDF; that content is embedded in its light-mode
-colors until #154 decides the mechanism.
+is not a charged event. PDF also lowers dark mode into a nested-SVG image's
+content before `svg2pdf` converts it (#154): the sanitized tree is serialized
+through the backend's lossless normalized writer, every `fill`, `stroke`,
+`stop-color`, `flood-color` and `lighting-color` color and every visible pixel
+of a nested raster (a normalized PNG) passes through the rounded theme filter,
+alpha untouched, and the result is parsed again. `<mask>` content keeps its
+light-mode colors, because a mask acts through their luminance while the
+reference filters only the composite. Nested-SVG images inside the image are
+inlined by that writer and lowered in the same pass. The content stays vector;
+no fork of `svg2pdf` is involved.
 
 A missing local image is omitted in SVG and PDF, uses the official image/error
 fallback in PNG, and is diagnosed in every selected format. Other invalid,
@@ -1559,8 +1566,8 @@ Every project-owned operation remains native PDF content:
 - Safe URI annotations over deterministic transformed bounds.
 
 Dark mode is lowered into vector colors and image pixels before this matrix,
-rounded as the official SVG's root filter rounds (Sections 8.1 and 8.2); nested-SVG vector content is the revision-1 exception
-Section 8.2 records. Failure to encode a required operation is fatal, never
+rounded as the official SVG's root filter rounds, nested-SVG content included
+(Sections 8.1 and 8.2). Failure to encode a required operation is fatal, never
 fallback. Admitted scene raster pixels are lossless image XObjects and inherent
 source content.
 

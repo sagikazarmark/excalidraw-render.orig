@@ -9,7 +9,8 @@
 //! recolors a magic frame's outline by theme before that filter, a nested-SVG
 //! image inverts with the theme filter alone, a raster image keeps its pixels
 //! in PNG but compresses its contrast in SVG and, following the SVG authority,
-//! in PDF, and the PNG image placeholder passes through the theme filter.
+//! in PDF, a nested-SVG image inverts with the theme filter in every format, and
+//! the PNG image placeholder passes through the theme filter.
 
 use base64::Engine as _;
 use excalidraw_render::{ColorMode, FrameOptions, OutputFormat, RenderRequest, SceneDocument};
@@ -401,22 +402,22 @@ fn dark_mode_pdf_lowers_the_reference_svg_image_filters_into_raster_pixels() {
     assert_eq!(alpha, [255, 255, 255, 0]);
 }
 
-/// The revision-1 limitation spec section 8.2 records for #154: PDF embeds a
-/// nested-SVG image's vector content through svg2pdf in its light-mode colors.
-/// This pins the exact spelling so the decision, once made, fails it.
+/// A nested-SVG image inverts with the scene under the reference's root
+/// filter, so PDF lowers dark mode into its vector content (#154, spec section
+/// 8.2), rounded as the official SVG's root filter rounds.
 #[test]
-fn dark_mode_pdf_still_embeds_nested_svg_vector_content_in_light_colors_until_154() {
+fn dark_mode_pdf_lowers_nested_svg_vector_content_like_the_root_filter() {
     let scene = image_scene(&[nested_svg_fixture(r#""x":0,"y":0,"width":20,"height":20"#)]);
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Dark);
     let pdf = pdf_text(&pdf);
-    // svg2pdf spells the nested rectangle's #1e1e1e fill as 30/255 in f32; the
-    // lowered #d3d3d3 would be 211/255. The page background is lowered, and
-    // rounded as the official SVG's root filter rounds.
+    // svg2pdf spells the nested rectangle's lowered #d3d3d3 fill as 211/255 in
+    // f32; the light #1e1e1e would be 30/255. The page background is lowered
+    // too.
+    assert!(pdf.contains("0.827451 0.827451 0.827451 scn\n"), "{pdf}");
     assert!(
-        pdf.contains("0.11764706 0.11764706 0.11764706 scn\n"),
+        !pdf.contains("0.11764706 0.11764706 0.11764706 scn"),
         "{pdf}"
     );
-    assert!(!pdf.contains("0.827451 0.827451 0.827451 scn"), "{pdf}");
     assert!(pdf.contains("0.07058823529411765 0.07058823529411765 0.07058823529411765 scn\n"));
 }
 

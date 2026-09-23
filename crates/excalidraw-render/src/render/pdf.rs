@@ -15,6 +15,7 @@
 //! and `raster_preflight` the session's admission of those closures.
 
 mod content;
+mod dark_nested_svg;
 mod fonts;
 mod nested_svg;
 mod raster;
@@ -374,7 +375,18 @@ impl PdfPlan {
             logical_width: scene.logical_width,
             logical_height: scene.logical_height,
             scale,
-            svg_trees: svg_trees.clone(),
+            svg_trees: if request.color_mode() == crate::ColorMode::Dark {
+                // The reference's root filter inverts nested-SVG content with
+                // the scene; PDF lowers it into that content (#154).
+                svg_trees
+                    .iter()
+                    .map(|(identity, tree)| {
+                        dark_nested_svg::lower(tree).map(|lowered| (*identity, Arc::new(lowered)))
+                    })
+                    .collect::<Result<_, _>>()?
+            } else {
+                svg_trees.clone()
+            },
             page_width,
             page_height,
             background,

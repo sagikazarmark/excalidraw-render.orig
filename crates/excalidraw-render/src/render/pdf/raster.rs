@@ -313,7 +313,7 @@ fn pixmap(width: u32, height: u32) -> Result<tiny_skia::Pixmap, FormatEncodeErro
     pixels.resize(length, 0);
     tiny_skia::Pixmap::from_vec(pixels, size).ok_or_else(memory)
 }
-fn parse(xml: &str) -> Result<usvg::Tree, FormatEncodeError> {
+pub(super) fn parse(xml: &str) -> Result<usvg::Tree, FormatEncodeError> {
     usvg::Tree::from_str(xml, &usvg::Options::default())
         .map_err(|_| invalid("could not parse PDF raster adapter SVG"))
 }
@@ -420,7 +420,7 @@ fn occurrence_resources(xml: &str) -> Result<String, FormatEncodeError> {
 // usvg writes nested SVG images as opaque data URLs (using default precision).
 // Inline their normalized trees before identifying closures, with scoped IDs so
 // separate asset documents cannot accidentally share local resources.
-fn expanded_xml(
+pub(super) fn expanded_xml(
     tree: &usvg::Tree,
     ordinal: &mut usize,
     prefix: Option<String>,

@@ -889,7 +889,7 @@ fn decode_hdr_png(
     })
 }
 
-pub(super) fn encode_normalized_png(
+pub(in crate::render) fn encode_normalized_png(
     width: u32,
     height: u32,
     rgba: &[u8],

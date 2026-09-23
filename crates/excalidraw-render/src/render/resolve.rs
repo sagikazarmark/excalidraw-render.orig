@@ -887,9 +887,9 @@ pub(super) enum DarkModeImageFilter {
     /// official SVG, lowers both into the pixels; PNG follows the canvas and
     /// leaves a raster image's pixels alone.
     RasterImage,
-    /// `THEME_FILTER` alone. SVG applies it through its root filter and PNG
-    /// lowers it into the pixels it rasterizes; PDF embeds the nested SVG's
-    /// vector content unlowered until #154 decides the mechanism.
+    /// `THEME_FILTER` alone. SVG applies it through its root filter, PNG
+    /// lowers it into the pixels it rasterizes, and PDF lowers it into the
+    /// nested SVG's content before converting it (#154).
     NestedSvgImage,
 }
 

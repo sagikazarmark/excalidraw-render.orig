@@ -42,9 +42,10 @@ use jpeg::{
     JPEG_SIGNATURE,
 };
 use payload::{payload, Payload};
+pub(super) use png::encode_normalized_png;
 use png::{
-    decode_static_png, encode_normalized_png, png_animation_validation_work, read_png_ihdr,
-    validate_static_png, PngSemantics, PNG_SIGNATURE,
+    decode_static_png, png_animation_validation_work, read_png_ihdr, validate_static_png,
+    PngSemantics, PNG_SIGNATURE,
 };
 use webp::{
     decode_webp_default_frame, map_webp_error, read_webp_dimensions, validate_webp,
