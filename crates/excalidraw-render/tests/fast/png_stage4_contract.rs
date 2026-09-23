@@ -11,7 +11,7 @@ fn source_bindings() {
         ),
         (
             include_bytes!("../common/png_stage4_composition.rs").as_slice(),
-            "17065a89ce71ec6388bf9683a3f536f27b4be74011a8cb197099fd0b71cb1a4c",
+            "c11f048c494dcbbd6c045fdd8a5bd442fcb547cc300aa7c1a0ba8a261fb50c61",
         ),
         (
             include_bytes!("../common/png_stage4_review.rs").as_slice(),
@@ -27,7 +27,7 @@ fn source_bindings() {
         ),
         (
             include_bytes!("../common/png_color_reference.rs").as_slice(),
-            "e779eadd553a42a007c792e71f3053bc617588c7e8736cab0b572c15f77c8fa0",
+            "2080b06d8634ebdf0f116c8a07bd6072c17f68159b75de48c4eebc9040d4a789",
         ),
         (
             include_bytes!("png_profile_contract.rs").as_slice(),
@@ -492,6 +492,33 @@ fn complete_profile_composition_matches_independent_reference() {
     );
     review_adam7_narrow_multiline_subframes_preserve_rows_and_validate_later_indexes();
     review_lower_depth_transparency_keys_never_alias_after_truncation();
+}
+
+/// PNG alpha and color-profile umbrella facets (#85): every accepted signal
+/// family crossed with every sample layout, transparency form (intrinsic,
+/// key, palette, none), interlace and APNG container against the pinned
+/// reference, including PDF's grayscale soft mask and transparent RGB zero.
+/// The frozen matrix covers the gray ICC, LUT, gAMA, cHRM, v4 ICC and PQ/HLG
+/// families; the supplement adds the sRGB chunk, v2 matrix/TRC ICC, SDR,
+/// linear, BT.709 and Display-P3 cICP, ignored narrow-range cICP, and gray
+/// sRGB/gAMA/cICP/PQ.
+#[test]
+fn png_alpha_and_profiles_compose_across_every_layout() {
+    complete_profile_composition_matches_independent_reference();
+    check_evidence(
+        crate::common::png_stage4_composition::supplemental_evidence(),
+        "composition",
+        840,
+    );
+}
+
+/// PNG limits umbrella facet (#85): byte, dimension, pixel and work equality
+/// and first crossing for every layout, interlace and container, and the
+/// multi-crossing precedence of spec section 13.2.
+#[test]
+fn png_limits_have_exact_boundaries_and_precedence() {
+    profile_validation_and_decode_limits_have_exact_boundaries();
+    super::png_limit_crossing_contract::raster_crossings_order_width_then_height_then_area();
 }
 
 fn check_evidence(evidence: serde_json::Value, group: &str, count: usize) {

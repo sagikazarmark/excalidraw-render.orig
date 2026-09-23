@@ -274,6 +274,98 @@ pub fn gain_map_equivalent<'a>(record: &'a Value, row: &Value) -> Option<&'a Val
     )
 }
 
+/// The supplemental HDR peak-luminance record (#85 codec:png:hdr-gain-map):
+/// cLLI/mDCV/gain-map chunks inserted into unchanged main-record PQ/HLG bases
+/// and SDR controls. Reference-side, every row equals its declared equivalent
+/// exactly, and the distinct peak classes of one base are pairwise distinct.
+pub fn hdr_metadata_evidence() -> Value {
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/oracle/png-color/hdr-metadata-reference.json"
+    ));
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bytes)),
+        "c46e2a12fba6f2e2ea9d8d0723bd1b1af1b9b0cdadf42e24b1f49db981e89101"
+    );
+    let record: Value = serde_json::from_slice(bytes).unwrap();
+    assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
+    assert_eq!(record["visual_class"], "geometry-image");
+    let rows = record["cases"].as_array().unwrap();
+    assert_eq!(rows.len(), 170);
+    let ids: std::collections::BTreeSet<_> =
+        rows.iter().map(|r| r["id"].as_str().unwrap()).collect();
+    assert_eq!(ids.len(), rows.len());
+    let colors = evidence();
+    let by_id = |id: &Value| rows.iter().find(|r| &r["id"] == id).unwrap();
+    for row in rows {
+        assert_eq!(row["reference"]["admitted"], true, "{}", row["id"]);
+        if row["group"] == "hdr-metadata-controls" {
+            let original = colors["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| r["id"] == row["id"])
+                .unwrap();
+            let mut restored = row.clone();
+            restored["group"] = original["group"].clone();
+            assert_eq!(
+                &restored, original,
+                "supplement changed its independent base control"
+            );
+        } else if !row["equivalent_id"].is_null() {
+            let equivalent = by_id(&row["equivalent_id"]);
+            for kind in ["png", "opaque_png"] {
+                assert_eq!(
+                    row["reference"][kind], equivalent["reference"][kind],
+                    "{} {kind} equals {}",
+                    row["id"], row["equivalent_id"]
+                );
+            }
+        }
+    }
+    // Each HDR base's distinct peak classes, and its default control, differ
+    // pairwise in the reference: the peak is observable, not assumed.
+    let distinct = [
+        "clli-203",
+        "clli-500",
+        "clli-1234.5678",
+        "clli-4000",
+        "clli-10000",
+    ];
+    for base in ["cicp-p9-t16-r1", "cicp-p9-t18-r1", "cicp-p1-t16-r1"] {
+        for depth in [8, 16] {
+            let control = format!("{base}-c6-d{depth}");
+            let mut seen = std::collections::BTreeSet::new();
+            for id in std::iter::once(control)
+                .chain(distinct.map(|v| format!("hdr-{base}-{v}-c6-d{depth}")))
+            {
+                let row = by_id(&json!(id));
+                assert!(
+                    seen.insert(row["reference"]["opaque_png"].as_str().unwrap().to_owned()),
+                    "{id} does not discriminate its peak class"
+                );
+            }
+        }
+    }
+    record
+}
+
+/// A supplemental HDR metadata row's exact equivalent: its declared
+/// equivalent peak class, or its base control.
+pub fn hdr_metadata_equivalent<'a>(record: &'a Value, row: &Value) -> Option<&'a Value> {
+    if row["group"] != "hdr-metadata" || row["equivalent_id"].is_null() {
+        return None;
+    }
+    Some(
+        record["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == row["equivalent_id"])
+            .unwrap(),
+    )
+}
+
 /// The four newly qualified H.273 codes select the same reference EOTF as
 /// transfer 1. Keep this equivalence exact on both reference and facade output.
 pub fn bt1886_equivalent<'a>(record: &'a Value, row: &Value) -> Option<&'a Value> {

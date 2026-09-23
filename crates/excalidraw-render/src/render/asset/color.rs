@@ -161,7 +161,12 @@ pub(super) fn prepare_png_color_normalization(
         }
         let profile = cicp_color_profile(cicp)?;
         return Ok(if matches!(cicp[1], 16 | 18) {
-            ColorNormalization::Hdr(Box::new(super::hdr::Hdr::new(&profile, cicp[1] == 18)))
+            let peak = png_peak_luminance(bytes, workspace_bytes)?;
+            ColorNormalization::Hdr(Box::new(super::hdr::Hdr::new(
+                &profile,
+                cicp[1] == 18,
+                peak,
+            )))
         } else {
             ColorNormalization::Profile(Box::new(profile))
         });
@@ -174,6 +179,33 @@ pub(super) fn prepare_png_color_normalization(
         .read_info()
         .map_err(|_| ResolveError::DecodeFailed)?;
     png_color_profile(reader.info())
+}
+
+/// The content peak luminance SkHdrAgtm tone maps PQ/HLG from, in nits: a
+/// positive cLLI MaxCLL, else a positive mDCV maximum luminance, else the
+/// default. The pinned codec reads both through png 0.17.16 before the first
+/// IDAT: a malformed chunk counts as absent, the first valid one wins, and mDCV
+/// must precede PLTE and IDAT. Values are 0.0001 cd/m2 units converted in f32.
+fn png_peak_luminance(bytes: &[u8], workspace_bytes: u64) -> Result<f64, ResolveError> {
+    let mut decoder = png::Decoder::new(Cursor::new(bytes));
+    decoder.set_limits(png::Limits {
+        bytes: usize::try_from(workspace_bytes).map_err(|_| ResolveError::Memory)?,
+    });
+    let reader = decoder
+        .read_info()
+        .map_err(|_| ResolveError::DecodeFailed)?;
+    let info = reader.info();
+    let nits = |value: u32| f64::from(value as f32 / 10_000.0);
+    Ok(info
+        .content_light_level
+        .map(|clli| nits(clli.max_content_light_level))
+        .filter(|&peak| peak > 0.0)
+        .or_else(|| {
+            info.mastering_display_color_volume
+                .map(|mdcv| nits(mdcv.max_luminance))
+                .filter(|&peak| peak > 0.0)
+        })
+        .unwrap_or(super::hdr::DEFAULT_PEAK_LUMINANCE))
 }
 
 fn cicp_color_profile(cicp: [u8; 4]) -> Result<ColorProfile, ResolveError> {

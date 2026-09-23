@@ -1,0 +1,358 @@
+{
+ "schema": "excalidraw-render/png-hdr-metadata-inputs/v1",
+ "base_inputs": "tests/oracle/png-color/inputs.json",
+ "depths": [
+  8,
+  16
+ ],
+ "bases": [
+  {
+   "signal": "cicp-p9-t16-r1",
+   "hdr": true
+  },
+  {
+   "signal": "cicp-p9-t18-r1",
+   "hdr": true
+  },
+  {
+   "signal": "cicp-p1-t16-r1",
+   "hdr": true
+  },
+  {
+   "signal": "cicp-p1-t13-r1",
+   "hdr": false
+  }
+ ],
+ "variants": [
+  {
+   "id": "clli-150",
+   "tags": [
+    [
+     "cLLI",
+     1500000
+    ]
+   ],
+   "peak_nits": 150,
+   "equivalent": "clli-203"
+  },
+  {
+   "id": "clli-203",
+   "tags": [
+    [
+     "cLLI",
+     2030000
+    ]
+   ],
+   "peak_nits": 203
+  },
+  {
+   "id": "clli-500",
+   "tags": [
+    [
+     "cLLI",
+     5000000
+    ]
+   ],
+   "peak_nits": 500
+  },
+  {
+   "id": "clli-1000",
+   "tags": [
+    [
+     "cLLI",
+     10000000
+    ]
+   ],
+   "peak_nits": 1000,
+   "equivalent": "control"
+  },
+  {
+   "id": "clli-1234.5678",
+   "tags": [
+    [
+     "cLLI",
+     12345678
+    ]
+   ],
+   "peak_nits": 1234.5678
+  },
+  {
+   "id": "clli-4000",
+   "tags": [
+    [
+     "cLLI",
+     40000000
+    ]
+   ],
+   "peak_nits": 4000,
+   "sdr_control": true
+  },
+  {
+   "id": "clli-10000",
+   "tags": [
+    [
+     "cLLI",
+     100000000
+    ]
+   ],
+   "peak_nits": 10000
+  },
+  {
+   "id": "clli-max",
+   "tags": [
+    [
+     "cLLI",
+     4294967295
+    ]
+   ],
+   "peak_nits": 429496.7295,
+   "sdr_control": true
+  },
+  {
+   "id": "clli-zero",
+   "tags": [
+    [
+     "cLLI",
+     0
+    ]
+   ],
+   "peak_nits": 1000,
+   "equivalent": "control"
+  },
+  {
+   "id": "mdcv-500",
+   "tags": [
+    [
+     "mDCV",
+     5000000
+    ]
+   ],
+   "peak_nits": 500,
+   "equivalent": "clli-500"
+  },
+  {
+   "id": "mdcv-4000",
+   "tags": [
+    [
+     "mDCV",
+     40000000
+    ]
+   ],
+   "peak_nits": 4000,
+   "equivalent": "clli-4000",
+   "sdr_control": true
+  },
+  {
+   "id": "mdcv-zero",
+   "tags": [
+    [
+     "mDCV",
+     0
+    ]
+   ],
+   "peak_nits": 1000,
+   "equivalent": "control"
+  },
+  {
+   "id": "clli-zero-mdcv-4000",
+   "tags": [
+    [
+     "cLLI",
+     0
+    ],
+    [
+     "mDCV",
+     40000000
+    ]
+   ],
+   "peak_nits": 4000,
+   "equivalent": "clli-4000"
+  },
+  {
+   "id": "clli-500-mdcv-4000",
+   "tags": [
+    [
+     "cLLI",
+     5000000
+    ],
+    [
+     "mDCV",
+     40000000
+    ]
+   ],
+   "peak_nits": 500,
+   "equivalent": "clli-500"
+  },
+  {
+   "id": "mdcv-4000-clli-500",
+   "tags": [
+    [
+     "mDCV",
+     40000000
+    ],
+    [
+     "cLLI",
+     5000000
+    ]
+   ],
+   "peak_nits": 500,
+   "equivalent": "clli-500"
+  },
+  {
+   "id": "clli-duplicate-500-4000",
+   "tags": [
+    [
+     "cLLI",
+     5000000
+    ],
+    [
+     "cLLI",
+     40000000
+    ]
+   ],
+   "peak_nits": 500,
+   "equivalent": "clli-500"
+  },
+  {
+   "id": "clli-short-then-4000",
+   "tags": [
+    [
+     "cLLI",
+     5000000,
+     "short"
+    ],
+    [
+     "cLLI",
+     40000000
+    ]
+   ],
+   "peak_nits": 4000,
+   "equivalent": "clli-4000"
+  },
+  {
+   "id": "mdcv-duplicate-500-4000",
+   "tags": [
+    [
+     "mDCV",
+     5000000
+    ],
+    [
+     "mDCV",
+     40000000
+    ]
+   ],
+   "peak_nits": 500,
+   "equivalent": "clli-500"
+  },
+  {
+   "id": "mdcv-short-then-4000",
+   "tags": [
+    [
+     "mDCV",
+     5000000,
+     "short"
+    ],
+    [
+     "mDCV",
+     40000000
+    ]
+   ],
+   "peak_nits": 4000,
+   "equivalent": "clli-4000"
+  },
+  {
+   "id": "clli-short",
+   "tags": [
+    [
+     "cLLI",
+     40000000,
+     "short"
+    ]
+   ],
+   "peak_nits": 1000,
+   "equivalent": "control"
+  },
+  {
+   "id": "clli-long",
+   "tags": [
+    [
+     "cLLI",
+     40000000,
+     "long"
+    ]
+   ],
+   "peak_nits": 1000,
+   "equivalent": "control"
+  },
+  {
+   "id": "mdcv-short",
+   "tags": [
+    [
+     "mDCV",
+     40000000,
+     "short"
+    ]
+   ],
+   "peak_nits": 1000,
+   "equivalent": "control"
+  },
+  {
+   "id": "mdcv-long",
+   "tags": [
+    [
+     "mDCV",
+     40000000,
+     "long"
+    ]
+   ],
+   "peak_nits": 1000,
+   "equivalent": "control"
+  },
+  {
+   "id": "clli-after-idat",
+   "tags": [
+    [
+     "cLLI",
+     40000000,
+     "valid",
+     true
+    ]
+   ],
+   "peak_nits": 1000,
+   "equivalent": "control"
+  },
+  {
+   "id": "mdcv-after-idat",
+   "tags": [
+    [
+     "mDCV",
+     40000000,
+     "valid",
+     true
+    ]
+   ],
+   "peak_nits": 1000,
+   "equivalent": "control"
+  },
+  {
+   "id": "gain-map-clli-4000",
+   "tags": [
+    [
+     "cLLI",
+     40000000
+    ],
+    [
+     "gmAP",
+     [
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   ],
+   "peak_nits": 4000,
+   "equivalent": "clli-4000"
+  }
+ ]
+}

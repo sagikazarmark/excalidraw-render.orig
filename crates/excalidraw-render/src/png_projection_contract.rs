@@ -60,7 +60,7 @@ pub(crate) fn profile_limits(selected_mask: Option<usize>) {
         ),
         (
             include_bytes!("../tests/common/png_color_reference.rs").as_slice(),
-            "e779eadd553a42a007c792e71f3053bc617588c7e8736cab0b572c15f77c8fa0",
+            "2080b06d8634ebdf0f116c8a07bd6072c17f68159b75de48c4eebc9040d4a789",
         ),
         (
             include_bytes!("../tests/common/codec_fixtures.rs").as_slice(),

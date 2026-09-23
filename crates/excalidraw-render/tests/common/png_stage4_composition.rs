@@ -18,6 +18,28 @@ pub fn evidence() -> Value {
     );
     record
 }
+/// The supplemental SDR composition record (#85 codec:png:alpha/color-profile):
+/// the sRGB chunk, v2 matrix/TRC ICC, SDR/linear/BT.709/Display-P3 and
+/// narrow-range cICP crossed with every RGB/gray/palette layout, transparency,
+/// interlace and container, plus gray gAMA/cICP/PQ, all with early eXIf.
+pub fn supplemental_evidence() -> Value {
+    let bytes = include_bytes!(
+        "../../../../tests/oracle/png-color/supplemental-composition-reference.json"
+    );
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bytes)),
+        "58f2b7381540dc926a1538b4de276bbd30c532ba0b93761fd768145e4e15d4bb"
+    );
+    let record: Value = serde_json::from_slice(bytes).unwrap();
+    let rows = record["cases"].as_array().unwrap();
+    assert_eq!(rows.len(), 840);
+    let ids: std::collections::BTreeSet<_> =
+        rows.iter().map(|r| r["id"].as_str().unwrap()).collect();
+    assert_eq!(ids.len(), 840);
+    assert!(ids.iter().all(|id| id.starts_with("supplement-cross-")));
+    assert!(rows.iter().all(|r| r["group"] == "composition"));
+    record
+}
 pub fn report(row: &Value, format: &str, actual: Value) {
     let case = super::png_stage4::Case {
         id: row["id"].as_str().unwrap().into(),

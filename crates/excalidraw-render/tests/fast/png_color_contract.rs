@@ -103,6 +103,7 @@ fn check_rows(evidence: &serde_json::Value, group: &str, count: usize) {
                 if let Some(equivalent) = reference::bt1886_equivalent(evidence, row)
                     .or_else(|| reference::ignored_cicp_equivalent(evidence, row))
                     .or_else(|| reference::gain_map_equivalent(evidence, row))
+                    .or_else(|| reference::hdr_metadata_equivalent(evidence, row))
                 {
                     let scene =
                         SceneDocument::parse(&serde_json::to_vec(&equivalent["scene"]).unwrap())
@@ -331,6 +332,24 @@ fn hdr_adam7_preserves_reference_samples() {
             }
         }
     }
+}
+
+/// Every PNG HDR tone-mapping path of the pinned reference: PQ and HLG over
+/// two primaries, 8/16-bit, with RWTMO driven by the content peak (a positive
+/// cLLI MaxCLL, else a positive mDCV maximum, else 1000 nits; no tone map at or
+/// below reference white), including malformed, duplicate, late and zero
+/// metadata, ignored gain-map signaling and SDR controls. The pinned
+/// SkPngRustCodec has no AGTM source, so no other tone map is reachable. Also
+/// runs the gain-map base, admission and precedence evidence.
+#[test]
+fn hdr_peak_luminance_and_tone_mapping_paths_match_the_reference() {
+    exact_transfer_and_metadata_anchors();
+    hdr_transfer_exact_anchors();
+    let evidence = reference::hdr_metadata_evidence();
+    assert_eq!(evidence["sources"].as_array().unwrap().len(), 8);
+    check_rows(&evidence, "hdr-metadata-controls", 8);
+    check_rows(&evidence, "hdr-metadata", 162);
+    gain_map_base_admission_and_precedence_match_the_reference();
 }
 
 #[test]
@@ -595,7 +614,7 @@ fn exact_transfer_and_metadata_anchors() {
             "{:x}",
             Sha256::digest(include_bytes!("../common/png_color_reference.rs"))
         ),
-        "e779eadd553a42a007c792e71f3053bc617588c7e8736cab0b572c15f77c8fa0"
+        "2080b06d8634ebdf0f116c8a07bd6072c17f68159b75de48c4eebc9040d4a789"
     );
     let evidence = reference::evidence();
     let icc = evidence["cases"]

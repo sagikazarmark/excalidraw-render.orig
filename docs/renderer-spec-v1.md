@@ -753,6 +753,14 @@ and premultiplied-alpha compositing; and writes deterministic untagged sRGB
 RGBA8 with RGB zero wherever alpha is zero. Source bytes, profiles, metadata, animation, and source alpha
 representation are discarded silently.
 
+PQ and HLG PNG content is tone mapped with the reference's default
+reference-white tone map, whose peak is the content's positive `cLLI` maximum
+content light level, else its positive `mDCV` maximum luminance, else 1000
+nits, as the pinned codec reads them before the first `IDAT`: a malformed chunk
+counts as absent, the first valid one wins, and `mDCV` must precede `PLTE`.
+Content whose peak does not exceed the 203-nit reference white is not tone
+mapped.
+
 PNG and PDF emit one informational `image.animation-flattened` occurrence for
 each actually rendered multi-frame asset occurrence. Static, one-frame, and
 unreferenced assets remain silent. PDF uses the same default-frame, orientation,
