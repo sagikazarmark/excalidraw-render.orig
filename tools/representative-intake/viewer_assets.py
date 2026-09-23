@@ -35,7 +35,10 @@ FORMAT_HINT = re.compile(r"(@font-face\s*\{[^}]*?src\s*:\s*url\(data:font/woff2;
 
 def fonts_tool(*args, stdin=None):
     binary = FONTS_TOOL / "target/release/representative-intake-viewer-fonts"
-    subprocess.run(["cargo", "build", "--locked", "--release", "--quiet", "--manifest-path", str(FONTS_TOOL / "Cargo.toml")],
+    # An explicit target directory: an ambient CARGO_TARGET_DIR (CI sets one)
+    # would otherwise place the binary where this path does not look.
+    subprocess.run(["cargo", "build", "--locked", "--release", "--quiet", "--manifest-path", str(FONTS_TOOL / "Cargo.toml"),
+                    "--target-dir", str(FONTS_TOOL / "target")],
                    cwd=ROOT, check=True, timeout=600)
     result = subprocess.run([str(binary), *map(str, args)], cwd=ROOT, input=stdin, capture_output=True, timeout=120)
     intake.require(result.returncode == 0, f"viewer-fonts {args[0]} failed: {result.stderr.decode()}")
