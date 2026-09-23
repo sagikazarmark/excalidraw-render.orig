@@ -1,0 +1,12 @@
+{
+  "prior": "tests/conformance/candidates/stage4-frames-text-assets-v15",
+  "successor": "tests/conformance/candidates/stage4-frames-text-assets-v16",
+  "identical_files": [
+    "native.svg",
+    "native-svg-report.json",
+    "native.png",
+    "native-png-report.json",
+    "native.pdf",
+    "native-pdf-report.json"
+  ]
+}
