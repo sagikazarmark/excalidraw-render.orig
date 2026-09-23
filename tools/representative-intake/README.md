@@ -196,3 +196,16 @@ python3 -B tools/representative-intake/compact.py check <proposal-dir>
 `pdf_thin_lines.py` renders hand-authored single-stroke PDFs in both pinned PDF
 viewers and records the coverage each paints; it is an independent control for
 sub-pixel stroke comparisons, not a judgment.
+
+## Registered cases
+
+`case.py` promotes an intake bundle and its collection into a registered case
+under `tests/conformance/cases/representative/` (see that directory's README).
+`materialize` retains the pinned reference collection and writes the case
+record from a spec (formats, independently authored semantic expectations and
+expected reports, exact-ceiling exceptions). `verify` checks retained bytes and
+the approval subject; `--renderer` adds fresh-process native renders, reports,
+dimensions and semantics; `--viewers` adds every pinned viewer and requires
+each registered comparison to pass its budget or a matching exception, with
+unused exceptions rejected. `judge` applies a case's budgets and exceptions to
+an existing collection. CI runs `verify-registry --renderer` on every change.

@@ -33,6 +33,7 @@ type RepresentativeIntake {
       .withExec(["python3", "-B", "tools/representative-intake/intake.py", "verify", "tests/conformance/intake/velox-design-v1"])
       .withExec(["python3", "-B", "tools/representative-intake/intake.py", "capture", "tests/conformance/intake/velox-design-v1", "/work/src/target/debug/excalidraw-render", "/tmp/velox-intake-capture"])
       .withExec(["python3", "-B", "tools/representative-intake/intake.py", "verify-capture", "tests/conformance/intake/velox-design-v1", "/tmp/velox-intake-capture"])
+      .withExec(["python3", "-B", "tools/representative-intake/case.py", "verify-registry", "--renderer", "/work/src/target/debug/excalidraw-render"])
       .combinedOutput
   }
 }

@@ -1,0 +1,9 @@
+{
+  "schema": "excalidraw-render/representative-case-registry/v1",
+  "cases": [
+    {
+      "case_id": "representative.excali-local-slides.v1",
+      "path": "tests/conformance/cases/representative/excali-local-slides"
+    }
+  ]
+}

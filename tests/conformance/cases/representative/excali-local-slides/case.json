@@ -1,0 +1,141 @@
+{
+  "approval": {
+    "approval_subject_sha256": "sha256:4984fa1cb53be8e00a07140b8037167a5062fd358f9eceada4f6a6c1d5b80eb4",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5791971816",
+    "approved_at": "2026-09-23",
+    "approved_by": "sagikazarmark"
+  },
+  "case_id": "representative.excali-local-slides.v1",
+  "comparisons": [
+    "svg-chromium",
+    "svg-rust",
+    "pdf-pdfium",
+    "pdf-pdfjs",
+    "png-canvas"
+  ],
+  "compatibility_revision": 1,
+  "evidence_record": {
+    "bytes": 131767,
+    "path": "tests/conformance/proposals/slides84-evidence-v2/compact.json",
+    "sha256": "7779f6fab3c20510cc03acb2eab884451dc8418cabfd954dd0937bb562226c14"
+  },
+  "exceptions": [
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 0,
+      "minimum_ssim_bits": "3feff378e3937646",
+      "reason": "Viewer rasterization of the nested-SVG avatar's fine vector detail: 0 changed pixels, and canonical rasterizers disagree as much on identical input (official SVG Chromium vs pure Rust; this PDF PDFium vs PDF.js).",
+      "region": "slide1-avatar",
+      "variant": "light",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    },
+    {
+      "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+      "comparison_id": "pdf-pdfium",
+      "max_changed_pixels": 0,
+      "minimum_ssim_bits": "3feff4fa706910a9",
+      "reason": "Viewer rasterization of the nested-SVG avatar's fine vector detail: 0 changed pixels, and canonical rasterizers disagree as much on identical input (official SVG Chromium vs pure Rust; this PDF PDFium vs PDF.js).",
+      "region": "slide1-avatar",
+      "variant": "dark",
+      "viewer_profile": "canonical-pdf-pdfium-v1"
+    }
+  ],
+  "files": {
+    "expected-report-pdf.json": {
+      "bytes": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
+    "expected-report-png.json": {
+      "bytes": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
+    "expected-report-svg.json": {
+      "bytes": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
+    "reference/dark/official-png.rgba.zlib": {
+      "bytes": 255038,
+      "sha256": "d32b14b9ddafad1425bc25a186975309a83c892a2349fd29ee9c44c979f34cc6"
+    },
+    "reference/dark/official.png": {
+      "bytes": 539796,
+      "sha256": "dd4c736aa94bf7b3b0bc28fd21d5ab21c80eae1ea21317b20c5af92e395df71b"
+    },
+    "reference/dark/official.svg": {
+      "bytes": 61300,
+      "sha256": "de0dd674669d8a3cb442a7134165860fb486757538aaa599a5c239202f9e0e3d"
+    },
+    "reference/light/official-png.rgba.zlib": {
+      "bytes": 263199,
+      "sha256": "14a048aa0cf5bdaa38c6053e829f4e66594e646d649bcd8eca5a2c298207b0da"
+    },
+    "reference/light/official.png": {
+      "bytes": 539249,
+      "sha256": "c229712255139e4fecd7ad7fa2e3d01bf8f07ec671539962a940f4e753265ad2"
+    },
+    "reference/light/official.svg": {
+      "bytes": 61260,
+      "sha256": "0ded9e3c9cf95d6234be80377c1fa2d0d136a1a33acfd8f061c2d5df0827c6b6"
+    },
+    "reference/reference.json": {
+      "bytes": 11865,
+      "sha256": "3244ac4e2d0936ce786e400f2ba35ed07e8073de326aaabe8521ebefa75ad611"
+    }
+  },
+  "formats": [
+    "svg",
+    "png",
+    "pdf"
+  ],
+  "intake": {
+    "bytes": 3143,
+    "path": "tests/conformance/intake/excali-local-slides-v1",
+    "sha256": "eae1f16fac9ba6f9efb56692c37902b7118b947ba805726a76a812ad72a8991c"
+  },
+  "layer": "representative",
+  "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/84",
+  "schema": "excalidraw-render/representative-case/v1",
+  "semantic_expectations": {
+    "dark": {
+      "embedded_scene": true,
+      "links": 0,
+      "min_text_elements": 16,
+      "pdf_media_box": [
+        "2123.75",
+        "2885.375"
+      ],
+      "png_size": [
+        2831,
+        3847
+      ],
+      "root_theme_filter": true,
+      "svg_size": [
+        "2831.6666666666665",
+        "3847.1666666666665"
+      ]
+    },
+    "light": {
+      "embedded_scene": true,
+      "links": 0,
+      "min_text_elements": 16,
+      "pdf_media_box": [
+        "2123.75",
+        "2885.375"
+      ],
+      "png_size": [
+        2831,
+        3847
+      ],
+      "root_theme_filter": false,
+      "svg_size": [
+        "2831.6666666666665",
+        "3847.1666666666665"
+      ]
+    }
+  },
+  "variants": [
+    "light",
+    "dark"
+  ]
+}
