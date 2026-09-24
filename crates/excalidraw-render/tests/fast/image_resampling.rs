@@ -122,11 +122,16 @@ fn a_texel_centre_inside_a_destination_pixel_is_sampled_once_not_averaged() {
     // subpixel samples, two of them past the centre on the ramp toward white,
     // read 11 instead. Pixels 2 and 3 map to 1/3 and 2/3, which Chromium's
     // four-bit weights truncate to 5/16 and 10/16, giving levels 79 and 159.
+    // Pixel 4's centre maps to the second texel's centre in exact arithmetic,
+    // but Skia's legacy sampler steps x in 32.32 fixed point from the binary32
+    // inverse of the device matrix and lands just short of it, so the pixel
+    // is 15/16 white (239), as the pinned Chromium 149.0.7827.55 canvas
+    // paints it (probed for #198).
     let png = render_png(&checker_scene(
         r#""x":0,"y":0,"width":6,"height":6,"angle":0,"opacity":100,"scale":[1,1]"#,
     ));
     let row: Vec<u8> = (0..6).map(|x| level(png.pixel(10 + x, 10))).collect();
-    assert_eq!(row, [0, 0, 79, 159, 255, 255]);
+    assert_eq!(row, [0, 0, 79, 159, 239, 255]);
     // At a half-pixel offset (x = 0.5, 8x8) the snapped rectangle starts at
     // device column 11 and pixel 12's centre maps onto the first texel's
     // centre exactly (source u = 0): a pure texel, not the 8-level blend the

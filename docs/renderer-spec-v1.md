@@ -934,9 +934,32 @@ outside and one on the right or bottom edge inside, so a fractional edge is a
 whole row or column or none and never a blend, while the image is still
 sampled bilinearly at the exact fractional mapping and the strict source
 rectangle pads the snapped edge with the crop's own edge pixels. PNG paints
-the same whole pixels, and resamples the image as the canvas does: once per
-destination pixel, a bilinear sample at the pixel's centre under that mapping
-(#165). The renderer's fixed supersample takes no part in an axis-aligned
+the same whole pixels, and resamples the image as the pinned software canvas
+does (#165, #198). All pixels are premultiplied RGBA8 and all arithmetic is
+binary32.
+
+- Level: the image cache first chooses a pre-scaled level of the rounded-out
+  source rectangle. Level sizes halve, rounding up. The chosen level is the
+  deepest one whose next level is no smaller, in either axis, than the device
+  size rounded to whole pixels. An image drawn at or above half its size in
+  either axis uses the image itself.
+- Building a level: Skia's `scalePixels` builds it with its own mip level,
+  `round(max(-log2 sqrt(sx sy) - 0.5, 0))`, from a chain that halves rounding
+  down. The chain uses a truncating 2x2 box, or 1-2-1 taps along an odd
+  extent, followed by the fixed-point bilinear kernel of its low-precision
+  pipeline.
+- Draw: Skia's legacy bitmap sampler draws the level. It copies the level
+  unscaled when the mapped rectangle is the level's own size at an integer
+  translate. It samples the nearest texel when the inverse is a translate
+  within 1/256 of whole pixels. Otherwise it steps 32.32 fixed-point
+  coordinates along each row, restarting every 127 pixels, and blends with
+  4-bit weights and truncated sums. Opacity multiplies by
+  `(round(opacity × 255) + 1) >> 8`.
+- Reuse: within one render, a later draw of the same image and source
+  rectangle builds its level from the smallest level already built that is
+  no smaller, so the order of draws matters.
+
+A 1:1 image is its own texels. The renderer's fixed supersample takes no part in an axis-aligned
 raster image's sampling — each destination pixel paints one constant block of
 subpixels, which the box filter returns unchanged — so its interior pixels are
 the canvas's rather than a footprint one destination pixel wider; a 1:1 image

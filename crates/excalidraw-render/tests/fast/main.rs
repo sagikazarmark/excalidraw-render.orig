@@ -51,6 +51,7 @@ mod helvetica_text_render;
 mod image_corner_clip;
 mod image_edge_coverage;
 mod image_field_contract;
+mod image_resample_contract;
 mod image_resampling;
 mod image_viewport_rounding;
 mod jpeg_color_contract;

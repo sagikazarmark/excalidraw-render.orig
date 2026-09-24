@@ -14,6 +14,7 @@
 //! the conservative device-space area estimators the ledger reads, which are
 //! a pure function of the plan and never of the painted pixels.
 
+mod canvas_image;
 mod coverage;
 mod encoder;
 mod paint;
@@ -21,6 +22,10 @@ mod paint;
 pub(super) use encoder::PngIdatStream;
 pub(super) use encoder::{canonicalize_straight_alpha, compress_rgba};
 
+use canvas_image::{
+    device_draw_image_rect, paint_alpha8, scale_pixels_chain_pixels, AffineF, CanvasImageDraw,
+    CcDecode, DecodeCache, DecodeCachePlanner, DecodeKey, LevelSource, PremulView, RectF,
+};
 use coverage::{
     conservative_coverage_area, conservative_fallback_coverage_area,
     conservative_freedraw_coverage_area, conservative_text_coverage_area, fallback_coverage_bounds,
@@ -55,62 +60,6 @@ use super::resolve::{
 use super::rough::{Drawing, Fill, FillKind};
 use super::text::{ResolvedLabel, ResolvedText};
 use super::{freedraw, FormatEncodeError, SvgTreeCache};
-
-/// Chromium's ordinary N32 image shader uses four fractional bits per bilinear
-/// axis and truncates the weighted premultiplied sum. Full-precision weights
-/// are observably different on magnified alpha ramps (even with opaque colors).
-fn canvas_bilinear_samples(
-    layer: &mut Pixmap,
-    source: PixmapRef<'_>,
-    transform: Transform,
-) -> Result<(), FormatEncodeError> {
-    let inverse = transform.invert().ok_or_else(|| {
-        FormatEncodeError::Encoding("noninvertible image sampling transform".into())
-    })?;
-    let width = layer.width() as usize;
-    let (sw, sh) = (source.width() as usize, source.height() as usize);
-    let axis = |v: f32, size: usize| -> Result<(usize, usize, u32), FormatEncodeError> {
-        if !v.is_finite() {
-            return Err(FormatEncodeError::Encoding(
-                "nonfinite image sample coordinate".into(),
-            ));
-        }
-        let p = (v - 0.5).clamp(0., (size - 1) as f32);
-        let low = p.floor() as usize;
-        Ok((
-            low,
-            (low + 1).min(size - 1),
-            ((p - low as f32) * 16.).floor() as u32,
-        ))
-    };
-    for (i, pixel) in layer.data_mut().chunks_exact_mut(4).enumerate() {
-        let (x, y) = ((i % width) as f32 + 0.5, (i / width) as f32 + 0.5);
-        let (x0, x1, wx) = axis(inverse.sx * x + inverse.kx * y + inverse.tx, sw)?;
-        let (y0, y1, wy) = axis(inverse.ky * x + inverse.sy * y + inverse.ty, sh)?;
-        let mut sum = [0_u32; 4];
-        for (sx, sy, weight) in [
-            (x0, y0, (16 - wx) * (16 - wy)),
-            (x1, y0, wx * (16 - wy)),
-            (x0, y1, (16 - wx) * wy),
-            (x1, y1, wx * wy),
-        ] {
-            let start = sy
-                .checked_mul(sw)
-                .and_then(|v| v.checked_add(sx))
-                .and_then(|v| v.checked_mul(4))
-                .ok_or_else(png_size_error)?;
-            let end = start.checked_add(4).ok_or_else(png_size_error)?;
-            let rgba = source.data().get(start..end).ok_or_else(png_size_error)?;
-            for (s, v) in sum.iter_mut().zip(rgba) {
-                *s += u32::from(*v) * weight;
-            }
-        }
-        for (target, value) in pixel.iter_mut().zip(sum) {
-            *target = (value >> 8) as u8;
-        }
-    }
-    Ok(())
-}
 
 #[derive(Debug)]
 pub(super) struct PngPlan {
@@ -426,6 +375,132 @@ impl PngElement {
             origin.y.max(corner.y),
         ))
     }
+
+    /// The canvas `drawImage` call a raster image element issues (#198):
+    /// the reference's `drawImage(image, crop..., 0, 0, width, height)` under
+    /// its current transform, which Blink composes in binary64 (the element
+    /// transform, then the flip `scale`) and hands to Skia as binary32, with
+    /// the element opacity as the paint alpha. `None` for any other element
+    /// and for a nested-SVG image.
+    fn canvas_image_draw(&self) -> Option<Result<CanvasImageDraw, FormatEncodeError>> {
+        let PngElementKind::Image {
+            asset,
+            source_rect,
+            scale,
+            ..
+        } = &self.planned.kind
+        else {
+            return None;
+        };
+        if asset.sanitized_svg.is_some() {
+            return None;
+        }
+        let PlannedElement {
+            transform,
+            opacity,
+            width,
+            height,
+            ..
+        } = &self.planned;
+        let (width, height) = (*width, *height);
+        let (sign_x, flip_x) = if scale[0] < 0 {
+            (-1.0, width)
+        } else {
+            (1.0, 0.0)
+        };
+        let (sign_y, flip_y) = if scale[1] < 0 {
+            (-1.0, height)
+        } else {
+            (1.0, 0.0)
+        };
+        let draw = || -> Result<CanvasImageDraw, FormatEncodeError> {
+            Ok(CanvasImageDraw {
+                ctm: AffineF {
+                    a: finite_f32(transform.a * sign_x, "PNG image transform a")?,
+                    b: finite_f32(transform.b * sign_x, "PNG image transform b")?,
+                    c: finite_f32(transform.c * sign_y, "PNG image transform c")?,
+                    d: finite_f32(transform.d * sign_y, "PNG image transform d")?,
+                    e: finite_f32(
+                        transform.e + transform.a * flip_x + transform.c * flip_y,
+                        "PNG image transform e",
+                    )?,
+                    f: finite_f32(
+                        transform.f + transform.b * flip_x + transform.d * flip_y,
+                        "PNG image transform f",
+                    )?,
+                },
+                src: RectF {
+                    x: finite_f32(source_rect.x, "PNG image source x")?,
+                    y: finite_f32(source_rect.y, "PNG image source y")?,
+                    width: finite_f32(source_rect.width, "PNG image source width")?,
+                    height: finite_f32(source_rect.height, "PNG image source height")?,
+                },
+                dst: RectF {
+                    x: 0.0,
+                    y: 0.0,
+                    width: finite_f32(width, "PNG image width")?,
+                    height: finite_f32(height, "PNG image height")?,
+                },
+                alpha8: paint_alpha8(*opacity),
+            })
+        };
+        Some(draw())
+    }
+
+    /// Whether the element's device bounds miss the `surface_width` by
+    /// `surface_height` canvas, so the canvas rejects its draw before
+    /// decoding anything.
+    fn misses_canvas(&self, surface_width: u32, surface_height: u32) -> bool {
+        let corners = [
+            Point { x: 0.0, y: 0.0 },
+            Point {
+                x: self.planned.width,
+                y: 0.0,
+            },
+            Point {
+                x: self.planned.width,
+                y: self.planned.height,
+            },
+            Point {
+                x: 0.0,
+                y: self.planned.height,
+            },
+        ]
+        .map(|point| self.planned.transform.map_point(point));
+        let fold = |axis: fn(&Point) -> f64, pick: fn(f64, f64) -> f64, start: f64| {
+            corners.iter().map(axis).fold(start, pick)
+        };
+        let left = fold(|point| point.x, f64::min, f64::INFINITY);
+        let right = fold(|point| point.x, f64::max, f64::NEG_INFINITY);
+        let top = fold(|point| point.y, f64::min, f64::INFINITY);
+        let bottom = fold(|point| point.y, f64::max, f64::NEG_INFINITY);
+        !(left < f64::from(surface_width)
+            && right > 0.0
+            && top < f64::from(surface_height)
+            && bottom > 0.0)
+    }
+}
+
+/// The cc decode level an image draw uses and where that level comes from.
+#[derive(Clone, Copy, Debug)]
+struct PlannedImageLevel {
+    key: DecodeKey,
+    decode: CcDecode,
+    source: LevelSource,
+}
+
+/// One image level the render builds, as the resource ledger prices it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct ImageLevelBuild {
+    /// The plan index of the element whose draw builds the level.
+    pub(super) index: usize,
+    /// The level's pixels, kept for the rest of the render.
+    pub(super) level_pixels: u64,
+    /// The pixels the build reads: the decoded source rectangle or the cached
+    /// level it scales from.
+    pub(super) source_pixels: u64,
+    /// The transient Skia mipmap chain the build allocates.
+    pub(super) chain_pixels: u64,
 }
 
 /// Applies to a nested-SVG image's supersampled layer the two clips the
@@ -965,7 +1040,9 @@ impl PngPlan {
                 surface.fill(Color::from_rgba8(red, green, blue, alpha));
             }
             let mut masks = PaintMasks::new(raster_width, raster_height, SUBPIXEL_SCALE);
-            for element in &self.elements {
+            let image_levels = self.plan_image_levels()?;
+            let mut decode_cache = DecodeCache::default();
+            for (index, element) in self.elements.iter().enumerate() {
                 if !element.render {
                     continue;
                 }
@@ -1334,85 +1411,75 @@ impl PngPlan {
                             );
                             continue;
                         }
-                        let raster_transform = transform.raster_image_transform(
-                            SUBPIXEL_SCALE,
-                            *source_rect,
-                            *width,
-                            *height,
-                            *scale,
-                        )?;
                         let pixels = asset.premultiplied_rgba.as_deref().ok_or_else(|| {
                             FormatEncodeError::Encoding(
                                 "PNG image has no normalized pixel resource".to_owned(),
                             )
                         })?;
-                        let pixmap = PixmapRef::from_bytes(pixels, asset.width, asset.height)
-                            .ok_or_else(png_size_error)?;
-                        let image_paint = PixmapPaint {
-                            opacity: finite_f32(*opacity, "PNG image opacity")?,
-                            quality: FilterQuality::Bilinear,
-                            ..PixmapPaint::default()
+                        let image = PremulView::new(asset.width, asset.height, pixels);
+                        // The cc decode level the canvas samples (#198): a
+                        // strongly minified draw samples a smaller level
+                        // built from the source rectangle, reused across
+                        // draws of the same image and rectangle.
+                        let level = match image_levels.get(index).copied().flatten() {
+                            Some(level) => Some((
+                                level.decode,
+                                decode_cache.level(
+                                    level.key,
+                                    image,
+                                    &level.decode,
+                                    level.source,
+                                )?,
+                            )),
+                            None => None,
                         };
                         match snapped {
-                            Some(rect) => {
-                                // The snapped rectangle, filled with the image
-                                // resampled once per destination pixel centre
-                                // as the canvas's `drawImage` resamples it
-                                // (#165): a canvas-resolution layer of the
-                                // rectangle's size takes the image as a
-                                // pattern under the exact fractional mapping,
-                                // sampled bilinearly at each of its pixel
-                                // centres, and each of its pixels then paints
+                            Some(_) => {
+                                // The canvas's non-antialiased `drawImageRect`
+                                // (#162, #165, #198): Skia's legacy sampler
+                                // shades the whole device pixels whose centres
+                                // the destination covers, once per canvas
+                                // pixel, and each of those pixels then paints
                                 // one constant block of subpixels, which the
-                                // box filter returns unchanged. Sampling the
-                                // image at every subpixel centre instead gave
-                                // an upscaled image a footprint one
-                                // destination pixel wider than the canvas's.
-                                // Coverage is the canvas's whole rows and
-                                // columns, and the padded spread supplies the
-                                // image's edge pixel where the snapped edge
-                                // reaches past the mapped one, as Skia's
-                                // clamped image shader does. A cropped image
-                                // is sampled from the whole pixmap, as the
-                                // canvas samples it: the official evidence for
+                                // box filter returns unchanged. Paint alpha is
+                                // part of the shaded pixel, and the blocks
+                                // composite with the canvas's byte source-over
+                                // unless a clip mask needs tiny-skia's masked
+                                // fill. A cropped image is sampled from the
+                                // whole decoded level, as the canvas samples
+                                // it: the official evidence for
                                 // `focused.image-codecs.v1` blends the pixels
-                                // beside the crop into its edge rows, so the
-                                // source rectangle does not bound the sampling
-                                // there either.
-                                let layer_width = rect.right - rect.left;
-                                let layer_height = rect.bottom - rect.top;
-                                let sampling_transform = transform
-                                    .raster_image_transform_with_origin(
-                                        1,
-                                        *source_rect,
-                                        *width,
-                                        *height,
-                                        *scale,
-                                        rect.left,
-                                        rect.top,
-                                    )?;
-                                let mut layer = Pixmap::new(layer_width, layer_height).ok_or(
-                                    FormatEncodeError::MemoryUnavailable {
-                                        subject_kind: "raster_surface",
-                                        subject: "png_image_resample_surface",
-                                    },
-                                )?;
-                                canvas_bilinear_samples(&mut layer, pixmap, sampling_transform)?;
-                                let integer_blit = sampling_transform.sx == 1.0
-                                    && sampling_transform.sy == 1.0
-                                    && sampling_transform.kx == 0.0
-                                    && sampling_transform.ky == 0.0
-                                    && sampling_transform.tx.fract() == 0.0
-                                    && sampling_transform.ty.fract() == 0.0;
-                                if integer_blit
-                                    && image_paint.opacity == 1.0
-                                    && paint_mask.is_none()
-                                {
+                                // beside the crop into its edge rows.
+                                let draw =
+                                    element.canvas_image_draw().transpose()?.ok_or_else(|| {
+                                        FormatEncodeError::Encoding(
+                                            "PNG image has no canvas draw".to_owned(),
+                                        )
+                                    })?;
+                                let (bitmap, draw) = match &level {
+                                    Some((decode, level)) => (level.view(), draw.for_level(decode)),
+                                    None => (image, draw),
+                                };
+                                let Some(painted) =
+                                    device_draw_image_rect(bitmap, &draw, self.width, self.height)?
+                                else {
+                                    continue;
+                                };
+                                let layer = Pixmap::from_vec(
+                                    painted.pixels,
+                                    IntSize::from_wh(
+                                        painted.right - painted.left,
+                                        painted.bottom - painted.top,
+                                    )
+                                    .ok_or_else(png_size_error)?,
+                                )
+                                .ok_or_else(png_size_error)?;
+                                if paint_mask.is_none() {
                                     composite_unmasked_raster_blocks(
                                         &mut surface,
                                         &layer,
-                                        rect.left,
-                                        rect.top,
+                                        painted.left,
+                                        painted.top,
                                         SUBPIXEL_SCALE,
                                     )?;
                                     continue;
@@ -1424,10 +1491,10 @@ impl PngPlan {
                                     )
                                 };
                                 let destination = Rect::from_ltrb(
-                                    scaled(rect.left)?,
-                                    scaled(rect.top)?,
-                                    scaled(rect.right)?,
-                                    scaled(rect.bottom)?,
+                                    scaled(painted.left)?,
+                                    scaled(painted.top)?,
+                                    scaled(painted.right)?,
+                                    scaled(painted.bottom)?,
                                 )
                                 .ok_or_else(png_size_error)?;
                                 let block_scale =
@@ -1439,17 +1506,17 @@ impl PngPlan {
                                             layer.as_ref(),
                                             tiny_skia::SpreadMode::Pad,
                                             FilterQuality::Nearest,
-                                            image_paint.opacity,
+                                            1.0,
                                             Transform::from_row(
                                                 block_scale,
                                                 0.0,
                                                 0.0,
                                                 block_scale,
-                                                scaled(rect.left)?,
-                                                scaled(rect.top)?,
+                                                scaled(painted.left)?,
+                                                scaled(painted.top)?,
                                             ),
                                         ),
-                                        blend_mode: image_paint.blend_mode,
+                                        blend_mode: tiny_skia::BlendMode::SourceOver,
                                         anti_alias: false,
                                         force_hq_pipeline: false,
                                     },
@@ -1457,14 +1524,73 @@ impl PngPlan {
                                     paint_mask,
                                 );
                             }
-                            None => surface.draw_pixmap(
-                                0,
-                                0,
-                                pixmap,
-                                &image_paint,
-                                raster_transform,
-                                paint_mask,
-                            ),
+                            None => {
+                                // A rotated image keeps tiny-skia's bilinear
+                                // sampler with antialiased edges, drawing the
+                                // cc decode level the canvas would sample.
+                                let image_paint = PixmapPaint {
+                                    opacity: finite_f32(*opacity, "PNG image opacity")?,
+                                    quality: FilterQuality::Bilinear,
+                                    ..PixmapPaint::default()
+                                };
+                                let raster_transform = transform.raster_image_transform(
+                                    SUBPIXEL_SCALE,
+                                    *source_rect,
+                                    *width,
+                                    *height,
+                                    *scale,
+                                )?;
+                                match &level {
+                                    Some((decode, level)) => {
+                                        let (left, top, decoded_width, decoded_height) =
+                                            decode.rect;
+                                        let pixmap = PixmapRef::from_bytes(
+                                            &level.data,
+                                            level.width,
+                                            level.height,
+                                        )
+                                        .ok_or_else(png_size_error)?;
+                                        let level_transform = raster_transform
+                                            .pre_translate(left as f32, top as f32)
+                                            .pre_scale(
+                                                finite_f32(
+                                                    f64::from(decoded_width)
+                                                        / f64::from(level.width),
+                                                    "PNG image level scale",
+                                                )?,
+                                                finite_f32(
+                                                    f64::from(decoded_height)
+                                                        / f64::from(level.height),
+                                                    "PNG image level scale",
+                                                )?,
+                                            );
+                                        surface.draw_pixmap(
+                                            0,
+                                            0,
+                                            pixmap,
+                                            &image_paint,
+                                            level_transform,
+                                            paint_mask,
+                                        );
+                                    }
+                                    None => {
+                                        let pixmap = PixmapRef::from_bytes(
+                                            pixels,
+                                            asset.width,
+                                            asset.height,
+                                        )
+                                        .ok_or_else(png_size_error)?;
+                                        surface.draw_pixmap(
+                                            0,
+                                            0,
+                                            pixmap,
+                                            &image_paint,
+                                            raster_transform,
+                                            paint_mask,
+                                        );
+                                    }
+                                }
+                            }
                         }
                     }
                     PngElementKind::ImageFallback { source, status } => {
@@ -1750,6 +1876,85 @@ impl PngPlan {
                 }
             }
         })
+    }
+
+    /// The cc decode level of every painted raster image draw, indexed like
+    /// the plan's elements, with the per-render decode cache's decisions in
+    /// paint order (#198). A draw at level 0 samples the decoded image itself
+    /// and has no entry; so does an element the session omitted or whose
+    /// device bounds miss the canvas, which the canvas never decodes.
+    fn plan_image_levels(&self) -> Result<Vec<Option<PlannedImageLevel>>, FormatEncodeError> {
+        let mut planner = DecodeCachePlanner::default();
+        let mut levels = Vec::new();
+        levels.try_reserve_exact(self.elements.len()).map_err(|_| {
+            FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_plan",
+                subject: "png_image_levels",
+            }
+        })?;
+        for element in &self.elements {
+            let planned = match &element.planned.kind {
+                PngElementKind::Image { asset, .. }
+                    if element.render
+                        && element.planned.width != 0.0
+                        && element.planned.height != 0.0
+                        && !self.svg_trees.contains_key(&asset.identity)
+                        && !element.misses_canvas(self.width, self.height) =>
+                {
+                    match element.canvas_image_draw().transpose()? {
+                        Some(draw) => draw
+                            .cc_decode(asset.width, asset.height)
+                            .filter(|decode| decode.level > 0)
+                            .map(|decode| {
+                                let key = (asset.identity, decode.rect);
+                                PlannedImageLevel {
+                                    key,
+                                    decode,
+                                    source: planner.plan(
+                                        key,
+                                        decode.level_width,
+                                        decode.level_height,
+                                    ),
+                                }
+                            }),
+                        None => None,
+                    }
+                }
+                _ => None,
+            };
+            levels.push(planned);
+        }
+        Ok(levels)
+    }
+
+    /// The image levels the render builds, in paint order, for the resource
+    /// ledger: a level reused from the decode cache builds nothing.
+    pub(super) fn image_level_builds(&self) -> Result<Vec<ImageLevelBuild>, FormatEncodeError> {
+        let mut builds = Vec::new();
+        for (index, level) in self.plan_image_levels()?.into_iter().enumerate() {
+            let Some(level) = level else {
+                continue;
+            };
+            let (source_width, source_height) = match level.source {
+                LevelSource::Hit => continue,
+                LevelSource::Cached(width, height) => (width, height),
+                LevelSource::Original => (level.decode.rect.2, level.decode.rect.3),
+            };
+            let (width, height) = (level.decode.level_width, level.decode.level_height);
+            builds
+                .try_reserve(1)
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "format_plan",
+                    subject: "png_image_levels",
+                })?;
+            builds.push(ImageLevelBuild {
+                index,
+                level_pixels: u64::from(width) * u64::from(height),
+                source_pixels: u64::from(source_width) * u64::from(source_height),
+                chain_pixels: scale_pixels_chain_pixels(source_width, source_height, width, height),
+            });
+        }
+        Ok(builds)
     }
 
     pub(super) fn image_projection_area(&self, index: usize) -> Option<Option<u64>> {

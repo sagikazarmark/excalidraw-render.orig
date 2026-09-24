@@ -494,6 +494,65 @@ impl RenderSession {
 
         self.flush_pending_png_animation_diagnostics(request)?;
 
+        // The canvas samples a strongly minified image from a smaller cc
+        // decode level, which the render builds once per image, source
+        // rectangle and level and keeps until the raster is done (#198). Each
+        // build pays its level's surface area, its canonical samples (up to
+        // nine taps per pixel of Skia's transient mipmap chain, four per level
+        // pixel), and the working bytes of every kept level plus the largest
+        // transient chain, for the rasterization's lifetime.
+        let image_level_builds = plan
+            .image_level_builds()
+            .map_err(|error| self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error))?;
+        let mut image_level_bytes = 0_u64;
+        let mut image_level_chain_bytes = 0_u64;
+        for build in &image_level_builds {
+            let (element_id, json_pointer) = plan.source(build.index).ok_or_else(|| {
+                self.internal_failure(
+                    request.format(),
+                    "PNG image level source is missing",
+                    "/elements",
+                )
+            })?;
+            self.transact(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::ProjectionAndFallback,
+                    "image_decode_level_samples",
+                    json_pointer,
+                )
+                .with_element_id(element_id)
+                .with_local_owner(element_id),
+                ResourceDelta {
+                    rasterized_pixels: build.level_pixels,
+                    total_work_units: build
+                        .chain_pixels
+                        .saturating_mul(9)
+                        .saturating_add(build.level_pixels.saturating_mul(4)),
+                    ..ResourceDelta::default()
+                },
+            )?;
+            image_level_bytes = image_level_bytes
+                .saturating_add(256)
+                .saturating_add(build.level_pixels.saturating_mul(4));
+            image_level_chain_bytes = image_level_chain_bytes
+                .max(256_u64.saturating_add(build.chain_pixels.saturating_mul(4)));
+        }
+        let image_level_working = if image_level_builds.is_empty() {
+            0
+        } else {
+            image_level_bytes.saturating_add(image_level_chain_bytes)
+        };
+        let image_level_surface = ResourceContext::new(
+            ResourcePhase::ProjectionAndFallback,
+            "image_decode_level_surface",
+            "",
+        )
+        .with_record(ResourceRecordKind::RasterColorSurface);
+        if image_level_working != 0 {
+            self.acquire_working(request, image_level_surface, image_level_working)?;
+        }
+
         let workspace_bytes = 2_u64
             .saturating_mul(1_048_576)
             .saturating_add(16_u64.saturating_mul(u64::from(plan.width())));
@@ -545,6 +604,9 @@ impl RenderSession {
         )?;
         drop(stream);
         self.release_semantic_working(request, semantic_working, true)?;
+        if image_level_working != 0 {
+            self.release_working(request, image_level_surface, image_level_working)?;
+        }
         if paint_mask_bytes != 0 {
             self.release_working(request, paint_mask_surface, paint_mask_bytes)?;
         }
