@@ -1,0 +1,30 @@
+{
+  "schema": "excalidraw-render/ownership-tranche/v1",
+  "approval": null,
+  "owners": [
+    {
+      "module": "nested_svg_reference_contract",
+      "function": "nested_svg_sanitization_matches_the_reference_where_it_stays_static",
+      "ids": [
+        "codec:nested-svg:sanitization"
+      ],
+      "rationale": "Nested-SVG sanitization facet: 35 reference rows (tests/oracle/nested-svg). Scripts, handlers, javascript: links, stylesheet instructions, external entities, @import, @font-face, external url(), use and xml:base never run or load; remaining content matches the reference canonically in PNG with SVG/PDF reporting exactly what PNG reports; internal entities expand within a documented bound; an undefined entity or expansion bomb rejects with exact recovery in every format; animation state, foreignObject and the external-image placeholder are declared divergences pinned to their static twins or placeholder. See docs/research/nested-svg-umbrella-facets.md."
+    },
+    {
+      "module": "nested_svg_reference_contract",
+      "function": "nested_svg_references_match_the_reference",
+      "ids": [
+        "codec:nested-svg:references"
+      ],
+      "rationale": "Nested-SVG references facet: 22 reference rows (tests/oracle/nested-svg). Same-document and missing fragments with fallbacks, use/pattern/mask/clip/gradient cycles cut at their closing edge, base64 and percent-encoded data images recursively sanitized, matching the reference canonically in PNG with SVG/PDF reporting exactly what PNG reports; plus the exact nested depth and node-limit contracts in every format. See docs/research/nested-svg-umbrella-facets.md."
+    },
+    {
+      "module": "pdf_raster_fallback_contract",
+      "function": "raster_fallback_contract_covers_families_occurrences_geometry_and_failures",
+      "ids": [
+        "codec:nested-svg:pdf-fallback"
+      ],
+      "rationale": "Nested-SVG pdf-fallback facet (spec section 8.6 is the sole authority; no reference PDF exists): exact reports and isolated artifacts for sixteen pixel-domain effect families, forbid failures and SVG/PNG silence, occurrence order and merged causes, no-op and native silence under Forbid over the approved native matrix, scaled bounds and preflight, frames, crops, rotation, subpixel grids and stylesheet provenance. See docs/research/nested-svg-umbrella-facets.md."
+    }
+  ]
+}
