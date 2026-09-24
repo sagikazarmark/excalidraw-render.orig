@@ -212,7 +212,7 @@
       "rationale": "Registered frame-kind case focused.frame-export.v1 (issue 97). verify-ownership runs conformance verify on it with approval required: manifest digest and identity, the pinned frame reference profile, every evidence descriptor, and all seven live frame/magicframe targets bound to their official SVG/PNG evidence and expected reports. Renderer parity against that evidence is executed by tests/parity_frame_export.rs (secondary evidence). The only focused-layer obligation without a case-label home; this assignment does not claim format/profile sub-obligations."
     }
   ],
-  "layers_subject": "error: derivation does not reproduce layers.json; run layers-generate and review the diff",
+  "layers_subject": "  regression crates/excalidraw-render/tests/qualification/scene-fuzz-regressions.json: layer:regression:scene-fuzz has no primary owner",
   "closure_owners": [
     {
       "obligation": "closure:all-five-layers",
