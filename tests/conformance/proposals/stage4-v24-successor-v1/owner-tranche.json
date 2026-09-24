@@ -1,0 +1,11 @@
+{
+  "schema": "excalidraw-render/ownership-tranche/v1",
+  "approval": null,
+  "closure_owners": [
+    {
+      "obligation": "closure:pdf-judgments",
+      "verifier": "pdf-judgments",
+      "rationale": "Record owner (ADR-0015): tests/conformance/coverage/pdf-judgments.json, approved on #85, binds independently derived expected reports for all 56 PDF executions (byte-equal to the approved native baseline) and 20 specialized PDF structural/visual judgment files by digest with a completeness rule; the compiled-in pdf-judgments verifier rederives and rechecks it with approval required."
+    }
+  ]
+}
