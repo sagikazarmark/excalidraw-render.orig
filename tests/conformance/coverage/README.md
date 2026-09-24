@@ -185,7 +185,17 @@ until those discrepancies are fixed. See [the findings](../../../docs/research/w
 
 ### Canonical baseline approval and replay
 
-`native-baseline/revision-1.json` contains the approved clean `4713c2e` recollection
+`native-baseline/revision-1.json` contains the approved clean `ec30177`
+recollection after JPEG began reading as the pinned libjpeg-turbo decoder does.
+Exactly two keys changed, `focused.image-codecs.v1` PNG and PDF, with their
+reports unchanged. The case's JPEG carries an sRGB-equivalent ICC profile,
+which now draws untransformed as the reference draws it. It was approved on
+2026-09-24 in
+[#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5808265754),
+subject `sha256:9dfb7dc101a5bf5350248bee33028aa17e8b0b8228fb622f10839bb13985c2e7`.
+See [the JPEG facet record](../../../docs/research/jpeg-umbrella-facets.md).
+
+The preceding baseline contains the approved clean `4713c2e` recollection
 after PDF began lowering dark mode into nested-SVG content (ADR-0013, #154).
 Exactly one key changed, `focused.dark-mode-images.v1` dark-mode PDF, with its
 report unchanged. It was approved on 2026-09-23 in
