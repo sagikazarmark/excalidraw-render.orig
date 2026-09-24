@@ -211,5 +211,13 @@
       ],
       "rationale": "Registered frame-kind case focused.frame-export.v1 (issue 97). verify-ownership runs conformance verify on it with approval required: manifest digest and identity, the pinned frame reference profile, every evidence descriptor, and all seven live frame/magicframe targets bound to their official SVG/PNG evidence and expected reports. Renderer parity against that evidence is executed by tests/parity_frame_export.rs (secondary evidence). The only focused-layer obligation without a case-label home; this assignment does not claim format/profile sub-obligations."
     }
+  ],
+  "layers_subject": "error: derivation does not reproduce layers.json; run layers-generate and review the diff",
+  "closure_owners": [
+    {
+      "obligation": "closure:all-five-layers",
+      "verifier": "layers",
+      "rationale": "Record owner (ADR-0015): tests/conformance/coverage/layers.json, approved on #85, binds every item of the five corpus layers (the ten spec vector families, stored vector corpora and oracle directories, all registered focused cases, the representative candidate and the three #84 representative cases with their approval, sanitization and crops, every fuzz target with its required risks, and every permanent regression corpus with its case ids) by rule and digest; the compiled-in layers verifier rederives the item list and requires each item to map to an owned ledger row whose owner validates."
+    }
   ]
 }
