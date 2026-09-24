@@ -273,3 +273,59 @@ fn rejects_incomplete_stale_or_divergent_collector_results() {
         );
     }
 }
+
+#[test]
+fn closure_record_and_ledger_approval_recorders_refuse_without_changing_the_ledger() {
+    let path = root().join("tests/conformance/coverage/ownership.json");
+    let before = fs::read(&path).unwrap();
+    for (args, expected) in [
+        (
+            vec![
+                "record-closure-owner",
+                "codec:png:alpha",
+                "pdf-judgments",
+                "reviewed",
+            ],
+            "only for closure obligations",
+        ),
+        (
+            vec![
+                "record-closure-owner",
+                "closure:pdf-judgments",
+                "sh -c true",
+                "reviewed",
+            ],
+            "unknown record verifier",
+        ),
+        (
+            vec![
+                "record-closure-owner",
+                "closure:all-five-layers",
+                "pdf-judgments",
+                "reviewed",
+            ],
+            "stale or unbound record owner",
+        ),
+        (
+            vec![
+                "record-ownership-approval",
+                "sagikazarmark",
+                "2026-09-24",
+                "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1",
+                "sha256:0",
+            ],
+            "",
+        ),
+    ] {
+        let mut full = vec!["conformance"];
+        full.extend(args);
+        let output = command(&full);
+        assert!(!output.status.success());
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(expected),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(fs::read(&path).unwrap(), before);
+    }
+}

@@ -179,6 +179,21 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             coverage::refresh_test_owner_source(&module)?;
         }
+        Some("record-closure-owner") => {
+            let obligation = required_arg(&mut args, "closure obligation")?;
+            let verifier = required_arg(&mut args, "record verifier")?;
+            let rationale = required_arg(&mut args, "reviewed rationale")?;
+            no_more_args(args)?;
+            coverage::record_closure_owner(&obligation, &verifier, &rationale)?;
+        }
+        Some("record-ownership-approval") => {
+            let login = required_arg(&mut args, "GitHub identity")?;
+            let date = required_arg(&mut args, "approval date")?;
+            let url = required_arg(&mut args, "approval comment URL")?;
+            let subject = required_arg(&mut args, "approval subject")?;
+            no_more_args(args)?;
+            coverage::record_ownership_approval(&login, &date, &url, &subject)?;
+        }
         Some("ownership-approval-subject") => {
             no_more_args(args)?;
             println!("sha256:{}", coverage::ownership_subject()?);
@@ -631,7 +646,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|record-exception-test-owner|refresh-exception-test-owner-source|refresh-test-owner-source|refresh-library-test-owner-source|ownership-approval-subject|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|pdf-judgments-generate|pdf-judgments-approval-subject|record-pdf-judgments-approval|verify-pdf-judgments|verify-closure|generate|reproduce|verify|verify-all|approval-subject|candidate-approval-subject|record-approval|",
+        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|record-exception-test-owner|refresh-exception-test-owner-source|refresh-test-owner-source|refresh-library-test-owner-source|record-closure-owner|ownership-approval-subject|record-ownership-approval|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|pdf-judgments-generate|pdf-judgments-approval-subject|record-pdf-judgments-approval|verify-pdf-judgments|verify-closure|generate|reproduce|verify|verify-all|approval-subject|candidate-approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"

@@ -330,6 +330,12 @@ cargo run --locked -p xtask -- conformance record-pdf-judgments-approval \
 cargo run --locked -p xtask -- conformance verify-pdf-judgments [--require-approval]
 ```
 
+The approved record owns `closure:pdf-judgments` through a `record` owner
+([ADR-0015](../../../docs/adr/0015-own-closure-obligations-with-approved-judgment-records.md)):
+`record-closure-owner closure:pdf-judgments pdf-judgments RATIONALE` binds its
+digest and approval subject after running this verification in-process, and
+`verify-ownership` repeats it. See [OWNERSHIP.md](OWNERSHIP.md).
+
 Generation keeps the authored declarations and rewrites everything else with a
 null approval. Verification checks exact PDF execution coverage, report and
 judgment digests, spec anchors, completeness, that derivation reproduces the

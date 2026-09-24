@@ -189,6 +189,8 @@ cargo run --locked -p xtask -- conformance refresh-test-owner-source MODULE
 # Explicit root library tests using private test-only operation seams:
 cargo run --locked -p xtask -- conformance record-library-test-owner MODULE FUNCTION RATIONALE ID...
 cargo run --locked -p xtask -- conformance refresh-library-test-owner-source MODULE
+# Own a closure row with its approved judgment record (ADR-0015):
+cargo run --locked -p xtask -- conformance record-closure-owner closure:pdf-judgments pdf-judgments RATIONALE
 # Capture the old catalog before editing inventory inputs, then extend only:
 # cargo run --locked -p xtask -- conformance ownership-catalog > target/old-catalog.json
 cargo run --locked -p xtask -- conformance extend-ownership target/old-catalog.json ISSUE REASON
@@ -196,6 +198,8 @@ cargo run --locked -p xtask -- conformance extend-ownership target/old-catalog.j
 cargo run --locked -p xtask -- conformance seed-ownership > target/ownership-template.json
 # Both fail until the ledger is complete (closure also requires approval):
 cargo run --locked -p xtask -- conformance ownership-approval-subject
+cargo run --locked -p xtask -- conformance record-ownership-approval \
+  <login> <UTC-date> <issue-85-comment-URL> <exact-subject>
 cargo run --locked -p xtask -- conformance verify-closure
 ```
 
@@ -239,6 +243,18 @@ Dispositions are strict tagged objects:
   exclusions. Disabled, redirected and procedural-macro targets are rejected.
   This adapter supports private operation-failure contracts while keeping test
   controls out of the production API; see [ADR-0010](../../../docs/adr/0010-test-metadata-operation-failures-through-private-library-seams.md).
+- `owned` record adapter ([ADR-0015](../../../docs/adr/0015-own-closure-obligations-with-approved-judgment-records.md)):
+  `kind: record`, a `record` path + sha256, `approval_subject_sha256` and a
+  `verifier` name. Closure rows (`closure:*`) accept only record owners, and
+  record owners own only closure rows. The record's bytes match the digest, it
+  names the row as its `obligation`, its `approving_issue` is 85, and its #85
+  approval binds exactly the recorded subject, which its own subject computation
+  reproduces. `verifier` selects a verifier compiled into xtask for the record's
+  schema, never a shell command; it runs in-process with approval required
+  (`pdf-judgments` runs `verify-pdf-judgments --require-approval`). Any failure
+  is stale or unbound ownership. `record-closure-owner` checks all of this before
+  writing a gap or existing record row of an unapproved ledger; a changed record
+  needs a fresh approval before it can be rebound.
 - `gap`: positive issue number and a concrete reason. Always blocks closure.
 - `excluded`: reason, digest-bound proof source/anchor and an existing explicit
   #85 approval binding the canonical exclusion subject (obligation + reason +
@@ -263,10 +279,13 @@ approval scope when unrelated consuming tests change.
 
 A completed-ledger subject binds the whole catalog and every disposition,
 excluding only the ledger's approval object. It contains strings/integers, not
-floating-point request JSON. Subject generation refuses remaining gaps; release
-closure additionally requires its scoped four-field approval. Recording a final
-ledger approval will be added when the complete inventory and mappings are ready;
-this incomplete proposal cannot be marked complete by a metadata flag.
+floating-point request JSON. Record owners keep their record digest in the
+subject. Subject generation refuses remaining gaps; release closure additionally
+requires its scoped four-field approval. `record-ownership-approval` verifies the
+ledger, refuses while any gap remains, requires the exact computed subject and
+a #85 comment URL, writes the four-field approval and re-verifies. Once approved
+the ledger is frozen; this incomplete proposal cannot be marked complete by a
+metadata flag.
 
 ## Remaining mapping work
 

@@ -22,10 +22,10 @@ mod pdf_judgments;
 mod snapshots;
 pub use ownership::{
     extend_ownership, ownership_authority_migration, ownership_catalog, ownership_subject,
-    reconcile_stage4_bindings, record_exception_test_owner, record_library_test_owner,
-    record_representative_owner, record_test_owner, refresh_exception_test_owner_source,
-    refresh_library_test_owner_source, refresh_test_owner_source, seed_ownership, verify_ownership,
-    verify_representative_owner,
+    reconcile_stage4_bindings, record_closure_owner, record_exception_test_owner,
+    record_library_test_owner, record_ownership_approval, record_representative_owner,
+    record_test_owner, refresh_exception_test_owner_source, refresh_library_test_owner_source,
+    refresh_test_owner_source, seed_ownership, verify_ownership, verify_representative_owner,
 };
 mod traces;
 pub use pdf_judgments::{

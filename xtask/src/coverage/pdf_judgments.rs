@@ -9,8 +9,8 @@ use std::path::{Path, PathBuf};
 mod derive;
 use derive::{build_record, classify_files, declared, report_bytes, FORMAT_RULES, RULES};
 
-const RECORD: &str = "tests/conformance/coverage/pdf-judgments.json";
-const SCHEMA: &str = "excalidraw-render/pdf-judgments/v1";
+pub(super) const RECORD: &str = "tests/conformance/coverage/pdf-judgments.json";
+pub(super) const SCHEMA: &str = "excalidraw-render/pdf-judgments/v1";
 const SUBJECT: &str = "excalidraw-render/pdf-judgments-approval-subject/v1";
 const SPEC: &str = "docs/renderer-spec-v1.md";
 const BASELINE: &str = "tests/conformance/coverage/native-baseline";
@@ -380,6 +380,19 @@ pub fn record_pdf_judgments_approval(
     apply_approval(&mut record, login, date, url, expected)?;
     write_record(&record)?;
     verify_record(&repo, &inventory, true).map(|_| ())
+}
+
+/// The compiled-in `pdf-judgments` record-owner verifier (ADR-0015): exactly
+/// `verify-pdf-judgments --require-approval`, run in-process.
+pub(super) fn verify_approved_record() -> Result<(), String> {
+    let repo = Repo::real();
+    let record = verify_record(&repo, &load_inventory()?, true)?;
+    cross_check_baseline(&repo, &record).map(|_| ())
+}
+
+/// The record's own approval subject computation, without the `sha256:` prefix.
+pub(super) fn record_subject(record: &Value) -> Result<String, String> {
+    subject_of(record)
 }
 
 pub fn verify_pdf_judgments(require_approval: bool) -> Result<(), String> {

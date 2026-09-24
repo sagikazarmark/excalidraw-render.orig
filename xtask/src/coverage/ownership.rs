@@ -5,6 +5,7 @@ use crate::conformance::verify_approval_for_issue;
 mod authority_migration;
 mod png_profiles;
 mod reconciliation;
+mod record;
 mod representative;
 pub use authority_migration::ownership_authority_migration;
 pub use reconciliation::reconcile_stage4_bindings;
@@ -68,6 +69,13 @@ enum Owner {
         function: String,
         binary: String,
         command: Vec<String>,
+    },
+    /// ADR-0015: an approved judgment record, for closure obligations only,
+    /// checked by a compiled-in verifier registered by the record's schema.
+    Record {
+        record: Descriptor,
+        approval_subject_sha256: String,
+        verifier: String,
     },
 }
 
@@ -581,6 +589,12 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
                 if !nonempty(rationale) {
                     return Err("ownership rationale is empty".into());
                 }
+                if row.id.starts_with("closure:") != matches!(owner, Owner::Record { .. }) {
+                    return Err(format!(
+                        "closure obligations are owned only by approved judgment records, and records own only closure obligations: {}",
+                        row.id
+                    ));
+                }
                 let exception_owner = matches!(owner, Owner::Test { binary, function, .. }
                     if binary == EXCEPTION_BINARY && function == EXCEPTION_FUNCTION);
                 if (row.category == "tolerance-exception") != exception_owner {
@@ -695,6 +709,11 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
                             );
                         }
                     }
+                    Owner::Record {
+                        record,
+                        approval_subject_sha256,
+                        verifier,
+                    } => record::verify(&row.id, record, approval_subject_sha256, verifier)?,
                 }
             }
             Disposition::Excluded {
@@ -994,13 +1013,138 @@ fn refresh_owner_source(binary: &str, module: &str) -> Result<(), String> {
 
 pub fn ownership_subject() -> Result<String, String> {
     let (catalog, ledger) = load()?;
-    let gaps = validate(&catalog, &ledger, false)?;
+    completed_subject(&catalog, &ledger)
+}
+
+fn completed_subject(catalog: &Catalog, ledger: &Ledger) -> Result<String, String> {
+    let gaps = validate(catalog, ledger, false)?;
     if gaps > 0 {
         return Err(format!(
             "cannot approve completed ownership: {gaps} gaps remain"
         ));
     }
-    subject(&catalog, &ledger)
+    subject(catalog, ledger)
+}
+
+fn write_ledger(ledger: &Ledger) -> Result<(), String> {
+    let mut bytes = serde_json::to_vec_pretty(ledger).map_err(|e| e.to_string())?;
+    bytes.push(b'\n');
+    fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())
+}
+
+/// ADR-0015: assign `owner` (a verified record owner) to its closure row. The
+/// row must be a gap or an existing record owner, and the ledger unapproved.
+fn assign_record_owner(
+    catalog: &Catalog,
+    ledger: &mut Ledger,
+    obligation: &str,
+    owner: Owner,
+    rationale: &str,
+) -> Result<(), String> {
+    if !ledger.approval.is_null() {
+        return Err("approved ownership requires a new reviewed decision".into());
+    }
+    if !obligation.starts_with("closure:") || !matches!(owner, Owner::Record { .. }) {
+        return Err(format!(
+            "record owners are allowed only for closure obligations: {obligation}"
+        ));
+    }
+    if !nonempty(rationale) {
+        return Err("ownership rationale is empty".into());
+    }
+    let assignment = ledger
+        .assignments
+        .iter_mut()
+        .find(|r| r.id == obligation)
+        .ok_or_else(|| format!("unknown ownership identity {obligation}"))?;
+    if !matches!(
+        assignment.disposition,
+        Disposition::Gap { .. }
+            | Disposition::Owned {
+                owner: Owner::Record { .. },
+                ..
+            }
+    ) {
+        return Err(format!(
+            "closure row is neither a gap nor record-owned: {obligation}"
+        ));
+    }
+    assignment.disposition = Disposition::Owned {
+        owner,
+        rationale: rationale.into(),
+    };
+    validate(catalog, ledger, false).map(|_| ())
+}
+
+/// `record-closure-owner`: verify the registered verifier's approved record
+/// completely, then record it as the owner of `obligation`.
+pub fn record_closure_owner(
+    obligation: &str,
+    verifier: &str,
+    rationale: &str,
+) -> Result<(), String> {
+    if !obligation.starts_with("closure:") {
+        return Err(format!(
+            "record owners are allowed only for closure obligations: {obligation}"
+        ));
+    }
+    if !nonempty(rationale) {
+        return Err("ownership rationale is empty".into());
+    }
+    // Refuse an unknown verifier or unbound/unapproved record before any
+    // ledger mutation.
+    let owner = record::current_owner(obligation, verifier)?;
+    let (catalog, mut ledger) = load()?;
+    if !ledger.approval.is_null() {
+        return Err("approved ownership requires a new reviewed decision".into());
+    }
+    validate(&catalog, &ledger, false)?;
+    assign_record_owner(&catalog, &mut ledger, obligation, owner, rationale)?;
+    write_ledger(&ledger)?;
+    println!("recorded {verifier} record owner for {obligation}");
+    Ok(())
+}
+
+/// Add the global #85 approval to a complete ledger whose subject is `expected`.
+fn apply_ownership_approval(
+    catalog: &Catalog,
+    ledger: &mut Ledger,
+    login: &str,
+    date: &str,
+    url: &str,
+    expected: &str,
+) -> Result<(), String> {
+    if !ledger.approval.is_null() {
+        return Err("ownership ledger is already approved".into());
+    }
+    let subject = completed_subject(catalog, ledger)?;
+    if expected.strip_prefix("sha256:").unwrap_or(expected) != subject {
+        return Err(format!(
+            "ownership approval subject mismatch: computed sha256:{subject}"
+        ));
+    }
+    let approval = json!({"approved_at":date,"approved_by":login,
+        "approval_subject_sha256":format!("sha256:{subject}"),"approval_url":url});
+    verify_approval_for_issue(&approval, &subject, "85")?;
+    ledger.approval = approval;
+    validate(catalog, ledger, true).map(|_| ())
+}
+
+/// `record-ownership-approval`: record the global #85 approval of a complete
+/// ledger (ADR-0011/0015). Refuses while any gap remains.
+pub fn record_ownership_approval(
+    login: &str,
+    date: &str,
+    url: &str,
+    expected: &str,
+) -> Result<(), String> {
+    let (catalog, mut ledger) = load()?;
+    apply_ownership_approval(&catalog, &mut ledger, login, date, url, expected)?;
+    write_ledger(&ledger)?;
+    let (catalog, ledger) = load()?;
+    validate(&catalog, &ledger, true)?;
+    println!("recorded ownership ledger approval");
+    Ok(())
 }
 
 pub(super) fn verify_closed() -> Result<(), String> {
@@ -1357,6 +1501,219 @@ mod tests {
             }],
         };
         (catalog, ledger)
+    }
+
+    /// A one-row catalog holding the real `closure:pdf-judgments` row.
+    fn closure_fixture() -> (Catalog, Ledger) {
+        let (mut catalog, mut ledger) = fixture();
+        catalog.obligations[0].id = "closure:pdf-judgments".into();
+        catalog.obligations[0].category = "closure".into();
+        ledger.assignments[0].id = "closure:pdf-judgments".into();
+        ledger.catalog_sha256 = digest(&catalog).unwrap();
+        (catalog, ledger)
+    }
+
+    fn library_owner() -> Owner {
+        let function = "metadata_failures_have_exact_recovery_in_every_format";
+        Owner::Test {
+            source: descriptor("crates/excalidraw-render/src/metadata_failure_contract.rs")
+                .unwrap(),
+            function: function.into(),
+            binary: "lib".into(),
+            command: owner_test_command("lib", "metadata_failure_contract", function),
+        }
+    }
+
+    const APPROVAL_URL: &str =
+        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1";
+
+    #[test]
+    fn closure_rows_are_owned_only_by_verified_approved_records() {
+        let owner = record::current_owner("closure:pdf-judgments", "pdf-judgments").unwrap();
+        let (catalog, mut ledger) = closure_fixture();
+        assign_record_owner(
+            &catalog,
+            &mut ledger,
+            "closure:pdf-judgments",
+            owner.clone(),
+            "reviewed",
+        )
+        .unwrap();
+        assert_eq!(validate(&catalog, &ledger, false).unwrap(), 0);
+        // The record descriptor is judgment-bearing: it stays in the subject.
+        let before = subject(&catalog, &ledger).unwrap();
+        let mut stale = ledger.clone();
+        let Disposition::Owned {
+            owner: Owner::Record { record, .. },
+            ..
+        } = &mut stale.assignments[0].disposition
+        else {
+            panic!()
+        };
+        record.sha256 = "0".repeat(64);
+        assert_ne!(subject(&catalog, &stale).unwrap(), before);
+        assert!(validate(&catalog, &stale, false)
+            .unwrap_err()
+            .contains("stale or unbound record owner"));
+        for (mutate, expected) in [(0, "does not bind"), (1, "unknown record verifier")] {
+            let mut bad = ledger.clone();
+            let Disposition::Owned {
+                owner:
+                    Owner::Record {
+                        approval_subject_sha256,
+                        verifier,
+                        ..
+                    },
+                ..
+            } = &mut bad.assignments[0].disposition
+            else {
+                panic!()
+            };
+            if mutate == 0 {
+                *approval_subject_sha256 = format!("sha256:{}", "0".repeat(64));
+            } else {
+                *verifier = "sh -c true".into();
+            }
+            let error = validate(&catalog, &bad, false).unwrap_err();
+            assert!(error.contains(expected), "{error}");
+        }
+        // A closure row with a test owner, and a non-closure row with a record owner.
+        let tested = assigned(&ledger, "closure:pdf-judgments", library_owner());
+        assert!(validate(&catalog, &tested, false)
+            .unwrap_err()
+            .contains("closure obligations are owned only by approved judgment records"));
+        let (catalog, ledger) = fixture();
+        let foreign = assigned(&ledger, "fixture", owner.clone());
+        assert!(validate(&catalog, &foreign, false)
+            .unwrap_err()
+            .contains("closure obligations are owned only by approved judgment records"));
+        let mut ledger = ledger;
+        assert!(
+            assign_record_owner(&catalog, &mut ledger, "fixture", owner, "reviewed")
+                .unwrap_err()
+                .contains("only for closure obligations")
+        );
+    }
+
+    #[test]
+    fn record_closure_owner_refuses_approved_ledgers_and_non_record_owners() {
+        let owner = Owner::Record {
+            record: Descriptor {
+                path: "unused".into(),
+                sha256: "0".repeat(64),
+            },
+            approval_subject_sha256: "unused".into(),
+            verifier: "pdf-judgments".into(),
+        };
+        let (catalog, ledger) = closure_fixture();
+        let mut approved = ledger.clone();
+        approved.approval = json!({"existing":"approval"});
+        assert!(assign_record_owner(
+            &catalog,
+            &mut approved,
+            "closure:pdf-judgments",
+            owner.clone(),
+            "r"
+        )
+        .unwrap_err()
+        .contains("new reviewed decision"));
+        let mut tested = assigned(&ledger, "closure:pdf-judgments", library_owner());
+        assert!(assign_record_owner(
+            &catalog,
+            &mut tested,
+            "closure:pdf-judgments",
+            owner.clone(),
+            "r"
+        )
+        .unwrap_err()
+        .contains("neither a gap nor record-owned"));
+        let mut empty = ledger.clone();
+        assert!(
+            assign_record_owner(&catalog, &mut empty, "closure:pdf-judgments", owner, " ")
+                .unwrap_err()
+                .contains("rationale is empty")
+        );
+        for (obligation, verifier, expected) in [
+            (
+                "codec:png:alpha",
+                "pdf-judgments",
+                "only for closure obligations",
+            ),
+            (
+                "closure:pdf-judgments",
+                "unknown",
+                "unknown record verifier",
+            ),
+            (
+                "closure:all-five-layers",
+                "pdf-judgments",
+                "not closure:all-five-layers",
+            ),
+        ] {
+            let error = record_closure_owner(obligation, verifier, "reviewed").unwrap_err();
+            assert!(error.contains(expected), "{error}");
+        }
+    }
+
+    #[test]
+    fn ownership_approval_binds_a_complete_ledger_on_issue_85() {
+        let (catalog, mut gap) = fixture();
+        let error = apply_ownership_approval(
+            &catalog,
+            &mut gap,
+            "sagikazarmark",
+            "2026-09-24",
+            APPROVAL_URL,
+            "x",
+        )
+        .unwrap_err();
+        assert!(error.contains("1 gaps remain"), "{error}");
+        assert!(gap.approval.is_null());
+        let complete = assigned(&gap, "fixture", library_owner());
+        let computed = format!("sha256:{}", completed_subject(&catalog, &complete).unwrap());
+        for (url, expected, error) in [
+            (APPROVAL_URL, "sha256:0", "subject mismatch"),
+            (
+                "https://github.com/sagikazarmark/excalidraw-render.orig/issues/86#issuecomment-1",
+                computed.as_str(),
+                "URL is invalid",
+            ),
+        ] {
+            let mut ledger = complete.clone();
+            let message = apply_ownership_approval(
+                &catalog,
+                &mut ledger,
+                "sagikazarmark",
+                "2026-09-24",
+                url,
+                expected,
+            )
+            .unwrap_err();
+            assert!(message.contains(error), "{message}");
+            assert!(ledger.approval.is_null());
+        }
+        let mut ledger = complete.clone();
+        apply_ownership_approval(
+            &catalog,
+            &mut ledger,
+            "sagikazarmark",
+            "2026-09-24",
+            APPROVAL_URL,
+            &computed,
+        )
+        .unwrap();
+        assert_eq!(ledger.approval["approval_subject_sha256"], json!(computed));
+        assert_eq!(validate(&catalog, &ledger, true).unwrap(), 0);
+        assert!(apply_ownership_approval(
+            &catalog,
+            &mut ledger,
+            "sagikazarmark",
+            "2026-09-24",
+            APPROVAL_URL,
+            &computed
+        )
+        .unwrap_err()
+        .contains("already approved"));
     }
 
     #[test]
