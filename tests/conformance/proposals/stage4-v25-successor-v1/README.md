@@ -1,7 +1,10 @@
-# Five-layer integration and V25 successor — proposal
+# Five-layer integration and V25 successor — approved and applied
 
-Three exact subjects for one #85 decision. Nothing is applied until a genuine
-approval comment exists on #85.
+Three exact subjects for one #85 decision, approved by the user on 2026-09-24
+([#85 comment](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5812845586)) and applied with `apply.py`. After application,
+`verify-layers --require-approval`, V25 `candidate-verify` and
+`verify-ownership` (2423 of 2439 assigned/excluded, 16 gaps) passed. The rest
+of this README preserves the reviewed proposal.
 
 | Subject | SHA-256 |
 | --- | --- |

@@ -1777,9 +1777,17 @@
     {
       "id": "closure:all-five-layers",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "No reviewed primary owner assigned yet; candidate evidence is not complete coverage."
+        "status": "owned",
+        "owner": {
+          "kind": "record",
+          "record": {
+            "path": "tests/conformance/coverage/layers.json",
+            "sha256": "4946c3605b4e227f495f3b06cf2a0bcdcf75e58bf8d07884439ccf797510fbda"
+          },
+          "approval_subject_sha256": "sha256:cd0d6e4a2c9ea1baa4d36c8e24b6be783a960810889dfc6cd4a9f18a600599c6",
+          "verifier": "layers"
+        },
+        "rationale": "Record owner (ADR-0015): tests/conformance/coverage/layers.json, approved on #85, binds every item of the five corpus layers (the ten spec vector families, stored vector corpora and oracle directories, all registered focused cases, the representative candidate and the three #84 representative cases with their approval, sanitization and crops, every fuzz target with its required risks, and every permanent regression corpus with its case ids) by rule and digest; the compiled-in layers verifier rederives the item list and requires each item to map to an owned ledger row whose owner validates."
       }
     },
     {
@@ -50487,16 +50495,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v24",
+            "case": "representative.stage4-frames-text-assets.v25",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "056ae2f3f17f1c7c7f73ac544a30179f89a297c446e8031e993d846ba36dea38"
+              "sha256": "d67f26ca254f3320559c2f77128a91d4459a0b1b07eec59c0e354e589a8dae9c"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v24/manifest.json",
-              "sha256": "e061c77a010234d10becd0b0a69218e8b6eccd0d8b35bb5cdf197a8a26fa0193"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v25/manifest.json",
+              "sha256": "1f7c86fcfa5f77b74a21bbd7f01053d3d622690c368345235afa20450420d8bb"
             },
-            "approval_subject_sha256": "sha256:9cdcbf3efdb0ab888f3a3ec4672f2da09f07bf02fc6d2300a68c155daeeb2f67",
+            "approval_subject_sha256": "sha256:bab27df4f9dc2ff5b2424f2dcab27980271006ac41bc8cf25def63eafa348bef",
             "command": [
               "cargo",
               "run",
@@ -50507,7 +50515,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v24"
+              "tests/conformance/candidates/stage4-frames-text-assets-v25"
             ]
           }
         },
@@ -50517,169 +50525,622 @@
     {
       "id": "layer:adversarial:asset-fuzz",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/tests/asset_fuzz/mod.rs",
+            "sha256": "3cef5fa1035846f3fb298a1d7727c06b54f68a2c441275987fc7cb7de75b42c2"
+          },
+          "function": "fixed_seed_asset_fuzz_smoke",
+          "binary": "asset_fuzz",
+          "module": "asset_fuzz",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "asset_fuzz",
+            "asset_fuzz::fixed_seed_asset_fuzz_smoke",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Pull-request smoke of the public-facade asset fuzz: 64 byte/grammar mutations of the core raster and nested-SVG seeds from the fixed seed, round-robin over PNG, JPEG, GIF, WebP, BMP, ICO and SVG families, each rendered through the public facade and replayed with the target's bounded-outcome and determinism checks. The ignored nightly and captured-replay tests are not the owner."
       }
     },
     {
       "id": "layer:adversarial:font-subset-fuzz",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/font_subset_fuzz.rs",
+            "sha256": "10aa9c2c14509f3861e7cac760a117c55438cceef4cf97bcd076543619899a9a"
+          },
+          "function": "fixed_seed_font_subset_fuzz_smoke_is_bounded_and_deterministic",
+          "binary": "lib",
+          "module": "render::font_subset_fuzz",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::font_subset_fuzz::fixed_seed_font_subset_fuzz_smoke_is_bounded_and_deterministic",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Pull-request smoke of the font subset fuzz: 64 cases from the fixed seed 0x6a09e667f3bcc908 routed over subset derivation and malformed source/generated font structures, each replayed twice against the shared baseline context and required to return the identical typed outcome without panic. The ignored nightly expansion is not the owner."
       }
     },
     {
       "id": "layer:adversarial:frame-batch-property",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/frame_batch_property.rs",
+            "sha256": "effc5c0a278e9171f7c848b5410c18361c98d6ce9e0537a00abd04c8e74c876e"
+          },
+          "function": "duplicate_identity_cycle_and_resource_boundaries_replay_exact_traces",
+          "binary": "lib",
+          "module": "render::frame_batch_property",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::frame_batch_property::duplicate_identity_cycle_and_resource_boundaries_replay_exact_traces",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "For a scene with duplicate frame ids and a frame cycle, in SVG, PNG and PDF, derives each work boundary N from the canonical resource trace and asserts batch-prepared frame rendering equals standalone rendering (artifact bytes, report, failure location and canonical resource trace) at N-1, N and N+1 work units, at 1-3 diagnostics and across the output/memory limit ladder. The generated fixed-seed sample (frame_batch_rendering_matches_standalone_around_resource_limits) is ignored without the release-qualification feature and cannot own this row."
       }
     },
     {
       "id": "layer:adversarial:limits-scene-admission",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/tests/limits_scene_admission.rs",
+            "sha256": "86c2b3ef74477e9a9ddc77d66dd5c95fe7ed94a002d497d82d47b700e50e09c8"
+          },
+          "function": "fixed_structure_and_input_byte_boundaries_are_enforced",
+          "binary": "limits_scene_admission",
+          "module": "",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "limits_scene_admission",
+            "fixed_structure_and_input_byte_boundaries_are_enforced",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Builds ceiling-sized scene documents and asserts the 1,048,576-entry JSON structure ceiling and the 67,108,864-byte input ceiling admit at equality and reject one unit over with the exact typed descriptor (code, pointer, limit name, limit, value kind, attempted measurement). The parser-memory boundary sibling in the same binary remains secondary evidence."
       }
     },
     {
       "id": "layer:adversarial:render-fuzz",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/tests/render_fuzz/mod.rs",
+            "sha256": "8f52df737ee9e15247c7fd6ba7741e04f060d2c25bf886bd0d1b71d8c60783b8"
+          },
+          "function": "fixed_seed_complete_render_is_bounded_and_deterministic",
+          "binary": "render_fuzz",
+          "module": "render_fuzz",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "render_fuzz",
+            "render_fuzz::fixed_seed_complete_render_is_bounded_and_deterministic",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Pull-request smoke of the complete-render fuzz: 36 generated scene/option/limit-profile cases (mutated every third round), rendered in sequence on one Renderer and then replayed in reverse on fresh renderers, requiring identical snapshots and no panic. The ignored nightly and captured-replay tests are not the owner."
       }
     },
     {
       "id": "layer:adversarial:scene-fuzz",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/scene_fuzz/mod.rs",
+            "sha256": "131f9f28adb9997de4b73225f6a4249abfd177003fdf7bd9326016724eb4b73c"
+          },
+          "function": "fixed_seed_scene_fuzz_smoke_is_bounded_and_deterministic",
+          "binary": "lib",
+          "module": "scene_fuzz",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "scene_fuzz::fixed_seed_scene_fuzz_smoke_is_bounded_and_deterministic",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Pull-request smoke of the scene fuzz: 64 generated/mutated scene documents from the fixed xorshift seed 0xbb67ae8584caa73b, each replayed twice and required identical, and checked against its generator expectation and the generic contract (typed scene.* rejection with well-formed pointer, canonical-preservation fixpoint, deterministic ordered normalization per format, public-facade SVG render determinism, no panic). The ignored nightly expansion is not the owner."
       }
     },
     {
       "id": "layer:focused:frame-export",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "case",
+          "case": "focused.frame-export.v1",
+          "manifest": {
+            "path": "tests/conformance/cases/focused/frame-export/manifest.json",
+            "sha256": "c6155d7264e92d2d0e997080ad0127b1cb64beab2d0ea3142a1a31fc0acac200"
+          }
+        },
+        "rationale": "Registered frame-kind case focused.frame-export.v1 (issue 97). verify-ownership runs conformance verify on it with approval required: manifest digest and identity, the pinned frame reference profile, every evidence descriptor, and all seven live frame/magicframe targets bound to their official SVG/PNG evidence and expected reports. Renderer parity against that evidence is executed by tests/parity_frame_export.rs (secondary evidence). The only focused-layer obligation without a case-label home; this assignment does not claim format/profile sub-obligations."
       }
     },
     {
       "id": "layer:regression:font-subset-fuzz",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/font_subset_fuzz.rs",
+            "sha256": "10aa9c2c14509f3861e7cac760a117c55438cceef4cf97bcd076543619899a9a"
+          },
+          "function": "font_subset_fuzz_regression_corpus_is_manifested_and_replayed",
+          "binary": "lib",
+          "module": "render::font_subset_fuzz",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::font_subset_fuzz::font_subset_fuzz_regression_corpus_is_manifested_and_replayed",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Loads tests/qualification/font-subset-fuzz-regressions.json, checks schema, issues, subset profile digest, fixed seed, bounds and source font identity, replays its public-facade cases, and replays every unique minimized case twice asserting determinism, no whole-chunk fallback or partial output, the exact failure stage or validated WOFF2 digest, and coverage of every required risk."
       }
     },
     {
       "id": "layer:regression:render-fuzz",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/tests/render_fuzz/regressions.rs",
+            "sha256": "e8a3ef576ea449df12fea87d026a4cfeb391d4557c0b8cbd1e67d4dcb73fb97d"
+          },
+          "function": "confirmed_failures_are_manifested_and_replayed",
+          "binary": "render_fuzz",
+          "module": "render_fuzz::regressions",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "render_fuzz",
+            "render_fuzz::regressions::confirmed_failures_are_manifested_and_replayed",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Loads tests/qualification/render-fuzz-regressions.json (issue 83), requires unique minimized reproducers with frozen limits for boundary cases, replays each case's history and reproducer on a shared renderer and again on a fresh one, and asserts the exact expected rejection descriptor, failure descriptor and report, or artifact SHA-256 and report per output."
       }
     },
     {
       "id": "layer:regression:scene-fuzz",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/scene_fuzz/mod.rs",
+            "sha256": "131f9f28adb9997de4b73225f6a4249abfd177003fdf7bd9326016724eb4b73c"
+          },
+          "function": "scene_fuzz_regression_corpus_is_manifested_and_replayed",
+          "binary": "lib",
+          "module": "scene_fuzz",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "scene_fuzz::scene_fuzz_regression_corpus_is_manifested_and_replayed",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Loads tests/qualification/scene-fuzz-regressions.json, checks its schema, issues, fixed seed and bounds against the fuzz target, requires unique minimized cases within the input bound covering all ten required risks, and replays each twice through the public seam, asserting determinism and the exact expected rejection code/pointer or admitted canonical digest, report and render outcome."
       }
     },
     {
       "id": "layer:vector:color",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/color.rs",
+            "sha256": "66181c42d040ee5e47920ed92c31432242a3328059b16159f8d26d02e900cab3"
+          },
+          "function": "pinned_chromium_color_level_4_forms_lower_to_canonical_srgb",
+          "binary": "lib",
+          "module": "color::tests",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "color::tests::pinned_chromium_color_level_4_forms_lower_to_canonical_srgb",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Asserts seventeen CSS color values (rgb/hwb/lab/oklab, color() in display-p3, srgb and srgb-linear, color-mix in srgb, oklab, hsl with and without longer hue, hwb, display-p3 and xyz, currentcolor, a named color and padded whitespace, keywords case-insensitive) lower to exactly the sRGB hex the pinned Chromium produces. The sibling system-color, dark-mode lowering and theme-filter tests in color::tests remain secondary evidence."
       }
     },
     {
       "id": "layer:vector:format-planning",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/plan_tests.rs",
+            "sha256": "a8db0f22dda2f27af58f94a4d0b41806baa28c7579bca60a52198ccf90549600"
+          },
+          "function": "png_surface_follows_the_sizing_rule",
+          "binary": "lib",
+          "module": "render::plan_tests",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::plan_tests::png_surface_follows_the_sizing_rule",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Builds the PNG plan (no session, accounting, metadata or encoding) for a 20 x 10 rectangle with the default 10 px padding and asserts the planned surface is exactly 40x30, 60x45 and 80x60 at scales 1, 1.5 and 2, 20x15 under a 20 px maximum-dimension ceiling and 40x30 under a 100 px one, the values of the spec sizing rule. The PDF raster-closure and SVG shared-definition plan tests in render::plan_tests remain secondary evidence."
       }
     },
     {
       "id": "layer:vector:fractional-index",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/normalization/fractional_index.rs",
+            "sha256": "909c49f286196b82c8b1a700c5e5d0f728172679bf7cb94532585c52b8561460"
+          },
+          "function": "repair_matches_the_pinned_source_order_vectors",
+          "binary": "lib",
+          "module": "normalization::fractional_index::tests",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "normalization::fractional_index::tests::repair_matches_the_pinned_source_order_vectors",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Asserts fractional-index repair of seven source-order key vectors (missing, duplicate, descending and mixed keys) returns the exact pinned repaired keys, and that repairing the result again is the identity."
       }
     },
     {
       "id": "layer:vector:geometry",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/tests.rs",
+            "sha256": "f6be7ad8715289ede7b831e92e7e23cb7bb83b4860de9b6f15a350a212c4ca61"
+          },
+          "function": "rounded_diamond_radii_match_the_pinned_roughjs_vectors",
+          "binary": "lib",
+          "module": "render::tests",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::tests::rounded_diamond_radii_match_the_pinned_roughjs_vectors",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Renders four rounded diamonds chosen to separate the reference's corner-radius rule (#160): proportional (type 2) radii of the vertex offsets floor(extent / 2) + 1 for an even and an odd extent, the adaptive (type 3) fixed 32 only beyond the 128 vertex-offset cutoff, and a small adaptive diamond whose hachure fill scans the same rounded outline. It asserts each element's exact per-path operation counts and the SHA-256 of every outline and fill path, pinned as npm Rough.js 4.6.4 output of tools/rough-filler-vectors/derive.mjs, which builds the path from the vertex offsets exactly as generateElementShape spells it. Exact element-shape geometry; the Rough.js outline digest (layer:vector:rough-js) remains the primary home of stroke generation."
       }
     },
     {
       "id": "layer:vector:number-format",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/number_format.rs",
+            "sha256": "3046bb4146d4959029c5a84b0a74c41b60ffdde22f75c5f517c855563ce20e09"
+          },
+          "function": "ecmascript_spelling_matches_pinned_chromium_vectors",
+          "binary": "lib",
+          "module": "render::number_format::tests",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::number_format::tests::ecmascript_spelling_matches_pinned_chromium_vectors",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reads every entry of crates/excalidraw-render/tests/fixtures/number-format-vectors.json (pinned Chromium Number-to-string results keyed by binary64 bits) and asserts ecmascript_number spells each value exactly, and rejects each entry that has no spelling. The sibling rough_fixed_decimals_match_pinned_chromium_vectors (Rough toFixed(2) of the same corpus) remains secondary evidence."
       }
     },
     {
       "id": "layer:vector:perfect-freehand",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/tests.rs",
+            "sha256": "f6be7ad8715289ede7b831e92e7e23cb7bb83b4860de9b6f15a350a212c4ca61"
+          },
+          "function": "freedraw_strokes_match_the_pinned_perfect_freehand_vectors",
+          "binary": "lib",
+          "module": "render::tests",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::tests::freedraw_strokes_match_the_pinned_perfect_freehand_vectors",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Normalizes four freedraw scenes (simulated pressure, explicit pressure samples, a pressureless dot, omitted samples taking library defaults) and asserts the SHA-256 of each freedraw SVG path equals the pinned perfect-freehand 1.2.0 vector as Excalidraw v0.18.1 drives it."
       }
     },
     {
       "id": "layer:vector:pixelmatch",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render-compare",
+          "source": {
+            "path": "crates/excalidraw-render-compare/tests/pixelmatch_upstream.rs",
+            "sha256": "55f131abcef6da2f1c9be21420d4f747e9acc7a7b944736996a5f01faadc8433"
+          },
+          "function": "pixelmatch_matches_the_pinned_upstream_counts_and_diff_bytes",
+          "binary": "pixelmatch_upstream",
+          "module": "",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render-compare",
+            "--test",
+            "pixelmatch_upstream",
+            "pixelmatch_matches_the_pinned_upstream_counts_and_diff_bytes",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Runs the Pixelmatch port over the upstream Pixelmatch 7.2.0 fixture pairs in tests/conformance/comparator-vectors/pixelmatch-v7.2.0 with each upstream option set (thresholds, diff mask, alpha, AA/diff colors) and asserts the exact upstream mismatch count and the exact decoded RGBA bytes of every upstream diff image. The fixture bytes themselves are pinned by the comparator profile test."
       }
     },
     {
       "id": "layer:vector:prng",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/rough.rs",
+            "sha256": "946b8786f6684da3826ccfdbbe8bee90ec3d6cbc37b909d06281f8c232d9b08d"
+          },
+          "function": "architect_solid_ellipse_consumes_both_overlap_pairs",
+          "binary": "lib",
+          "module": "render::rough::tests",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::rough::tests::architect_solid_ellipse_consumes_both_overlap_pairs",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Seeds the Rough.js Park-Miller generator (Random::new(43)), draws two architect ellipse overlaps at roughness 0 and asserts both return 0.0 while the generator state becomes exactly -610782869, i.e. both overlap pairs consume their draws as the reference does. Narrow PRNG-consumption vector; end-to-end consumption order is secondary evidence in the Rough.js digest tests."
       }
     },
     {
       "id": "layer:vector:rough-js",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/tests.rs",
+            "sha256": "f6be7ad8715289ede7b831e92e7e23cb7bb83b4860de9b6f15a350a212c4ca61"
+          },
+          "function": "outline_operations_match_the_pinned_roughjs_vectors",
+          "binary": "lib",
+          "module": "render::tests",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::tests::outline_operations_match_the_pinned_roughjs_vectors",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Renders the seven OUTLINE_FAMILIES shapes (rectangle, rounded rectangle, ellipse, diamond, rounded diamond, line, rounded line) through the Rough.js port and asserts the exact per-path M/C operation counts [16,32,24,16,32,8,6] and the SHA-256 of the joined path data, which the test pins as derived from npm Rough.js 4.6.4 by tools/rough-filler-vectors/derive.mjs. Primary home for the Rough.js outline vectors; the sibling fill/arrowhead/rounded-diamond vector tests in render::tests remain secondary evidence."
       }
     },
     {
       "id": "layer:vector:shaping-fallback",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render",
+          "source": {
+            "path": "crates/excalidraw-render/src/render/tests.rs",
+            "sha256": "f6be7ad8715289ede7b831e92e7e23cb7bb83b4860de9b6f15a350a212c4ca61"
+          },
+          "function": "a_font_fallback_probe_is_one_consulted_face_per_shaped_scalar_occurrence",
+          "binary": "lib",
+          "module": "render::tests",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "render::tests::a_font_fallback_probe_is_one_consulted_face_per_shaped_scalar_occurrence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Lays text out through the fallback chain and asserts the exact font fallback probe count for eight spec 8.3.1 shapes whose expected values follow the rule, not the code: a whole-text-face scalar (0), an untriggered won sign and U+10FFFF (Noto Emoji then the replacement, 2 each), a triggered ideograph served by its one Xiaolai chunk (1), an emoji (1), a triggered won sign served by Xiaolai (2), a repeated won sign paying per occurrence (4) and a Hebrew scalar Liberation declares but does not map (3). The sibling selected-Noto-Emoji test and render::resolve_tests' ordered-fallback run tests remain secondary evidence."
       }
     },
     {
       "id": "layer:vector:ssim",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "package": "excalidraw-render-compare",
+          "source": {
+            "path": "crates/excalidraw-render-compare/tests/ssim_vectors.rs",
+            "sha256": "40da83781c7d784201cb003817ec0c0f64c0deeca0263c2d56932824431a3439"
+          },
+          "function": "ssim_matches_every_normative_kernel_position_vector",
+          "binary": "ssim_vectors",
+          "module": "",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render-compare",
+            "--test",
+            "ssim_vectors",
+            "ssim_matches_every_normative_kernel_position_vector",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Perturbs each of the 121 positions of an 11x11 constant plane by one level and asserts compare_planes returns the exact expected binary64 bit pattern for every position, plus the SHA-256 of the little-endian result words."
       }
     },
     {
