@@ -16630,25 +16630,88 @@
     {
       "id": "codec:nested-svg:pdf-fallback",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/pdf_raster_fallback_contract.rs",
+            "sha256": "60f1c7af649f24ce9043a35e953c7797d00ca111cc2c6c4d773b1178ae9b02cd"
+          },
+          "function": "raster_fallback_contract_covers_families_occurrences_geometry_and_failures",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "pdf_raster_fallback_contract::raster_fallback_contract_covers_families_occurrences_geometry_and_failures",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Nested-SVG pdf-fallback facet (spec section 8.6 is the sole authority; no reference PDF exists): exact reports and isolated artifacts for sixteen pixel-domain effect families, forbid failures and SVG/PNG silence, occurrence order and merged causes, no-op and native silence under Forbid over the approved native matrix, scaled bounds and preflight, frames, crops, rotation, subpixel grids and stylesheet provenance. See docs/research/nested-svg-umbrella-facets.md."
       }
     },
     {
       "id": "codec:nested-svg:references",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/nested_svg_reference_contract.rs",
+            "sha256": "d28b903821b58e2da7f63eb09ff661d922ef08eb48d95a4e8d63b4a88496ce5b"
+          },
+          "function": "nested_svg_references_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "nested_svg_reference_contract::nested_svg_references_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Nested-SVG references facet: 22 reference rows (tests/oracle/nested-svg). Same-document and missing fragments with fallbacks, use/pattern/mask/clip/gradient cycles cut at their closing edge, base64 and percent-encoded data images recursively sanitized, matching the reference canonically in PNG with SVG/PDF reporting exactly what PNG reports; plus the exact nested depth and node-limit contracts in every format. See docs/research/nested-svg-umbrella-facets.md."
       }
     },
     {
       "id": "codec:nested-svg:sanitization",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/nested_svg_reference_contract.rs",
+            "sha256": "d28b903821b58e2da7f63eb09ff661d922ef08eb48d95a4e8d63b4a88496ce5b"
+          },
+          "function": "nested_svg_sanitization_matches_the_reference_where_it_stays_static",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "nested_svg_reference_contract::nested_svg_sanitization_matches_the_reference_where_it_stays_static",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Nested-SVG sanitization facet: 35 reference rows (tests/oracle/nested-svg). Scripts, handlers, javascript: links, stylesheet instructions, external entities, @import, @font-face, external url(), use and xml:base never run or load; remaining content matches the reference canonically in PNG with SVG/PDF reporting exactly what PNG reports; internal entities expand within a documented bound; an undefined entity or expansion bomb rejects with exact recovery in every format; animation state, foreignObject and the external-image placeholder are declared divergences pinned to their static twins or placeholder. See docs/research/nested-svg-umbrella-facets.md."
       }
     },
     {
@@ -50248,16 +50311,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v20",
+            "case": "representative.stage4-frames-text-assets.v21",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "d5e70623a73277a3dd6a044b366ad6959404b2a0d716269d87dbdcb6904ba316"
+              "sha256": "5dbbf833a465994d4ba87239da33793e150390b3a97c83f5d8f97139e2311ceb"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v20/manifest.json",
-              "sha256": "281ff5f99f7e6bc047710d9b118cd4bd841a0434fd7699010d1b4184c2ea91c3"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v21/manifest.json",
+              "sha256": "3743bb9b79b5e79691f98bc24e2ccae996e0752293946b1ff573b8761d22ffce"
             },
-            "approval_subject_sha256": "sha256:347cc831827ba921467c95d40e8713060cec042d17fbe91e9e756394b13ae510",
+            "approval_subject_sha256": "sha256:1f9e1f8ad8b92823984342194ca9bcd93fcd67db6ce52137ffe3931ef7feed50",
             "command": [
               "cargo",
               "run",
@@ -50268,7 +50331,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v20"
+              "tests/conformance/candidates/stage4-frames-text-assets-v21"
             ]
           }
         },
