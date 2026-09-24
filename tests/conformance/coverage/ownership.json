@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "ed794e86459206cede69ea2479ecdebcabe3d6536a95b1d3b009d6deee124991",
+  "catalog_sha256": "6ec5b55c6380e57f6782675a0262ba7d53dc03e70d7779865d9653364241c52a",
   "approval": null,
   "assignments": [
     {
@@ -1777,17 +1777,9 @@
     {
       "id": "closure:all-five-layers",
       "disposition": {
-        "status": "owned",
-        "owner": {
-          "kind": "record",
-          "record": {
-            "path": "tests/conformance/coverage/layers.json",
-            "sha256": "4946c3605b4e227f495f3b06cf2a0bcdcf75e58bf8d07884439ccf797510fbda"
-          },
-          "approval_subject_sha256": "sha256:cd0d6e4a2c9ea1baa4d36c8e24b6be783a960810889dfc6cd4a9f18a600599c6",
-          "verifier": "layers"
-        },
-        "rationale": "Record owner (ADR-0015): tests/conformance/coverage/layers.json, approved on #85, binds every item of the five corpus layers (the ten spec vector families, stored vector corpora and oracle directories, all registered focused cases, the representative candidate and the three #84 representative cases with their approval, sanitization and crops, every fuzz target with its required risks, and every permanent regression corpus with its case ids) by rule and digest; the compiled-in layers verifier rederives the item list and requires each item to map to an owned ledger row whose owner validates."
+        "status": "gap",
+        "issue": 85,
+        "reason": "layers.json is regenerated to declare tests/oracle/image-resample (#198) and awaits re-approval; the V26 packet re-records its record owner."
       }
     },
     {
@@ -50929,6 +50921,14 @@
           ]
         },
         "rationale": "Renders four rounded diamonds chosen to separate the reference's corner-radius rule (#160): proportional (type 2) radii of the vertex offsets floor(extent / 2) + 1 for an even and an odd extent, the adaptive (type 3) fixed 32 only beyond the 128 vertex-offset cutoff, and a small adaptive diamond whose hachure fill scans the same rounded outline. It asserts each element's exact per-path operation counts and the SHA-256 of every outline and fill path, pinned as npm Rough.js 4.6.4 output of tools/rough-filler-vectors/derive.mjs, which builds the path from the vertex offsets exactly as generateElementShape spells it. Exact element-shape geometry; the Rough.js outline digest (layer:vector:rough-js) remains the primary home of stroke generation."
+      }
+    },
+    {
+      "id": "layer:vector:image-resampling",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "New exact-vector layer row for the canvas image resampling record (#198); owner proposed with the V26 successor."
       }
     },
     {

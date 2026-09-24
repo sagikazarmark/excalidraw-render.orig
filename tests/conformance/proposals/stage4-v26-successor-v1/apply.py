@@ -62,5 +62,16 @@ def apply(approved_by, approved_at, approval_url):
                     'record-native-baseline-approval', approved_by, approved_at, approval_url, NATIVE_BASELINE_SUBJECT],
                    cwd=ROOT, check=True)
 
+    tranche = json.loads((P/'owner-tranche.json').read_bytes())
+    xtask = ['cargo', 'run', '-q', '--locked', '--release', '-p', 'xtask', '--', 'conformance']
+    for owner in tranche['owners']:
+        subprocess.run(xtask + ['record-test-owner', '--package', owner['package'], '--binary', owner['binary'],
+                                owner['module'], owner['function'], owner['rationale'], *owner['ids']], cwd=ROOT, check=True)
+    subprocess.run(xtask + ['record-layers-approval', approved_by, approved_at, approval_url, tranche['layers_subject']],
+                   cwd=ROOT, check=True)
+    for owner in tranche['closure_owners']:
+        subprocess.run(xtask + ['record-closure-owner', owner['obligation'], owner['verifier'], owner['rationale']],
+                       cwd=ROOT, check=True)
+
 if __name__ == '__main__':
     apply(*sys.argv[1:])
