@@ -112,13 +112,19 @@ fn ownership_recording_validates_the_entire_batch_before_writing() {
     let assignments = ledger["assignments"].as_array().unwrap();
     let gap = assignments
         .iter()
-        .find(|row| row["disposition"]["status"] == "gap")
+        .find(|row| {
+            row["disposition"]["status"] == "gap"
+                && !row["id"].as_str().unwrap().starts_with("closure:")
+        })
         .unwrap()["id"]
         .as_str()
         .unwrap();
     let owned = assignments
         .iter()
-        .find(|row| row["disposition"]["status"] == "owned")
+        .find(|row| {
+            row["disposition"]["status"] == "owned"
+                && !row["id"].as_str().unwrap().starts_with("closure:")
+        })
         .unwrap()["id"]
         .as_str()
         .unwrap();
