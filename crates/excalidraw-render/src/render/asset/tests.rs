@@ -486,7 +486,9 @@ mod jpeg_codec {
     }
 
     #[test]
-    fn malformed_multipart_icc_metadata_is_a_decode_failure() {
+    fn malformed_multipart_icc_metadata_is_ignored() {
+        // jpeg_read_icc_profile returns no profile for an incomplete or
+        // duplicated sequence; the reference draws the image untagged.
         let source = jpeg_rgb(1, 1, &[[128, 128, 128]]);
         let profile = linear_rgb_icc_profile();
         let mut missing_part = b"ICC_PROFILE\0\x01\x02".to_vec();
@@ -496,13 +498,34 @@ mod jpeg_codec {
         duplicate_part.extend_from_slice(&profile);
         let duplicate = jpeg_with_app_segment(&source, 0xe2, &duplicate_part);
         let duplicate = jpeg_with_app_segment(&duplicate, 0xe2, &duplicate_part);
+        let mut zero_index = b"ICC_PROFILE\0\x00\x01".to_vec();
+        zero_index.extend_from_slice(&profile);
+        let zero_index = jpeg_with_app_segment(&source, 0xe2, &zero_index);
 
-        for malformed in [missing_part, duplicate] {
-            assert_eq!(
-                failure_for("image/jpeg", &malformed, OutputFormat::Svg),
-                ResolveError::JpegDecodeFailed
-            );
+        let untagged = only_pixel(&decode("image/jpeg", &source));
+        for malformed in [missing_part, duplicate, zero_index] {
+            assert_eq!(only_pixel(&decode("image/jpeg", &malformed)), untagged);
         }
+    }
+
+    #[test]
+    fn a_profile_that_does_not_parse_or_fit_the_model_is_ignored() {
+        let source = jpeg_rgb(1, 1, &[[128, 128, 128]]);
+        let untagged = only_pixel(&decode("image/jpeg", &source));
+        let truncated = linear_rgb_icc_profile()[..100].to_vec();
+        let mut gray = linear_rgb_icc_profile();
+        gray[16..20].copy_from_slice(b"GRAY");
+        for profile in [truncated, gray] {
+            let tagged = jpeg_with_icc_profile(&source, &profile);
+            assert_eq!(only_pixel(&decode("image/jpeg", &tagged)), untagged);
+        }
+        // Blink keeps only a CMYK profile on a CMYK image.
+        let cmyk = cmyk_jpeg([255, 0, 0, 0]);
+        let tagged = jpeg_with_icc_profile(&cmyk, &linear_rgb_icc_profile());
+        assert_eq!(
+            only_pixel(&decode("image/jpeg", &tagged)),
+            only_pixel(&decode("image/jpeg", &cmyk))
+        );
     }
 
     #[test]
@@ -538,14 +561,280 @@ mod jpeg_codec {
     }
 
     #[test]
-    fn unqualified_concatenated_streams_are_a_decode_failure() {
-        let mut concatenated = jpeg_rgb(1, 1, &[JFIF_BLUE]);
+    fn data_after_the_first_image_is_ignored() {
+        // Anything after the first EOI, another image included, is not read.
+        let source = jpeg_rgb(1, 1, &[JFIF_BLUE]);
+        let expected = only_pixel(&decode("image/jpeg", &source));
+        let mut concatenated = source.clone();
         concatenated.extend_from_slice(&jpeg_rgb(1, 1, &[[255, 255, 255]]));
+        let mut unterminated = source.clone();
+        let second = jpeg_rgb(1, 1, &[[255, 255, 255]]);
+        unterminated.extend_from_slice(&second[..second.len() - 2]);
+        let mut garbage = source.clone();
+        garbage.extend_from_slice(b"garbage\0\0\xff");
+        for jpeg in [concatenated, unterminated, garbage] {
+            assert_eq!(only_pixel(&decode("image/jpeg", &jpeg)), expected);
+        }
+    }
 
+    /// The offset of the first `marker` segment of `jpeg`.
+    fn marker_at(jpeg: &[u8], marker: u8) -> usize {
+        let mut offset = 2;
+        loop {
+            assert_eq!(jpeg[offset], 0xff);
+            if jpeg[offset + 1] == marker {
+                return offset;
+            }
+            offset += 2 + usize::from(u16::from_be_bytes([jpeg[offset + 2], jpeg[offset + 3]]));
+        }
+    }
+
+    fn inserted(jpeg: &[u8], at: usize, bytes: &[u8]) -> Vec<u8> {
+        [&jpeg[..at], bytes, &jpeg[at..]].concat()
+    }
+
+    #[test]
+    fn junk_bytes_and_stray_markers_between_segments_are_skipped() {
+        // libjpeg's next_marker skips non-marker bytes and stuffed zeros;
+        // read_markers ignores RSTn and TEM outside a scan.
+        let source = jpeg_rgb(2, 2, &[JFIF_BLUE, [200, 20, 20], [20, 200, 20], [9, 9, 9]]);
+        let expected = pixels(&decode("image/jpeg", &source));
+        let sos = marker_at(&source, 0xda);
+        let dqt = marker_at(&source, 0xdb);
+        for (at, bytes) in [
+            (sos, b"junk".as_slice()),
+            (dqt, b"\x00\x12\xff\x00"),
+            (sos, b"\xff\xd0"),
+            (dqt, b"\xff\x01"),
+            (dqt, b"\xff\xff\xff"),
+        ] {
+            let jpeg = inserted(&source, at, bytes);
+            assert_eq!(pixels(&decode("image/jpeg", &jpeg)), expected, "{bytes:?}");
+        }
+    }
+
+    #[test]
+    fn a_missing_huffman_table_is_the_standard_table() {
+        // libjpeg-turbo's jpeg_std_huff_table, as for MJPEG: the fixture
+        // encoder writes exactly the standard tables.
+        let source = jpeg_rgb(2, 2, &[JFIF_BLUE, [200, 20, 20], [20, 200, 20], [9, 9, 9]]);
+        let dht = marker_at(&source, 0xc4);
+        let sos = marker_at(&source, 0xda);
+        let mut stripped = source[..dht].to_vec();
+        let mut offset = dht;
+        while offset < sos {
+            let end = offset
+                + 2
+                + usize::from(u16::from_be_bytes([source[offset + 2], source[offset + 3]]));
+            if source[offset + 1] != 0xc4 {
+                stripped.extend_from_slice(&source[offset..end]);
+            }
+            offset = end;
+        }
+        stripped.extend_from_slice(&source[sos..]);
+        assert!(stripped.len() < source.len());
         assert_eq!(
-            failure_for("image/jpeg", &concatenated, OutputFormat::Svg),
+            pixels(&decode("image/jpeg", &stripped)),
+            pixels(&decode("image/jpeg", &source))
+        );
+    }
+
+    #[test]
+    fn a_missing_quantization_table_is_a_decode_failure() {
+        // latch_quant_tables: JERR_NO_QUANT_TABLE; the reference paints nothing.
+        let source = jpeg_rgb(1, 1, &[JFIF_BLUE]);
+        let dqt = marker_at(&source, 0xdb);
+        let sof = marker_at(&source, 0xc0);
+        let jpeg = [&source[..dqt], &source[sof..]].concat();
+        assert_eq!(
+            failure_for("image/jpeg", &jpeg, OutputFormat::Svg),
             ResolveError::JpegDecodeFailed
         );
+    }
+
+    fn restart_jpeg() -> Vec<u8> {
+        let mut bytes = Vec::new();
+        let mut encoder = jpeg_encoder::Encoder::new(&mut bytes, 100);
+        encoder.set_restart_interval(1);
+        let rgb: Vec<u8> = (0..32 * 16 * 3).map(|i| (i * 7 % 251) as u8).collect();
+        encoder
+            .encode(&rgb, 32, 16, jpeg_encoder::ColorType::Rgb)
+            .expect("restart JPEG encodes");
+        bytes
+    }
+
+    #[test]
+    fn restart_markers_must_follow_the_restart_interval() {
+        let source = restart_jpeg();
+        let sos = marker_at(&source, 0xda);
+        let restarts: Vec<usize> = (sos..source.len() - 1)
+            .filter(|&i| source[i] == 0xff && (0xd0..=0xd7).contains(&source[i + 1]))
+            .collect();
+        assert!(restarts.len() > 2);
+        decode("image/jpeg", &source);
+        // Missing restart markers, one dropped, and one out of sequence leave
+        // the reference resynchronizing: it paints garbled rows.
+        let mut missing = source.clone();
+        for &at in restarts.iter().rev() {
+            missing.drain(at..at + 2);
+        }
+        let mut dropped = source.clone();
+        dropped.drain(restarts[1]..restarts[1] + 2);
+        let mut swapped = source.clone();
+        swapped[restarts[1] + 1] = swapped[restarts[0] + 1];
+        for jpeg in [missing, dropped, swapped] {
+            assert_eq!(
+                failure_for("image/jpeg", &jpeg, OutputFormat::Svg),
+                ResolveError::JpegDecodeFailed
+            );
+        }
+        // A zero interval disables restart processing.
+        let rgb = jpeg_rgb(1, 1, &[JFIF_BLUE]);
+        let dri_zero = inserted(&rgb, marker_at(&rgb, 0xda), b"\xff\xdd\x00\x04\x00\x00");
+        assert_eq!(
+            only_pixel(&decode("image/jpeg", &dri_zero)),
+            only_pixel(&decode("image/jpeg", &rgb))
+        );
+    }
+
+    #[test]
+    fn only_a_complete_progression_draws_without_its_eoi() {
+        let mut bytes = Vec::new();
+        let mut encoder = jpeg_encoder::Encoder::new(&mut bytes, 100);
+        encoder.set_progressive(true);
+        let rgb: Vec<u8> = (0..16 * 16 * 3).map(|i| (i * 5 % 253) as u8).collect();
+        encoder
+            .encode(&rgb, 16, 16, jpeg_encoder::ColorType::Rgb)
+            .expect("progressive JPEG encodes");
+        let expected = pixels(&decode("image/jpeg", &bytes));
+        let unterminated = &bytes[..bytes.len() - 2];
+        assert_eq!(pixels(&decode("image/jpeg", unterminated)), expected);
+        // Ending after an earlier scan leaves coefficients unread.
+        let scans: Vec<usize> = (2..bytes.len() - 1)
+            .filter(|&i| bytes[i] == 0xff && bytes[i + 1] == 0xda)
+            .collect();
+        assert!(scans.len() > 2);
+        assert_eq!(
+            failure_for(
+                "image/jpeg",
+                &bytes[..scans[scans.len() - 1]],
+                OutputFormat::Svg
+            ),
+            ResolveError::JpegDecodeFailed
+        );
+        assert_eq!(
+            failure_for("image/jpeg", &bytes[..scans[1] + 2], OutputFormat::Svg),
+            ResolveError::JpegDecodeFailed
+        );
+    }
+
+    /// A 1x1 three-component JPEG with component ids `ids`, and optionally an
+    /// Adobe transform and no JFIF segment.
+    fn three_component(ids: [u8; 3], adobe: Option<u8>, jfif: bool) -> Vec<u8> {
+        let mut jpeg = jpeg_rgb(1, 1, &[[200, 60, 30]]);
+        if !jfif {
+            jpeg = jpeg_without_app0(&jpeg);
+        }
+        let sof = marker_at(&jpeg, 0xc0);
+        let sos = marker_at(&jpeg, 0xda);
+        for (index, id) in ids.into_iter().enumerate() {
+            jpeg[sof + 10 + 3 * index] = id;
+            jpeg[sos + 5 + 2 * index] = id;
+        }
+        if let Some(transform) = adobe {
+            let mut segment = b"Adobe\x00\x64\x00\x00\x00\x00".to_vec();
+            segment.push(transform);
+            jpeg = jpeg_with_app_segment(&jpeg, 0xee, &segment);
+        }
+        jpeg
+    }
+
+    #[test]
+    fn jfif_precedes_the_adobe_transform_and_component_ids() {
+        // jdapimin.c default_decompress_parms for three components: JFIF
+        // means YCbCr; else the Adobe transform (0 RGB, other YCbCr); else ids
+        // 'R','G','B' mean RGB.
+        let ycbcr = only_pixel(&decode(
+            "image/jpeg",
+            &three_component([1, 2, 3], None, true),
+        ));
+        let rgb = only_pixel(&decode(
+            "image/jpeg",
+            &three_component([1, 2, 3], Some(0), false),
+        ));
+        assert_ne!(ycbcr, rgb);
+        for (jpeg, expected) in [
+            (three_component([1, 2, 3], Some(0), true), ycbcr),
+            (three_component(*b"RGB", None, true), ycbcr),
+            (three_component(*b"RGB", Some(1), false), ycbcr),
+            (three_component([1, 2, 3], Some(7), false), ycbcr),
+            (three_component(*b"RGB", Some(0), true), ycbcr),
+            (three_component(*b"RGB", None, false), rgb),
+            (three_component([4, 5, 6], Some(0), false), rgb),
+        ] {
+            assert_eq!(only_pixel(&decode("image/jpeg", &jpeg)), expected);
+        }
+    }
+
+    #[test]
+    fn a_four_component_adobe_transform_other_than_zero_is_ycck() {
+        // libjpeg reads four components as YCCK for any Adobe transform but 0.
+        let cmyk = cmyk_jpeg([255, 0, 0, 0]);
+        let segment = |transform: u8| {
+            let mut segment = b"Adobe\x00\x64\x00\x00\x00\x00".to_vec();
+            segment.push(transform);
+            segment
+        };
+        let plain = only_pixel(&decode("image/jpeg", &cmyk));
+        let as_cmyk = jpeg_with_app_segment(&jpeg_without_adobe(&cmyk), 0xee, &segment(0));
+        assert_eq!(only_pixel(&decode("image/jpeg", &as_cmyk)), plain);
+        let ycck = only_pixel(&decode(
+            "image/jpeg",
+            &jpeg_with_app_segment(&jpeg_without_adobe(&cmyk), 0xee, &segment(2)),
+        ));
+        assert_ne!(ycck, plain);
+        for transform in [1, 9] {
+            let jpeg = jpeg_with_app_segment(&jpeg_without_adobe(&cmyk), 0xee, &segment(transform));
+            assert_eq!(
+                only_pixel(&decode("image/jpeg", &jpeg)),
+                ycck,
+                "{transform}"
+            );
+        }
+    }
+
+    /// `jpeg` without its Adobe APP14 segments.
+    fn jpeg_without_adobe(jpeg: &[u8]) -> Vec<u8> {
+        let sos = marker_at(jpeg, 0xda);
+        let mut out = jpeg[..2].to_vec();
+        let mut offset = 2;
+        while offset < sos {
+            let end =
+                offset + 2 + usize::from(u16::from_be_bytes([jpeg[offset + 2], jpeg[offset + 3]]));
+            if jpeg[offset + 1] != 0xee {
+                out.extend_from_slice(&jpeg[offset..end]);
+            }
+            offset = end;
+        }
+        out.extend_from_slice(&jpeg[sos..]);
+        out
+    }
+
+    #[test]
+    fn an_exif_header_with_a_fill_byte_is_read() {
+        // Blink accepts "Exif\0" followed by 0x00 or 0xff.
+        let source = jpeg_rgb(2, 1, &[[240, 20, 20], [20, 20, 240]]);
+        let exif = jpeg_with_app1_exif(&source, 6);
+        let app1 = marker_at(&exif, 0xe1);
+        for (fill, turned) in [(0xff, true), (0x01, false)] {
+            let mut variant = exif.clone();
+            variant[app1 + 9] = fill;
+            let asset = decode("image/jpeg", &variant);
+            assert_eq!(
+                (asset.width, asset.height),
+                if turned { (1, 2) } else { (2, 1) }
+            );
+        }
     }
 
     #[test]

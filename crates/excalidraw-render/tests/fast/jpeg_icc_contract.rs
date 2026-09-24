@@ -273,7 +273,9 @@ fn request(format: OutputFormat) -> RenderRequest {
         .unwrap()
 }
 fn linear_gray(row: &Value) -> bool {
-    row["source_model"] == "gray" && matches!(row["signal"].as_str().unwrap(), "v2-g1" | "v4-g1")
+    row["expected_outcome"] == "accepted"
+        && row["source_model"] == "gray"
+        && matches!(row["signal"].as_str().unwrap(), "v2-g1" | "v4-g1")
 }
 fn svg_check(svg: &str, row: &Value) {
     let doc = roxmltree::Document::parse(svg).unwrap();
@@ -387,42 +389,12 @@ fn check(row: &Value) {
         let repeat = Renderer::new().render(&scene, &request(format)).unwrap();
         assert_eq!(output.artifact().bytes(), repeat.artifact().bytes());
         assert_eq!(output.report(), repeat.report());
-        let outcome = row["expected_outcome"].as_str().unwrap();
-        let recovery = if outcome == "decode-failed"
-            || (outcome == "unsupported-format" && format != OutputFormat::Svg)
-        {
-            Some(outcome)
-        } else {
-            None
-        };
+        // Every row draws: a malformed profile or ICC sequence is ignored and
+        // the image draws untagged, as the reference draws it.
         let mut report = serde_json::to_value(output.report()).unwrap();
         for d in report["diagnostics"].as_array_mut().unwrap() {
             assert!(!d["message"].as_str().unwrap().is_empty());
             d.as_object_mut().unwrap().remove("message");
-        }
-        if let Some(code) = recovery {
-            assert_eq!(
-                report,
-                json!({"schema_version":1,"diagnostics":[{
-                    "code":format!("image.{code}"),"severity":"warning","format":format.as_str(),"effects":["visual"],
-                    "element_id":"image","json_pointer":"/files/asset/dataURL","details":{"kind":"asset","asset_id":"asset",
-                    "claimed_media_type":null,"validated_media_type":if code == "decode-failed" {json!("image/jpeg")} else {Value::Null},
-                    "recovery":if format == OutputFormat::Png {"placeholder"} else {"omitted"},
-                    "recipe_id":if format == OutputFormat::Png {json!("official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d")} else {Value::Null}}
-                }]}),
-                "{id}"
-            );
-            let mut missing = row["scene"].clone();
-            missing["files"] = json!({});
-            let missing = SceneDocument::parse(&serde_json::to_vec(&missing).unwrap()).unwrap();
-            let control = Renderer::new().render(&missing, &request(format)).unwrap();
-            assert_eq!(
-                output.artifact().bytes(),
-                control.artifact().bytes(),
-                "{id}"
-            );
-            recovery_artifact(output.artifact().bytes(), format, row);
-            continue;
         }
         assert_eq!(report, json!({"schema_version":1,"diagnostics":[]}), "{id}");
         if format == OutputFormat::Svg {
@@ -667,7 +639,9 @@ fn gray_profile_precision_handles_small_extents_and_scratch_boundaries() {
 }
 
 #[test]
-fn invalid_gray_profiles_are_not_silently_ignored_on_rgb_sources() {
+fn invalid_gray_profiles_are_ignored_on_rgb_sources() {
+    // Blink keeps only an RGB profile on a three-component image, and ignores
+    // one skcms does not parse: an invalid gray profile draws untagged.
     let record = evidence();
     let row = record["cases"]
         .as_array()
@@ -686,11 +660,14 @@ fn invalid_gray_profiles_are_not_silently_ignored_on_rgb_sources() {
     assert_eq!(&profile[144..148], b"kTRC");
     assert_eq!(&profile[20..24], b"XYZ ");
     assert_eq!(&profile[12..16], b"mntr");
-    let width = row["width"].as_u64().unwrap();
-    let height = row["height"].as_u64().unwrap();
-    let mut missing = row["scene"].clone();
-    missing["files"] = json!({});
-    let missing = SceneDocument::parse(&serde_json::to_vec(&missing).unwrap()).unwrap();
+    let width = u32::try_from(row["width"].as_u64().unwrap()).unwrap();
+    let height = u32::try_from(row["height"].as_u64().unwrap()).unwrap();
+    let untagged = scene_with_jpeg(
+        &row["scene"],
+        &decode(&source["jpeg_base64"]),
+        width,
+        height,
+    );
     for kind in ["missing-trc", "bad-pcs", "device-link"] {
         let mut invalid = profile.clone();
         match kind {
@@ -700,14 +677,9 @@ fn invalid_gray_profiles_are_not_silently_ignored_on_rgb_sources() {
             _ => unreachable!(),
         }
         let jpeg = with_profile(&decode(&source["jpeg_base64"]), &invalid);
-        let scene = scene_with_jpeg(
-            &row["scene"],
-            &jpeg,
-            u32::try_from(width).unwrap(),
-            u32::try_from(height).unwrap(),
-        );
-        // Authored rejection controls assert the renderer's source/recovery
-        // contract directly; they have no browser reference exports.
+        let scene = scene_with_jpeg(&row["scene"], &jpeg, width, height);
+        // Authored controls without browser exports: the renderer's source
+        // preservation and untagged drawing are asserted directly.
         for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
             let output = Renderer::new().render(&scene, &request(format)).unwrap();
             let repeat = Renderer::new().render(&scene, &request(format)).unwrap();
@@ -717,20 +689,15 @@ fn invalid_gray_profiles_are_not_silently_ignored_on_rgb_sources() {
                 "{kind}"
             );
             assert_eq!(output.report(), repeat.report(), "{kind}");
-            let mut report = serde_json::to_value(output.report()).unwrap();
-            for diagnostic in report["diagnostics"].as_array_mut().unwrap() {
-                assert!(!diagnostic["message"].as_str().unwrap().is_empty());
-                diagnostic.as_object_mut().unwrap().remove("message");
-            }
+            assert_eq!(
+                serde_json::to_value(output.report()).unwrap(),
+                json!({"schema_version":1,"diagnostics":[]}),
+                "{kind}"
+            );
             if format == OutputFormat::Svg {
-                assert_eq!(
-                    report,
-                    json!({"schema_version":1,"diagnostics":[]}),
-                    "{kind}"
-                );
                 let svg = std::str::from_utf8(output.artifact().bytes()).unwrap();
                 let doc = roxmltree::Document::parse(svg).unwrap();
-                svg_extent(doc.root_element(), width, height);
+                svg_extent(doc.root_element(), u64::from(width), u64::from(height));
                 let images: Vec<_> = doc
                     .descendants()
                     .filter(|n| n.has_tag_name("image"))
@@ -745,24 +712,12 @@ fn invalid_gray_profiles_are_not_silently_ignored_on_rgb_sources() {
                 );
                 assert_eq!(href, Some(expected.as_str()), "{kind}: exact SVG source");
             } else {
-                assert_eq!(
-                    report,
-                    json!({"schema_version":1,"diagnostics":[{
-                        "code":"image.unsupported-format","severity":"warning","format":format.as_str(),"effects":["visual"],
-                        "element_id":"image","json_pointer":"/files/asset/dataURL","details":{"kind":"asset","asset_id":"asset",
-                        "claimed_media_type":null,"validated_media_type":null,
-                        "recovery":if format == OutputFormat::Png {"placeholder"} else {"omitted"},
-                        "recipe_id":if format == OutputFormat::Png {json!("official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d")} else {Value::Null}}
-                    }]}),
-                    "{kind}"
-                );
-                let control = Renderer::new().render(&missing, &request(format)).unwrap();
+                let control = Renderer::new().render(&untagged, &request(format)).unwrap();
                 assert_eq!(
                     output.artifact().bytes(),
                     control.artifact().bytes(),
-                    "{kind}"
+                    "{kind}: untagged drawing"
                 );
-                recovery_artifact(output.artifact().bytes(), format, row);
             }
         }
     }
@@ -826,7 +781,7 @@ fn gray_trc_profile_on_ycbcr_preserves_untagged_pixels() {
 }
 
 #[test]
-fn rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities() {
+pub(super) fn rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities() {
     let record = evidence();
     reconstruct_contract(&record);
     multipart_contract(&record);
@@ -842,7 +797,7 @@ fn rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities() {
     }
 }
 #[test]
-fn malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation() {
+pub(super) fn malformed_profiles_and_sequences_draw_untagged_as_the_reference() {
     let record = evidence();
     reconstruct_contract(&record);
     let rows: Vec<_> = record["cases"]
@@ -862,7 +817,7 @@ fn malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation(
     }
 }
 #[test]
-fn corrected_gray_precision_and_model_mismatches_match_reference() {
+pub(super) fn corrected_gray_precision_and_model_mismatches_match_reference() {
     let record = evidence();
     reconstruct_contract(&record);
     multipart_contract(&record);
@@ -896,7 +851,7 @@ fn corrected_gray_precision_and_model_mismatches_match_reference() {
     }
 }
 #[test]
-fn multipart_profiles_preserve_semantics_and_discriminate_ignored_icc() {
+pub(super) fn multipart_profiles_preserve_semantics_and_discriminate_ignored_icc() {
     let record = evidence();
     multipart_contract(&record);
 }
@@ -1017,7 +972,10 @@ fn recovery_gates_reject_changed_extents_and_non_rgba_png() {
         .iter()
         .find(|r| r["expected_outcome"] == "decode-failed")
         .unwrap();
-    let scene = SceneDocument::parse(&serde_json::to_vec(&row["scene"]).unwrap()).unwrap();
+    // The recovery artifact: the image's asset is missing.
+    let mut missing = row["scene"].clone();
+    missing["files"] = json!({});
+    let scene = SceneDocument::parse(&serde_json::to_vec(&missing).unwrap()).unwrap();
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let output = Renderer::new().render(&scene, &request(format)).unwrap();
         let bytes = output.artifact().bytes();

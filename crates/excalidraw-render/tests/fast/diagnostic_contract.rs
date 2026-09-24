@@ -1335,7 +1335,7 @@ pub(super) fn unsupported_image_contract_in_every_format() {
     shared_file_recovery_is_scoped_to_selected_frame_references();
     unsupported_nested_images_report_removed_paths();
     nested_unsupported_recovery_preserves_surrounding_text();
-    invalid_image_profiles_report_unsupported_recovery();
+    unparseable_jpeg_and_webp_profiles_are_ignored();
 }
 
 #[test]
@@ -1431,7 +1431,7 @@ fn nested_unsupported_recovery_preserves_surrounding_text() {
 }
 
 #[test]
-fn invalid_image_profiles_report_unsupported_recovery() {
+fn unparseable_jpeg_and_webp_profiles_are_ignored() {
     use base64::Engine;
     let mut jpeg = Vec::new();
     jpeg_encoder::Encoder::new(&mut jpeg, 90)
@@ -1464,20 +1464,8 @@ fn invalid_image_profiles_report_unsupported_recovery() {
                     json!([element]),
                     json!({"file":{"id":"file","created":1,"mimeType":mime,"dataURL":data}}),
                 );
-                // Blink ignores a WebP profile it cannot parse (#85).
-                let rows = if format == OutputFormat::Svg || mime == "image/webp" {
-                    json!([])
-                } else {
-                    json!([image_expected(
-                        "image.unsupported-format",
-                        json!("image"),
-                        "/files/file/dataURL",
-                        "file",
-                        status,
-                        format
-                    )])
-                };
-                assert_report(&source, format, rows);
+                // Blink ignores a JPEG or WebP profile it cannot parse (#85).
+                assert_report(&source, format, json!([]));
             }
         }
     }

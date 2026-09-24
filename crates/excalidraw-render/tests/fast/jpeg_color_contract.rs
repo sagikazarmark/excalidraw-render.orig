@@ -428,7 +428,7 @@ fn check(row: &Value) -> usize {
 }
 
 #[test]
-fn qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities() {
+pub(super) fn qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities() {
     let record = evidence();
     // Retain the existing exact owner selector; its scope now also covers
     // the 15 repaired CMYK/YCCK color cells. Sampling cells stay separate.
@@ -458,7 +458,7 @@ fn issue_187_baseline_sampling_cells_remain_explicit_defects() {
 }
 
 #[test]
-fn cmyk_component_probe_isolates_reference_truncation_from_decoder_rounding() {
+pub(super) fn cmyk_component_probe_isolates_reference_truncation_from_decoder_rounding() {
     use zune_jpeg::zune_core::{
         bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions,
     };
@@ -511,7 +511,7 @@ fn cmyk_component_probe_isolates_reference_truncation_from_decoder_rounding() {
 }
 
 #[test]
-fn ycck_unconverted_components_with_integer_color_conversion_match_reference() {
+pub(super) fn ycck_unconverted_components_with_integer_color_conversion_match_reference() {
     use zune_jpeg::zune_core::{
         bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions,
     };

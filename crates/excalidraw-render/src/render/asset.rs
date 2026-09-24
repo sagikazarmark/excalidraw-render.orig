@@ -19,6 +19,7 @@ mod icc_lut;
 mod icc_matrix;
 mod ico;
 mod jpeg;
+mod jpeg_markers;
 mod orientation;
 mod payload;
 mod png;
@@ -39,8 +40,8 @@ use gif::{
     GifSemantics, GIF87A_SIGNATURE, GIF89A_SIGNATURE,
 };
 use jpeg::{
-    decode_static_jpeg, jpeg_decoder, read_jpeg_dimensions, validate_static_jpeg, JpegSemantics,
-    JPEG_SIGNATURE,
+    decode_static_jpeg, jpeg_color_normalization, read_jpeg_dimensions, validate_static_jpeg,
+    JpegSemantics, JPEG_SIGNATURE,
 };
 use payload::{payload, Payload};
 pub(super) use png::encode_normalized_png;
@@ -1357,17 +1358,7 @@ fn prepare_color_normalization(
         RasterSemantics::Png(semantics) => {
             prepare_png_color_normalization(bytes, semantics, workspace_bytes)
         }
-        RasterSemantics::Jpeg(_) => {
-            let mut decoder = jpeg_decoder(bytes);
-            decoder
-                .decode_headers()
-                .map_err(|_| ResolveError::JpegDecodeFailed)?;
-            decoder
-                .icc_profile()
-                .map_or(Ok(ColorNormalization::None), |profile| {
-                    color::parse_icc_profile(&profile)
-                })
-        }
+        RasterSemantics::Jpeg(_) => jpeg_color_normalization(bytes),
         RasterSemantics::Gif(_) => Ok(ColorNormalization::None),
         RasterSemantics::WebP(_) => match webp_icc_profile(bytes)? {
             // Blink keeps only a profile that parses as an RGB profile and

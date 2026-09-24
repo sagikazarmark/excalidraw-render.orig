@@ -682,11 +682,11 @@ fn check_partition(corrected: bool, cells: usize, vectors: usize) {
     }
 }
 #[test]
-fn qualified_exif_precedence_matches_reference() {
+pub(super) fn qualified_exif_precedence_matches_reference() {
     check_partition(false, 46, 92);
 }
 #[test]
-fn corrected_duplicate_exif_precedence_matches_reference() {
+pub(super) fn corrected_duplicate_exif_precedence_matches_reference() {
     check_partition(true, 36, 72);
 }
 
@@ -827,7 +827,7 @@ fn check_rejected_header(bytes: &[u8], row: &Value, name: &str) {
 }
 
 #[test]
-fn authored_invalid_tiff_blocks_and_malformed_headers_have_bounded_recovery() {
+pub(super) fn authored_invalid_tiff_blocks_and_malformed_headers_have_bounded_recovery() {
     let record = evidence();
     let rows = record["cases"].as_array().unwrap();
     let inputs = inputs();

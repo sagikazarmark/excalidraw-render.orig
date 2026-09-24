@@ -729,7 +729,7 @@ fn admitted(row: &Value, base: &Value, defect: bool) {
 }
 
 #[test]
-fn valid_sdr_gain_maps_match_reference_base_projection() {
+pub(super) fn valid_sdr_gain_maps_match_reference_base_projection() {
     let record = evidence();
     assert_structural_mutations(&record);
     assert_nonidentity_map_discrimination(&record);
@@ -740,7 +740,7 @@ fn valid_sdr_gain_maps_match_reference_base_projection() {
     }
 }
 #[test]
-fn hdr_gain_maps_pin_known_color_defect_190() {
+pub(super) fn hdr_gain_maps_pin_known_color_defect_190() {
     let record = evidence();
     let bases = base_evidence();
     for row in selected(&record, HDR, 8) {
@@ -748,7 +748,7 @@ fn hdr_gain_maps_pin_known_color_defect_190() {
     }
 }
 #[test]
-fn corrected_mpf_index_ranges_have_exact_recovery() {
+pub(super) fn corrected_mpf_index_ranges_have_exact_recovery() {
     let record = evidence();
     assert_optional_mpf_controls(&record);
     assert_malformed_mpf_fields(&record);
@@ -760,7 +760,7 @@ fn corrected_mpf_index_ranges_have_exact_recovery() {
     }
 }
 #[test]
-fn invalid_container_framing_has_exact_recovery() {
+pub(super) fn invalid_container_framing_has_exact_recovery() {
     let record = evidence();
     assert_structural_mutations(&record);
     assert_nonidentity_map_discrimination(&record);
@@ -1054,7 +1054,7 @@ fn with_secondary_mpf(original: &[u8], big: bool, app2: &[u8]) -> Vec<u8> {
 }
 
 #[test]
-fn secondary_mpf_index_has_exact_recovery() {
+pub(super) fn secondary_mpf_index_has_exact_recovery() {
     assert_secondary_mpf_index_recovery(&evidence());
 }
 
@@ -1272,7 +1272,7 @@ fn assert_optional_mpf_controls(record: &Value) {
 }
 
 #[test]
-fn malformed_mpf_fields_and_duplicate_indexes_have_exact_recovery() {
+pub(super) fn malformed_mpf_fields_and_duplicate_indexes_have_exact_recovery() {
     let record = evidence();
     assert_optional_mpf_controls(&record);
     assert_malformed_mpf_fields(&record);

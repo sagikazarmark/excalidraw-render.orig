@@ -664,43 +664,43 @@
     {
       "id": "codec:jpeg:icc:gray-baseline-bad-signature-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-baseline-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-baseline-bad-signature-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-truncated-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-baseline-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-baseline-truncated-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-tag-out-of-bounds-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-baseline-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-baseline-tag-out-of-bounds-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-v2-g1-missing",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-baseline-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-missing: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-v2-g1-duplicate",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-baseline-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-duplicate: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-v2-g1-zero-index",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-baseline-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-zero-index: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-v2-g1-inconsistent-count",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-baseline-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-baseline-v2-g1-inconsistent-count: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
@@ -784,43 +784,43 @@
     {
       "id": "codec:jpeg:icc:gray-progressive-bad-signature-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-progressive-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-progressive-bad-signature-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-truncated-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-progressive-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-progressive-truncated-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-tag-out-of-bounds-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-progressive-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-progressive-tag-out-of-bounds-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-v2-g1-missing",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-progressive-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-missing: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-v2-g1-duplicate",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-progressive-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-duplicate: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-v2-g1-zero-index",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-progressive-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-zero-index: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-v2-g1-inconsistent-count",
       "category": "codec-profile",
-      "criterion": "JPEG ICC gray-progressive-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC gray-progressive-v2-g1-inconsistent-count: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
@@ -904,43 +904,43 @@
     {
       "id": "codec:jpeg:icc:rgb-baseline-bad-signature-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-baseline-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-baseline-bad-signature-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-baseline-truncated-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-baseline-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-baseline-truncated-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-baseline-tag-out-of-bounds-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-baseline-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-baseline-tag-out-of-bounds-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-baseline-v2-g1-missing",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-baseline-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-missing: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-baseline-v2-g1-duplicate",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-baseline-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-duplicate: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-baseline-v2-g1-zero-index",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-baseline-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-zero-index: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-baseline-v2-g1-inconsistent-count",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-baseline-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-baseline-v2-g1-inconsistent-count: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
@@ -1024,43 +1024,43 @@
     {
       "id": "codec:jpeg:icc:rgb-progressive-bad-signature-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-progressive-bad-signature-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-progressive-bad-signature-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-progressive-truncated-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-progressive-truncated-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-progressive-truncated-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-progressive-tag-out-of-bounds-single",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-progressive-tag-out-of-bounds-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact unsupported-format recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-progressive-tag-out-of-bounds-single: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-progressive-v2-g1-missing",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-progressive-v2-g1-missing: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-missing: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-progressive-v2-g1-duplicate",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-progressive-v2-g1-duplicate: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-duplicate: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-progressive-v2-g1-zero-index",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-progressive-v2-g1-zero-index: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-zero-index: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {
       "id": "codec:jpeg:icc:rgb-progressive-v2-g1-inconsistent-count",
       "category": "codec-profile",
-      "criterion": "JPEG ICC rgb-progressive-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
+      "criterion": "JPEG ICC rgb-progressive-v2-g1-inconsistent-count: both frozen ramp/edge vectors; the pinned reference ignores this malformed or incomplete profile sequence and draws the untagged image, and the renderer matches it: exact extent/opaque-alpha/report/replay gates, SVG source-byte preservation, and canonical direct-PNG and bound PDF comparison with the reference drawing. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     },
     {

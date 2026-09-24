@@ -174,7 +174,7 @@ fn baseline_and_progressive_dc_blocks_are_exact_opaque_samples() {
 }
 
 #[test]
-fn all_tiff_orientations_preserve_exact_samples_and_svg_source_octets() {
+pub(super) fn all_tiff_orientations_preserve_exact_samples_and_svg_source_octets() {
     let (_, _, gray) = blocks(1);
     for progressive in [false, true] {
         let source = encode(24, 16, &gray, progressive, false);
@@ -189,7 +189,7 @@ fn all_tiff_orientations_preserve_exact_samples_and_svg_source_octets() {
 }
 
 #[test]
-fn absent_and_invalid_tiff_orientation_leave_the_source_layout_intact() {
+pub(super) fn absent_and_invalid_tiff_orientation_leave_the_source_layout_intact() {
     let (width, height, gray) = blocks(1);
     for progressive in [false, true] {
         let source = encode(width as u16, height as u16, &gray, progressive, false);
@@ -227,7 +227,7 @@ fn absent_and_invalid_tiff_orientation_leave_the_source_layout_intact() {
 
 fn malformed_vectors() -> Vec<(&'static str, Vec<u8>)> {
     let source = encode(8, 8, &[64; 64], false, false);
-    let mut vectors = vec![
+    vec![
         ("missing-eoi", source[..source.len() - 2].to_vec()),
         (
             "short-marker-length",
@@ -238,8 +238,18 @@ fn malformed_vectors() -> Vec<(&'static str, Vec<u8>)> {
             b"\xff\xd8\xff\xe0\xff\xff\xff\xd9".to_vec(),
         ),
         ("no-frame-or-scan", b"\xff\xd8\xff\xd9".to_vec()),
+    ]
+}
+
+/// Files the reference draws completely: data after the first image's EOI
+/// is not read, and libjpeg's `jpeg_read_icc_profile` returns no profile for
+/// an inconsistent, incomplete or duplicated sequence, so the image draws
+/// untagged.
+fn drawn_vectors() -> Vec<(&'static str, Vec<u8>)> {
+    let source = encode(8, 8, &[64; 64], false, false);
+    let mut vectors = vec![
         (
-            "unqualified-second-image",
+            "second-image",
             [source.as_slice(), source.as_slice()].concat(),
         ),
         ("trailing-garbage", [source.as_slice(), b"garbage"].concat()),
@@ -271,7 +281,14 @@ fn malformed_vectors() -> Vec<(&'static str, Vec<u8>)> {
 }
 
 #[test]
-fn malformed_markers_and_icc_sequences_have_exact_recovery_reports() {
+pub(super) fn trailing_data_and_malformed_icc_sequences_draw_the_first_image_untagged() {
+    for (_, bytes) in drawn_vectors() {
+        check(&bytes, 8, 8, &[64; 64]);
+    }
+}
+
+#[test]
+pub(super) fn malformed_markers_have_exact_recovery_reports() {
     let missing = missing_scene();
     for (name, bytes) in malformed_vectors() {
         let scene = image_scene(&bytes, "image/jpeg", 24, 16);

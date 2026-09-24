@@ -1,7 +1,7 @@
-//! The JPEG codec: marker-level validation that admits one baseline or
-//! progressive image (or an MPF gain-map pair) with a complete ICC sequence,
-//! header and EXIF-orientation reads, and the strict `zune-jpeg` decode with
-//! ICC or linear color normalization applied in the decoder's color space.
+//! The JPEG codec: the first image as the reference reads it (see
+//! `jpeg_markers`), the strict framing of an MPF gain-map pair, header and
+//! EXIF-orientation reads, and the strict `zune-jpeg` decode with ICC or
+//! linear color normalization applied in the decoder's color space.
 
 use moxcms::{ColorProfile, DataColorSpace, Layout, TransformOptions};
 use std::sync::Arc;
@@ -11,6 +11,7 @@ use zune_jpeg::zune_core::options::DecoderOptions;
 use zune_jpeg::JpegDecoder;
 
 use super::color::{ColorNormalization, LINEAR_TO_SRGB};
+use super::jpeg_markers::{read_primary, JpegModel, JpegPrimary};
 use super::orientation::{orient_rgba, oriented_dimensions};
 use super::{try_copy, DecodedRaster, ResolveError};
 
@@ -41,12 +42,13 @@ pub(super) fn read_jpeg_dimensions(bytes: &[u8]) -> Result<(u32, u32), ResolveEr
     if !bytes.starts_with(JPEG_SIGNATURE) {
         return Err(ResolveError::Unsupported);
     }
-    let metadata = read_jpeg_metadata(bytes)?;
+    let primary = read_primary(bytes)?;
+    let metadata = read_jpeg_metadata(&primary)?;
     Ok((metadata.width, metadata.height))
 }
 
-fn read_jpeg_metadata(bytes: &[u8]) -> Result<JpegMetadata, ResolveError> {
-    let mut decoder = jpeg_decoder(bytes);
+fn read_jpeg_metadata(primary: &JpegPrimary<'_>) -> Result<JpegMetadata, ResolveError> {
+    let mut decoder = jpeg_decoder(&primary.stream);
     decoder
         .decode_headers()
         .map_err(|_| ResolveError::JpegDecodeFailed)?;
@@ -57,49 +59,13 @@ fn read_jpeg_metadata(bytes: &[u8]) -> Result<JpegMetadata, ResolveError> {
     Ok(JpegMetadata {
         width: u32::from(info.width),
         height: u32::from(info.height),
-        orientation: jpeg_orientation(bytes),
+        orientation: primary.orientation,
     })
-}
-
-// JPEG owns APP1 precedence. The reference uses the first EXIF block before
-// the first scan, even when that block has no usable orientation. Never use
-// the decoder's last-APP1 metadata or inspect post-SOS entropy as header bytes.
-fn jpeg_orientation(bytes: &[u8]) -> Option<u8> {
-    if bytes.get(..2)? != b"\xff\xd8" {
-        return None;
-    }
-    let mut offset = 2_usize;
-    while offset < bytes.len() {
-        if *bytes.get(offset)? != 0xff {
-            return None;
-        }
-        while bytes.get(offset) == Some(&0xff) {
-            offset = offset.checked_add(1)?;
-        }
-        let marker = *bytes.get(offset)?;
-        offset = offset.checked_add(1)?;
-        if matches!(marker, 0xda | 0xd9) {
-            return None;
-        }
-        let length = usize::from(u16::from_be_bytes(
-            bytes.get(offset..offset.checked_add(2)?)?.try_into().ok()?,
-        ));
-        if length < 2 {
-            return None;
-        }
-        let end = offset.checked_add(length)?;
-        let payload = bytes.get(offset.checked_add(2)?..end)?;
-        if marker == 0xe1 && payload.starts_with(b"Exif\0\0") {
-            return jpeg_tiff_orientation(&payload[6..]);
-        }
-        offset = end;
-    }
-    None
 }
 
 // The JPEG reference skips invalid orientation values within IFD0. This is
 // intentionally separate from the qualified PNG/WebP TIFF interpretation.
-fn jpeg_tiff_orientation(bytes: &[u8]) -> Option<u8> {
+pub(super) fn jpeg_tiff_orientation(bytes: &[u8]) -> Option<u8> {
     let big = match bytes.get(..2)? {
         b"MM" => true,
         b"II" => false,
@@ -147,21 +113,61 @@ fn jpeg_tiff_orientation(bytes: &[u8]) -> Option<u8> {
 pub(super) fn validate_static_jpeg(
     bytes: &[u8],
 ) -> Result<(u32, u32, JpegSemantics), ResolveError> {
-    if !bytes.starts_with(JPEG_SIGNATURE) || validate_jpeg_markers(bytes).is_err() {
-        return Err(if bytes.starts_with(JPEG_SIGNATURE) {
-            ResolveError::JpegDecodeFailed
-        } else {
-            ResolveError::Unsupported
-        });
+    if !bytes.starts_with(JPEG_SIGNATURE) {
+        return Err(ResolveError::Unsupported);
     }
-    let metadata = read_jpeg_metadata(bytes)?;
+    let primary = read_primary(bytes)?;
+    // A first image carrying an MPF index or hdrgm metadata makes the file a
+    // gain-map container, judged by its approved strict framing rules.
+    if primary.gain_map_container {
+        validate_gain_map_container(bytes)?;
+    }
+    let metadata = read_jpeg_metadata(&primary)?;
     let orientation = metadata.orientation;
     let (width, height) =
         oriented_dimensions(metadata.width, metadata.height, orientation.unwrap_or(1));
     Ok((width, height, JpegSemantics { orientation }))
 }
 
-fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
+/// The color normalization of the embedded ICC profile. Blink keeps a profile
+/// that skcms parses and whose data color space fits libjpeg's color space
+/// (CMYK for CMYK/YCCK, gray or RGB for gray, RGB otherwise) and ignores
+/// every other; Skia draws a profile it snaps to sRGB untransformed.
+pub(super) fn jpeg_color_normalization(bytes: &[u8]) -> Result<ColorNormalization, ResolveError> {
+    let primary = read_primary(bytes)?;
+    let Some(profile) = primary.icc_profile()? else {
+        return Ok(ColorNormalization::None);
+    };
+    let space = profile.get(16..20);
+    let kept = match primary.model {
+        JpegModel::Gray => matches!(space, Some(b"GRAY" | b"RGB ")),
+        JpegModel::Cmyk | JpegModel::Ycck => space == Some(b"CMYK"),
+        JpegModel::YCbCr | JpegModel::Rgb | JpegModel::Unknown => space == Some(b"RGB "),
+    };
+    if !kept {
+        return Ok(ColorNormalization::None);
+    }
+    // The project does not color-manage CMYK: strict unsupported recovery.
+    if space == Some(b"CMYK") {
+        return Err(ResolveError::Unsupported);
+    }
+    match super::color::parse_icc_profile(&profile) {
+        Ok(ColorNormalization::Profile(profile))
+            if profile.color_space == DataColorSpace::Rgb
+                && super::skia_srgb::snaps_to_srgb(&profile) =>
+        {
+            Ok(ColorNormalization::None)
+        }
+        Err(ResolveError::Memory) => Err(ResolveError::Memory),
+        // A profile that does not parse is ignored.
+        Err(_) => Ok(ColorNormalization::None),
+        other => other,
+    }
+}
+
+// The approved strict framing of an MPF + hdrgm gain-map container: exactly a
+// primary and its indexed secondary image, nothing between or after them.
+fn validate_gain_map_container(bytes: &[u8]) -> Result<(), ResolveError> {
     let mut image_start = 0_usize;
     let mut image_count = 0_u8;
     let mut primary_mpf = None;
@@ -169,8 +175,6 @@ fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
     while image_start < bytes.len() {
         let current_start = image_start;
         let mut saw_secondary_mpf = false;
-        let mut icc_parts = [false; 256];
-        let mut icc_part_count = None;
         if bytes.get(image_start..image_start.saturating_add(2)) != Some(b"\xff\xd8") {
             return Err(ResolveError::JpegDecodeFailed);
         }
@@ -193,11 +197,6 @@ fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
                 .ok_or(ResolveError::JpegDecodeFailed)?;
             match marker {
                 0xd9 if saw_frame && saw_scan => {
-                    if let Some(part_count) = icc_part_count {
-                        if !(1..=part_count).all(|part| icc_parts[usize::from(part)]) {
-                            return Err(ResolveError::JpegDecodeFailed);
-                        }
-                    }
                     if let Some(entries) = &primary_mpf {
                         let entries: &[std::ops::Range<usize>; 2] = entries;
                         if entries.get(usize::from(image_count)) != Some(&(current_start..offset)) {
@@ -249,20 +248,6 @@ fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
                             validate_secondary_mpf(&segment[4..])?;
                             saw_secondary_mpf = true;
                         }
-                    }
-                    if marker == 0xe2 && segment.starts_with(b"ICC_PROFILE\0") {
-                        let sequence = *segment.get(12).ok_or(ResolveError::JpegDecodeFailed)?;
-                        let part_count = *segment.get(13).ok_or(ResolveError::JpegDecodeFailed)?;
-                        if sequence == 0
-                            || part_count == 0
-                            || sequence > part_count
-                            || icc_part_count.is_some_and(|expected| expected != part_count)
-                            || icc_parts[usize::from(sequence)]
-                        {
-                            return Err(ResolveError::JpegDecodeFailed);
-                        }
-                        icc_part_count = Some(part_count);
-                        icc_parts[usize::from(sequence)] = true;
                     }
                     if image_count == 0
                         && marker == 0xe1
@@ -558,10 +543,11 @@ fn mpf_image_ranges(
 pub(super) fn decode_static_jpeg(
     bytes: &[u8],
     pixels: u64,
-    mut color_normalization: ColorNormalization,
+    color_normalization: ColorNormalization,
     orientation: Option<u8>,
 ) -> Result<DecodedRaster, ResolveError> {
-    let mut decoder = jpeg_decoder(bytes);
+    let primary = read_primary(bytes)?;
+    let mut decoder = jpeg_decoder(&primary.stream);
     decoder
         .decode_headers()
         .map_err(|_| ResolveError::JpegDecodeFailed)?;
@@ -569,40 +555,6 @@ pub(super) fn decode_static_jpeg(
         .info()
         .ok_or(ResolveError::JpegDecodeFailed)?
         .components;
-    // The pinned JPEG reference ignores a valid gray profile on a
-    // three-component source, rather than converting RGB into profile gray.
-    // An RGB profile on a gray source is valid: the decoder expands its samples.
-    let gray_profile = match &color_normalization {
-        ColorNormalization::Profile(profile) => profile.color_space == DataColorSpace::Gray,
-        _ => false,
-    };
-    if component_count == 3 && gray_profile {
-        if let ColorNormalization::Profile(profile) = &color_normalization {
-            if profile.gray_trc.is_none()
-                || profile.pcs != DataColorSpace::Xyz
-                || !matches!(
-                    profile.profile_class,
-                    moxcms::ProfileClass::InputDevice
-                        | moxcms::ProfileClass::DisplayDevice
-                        | moxcms::ProfileClass::OutputDevice
-                        | moxcms::ProfileClass::ColorSpace
-                )
-            {
-                return Err(ResolveError::Unsupported);
-            }
-            // Ignore only a usable source profile; a recognized header alone
-            // must not bypass malformed TRC/PCS validation or typed CMS errors.
-            super::color::cms_operation(super::color::CmsSite::Construct, || {
-                profile.create_transform_16bit(
-                    Layout::Gray,
-                    &ColorProfile::new_srgb(),
-                    Layout::Rgb,
-                    TransformOptions::default(),
-                )
-            })?;
-        }
-        color_normalization = ColorNormalization::None;
-    }
     let source_color_space = match &color_normalization {
         ColorNormalization::Lut(lut) => {
             if lut.first().ok_or(ResolveError::DecodeFailed)?.gray() {

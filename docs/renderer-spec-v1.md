@@ -813,6 +813,42 @@ GIF is read as the pinned reference's decoder reads it:
   paints the partial frame.
 - Later frames only count; their data is not decoded.
 
+JPEG is read as the pinned reference's decoder reads it:
+- Container:
+  - Only the first image draws. Bytes after its EOI are ignored, including an
+    appended image, a thumbnail or a gain-map container other than MPF with
+    hdrgm.
+  - A file whose first image carries an MPF index or hdrgm XMP is judged by
+    the gain-map framing rules instead, which reject an invalid index. This is
+    a declared divergence: the reference draws the primary image.
+- Markers:
+  - Fill and non-marker bytes between segments are skipped.
+  - Restart and TEM markers outside a scan are ignored.
+  - A missing DHT uses the standard Huffman tables.
+- Color space:
+  - A JFIF marker makes three components YCbCr, before any Adobe transform
+    or component identifiers.
+  - Four components are CMYK unless an Adobe transform other than 0 makes
+    them YCCK.
+- ICC profiles:
+  - A profile is assembled from its ordered APP2 parts.
+  - It applies only when it parses and fits the image's model: RGB for RGB,
+    RGB or gray for gray.
+  - An sRGB-equivalent profile draws untransformed.
+  - Any other profile is ignored.
+- Orientation: EXIF orientation applies from the first value from 1 to 8 in
+  IFD0 of the first EXIF segment, after an `Exif\0` header with a zero or
+  fill byte. Any other value, IFD1 and XMP are ignored.
+- Partial data:
+  - The reference paints what it can decode, and the file is rejected with
+    the usual decode-failed recovery. This is the declared divergence.
+  - It covers a truncated scan, a baseline file missing its EOI, a missing
+    quantization table, and a restart interval whose markers are missing.
+  - A progressive file missing only its EOI draws when its scans are
+    complete.
+- HDR-base gain-map projection is a known divergence (#190). It is pinned to
+  its current output.
+
 BMP is read as the pinned reference's BMP reader reads it:
 - Headers:
   - The file header needs only its signature and pixel-data offset.
