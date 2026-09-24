@@ -154,9 +154,11 @@ pub fn generate_layers() -> Result<(), String> {
     Ok(())
 }
 
+/// The subject binds the record alone, never the ledger, so it is computed
+/// from the reproduced structure; completeness is required when the approval
+/// is recorded and whenever the record owner is verified.
 pub fn layers_subject() -> Result<String, String> {
-    let record = verify_record(&Repo::real(), &LedgerView::load()?, false)?;
-    subject_of(&record)
+    subject_of(&current_record(&Repo::real())?)
 }
 
 pub fn record_layers_approval(
@@ -473,6 +475,8 @@ mod tests {
         let mut fixture = Fixture::new();
         fixture.view.clear("layer:vector:rough-js");
         fixture.view.clear("interaction:diagnostic-order");
+        fixture.view.clear("layer:adversarial:scene-fuzz");
+        fixture.view.clear("layer:regression:render-fuzz");
         for expected in [
             "vector Rough.js: layer row layer:vector:rough-js has no primary owner",
             "vector diagnostic order: no mapped row is owned",
