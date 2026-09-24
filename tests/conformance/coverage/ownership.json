@@ -1777,9 +1777,17 @@
     {
       "id": "closure:all-five-layers",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "layers.json is regenerated to declare tests/oracle/image-resample (#198) and awaits re-approval; the V26 packet re-records its record owner."
+        "status": "owned",
+        "owner": {
+          "kind": "record",
+          "record": {
+            "path": "tests/conformance/coverage/layers.json",
+            "sha256": "2b26dd5a6c05b3962f75adc6421228947c4f804f6050c7e47a7505a6fff940ed"
+          },
+          "approval_subject_sha256": "sha256:aaf11ea35a5c0b450494cade7bb7b0cbb3d3383fb4b84a00c8d6c3e52c020552",
+          "verifier": "layers"
+        },
+        "rationale": "Record owner (ADR-0015): tests/conformance/coverage/layers.json, approved on #85, binds every item of the five corpus layers (the ten spec vector families, stored vector corpora and oracle directories, all registered focused cases, the representative candidate and the three #84 representative cases with their approval, sanitization and crops, every fuzz target with its required risks, and every permanent regression corpus with its case ids) by rule and digest; the compiled-in layers verifier rederives the item list and requires each item to map to an owned ledger row whose owner validates."
       }
     },
     {
@@ -50487,16 +50495,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v25",
+            "case": "representative.stage4-frames-text-assets.v26",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "d67f26ca254f3320559c2f77128a91d4459a0b1b07eec59c0e354e589a8dae9c"
+              "sha256": "84fe8e1cb830e12baf1a2d2538285b4589206811e5a3181293c738dba1017e6c"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v25/manifest.json",
-              "sha256": "1f7c86fcfa5f77b74a21bbd7f01053d3d622690c368345235afa20450420d8bb"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v26/manifest.json",
+              "sha256": "88e49b55fc79ae7038219064d37ca48f92a8b47939552b014a4183031aef410e"
             },
-            "approval_subject_sha256": "sha256:bab27df4f9dc2ff5b2424f2dcab27980271006ac41bc8cf25def63eafa348bef",
+            "approval_subject_sha256": "sha256:8be7a55b44d48f33d9fd7d7614bb2e54d9ffb8e2d182bb4e51861d5f8d5fb256",
             "command": [
               "cargo",
               "run",
@@ -50507,7 +50515,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v25"
+              "tests/conformance/candidates/stage4-frames-text-assets-v26"
             ]
           }
         },
@@ -50926,9 +50934,30 @@
     {
       "id": "layer:vector:image-resampling",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "New exact-vector layer row for the canvas image resampling record (#198); owner proposed with the V26 successor."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_resample_contract.rs",
+            "sha256": "f0281786d4baae447a0dcc81a65dc5c26c2bd3d76fc92fefe99b2eb4e851c60a"
+          },
+          "function": "raster_images_resample_exactly_as_the_reference_canvas",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_resample_contract::raster_images_resample_exactly_as_the_reference_canvas",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Renders all 73 rows of tests/oracle/image-resample (seeded noise, alpha, edge, impulse, odd and thin images drawn at minification sweeps down to 1x1, magnification, anisotropic scales, fractional sizes and offsets, crops, opacity, and repeated draws of one image in both orders) and requires every PNG to equal the pinned software canvas byte-for-byte in RGBA, with empty reports. See docs/research/canvas-image-resampling.md."
       }
     },
     {

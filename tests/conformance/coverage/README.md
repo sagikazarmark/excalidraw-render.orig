@@ -185,7 +185,16 @@ until those discrepancies are fixed. See [the findings](../../../docs/research/w
 
 ### Canonical baseline approval and replay
 
-`native-baseline/revision-1.json` contains the approved clean `ec30177`
+`native-baseline/revision-1.json` contains the approved clean recollection
+after PNG began resampling raster images as the pinned software canvas does
+(#198). Exactly two keys changed, `focused.image-codecs.v1` PNG and
+`focused.rounded-image.v1` scale-2 PNG, both closer to their official evidence,
+with their reports unchanged. It was approved on 2026-09-24 in
+[#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5815132060),
+subject `sha256:5c1e26e4123ef7e8597a6f419ca87877862aa752a428be57cbbff3b2163deb25`.
+See [the resampling record](../../../docs/research/canvas-image-resampling.md).
+
+The preceding baseline contains the approved clean `ec30177`
 recollection after JPEG began reading as the pinned libjpeg-turbo decoder does.
 Exactly two keys changed, `focused.image-codecs.v1` PNG and PDF, with their
 reports unchanged. The case's JPEG carries an sRGB-equivalent ICC profile,

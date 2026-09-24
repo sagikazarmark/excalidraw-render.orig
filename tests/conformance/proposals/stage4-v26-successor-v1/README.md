@@ -1,7 +1,10 @@
-# Canvas image resampling (#198) and V26 successor — proposal
+# Canvas image resampling (#198) and V26 successor — approved and applied
 
-Four exact subjects for one #85 decision. Nothing is applied until a genuine
-approval comment exists on #85.
+Four exact subjects for one #85 decision, approved by the user on 2026-09-24
+([#85 comment](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5815132060)) and applied with `apply.py`. After application,
+`verify-layers --require-approval`, `verify-native-baseline`, V26
+`candidate-verify` and `verify-ownership` (2424 of 2440 assigned/excluded, 16
+gaps) passed. The rest of this README preserves the reviewed proposal.
 
 | Subject | SHA-256 |
 | --- | --- |
