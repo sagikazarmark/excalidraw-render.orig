@@ -21,6 +21,23 @@ resource-boundary documents, and permanent minimized regressions. ADR-0015 turns
 `closure:all-five-layers` into a record: every registered vector family, fuzz
 risk, regression corpus and case, in every layer, maps to a ledger row.
 
+## Bindings
+
+The record avoids bindings that churn routinely:
+
+- **Candidate registry and superseded `candidates/*` directories.** These
+  change with every representative successor, so they are checked by rule
+  instead (step 5 below).
+- **Spec digest.** Only the family sentence's normalized text is bound.
+- **Catalog digest.** Selectors are expanded, and orphans checked, against the
+  current catalog.
+- **Focused registry digest.** Only the case ids are bound.
+- **Oracle and fuzz source bytes.** Their owners bind them.
+
+`derive.rs` stays bound because it is the rule set. A simulated V25 apply on a
+scratch copy moved the registry and the ledger binding, and `layers.json` still
+reproduced.
+
 ## Rules
 
 `xtask/src/coverage/layers/derive.rs` holds every discovery, derivation and

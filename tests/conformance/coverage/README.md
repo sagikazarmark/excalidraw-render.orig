@@ -364,17 +364,23 @@ directory to catalog rows. Selectors are exact ids or `prefix:*`.
 | 4 adversarial | `src/**/*_fuzz*`, `tests/*_fuzz*`, `tests/limits_*`, `**/frame_batch_property` | `layer:adversarial:<name>`, with the parsed `REQUIRED_RISKS` |
 | 5 regressions | `crates/*/tests/qualification/*-regressions.json` | `layer:regression:<name>`, with digest, case ids and risks |
 
-The record binds the spec, the derivation source, the registries, a tree digest
-of every corpus, oracle directory and fuzz target, each #84 case's `case.json`,
-subject and intake manifest, and the ledger's `catalog_sha256`. It never reads
-dispositions, so recording an owner does not change it. Unregistered candidate
-directories, unreferenced intake bundles and `tests/public-scenes/*` are
-excluded by rule and listed. Any new corpus, oracle directory, case, fuzz
-target, risk or regression id changes the record, and verification fails until
-it is regenerated and approved again.
+The record binds only what defines the layers' contents: `derive.rs` (the
+rules), the text of the family sentence, the declarations, the tree digests of
+the vector corpora, the registered case ids, each #84 case (`case.json`,
+subject and intake), each fuzz target with its `REQUIRED_RISKS`, and the
+regression corpora with their digests and ids. It binds no spec digest, catalog
+digest, oracle bytes, fuzz source bytes or candidate registry. It never reads
+the ledger either. Row selectors are expanded against the current catalog at
+verification. The candidate registry is checked by rule: it must hold exactly
+one entry, which must be the case bound by the owned
+`interaction:frames-text-assets` representative owner. Every other
+`candidates/*` directory, every unreferenced intake bundle and
+`tests/public-scenes/*` is excluded by rule. So a representative successor, a
+spec edit outside the sentence or a codec tranche does not stale the record. A
+new corpus, oracle directory, case, fuzz target, risk or regression id does.
 
 Verification rebuilds the record and requires equality. It then checks
-completeness against the ledger's owners, using the ledger's own per-row owner
+completeness against the current catalog and the ledger's owners, using the ledger's own per-row owner
 checks. Each vector item needs at least one owned row, every mapped `layer:*`
 row must be owned, and every owned mapped row's owner must pass. Each
 registered case must be the case owner of one of its rows. Candidate rows must

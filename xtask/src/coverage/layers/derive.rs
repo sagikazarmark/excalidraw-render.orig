@@ -13,12 +13,9 @@ use crate::coverage::ownership::PrimaryOwner;
 
 pub(super) const IMPLEMENTATION: &str = "xtask/src/coverage/layers/derive.rs";
 pub(super) const SPEC: &str = "docs/renderer-spec-v1.md";
-const LEDGER: &str = "tests/conformance/coverage/ownership.json";
 const CANDIDATE_REGISTRY: &str = "tests/conformance/candidates/registry.json";
-const CANDIDATE_ROOT: &str = "tests/conformance/candidates";
+const REPRESENTATIVE_ROW: &str = "interaction:frames-text-assets";
 const CASE_REGISTRY: &str = "tests/conformance/cases/representative/registry.json";
-const INTAKE_ROOT: &str = "tests/conformance/intake";
-const PUBLIC_SCENES: &str = "tests/public-scenes";
 const ORACLE_ROOT: &str = "tests/oracle";
 const COMPARATOR_ROOT: &str = "tests/conformance/comparator-vectors";
 const FAMILY_SENTENCE: &str = "Exact vectors cover ";
@@ -44,8 +41,8 @@ pub(super) const RULES: &[Rule] = &[
     Rule {
         id: "vector-families",
         layer: "vector",
-        statement: "The exact-vector families are the comma-separated list of the spec sentence beginning \"Exact vectors cover \", in order. Each is declared once, in that order, with row selectors (an exact catalog id, or a prefix ending in \":*\" that matches at least one row), expanded against the catalog.",
-        spec_anchor: "Exact vectors cover Rough.js",
+        statement: "The exact-vector families are the comma-separated list of the spec sentence beginning \"Exact vectors cover \", in order; the record binds that sentence's text, not the whole spec. Each family is declared once, in that order, with row selectors (an exact catalog id, or a prefix ending in \":*\"), expanded against the current catalog at verification: every selector must match a row, never a closure row, and only layer:vector:* layer rows.",
+        spec_anchor: "Exact vectors cover ",
     },
     Rule {
         id: "vector-domains",
@@ -56,37 +53,37 @@ pub(super) const RULES: &[Rule] = &[
     Rule {
         id: "vector-corpora",
         layer: "vector",
-        statement: "Stored vector corpora are every tests/conformance/comparator-vectors/*/ directory (which must hold manifest.json), every crates/*/tests/fixtures/*-vectors.json file and every tools/*-vectors/ derivation directory. Each is declared exactly once with row selectors; its bytes are bound by tree digest.",
+        statement: "Stored vector corpora are every tests/conformance/comparator-vectors/*/ directory (which must hold manifest.json), every crates/*/tests/fixtures/*-vectors.json file and every tools/*-vectors/ derivation directory. Each is declared exactly once with row selectors; its bytes, the vectors themselves, are bound by tree digest.",
         spec_anchor: "1. Exact compatibility-critical vectors.",
     },
     Rule {
         id: "oracle-classification",
         layer: "vector",
-        statement: "Every tests/oracle/*/ directory is declared exactly once: a vector oracle maps to the codec/profile rows its pinned reference values decide; an authority or profile input maps to no row. Its bytes are bound by tree digest.",
+        statement: "Every tests/oracle/*/ directory is declared exactly once: a vector oracle maps to the codec/profile rows its pinned reference values decide; an authority or profile input maps to no row. Oracle bytes are the evidence of those rows and are bound by their owners, not here.",
         spec_anchor: "1. Exact compatibility-critical vectors.",
     },
     Rule {
         id: "registered-cases",
         layer: "focused",
-        statement: "Every case of tests/conformance/cases/registry.json maps to the case-label and layer rows that name it as a candidate, and must be the case owner of at least one of them.",
+        statement: "The record binds the ids of the cases in tests/conformance/cases/registry.json. Each maps to the current case-label and layer:focused:* rows that name it as a candidate, and must be the case owner of at least one of them.",
         spec_anchor: "2. Focused scene documents with official SVG/PNG evidence.",
     },
     Rule {
         id: "representative-candidates",
         layer: "representative",
-        statement: "Every entry of tests/conformance/candidates/registry.json maps to its coverage rows, each owned by the representative owner bound to that entry. Unregistered candidate directories are excluded and listed.",
+        statement: "Checked by rule, never bound: tests/conformance/candidates/registry.json holds exactly one entry; it covers interaction:frames-text-assets, and each of its coverage rows is owned by the representative owner bound to that entry, which validates. Every other candidates/* directory is a superseded or unregistered collection, excluded by rule.",
         spec_anchor: "3. Representative licensed or project-authored scene documents.",
     },
     Rule {
         id: "representative-cases",
         layer: "representative",
-        statement: "Every #84 case of tests/conformance/cases/representative/registry.json is checked here as tools/representative-intake/case.py checks it: its case.json is approved on a #85 comment binding its subject (case.py's subject computation), its retained-file inventory and intake manifest digest are current, the intake's sanitization retained_sha256 is the retained scene's digest, a license is present, and it has comparisons and at least one anchored crop besides whole. Unreferenced intake bundles and tests/public-scenes entries are excluded and listed.",
+        statement: "Every #84 case of tests/conformance/cases/representative/registry.json is checked here as tools/representative-intake/case.py checks it: its case.json is approved on a #85 comment binding its subject (case.py's subject computation), its retained-file inventory and intake manifest digest are current, the intake's sanitization retained_sha256 is the retained scene's digest, a license is present, and it has comparisons and at least one anchored crop besides whole. Unreferenced intake bundles and tests/public-scenes entries are excluded by rule.",
         spec_anchor: "External scenes require consent or redistribution-compatible licensing and are",
     },
     Rule {
         id: "adversarial-targets",
         layer: "adversarial",
-        statement: "Fuzz and property targets are crates/*/src/**/*_fuzz* (a module file or directory, outermost match), crates/*/tests/*_fuzz* and crates/*/tests/limits_* (a test binary with its module directory), and crates/*/{src,tests}/**/frame_batch_property. Each maps to exactly the row layer:adversarial:<name with - for _>, and records the REQUIRED_RISKS it declares.",
+        statement: "Fuzz and property targets are crates/*/src/**/*_fuzz* (a module file or directory, outermost match), crates/*/tests/*_fuzz* and crates/*/tests/limits_* (a test binary with its module directory), and crates/*/{src,tests}/**/frame_batch_property. Each maps to exactly the row layer:adversarial:<name with - for _>. The record binds each target and the REQUIRED_RISKS it declares, not its source bytes.",
         spec_anchor: "4. Adversarial and resource-boundary scene documents.",
     },
     Rule {
@@ -98,7 +95,7 @@ pub(super) const RULES: &[Rule] = &[
     Rule {
         id: "no-orphan-layer-rows",
         layer: "all",
-        statement: "Every catalog row layer:<layer>:* is referenced by an item of its own layer; closure rows are never mapped.",
+        statement: "At verification, every current catalog row layer:<layer>:* is referenced by an item of its own layer, every mapped row exists, and closure rows are never mapped.",
         spec_anchor: "The conformance corpus has five layers:",
     },
     Rule {
@@ -109,28 +106,8 @@ pub(super) const RULES: &[Rule] = &[
     },
 ];
 
-/// The catalog rows the record maps into, and the catalog digest the ledger binds.
-pub(super) struct CatalogRows {
-    pub sha256: String,
-    pub rows: BTreeMap<String, (String, Vec<String>)>,
-}
-
-impl CatalogRows {
-    pub(super) fn of(view: &LedgerView) -> Result<Self, String> {
-        Ok(Self {
-            sha256: view.catalog_sha256()?,
-            rows: view
-                .rows()
-                .map(|r| {
-                    (
-                        r.id.to_owned(),
-                        (r.category.to_owned(), r.candidates.to_vec()),
-                    )
-                })
-                .collect(),
-        })
-    }
-}
+/// Catalog rows by id: (category, candidates).
+type CatalogRows = BTreeMap<String, (String, Vec<String>)>;
 
 fn text(repo: &Repo, path: &str) -> Result<String, String> {
     String::from_utf8(repo.read(path)?).map_err(|_| format!("{path} is not UTF-8"))
@@ -140,8 +117,8 @@ fn source(repo: &Repo, path: &str) -> Result<Value, String> {
     Ok(json!({"path":path,"sha256":sha256(&repo.read(path)?)}))
 }
 
-/// The ten (or however many) families of the spec's exact-vector sentence.
-pub(super) fn spec_families(spec: &str) -> Result<Vec<String>, String> {
+/// The spec's exact-vector sentence (whitespace-normalized) and its families.
+pub(super) fn spec_families(spec: &str) -> Result<(String, Vec<String>), String> {
     let start = spec
         .find(FAMILY_SENTENCE)
         .ok_or("the spec has no exact-vector sentence")?
@@ -161,7 +138,7 @@ pub(super) fn spec_families(spec: &str) -> Result<Vec<String>, String> {
     {
         return Err("the exact-vector sentence has an empty or repeated family".into());
     }
-    Ok(families)
+    Ok((format!("{FAMILY_SENTENCE}{sentence}."), families))
 }
 
 /// Expand row selectors against the catalog: every row exists, no closure
@@ -178,12 +155,11 @@ fn expand(selectors: &Value, catalog: &CatalogRows, item: &str) -> Result<Vec<St
             .ok_or_else(|| format!("{item}: row selectors are strings"))?;
         let matched: Vec<String> = match selector.strip_suffix(":*") {
             Some(prefix) => catalog
-                .rows
                 .keys()
                 .filter(|id| id.starts_with(&format!("{prefix}:")))
                 .cloned()
                 .collect(),
-            None if catalog.rows.contains_key(selector) => vec![selector.to_owned()],
+            None if catalog.contains_key(selector) => vec![selector.to_owned()],
             None => Vec::new(),
         };
         if matched.is_empty() {
@@ -462,8 +438,8 @@ fn byte_descriptor(bytes: &[u8]) -> Value {
 }
 
 /// One #84 case, checked as case.py checks it offline, plus the five-layer
-/// requirements. Returns its record entry and intake bundle directory.
-fn representative_case(repo: &Repo, entry: &Value) -> Result<(Value, String), String> {
+/// requirements. Returns its record entry.
+fn representative_case(repo: &Repo, entry: &Value) -> Result<Value, String> {
     let id = string(entry, "case_id")?;
     let dir = string(entry, "path")?;
     let fail = |problem: &str| format!("#84 case {id}: {problem}");
@@ -568,13 +544,12 @@ fn representative_case(repo: &Repo, entry: &Value) -> Result<(Value, String), St
         return Err(fail("case.json is not approved"));
     }
     verify_approval_for_issue(approval, &subject, "85").map_err(|e| fail(&e))?;
-    Ok((
+    Ok(
         json!({"case":id,"path":dir,"case_sha256":sha256(&case_bytes),
             "subject_sha256":format!("sha256:{subject}"),"approval_url":approval["approval_url"],
             "intake":{"path":bundle,"manifest_sha256":sha256(&manifest_bytes),"scene_sha256":scene,"license":license},
             "comparisons":comparisons,"crops":crops}),
-        bundle.to_owned(),
-    ))
+    )
 }
 
 fn exact_keys(value: &Value, keys: &[&str], item: &str) -> Result<(), String> {
@@ -626,14 +601,12 @@ fn declared<'a>(
     Ok(items)
 }
 
-/// Build the record from the repository, the catalog and the authored
-/// declarations. Structural failures (an undeclared corpus or oracle, a target
-/// or corpus without its row, an orphan layer row, a failing #84 case) refuse.
-pub(super) fn build_record(
-    repo: &Repo,
-    catalog: &CatalogRows,
-    declarations: &Value,
-) -> Result<Value, String> {
+/// Build the record from the repository and the authored declarations alone.
+/// It reads neither the ownership catalog nor the ledger, so catalog, spec and
+/// representative-successor churn never makes it stale. Structural failures
+/// (an undeclared corpus or oracle, a changed family sentence, a failing #84
+/// case) refuse.
+pub(super) fn build_record(repo: &Repo, declarations: &Value) -> Result<Value, String> {
     exact_keys(
         declarations,
         &[
@@ -650,20 +623,15 @@ pub(super) fn build_record(
             return Err(format!("stale spec anchor: {}", rule.spec_anchor));
         }
     }
-    let mut referenced: BTreeSet<String> = BTreeSet::new();
 
-    // Layer 1: exact vectors.
-    let families = spec_families(&spec)?;
-    let mut family_items = Vec::new();
+    // Layer 1: exact vectors. Rows are selectors, expanded at verification.
+    let (sentence, families) = spec_families(&spec)?;
     for (item, family) in declared(declarations, "vector_families", "family", &families)?
         .into_iter()
         .zip(&families)
     {
         exact_keys(item, &["family", "rows", "rationale"], family)?;
         rationale(item, family)?;
-        let rows = expand(&item["rows"], catalog, family)?;
-        referenced.extend(rows.iter().cloned());
-        family_items.push(json!({"family":family,"rows":rows}));
     }
     let domain_names: Vec<String> = declarations["vector_domains"]
         .as_array()
@@ -674,7 +642,6 @@ pub(super) fn build_record(
     if domain_names.windows(2).any(|w| w[0] >= w[1]) || domain_names.iter().any(|d| d.is_empty()) {
         return Err("declarations.vector_domains must be named and sorted".into());
     }
-    let mut domain_items = Vec::new();
     for item in declared(declarations, "vector_domains", "domain", &domain_names)? {
         let domain = string(item, "domain")?;
         exact_keys(
@@ -687,9 +654,6 @@ pub(super) fn build_record(
         if anchor.trim().is_empty() || !spec.contains(anchor) {
             return Err(format!("stale spec anchor: {anchor}"));
         }
-        let rows = expand(&item["rows"], catalog, domain)?;
-        referenced.extend(rows.iter().cloned());
-        domain_items.push(json!({"domain":domain,"spec_anchor":anchor,"rows":rows}));
     }
     let discovered = corpora(repo)?;
     let paths: Vec<String> = discovered.iter().map(|c| c.0.clone()).collect();
@@ -700,151 +664,56 @@ pub(super) fn build_record(
     {
         exact_keys(item, &["path", "rows", "rationale"], path)?;
         rationale(item, path)?;
-        let rows = expand(&item["rows"], catalog, path)?;
-        referenced.extend(rows.iter().cloned());
-        corpus_items.push(json!({"path":path,"kind":kind,"tree":tree(repo, files)?,"rows":rows}));
+        corpus_items.push(json!({"path":path,"kind":kind,"tree":tree(repo, files)?}));
     }
     let oracle_dirs: Vec<String> = dirs(repo, ORACLE_ROOT)?
         .into_iter()
         .map(|d| format!("{ORACLE_ROOT}/{d}"))
         .collect();
-    let mut oracle_items = Vec::new();
     for (item, dir) in declared(declarations, "oracles", "directory", &oracle_dirs)?
         .into_iter()
         .zip(&oracle_dirs)
     {
         rationale(item, dir)?;
-        let class = string(item, "class")?;
-        let rows = match class {
-            "vector" => {
-                exact_keys(item, &["directory", "class", "rows", "rationale"], dir)?;
-                expand(&item["rows"], catalog, dir)?
-            }
-            "authority" | "profile" => {
-                exact_keys(item, &["directory", "class", "rationale"], dir)?;
-                Vec::new()
-            }
+        match string(item, "class")? {
+            "vector" => exact_keys(item, &["directory", "class", "rows", "rationale"], dir)?,
+            "authority" | "profile" => exact_keys(item, &["directory", "class", "rationale"], dir)?,
             other => return Err(format!("{dir}: unknown oracle class {other}")),
-        };
-        referenced.extend(rows.iter().cloned());
-        oracle_items.push(
-            json!({"directory":dir,"class":class,"tree":tree(repo, &repo.list(dir)?)?,"rows":rows}),
-        );
+        }
     }
 
-    // Layer 2: registered cases.
+    // Layer 2: registered cases, by id.
     let registry: Value = parse(&repo.read(REGISTRY)?)?;
-    let mut case_items = Vec::new();
-    for case in array(&registry, "cases")? {
-        let id = string(case, "id")?;
-        let rows: Vec<String> = catalog
-            .rows
-            .iter()
-            .filter(|(_, (category, candidates))| {
-                matches!(category.as_str(), "case-label" | "layer")
-                    && candidates.iter().any(|c| c == id)
-            })
-            .map(|(row, _)| row.clone())
-            .collect();
-        if let Some(bad) = rows
-            .iter()
-            .find(|r| r.starts_with("layer:") && !r.starts_with("layer:focused:"))
-        {
-            return Err(format!(
-                "case {id}: layer row {bad} is not a focused-layer row"
-            ));
-        }
-        referenced.extend(rows.iter().cloned());
-        case_items.push(json!({"case":id,"layer":case["layer"],"rows":rows}));
-    }
+    let cases = array(&registry, "cases")?
+        .iter()
+        .map(|case| string(case, "id").map(str::to_owned))
+        .collect::<Result<Vec<_>, _>>()?;
 
-    // Layer 3: representative candidates and #84 cases.
-    let candidates: Value = parse(&repo.read(CANDIDATE_REGISTRY)?)?;
-    if candidates["schema"] != "excalidraw-render/representative-corpus-adapter/v1" {
-        return Err("invalid candidate registry schema".into());
-    }
-    let mut candidate_items = Vec::new();
-    let mut registered_dirs = BTreeSet::new();
-    for entry in array(&candidates, "cases")? {
-        let id = string(entry, "id")?;
-        let directory = string(entry, "directory")?;
-        registered_dirs.insert(directory.to_owned());
-        let rows: Vec<String> = array(entry, "coverage")?
-            .iter()
-            .map(|r| {
-                r.as_str()
-                    .map(str::to_owned)
-                    .ok_or("coverage rows are strings")
-            })
-            .collect::<Result<_, _>>()?;
-        if rows.is_empty()
-            || rows.iter().any(|r| {
-                !catalog.rows.contains_key(r)
-                    || r.starts_with("closure:")
-                    || r.starts_with("layer:")
-            })
-        {
-            return Err(format!(
-                "candidate {id}: coverage must name catalog interaction rows"
-            ));
-        }
-        candidate_items.push(json!({"case":id,"directory":directory,"rows":rows}));
-    }
-    let excluded_candidates: Vec<String> = dirs(repo, CANDIDATE_ROOT)?
-        .into_iter()
-        .map(|d| format!("{CANDIDATE_ROOT}/{d}"))
-        .filter(|d| !registered_dirs.contains(d))
-        .collect();
+    // Layer 3: the #84 cases. Candidates are checked by rule at verification.
     let representative: Value = parse(&repo.read(CASE_REGISTRY)?)?;
     if representative["schema"] != "excalidraw-render/representative-case-registry/v1" {
         return Err("invalid representative case registry schema".into());
     }
-    let mut representative_items = Vec::new();
-    let mut bundles = BTreeSet::new();
-    for entry in array(&representative, "cases")? {
-        let (item, bundle) = representative_case(repo, entry)?;
-        representative_items.push(item);
-        bundles.insert(bundle);
-    }
-    let excluded_intake: Vec<String> = dirs(repo, INTAKE_ROOT)?
-        .into_iter()
-        .map(|d| format!("{INTAKE_ROOT}/{d}"))
-        .filter(|d| !bundles.contains(d))
-        .collect();
-    let public_scenes: Vec<String> = repo
-        .children(PUBLIC_SCENES)?
-        .into_iter()
-        .map(|(name, _)| format!("{PUBLIC_SCENES}/{name}"))
-        .collect();
+    let representative_items = array(&representative, "cases")?
+        .iter()
+        .map(|entry| representative_case(repo, entry))
+        .collect::<Result<Vec<_>, _>>()?;
 
-    // Layer 4: adversarial targets.
+    // Layer 4: adversarial targets and their declared risks.
     let mut target_items = Vec::new();
-    let mut target_rows = BTreeSet::new();
     for (target, files) in targets(repo)? {
         let name = target
             .rsplit('/')
             .next()
             .unwrap_or_default()
             .replace('_', "-");
-        let row = format!("layer:adversarial:{name}");
-        if !catalog.rows.contains_key(&row) {
-            return Err(format!(
-                "adversarial target {target} has no catalog row {row}"
-            ));
-        }
-        if !target_rows.insert(row.clone()) {
-            return Err(format!("more than one adversarial target maps to {row}"));
-        }
         let sources = files
             .iter()
             .filter(|f| f.ends_with(".rs"))
             .map(|f| Ok((f.clone(), text(repo, f)?)))
             .collect::<Result<Vec<_>, String>>()?;
         let risks = required_risks(&sources).map_err(|e| format!("{target}: {e}"))?;
-        referenced.insert(row.clone());
-        target_items.push(
-            json!({"target":target,"tree":tree(repo, &files)?,"row":row,"required_risks":risks}),
-        );
+        target_items.push(json!({"target":target,"row":format!("layer:adversarial:{name}"),"required_risks":risks}));
     }
 
     // Layer 5: regression corpora.
@@ -856,10 +725,6 @@ pub(super) fn build_record(
                 continue;
             };
             let path = format!("{dir}/{name}");
-            let row = format!("layer:regression:{stem}");
-            if !catalog.rows.contains_key(&row) {
-                return Err(format!("regression corpus {path} has no catalog row {row}"));
-            }
             let bytes = repo.read(&path)?;
             let corpus: Value = parse(&bytes)?;
             let ids = |member: &str| -> Result<Vec<String>, String> {
@@ -885,24 +750,11 @@ pub(super) fn build_record(
                 .iter()
                 .filter_map(|c| c["risk"].as_str())
                 .collect();
-            referenced.insert(row.clone());
             regression_items.push(
                 json!({"path":path,"sha256":sha256(&bytes),"byte_length":bytes.len(),
-                "row":row,"case_ids":case_ids,"public_facade_case_ids":public,"risks":risks}),
+                "row":format!("layer:regression:{stem}"),"case_ids":case_ids,"public_facade_case_ids":public,"risks":risks}),
             );
         }
-    }
-
-    // No orphan layer rows.
-    let orphans: Vec<&String> = catalog
-        .rows
-        .keys()
-        .filter(|id| id.starts_with("layer:") && !referenced.contains(*id))
-        .collect();
-    if !orphans.is_empty() {
-        return Err(format!(
-            "orphan layer row(s) no item references: {orphans:?}"
-        ));
     }
 
     Ok(json!({
@@ -911,36 +763,39 @@ pub(super) fn build_record(
         "obligation": "closure:all-five-layers",
         "approving_issue": 85,
         "implementation": source(repo, IMPLEMENTATION)?,
-        "spec": source(repo, SPEC)?,
-        "ledger": {"path": LEDGER, "catalog_sha256": catalog.sha256},
+        "spec": {"path": SPEC, "family_sentence": sentence},
         "rules": RULES.iter().map(|r| json!({"id":r.id,"layer":r.layer,"statement":r.statement,"spec_anchor":r.spec_anchor})).collect::<Vec<_>>(),
         "declarations": declarations,
-        "vector": {"families": family_items, "domains": domain_items, "corpora": corpus_items, "oracles": oracle_items},
-        "focused": {"registry": source(repo, REGISTRY)?, "cases": case_items},
-        "representative": {
-            "candidate_registry": source(repo, CANDIDATE_REGISTRY)?,
-            "candidates": candidate_items,
-            "case_registry": source(repo, CASE_REGISTRY)?,
-            "cases": representative_items,
-            "excluded": {"candidate_directories": excluded_candidates, "intake_bundles": excluded_intake, "public_scenes": public_scenes},
-        },
+        "vector": {"corpora": corpus_items},
+        "focused": {"cases": cases},
+        "representative": {"cases": representative_items},
         "adversarial": {"targets": target_items},
         "regression": {"corpora": regression_items},
         "approval": Value::Null,
     }))
 }
 
-fn rows_of(item: &Value) -> Vec<&str> {
-    item["rows"]
-        .as_array()
-        .map(|rows| rows.iter().filter_map(Value::as_str).collect())
-        .unwrap_or_default()
+fn catalog_rows(view: &LedgerView) -> BTreeMap<String, (String, Vec<String>)> {
+    view.rows()
+        .map(|r| {
+            (
+                r.id.to_owned(),
+                (r.category.to_owned(), r.candidates.to_vec()),
+            )
+        })
+        .collect()
 }
 
-/// Every completeness problem of a structurally current record, in record
-/// order. An empty list is complete.
-pub(super) fn completeness(record: &Value, view: &LedgerView) -> Vec<String> {
+/// Every completeness problem of a structurally current record against the
+/// current catalog, ledger and candidate registry, in record order. An empty
+/// list is complete.
+pub(super) fn completeness(record: &Value, repo: &Repo, view: &LedgerView) -> Vec<String> {
     let mut problems = Vec::new();
+    if let Err(e) = view.catalog_sha256() {
+        problems.push(format!("ledger: {e}"));
+    }
+    let catalog = catalog_rows(view);
+    let mut referenced: BTreeSet<String> = BTreeSet::new();
     let owner = |item: &str, row: &str, problems: &mut Vec<String>| match view.owner(row) {
         Ok(owner) => owner,
         Err(e) => {
@@ -948,21 +803,31 @@ pub(super) fn completeness(record: &Value, view: &LedgerView) -> Vec<String> {
             None
         }
     };
-    let vector = &record["vector"];
+
+    // Layer 1: every declared vector item's selectors expand to existing rows,
+    // at least one owned, every mapped layer row owned.
+    let declarations = &record["declarations"];
     for (section, key) in [
-        ("families", "family"),
-        ("domains", "domain"),
-        ("corpora", "path"),
+        ("vector_families", "family"),
+        ("vector_domains", "domain"),
+        ("vector_corpora", "path"),
         ("oracles", "directory"),
     ] {
-        for item in vector[section].as_array().into_iter().flatten() {
+        for item in declarations[section].as_array().into_iter().flatten() {
             let name = format!("vector {}", item[key].as_str().unwrap_or_default());
-            let rows = rows_of(item);
-            if rows.is_empty() {
+            if item.get("rows").is_none() {
                 continue; // an authority or profile input
             }
+            let rows = match expand(&item["rows"], &catalog, &name) {
+                Ok(rows) => rows,
+                Err(e) => {
+                    problems.push(e);
+                    continue;
+                }
+            };
+            referenced.extend(rows.iter().cloned());
             let mut owned = 0;
-            for row in rows {
+            for row in &rows {
                 match owner(&name, row, &mut problems) {
                     Some(_) => owned += 1,
                     None if row.starts_with("layer:") => {
@@ -976,35 +841,64 @@ pub(super) fn completeness(record: &Value, view: &LedgerView) -> Vec<String> {
             }
         }
     }
-    for item in record["focused"]["cases"].as_array().into_iter().flatten() {
-        let case = item["case"].as_str().unwrap_or_default();
+
+    // Layer 2: each registered case owns one of the rows naming it.
+    for case in record["focused"]["cases"].as_array().into_iter().flatten() {
+        let case = case.as_str().unwrap_or_default();
         let name = format!("registered case {case}");
+        let rows: Vec<&String> = catalog
+            .iter()
+            .filter(|(_, (category, candidates))| {
+                matches!(category.as_str(), "case-label" | "layer")
+                    && candidates.iter().any(|c| c == case)
+            })
+            .map(|(row, _)| row)
+            .collect();
         let mut owns = false;
-        for row in rows_of(item) {
+        for row in &rows {
+            if row.starts_with("layer:") && !row.starts_with("layer:focused:") {
+                problems.push(format!(
+                    "{name}: layer row {row} is not a focused-layer row"
+                ));
+            }
+            referenced.insert((*row).clone());
             owns |= owner(&name, row, &mut problems) == Some(PrimaryOwner::Case(case.into()));
         }
         if !owns {
             problems.push(format!(
-                "{name} is the case owner of none of its rows {:?}",
-                rows_of(item)
+                "{name} is the case owner of none of its rows {rows:?}"
             ));
         }
     }
-    for item in record["representative"]["candidates"]
-        .as_array()
-        .into_iter()
-        .flatten()
-    {
-        let case = item["case"].as_str().unwrap_or_default();
-        let name = format!("representative candidate {case}");
-        for row in rows_of(item) {
-            if owner(&name, row, &mut problems) != Some(PrimaryOwner::Representative(case.into())) {
-                problems.push(format!(
-                    "{name}: {row} is not owned by its representative binding"
-                ));
+
+    // Layer 3: exactly one registered candidate, the one the representative
+    // owner binds; every other candidates/* directory is excluded by rule.
+    match representative_candidate(repo) {
+        Ok((case, rows)) => {
+            let name = format!("representative candidate {case}");
+            if !rows.iter().any(|r| r == REPRESENTATIVE_ROW) {
+                problems.push(format!("{name} does not cover {REPRESENTATIVE_ROW}"));
+            }
+            for row in &rows {
+                if !catalog.contains_key(row)
+                    || row.starts_with("closure:")
+                    || row.starts_with("layer:")
+                {
+                    problems.push(format!("{name}: {row} is not a catalog interaction row"));
+                } else if owner(&name, row, &mut problems)
+                    != Some(PrimaryOwner::Representative(case.clone()))
+                {
+                    problems.push(format!(
+                        "{name}: {row} is not owned by the representative binding of this entry"
+                    ));
+                }
             }
         }
+        Err(e) => problems.push(format!("representative candidates: {e}")),
     }
+
+    // Layers 4 and 5: each target and corpus row exists, once, and is owned.
+    let mut rows_seen = BTreeSet::new();
     for (section, list, key) in [
         ("adversarial", "targets", "target"),
         ("regression", "corpora", "path"),
@@ -1012,11 +906,50 @@ pub(super) fn completeness(record: &Value, view: &LedgerView) -> Vec<String> {
         for item in record[section][list].as_array().into_iter().flatten() {
             let name = format!("{section} {}", item[key].as_str().unwrap_or_default());
             let row = item["row"].as_str().unwrap_or_default();
+            if !catalog.contains_key(row) {
+                problems.push(format!("{name} has no catalog row {row}"));
+                continue;
+            }
+            if !rows_seen.insert(row) {
+                problems.push(format!("{name}: more than one item maps to {row}"));
+            }
+            referenced.insert(row.to_owned());
             if owner(&name, row, &mut problems).is_none() {
                 problems.push(format!("{name}: {row} has no primary owner"));
             }
         }
     }
+
+    // No orphan layer rows.
+    let orphans: Vec<&String> = catalog
+        .keys()
+        .filter(|id| id.starts_with("layer:") && !referenced.contains(*id))
+        .collect();
+    if !orphans.is_empty() {
+        problems.push(format!(
+            "orphan layer row(s) no item references: {orphans:?}"
+        ));
+    }
     problems.dedup();
     problems
+}
+
+/// The candidate registry's single representative entry: (case, coverage).
+fn representative_candidate(repo: &Repo) -> Result<(String, Vec<String>), String> {
+    let registry: Value = parse(&repo.read(CANDIDATE_REGISTRY)?)?;
+    if registry["schema"] != "excalidraw-render/representative-corpus-adapter/v1" {
+        return Err("invalid candidate registry schema".into());
+    }
+    let [entry] = array(&registry, "cases")?.as_slice() else {
+        return Err("the candidate registry must hold exactly one representative entry".into());
+    };
+    let rows = array(entry, "coverage")?
+        .iter()
+        .map(|r| {
+            r.as_str()
+                .map(str::to_owned)
+                .ok_or("coverage rows are strings")
+        })
+        .collect::<Result<_, _>>()?;
+    Ok((string(entry, "id")?.to_owned(), rows))
 }

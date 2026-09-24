@@ -10,7 +10,7 @@ use super::*;
 use crate::conformance::verify_approval_for_issue;
 
 mod derive;
-use derive::{build_record, completeness, CatalogRows};
+use derive::{build_record, completeness};
 
 pub(super) const RECORD: &str = "tests/conformance/coverage/layers.json";
 pub(super) const SCHEMA: &str = "excalidraw-render/five-layers/v1";
@@ -32,7 +32,7 @@ fn subject_of(record: &Value) -> Result<String, String> {
 }
 
 /// The structural checks: canonical bytes, identity and exact rebuild.
-fn current_record(repo: &Repo, view: &LedgerView) -> Result<Value, String> {
+fn current_record(repo: &Repo) -> Result<Value, String> {
     let bytes = repo.read(RECORD)?;
     let record: Value = parse(&bytes)?;
     if bytes != record_bytes(&record)? {
@@ -45,7 +45,7 @@ fn current_record(repo: &Repo, view: &LedgerView) -> Result<Value, String> {
     {
         return Err("invalid layers record identity".into());
     }
-    let mut rebuilt = build_record(repo, &CatalogRows::of(view)?, &record["declarations"])?;
+    let mut rebuilt = build_record(repo, &record["declarations"])?;
     rebuilt["approval"] = record["approval"].clone();
     if rebuilt != record {
         return Err(
@@ -58,8 +58,8 @@ fn current_record(repo: &Repo, view: &LedgerView) -> Result<Value, String> {
 
 /// Every check: structure, completeness against `view`, then the approval.
 fn verify_record(repo: &Repo, view: &LedgerView, require_approval: bool) -> Result<Value, String> {
-    let record = current_record(repo, view)?;
-    let problems = completeness(&record, view);
+    let record = current_record(repo)?;
+    let problems = completeness(&record, repo, view);
     if !problems.is_empty() {
         return Err(format!(
             "five-layer completeness fails with {} problem(s):\n  {}",
@@ -85,8 +85,8 @@ fn existing_declarations(repo: &Repo) -> Result<Value, String> {
     Ok(record["declarations"].clone())
 }
 
-fn generate_in(repo: &Repo, view: &LedgerView) -> Result<Value, String> {
-    build_record(repo, &CatalogRows::of(view)?, &existing_declarations(repo)?)
+fn generate_in(repo: &Repo) -> Result<Value, String> {
+    build_record(repo, &existing_declarations(repo)?)
 }
 
 /// Adds the approval to a record whose subject equals `expected`.
@@ -124,13 +124,12 @@ fn count(record: &Value, pointer: &str) -> usize {
 
 fn summary(record: &Value) -> String {
     format!(
-        "{} vector families, {} vector domains, {} vector corpora, {} oracle directories, {} registered cases, {} representative candidates, {} #84 cases, {} adversarial targets, {} regression corpora",
-        count(record, "/vector/families"),
-        count(record, "/vector/domains"),
+        "{} vector families, {} vector domains, {} vector corpora, {} oracle directories, {} registered cases, {} #84 cases, {} adversarial targets, {} regression corpora",
+        count(record, "/declarations/vector_families"),
+        count(record, "/declarations/vector_domains"),
         count(record, "/vector/corpora"),
-        count(record, "/vector/oracles"),
+        count(record, "/declarations/oracles"),
         count(record, "/focused/cases"),
-        count(record, "/representative/candidates"),
         count(record, "/representative/cases"),
         count(record, "/adversarial/targets"),
         count(record, "/regression/corpora"),
@@ -140,9 +139,9 @@ fn summary(record: &Value) -> String {
 pub fn generate_layers() -> Result<(), String> {
     let repo = Repo::real();
     let view = LedgerView::load()?;
-    let record = generate_in(&repo, &view)?;
+    let record = generate_in(&repo)?;
     write_record(&record)?;
-    let problems = completeness(&record, &view);
+    let problems = completeness(&record, &repo, &view);
     println!(
         "wrote {RECORD}: {}; {} completeness problem(s); approval subject sha256:{}",
         summary(&record),
@@ -209,6 +208,8 @@ mod tests {
     const SCENE_REGRESSIONS: &str =
         "crates/excalidraw-render/tests/qualification/scene-fuzz-regressions.json";
     const VARMQ: &str = "tests/conformance/cases/representative/varmq-queue-diagram/case.json";
+    const CANDIDATES: &str = "tests/conformance/candidates/registry.json";
+    const REPRESENTATIVE_ROW: &str = "interaction:frames-text-assets";
 
     struct Fixture {
         repo: Repo,
@@ -224,8 +225,8 @@ mod tests {
             let mut view = LedgerView::load().unwrap();
             // Completeness tests never execute the representative's release
             // gate; its binding is the ledger's own concern.
-            view.clear(ownership_representative_row());
-            let record = generate_in(&repo, &view).unwrap();
+            view.clear(REPRESENTATIVE_ROW);
+            let record = generate_in(&repo).unwrap();
             repo.overrides
                 .insert(RECORD.into(), Some(record_bytes(&record).unwrap()));
             Self { repo, view, record }
@@ -240,12 +241,23 @@ mod tests {
             parse(&self.repo.read(path).unwrap()).unwrap()
         }
         fn structure(&self) -> Result<Value, String> {
-            current_record(&self.repo, &self.view)
+            current_record(&self.repo)
         }
         fn regenerate(&mut self) -> Value {
-            let record = generate_in(&self.repo, &self.view).unwrap();
+            let record = generate_in(&self.repo).unwrap();
             self.set(RECORD, record_bytes(&record).unwrap());
+            self.record = record.clone();
             record
+        }
+        fn problems(&self) -> Vec<String> {
+            completeness(&self.record, &self.repo, &self.view)
+        }
+        fn has_problem(&self, expected: &str) {
+            let problems = self.problems();
+            assert!(
+                problems.iter().any(|p| p.contains(expected)),
+                "{expected}: {problems:?}"
+            );
         }
     }
 
@@ -257,32 +269,12 @@ mod tests {
     #[test]
     fn generation_is_deterministic_canonical_and_discovers_every_layer() {
         let fixture = Fixture::new();
-        assert_eq!(
-            generate_in(&fixture.repo, &fixture.view).unwrap(),
-            fixture.record
-        );
+        assert_eq!(generate_in(&fixture.repo).unwrap(), fixture.record);
         assert_eq!(fixture.structure().unwrap(), fixture.record);
         let record = &fixture.record;
-        let families: Vec<_> = record["vector"]["families"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|f| f["family"].as_str().unwrap())
-            .collect();
         assert_eq!(
-            families,
-            [
-                "Rough.js",
-                "the qualified Perfect Freehand path",
-                "PRNG consumption",
-                "normalization",
-                "geometry",
-                "color",
-                "shaping/fallback",
-                "serialization",
-                "diagnostic order",
-                "format planning"
-            ]
+            record["spec"]["family_sentence"],
+            "Exact vectors cover Rough.js, the qualified Perfect Freehand path, PRNG consumption, normalization, geometry, color, shaping/fallback, serialization, diagnostic order, and format planning."
         );
         let targets: BTreeMap<_, _> = record["adversarial"]["targets"]
             .as_array()
@@ -301,16 +293,67 @@ mod tests {
         assert_eq!(targets.len(), 6);
         assert_eq!(count(record, "/regression/corpora"), 3);
         assert_eq!(count(record, "/representative/cases"), 3);
-        let excluded = &record["representative"]["excluded"];
-        assert!(excluded["intake_bundles"]
-            .as_array()
-            .unwrap()
-            .contains(&json!("tests/conformance/intake/velox-design-v1")));
-        // Structural checks never read the ledger's dispositions: the subject
-        // is independent of which owners are recorded.
-        let mut view = LedgerView::load().unwrap();
-        view.clear("interaction:diagnostic-order");
-        assert_eq!(generate_in(&fixture.repo, &view).unwrap(), fixture.record);
+        assert_eq!(count(record, "/focused/cases"), 37);
+    }
+
+    #[test]
+    fn successors_spec_edits_and_catalog_growth_do_not_stale_the_record() {
+        // A representative successor, as the V25 apply moves the registry,
+        // plus its collection directory and a new intake bundle and public
+        // scene, all excluded or checked by rule.
+        let mut fixture = Fixture::new();
+        let mut registry = fixture.json(CANDIDATES);
+        let entry = &mut registry["cases"][0];
+        entry["id"] = json!("representative.stage4-frames-text-assets.v26");
+        entry["directory"] = json!("tests/conformance/candidates/stage4-frames-text-assets-v26");
+        fixture.set_json(CANDIDATES, &registry);
+        for path in [
+            "tests/conformance/candidates/stage4-frames-text-assets-v26/manifest.json",
+            "tests/conformance/intake/new-bundle-v1/manifest.json",
+            "tests/public-scenes/new-scene/scene.excalidraw",
+        ] {
+            fixture.set(path, b"{}".to_vec());
+        }
+        // A spec edit outside the family sentence.
+        let spec = String::from_utf8(fixture.repo.read(derive::SPEC).unwrap()).unwrap();
+        fixture.set(
+            derive::SPEC,
+            format!("{spec}\nA later amendment.\n").into_bytes(),
+        );
+        assert_eq!(fixture.structure().unwrap(), fixture.record);
+        // The successor is judged against the ledger's representative binding.
+        fixture.has_problem(
+            "representative candidate representative.stage4-frames-text-assets.v26: interaction:frames-text-assets is not owned by the representative binding of this entry",
+        );
+        // A new catalog row under a declared selector joins its item live.
+        let mut fixture = Fixture::new();
+        let before = fixture.problems();
+        fixture
+            .view
+            .add_row("codec:png:icc:new-profile", "codec-profile", &[]);
+        assert_eq!(fixture.structure().unwrap(), fixture.record);
+        let after = fixture.problems();
+        assert!(
+            after.iter().all(|p| !p.contains("png-color")) && after.len() == before.len(),
+            "{after:?}"
+        );
+    }
+
+    #[test]
+    fn the_candidate_registry_holds_exactly_the_bound_representative() {
+        let mut fixture = Fixture::new();
+        let mut registry = fixture.json(CANDIDATES);
+        let second = registry["cases"][0].clone();
+        registry["cases"].as_array_mut().unwrap().push(second);
+        fixture.set_json(CANDIDATES, &registry);
+        fixture.has_problem("exactly one representative entry");
+        let mut fixture = Fixture::new();
+        let mut registry = fixture.json(CANDIDATES);
+        registry["cases"][0]["coverage"] = json!(["interaction:diagnostic-order"]);
+        fixture.set_json(CANDIDATES, &registry);
+        fixture.has_problem("does not cover interaction:frames-text-assets");
+        fixture
+            .has_problem("interaction:diagnostic-order is not owned by the representative binding");
     }
 
     #[test]
@@ -338,7 +381,7 @@ mod tests {
     }
 
     #[test]
-    fn a_new_case_candidate_or_intake_bundle_changes_the_record_and_needs_an_owner() {
+    fn a_new_case_changes_the_record_and_needs_an_owner() {
         let mut fixture = Fixture::new();
         let mut registry = fixture.json(REGISTRY);
         let mut case = registry["cases"][0].clone();
@@ -346,47 +389,38 @@ mod tests {
         registry["cases"].as_array_mut().unwrap().push(case);
         fixture.set_json(REGISTRY, &registry);
         fails(fixture.structure(), "does not reproduce");
-        let record = fixture.regenerate();
+        fixture.regenerate();
         fixture.structure().unwrap();
-        let problems = completeness(&record, &fixture.view);
-        assert!(
-            problems
-                .iter()
-                .any(|p| p.contains("registered case focused.unowned.v1 is the case owner of none")),
-            "{problems:?}"
-        );
-
-        let mut fixture = Fixture::new();
-        fixture.set(
-            "tests/conformance/candidates/stage4-frames-text-assets-v25/manifest.json",
-            b"{}".to_vec(),
-        );
-        fails(fixture.structure(), "does not reproduce");
-        let mut fixture = Fixture::new();
-        fixture.set(
-            "tests/conformance/intake/new-bundle-v1/manifest.json",
-            b"{}".to_vec(),
-        );
-        fails(fixture.structure(), "does not reproduce");
+        fixture.has_problem("registered case focused.unowned.v1 is the case owner of none");
     }
 
     #[test]
     fn new_fuzz_targets_risks_and_regression_ids_fail_until_regenerated() {
-        let mut fixture = Fixture::new();
-        fixture.set(
-            "crates/excalidraw-render/src/render/pdf_fuzz.rs",
-            b"#[test] fn smoke() {}".to_vec(),
-        );
-        fails(
-            fixture.structure(),
-            "has no catalog row layer:adversarial:pdf-fuzz",
-        );
-        let mut fixture = Fixture::new();
-        fixture.set(
-            "crates/excalidraw-render/tests/limits_output.rs",
-            b"#[test] fn smoke() {}".to_vec(),
-        );
-        fails(fixture.structure(), "layer:adversarial:limits-output");
+        for (path, row) in [
+            (
+                "crates/excalidraw-render/src/render/pdf_fuzz.rs",
+                "layer:adversarial:pdf-fuzz",
+            ),
+            (
+                "crates/excalidraw-render/tests/limits_output.rs",
+                "layer:adversarial:limits-output",
+            ),
+            (
+                "crates/excalidraw-render/tests/qualification/asset-fuzz-regressions.json",
+                "layer:regression:asset-fuzz",
+            ),
+        ] {
+            let mut fixture = Fixture::new();
+            let bytes = if path.ends_with(".json") {
+                b"{\"cases\":[]}".to_vec()
+            } else {
+                b"#[test] fn smoke() {}".to_vec()
+            };
+            fixture.set(path, bytes);
+            fails(fixture.structure(), "does not reproduce");
+            fixture.regenerate();
+            fixture.has_problem(&format!("has no catalog row {row}"));
+        }
 
         let mut fixture = Fixture::new();
         let source = String::from_utf8(fixture.repo.read(FONT_FUZZ).unwrap()).unwrap();
@@ -412,6 +446,10 @@ mod tests {
         let inconsistent = added.replacen("[Risk; 8]", "[Risk; 9]", 1);
         fixture.set(FONT_FUZZ, inconsistent.into_bytes());
         fails(fixture.structure(), "length or uniqueness");
+        // An edit that keeps the target and its risks is not a new record.
+        let mut fixture = Fixture::new();
+        fixture.set(FONT_FUZZ, format!("{source}\n// comment\n").into_bytes());
+        fixture.structure().unwrap();
 
         let mut fixture = Fixture::new();
         let mut corpus = fixture.json(SCENE_REGRESSIONS);
@@ -423,77 +461,67 @@ mod tests {
         corpus["cases"].as_array_mut().unwrap().push(case);
         fixture.set_json(SCENE_REGRESSIONS, &corpus);
         fails(fixture.structure(), "duplicate regression case id");
-        let mut fixture = Fixture::new();
-        fixture.set(
-            "crates/excalidraw-render/tests/qualification/asset-fuzz-regressions.json",
-            b"{\"cases\":[]}".to_vec(),
-        );
-        fails(
-            fixture.structure(),
-            "has no catalog row layer:regression:asset-fuzz",
-        );
     }
 
     #[test]
-    fn every_layer_row_is_referenced_and_owned() {
+    fn every_layer_row_is_referenced_existing_and_owned() {
         let mut fixture = Fixture::new();
         fixture.view.add_row("layer:vector:orphan", "layer", &[]);
-        fails(fixture.structure(), "orphan layer row");
+        fixture.structure().unwrap();
+        fixture.has_problem("orphan layer row(s) no item references: [\"layer:vector:orphan\"]");
 
-        // A mapped layer row without an owner, and an item with no owned row.
-        let fixture = Fixture::new();
-        let mut view = LedgerView::load().unwrap();
-        view.clear("layer:vector:rough-js");
-        view.clear("interaction:diagnostic-order");
-        let problems = completeness(&fixture.record, &view);
+        let mut fixture = Fixture::new();
+        fixture.view.clear("layer:vector:rough-js");
+        fixture.view.clear("interaction:diagnostic-order");
         for expected in [
             "vector Rough.js: layer row layer:vector:rough-js has no primary owner",
             "vector diagnostic order: no mapped row is owned",
             "adversarial crates/excalidraw-render/src/scene_fuzz: layer:adversarial:scene-fuzz has no primary owner",
             "regression crates/excalidraw-render/tests/qualification/render-fuzz-regressions.json: layer:regression:render-fuzz has no primary owner",
         ] {
-            assert!(problems.iter().any(|p| p == expected), "{expected}: {problems:?}");
+            fixture.has_problem(expected);
         }
-        view.clear(ownership_representative_row());
-        let problems = completeness(&fixture.record, &view);
-        assert!(problems.iter().any(|p| p.contains(
-            "representative candidate representative.stage4-frames-text-assets.v24: interaction:frames-text-assets is not owned"
-        )));
-        // A closure row can never answer an item.
-        let mut declarations = fixture.record["declarations"].clone();
-        declarations["vector_families"][0]["rows"] = json!(["closure:all-five-layers"]);
-        let catalog = CatalogRows::of(&fixture.view).unwrap();
-        assert!(build_record(&fixture.repo, &catalog, &declarations)
-            .unwrap_err()
-            .contains("cannot answer a vector item"));
-        declarations["vector_families"][0]["rows"] = json!(["codec:nope:*"]);
-        assert!(build_record(&fixture.repo, &catalog, &declarations)
-            .unwrap_err()
-            .contains("matches no catalog row"));
+        // Declared selectors must match current rows, never closure rows.
+        for (rows, expected) in [
+            (
+                json!(["closure:all-five-layers"]),
+                "cannot answer a vector item",
+            ),
+            (json!(["codec:nope:*"]), "matches no catalog row"),
+            (
+                json!(["layer:focused:frame-export"]),
+                "cannot answer a vector item",
+            ),
+        ] {
+            let mut fixture = Fixture::new();
+            let mut declarations = fixture.record["declarations"].clone();
+            declarations["vector_families"][0]["rows"] = rows;
+            fixture.record = build_record(&fixture.repo, &declarations).unwrap();
+            fixture.has_problem(expected);
+        }
     }
 
     #[test]
     fn recording_a_reviewed_owner_clears_exactly_its_items() {
-        let fixture = Fixture::new();
-        let mut view = LedgerView::load().unwrap();
-        view.clear(ownership_representative_row());
+        let mut fixture = Fixture::new();
         for row in [
             "layer:vector:shaping-fallback",
             "layer:vector:format-planning",
             "layer:focused:frame-export",
+            "layer:vector:color",
         ] {
-            view.clear(row);
+            fixture.view.clear(row);
         }
-        let before = completeness(&fixture.record, &view);
         for expected in [
             "vector shaping/fallback: no mapped row is owned",
             "vector format planning: no mapped row is owned",
             "registered case focused.frame-export.v1 is the case owner of none of its rows [\"layer:focused:frame-export\"]",
         ] {
-            assert!(before.iter().any(|p| p == expected), "{expected}: {before:?}");
+            fixture.has_problem(expected);
         }
+        let view = &mut fixture.view;
         view.assign_test(
-            executable_renderer(),
+            "excalidraw-render",
             "lib",
             "render::tests",
             "a_font_fallback_probe_is_one_consulted_face_per_shaped_scalar_occurrence",
@@ -501,7 +529,7 @@ mod tests {
         )
         .unwrap();
         view.assign_test(
-            executable_renderer(),
+            "excalidraw-render",
             "lib",
             "render::plan_tests",
             "png_surface_follows_the_sizing_rule",
@@ -511,32 +539,17 @@ mod tests {
         view.assign_case("focused.frame-export.v1", "layer:focused:frame-export")
             .unwrap();
         // A case may own only a layer row that names it as its one candidate.
-        view.clear("layer:vector:color");
         view.assign_case("focused.frame-export.v1", "layer:vector:color")
             .unwrap();
         assert!(view.owner("layer:vector:color").is_err());
-        let after = completeness(&fixture.record, &view);
+        let after = fixture.problems();
         assert!(
             after.iter().all(|p| !p.contains("shaping/fallback")
                 && !p.contains("format planning")
                 && !p.contains("focused.frame-export.v1")),
             "{after:?}"
         );
-        assert!(
-            after
-                .iter()
-                .any(|p| p
-                    .contains("vector color: layer:vector:color: case owner does not establish")),
-            "{after:?}"
-        );
-    }
-
-    fn executable_renderer() -> &'static str {
-        "excalidraw-render"
-    }
-
-    fn ownership_representative_row() -> &'static str {
-        "interaction:frames-text-assets"
+        fixture.has_problem("vector color: layer:vector:color: case owner does not establish");
     }
 
     #[test]
@@ -576,20 +589,28 @@ mod tests {
             "intake bundle changed",
         );
 
-        // Sanitization: a retained digest that is not the retained scene's,
-        // with the case rebound to the changed manifest.
-        let mut fixture = Fixture::new();
         let bundle = "tests/conformance/intake/varmq-queue-diagram-v1";
-        let mut manifest = fixture.json(&format!("{bundle}/manifest.json"));
+        let manifest_path = format!("{bundle}/manifest.json");
+        let rebind = |fixture: &mut Fixture, manifest: &Value| {
+            let bytes = serde_json::to_vec_pretty(manifest).unwrap();
+            let mut case = fixture.json(VARMQ);
+            case["intake"]["bytes"] = json!(bytes.len());
+            case["intake"]["sha256"] = json!(sha256(&bytes));
+            fixture.set(&manifest_path, bytes);
+            fixture.set_json(VARMQ, &case);
+        };
+        // Sanitization: a retained digest that is not the retained scene's.
+        let mut fixture = Fixture::new();
+        let mut manifest = fixture.json(&manifest_path);
         manifest["sanitization"]["retained_sha256"] = json!("0".repeat(64));
-        let bytes = serde_json::to_vec_pretty(&manifest).unwrap();
-        let mut case = fixture.json(VARMQ);
-        case["intake"]["bytes"] = json!(bytes.len());
-        case["intake"]["sha256"] = json!(sha256(&bytes));
-        fixture.set(&format!("{bundle}/manifest.json"), bytes);
-        fixture.set_json(VARMQ, &case);
+        rebind(&mut fixture, &manifest);
         fails(fixture.structure(), "sanitization retained_sha256");
-
+        // License: an empty SPDX value.
+        let mut fixture = Fixture::new();
+        let mut manifest = fixture.json(&manifest_path);
+        manifest["license"] = json!(" ");
+        rebind(&mut fixture, &manifest);
+        fails(fixture.structure(), "no license");
         // Crops: only the whole-scene judgment left.
         let mut fixture = Fixture::new();
         let plan_path = format!("{bundle}/plan.json");
@@ -599,19 +620,12 @@ mod tests {
             .unwrap()
             .retain(|r| r["id"] == "whole");
         fixture.set_json(&plan_path, &plan);
-        let mut manifest = fixture.json(&format!("{bundle}/manifest.json"));
-        manifest["files"]["plan.json"] = derive_descriptor(&fixture.repo.read(&plan_path).unwrap());
-        let bytes = serde_json::to_vec_pretty(&manifest).unwrap();
-        let mut case = fixture.json(VARMQ);
-        case["intake"]["bytes"] = json!(bytes.len());
-        case["intake"]["sha256"] = json!(sha256(&bytes));
-        fixture.set(&format!("{bundle}/manifest.json"), bytes);
-        fixture.set_json(VARMQ, &case);
+        let plan_bytes = fixture.repo.read(&plan_path).unwrap();
+        let mut manifest = fixture.json(&manifest_path);
+        manifest["files"]["plan.json"] =
+            json!({"bytes":plan_bytes.len(),"sha256":sha256(&plan_bytes)});
+        rebind(&mut fixture, &manifest);
         fails(fixture.structure(), "at least one anchored crop");
-    }
-
-    fn derive_descriptor(bytes: &[u8]) -> Value {
-        json!({"bytes":bytes.len(),"sha256":sha256(bytes)})
     }
 
     #[test]
@@ -652,10 +666,15 @@ mod tests {
     }
 
     #[test]
-    fn spec_families_follow_the_sentence() {
+    fn the_family_sentence_is_bound_and_parsed() {
         let spec = "x\nExact vectors cover Rough.js, the qualified\nPerfect Freehand path, and format planning. Next.";
+        let (sentence, families) = derive::spec_families(spec).unwrap();
         assert_eq!(
-            derive::spec_families(spec).unwrap(),
+            sentence,
+            "Exact vectors cover Rough.js, the qualified Perfect Freehand path, and format planning."
+        );
+        assert_eq!(
+            families,
             [
                 "Rough.js",
                 "the qualified Perfect Freehand path",
@@ -674,6 +693,18 @@ mod tests {
             .into_bytes(),
         );
         fails(fixture.structure(), "declarations.vector_families");
+        // A reflowed but identical sentence is the same binding.
+        let mut fixture = Fixture::new();
+        fixture.set(
+            derive::SPEC,
+            spec.replacen(
+                "the qualified Perfect Freehand path, PRNG",
+                "the qualified Perfect\nFreehand path, PRNG",
+                1,
+            )
+            .into_bytes(),
+        );
+        assert_eq!(fixture.structure().unwrap(), fixture.record);
     }
 
     #[test]
