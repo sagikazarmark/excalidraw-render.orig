@@ -176,6 +176,19 @@ manifest bytes; the consistency command additionally verifies case approvals.
 These are label-level ownership decisions only, not proof that a chosen scene
 covers every diagnostic/format/profile obligation introduced by this ledger.
 
+### Five-layer rows
+
+The `layer` policy category adds 21 `layer:*` rows, all #85 gaps until their
+owners in `tests/conformance/proposals/layer-owner-tranche.json` are applied.
+These are 11 `layer:vector:*`, one `layer:focused:*`, six `layer:adversarial:*`
+and three `layer:regression:*` rows. `layer:vector:geometry`, `color`,
+`shaping-fallback` and `format-planning` cover spec families that no owned row
+pinned by exact values. A `layer` row may name registered candidate cases;
+`record-case-owner` assigns only a row whose single candidate is the case.
+`layers.json` maps every layer item to these rows and to existing rows such as
+`interaction:diagnostic-order` and `codec:*`. It is the record owner of
+`closure:all-five-layers`; see [README.md](README.md#five-layer-integration-closureall-five-layers).
+
 ## Commands and checks
 
 ```sh
@@ -191,6 +204,9 @@ cargo run --locked -p xtask -- conformance record-library-test-owner MODULE FUNC
 cargo run --locked -p xtask -- conformance refresh-library-test-owner-source MODULE
 # Own a closure row with its approved judgment record (ADR-0015):
 cargo run --locked -p xtask -- conformance record-closure-owner closure:pdf-judgments pdf-judgments RATIONALE
+cargo run --locked -p xtask -- conformance record-closure-owner closure:all-five-layers layers RATIONALE
+# Own a `layer:*` row with the registered case that is its single candidate:
+cargo run --locked -p xtask -- conformance record-case-owner CASE RATIONALE ID...
 # Capture the old catalog before editing inventory inputs, then extend only:
 # cargo run --locked -p xtask -- conformance ownership-catalog > target/old-catalog.json
 cargo run --locked -p xtask -- conformance extend-ownership target/old-catalog.json ISSUE REASON
@@ -251,7 +267,8 @@ Dispositions are strict tagged objects:
   approval binds exactly the recorded subject, which its own subject computation
   reproduces. `verifier` selects a verifier compiled into xtask for the record's
   schema, never a shell command; it runs in-process with approval required
-  (`pdf-judgments` runs `verify-pdf-judgments --require-approval`). Any failure
+  (`pdf-judgments` runs `verify-pdf-judgments --require-approval`, `layers`
+  runs `verify-layers --require-approval`). Any failure
   is stale or unbound ownership. `record-closure-owner` checks all of this before
   writing a gap or existing record row of an unapproved ledger; a changed record
   needs a fresh approval before it can be rebound.
@@ -295,5 +312,6 @@ their severity/effects/details, silence, recovery and ordering assertions before
 assigning a broad obligation. Connect specialized PDF structural/visual exceptions
 to their consuming comparators and stale-exception tests with a dedicated adapter.
 Expand codec facets into explicit accepted profile/color/orientation/alpha/animation
-subrows; add representative interactions and register the five corpus layers.
+subrows; add representative interactions. The five corpus layers are registered
+in `layers.json`; apply the layer owner tranche and approve that record.
 Only then request final ledger approval and attempt #85 release closure.

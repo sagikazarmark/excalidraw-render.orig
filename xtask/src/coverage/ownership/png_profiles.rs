@@ -89,6 +89,7 @@ pub(super) fn rows(bytes: &[u8]) -> Result<Vec<PolicyRow>, String> {
             criterion,
             category: "codec-profile".into(),
             spec_anchor: anchor.into(),
+            candidates: vec![],
         })
     };
     for layout in &inventory.sample_layouts {
@@ -140,6 +141,7 @@ pub(super) fn rows(bytes: &[u8]) -> Result<Vec<PolicyRow>, String> {
             criterion: row.criterion,
             spec_anchor: row.spec_anchor,
             category: "codec-profile".into(),
+            candidates: vec![],
         });
     }
     Ok(rows)

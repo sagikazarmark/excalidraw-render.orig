@@ -16,21 +16,22 @@ const SPEC: &str = "docs/renderer-spec-v1.md";
 const BASELINE: &str = "tests/conformance/coverage/native-baseline";
 
 /// Repository view with test overrides: `Some` replaces or adds a file, `None`
-/// removes one. Production uses no overrides.
+/// removes one. Production uses no overrides. Shared with the five-layer
+/// record.
 pub(super) struct Repo {
     root: PathBuf,
-    overrides: BTreeMap<String, Option<Vec<u8>>>,
+    pub(super) overrides: BTreeMap<String, Option<Vec<u8>>>,
 }
 
 impl Repo {
-    fn real() -> Self {
+    pub(super) fn real() -> Self {
         Self {
             root: repo_root(),
             overrides: BTreeMap::new(),
         }
     }
 
-    fn read(&self, path: &str) -> Result<Vec<u8>, String> {
+    pub(super) fn read(&self, path: &str) -> Result<Vec<u8>, String> {
         match self.overrides.get(path) {
             Some(Some(bytes)) => Ok(bytes.clone()),
             Some(None) => Err(format!("failed to read {path}: removed")),
@@ -39,7 +40,7 @@ impl Repo {
     }
 
     /// Every regular file below `dir`, repository-relative, sorted.
-    fn list(&self, dir: &str) -> Result<Vec<String>, String> {
+    pub(super) fn list(&self, dir: &str) -> Result<Vec<String>, String> {
         fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), String> {
             for entry in fs::read_dir(root.join(dir)).map_err(|e| e.to_string())? {
                 let entry = entry.map_err(|e| e.to_string())?;
@@ -59,7 +60,10 @@ impl Repo {
             Ok(())
         }
         let mut files = Vec::new();
-        walk(&self.root, Path::new(dir), &mut files)?;
+        // A directory may exist only in the overrides.
+        if self.root.join(dir).is_dir() || self.overrides.is_empty() {
+            walk(&self.root, Path::new(dir), &mut files)?;
+        }
         let mut files: BTreeSet<_> = files.into_iter().collect();
         for (path, bytes) in &self.overrides {
             if path.starts_with(&format!("{dir}/")) {
@@ -71,6 +75,48 @@ impl Repo {
             }
         }
         Ok(files.into_iter().collect())
+    }
+
+    /// The immediate entries of `dir` as `(name, is_directory)`, sorted, with
+    /// overrides applied: an override below a child makes it a directory. A
+    /// missing directory has no entries.
+    pub(super) fn children(&self, dir: &str) -> Result<Vec<(String, bool)>, String> {
+        let mut entries = BTreeMap::new();
+        match fs::read_dir(self.root.join(dir)) {
+            Ok(read) => {
+                for entry in read {
+                    let entry = entry.map_err(|e| e.to_string())?;
+                    let name = entry
+                        .file_name()
+                        .into_string()
+                        .map_err(|_| "non-UTF8 repository path")?;
+                    let kind = entry.file_type().map_err(|e| e.to_string())?;
+                    if kind.is_dir() || kind.is_file() {
+                        entries.insert(name, kind.is_dir());
+                    }
+                }
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(format!("failed to list {dir}: {e}")),
+        }
+        for (path, bytes) in &self.overrides {
+            let Some(rest) = path.strip_prefix(&format!("{dir}/")) else {
+                continue;
+            };
+            match (rest.split_once('/'), bytes) {
+                (Some((child, _)), Some(_)) => {
+                    entries.insert(child.to_owned(), true);
+                }
+                (None, Some(_)) => {
+                    entries.insert(rest.to_owned(), false);
+                }
+                (None, None) => {
+                    entries.remove(rest);
+                }
+                (Some(_), None) => {}
+            }
+        }
+        Ok(entries.into_iter().collect())
     }
 }
 

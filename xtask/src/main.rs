@@ -124,10 +124,36 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             coverage::extend_ownership(&previous, issue, &reason)?;
         }
         Some("record-test-owner") => {
-            let module = required_arg(&mut args, "test module")?;
+            // `[--package <package>] [--binary <binary>] <module> <function>
+            // <rationale> <ids...>`: the renderer's `fast` binary by default;
+            // `module` is the full path from the target's crate root, and an
+            // empty string selects the root of a test binary.
+            let mut package = "excalidraw-render".to_string();
+            let mut binary = "fast".to_string();
+            let mut module = required_arg(&mut args, "test module")?;
+            loop {
+                match module.as_str() {
+                    "--package" => package = required_arg(&mut args, "test package")?,
+                    "--binary" => binary = required_arg(&mut args, "test binary")?,
+                    _ => break,
+                }
+                module = required_arg(&mut args, "test module")?;
+            }
             let function = required_arg(&mut args, "test function")?;
             let rationale = required_arg(&mut args, "reviewed rationale")?;
-            coverage::record_test_owner(&module, &function, &rationale, &args.collect::<Vec<_>>())?;
+            coverage::record_test_owner(
+                &package,
+                &binary,
+                &module,
+                &function,
+                &rationale,
+                &args.collect::<Vec<_>>(),
+            )?;
+        }
+        Some("record-case-owner") => {
+            let case = required_arg(&mut args, "registered case")?;
+            let rationale = required_arg(&mut args, "reviewed rationale")?;
+            coverage::record_case_owner(&case, &rationale, &args.collect::<Vec<_>>())?;
         }
         Some("reconcile-stage4-bindings") => {
             let proof = required_arg(&mut args, "qualified native canary record")?;
@@ -300,6 +326,31 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             };
             no_more_args(args)?;
             coverage::verify_pdf_judgments(require_approval)?;
+        }
+        Some("layers-generate") => {
+            no_more_args(args)?;
+            coverage::generate_layers()?;
+        }
+        Some("layers-approval-subject") => {
+            no_more_args(args)?;
+            println!("sha256:{}", coverage::layers_subject()?);
+        }
+        Some("record-layers-approval") => {
+            let login = required_arg(&mut args, "GitHub identity")?;
+            let date = required_arg(&mut args, "approval date")?;
+            let url = required_arg(&mut args, "approval comment URL")?;
+            let subject = required_arg(&mut args, "approval subject")?;
+            no_more_args(args)?;
+            coverage::record_layers_approval(&login, &date, &url, &subject)?;
+        }
+        Some("verify-layers") => {
+            let require_approval = match args.next().as_deref() {
+                None => false,
+                Some("--require-approval") => true,
+                Some(other) => return Err(format!("unexpected argument {other:?}")),
+            };
+            no_more_args(args)?;
+            coverage::verify_layers(require_approval)?;
         }
         Some("verify-closure") => {
             no_more_args(args)?;
@@ -646,7 +697,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|record-exception-test-owner|refresh-exception-test-owner-source|refresh-test-owner-source|refresh-library-test-owner-source|record-closure-owner|ownership-approval-subject|record-ownership-approval|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|pdf-judgments-generate|pdf-judgments-approval-subject|record-pdf-judgments-approval|verify-pdf-judgments|verify-closure|generate|reproduce|verify|verify-all|approval-subject|candidate-approval-subject|record-approval|",
+        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|record-case-owner|record-exception-test-owner|refresh-exception-test-owner-source|refresh-test-owner-source|refresh-library-test-owner-source|record-closure-owner|ownership-approval-subject|record-ownership-approval|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|pdf-judgments-generate|pdf-judgments-approval-subject|record-pdf-judgments-approval|verify-pdf-judgments|layers-generate|layers-approval-subject|record-layers-approval|verify-layers|verify-closure|generate|reproduce|verify|verify-all|approval-subject|candidate-approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"

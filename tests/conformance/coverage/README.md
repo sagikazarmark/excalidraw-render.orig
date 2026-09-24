@@ -347,6 +347,54 @@ report: PDF byte for byte with this record, SVG/PNG as complete JSON values with
 the manifest-owned declarations. All 168 executions, not 120, have an expected
 report.
 
+### Five-layer integration (`closure:all-five-layers`)
+
+`layers.json` (`excalidraw-render/five-layers/v1`, approving issue #85) maps
+every item of the five corpus layers of spec 14.2 to the ownership ledger.
+`xtask/src/coverage/layers/derive.rs` discovers the items by rule and is bound
+by digest. The only authored part is `declarations`, the reviewed mapping of
+each exact-vector family, vector domain, stored vector corpus and oracle
+directory to catalog rows. Selectors are exact ids or `prefix:*`.
+
+| Layer | Items (discovered by rule) | Maps to |
+| --- | --- | --- |
+| 1 vectors | the 10 families parsed from "Exact vectors cover …"; `comparator-vectors/*/`, `crates/*/tests/fixtures/*-vectors.json`, `tools/*-vectors/`; every `tests/oracle/*/` | declared rows (`layer:vector:*`, `interaction:diagnostic-order`, `codec:*`); oracles are `vector`, `authority` or `profile` |
+| 2 focused | every case in `cases/registry.json` | the case-label/layer rows naming it as a candidate |
+| 3 representative | `candidates/registry.json` entries; `cases/representative/registry.json` #84 cases | coverage rows owned by that candidate's binding; #84 cases are checked by the verifier itself |
+| 4 adversarial | `src/**/*_fuzz*`, `tests/*_fuzz*`, `tests/limits_*`, `**/frame_batch_property` | `layer:adversarial:<name>`, with the parsed `REQUIRED_RISKS` |
+| 5 regressions | `crates/*/tests/qualification/*-regressions.json` | `layer:regression:<name>`, with digest, case ids and risks |
+
+The record binds the spec, the derivation source, the registries, a tree digest
+of every corpus, oracle directory and fuzz target, each #84 case's `case.json`,
+subject and intake manifest, and the ledger's `catalog_sha256`. It never reads
+dispositions, so recording an owner does not change it. Unregistered candidate
+directories, unreferenced intake bundles and `tests/public-scenes/*` are
+excluded by rule and listed. Any new corpus, oracle directory, case, fuzz
+target, risk or regression id changes the record, and verification fails until
+it is regenerated and approved again.
+
+Verification rebuilds the record and requires equality. It then checks
+completeness against the ledger's owners, using the ledger's own per-row owner
+checks. Each vector item needs at least one owned row, every mapped `layer:*`
+row must be owned, and every owned mapped row's owner must pass. Each
+registered case must be the case owner of one of its rows. Candidate rows must
+be owned by that candidate's representative binding. Every fuzz target and
+regression corpus row must be owned, and no `layer:*` row may be left
+unreferenced. Every problem is listed.
+
+```sh
+cargo run --locked -p xtask -- conformance layers-generate
+cargo run --locked -p xtask -- conformance layers-approval-subject
+cargo run --locked -p xtask -- conformance record-layers-approval \
+  <login> <UTC-date> <issue-85-comment-URL> <exact-subject>
+cargo run --locked -p xtask -- conformance verify-layers [--require-approval]
+```
+
+Once approved, `record-closure-owner closure:all-five-layers layers RATIONALE`
+binds the record through the compiled-in `layers` verifier, which is
+`verify-layers --require-approval` run in-process. See
+[the five-layer note](../../../docs/research/five-layer-integration.md).
+
 ### Native snapshot candidates
 
 The native public-facade collector is implemented as the non-published

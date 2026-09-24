@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "3cceb400cf3b621184bad2acacb3032bd3b65942079f3ee237969fc1fe761731",
+  "catalog_sha256": "ae47174f02d489167895c86ea4ea09a3116b3ac20688aa1bedc3b63314dc0a27",
   "approval": null,
   "assignments": [
     {
@@ -50512,6 +50512,174 @@
           }
         },
         "rationale": "Formatting-only release successor representative.stage4-frames-text-assets.v8, subject sha256:aaa772430f342a60807ef97255bf2296041cbcf23dff4c2aa4284052deb92454; apply only with genuine user approval. Prior approved selection: User-approved final release representative and exact three PDF exceptions, subject sha256:c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05; actual scoped decision https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5749841192. Strict release replay and registry receipts verified; see docs/research/png-stage4-v7-approved-owner.md."
+      }
+    },
+    {
+      "id": "layer:adversarial:asset-fuzz",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:adversarial:font-subset-fuzz",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:adversarial:frame-batch-property",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:adversarial:limits-scene-admission",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:adversarial:render-fuzz",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:adversarial:scene-fuzz",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:focused:frame-export",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:regression:font-subset-fuzz",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:regression:render-fuzz",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:regression:scene-fuzz",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:color",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:format-planning",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:fractional-index",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:geometry",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:number-format",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:perfect-freehand",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:pixelmatch",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:prng",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:rough-js",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:shaping-fallback",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
+      }
+    },
+    {
+      "id": "layer:vector:ssim",
+      "disposition": {
+        "status": "gap",
+        "issue": 85,
+        "reason": "Five-layer closure inventory (#85, closure:all-five-layers): no reviewed primary owner selected yet for this vector/focused/adversarial/regression layer obligation."
       }
     },
     {

@@ -584,6 +584,135 @@
       "spec_anchor": "Representative licensed or project-authored scene documents."
     },
     {
+      "id": "layer:vector:rough-js",
+      "category": "layer",
+      "criterion": "Exact-vector layer, Rough.js: generated outline operations of the admitted shape families equal the vectors derived from the pinned npm Rough.js 4.6.4 by tools/rough-filler-vectors/derive.mjs (per-path operation counts and the joined-path digest).",
+      "spec_anchor": "Exact vectors cover Rough.js"
+    },
+    {
+      "id": "layer:vector:perfect-freehand",
+      "category": "layer",
+      "criterion": "Exact-vector layer, Perfect Freehand: freedraw stroke outlines for simulated pressure, explicit pressure samples, a pressureless dot and defaulted samples equal the pinned perfect-freehand 1.2.0 vectors as Excalidraw v0.18.1 drives them.",
+      "spec_anchor": "Exact vectors cover Rough.js"
+    },
+    {
+      "id": "layer:vector:prng",
+      "category": "layer",
+      "criterion": "Exact-vector layer, PRNG consumption: the Rough.js seeded Park-Miller generator is consumed exactly as the reference consumes it, pinned by the generator state after a known draw sequence.",
+      "spec_anchor": "Exact vectors cover Rough.js"
+    },
+    {
+      "id": "layer:vector:number-format",
+      "category": "layer",
+      "criterion": "Exact-vector layer, number serialization: ECMAScript Number-to-string spelling (and its rejections) equals every entry of the pinned Chromium corpus crates/excalidraw-render/tests/fixtures/number-format-vectors.json.",
+      "spec_anchor": "Exact vectors cover Rough.js"
+    },
+    {
+      "id": "layer:vector:fractional-index",
+      "category": "layer",
+      "criterion": "Exact-vector layer, normalization order: fractional-index repair of source-order keys equals the pinned fractional-indexing vectors and is idempotent.",
+      "spec_anchor": "Exact vectors cover Rough.js"
+    },
+    {
+      "id": "layer:vector:pixelmatch",
+      "category": "layer",
+      "criterion": "Exact-vector layer, comparator: the Pixelmatch port reproduces the pinned upstream Pixelmatch 7.2.0 fixtures' changed-pixel counts and diff image bytes (tests/conformance/comparator-vectors/pixelmatch-v7.2.0).",
+      "spec_anchor": "Changed pixels use an exact port of Mapbox Pixelmatch `7.2.0`, commit"
+    },
+    {
+      "id": "layer:vector:ssim",
+      "category": "layer",
+      "criterion": "Exact-vector layer, comparator: single-scale SSIM returns the exact binary64 result for every normative Gaussian kernel position vector.",
+      "spec_anchor": "SSIM is single-scale Wang/Bovik/Sheikh/Simoncelli SSIM with no filtering or"
+    },
+    {
+      "id": "layer:vector:geometry",
+      "category": "layer",
+      "criterion": "Exact-vector layer, element geometry: rounded diamond corner radii follow the reference's vertex-offset rule (floor(extent / 2) + 1 through getCornerRadius, with the adaptive 128 cutoff), and the resulting outline and fill paths equal the pinned Rough.js 4.6.4 vectors derived by tools/rough-filler-vectors/derive.mjs.",
+      "spec_anchor": "geometry, color, shaping/fallback"
+    },
+    {
+      "id": "layer:vector:color",
+      "category": "layer",
+      "criterion": "Exact-vector layer, color: CSS Color Level 4 forms (every predefined color space, color-mix in each interpolation space with and without a hue method, currentcolor and named colors) lower to exactly the canonical sRGB hex values the pinned Chromium produces.",
+      "spec_anchor": "geometry, color, shaping/fallback"
+    },
+    {
+      "id": "layer:vector:shaping-fallback",
+      "category": "layer",
+      "criterion": "Exact-vector layer, shaping/fallback: for every fallback shape the per-scalar face chain (declared-range chunks of the family in pinned face order, Xiaolai when the CJK subset trigger selected it, Noto Emoji, then the Liberation Sans replacement) consults exactly the spec-derived number of faces, repeated scalars and declared-but-unmapped chunks included.",
+      "spec_anchor": "geometry, color, shaping/fallback"
+    },
+    {
+      "id": "layer:vector:format-planning",
+      "category": "layer",
+      "criterion": "Exact-vector layer, format planning: the PNG plan's surface dimensions equal the exact values of the spec sizing rule across scales and maximum-dimension ceilings, before any encoding.",
+      "spec_anchor": "diagnostic order, and format planning"
+    },
+    {
+      "id": "layer:focused:frame-export",
+      "category": "layer",
+      "criterion": "Focused layer, frame export: the registered frame case's every frame target passes its approved official SVG/PNG evidence and reports through the conformance case verifier; the only focused obligation with no case-label home.",
+      "spec_anchor": "2. Focused scene documents with official SVG/PNG evidence.",
+      "candidates": [
+        "focused.frame-export.v1"
+      ]
+    },
+    {
+      "id": "layer:adversarial:scene-fuzz",
+      "category": "layer",
+      "criterion": "Adversarial layer, scene admission/normalization: the fixed-seed pull-request scene fuzz sample is bounded and deterministic, returns typed rejections or idempotent normalization and deterministic public-facade renders, without panic.",
+      "spec_anchor": "Fixed-seed property tests run on every"
+    },
+    {
+      "id": "layer:adversarial:font-subset-fuzz",
+      "category": "layer",
+      "criterion": "Adversarial layer, SVG font subsetting: the fixed-seed font subset fuzz sample over malformed generated/source structures returns typed failures or valid subsets deterministically, without panic, trap, whole-chunk fallback or partial output.",
+      "spec_anchor": "Malformed generated/source structures"
+    },
+    {
+      "id": "layer:adversarial:asset-fuzz",
+      "category": "layer",
+      "criterion": "Adversarial layer, codecs and nested SVG: the fixed-seed public-facade asset fuzz sample (byte and grammar mutations of raster and nested-SVG seeds) is bounded and deterministic in every format.",
+      "spec_anchor": "4. Adversarial and resource-boundary scene documents."
+    },
+    {
+      "id": "layer:adversarial:render-fuzz",
+      "category": "layer",
+      "criterion": "Adversarial layer, complete rendering: the fixed-seed complete-render fuzz sample over generated scenes, options and limit profiles is bounded and deterministic at the public facade in every format.",
+      "spec_anchor": "4. Adversarial and resource-boundary scene documents."
+    },
+    {
+      "id": "layer:adversarial:frame-batch-property",
+      "category": "layer",
+      "criterion": "Adversarial layer, frame batches: frame rendering through a shared batch preparation equals standalone rendering (artifact bytes, report, resource trace) at N-1/N/N+1 of the resource boundaries a scene actually consumes.",
+      "spec_anchor": "Fixed-seed property tests run on every"
+    },
+    {
+      "id": "layer:adversarial:limits-scene-admission",
+      "category": "layer",
+      "criterion": "Adversarial layer, fixed parser ceilings: ceiling-sized scene documents are admitted at equality and rejected one unit over with the exact typed limit descriptor.",
+      "spec_anchor": "4. Adversarial and resource-boundary scene documents."
+    },
+    {
+      "id": "layer:regression:scene-fuzz",
+      "category": "layer",
+      "criterion": "Regression layer, scene fuzz: every confirmed scene fuzz failure is a manifested, minimized, permanent regression replayed through the public parse/normalize/render seam with its exact expected outcome.",
+      "spec_anchor": "Confirmed failures become"
+    },
+    {
+      "id": "layer:regression:font-subset-fuzz",
+      "category": "layer",
+      "criterion": "Regression layer, font subset fuzz: every confirmed font subset fuzz failure is a manifested, minimized, permanent regression replayed with its exact expected typed outcome.",
+      "spec_anchor": "Confirmed failures become"
+    },
+    {
+      "id": "layer:regression:render-fuzz",
+      "category": "layer",
+      "criterion": "Regression layer, render fuzz: every confirmed complete-render fuzz failure is a manifested, minimized, permanent regression replayed with its exact public outcome, report and artifact digest.",
+      "spec_anchor": "Confirmed failures become"
+    },
+    {
       "id": "codec:jpeg:icc:gray-baseline-v2-g1-single",
       "category": "codec-profile",
       "criterion": "JPEG ICC gray-baseline-v2-g1-single: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; canonical direct-PNG and official-SVG-authoritative bound PDF sample comparison; demonstrate ICC precedence and multipart equivalence. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",

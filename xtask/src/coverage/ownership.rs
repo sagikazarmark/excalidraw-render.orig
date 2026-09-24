@@ -3,12 +3,15 @@
 use super::*;
 use crate::conformance::verify_approval_for_issue;
 mod authority_migration;
+mod executable;
 mod png_profiles;
 mod reconciliation;
 mod record;
 mod representative;
+mod view;
 pub use authority_migration::ownership_authority_migration;
 pub use reconciliation::reconcile_stage4_bindings;
+pub(super) use view::{LedgerView, PrimaryOwner};
 
 const POLICY: &str = "tests/conformance/coverage/ownership-policy.json";
 const LEDGER: &str = "tests/conformance/coverage/ownership.json";
@@ -37,6 +40,9 @@ struct PolicyRow {
     category: String,
     criterion: String,
     spec_anchor: String,
+    /// Registered cases that may own a `layer` row; no other category names any.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    candidates: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -64,10 +70,18 @@ enum Owner {
         case: String,
         manifest: Descriptor,
     },
+    /// An executable test. The compact form (no `package`/`module`) is the
+    /// original adapter: `fast` and `lib` flat modules of the renderer and the
+    /// direct PNG exception binary, the module derived from the source path.
+    /// Every other target names its package and full module path.
     Test {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        package: Option<String>,
         source: Descriptor,
         function: String,
         binary: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        module: Option<String>,
         command: Vec<String>,
     },
     /// ADR-0015: an approved judgment record, for closure obligations only,
@@ -197,14 +211,12 @@ fn catalog_from_inventory(
         sources.push(descriptor(&path)?);
     }
     let spec = std::str::from_utf8(spec_bytes).map_err(|e| e.to_string())?;
+    let registered: BTreeSet<_> = array(&registry, "cases")?
+        .iter()
+        .filter_map(|case| case["id"].as_str())
+        .collect();
     for row in policy.rows {
-        if !matches!(
-            row.category.as_str(),
-            "codec-profile" | "interaction" | "closure"
-        ) || !nonempty(&row.criterion)
-            || !nonempty(&row.spec_anchor)
-            || !spec.contains(&row.spec_anchor)
-        {
+        if !policy_row_valid(&row, spec, &registered) {
             return Err(format!(
                 "invalid ownership policy row or stale spec anchor: {}",
                 row.id
@@ -216,7 +228,7 @@ fn catalog_from_inventory(
             criterion: row.criterion,
             authority: spec_descriptor.clone(),
             pointer: row.spec_anchor,
-            candidates: vec![],
+            candidates: row.candidates,
         });
     }
     obligations.sort_by(|a, b| a.id.cmp(&b.id));
@@ -277,6 +289,26 @@ fn catalog_from_inventory(
     })
 }
 
+/// A policy row is one of the explicit categories, anchored in the spec. Only
+/// `layer` rows (all `layer:`-prefixed) may name candidate cases, each
+/// registered and listed once.
+fn policy_row_valid(row: &PolicyRow, spec: &str, registered: &BTreeSet<&str>) -> bool {
+    let layer = row.category == "layer";
+    matches!(
+        row.category.as_str(),
+        "codec-profile" | "interaction" | "closure" | "layer"
+    ) && layer == row.id.starts_with("layer:")
+        && (layer || row.candidates.is_empty())
+        && row
+            .candidates
+            .iter()
+            .all(|case| registered.contains(case.as_str()))
+        && row.candidates.iter().collect::<BTreeSet<_>>().len() == row.candidates.len()
+        && nonempty(&row.criterion)
+        && nonempty(&row.spec_anchor)
+        && spec.contains(&row.spec_anchor)
+}
+
 pub fn ownership_catalog() -> Result<String, String> {
     serde_json::to_string_pretty(&catalog()?).map_err(|e| e.to_string())
 }
@@ -299,37 +331,147 @@ fn check_evidence(evidence: &Evidence) -> Result<(), String> {
     Ok(())
 }
 
-fn may_import_test_attribute(tree: &syn::UseTree) -> bool {
-    use syn::ext::IdentExt;
-    match tree {
-        syn::UseTree::Path(path) => may_import_test_attribute(&path.tree),
-        syn::UseTree::Name(name) => name.ident.unraw() == "test",
-        syn::UseTree::Rename(rename) => rename.rename.unraw() == "test",
-        syn::UseTree::Glob(_) => true,
-        syn::UseTree::Group(group) => group.items.iter().any(may_import_test_attribute),
+/// Read a repository text file for the executable adapter; absence is a
+/// resolution outcome, never a panic.
+fn read_text(path: &str) -> Option<String> {
+    read(path)
+        .ok()
+        .and_then(|bytes| String::from_utf8(bytes).ok())
+}
+
+/// The effective package and module path of a test owner. The compact form
+/// is the original adapter and derives its single flat module from the
+/// source path; the explicit form is required for every other target and is
+/// refused where the compact form would express the same owner.
+fn test_selector(
+    package: Option<&str>,
+    source: &Descriptor,
+    binary: &str,
+    module: Option<&str>,
+) -> Result<(String, String), String> {
+    let flat = |binary: &str, module: &str| match binary {
+        "fast" => Some(format!("crates/excalidraw-render/tests/fast/{module}.rs")),
+        "lib" => Some(format!("crates/excalidraw-render/src/{module}.rs")),
+        _ => None,
+    };
+    match (package, module) {
+        (None, None) => {
+            let prefix = match binary {
+                EXCEPTION_BINARY => {
+                    if source.path != owner_source(EXCEPTION_BINARY, EXCEPTION_BINARY) {
+                        return Err("unsupported executable owner path/binary".into());
+                    }
+                    return Ok((executable::RENDERER.into(), String::new()));
+                }
+                "fast" => "crates/excalidraw-render/tests/fast/",
+                "lib" => "crates/excalidraw-render/src/",
+                _ => return Err("unsupported executable owner path/binary".into()),
+            };
+            let module = source
+                .path
+                .strip_prefix(prefix)
+                .and_then(|m| m.strip_suffix(".rs"))
+                .ok_or("unsupported executable owner path/binary")?;
+            if !executable::valid_name(module) {
+                return Err("nested test module must have an explicit adapter".into());
+            }
+            Ok((executable::RENDERER.into(), module.into()))
+        }
+        (Some(package), Some(module)) => {
+            let compact = package == executable::RENDERER
+                && match binary {
+                    EXCEPTION_BINARY => module.is_empty(),
+                    _ => {
+                        executable::valid_name(module)
+                            && flat(binary, module).as_deref() == Some(source.path.as_str())
+                    }
+                };
+            if compact {
+                return Err(
+                    "an owner the compact adapter expresses must use the compact form".into(),
+                );
+            }
+            Ok((package.into(), module.into()))
+        }
+        _ => Err("test owner package and module are named together or not at all".into()),
     }
 }
 
-fn check_test_attribute_scope(file: &syn::File) -> Result<(), String> {
-    // This adapter does not resolve imports or expand macros. Reject scopes
-    // that could replace the built-in test attribute instead of guessing.
-    for item in &file.items {
-        let ambiguous = match item {
-            syn::Item::Use(item) => may_import_test_attribute(&item.tree),
-            syn::Item::Macro(item) => item.ident.is_none(),
-            syn::Item::ExternCrate(item) => {
-                item.attrs.iter().any(|a| a.path().is_ident("macro_use"))
-            }
-            syn::Item::Mod(item) => item.attrs.iter().any(|a| a.path().is_ident("macro_use")),
-            _ => false,
-        };
-        if ambiguous {
-            return Err("test owner scope may shadow the built-in test attribute".into());
-        }
+/// Resolve an executable owner's selector against the compiled module tree
+/// and return the file holding the selected module.
+fn resolve_test_owner(
+    package: &str,
+    binary: &str,
+    module: &str,
+    function: &str,
+) -> Result<String, String> {
+    let root = executable::target_root(package, binary, &read_text)?;
+    executable::resolve(&root, module, function, binary == "lib", &read_text)
+}
+
+/// Build the canonical owner for a reviewed selector.
+fn test_owner(package: &str, binary: &str, module: &str, function: &str) -> Result<Owner, String> {
+    let path = resolve_test_owner(package, binary, module, function)?;
+    let source = descriptor(&path)?;
+    let explicit = test_selector(Some(package), &source, binary, Some(module)).is_ok();
+    let owner = Owner::Test {
+        package: explicit.then(|| package.into()),
+        source,
+        function: function.into(),
+        binary: binary.into(),
+        module: explicit.then(|| module.into()),
+        command: executable::command(package, binary, module, function),
+    };
+    Ok(owner)
+}
+
+fn check_test_owner(
+    package: Option<&str>,
+    source: &Descriptor,
+    function: &str,
+    binary: &str,
+    module: Option<&str>,
+    command: &[String],
+) -> Result<(), String> {
+    if !executable::valid_name(function) || !executable::valid_name(binary) {
+        return Err("invalid test owner selector".into());
+    }
+    let (package, module) = test_selector(package, source, binary, module)?;
+    let resolved = resolve_test_owner(&package, binary, &module, function)?;
+    if resolved != source.path {
+        return Err("test owner source is not the selected compiled module".into());
+    }
+    if descriptor(&source.path)? != *source {
+        return Err("stale ownership evidence".into());
+    }
+    if command != executable::command(&package, binary, &module, function) {
+        return Err("test owner command does not select its exact executable test".into());
     }
     Ok(())
 }
 
+/// The original flat-module adapter over an in-memory crate: `main` is the
+/// crate root and `source` the selected module's file.
+#[cfg(test)]
+fn executable_test(
+    source: &str,
+    main: &str,
+    module: &str,
+    function: &str,
+    library: bool,
+) -> Result<(), String> {
+    let read = executable::memory(&[
+        ("crate/root.rs", main),
+        (&format!("crate/{module}.rs"), source),
+    ]);
+    let resolved = executable::resolve("crate/root.rs", module, function, library, &read)?;
+    if resolved != format!("crate/{module}.rs") {
+        return Err("test owner module is not compiled".into());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
 fn unconditional_test(
     source: &str,
     main: &str,
@@ -339,178 +481,33 @@ fn unconditional_test(
     executable_test(source, main, module, function, false)
 }
 
-fn executable_test(
-    source: &str,
-    main: &str,
-    module: &str,
-    function: &str,
-    library: bool,
-) -> Result<(), String> {
-    // Resolve the actual top-level syntax, not textual anchors in comments,
-    // strings or nested scopes. Unknown attributes fail closed at the selected
-    // module/test boundary; unrelated consuming tests need not share its policy.
-    let main = syn::parse_file(main).map_err(|e| format!("invalid test binary source: {e}"))?;
-    check_test_attribute_scope(&main)?;
-    if main.attrs.iter().any(|attr| !attr.path().is_ident("doc")) {
-        return Err("test binary contains conditional attributes".into());
-    }
-    let modules: Vec<_> = main
-        .items
-        .iter()
-        .filter_map(|item| match item {
-            syn::Item::Mod(item) if item.ident == module => Some(item),
-            _ => None,
-        })
-        .collect();
-    if modules.len() != 1 || modules[0].content.is_some() {
-        return Err("test owner module is not compiled".into());
-    }
-    let test_cfg = |attr: &syn::Attribute| {
-        matches!(attr.style, syn::AttrStyle::Outer)
-            && attr.path().is_ident("cfg")
-            && attr.parse_args::<syn::Ident>().is_ok_and(|id| id == "test")
-    };
-    if library
-        && modules[0]
-            .attrs
-            .iter()
-            .filter(|attr| test_cfg(attr))
-            .count()
-            != 1
-    {
-        return Err("library test owner module must use exactly cfg(test)".into());
-    }
-    if modules[0]
-        .attrs
-        .iter()
-        .any(|attr| !attr.path().is_ident("doc") && !(library && test_cfg(attr)))
-    {
-        return Err("test owner module has unsupported attributes".into());
-    }
-    crate_root_test(source, function)
-}
-
 /// The selected function is an unconditional top-level test of `source`.
+#[cfg(test)]
 fn crate_root_test(source: &str, function: &str) -> Result<(), String> {
-    let source = syn::parse_file(source).map_err(|e| format!("invalid test owner source: {e}"))?;
-    check_test_attribute_scope(&source)?;
-    if source.attrs.iter().any(|attr| !attr.path().is_ident("doc")) {
-        return Err("test owner source contains unsupported attributes".into());
-    }
-    let functions: Vec<_> = source
-        .items
-        .iter()
-        .filter_map(|item| match item {
-            syn::Item::Fn(item) if item.sig.ident == function => Some(item),
-            _ => None,
-        })
-        .collect();
-    if functions.len() != 1 {
-        return Err("test owner function is not an unconditional test".into());
-    }
-    let attrs = &functions[0].attrs;
-    if attrs
-        .iter()
-        .filter(|attr| {
-            matches!(attr.style, syn::AttrStyle::Outer)
-                && matches!(&attr.meta, syn::Meta::Path(path) if path.is_ident("test"))
-        })
-        .count()
-        != 1
-        || attrs.iter().any(|attr| {
-            !attr.path().is_ident("doc")
-                && !(matches!(attr.style, syn::AttrStyle::Outer)
-                    && matches!(&attr.meta, syn::Meta::Path(path) if path.is_ident("test")))
-        })
-    {
-        return Err("test owner function is not an unconditional test".into());
-    }
-    Ok(())
+    let read = executable::memory(&[("crate/root.rs", source)]);
+    executable::resolve("crate/root.rs", "", function, false, &read).map(|_| ())
 }
 
 #[cfg(test)]
 fn test_command(module: &str, function: &str) -> Vec<String> {
     owner_test_command("fast", module, function)
 }
+/// The compact adapter's command: the exception binary selects its root test.
+#[cfg(test)]
 fn owner_test_command(binary: &str, module: &str, function: &str) -> Vec<String> {
-    let mut args: Vec<_> = [
-        "cargo",
-        "test",
-        "--locked",
-        "--release",
-        "-p",
-        "excalidraw-render",
-    ]
-    .into_iter()
-    .map(String::from)
-    .collect();
-    if binary == "lib" {
-        args.push("--lib".into());
-    } else if binary == EXCEPTION_BINARY {
-        args.extend(["--test".into(), binary.into(), function.into()]);
-        args.extend(["--".into(), "--exact".into()]);
-        return args;
+    let module = if binary == EXCEPTION_BINARY {
+        ""
     } else {
-        args.extend(["--test".into(), "fast".into()]);
-    }
-    args.extend([
-        format!("{module}::{function}"),
-        "--".into(),
-        "--exact".into(),
-    ]);
-    args
+        module
+    };
+    executable::command(executable::RENDERER, binary, module, function)
 }
 
 /// This adapter deliberately supports the repository's default library target
 /// and explicit workspace membership, not arbitrary Cargo target redirection.
+#[cfg(test)]
 fn library_layout(package: &str, workspace: &str) -> Result<(), String> {
-    let package: toml::Value =
-        toml::from_str(package).map_err(|e| format!("invalid renderer manifest: {e}"))?;
-    let workspace: toml::Value =
-        toml::from_str(workspace).map_err(|e| format!("invalid workspace manifest: {e}"))?;
-    let lib = package.get("lib");
-    if package
-        .get("package")
-        .and_then(|p| p.get("name"))
-        .and_then(toml::Value::as_str)
-        != Some("excalidraw-render")
-        || package
-            .get("package")
-            .and_then(|p| p.get("autolib"))
-            .and_then(toml::Value::as_bool)
-            == Some(false)
-        || lib.is_some_and(|l| l.as_table().is_none())
-        || lib
-            .and_then(|l| l.get("path"))
-            .is_some_and(|p| p.as_str() != Some("src/lib.rs"))
-        || ["test", "harness"].iter().any(|key| {
-            lib.and_then(|l| l.get(key))
-                .is_some_and(|v| v.as_bool() != Some(true))
-        })
-        || lib
-            .and_then(|l| l.get("proc-macro"))
-            .is_some_and(|v| v.as_bool() != Some(false))
-    {
-        return Err("unsupported library test target layout".into());
-    }
-    let workspace = workspace
-        .get("workspace")
-        .ok_or("missing workspace target layout")?;
-    if workspace.get("exclude").is_some()
-        || !workspace
-            .get("members")
-            .and_then(toml::Value::as_array)
-            .is_some_and(|members| {
-                members
-                    .iter()
-                    .any(|m| m.as_str() == Some("crates/excalidraw-render"))
-            })
-    {
-        return Err(
-            "library test target requires explicit, unexcluded workspace membership".into(),
-        );
-    }
-    Ok(())
+    executable::package_layout(executable::RENDERER, package, workspace, true)
 }
 
 /// The exception adapter's scope: the obligation's exception is the only
@@ -557,6 +554,110 @@ fn exception_scope(row: &Obligation) -> Result<(), String> {
     Ok(())
 }
 
+/// Every check `validate` applies to one assignment; `Ok(true)` is a gap.
+/// Shared with the five-layer record, which checks the owners of the rows it
+/// maps without validating (and so recursing into) the closure rows.
+fn check_disposition(row: &Obligation, disposition: &Disposition) -> Result<bool, String> {
+    match disposition {
+        Disposition::Gap { issue, reason } => {
+            if *issue == 0 || !nonempty(reason) {
+                return Err("gap must name an issue and reason".into());
+            }
+        }
+        Disposition::Owned { owner, rationale } => {
+            if !nonempty(rationale) {
+                return Err("ownership rationale is empty".into());
+            }
+            if row.id.starts_with("closure:") != matches!(owner, Owner::Record { .. }) {
+                return Err(format!(
+                    "closure obligations are owned only by approved judgment records, and records own only closure obligations: {}",
+                    row.id
+                ));
+            }
+            let exception_owner = matches!(owner, Owner::Test { package: None, binary, function, .. }
+                if binary == EXCEPTION_BINARY && function == EXCEPTION_FUNCTION);
+            if (row.category == "tolerance-exception") != exception_owner {
+                return Err(format!(
+                    "tolerance exceptions are owned only by {EXCEPTION_BINARY}::{EXCEPTION_FUNCTION}: {}",
+                    row.id
+                ));
+            }
+            if exception_owner {
+                exception_scope(row)?;
+            }
+            match owner {
+                Owner::Representative { binding } => {
+                    if row.category != "interaction" {
+                        return Err(
+                            "representative adapter requires the interaction obligation".into()
+                        );
+                    }
+                    representative::verify(&row.id, binding)?;
+                }
+                Owner::Case { case, manifest } => {
+                    // A case owns its own scoped label, or a layer row whose
+                    // single candidate it is.
+                    let establishes = match row.category.as_str() {
+                        "case-label" => row.candidates.contains(case),
+                        "layer" => row.candidates == std::slice::from_ref(case),
+                        _ => false,
+                    };
+                    if !establishes {
+                        return Err(format!(
+                            "case owner does not establish obligation {}",
+                            row.id
+                        ));
+                    }
+                    let registry: Value = parse(&read(REGISTRY)?)?;
+                    let entry = array(&registry, "cases")?
+                        .iter()
+                        .find(|e| e["id"] == case.as_str())
+                        .ok_or("owner case is not registered")?;
+                    let path = format!("{}/manifest.json", string(entry, "path")?);
+                    if *manifest != descriptor(&path)? {
+                        return Err(format!("stale owner manifest for {case}"));
+                    }
+                }
+                Owner::Test {
+                    package,
+                    source,
+                    function,
+                    binary,
+                    module,
+                    command,
+                } => check_test_owner(
+                    package.as_deref(),
+                    source,
+                    function,
+                    binary,
+                    module.as_deref(),
+                    command,
+                )?,
+                Owner::Record {
+                    record,
+                    approval_subject_sha256,
+                    verifier,
+                } => record::verify(&row.id, record, approval_subject_sha256, verifier)?,
+            }
+        }
+        Disposition::Excluded {
+            reason,
+            proof,
+            approval,
+        } => {
+            if !nonempty(reason) {
+                return Err("exclusion reason is empty".into());
+            }
+            check_evidence(proof)?;
+            let subject = digest(
+                &json!({"schema":"excalidraw-render/coverage-exclusion/v1","obligation":row,"reason":reason,"proof":proof}),
+            )?;
+            verify_approval_for_issue(approval, &subject, "85")?;
+        }
+    }
+    Ok(matches!(disposition, Disposition::Gap { .. }))
+}
+
 fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, String> {
     if ledger.schema != SCHEMA
         || ledger.compatibility_revision != 1
@@ -578,158 +679,8 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
         if !seen.insert(assignment.id.as_str()) {
             return Err(format!("duplicate primary ownership {}", assignment.id));
         }
-        match &assignment.disposition {
-            Disposition::Gap { issue, reason } => {
-                if *issue == 0 || !nonempty(reason) {
-                    return Err("gap must name an issue and reason".into());
-                }
-                gaps += 1;
-            }
-            Disposition::Owned { owner, rationale } => {
-                if !nonempty(rationale) {
-                    return Err("ownership rationale is empty".into());
-                }
-                if row.id.starts_with("closure:") != matches!(owner, Owner::Record { .. }) {
-                    return Err(format!(
-                        "closure obligations are owned only by approved judgment records, and records own only closure obligations: {}",
-                        row.id
-                    ));
-                }
-                let exception_owner = matches!(owner, Owner::Test { binary, function, .. }
-                    if binary == EXCEPTION_BINARY && function == EXCEPTION_FUNCTION);
-                if (row.category == "tolerance-exception") != exception_owner {
-                    return Err(format!(
-                        "tolerance exceptions are owned only by {EXCEPTION_BINARY}::{EXCEPTION_FUNCTION}: {}",
-                        row.id
-                    ));
-                }
-                if exception_owner {
-                    exception_scope(row)?;
-                }
-                match owner {
-                    Owner::Representative { binding } => {
-                        if row.category != "interaction" {
-                            return Err(
-                                "representative adapter requires the interaction obligation".into(),
-                            );
-                        }
-                        representative::verify(&row.id, binding)?;
-                    }
-                    Owner::Case { case, manifest } => {
-                        if row.category != "case-label" || !row.candidates.contains(case) {
-                            return Err(format!(
-                                "case owner does not establish obligation {}",
-                                row.id
-                            ));
-                        }
-                        let registry: Value = parse(&read(REGISTRY)?)?;
-                        let entry = array(&registry, "cases")?
-                            .iter()
-                            .find(|e| e["id"] == case.as_str())
-                            .ok_or("owner case is not registered")?;
-                        let path = format!("{}/manifest.json", string(entry, "path")?);
-                        if *manifest != descriptor(&path)? {
-                            return Err(format!("stale owner manifest for {case}"));
-                        }
-                    }
-                    Owner::Test {
-                        source,
-                        function,
-                        binary,
-                        command,
-                    } => {
-                        let valid_name = |s: &str| {
-                            !s.is_empty()
-                                && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
-                        };
-                        if !valid_name(function) || !valid_name(binary) {
-                            return Err("invalid test owner selector".into());
-                        }
-                        let (prefix, entry, library) = match binary.as_str() {
-                            // A root test target is its own crate root.
-                            EXCEPTION_BINARY => ("crates/excalidraw-render/tests/", "", false),
-                            "fast" => (
-                                "crates/excalidraw-render/tests/fast/",
-                                "crates/excalidraw-render/tests/fast/main.rs",
-                                false,
-                            ),
-                            "lib" => {
-                                library_layout(
-                                    &String::from_utf8(read(
-                                        "crates/excalidraw-render/Cargo.toml",
-                                    )?)
-                                    .map_err(|e| e.to_string())?,
-                                    &String::from_utf8(read("Cargo.toml")?)
-                                        .map_err(|e| e.to_string())?,
-                                )?;
-                                (
-                                    "crates/excalidraw-render/src/",
-                                    "crates/excalidraw-render/src/lib.rs",
-                                    true,
-                                )
-                            }
-                            _ => return Err("unsupported executable owner path/binary".into()),
-                        };
-                        if !source.path.starts_with(prefix) || !source.path.ends_with(".rs") {
-                            return Err("unsupported executable owner path/binary".into());
-                        }
-                        let module = source
-                            .path
-                            .strip_prefix(prefix)
-                            .unwrap()
-                            .strip_suffix(".rs")
-                            .unwrap();
-                        if !valid_name(module) {
-                            return Err("nested test module must have an explicit adapter".into());
-                        }
-                        if descriptor(&source.path)? != *source {
-                            return Err("stale ownership evidence".into());
-                        }
-                        let source_text =
-                            String::from_utf8(read(&source.path)?).map_err(|e| e.to_string())?;
-                        if entry.is_empty() {
-                            if module != binary {
-                                return Err("unsupported executable owner path/binary".into());
-                            }
-                            crate_root_test(&source_text, function)?;
-                        } else if library {
-                            let main =
-                                String::from_utf8(read(entry)?).map_err(|e| e.to_string())?;
-                            executable_test(&source_text, &main, module, function, true)?;
-                        } else {
-                            let main =
-                                String::from_utf8(read(entry)?).map_err(|e| e.to_string())?;
-                            unconditional_test(&source_text, &main, module, function)?;
-                        }
-                        let args = owner_test_command(binary, module, function);
-                        if command != &args {
-                            return Err(
-                                "test owner command does not select its exact executable test"
-                                    .into(),
-                            );
-                        }
-                    }
-                    Owner::Record {
-                        record,
-                        approval_subject_sha256,
-                        verifier,
-                    } => record::verify(&row.id, record, approval_subject_sha256, verifier)?,
-                }
-            }
-            Disposition::Excluded {
-                reason,
-                proof,
-                approval,
-            } => {
-                if !nonempty(reason) {
-                    return Err("exclusion reason is empty".into());
-                }
-                check_evidence(proof)?;
-                let subject = digest(
-                    &json!({"schema":"excalidraw-render/coverage-exclusion/v1","obligation":row,"reason":reason,"proof":proof}),
-                )?;
-                verify_approval_for_issue(approval, &subject, "85")?;
-            }
+        if check_disposition(row, &assignment.disposition)? {
+            gaps += 1;
         }
     }
     if seen != expected.keys().copied().collect() {
@@ -862,13 +813,17 @@ pub fn verify_ownership() -> Result<(), String> {
 
 /// Record an explicitly reviewed selection. No inference from field names or
 /// source anchors is allowed; every requested identity must still be a gap.
+/// `module` is the full module path from the target's crate root (empty for
+/// the root of a test binary); the recorded owner resolves it exactly.
 pub fn record_test_owner(
+    package: &str,
+    binary: &str,
     module: &str,
     function: &str,
     rationale: &str,
     ids: &[String],
 ) -> Result<(), String> {
-    record_owner("fast", module, function, rationale, ids)
+    record_owner(package, binary, module, function, rationale, ids)
 }
 pub fn record_library_test_owner(
     module: &str,
@@ -876,14 +831,42 @@ pub fn record_library_test_owner(
     rationale: &str,
     ids: &[String],
 ) -> Result<(), String> {
-    record_owner("lib", module, function, rationale, ids)
+    record_owner(
+        executable::RENDERER,
+        "lib",
+        module,
+        function,
+        rationale,
+        ids,
+    )
+}
+/// Assign `layer` rows to the registered case that is their single candidate;
+/// the case is checked through the same registration/manifest binding as a
+/// case-label owner and executed by `verify-ownership`.
+pub fn record_case_owner(case: &str, rationale: &str, ids: &[String]) -> Result<(), String> {
+    if let Some(id) = ids.iter().find(|id| !id.starts_with("layer:")) {
+        return Err(format!(
+            "case owners are recorded here only for layer rows: {id}"
+        ));
+    }
+    let registry: Value = parse(&read(REGISTRY)?)?;
+    let entry = array(&registry, "cases")?
+        .iter()
+        .find(|e| e["id"] == case)
+        .ok_or("owner case is not registered")?;
+    let owner = Owner::Case {
+        case: case.into(),
+        manifest: descriptor(&format!("{}/manifest.json", string(entry, "path")?))?,
+    };
+    assign_owner(owner, rationale, ids)
 }
 /// Assign tolerance exceptions to the registered-case direct PNG test, which
 /// holds each at its exact ceilings and rejects it once stale.
 pub fn record_exception_test_owner(rationale: &str, ids: &[String]) -> Result<(), String> {
     record_owner(
+        executable::RENDERER,
         EXCEPTION_BINARY,
-        EXCEPTION_BINARY,
+        "",
         EXCEPTION_FUNCTION,
         rationale,
         ids,
@@ -932,23 +915,36 @@ pub fn record_representative_owner(case: &str, rationale: &str) -> Result<(), St
     fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())
 }
 fn record_owner(
+    package: &str,
     binary: &str,
     module: &str,
     function: &str,
     rationale: &str,
     ids: &[String],
 ) -> Result<(), String> {
+    assign_owner(
+        test_owner(package, binary, module, function)?,
+        rationale,
+        ids,
+    )
+}
+fn assign_owner(owner: Owner, rationale: &str, ids: &[String]) -> Result<(), String> {
     let (catalog, mut ledger) = load()?;
     validate(&catalog, &ledger, false)?;
+    assign_gaps(&mut ledger, &owner, rationale, ids)?;
+    validate(&catalog, &ledger, false)?;
+    write_ledger(&ledger)
+}
+/// Replace explicit gaps, and only gaps, with one reviewed owner.
+fn assign_gaps(
+    ledger: &mut Ledger,
+    owner: &Owner,
+    rationale: &str,
+    ids: &[String],
+) -> Result<(), String> {
     if ids.is_empty() || ids.iter().collect::<BTreeSet<_>>().len() != ids.len() {
         return Err("select nonempty, unique ownership identities".into());
     }
-    let owner = Owner::Test {
-        source: descriptor(&owner_source(binary, module))?,
-        function: function.into(),
-        binary: binary.into(),
-        command: owner_test_command(binary, module, function),
-    };
     for id in ids {
         let row = ledger
             .assignments
@@ -963,10 +959,6 @@ fn record_owner(
             rationale: rationale.into(),
         };
     }
-    validate(&catalog, &ledger, false)?;
-    let mut bytes = serde_json::to_vec_pretty(&ledger).map_err(|e| e.to_string())?;
-    bytes.push(b'\n');
-    fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -989,9 +981,13 @@ fn refresh_owner_source(binary: &str, module: &str) -> Result<(), String> {
     let mut count = 0;
     for assignment in &mut ledger.assignments {
         if let Disposition::Owned {
-            owner: Owner::Test {
-                source: existing, ..
-            },
+            owner:
+                Owner::Test {
+                    package: None,
+                    module: None,
+                    source: existing,
+                    ..
+                },
             ..
         } = &mut assignment.disposition
         {
@@ -1296,6 +1292,8 @@ mod tests {
 
     fn exception_owner() -> Owner {
         Owner::Test {
+            package: None,
+            module: None,
             source: descriptor(&owner_source(EXCEPTION_BINARY, EXCEPTION_BINARY)).unwrap(),
             function: EXCEPTION_FUNCTION.into(),
             binary: EXCEPTION_BINARY.into(),
@@ -1346,6 +1344,8 @@ mod tests {
             (EXCEPTION_FUNCTION, "fast"),
         ] {
             let owner = Owner::Test {
+                package: None,
+                module: None,
                 source: source.clone(),
                 function: function.into(),
                 binary: binary.into(),
@@ -1437,6 +1437,8 @@ mod tests {
         let function = "metadata_failures_have_exact_recovery_in_every_format";
         ledger.assignments[0].disposition = Disposition::Owned {
             owner: Owner::Test {
+                package: None,
+                module: None,
                 source: descriptor("crates/excalidraw-render/src/metadata_failure_contract.rs")
                     .unwrap(),
                 function: function.into(),
@@ -1516,6 +1518,8 @@ mod tests {
     fn library_owner() -> Owner {
         let function = "metadata_failures_have_exact_recovery_in_every_format";
         Owner::Test {
+            package: None,
+            module: None,
             source: descriptor("crates/excalidraw-render/src/metadata_failure_contract.rs")
                 .unwrap(),
             function: function.into(),
@@ -1922,5 +1926,663 @@ mod tests {
         assert_eq!(subject(&catalog, &ledger).unwrap(), before);
         ledger.assignments[0].id = "changed".into();
         assert_ne!(subject(&catalog, &ledger).unwrap(), before);
+    }
+
+    fn owned_fixture(owner: Owner) -> (Catalog, Ledger) {
+        let (catalog, mut ledger) = fixture();
+        ledger.assignments[0].disposition = Disposition::Owned {
+            owner,
+            rationale: "reviewed executable owner".into(),
+        };
+        (catalog, ledger)
+    }
+
+    fn explicit_owner(package: &str, binary: &str, module: &str, function: &str) -> Owner {
+        let owner = test_owner(package, binary, module, function)
+            .unwrap_or_else(|e| panic!("{package} {binary} {module}::{function}: {e}"));
+        let Owner::Test {
+            package: Some(named),
+            module: Some(path),
+            ..
+        } = &owner
+        else {
+            panic!("{module}::{function} must use the explicit adapter form: {owner:?}");
+        };
+        assert_eq!((named.as_str(), path.as_str()), (package, module));
+        owner
+    }
+
+    #[test]
+    fn explicit_adapter_accepts_nested_library_root_binary_and_compare_owners() {
+        let compare = executable::COMPARE;
+        let renderer = executable::RENDERER;
+        for (package, binary, module, function, source) in [
+            // An inline `#[cfg(test)] mod tests` two file modules deep.
+            (
+                renderer,
+                "lib",
+                "render::number_format::tests",
+                "ecmascript_spelling_matches_pinned_chromium_vectors",
+                "crates/excalidraw-render/src/render/number_format.rs",
+            ),
+            // `render/mod.rs` then `tests.rs`, importing its parent with `use super::*`.
+            (
+                renderer,
+                "lib",
+                "render::tests",
+                "outline_operations_match_the_pinned_roughjs_vectors",
+                "crates/excalidraw-render/src/render/tests.rs",
+            ),
+            // A non-`mod.rs` parent file (`normalization.rs`) owns its directory.
+            (
+                renderer,
+                "lib",
+                "normalization::fractional_index::tests",
+                "repair_matches_the_pinned_source_order_vectors",
+                "crates/excalidraw-render/src/normalization/fractional_index.rs",
+            ),
+            // A `mod.rs` directory module directly under the crate root.
+            (
+                renderer,
+                "lib",
+                "scene_fuzz",
+                "fixed_seed_scene_fuzz_smoke_is_bounded_and_deterministic",
+                "crates/excalidraw-render/src/scene_fuzz/mod.rs",
+            ),
+            // A root test binary with a `#[path]` module and its own submodule.
+            (
+                renderer,
+                "render_fuzz",
+                "render_fuzz::regressions",
+                "confirmed_failures_are_manifested_and_replayed",
+                "crates/excalidraw-render/tests/render_fuzz/regressions.rs",
+            ),
+            (
+                renderer,
+                "asset_fuzz",
+                "asset_fuzz",
+                "fixed_seed_asset_fuzz_smoke",
+                "crates/excalidraw-render/tests/asset_fuzz/mod.rs",
+            ),
+            // The crate root of a test binary.
+            (
+                renderer,
+                "limits_scene_admission",
+                "",
+                "fixed_structure_and_input_byte_boundaries_are_enforced",
+                "crates/excalidraw-render/tests/limits_scene_admission.rs",
+            ),
+            (
+                compare,
+                "pixelmatch_upstream",
+                "",
+                "pixelmatch_matches_the_pinned_upstream_counts_and_diff_bytes",
+                "crates/excalidraw-render-compare/tests/pixelmatch_upstream.rs",
+            ),
+            (
+                compare,
+                "ssim_vectors",
+                "",
+                "ssim_matches_every_normative_kernel_position_vector",
+                "crates/excalidraw-render-compare/tests/ssim_vectors.rs",
+            ),
+            (
+                compare,
+                "profile",
+                "",
+                "canonical_comparator_profile_schema_and_all_bound_bytes_are_current",
+                "crates/excalidraw-render-compare/tests/profile.rs",
+            ),
+        ] {
+            let owner = explicit_owner(package, binary, module, function);
+            let Owner::Test {
+                source: bound,
+                command,
+                ..
+            } = &owner
+            else {
+                unreachable!()
+            };
+            assert_eq!(bound.path, source);
+            let selector = if module.is_empty() {
+                function.to_string()
+            } else {
+                format!("{module}::{function}")
+            };
+            let target = if binary == "lib" {
+                vec!["--lib".to_string()]
+            } else {
+                vec!["--test".to_string(), binary.to_string()]
+            };
+            let expected: Vec<String> = ["cargo", "test", "--locked", "--release", "-p", package]
+                .into_iter()
+                .map(String::from)
+                .chain(target)
+                .chain([selector, "--".into(), "--exact".into()])
+                .collect();
+            assert_eq!(command, &expected);
+            let (catalog, ledger) = owned_fixture(owner);
+            assert_eq!(
+                validate(&catalog, &ledger, false).unwrap(),
+                0,
+                "{module}::{function}"
+            );
+        }
+        // The original adapters keep their compact form and stored bytes.
+        assert_eq!(
+            serde_json::to_value(
+                test_owner(
+                    renderer,
+                    "lib",
+                    "metadata_failure_contract",
+                    "metadata_failures_have_exact_recovery_in_every_format"
+                )
+                .unwrap()
+            )
+            .unwrap(),
+            serde_json::to_value(library_owner()).unwrap()
+        );
+        assert_eq!(
+            serde_json::to_value(
+                test_owner(renderer, EXCEPTION_BINARY, "", EXCEPTION_FUNCTION).unwrap()
+            )
+            .unwrap(),
+            serde_json::to_value(exception_owner()).unwrap()
+        );
+    }
+
+    #[test]
+    fn explicit_adapter_rejects_missing_ignored_misplaced_and_stale_owners() {
+        let renderer = executable::RENDERER;
+        for (package, binary, module, function) in [
+            // Missing functions.
+            (
+                renderer,
+                "lib",
+                "render::number_format::tests",
+                "no_such_test",
+            ),
+            (executable::COMPARE, "ssim_vectors", "", "no_such_test"),
+            // Ignored, or ignored unless a feature is enabled.
+            (
+                renderer,
+                "lib",
+                "scene_fuzz",
+                "nightly_scene_fuzz_is_bounded_and_deterministic",
+            ),
+            (
+                renderer,
+                "lib",
+                "render::frame_batch_property",
+                "frame_batch_rendering_matches_standalone_around_resource_limits",
+            ),
+            (
+                renderer,
+                "render_fuzz",
+                "render_fuzz",
+                "nightly_complete_render_fuzz",
+            ),
+            (
+                executable::COMPARE,
+                "profile",
+                "",
+                "materialize_canonical_comparator_closure",
+            ),
+            // Wrong module paths, targets or packages.
+            (
+                renderer,
+                "lib",
+                "number_format::tests",
+                "ecmascript_spelling_matches_pinned_chromium_vectors",
+            ),
+            (
+                renderer,
+                "lib",
+                "render::number_format",
+                "ecmascript_spelling_matches_pinned_chromium_vectors",
+            ),
+            (renderer, "lib", "render::no_such_module", "example"),
+            (
+                renderer,
+                "render_fuzz",
+                "",
+                "confirmed_failures_are_manifested_and_replayed",
+            ),
+            (
+                renderer,
+                "render_fuzz",
+                "render_fuzz::generator",
+                "confirmed_failures_are_manifested_and_replayed",
+            ),
+            (
+                renderer,
+                "fast",
+                "render_fuzz::regressions",
+                "confirmed_failures_are_manifested_and_replayed",
+            ),
+            (renderer, "no_such_binary", "", "example"),
+            (
+                executable::COMPARE,
+                "pixelmatch_upstream",
+                "pixelmatch",
+                "pixelmatch_matches_the_pinned_upstream_counts_and_diff_bytes",
+            ),
+            ("excalidraw-render-cli", "lib", "", "example"),
+            (renderer, "lib", "render::tests::", "example"),
+            // The wasm-only module is not compiled into a native test build.
+            (renderer, "lib", "wasm_tests", "example"),
+        ] {
+            assert!(
+                test_owner(package, binary, module, function).is_err(),
+                "accepted {package} {binary} {module}::{function}"
+            );
+        }
+        let valid = explicit_owner(
+            renderer,
+            "lib",
+            "render::number_format::tests",
+            "ecmascript_spelling_matches_pinned_chromium_vectors",
+        );
+        let mutate = |edit: &dyn Fn(&mut Owner)| {
+            let mut owner = valid.clone();
+            edit(&mut owner);
+            let (catalog, ledger) = owned_fixture(owner);
+            validate(&catalog, &ledger, false).unwrap_err()
+        };
+        let stale = mutate(&|o| {
+            if let Owner::Test { source, .. } = o {
+                source.sha256 = "0".repeat(64);
+            }
+        });
+        assert!(stale.contains("stale ownership evidence"), "{stale}");
+        let moved = mutate(&|o| {
+            if let Owner::Test { module, .. } = o {
+                *module = Some("render::tests".into());
+            }
+        });
+        assert!(
+            moved.contains("not an unconditional test") || moved.contains("not the selected"),
+            "{moved}"
+        );
+        let missing = mutate(&|o| {
+            if let Owner::Test {
+                function, command, ..
+            } = o
+            {
+                *function = "no_such_test".into();
+                *command = executable::command(
+                    renderer,
+                    "lib",
+                    "render::number_format::tests",
+                    "no_such_test",
+                );
+            }
+        });
+        assert!(missing.contains("not an unconditional test"), "{missing}");
+        let redirected = mutate(&|o| {
+            if let Owner::Test { command, .. } = o {
+                command[7] =
+                    "render::number_format::ecmascript_spelling_matches_pinned_chromium_vectors"
+                        .into();
+            }
+        });
+        assert!(redirected.contains("exact executable test"), "{redirected}");
+        let half = mutate(&|o| {
+            if let Owner::Test { package, .. } = o {
+                *package = None;
+            }
+        });
+        assert!(half.contains("named together"), "{half}");
+        // A nested owner cannot hide behind the compact form, and a compact
+        // owner cannot be respelled explicitly.
+        let compact_nested = mutate(&|o| {
+            if let Owner::Test {
+                package, module, ..
+            } = o
+            {
+                *package = None;
+                *module = None;
+            }
+        });
+        assert!(
+            compact_nested.contains("explicit adapter"),
+            "{compact_nested}"
+        );
+        let Owner::Test {
+            source,
+            function,
+            binary,
+            command,
+            ..
+        } = library_owner()
+        else {
+            unreachable!()
+        };
+        let respelled = Owner::Test {
+            package: Some(renderer.into()),
+            source,
+            function,
+            binary,
+            module: Some("metadata_failure_contract".into()),
+            command,
+        };
+        let (catalog, ledger) = owned_fixture(respelled);
+        assert!(validate(&catalog, &ledger, false)
+            .unwrap_err()
+            .contains("compact form"));
+    }
+
+    #[test]
+    fn module_resolution_follows_rust_file_rules_and_fails_closed() {
+        let test = "#[test] fn example() {}";
+        let resolve = |files: &[(&str, &str)], module: &str, library: bool| {
+            executable::resolve(
+                "c/src/lib.rs",
+                module,
+                "example",
+                library,
+                &executable::memory(files),
+            )
+        };
+        // `name.rs`, `name/mod.rs`, inline modules and `#[path]` files.
+        assert_eq!(
+            resolve(
+                &[
+                    ("c/src/lib.rs", "mod a;"),
+                    ("c/src/a.rs", "#[cfg(test)] mod b;"),
+                    ("c/src/a/b.rs", test)
+                ],
+                "a::b",
+                true
+            )
+            .unwrap(),
+            "c/src/a/b.rs"
+        );
+        assert_eq!(
+            resolve(
+                &[
+                    ("c/src/lib.rs", "mod a;"),
+                    (
+                        "c/src/a/mod.rs",
+                        "mod b { #[cfg(test)] mod t { #[test] fn example() {} } }"
+                    )
+                ],
+                "a::b::t",
+                true
+            )
+            .unwrap(),
+            "c/src/a/mod.rs"
+        );
+        assert_eq!(
+            resolve(
+                &[
+                    ("c/src/lib.rs", "#[path = \"../x/y.rs\"] mod a;"),
+                    ("c/x/y.rs", "mod b;"),
+                    ("c/x/b.rs", test)
+                ],
+                "a::b",
+                false
+            )
+            .unwrap(),
+            "c/x/b.rs"
+        );
+        assert_eq!(
+            resolve(
+                &[
+                    ("c/src/lib.rs", "mod a;"),
+                    ("c/src/a.rs", "mod b { mod c; }"),
+                    ("c/src/a/b/c.rs", test)
+                ],
+                "a::b::c",
+                false
+            )
+            .unwrap(),
+            "c/src/a/b/c.rs"
+        );
+        // `use super::*` is followed; the parent must not be able to shadow `test`.
+        let glob = "use super::*; #[test] fn example() {}";
+        assert!(resolve(
+            &[
+                ("c/src/lib.rs", "mod a; use std::fmt;"),
+                ("c/src/a.rs", glob)
+            ],
+            "a",
+            false
+        )
+        .is_ok());
+        for parent in [
+            "mod a; use custom::test;",
+            "mod a; use custom::*;",
+            "mod a; inject!();",
+            "mod a; pub(crate) fn test() {}",
+            "mod a; use super::*;",
+        ] {
+            assert!(
+                resolve(
+                    &[("c/src/lib.rs", parent), ("c/src/a.rs", glob)],
+                    "a",
+                    false
+                )
+                .is_err(),
+                "{parent}"
+            );
+        }
+        assert!(
+            resolve(
+                &[
+                    ("c/src/lib.rs", "mod a;"),
+                    ("c/src/a.rs", "mod b; use custom::*;"),
+                    ("c/src/a/b.rs", "mod c;"),
+                    ("c/src/a/b/c.rs", glob)
+                ],
+                "a::b::c",
+                false
+            )
+            .is_ok(),
+            "a grandparent glob is not imported"
+        );
+        for files in [
+            // Ambiguous, missing or duplicated module files and declarations.
+            vec![
+                ("c/src/lib.rs", "mod a;"),
+                ("c/src/a.rs", test),
+                ("c/src/a/mod.rs", test),
+            ],
+            vec![("c/src/lib.rs", "mod b;"), ("c/src/a.rs", test)],
+            vec![("c/src/lib.rs", "mod a; mod a;"), ("c/src/a.rs", test)],
+            // Conditional, redirected-inline or macro-imported chains.
+            vec![
+                ("c/src/lib.rs", "#[cfg(all(test, unix))] mod a;"),
+                ("c/src/a.rs", test),
+            ],
+            vec![
+                ("c/src/lib.rs", "#[cfg(not(test))] mod a;"),
+                ("c/src/a.rs", test),
+            ],
+            vec![
+                ("c/src/lib.rs", "#[allow(dead_code)] mod a;"),
+                ("c/src/a.rs", test),
+            ],
+            vec![
+                ("c/src/lib.rs", "#[macro_use] mod a;"),
+                ("c/src/a.rs", test),
+            ],
+            vec![
+                ("c/src/lib.rs", "mod a { #[path = \"x.rs\"] mod b; }"),
+                ("c/src/x.rs", test),
+            ],
+            vec![
+                ("c/src/lib.rs", "mod a;"),
+                ("c/src/a.rs", "#![cfg(unix)] #[test] fn example() {}"),
+            ],
+            vec![
+                ("c/src/lib.rs", "#![cfg(unix)] mod a;"),
+                ("c/src/a.rs", test),
+            ],
+            vec![
+                ("c/src/lib.rs", "mod a;"),
+                ("c/src/a.rs", "#[test] #[ignore] fn example() {}"),
+            ],
+            vec![
+                ("c/src/lib.rs", "#[path = \"../../../x.rs\"] mod a;"),
+                ("x.rs", test),
+            ],
+        ] {
+            assert!(resolve(&files, "a", false).is_err(), "{files:?}");
+        }
+        // A library owner needs a test-only module on its chain.
+        let files = [
+            ("c/src/lib.rs", "mod a;"),
+            ("c/src/a.rs", "mod b;"),
+            ("c/src/a/b.rs", test),
+        ];
+        assert!(resolve(&files, "a::b", false).is_ok());
+        assert!(resolve(&files, "a::b", true)
+            .unwrap_err()
+            .contains("cfg(test)"));
+        // Test binaries are auto-discovered harness targets only.
+        let workspace = "[workspace]\nmembers=['crates/excalidraw-render-compare']\n";
+        let package = "[package]\nname='excalidraw-render-compare'\n";
+        executable::package_layout(executable::COMPARE, package, workspace, false).unwrap();
+        for suffix in [
+            "autotests=false\n",
+            "[[test]]\nname='ssim_vectors'\nharness=false\n",
+        ] {
+            assert!(
+                executable::package_layout(
+                    executable::COMPARE,
+                    &format!("{package}{suffix}"),
+                    workspace,
+                    false
+                )
+                .is_err(),
+                "{suffix}"
+            );
+        }
+    }
+
+    #[test]
+    fn layer_rows_take_a_single_candidate_case_owner_or_an_executable_test() {
+        let (mut catalog, mut ledger) = fixture();
+        catalog.obligations[0].id = "layer:focused:frame-export".into();
+        catalog.obligations[0].category = "layer".into();
+        catalog.obligations[0].candidates = vec!["focused.frame-export.v1".into()];
+        ledger.assignments[0].id = "layer:focused:frame-export".into();
+        ledger.catalog_sha256 = digest(&catalog).unwrap();
+        let case = |id: &str, path: &str| Owner::Case {
+            case: id.into(),
+            manifest: descriptor(&format!(
+                "tests/conformance/cases/focused/{path}/manifest.json"
+            ))
+            .unwrap(),
+        };
+        let with = |owner: Owner, catalog: &Catalog| {
+            let mut ledger = ledger.clone();
+            assign_gaps(
+                &mut ledger,
+                &owner,
+                "reviewed",
+                &["layer:focused:frame-export".into()],
+            )
+            .unwrap();
+            validate(catalog, &ledger, false)
+        };
+        assert_eq!(
+            with(case("focused.frame-export.v1", "frame-export"), &catalog).unwrap(),
+            0
+        );
+        assert!(with(
+            case("focused.rectangle-outline.v1", "rectangle-outline"),
+            &catalog
+        )
+        .is_err());
+        let mut stale = case("focused.frame-export.v1", "frame-export");
+        if let Owner::Case { manifest, .. } = &mut stale {
+            manifest.sha256 = "0".repeat(64);
+        }
+        assert!(with(stale, &catalog)
+            .unwrap_err()
+            .contains("stale owner manifest"));
+        let mut two = catalog.clone();
+        two.obligations[0]
+            .candidates
+            .push("focused.rectangle-outline.v1".into());
+        let mut rebound = ledger.clone();
+        rebound.catalog_sha256 = digest(&two).unwrap();
+        let mut assigned = rebound.clone();
+        assign_gaps(
+            &mut assigned,
+            &case("focused.frame-export.v1", "frame-export"),
+            "reviewed",
+            &["layer:focused:frame-export".into()],
+        )
+        .unwrap();
+        assert!(validate(&two, &assigned, false)
+            .unwrap_err()
+            .contains("does not establish"));
+        // An executable test may own a layer row; a record may not.
+        assert_eq!(with(library_owner(), &catalog).unwrap(), 0);
+        // Only gaps are assigned.
+        let mut owned = ledger.clone();
+        assign_gaps(
+            &mut owned,
+            &library_owner(),
+            "reviewed",
+            &["layer:focused:frame-export".into()],
+        )
+        .unwrap();
+        assert!(assign_gaps(
+            &mut owned,
+            &library_owner(),
+            "again",
+            &["layer:focused:frame-export".into()]
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn only_spec_anchored_layer_rows_name_registered_candidate_cases() {
+        let registered: BTreeSet<&str> = ["focused.frame-export.v1"].into();
+        let spec = "The conformance corpus has five layers:";
+        let row = |id: &str, category: &str, candidates: &[&str]| PolicyRow {
+            id: id.into(),
+            category: category.into(),
+            criterion: "criterion".into(),
+            spec_anchor: spec.into(),
+            candidates: candidates.iter().map(|c| c.to_string()).collect(),
+        };
+        assert!(policy_row_valid(
+            &row("layer:vector:ssim", "layer", &[]),
+            spec,
+            &registered
+        ));
+        assert!(policy_row_valid(
+            &row(
+                "layer:focused:frame-export",
+                "layer",
+                &["focused.frame-export.v1"]
+            ),
+            spec,
+            &registered
+        ));
+        for bad in [
+            row("interaction:x", "interaction", &["focused.frame-export.v1"]),
+            row("layer:focused:x", "layer", &["focused.unregistered.v1"]),
+            row(
+                "layer:focused:x",
+                "layer",
+                &["focused.frame-export.v1", "focused.frame-export.v1"],
+            ),
+            row("vector:ssim", "layer", &[]),
+            row("layer:vector:ssim", "codec-profile", &[]),
+            row("layer:vector:ssim", "vector", &[]),
+        ] {
+            assert!(!policy_row_valid(&bad, spec, &registered), "{}", bad.id);
+        }
+        assert!(!policy_row_valid(
+            &row("layer:vector:ssim", "layer", &[]),
+            "other spec",
+            &registered
+        ));
     }
 }

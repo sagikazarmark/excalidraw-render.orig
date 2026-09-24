@@ -1,0 +1,215 @@
+{
+  "schema": "excalidraw-render/ownership-tranche/v1",
+  "approval": null,
+  "owners": [
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::tests",
+      "function": "outline_operations_match_the_pinned_roughjs_vectors",
+      "ids": [
+        "layer:vector:rough-js"
+      ],
+      "rationale": "Renders the seven OUTLINE_FAMILIES shapes (rectangle, rounded rectangle, ellipse, diamond, rounded diamond, line, rounded line) through the Rough.js port and asserts the exact per-path M/C operation counts [16,32,24,16,32,8,6] and the SHA-256 of the joined path data, which the test pins as derived from npm Rough.js 4.6.4 by tools/rough-filler-vectors/derive.mjs. Primary home for the Rough.js outline vectors; the sibling fill/arrowhead/rounded-diamond vector tests in render::tests remain secondary evidence."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::tests",
+      "function": "freedraw_strokes_match_the_pinned_perfect_freehand_vectors",
+      "ids": [
+        "layer:vector:perfect-freehand"
+      ],
+      "rationale": "Normalizes four freedraw scenes (simulated pressure, explicit pressure samples, a pressureless dot, omitted samples taking library defaults) and asserts the SHA-256 of each freedraw SVG path equals the pinned perfect-freehand 1.2.0 vector as Excalidraw v0.18.1 drives it."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::rough::tests",
+      "function": "architect_solid_ellipse_consumes_both_overlap_pairs",
+      "ids": [
+        "layer:vector:prng"
+      ],
+      "rationale": "Seeds the Rough.js Park-Miller generator (Random::new(43)), draws two architect ellipse overlaps at roughness 0 and asserts both return 0.0 while the generator state becomes exactly -610782869, i.e. both overlap pairs consume their draws as the reference does. Narrow PRNG-consumption vector; end-to-end consumption order is secondary evidence in the Rough.js digest tests."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::number_format::tests",
+      "function": "ecmascript_spelling_matches_pinned_chromium_vectors",
+      "ids": [
+        "layer:vector:number-format"
+      ],
+      "rationale": "Reads every entry of crates/excalidraw-render/tests/fixtures/number-format-vectors.json (pinned Chromium Number-to-string results keyed by binary64 bits) and asserts ecmascript_number spells each value exactly, and rejects each entry that has no spelling. The sibling rough_fixed_decimals_match_pinned_chromium_vectors (Rough toFixed(2) of the same corpus) remains secondary evidence."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "normalization::fractional_index::tests",
+      "function": "repair_matches_the_pinned_source_order_vectors",
+      "ids": [
+        "layer:vector:fractional-index"
+      ],
+      "rationale": "Asserts fractional-index repair of seven source-order key vectors (missing, duplicate, descending and mixed keys) returns the exact pinned repaired keys, and that repairing the result again is the identity."
+    },
+    {
+      "package": "excalidraw-render-compare",
+      "binary": "pixelmatch_upstream",
+      "module": "",
+      "function": "pixelmatch_matches_the_pinned_upstream_counts_and_diff_bytes",
+      "ids": [
+        "layer:vector:pixelmatch"
+      ],
+      "rationale": "Runs the Pixelmatch port over the upstream Pixelmatch 7.2.0 fixture pairs in tests/conformance/comparator-vectors/pixelmatch-v7.2.0 with each upstream option set (thresholds, diff mask, alpha, AA/diff colors) and asserts the exact upstream mismatch count and the exact decoded RGBA bytes of every upstream diff image. The fixture bytes themselves are pinned by the comparator profile test."
+    },
+    {
+      "package": "excalidraw-render-compare",
+      "binary": "ssim_vectors",
+      "module": "",
+      "function": "ssim_matches_every_normative_kernel_position_vector",
+      "ids": [
+        "layer:vector:ssim"
+      ],
+      "rationale": "Perturbs each of the 121 positions of an 11x11 constant plane by one level and asserts compare_planes returns the exact expected binary64 bit pattern for every position, plus the SHA-256 of the little-endian result words."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "scene_fuzz",
+      "function": "fixed_seed_scene_fuzz_smoke_is_bounded_and_deterministic",
+      "ids": [
+        "layer:adversarial:scene-fuzz"
+      ],
+      "rationale": "Pull-request smoke of the scene fuzz: 64 generated/mutated scene documents from the fixed xorshift seed 0xbb67ae8584caa73b, each replayed twice and required identical, and checked against its generator expectation and the generic contract (typed scene.* rejection with well-formed pointer, canonical-preservation fixpoint, deterministic ordered normalization per format, public-facade SVG render determinism, no panic). The ignored nightly expansion is not the owner."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::font_subset_fuzz",
+      "function": "fixed_seed_font_subset_fuzz_smoke_is_bounded_and_deterministic",
+      "ids": [
+        "layer:adversarial:font-subset-fuzz"
+      ],
+      "rationale": "Pull-request smoke of the font subset fuzz: 64 cases from the fixed seed 0x6a09e667f3bcc908 routed over subset derivation and malformed source/generated font structures, each replayed twice against the shared baseline context and required to return the identical typed outcome without panic. The ignored nightly expansion is not the owner."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "asset_fuzz",
+      "module": "asset_fuzz",
+      "function": "fixed_seed_asset_fuzz_smoke",
+      "ids": [
+        "layer:adversarial:asset-fuzz"
+      ],
+      "rationale": "Pull-request smoke of the public-facade asset fuzz: 64 byte/grammar mutations of the core raster and nested-SVG seeds from the fixed seed, round-robin over PNG, JPEG, GIF, WebP, BMP, ICO and SVG families, each rendered through the public facade and replayed with the target's bounded-outcome and determinism checks. The ignored nightly and captured-replay tests are not the owner."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "render_fuzz",
+      "module": "render_fuzz",
+      "function": "fixed_seed_complete_render_is_bounded_and_deterministic",
+      "ids": [
+        "layer:adversarial:render-fuzz"
+      ],
+      "rationale": "Pull-request smoke of the complete-render fuzz: 36 generated scene/option/limit-profile cases (mutated every third round), rendered in sequence on one Renderer and then replayed in reverse on fresh renderers, requiring identical snapshots and no panic. The ignored nightly and captured-replay tests are not the owner."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::frame_batch_property",
+      "function": "duplicate_identity_cycle_and_resource_boundaries_replay_exact_traces",
+      "ids": [
+        "layer:adversarial:frame-batch-property"
+      ],
+      "rationale": "For a scene with duplicate frame ids and a frame cycle, in SVG, PNG and PDF, derives each work boundary N from the canonical resource trace and asserts batch-prepared frame rendering equals standalone rendering (artifact bytes, report, failure location and canonical resource trace) at N-1, N and N+1 work units, at 1-3 diagnostics and across the output/memory limit ladder. The generated fixed-seed sample (frame_batch_rendering_matches_standalone_around_resource_limits) is ignored without the release-qualification feature and cannot own this row."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "limits_scene_admission",
+      "module": "",
+      "function": "fixed_structure_and_input_byte_boundaries_are_enforced",
+      "ids": [
+        "layer:adversarial:limits-scene-admission"
+      ],
+      "rationale": "Builds ceiling-sized scene documents and asserts the 1,048,576-entry JSON structure ceiling and the 67,108,864-byte input ceiling admit at equality and reject one unit over with the exact typed descriptor (code, pointer, limit name, limit, value kind, attempted measurement). The parser-memory boundary sibling in the same binary remains secondary evidence."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "scene_fuzz",
+      "function": "scene_fuzz_regression_corpus_is_manifested_and_replayed",
+      "ids": [
+        "layer:regression:scene-fuzz"
+      ],
+      "rationale": "Loads tests/qualification/scene-fuzz-regressions.json, checks its schema, issues, fixed seed and bounds against the fuzz target, requires unique minimized cases within the input bound covering all ten required risks, and replays each twice through the public seam, asserting determinism and the exact expected rejection code/pointer or admitted canonical digest, report and render outcome."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::font_subset_fuzz",
+      "function": "font_subset_fuzz_regression_corpus_is_manifested_and_replayed",
+      "ids": [
+        "layer:regression:font-subset-fuzz"
+      ],
+      "rationale": "Loads tests/qualification/font-subset-fuzz-regressions.json, checks schema, issues, subset profile digest, fixed seed, bounds and source font identity, replays its public-facade cases, and replays every unique minimized case twice asserting determinism, no whole-chunk fallback or partial output, the exact failure stage or validated WOFF2 digest, and coverage of every required risk."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "render_fuzz",
+      "module": "render_fuzz::regressions",
+      "function": "confirmed_failures_are_manifested_and_replayed",
+      "ids": [
+        "layer:regression:render-fuzz"
+      ],
+      "rationale": "Loads tests/qualification/render-fuzz-regressions.json (issue 83), requires unique minimized reproducers with frozen limits for boundary cases, replays each case's history and reproducer on a shared renderer and again on a fresh one, and asserts the exact expected rejection descriptor, failure descriptor and report, or artifact SHA-256 and report per output."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::tests",
+      "function": "rounded_diamond_radii_match_the_pinned_roughjs_vectors",
+      "ids": [
+        "layer:vector:geometry"
+      ],
+      "rationale": "Renders four rounded diamonds chosen to separate the reference's corner-radius rule (#160): proportional (type 2) radii of the vertex offsets floor(extent / 2) + 1 for an even and an odd extent, the adaptive (type 3) fixed 32 only beyond the 128 vertex-offset cutoff, and a small adaptive diamond whose hachure fill scans the same rounded outline. It asserts each element's exact per-path operation counts and the SHA-256 of every outline and fill path, pinned as npm Rough.js 4.6.4 output of tools/rough-filler-vectors/derive.mjs, which builds the path from the vertex offsets exactly as generateElementShape spells it. Exact element-shape geometry; the Rough.js outline digest (layer:vector:rough-js) remains the primary home of stroke generation."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "color::tests",
+      "function": "pinned_chromium_color_level_4_forms_lower_to_canonical_srgb",
+      "ids": [
+        "layer:vector:color"
+      ],
+      "rationale": "Asserts seventeen CSS color values (rgb/hwb/lab/oklab, color() in display-p3, srgb and srgb-linear, color-mix in srgb, oklab, hsl with and without longer hue, hwb, display-p3 and xyz, currentcolor, a named color and padded whitespace, keywords case-insensitive) lower to exactly the sRGB hex the pinned Chromium produces. The sibling system-color, dark-mode lowering and theme-filter tests in color::tests remain secondary evidence."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::tests",
+      "function": "a_font_fallback_probe_is_one_consulted_face_per_shaped_scalar_occurrence",
+      "ids": [
+        "layer:vector:shaping-fallback"
+      ],
+      "rationale": "Lays text out through the fallback chain and asserts the exact font fallback probe count for eight spec 8.3.1 shapes whose expected values follow the rule, not the code: a whole-text-face scalar (0), an untriggered won sign and U+10FFFF (Noto Emoji then the replacement, 2 each), a triggered ideograph served by its one Xiaolai chunk (1), an emoji (1), a triggered won sign served by Xiaolai (2), a repeated won sign paying per occurrence (4) and a Hebrew scalar Liberation declares but does not map (3). The sibling selected-Noto-Emoji test and render::resolve_tests' ordered-fallback run tests remain secondary evidence."
+    },
+    {
+      "package": "excalidraw-render",
+      "binary": "lib",
+      "module": "render::plan_tests",
+      "function": "png_surface_follows_the_sizing_rule",
+      "ids": [
+        "layer:vector:format-planning"
+      ],
+      "rationale": "Builds the PNG plan (no session, accounting, metadata or encoding) for a 20 x 10 rectangle with the default 10 px padding and asserts the planned surface is exactly 40x30, 60x45 and 80x60 at scales 1, 1.5 and 2, 20x15 under a 20 px maximum-dimension ceiling and 40x30 under a 100 px one, the values of the spec sizing rule. The PDF raster-closure and SVG shared-definition plan tests in render::plan_tests remain secondary evidence."
+    }
+  ],
+  "case_owners": [
+    {
+      "case": "focused.frame-export.v1",
+      "ids": [
+        "layer:focused:frame-export"
+      ],
+      "rationale": "Registered frame-kind case focused.frame-export.v1 (issue 97). verify-ownership runs conformance verify on it with approval required: manifest digest and identity, the pinned frame reference profile, every evidence descriptor, and all seven live frame/magicframe targets bound to their official SVG/PNG evidence and expected reports. Renderer parity against that evidence is executed by tests/parity_frame_export.rs (secondary evidence). The only focused-layer obligation without a case-label home; this assignment does not claim format/profile sub-obligations."
+    }
+  ]
+}

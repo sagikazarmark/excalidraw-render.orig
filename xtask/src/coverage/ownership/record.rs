@@ -15,13 +15,22 @@ pub(super) struct Verifier {
     verify: fn() -> Result<(), String>,
 }
 
-const VERIFIERS: &[Verifier] = &[Verifier {
-    name: "pdf-judgments",
-    schema: pdf_judgments::SCHEMA,
-    record: pdf_judgments::RECORD,
-    subject: pdf_judgments::record_subject,
-    verify: pdf_judgments::verify_approved_record,
-}];
+const VERIFIERS: &[Verifier] = &[
+    Verifier {
+        name: "pdf-judgments",
+        schema: pdf_judgments::SCHEMA,
+        record: pdf_judgments::RECORD,
+        subject: pdf_judgments::record_subject,
+        verify: pdf_judgments::verify_approved_record,
+    },
+    Verifier {
+        name: "layers",
+        schema: layers::SCHEMA,
+        record: layers::RECORD,
+        subject: layers::record_subject,
+        verify: layers::verify_approved_record,
+    },
+];
 
 fn verifier(name: &str) -> Result<&'static Verifier, String> {
     VERIFIERS
@@ -209,6 +218,56 @@ mod tests {
         };
         let error = check(OBLIGATION, &foreign, &subject, "pdf-judgments", &reader).unwrap_err();
         assert!(error.contains("verifier pdf-judgments checks"), "{error}");
+    }
+
+    #[test]
+    fn the_layers_verifier_is_registered_for_the_five_layer_record() {
+        let layers = verifier("layers").unwrap();
+        assert_eq!(
+            (layers.schema, layers.record),
+            (layers::SCHEMA, layers::RECORD)
+        );
+        let bytes = read(layers::RECORD).unwrap();
+        let value: Value = parse(&bytes).unwrap();
+        assert_eq!(value["obligation"], "closure:all-five-layers");
+        let descriptor = Descriptor {
+            path: layers::RECORD.into(),
+            sha256: sha256(&bytes),
+        };
+        let subject = format!("sha256:{}", (layers.subject)(&value).unwrap());
+        let reader = |_: &str| Ok(bytes.clone());
+        for (obligation, verifier, expected) in [
+            (
+                "closure:pdf-judgments",
+                "layers",
+                "not closure:pdf-judgments",
+            ),
+            (
+                "closure:all-five-layers",
+                "pdf-judgments",
+                "verifier pdf-judgments checks",
+            ),
+            (
+                "layer:vector:color",
+                "layers",
+                "only for closure obligations",
+            ),
+        ] {
+            let error = check(obligation, &descriptor, &subject, verifier, &reader).unwrap_err();
+            assert!(error.contains(expected), "{expected}: {error}");
+        }
+        // Until #85 approves it, the record cannot own its closure row.
+        if value["approval"].is_null() {
+            let error = check(
+                "closure:all-five-layers",
+                &descriptor,
+                &subject,
+                "layers",
+                &reader,
+            )
+            .unwrap_err();
+            assert!(error.contains("no #85 approval"), "{error}");
+        }
     }
 
     #[test]

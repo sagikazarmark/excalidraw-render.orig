@@ -23,6 +23,12 @@ pub(super) struct Binding {
     approval_subject_sha256: String,
     command: Vec<String>,
 }
+impl Binding {
+    /// The bound candidate case.
+    pub(super) fn case(&self) -> &str {
+        &self.case
+    }
+}
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Registry {
