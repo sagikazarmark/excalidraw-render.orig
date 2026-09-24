@@ -740,6 +740,27 @@ unsupported foreign namespaces, external CSS/fonts, `@import`, and non-fragment
 URLs are removed or rejected under the declared diagnostics. Only same-document
 fragments and admitted bounded data images can resolve.
 
+What remains draws as the pinned reference draws an SVG image:
+- Entities:
+  - Internal DTD entities expand. An undefined entity, a malformed or looping
+    declaration, or an expansion beyond the documented bound rejects the image
+    with the usual decode-failed recovery.
+  - External entities expand to nothing.
+- External references:
+  - A non-fragment `url()` resolves as a missing fragment, so its fallback
+    paint applies.
+  - A removed at-rule leaves the stylesheet's other rules in place.
+- Cycles: a reference cycle loses the edge that closes it in source order,
+  and the rest draws.
+- Data images may be base64 or percent-encoded, under the same bounds.
+
+The reference draws three things the renderer does not, and these are
+declared divergences:
+- animation state at the time it draws;
+- `foreignObject` content;
+- its own placeholder for an external image, where the renderer draws the
+  forbidden-resource placeholder.
+
 Direct SVG embeds validated compressed raster payload octets exactly. It does
 not decode, select a frame, apply orientation, transform color, tone-map,
 premultiply, strip metadata, or re-encode. Profiles, metadata, source alpha, and

@@ -2283,7 +2283,7 @@ fn nested_resource_limits_report_the_rejected_source_slot() {
 }
 
 #[test]
-fn nested_depth_contract_covers_owners_paths_frames_and_silence() {
+pub(super) fn nested_depth_contract_covers_owners_paths_frames_and_silence() {
     nested_resource_limits_report_the_rejected_source_slot();
     rejected_nested_payload_effects_follow_signatures_not_media_claims();
     nested_depth_recovery_depends_on_current_edge_not_cached_parent();
@@ -4248,7 +4248,7 @@ fn nested_placeholder_uses_current_reference_bounds_and_local_omission() {
 }
 
 #[test]
-fn nested_node_limits_cover_root_and_child_reports_and_silence() {
+pub(super) fn nested_node_limits_cover_root_and_child_reports_and_silence() {
     nested_node_count_includes_text_and_stops_descendant_discovery();
     nested_limit_owner_scope(true);
     nested_placeholder_artifact_oracle(true);

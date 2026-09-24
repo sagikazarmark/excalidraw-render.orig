@@ -1,5 +1,8 @@
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 mod css;
+mod entities;
+mod references;
 mod stylesheet;
 use std::sync::Arc;
 
@@ -140,11 +143,12 @@ fn sanitize_at(
     nested_accounting: &mut NestedAccounting,
 ) -> Result<SanitizedSvg, ResolutionFailure> {
     let text = std::str::from_utf8(bytes).map_err(|_| ResolveError::SvgDecodeFailed)?;
+    let text = entities::expand(text, limits.max_asset_bytes())?;
     let SvgSource {
         text,
         mut removals,
         source_nodes,
-    } = remove_dtd_and_entities(text)?;
+    } = remove_dtd_and_entities(&text)?;
     let mut failures = Vec::new();
     let mut media_claims = Vec::new();
     let document = roxmltree::Document::parse(&text).map_err(|_| ResolveError::SvgDecodeFailed)?;
@@ -177,7 +181,8 @@ fn sanitize_at(
     {
         return Err(ResolveError::SvgDecodeFailed.into());
     }
-    let css = css::Sheet::new(&document, &source_nodes, format)?;
+    let plan = references::Plan::new(&document)?;
+    let css = css::Sheet::new(&document, &source_nodes, &plan, format)?;
     let nodes = if source_nodes.is_empty() {
         document
             .descendants()
@@ -198,16 +203,31 @@ fn sanitize_at(
         .map(|node| node.attributes().len())
         .sum::<usize>()
         .saturating_add(removals.len())
-        .saturating_add(local_removal_count(&document));
+        .saturating_add(local_removal_count(&document, &plan));
     let tokens = nodes.saturating_add(attributes);
+    // Each local nested reference, accepted or rejected: every `href` and
+    // every `url(` in an attribute value or a stylesheet.
     let local_references = document
         .descendants()
-        .filter(|node| node.is_element())
-        .flat_map(|node| node.attributes())
-        .filter(|attribute| {
-            matches!(attribute.name(), "href" | "xlink:href") || attribute.value().contains("url(")
+        .map(|node| {
+            if node.is_text() {
+                return if node
+                    .parent()
+                    .is_some_and(|parent| parent.has_tag_name("style"))
+                {
+                    url_count(node.text().unwrap_or_default())
+                } else {
+                    0
+                };
+            }
+            node.attributes()
+                .map(|attribute| {
+                    usize::from(matches!(attribute.name(), "href" | "xlink:href"))
+                        .saturating_add(url_count(attribute.value()))
+                })
+                .fold(0_usize, usize::saturating_add)
         })
-        .count();
+        .fold(0_usize, usize::saturating_add);
     let semantic_records = u64::try_from(tokens)
         .unwrap_or(u64::MAX)
         .saturating_add(u64::try_from(nodes).unwrap_or(u64::MAX))
@@ -258,7 +278,7 @@ fn sanitize_at(
             .saturating_mul(64),
         );
     let mut serialized = String::new();
-    let css = css.resolve(&document)?;
+    let css = css.resolve(&document, &plan)?;
     let mut effects = discover_effects(&document, &source_nodes, &css);
     let mut node_ordinal = 0;
     serialize_node(
@@ -267,6 +287,7 @@ fn sanitize_at(
         &mut node_ordinal,
         &source_nodes,
         &css,
+        &plan,
         &mut serialized,
         &mut removals,
         &mut failures,
@@ -281,6 +302,20 @@ fn sanitize_at(
         transact,
         nested_accounting,
     )?;
+    // Backstop: the viewer library recurses through references, so a cycle
+    // the plan did not break would overflow the stack there. Refuse it.
+    let output = roxmltree::Document::parse_with_options(
+        &serialized,
+        roxmltree::ParsingOptions {
+            allow_dtd: true,
+            ..roxmltree::ParsingOptions::default()
+        },
+    )
+    .map_err(|_| ResolveError::SvgDecodeFailed)?;
+    if references::Plan::residual_cycle(&output)? {
+        return Err(ResolveError::SvgDecodeFailed.into());
+    }
+    drop(output);
     let options = viewer_options()?;
     super::svg_coordinates::source(&serialized, limits.max_coordinate_magnitude())?;
     let tree =
@@ -304,7 +339,7 @@ fn sanitize_at(
     })
 }
 
-fn local_removal_count(document: &roxmltree::Document<'_>) -> usize {
+fn local_removal_count(document: &roxmltree::Document<'_>, plan: &references::Plan) -> usize {
     document
         .descendants()
         .filter(|node| node.is_element())
@@ -317,7 +352,7 @@ fn local_removal_count(document: &roxmltree::Document<'_>) -> usize {
         })
         .map(|node| {
             let name = node.tag_name().name();
-            if !is_allowed_svg_node(&node) {
+            if !is_allowed_svg_node(&node) || plan.stylesheet_changed(node) {
                 return 1;
             }
             node.attributes()
@@ -352,15 +387,93 @@ fn safe_static_style_node(node: roxmltree::Node<'_, '_>) -> bool {
 }
 
 fn safe_static_stylesheet(stylesheet: &str) -> bool {
-    if stylesheet.contains(['@', '\\'])
-        || stylesheet.contains("/*")
-        || stylesheet.contains("*/")
-        || unsafe_attribute("style", "style", None, stylesheet)
-    {
-        return false;
-    }
+    rewrite_stylesheet(stylesheet, "x").is_some()
+}
 
-    stylesheet::Rules::new(stylesheet).all(|rule| rule.is_ok_and(|rule| rule.admitted()))
+/// The admitted static form of a stylesheet, and whether it differs from the
+/// source: its at-rules removed and its non-fragment URLs pointed at the
+/// `missing` fragment. `None` refuses the whole sheet.
+fn rewrite_stylesheet<'s>(stylesheet: &'s str, missing: &str) -> Option<(Cow<'s, str>, bool)> {
+    if stylesheet.contains('\\') || stylesheet.contains("/*") || stylesheet.contains("*/") {
+        return None;
+    }
+    let (sheet, stripped) = stylesheet::without_at_rules(stylesheet)?;
+    let (sheet, rewritten) = match rewrite_nonlocal_urls(&sheet, missing).ok()? {
+        Some(rewritten) => (Cow::Owned(rewritten), true),
+        None => (sheet, false),
+    };
+    if sheet.contains('@')
+        || unsafe_attribute("style", "style", None, &sheet)
+        || !stylesheet::Rules::new(&sheet).all(|rule| rule.is_ok_and(|rule| rule.admitted()))
+    {
+        return None;
+    }
+    Some((sheet, stripped || rewritten))
+}
+
+/// Each terminated `url(...)` token of `value` as its byte range and its
+/// unquoted target, found as admission finds them.
+fn url_tokens(value: &str) -> impl Iterator<Item = (usize, usize, &str)> {
+    let mut cursor = 0;
+    std::iter::from_fn(move || {
+        let offset = value.as_bytes()[cursor..]
+            .windows(4)
+            .position(|window| window.eq_ignore_ascii_case(b"url("))?;
+        let start = cursor + offset;
+        let end = start + 4 + value[start + 4..].find(')')? + 1;
+        cursor = end;
+        Some((
+            start,
+            end,
+            value[start + 4..end - 1].trim().trim_matches(['\'', '"']),
+        ))
+    })
+}
+
+fn url_count(value: &str) -> usize {
+    value
+        .as_bytes()
+        .windows(4)
+        .filter(|window| window.eq_ignore_ascii_case(b"url("))
+        .count()
+}
+
+/// `value` with each non-fragment `url(...)` replaced by a reference to the
+/// `missing` fragment; `None` when it has none. An unterminated `url(` stays
+/// for admission to refuse.
+fn rewrite_nonlocal_urls(value: &str, missing: &str) -> Result<Option<String>, ResolutionFailure> {
+    let mut rewritten: Option<String> = None;
+    let mut copied = 0;
+    for (start, end, target) in url_tokens(value) {
+        if target.starts_with('#') {
+            continue;
+        }
+        let output = match &mut rewritten {
+            Some(output) => output,
+            None => {
+                let mut output = String::new();
+                output
+                    .try_reserve(value.len().saturating_add(missing.len()))
+                    .map_err(|_| ResolutionFailure::Memory)?;
+                rewritten.insert(output)
+            }
+        };
+        output
+            .try_reserve(start - copied + missing.len() + 6)
+            .map_err(|_| ResolutionFailure::Memory)?;
+        output.push_str(&value[copied..start]);
+        output.push_str("url(#");
+        output.push_str(missing);
+        output.push(')');
+        copied = end;
+    }
+    if let Some(output) = &mut rewritten {
+        output
+            .try_reserve(value.len() - copied)
+            .map_err(|_| ResolutionFailure::Memory)?;
+        output.push_str(&value[copied..]);
+    }
+    Ok(rewritten)
 }
 
 fn allowed_static_style_property(property: &str) -> bool {
@@ -437,7 +550,9 @@ struct SourceNode {
     ordinal: u64,
 }
 
-/// Unknown entities become one temporary space solely in a location document,
+/// The DTD is dropped. Entities left after internal expansion (external ones,
+/// and undeclared ones the document may declare where the renderer does not
+/// look) are removed. They become one temporary space solely in a location document,
 /// so even an entity-only text node keeps its source ordinal. A second, clean
 /// document drives semantic operations; no marker is ever serialized or painted.
 fn remove_dtd_and_entities(text: &str) -> Result<SvgSource, ResolveError> {
@@ -684,6 +799,7 @@ fn serialize_node(
     node_ordinal: &mut u64,
     source_nodes: &[SourceNode],
     css: &css::Resolved,
+    plan: &references::Plan,
     output: &mut String,
     removals: &mut Vec<Removal>,
     failures: &mut Vec<Failure>,
@@ -727,6 +843,19 @@ fn serialize_node(
         count_descendants(node, node_ordinal);
         return Ok(());
     }
+    if name == "style" && plan.stylesheet_changed(node) {
+        // At-rules or non-fragment URLs were removed; every other rule stays.
+        removals
+            .try_reserve(1)
+            .map_err(|_| ResolutionFailure::Memory)?;
+        removals.push(Removal {
+            slots: Vec::new(),
+            node_ordinal: ordinal,
+            attribute_ordinal: None,
+            name: super::try_owned(name)?,
+            changes_appearance: true,
+        });
+    }
 
     output
         .try_reserve(name.len().saturating_add(128))
@@ -762,7 +891,11 @@ fn serialize_node(
         });
     for (attribute_ordinal, attribute) in node.attributes().enumerate() {
         let attribute_name = attribute.name();
-        let value = attribute.value();
+        let rewrite = plan.attribute(node, attribute_ordinal);
+        // A dropped attribute closed a reference cycle.
+        let Some(value) = plan.value(node, attribute_ordinal, attribute.value()) else {
+            continue;
+        };
         if attribute_name == "href"
             && matches!(
                 attribute.namespace(),
@@ -821,6 +954,19 @@ fn serialize_node(
                     && (!matches!(attribute_name, "href" | "xlink:href") || name != "a"),
             });
             continue;
+        }
+        if rewrite.is_some_and(|rewrite| rewrite.external) {
+            // Its non-fragment URLs now name a missing fragment.
+            removals
+                .try_reserve(1)
+                .map_err(|_| ResolutionFailure::Memory)?;
+            removals.push(Removal {
+                slots: Vec::new(),
+                node_ordinal: ordinal,
+                attribute_ordinal: Some(u64::try_from(attribute_ordinal).unwrap_or(u64::MAX)),
+                name: super::try_owned(attribute_name)?,
+                changes_appearance: true,
+            });
         }
         let nested_value = if matches!(attribute_name, "href" | "xlink:href") {
             match sanitize_nested_data_image(
@@ -901,6 +1047,13 @@ fn serialize_node(
             value,
         )?;
     }
+    for (added, value) in plan.added(node) {
+        if css.enabled && *added == "style" {
+            // Lowered with the rest of its cascade below.
+            continue;
+        }
+        write_attribute(output, added, value)?;
+    }
     if let Some((style, _)) = css.get(node) {
         if !style.is_empty() {
             write_attribute(output, "style", style)?;
@@ -918,7 +1071,22 @@ fn serialize_node(
         .try_reserve(1)
         .map_err(|_| ResolutionFailure::Memory)?;
     output.push('>');
-    for child in node.children() {
+    if plan.needs_stop(node) {
+        // No stop anywhere in its chain: it paints nothing, not its fallback.
+        output
+            .try_reserve(32)
+            .map_err(|_| ResolutionFailure::Memory)?;
+        output.push_str(r#"<stop stop-opacity="0"/>"#);
+    }
+    if let Some(sheet) = plan.stylesheet(node).filter(|_| name == "style") {
+        reserve_escaped(output, sheet, 0)?;
+        escape_text(output, sheet);
+        count_descendants(node, node_ordinal);
+    }
+    for child in node
+        .children()
+        .filter(|_| name != "style" || plan.stylesheet(node).is_none())
+    {
         if child.is_element() || child.is_text() {
             serialize_node(
                 child,
@@ -926,6 +1094,7 @@ fn serialize_node(
                 node_ordinal,
                 source_nodes,
                 css,
+                plan,
                 output,
                 removals,
                 failures,
@@ -997,15 +1166,90 @@ fn remember_recovery(
 /// content; SVG and unidentified content conservatively retain semantic risk.
 /// The untrusted media-type claim never overrides the payload signature.
 pub(super) fn rejected_payload_may_have_semantics(value: &str) -> bool {
-    let Some((_, encoded)) = value.split_once(";base64,") else {
+    let Some(DataUrl { base64, body, .. }) = value.strip_prefix("data:").and_then(DataUrl::parse)
+    else {
         return true;
     };
-    let prefix = &encoded.as_bytes()[..encoded.len().min(64)];
     let mut bytes = [0; 48];
-    let Ok(len) = base64::engine::general_purpose::STANDARD.decode_slice(prefix, &mut bytes) else {
-        return true;
+    let len = if base64 {
+        let prefix = &body.as_bytes()[..body.len().min(64)];
+        let Ok(len) = base64::engine::general_purpose::STANDARD.decode_slice(prefix, &mut bytes)
+        else {
+            return true;
+        };
+        len
+    } else {
+        let mut len = 0;
+        for byte in PercentDecoded(body.as_bytes()).take(bytes.len()) {
+            bytes[len] = byte;
+            len += 1;
+        }
+        len
     };
     super::sniff_media_kind(&bytes[..len]).is_err()
+}
+
+/// A `data:` URL body as the reference's URL parser and data URL processor
+/// read it: the header up to the first comma, a final `;base64` parameter
+/// selecting base64, otherwise percent-encoded octets; the fragment is not
+/// part of the body.
+struct DataUrl<'a> {
+    claimed_media_type: &'a str,
+    base64: bool,
+    body: &'a str,
+}
+
+impl<'a> DataUrl<'a> {
+    fn parse(data: &'a str) -> Option<Self> {
+        let (header, body) = data.split_once(',')?;
+        let body = body.split_once('#').map_or(body, |(body, _)| body);
+        Some(match header.rsplit_once(';') {
+            Some((media_type, parameter)) if parameter.trim().eq_ignore_ascii_case("base64") => {
+                Self {
+                    claimed_media_type: media_type,
+                    base64: true,
+                    body,
+                }
+            }
+            _ => Self {
+                claimed_media_type: header,
+                base64: false,
+                body,
+            },
+        })
+    }
+}
+
+/// Percent-decodes octets; a `%` without two hex digits stays literal.
+struct PercentDecoded<'a>(&'a [u8]);
+
+impl Iterator for PercentDecoded<'_> {
+    type Item = u8;
+
+    fn next(&mut self) -> Option<u8> {
+        let (&first, rest) = self.0.split_first()?;
+        let hex = |byte: u8| char::from(byte).to_digit(16);
+        if first == b'%' {
+            if let [high, low, rest @ ..] = rest {
+                if let (Some(high), Some(low)) = (hex(*high), hex(*low)) {
+                    self.0 = rest;
+                    return u8::try_from(high * 16 + low).ok();
+                }
+            }
+        }
+        self.0 = rest;
+        Some(first)
+    }
+}
+
+/// A media type without its parameters, compared case-insensitively.
+fn media_type_essence(media_type: &str) -> String {
+    media_type
+        .split(';')
+        .next()
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase()
 }
 
 /// A stopped nested image retains only its own established finite viewport.
@@ -1220,24 +1464,48 @@ fn sanitize_nested_data_image(
     let Some(data) = value.strip_prefix("data:") else {
         return Ok(None);
     };
-    let Some((claimed_media_type, encoded)) = data.split_once(";base64,") else {
+    let Some(DataUrl {
+        claimed_media_type,
+        base64,
+        body,
+    }) = DataUrl::parse(data)
+    else {
         return Err(ResolveError::SvgDecodeFailed.into());
     };
-    let (decoded_prefix, valid_base64) = super::payload::decoded_prefix(encoded);
-    admit_nested_occurrence(decoded_prefix, transact, nested_accounting)?;
-    if !valid_base64 {
-        return Err(ResolveError::SvgDecodeFailed.into());
-    }
     let attempted_depth = depth.saturating_add(1);
-    if attempted_depth > limits.max_nested_asset_depth() {
-        return Err(ResolveError::SvgDepth {
-            attempted: u64::from(attempted_depth),
+    let depth_error = ResolveError::SvgDepth {
+        attempted: u64::from(attempted_depth),
+    };
+    // Base64 and percent-encoded payloads are one occurrence of their decoded
+    // octets under the same bounds, accounting and recursion.
+    let bytes = if base64 {
+        let (decoded_prefix, valid_base64) = super::payload::decoded_prefix(body);
+        admit_nested_occurrence(decoded_prefix, transact, nested_accounting)?;
+        if !valid_base64 {
+            return Err(ResolveError::SvgDecodeFailed.into());
         }
-        .into());
-    }
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(encoded)
-        .map_err(|_| ResolveError::SvgDecodeFailed)?;
+        if attempted_depth > limits.max_nested_asset_depth() {
+            return Err(depth_error.into());
+        }
+        base64::engine::general_purpose::STANDARD
+            .decode(body)
+            .map_err(|_| ResolveError::SvgDecodeFailed)?
+    } else {
+        let mut bytes = Vec::new();
+        bytes
+            .try_reserve_exact(PercentDecoded(body.as_bytes()).count())
+            .map_err(|_| ResolutionFailure::Memory)?;
+        bytes.extend(PercentDecoded(body.as_bytes()));
+        admit_nested_occurrence(
+            u64::try_from(bytes.len()).unwrap_or(u64::MAX),
+            transact,
+            nested_accounting,
+        )?;
+        if attempted_depth > limits.max_nested_asset_depth() {
+            return Err(depth_error.into());
+        }
+        bytes
+    };
     let decoded_bytes = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
     if decoded_bytes > limits.max_asset_bytes() {
         return Err(ResolveError::AssetBytes {
@@ -1477,7 +1745,7 @@ fn sanitize_nested_data_image(
         };
         (emitted_type, canonical_bytes.as_ref().clone())
     };
-    if claimed_media_type != validated_media_type {
+    if media_type_essence(claimed_media_type) != validated_media_type {
         media_claims.push(MediaClaim {
             path: vec![(slot_node_ordinal, slot_attribute_ordinal)],
             claimed: claimed_media_type.to_owned(),
@@ -1961,7 +2229,7 @@ fn safe_href(element_name: &str, value: &str) -> bool {
     value.starts_with('#')
         || matches!(element_name, "image" | "feImage")
             && value.starts_with("data:image/")
-            && value.contains(";base64,")
+            && value.contains(',')
 }
 
 fn contains_nonlocal_url(value: &str) -> bool {
@@ -2173,24 +2441,136 @@ mod tests {
     }
 
     #[test]
-    fn dtds_and_declared_entities_are_removed_without_expansion() {
+    fn internal_entities_expand_and_the_dtd_is_removed() {
         let sanitized = sanitize_default(
-            br##"<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY secret "EXPANDED">]><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>&secret;</text><rect width="20" height="10" fill="#00ff00"/></svg>"##,
+            br##"<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY secret "EXPANDED"><!ENTITY paint "#00ff00">]><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>&secret;</text><rect width="20" height="10" fill="&paint;"/></svg>"##,
         );
         let text = sanitized_text(&sanitized);
         assert!(!text.contains("DOCTYPE"));
         assert!(!text.contains("ENTITY"));
-        assert!(!text.contains("EXPANDED"));
-        assert!(text.contains("<rect"));
-        // The DTD itself paints nothing; the reference to the declared entity
-        // did, and its removal changes what the text shows.
+        assert!(text.contains("<text>EXPANDED</text>"), "{text}");
+        assert!(text.contains(r##"fill="#00ff00""##), "{text}");
+        // Only the DTD is removed, and it paints nothing.
         assert_eq!(
             sanitized
                 .removals
                 .iter()
                 .map(|removal| (removal.name.as_str(), removal.changes_appearance))
                 .collect::<Vec<_>>(),
-            [("DOCTYPE", false), ("secret", true)]
+            [("DOCTYPE", false)]
+        );
+    }
+
+    #[test]
+    fn entity_replacement_text_is_markup_in_content_and_text_in_attributes() {
+        let sanitized = sanitize_default(
+            br##"<!DOCTYPE svg [<!ENTITY a "#e0"><!ENTITY c "&a;&#x65;0e020"><!ENTITY q 'say "hi"'><!ENTITY r "<rect id='r' width='4' height='4' fill='&c;'/>">]><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10">&r;<desc title="&q;"/></svg>"##,
+        );
+        let text = sanitized_text(&sanitized);
+        assert!(
+            text.contains(r##"<rect id="r" width="4" height="4" fill="#e0e0e020">"##),
+            "{text}"
+        );
+        assert!(text.contains(r#"title="say &quot;hi&quot;""#), "{text}");
+        assert_eq!(removal_names(&sanitized), ["DOCTYPE"]);
+    }
+
+    #[test]
+    fn external_entities_expand_to_nothing_and_are_reported() {
+        let sanitized = sanitize_default(
+            br##"<!DOCTYPE svg [<!ENTITY x SYSTEM "https://example.invalid/x"><!ENTITY y PUBLIC "-//X//Y" "https://example.invalid/y">]><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>A&x;B</text><rect width="20" height="10" fill="red&y;"/></svg>"##,
+        );
+        let text = sanitized_text(&sanitized);
+        assert!(text.contains("<text>AB</text>"), "{text}");
+        assert!(!text.contains("example.invalid"));
+        assert_eq!(
+            sanitized
+                .removals
+                .iter()
+                .map(|removal| (
+                    removal.name.as_str(),
+                    removal.node_ordinal,
+                    removal.attribute_ordinal
+                ))
+                .collect::<Vec<_>>(),
+            [("DOCTYPE", 0, None), ("x", 2, None), ("fill", 3, Some(2))]
+        );
+    }
+
+    #[test]
+    fn undeclared_entities_reject_unless_the_dtd_may_declare_them() {
+        for bytes in [
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect fill="&nope;"/></svg>"#.as_slice(),
+            br#"<!DOCTYPE svg [<!ENTITY a "x">]><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>&nope;</text></svg>"#.as_slice(),
+            br#"<?xml version="1.0" standalone="yes"?><!DOCTYPE svg SYSTEM "https://example.invalid/svg.dtd"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>&nope;</text></svg>"#.as_slice(),
+        ] {
+            assert_eq!(
+                asset_error(sanitize_with(bytes, &ResourceLimits::default(), OutputFormat::Svg)),
+                ResolveError::SvgDecodeFailed,
+                "{}",
+                String::from_utf8_lossy(bytes)
+            );
+        }
+        // An external subset or parameter-entity reference may declare it
+        // where the reference does not look: it is removed instead.
+        for bytes in [
+            br#"<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>A&nbsp;B</text></svg>"#.as_slice(),
+            br#"<!DOCTYPE svg [<!ENTITY % p "x"> %p;]><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>A&nbsp;B</text></svg>"#.as_slice(),
+        ] {
+            let sanitized = sanitize_default(bytes);
+            assert!(sanitized_text(&sanitized).contains("<text>AB</text>"));
+            assert_eq!(removal_names(&sanitized), ["DOCTYPE", "nbsp"]);
+        }
+    }
+
+    #[test]
+    fn entity_loops_depth_and_amplification_are_bounded() {
+        let expand = |text: &str, cap: u64| entities::expand(text, cap).map(|text| text.len());
+        let looped = r#"<!DOCTYPE svg [<!ENTITY a "&b;"><!ENTITY b "&a;">]><svg>&a;</svg>"#;
+        assert_eq!(expand(looped, u64::MAX), Err(ResolveError::SvgDecodeFailed));
+        let deep = |levels: u32| {
+            let mut dtd = String::from(r#"<!DOCTYPE svg [<!ENTITY e0 "x">"#);
+            for level in 1..levels {
+                dtd.push_str(&format!(r#"<!ENTITY e{level} "&e{};">"#, level - 1));
+            }
+            format!("{dtd}]><svg>&e{};</svg>", levels - 1)
+        };
+        assert!(expand(&deep(entities::MAX_DEPTH), u64::MAX).is_ok());
+        assert_eq!(
+            expand(&deep(entities::MAX_DEPTH + 1), u64::MAX),
+            Err(ResolveError::SvgDecodeFailed)
+        );
+        // Each reference costs 20 plus the 1,000 bytes it produces; a small
+        // source may expand to 1,000,000 cost units and no more.
+        let repeated = |references: usize| {
+            format!(
+                r#"<!DOCTYPE svg [<!ENTITY a "{}">]><svg><desc>{}</desc></svg>"#,
+                "x".repeat(1000),
+                "&a;".repeat(references)
+            )
+        };
+        assert!(expand(&repeated(980), u64::MAX).is_ok());
+        assert_eq!(
+            expand(&repeated(981), u64::MAX),
+            Err(ResolveError::SvgDecodeFailed)
+        );
+        // Never beyond the per-asset byte ceiling.
+        assert_eq!(
+            expand(&repeated(3), 3060),
+            Ok(repeated(3).len() - 3 * 3 + 3000)
+        );
+        assert_eq!(
+            expand(&repeated(3), 3059),
+            Err(ResolveError::SvgDecodeFailed)
+        );
+        // Beyond it, five cost units per source byte: 1,020k <= 5 * (301,064 + 3k).
+        let padded =
+            |references: usize| format!("{}<!-- {} -->", repeated(references), " ".repeat(300_000));
+        assert_eq!(padded(0).len(), 301_064);
+        assert!(expand(&padded(1497), u64::MAX).is_ok());
+        assert_eq!(
+            expand(&padded(1498), u64::MAX),
+            Err(ResolveError::SvgDecodeFailed)
         );
     }
 
@@ -2440,5 +2820,400 @@ mod tests {
         );
         let svg = sanitize_default(nested);
         assert!(!sanitized_text(&svg).contains("__excalidraw_"));
+    }
+
+    #[test]
+    fn at_rules_are_removed_from_stylesheets_and_every_other_rule_kept() {
+        for (sheet, kept) in [
+            (
+                "@import url(https://example.invalid/a.css); rect.a{fill:#e02020}",
+                " rect.a{fill:#e02020}",
+            ),
+            (
+                "rect.a{fill:#2020e0} @import url(https://example.invalid/a.css); rect.b{fill:#e02020}",
+                "rect.a{fill:#2020e0}  rect.b{fill:#e02020}",
+            ),
+            (
+                "@font-face{font-family:X;src:url(data:font/woff2;base64,AAAA)} rect.a{fill:#e02020}",
+                " rect.a{fill:#e02020}",
+            ),
+        ] {
+            let sanitized = sanitize_default(
+                format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><style>{sheet}</style><rect class="a b" width="20" height="10"/></svg>"#
+                )
+                .as_bytes(),
+            );
+            let text = sanitized_text(&sanitized);
+            assert!(text.contains(&format!("<style>{kept}</style>")), "{text}");
+            // The partially removed stylesheet is reported at its node.
+            let [removal] = sanitized.removals.as_slice() else {
+                panic!("one removal: {:#?}", sanitized.removals);
+            };
+            assert_eq!(
+                (removal.name.as_str(), removal.node_ordinal, removal.attribute_ordinal),
+                ("style", 1, None)
+            );
+            assert!(removal.changes_appearance);
+        }
+        // An unadmitted ordinary rule still refuses the whole stylesheet.
+        let sanitized = sanitize_default(
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><style>@keyframes k{from{fill:red}} rect{animation:k 1s}</style><rect width="20" height="10"/></svg>"#,
+        );
+        assert!(!sanitized_text(&sanitized).contains("<style"));
+        assert_eq!(removal_names(&sanitized), ["style"]);
+    }
+
+    #[test]
+    fn external_urls_resolve_as_a_missing_fragment_and_are_reported() {
+        let sanitized = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><style>rect.a{fill:url(http://example.invalid/a.svg#g) #2020e0}</style><rect class="a" id="__excalidraw_missing" width="20" height="10" fill="url(http://example.invalid/a.svg#g) #2020e0" style="stroke:url('https://example.invalid/s')" mask="url(#local)"/></svg>"##,
+        );
+        let text = sanitized_text(&sanitized);
+        assert!(!text.contains("example.invalid"), "{text}");
+        // The fragment names no element, even one spelled like it.
+        assert!(
+            text.contains("<style>rect.a{fill:url(#__excalidraw_missing_1) #2020e0}</style>"),
+            "{text}"
+        );
+        assert!(
+            text.contains(r##"fill="url(#__excalidraw_missing_1) #2020e0""##),
+            "{text}"
+        );
+        assert!(
+            text.contains(r##"style="stroke:url(#__excalidraw_missing_1)""##),
+            "{text}"
+        );
+        assert!(text.contains(r##"mask="url(#local)""##), "{text}");
+        assert_eq!(
+            sanitized
+                .removals
+                .iter()
+                .map(|removal| (
+                    removal.name.as_str(),
+                    removal.node_ordinal,
+                    removal.attribute_ordinal
+                ))
+                .collect::<Vec<_>>(),
+            [
+                ("style", 1, None),
+                ("fill", 3, Some(4)),
+                ("style", 3, Some(5))
+            ]
+        );
+        // Anything else unsafe in the value still removes the attribute once.
+        let removed = sanitize_default(
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" style="fill:url(https://example.invalid/p);width:expression(alert(1))"/></svg>"#,
+        );
+        assert!(!sanitized_text(&removed).contains("style="));
+        assert_eq!(removal_names(&removed), ["style"]);
+    }
+
+    #[test]
+    fn use_cycles_drop_the_closing_reference_in_source_order() {
+        let sanitized = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><g id="a"><rect width="4" height="4"/><use id="inner" href="#a"/></g><g id="b"><use id="first" href="#c"/></g><g id="c"><use id="second" href="#b"/></g></defs><use id="self" href="#self"/><use id="outer" href="#a"/><use href="#b"/></svg>"##,
+        );
+        let text = sanitized_text(&sanitized);
+        for dropped in ["inner", "second", "self"] {
+            assert!(text.contains(&format!(r#"<use id="{dropped}">"#)), "{text}");
+        }
+        assert!(text.contains(r##"<use id="first" href="#c">"##), "{text}");
+        assert!(text.contains(r##"<use id="outer" href="#a">"##), "{text}");
+        // Breaking a cycle removes nothing unsafe.
+        assert!(sanitized.removals.is_empty());
+        let tree = &sanitized.tree;
+        assert!(tree.root().has_children());
+    }
+
+    #[test]
+    fn rendering_reference_cycles_are_broken_and_the_rest_drawn() {
+        // Three-element cycles the viewer library does not detect itself.
+        let masks = sanitize_default(
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><mask id="a"><rect width="9" height="9" fill="white" mask="url(#b)"/></mask><mask id="b"><rect width="9" height="9" fill="white" mask="url(#c)"/></mask><mask id="c"><rect width="9" height="9" fill="white" mask="url(#a)"/></mask><rect width="20" height="10" mask="url(#a)"/></svg>"#,
+        );
+        let text = sanitized_text(&masks);
+        assert_eq!(
+            text.matches("url(#__excalidraw_missing)").count(),
+            1,
+            "{text}"
+        );
+        assert!(text.contains(r#"fill="white" mask="url(#__excalidraw_missing)""#));
+        assert!(text.contains(r#"<rect width="20" height="10" mask="url(#a)">"#));
+
+        // Pattern content inheriting its own pattern overrides the inherited
+        // value on the closing element.
+        let inherited = sanitize_default(
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><g fill="url(#p) red"><pattern id="p" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4"/></pattern><rect width="20" height="10"/></g></svg>"#,
+        );
+        let text = sanitized_text(&inherited);
+        assert!(
+            text.contains(r#"<rect width="4" height="4" fill="url(#__excalidraw_missing) red">"#),
+            "{text}"
+        );
+        assert!(text.contains(r#"<g fill="url(#p) red">"#), "{text}");
+
+        let filters = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="a"><feImage href="#r1"/></filter><filter id="b"><feImage href="#r2"/></filter></defs><rect id="r1" width="9" height="9" filter="url(#b)"/><rect id="r2" width="9" height="9" filter="url(#a)"/></svg>"##,
+        );
+        let text = sanitized_text(&filters);
+        assert!(text.contains(r##"<feImage href="#r2">"##), "{text}");
+        assert!(text.contains("<feImage>"), "{text}");
+    }
+
+    /// The sanitized document's pixels as the viewer library draws them.
+    fn drawn(sanitized: &SanitizedSvg) -> Vec<u8> {
+        let size = sanitized.tree.size().to_int_size();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(size.width(), size.height())
+            .expect("the drawing has an area");
+        resvg::render(
+            &sanitized.tree,
+            resvg::tiny_skia::Transform::default(),
+            &mut pixmap.as_mut(),
+        );
+        pixmap.data().to_vec()
+    }
+
+    /// Sanitizes a stylesheet-authored cycle twice and its attribute-authored
+    /// twin once: the result is deterministic, draws as the twin draws, and
+    /// breaking the cycle is not reported as a removal.
+    fn assert_breaks_like_twin(styled: &[u8], twin: &[u8]) -> SanitizedSvg {
+        let first = sanitize_default(styled);
+        let second = sanitize_default(styled);
+        assert_eq!(first.bytes, second.bytes);
+        assert!(first.removals.is_empty(), "{:?}", removal_names(&first));
+        let twin = sanitize_default(twin);
+        assert_eq!(
+            drawn(&first),
+            drawn(&twin),
+            "{}\n{}",
+            sanitized_text(&first),
+            sanitized_text(&twin)
+        );
+        first
+    }
+
+    #[test]
+    fn stylesheet_mask_cycles_break_like_attribute_cycles() {
+        let three = assert_breaks_like_twin(
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><style>.a{mask:url(#b)} .b{mask:url(#c)} .c{mask:url(#a)}</style><defs><mask id="a"><rect class="a" width="24" height="24" fill="white"/></mask><mask id="b"><rect class="b" width="24" height="24" fill="white"/></mask><mask id="c"><rect class="c" width="24" height="24" fill="white"/></mask></defs><rect width="24" height="24" fill="red" mask="url(#a)"/></svg>"#,
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><defs><mask id="a"><rect mask="url(#b)" width="24" height="24" fill="white"/></mask><mask id="b"><rect mask="url(#c)" width="24" height="24" fill="white"/></mask><mask id="c"><rect mask="url(#a)" width="24" height="24" fill="white"/></mask></defs><rect width="24" height="24" fill="red" mask="url(#a)"/></svg>"#,
+        );
+        let text = sanitized_text(&three);
+        // The rule stays; the closing element overrides it in its `style`.
+        assert!(
+            text.contains(".a{mask:url(#b)} .b{mask:url(#c)} .c{mask:url(#a)}"),
+            "{text}"
+        );
+        assert_eq!(text.matches("__excalidraw_missing").count(), 1, "{text}");
+        assert!(
+            text.contains(r#"<rect class="c" width="24" height="24" fill="white" style="mask:url(#__excalidraw_missing);">"#),
+            "{text}"
+        );
+        // The red square is drawn through masks whose content is unmasked.
+        let pixels = drawn(&three);
+        assert_eq!(&pixels[..4], &[255, 0, 0, 255]);
+
+        let two = assert_breaks_like_twin(
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><style>.a{clip-path:url(#b)} .b{clip-path:url(#a)}</style><defs><clipPath id="a"><rect class="a" width="12" height="24"/></clipPath><clipPath id="b"><rect class="b" width="24" height="12"/></clipPath></defs><rect width="24" height="24" fill="red" clip-path="url(#a)"/></svg>"#,
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><defs><clipPath id="a"><rect clip-path="url(#b)" width="12" height="24"/></clipPath><clipPath id="b"><rect clip-path="url(#a)" width="24" height="12"/></clipPath></defs><rect width="24" height="24" fill="red" clip-path="url(#a)"/></svg>"#,
+        );
+        let text = sanitized_text(&two);
+        assert!(
+            text.contains(r#"<rect class="b" width="24" height="12" style="clip-path:url(#__excalidraw_missing);">"#),
+            "{text}"
+        );
+    }
+
+    #[test]
+    fn a_rule_closing_a_filter_on_itself_breaks_like_its_attribute() {
+        let sanitized = assert_breaks_like_twin(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><style>.x{filter:url(#f)}</style><defs><filter id="f"><feImage href="#r"/></filter></defs><rect width="24" height="24" fill="blue"/><rect id="r" class="x" width="12" height="12" fill="red"/></svg>"##,
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><defs><filter id="f"><feImage href="#r"/></filter></defs><rect width="24" height="24" fill="blue"/><rect id="r" filter="url(#f)" width="12" height="12" fill="red"/></svg>"##,
+        );
+        // Reached first through the rule, the `feImage` link closes it.
+        let text = sanitized_text(&sanitized);
+        assert!(text.contains("<feImage></feImage>"), "{text}");
+    }
+
+    #[test]
+    fn a_value_inherited_from_a_rule_styled_ancestor_is_overridden_on_the_closing_element() {
+        let sanitized = assert_breaks_like_twin(
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><style>.p{fill:url(#p) red}</style><g class="p"><pattern id="p" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="2" height="2"/></pattern><rect width="20" height="10"/></g></svg>"#,
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><g fill="url(#p) red"><pattern id="p" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="2" height="2"/></pattern><rect width="20" height="10"/></g></svg>"#,
+        );
+        let text = sanitized_text(&sanitized);
+        assert!(
+            text.contains(r#"<rect width="2" height="2" fill="url(#__excalidraw_missing) red">"#),
+            "{text}"
+        );
+        assert!(text.contains(r#"<g class="p">"#), "{text}");
+    }
+
+    #[test]
+    fn use_of_a_rule_styled_element_breaks_like_its_attribute() {
+        let sanitized = assert_breaks_like_twin(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><style>.m{mask:url(#m)}</style><defs><mask id="m"><rect width="24" height="24" fill="white"/><use href="#r"/></mask></defs><rect width="24" height="24" fill="blue"/><rect id="r" class="m" width="12" height="12" fill="red"/></svg>"##,
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><defs><mask id="m"><rect width="24" height="24" fill="white"/><use href="#r"/></mask></defs><rect width="24" height="24" fill="blue"/><rect id="r" mask="url(#m)" width="12" height="12" fill="red"/></svg>"##,
+        );
+        let text = sanitized_text(&sanitized);
+        assert!(text.contains("<use></use>"), "{text}");
+        let pixels = drawn(&sanitized);
+        assert_eq!(&pixels[..4], &[255, 0, 0, 255]);
+    }
+
+    #[test]
+    fn important_rules_closing_a_cycle_keep_every_other_value() {
+        // The `!important` rule beats the inline `style` and the more specific
+        // rule; only the closing element's value changes.
+        let sanitized = assert_breaks_like_twin(
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><style>.a{mask:url(#b)!important} .b{mask:url(#a) !important} rect.b{mask:none}</style><defs><mask id="a"><rect class="a" style="mask:none" width="24" height="24" fill="white"/></mask><mask id="b"><rect class="b" width="24" height="24" fill="white"/></mask></defs><rect width="24" height="24" fill="red" mask="url(#a)"/><rect class="b" width="4" height="4" fill="blue"/></svg>"#,
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><defs><mask id="a"><rect mask="url(#b)" width="24" height="24" fill="white"/></mask><mask id="b"><rect width="24" height="24" fill="white"/></mask></defs><rect width="24" height="24" fill="red" mask="url(#a)"/><rect mask="url(#a)" width="4" height="4" fill="blue"/></svg>"#,
+        );
+        let text = sanitized_text(&sanitized);
+        assert!(text.contains(".a{} .b{} rect.b{mask:none}"), "{text}");
+        assert!(text.contains(r#"style="mask:url(#b);""#), "{text}");
+        assert!(
+            text.contains(r#"fill="blue" style="mask:url(#a);""#),
+            "{text}"
+        );
+        assert_eq!(text.matches("__excalidraw_missing").count(), 1, "{text}");
+    }
+
+    #[test]
+    fn a_cycle_the_plan_cannot_see_is_refused_before_the_viewer_library() {
+        // PDF marks a filtered element with an id, which the `[id]` selector
+        // then matches in the sanitized document only: a mask cycle the viewer
+        // library would recurse through without bound.
+        let svg = br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><style>rect[id]{mask:url(#m)}</style><mask id="m"><rect filter="none" width="24" height="24" fill="white"/></mask><rect width="24" height="24" fill="red" mask="url(#m)"/></svg>"#;
+        sanitize_default(svg);
+        assert_eq!(
+            asset_error(sanitize_with(
+                svg,
+                &ResourceLimits::default(),
+                OutputFormat::Pdf
+            )),
+            ResolveError::SvgDecodeFailed
+        );
+    }
+
+    #[test]
+    fn gradient_chains_without_stops_paint_nothing() {
+        let sanitized = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><linearGradient id="a" href="#b"/><linearGradient id="b" href="#c"/><linearGradient id="c" href="#b"/><linearGradient id="d" href="#e"/><linearGradient id="e"><stop stop-color="red"/></linearGradient></defs><rect width="20" height="10" fill="url(#a) blue"/><rect width="20" height="10" fill="url(#d) blue"/></svg>"##,
+        );
+        let text = sanitized_text(&sanitized);
+        // The closing link of the chain is dropped.
+        assert!(text.contains(r#"<linearGradient id="c">"#), "{text}");
+        for stopless in ["a", "b", "c"] {
+            assert!(
+                text.contains(&format!(r#"id="{stopless}"#))
+                    && text
+                        .split(&format!(r#"id="{stopless}""#))
+                        .nth(1)
+                        .is_some_and(|rest| rest.split_once('>').is_some_and(
+                            |(_, after)| after.starts_with(r#"<stop stop-opacity="0"/>"#)
+                        )),
+                "{stopless}: {text}"
+            );
+        }
+        assert_eq!(text.matches(r#"stop-opacity="0""#).count(), 3, "{text}");
+    }
+
+    #[test]
+    fn non_base64_data_urls_are_nested_payloads_like_base64_ones() {
+        let child = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/><script>alert(1)</script></svg>"##;
+        let percent = child
+            .replace('%', "%25")
+            .replace('#', "%23")
+            .replace('<', "&lt;")
+            .replace('"', "&quot;");
+        let base64_encoded =
+            sanitize_default(svg_with_nested_data_image(child.as_bytes()).as_bytes());
+        for header in [
+            "data:image/svg+xml,",
+            "data:image/svg+xml;utf8,",
+            "data:image/svg+xml;charset=utf-8,",
+        ] {
+            let sanitized = sanitize_default(
+                format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="{header}{percent}"/></svg>"#
+                )
+                .as_bytes(),
+            );
+            // Recursively sanitized and re-embedded in canonical base64.
+            assert_eq!(removal_names(&sanitized), ["script"]);
+            assert!(sanitized.media_claims.is_empty(), "{header}");
+            let (_, nested) = sanitized_text(&sanitized)
+                .split_once("data:image/svg+xml;base64,")
+                .expect("the nested SVG is re-embedded as base64");
+            let (_, expected) = sanitized_text(&base64_encoded)
+                .split_once("data:image/svg+xml;base64,")
+                .expect("the nested SVG is re-embedded as base64");
+            assert_eq!(nested, expected);
+            // One occurrence of the same decoded octets, and the same work.
+            let occurrences = |sanitized: &SanitizedSvg| {
+                sanitized
+                    .nested_admissions
+                    .iter()
+                    .filter_map(|admission| match admission {
+                        NestedAdmission::Occurrence { asset_bytes } => Some(*asset_bytes),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>()
+            };
+            assert_eq!(occurrences(&sanitized), [child.len() as u64]);
+            assert_eq!(occurrences(&sanitized), occurrences(&base64_encoded));
+        }
+        let png = base64::engine::general_purpose::STANDARD
+            .decode(PNG_BASE64)
+            .expect("fixture PNG");
+        let percent_png = png
+            .iter()
+            .map(|byte| format!("%{byte:02X}"))
+            .collect::<String>();
+        let sanitized = sanitize_default(
+            format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/png,{percent_png}"/></svg>"#
+            )
+            .as_bytes(),
+        );
+        assert!(sanitized_text(&sanitized).contains(&format!("data:image/png;base64,{PNG_BASE64}")));
+        assert!(sanitized.failures.is_empty());
+        // The depth ceiling applies alike.
+        let limits = ResourceLimits::builder()
+            .max_nested_asset_depth(1)
+            .build()
+            .expect("depth limit is valid");
+        let middle = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/svg+xml,{percent}"/></svg>"#
+        );
+        let refused = sanitize_with(
+            svg_with_nested_data_image(middle.as_bytes()).as_bytes(),
+            &limits,
+            OutputFormat::Svg,
+        )
+        .expect("the parent survives");
+        let [failure] = refused.failures.as_slice() else {
+            panic!("one depth failure: {:#?}", refused.failures);
+        };
+        assert_eq!(failure.error, ResolveError::SvgDepth { attempted: 2 });
+        assert_eq!(failure.path.len(), 2);
+    }
+
+    #[test]
+    fn each_nested_reference_is_charged_once() {
+        let work = |filter: &str| {
+            let bytes = format!(
+                r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="a"><feOffset dx="1"/></filter><filter id="b"><feOffset dx="1"/></filter></defs><rect width="20" height="10" filter="{filter}"/></svg>"##
+            );
+            (
+                sanitize_default(bytes.as_bytes()).work_units,
+                bytes.len() as u64,
+            )
+        };
+        let (one, one_len) = work("url(#a)");
+        let (two, two_len) = work("url(#a) url(#b)");
+        assert_eq!(two - two_len, one - one_len + 16);
     }
 }

@@ -233,6 +233,44 @@ fn cyclic_local_references_are_bounded() {
 }
 
 #[test]
+fn stylesheet_reference_cycles_break_like_their_attribute_twin() {
+    // A mask cycle declared only by rules once overflowed the viewer
+    // library's stack; the closing rule reference is now overridden on its
+    // element, exactly as the closing `mask` attribute is dropped.
+    let styled = br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><style>.a{mask:url(#b)} .b{mask:url(#c)} .c{mask:url(#a)}</style><defs><mask id="a"><rect class="a" width="24" height="24" fill="white"/></mask><mask id="b"><rect class="b" width="24" height="24" fill="white"/></mask><mask id="c"><rect class="c" width="24" height="24" fill="white"/></mask></defs><rect width="24" height="24" fill="red" mask="url(#a)"/></svg>"#;
+    let twin = br#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><defs><mask id="a"><rect mask="url(#b)" width="24" height="24" fill="white"/></mask><mask id="b"><rect mask="url(#c)" width="24" height="24" fill="white"/></mask><mask id="c"><rect mask="url(#a)" width="24" height="24" fill="white"/></mask></defs><rect width="24" height="24" fill="red" mask="url(#a)"/></svg>"#;
+    let scene = nested_svg_scene(styled, 24, 24);
+    let twin = nested_svg_scene(twin, 24, 24);
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        let first = Renderer::new()
+            .render(&scene, &request)
+            .expect("the rule cycle is broken");
+        assert!(first.report().diagnostics().is_empty(), "{format:?}");
+        let second = Renderer::new()
+            .render(&scene, &request)
+            .expect("the rule cycle is broken");
+        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+        if format == OutputFormat::Svg {
+            let artifact = std::str::from_utf8(first.artifact().bytes()).expect("UTF-8");
+            let sanitized = embedded_svg(artifact);
+            assert!(
+                sanitized.contains(r#"<rect class="c" width="24" height="24" fill="white" style="mask:url(#__excalidraw_missing);">"#),
+                "{sanitized}"
+            );
+        }
+    }
+
+    let png = render_artifact(&scene, OutputFormat::Png);
+    assert_eq!(png, render_artifact(&twin, OutputFormat::Png));
+    let decoded = decode_png(&png);
+    assert_eq!(decoded.pixel(30, 30), [255, 0, 0, 255]);
+}
+
+#[test]
 fn malformed_nested_svg_reports_its_validated_media_family() {
     let scene = nested_svg_scene(
         br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect>"#,
@@ -963,7 +1001,10 @@ fn stylesheet_token_boundaries_preserve_admission_and_removal_sources() {
             }
             if format == OutputFormat::Svg {
                 let svg = embedded_svg(std::str::from_utf8(outcome.artifact().bytes()).unwrap());
-                assert_eq!(svg.contains("<style>"), admitted, "{style:?}");
+                // Removing an at-rule or pointing a non-fragment URL at a
+                // missing fragment keeps the stylesheet element.
+                let kept = admitted || style.starts_with('@') || style.contains("url(https:");
+                assert_eq!(svg.contains("<style>"), kept, "{style:?}");
             }
         }
     }

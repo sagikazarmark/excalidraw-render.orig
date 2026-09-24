@@ -315,6 +315,42 @@ fn every_effect_family_has_an_exact_report_and_isolated_artifact() {
                 attribute(3, 1, "in2", "effect_input"),
             ],
         ),
+        (
+            "drop-shadow",
+            r#"<feDropShadow dx="1" dy="1" stdDeviation="1"/>"#,
+            4,
+            vec![node(3)],
+        ),
+        ("offset", r#"<feOffset dx="2" dy="1"/>"#, 4, vec![node(3)]),
+        (
+            "flood",
+            r##"<feFlood flood-color="#ff0000" flood-opacity="0.5"/>"##,
+            4,
+            vec![node(3)],
+        ),
+        (
+            "composite",
+            r##"<feFlood flood-color="#ff0000" result="f"/><feComposite in="f" in2="SourceGraphic" operator="in"/>"##,
+            5,
+            vec![
+                node(3),
+                node(4),
+                attribute(4, 0, "in", "effect_input"),
+                attribute(4, 1, "in2", "effect_input"),
+            ],
+        ),
+        (
+            "merge",
+            r#"<feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="SourceGraphic"/></feMerge>"#,
+            6,
+            vec![node(3)],
+        ),
+        (
+            "tile",
+            r#"<feOffset dx="0" dy="0" result="o"/><feTile in="o"/>"#,
+            5,
+            vec![node(3), node(4), attribute(4, 0, "in", "effect_input")],
+        ),
     ];
     for (name, primitives, usage, primitive_causes) in cases {
         let svg = svg(primitives);

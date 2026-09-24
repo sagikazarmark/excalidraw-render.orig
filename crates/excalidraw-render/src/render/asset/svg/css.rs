@@ -35,6 +35,7 @@ impl<'a> Sheet<'a> {
     pub(super) fn new(
         document: &'a roxmltree::Document<'_>,
         source_nodes: &[SourceNode],
+        plan: &'a references::Plan,
         format: OutputFormat,
     ) -> Result<Self, ResolutionFailure> {
         if format != OutputFormat::Pdf {
@@ -49,7 +50,10 @@ impl<'a> Sheet<'a> {
                 && safe_static_style_node(*n)
                 && n.attribute("type").is_none_or(|t| t == "text/css")
         }) {
-            for (ordinal, block) in stylesheet::Rules::new(node.text().unwrap_or("")).enumerate() {
+            let text = plan
+                .stylesheet(node)
+                .unwrap_or_else(|| node.text().unwrap_or(""));
+            for (ordinal, block) in stylesheet::Rules::new(text).enumerate() {
                 // Admission used these same source-preserving rule boundaries.
                 let block = block.map_err(|_| ResolveError::SvgDecodeFailed)?;
                 let sheet = simplecss::StyleSheet::parse(block.source);
@@ -96,6 +100,7 @@ impl<'a> Sheet<'a> {
     pub(super) fn resolve(
         self,
         document: &roxmltree::Document<'_>,
+        plan: &references::Plan,
     ) -> Result<Resolved, ResolutionFailure> {
         let rules = self.rules;
         if !self.enabled {
@@ -143,16 +148,29 @@ impl<'a> Sheet<'a> {
                     }
                 }
             }
-            if let Some((i, style)) = node.attributes().enumerate().find(|(_, a)| {
-                a.name() == "style"
-                    && !unsafe_attribute(node.tag_name().name(), "style", a.namespace(), a.value())
-            }) {
+            // A `style` the reference plan adds breaks a cycle a rule closed.
+            let added = plan
+                .added(node)
+                .iter()
+                .find(|(name, _)| *name == "style")
+                .map(|(_, value)| (usize::MAX, value.as_str()));
+            if let Some((i, style)) = node
+                .attributes()
+                .enumerate()
+                .find_map(|(i, a)| {
+                    let value = plan.value(node, i, a.value())?;
+                    (a.name() == "style"
+                        && !unsafe_attribute(node.tag_name().name(), "style", a.namespace(), value))
+                    .then_some((i, value))
+                })
+                .or(added)
+            {
                 value
-                    .try_reserve(style.value().len() + 1)
+                    .try_reserve(style.len() + 1)
                     .map_err(|_| ResolutionFailure::Memory)?;
-                value.push_str(style.value());
+                value.push_str(style);
                 value.push(';');
-                for d in simplecss::DeclarationTokenizer::from(style.value()) {
+                for d in simplecss::DeclarationTokenizer::from(style) {
                     if d.name == "filter" && !important {
                         filter = Some(Filter {
                             value: super::super::try_owned(d.value)?,
@@ -199,7 +217,7 @@ impl<'a> Sheet<'a> {
         })
     }
 }
-struct Element<'a, 'input>(roxmltree::Node<'a, 'input>);
+pub(super) struct Element<'a, 'input>(pub(super) roxmltree::Node<'a, 'input>);
 impl simplecss::Element for Element<'_, '_> {
     fn parent_element(&self) -> Option<Self> {
         self.0.parent_element().map(Self)

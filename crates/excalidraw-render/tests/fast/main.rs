@@ -62,6 +62,7 @@ mod license_bundle;
 mod linear_rotation_render;
 mod missing_glyph_render;
 mod nested_svg_asset_render;
+mod nested_svg_reference_contract;
 mod normalization;
 mod outcome_contract;
 mod outline_shape_render;

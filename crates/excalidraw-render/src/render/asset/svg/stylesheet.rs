@@ -188,3 +188,64 @@ fn compatibility_declaration(source: &str) -> bool {
             .split_once(':')
             .is_some_and(|(p, v)| admitted_declaration(p, v))
 }
+
+/// The stylesheet without its top-level at-rules (`@import`, `@font-face`,
+/// `@keyframes`, `@media`, ...), none of which the static subset admits, and
+/// whether any was removed. Every other rule is kept for admission. `None`
+/// when an at-keyword does not start a rule or the sheet does not tokenize:
+/// the caller then refuses the whole sheet, as before.
+pub(super) fn without_at_rules(source: &str) -> Option<(std::borrow::Cow<'_, str>, bool)> {
+    if !source.contains('@') {
+        return Some((std::borrow::Cow::Borrowed(source), false));
+    }
+    if !crate::css_syntax::fits_inline_block_stack(source) {
+        return None;
+    }
+    let mut input = ParserInput::new(source);
+    let parser = &mut Parser::new(&mut input);
+    let mut removed = Vec::new();
+    let mut boundary = true;
+    loop {
+        let start = parser.position().byte_index();
+        let Ok(token) = parser.next_including_whitespace_and_comments() else {
+            break;
+        };
+        match token {
+            Token::WhiteSpace(_) | Token::CDO | Token::CDC => {}
+            Token::AtKeyword(_) if boundary => {
+                loop {
+                    match parser.next_including_whitespace_and_comments() {
+                        Ok(Token::Semicolon) | Err(_) => break,
+                        Ok(Token::CurlyBracketBlock) => {
+                            parser
+                                .parse_nested_block(|block| {
+                                    while block.next_including_whitespace_and_comments().is_ok() {}
+                                    Ok::<(), ParseError<'_, ()>>(())
+                                })
+                                .ok()?;
+                            break;
+                        }
+                        Ok(token) if token.is_parse_error() => return None,
+                        Ok(_) => {}
+                    }
+                }
+                removed.push(start..parser.position().byte_index());
+            }
+            Token::CurlyBracketBlock => boundary = true,
+            token if token.is_parse_error() => return None,
+            _ => boundary = false,
+        }
+    }
+    if removed.is_empty() {
+        return Some((std::borrow::Cow::Borrowed(source), false));
+    }
+    let mut kept = String::new();
+    kept.try_reserve(source.len()).ok()?;
+    let mut copied = 0;
+    for range in removed {
+        kept.push_str(source.get(copied..range.start)?);
+        copied = range.end;
+    }
+    kept.push_str(source.get(copied..)?);
+    Some((std::borrow::Cow::Owned(kept), true))
+}

@@ -690,7 +690,11 @@ fn entity_removals_keep_source_boundaries() {
                     r#"<svg xmlns="http://www.w3.org/2000/svg" width="30" height="20">{body}</svg>"#
                 )
             };
-            let bad = format!(r#"<!DOCTYPE svg [<!ENTITY e "untrusted">]>{}"#, wrap(body));
+            // An external entity: internal ones expand, as the reference expands them.
+            let bad = format!(
+                r#"<!DOCTYPE svg [<!ENTITY e SYSTEM "https://example.invalid/untrusted">]>{}"#,
+                wrap(body)
+            );
             let source = scene(
                 json!([image("image", "outer")]),
                 json!({"outer":file(&svg_url(&bad))}),
@@ -772,7 +776,8 @@ fn unsafe_svg_artifact_oracles() {
         ),
         (
             r#"<style>@import url(https://example.invalid/style); rect {fill:red}</style><rect width="30" height="20"/>"#,
-            r#"<rect width="30" height="20"/>"#,
+            // Only the at-rule is removed; every other rule stays.
+            r#"<style> rect {fill:red}</style><rect width="30" height="20"/>"#,
             true,
             None,
         ),
@@ -796,7 +801,9 @@ fn unsafe_svg_artifact_oracles() {
         ),
         (
             r#"<rect style="fill:url(https://example.invalid/paint)" width="30" height="20" fill="blue"/>"#,
-            r#"<rect width="30" height="20" fill="blue"/>"#,
+            // A non-fragment paint resolves as a missing fragment, which
+            // without a fallback paints `none`.
+            r##"<rect style="fill:url(#__excalidraw_missing)" width="30" height="20" fill="blue"/>"##,
             true,
             Some("style"),
         ),
