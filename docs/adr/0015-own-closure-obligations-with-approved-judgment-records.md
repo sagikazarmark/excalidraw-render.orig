@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # Own closure obligations with approved judgment records
