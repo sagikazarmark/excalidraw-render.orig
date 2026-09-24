@@ -2,9 +2,9 @@
   "schema": "excalidraw-render/representative-corpus-adapter/v1",
   "cases": [
     {
-      "id": "representative.stage4-frames-text-assets.v23",
-      "directory": "tests/conformance/candidates/stage4-frames-text-assets-v23",
-      "status": "stage4-v23-source-binding-successor",
+      "id": "representative.stage4-frames-text-assets.v24",
+      "directory": "tests/conformance/candidates/stage4-frames-text-assets-v24",
+      "status": "stage4-v24-source-binding-successor",
       "formats": [
         "svg",
         "png",
@@ -15,9 +15,9 @@
         "interaction:frames-text-assets"
       ],
       "execution_keys": [
-        "representative.stage4-frames-text-assets.v23:default:svg",
-        "representative.stage4-frames-text-assets.v23:default:png",
-        "representative.stage4-frames-text-assets.v23:default:pdf"
+        "representative.stage4-frames-text-assets.v24:default:svg",
+        "representative.stage4-frames-text-assets.v24:default:png",
+        "representative.stage4-frames-text-assets.v24:default:pdf"
       ],
       "consumer": [
         "cargo",
@@ -29,7 +29,7 @@
         "--",
         "conformance",
         "candidate-verify",
-        "tests/conformance/candidates/stage4-frames-text-assets-v23"
+        "tests/conformance/candidates/stage4-frames-text-assets-v24"
       ],
       "exceptions": [
         {
@@ -40,7 +40,7 @@
             200,
             120
           ],
-          "case_id": "representative.stage4-frames-text-assets.v23",
+          "case_id": "representative.stage4-frames-text-assets.v24",
           "comparison_id": "pdf-pdfium",
           "format": "pdf",
           "max_changed_pixels": 118,
@@ -65,7 +65,7 @@
             124,
             41
           ],
-          "case_id": "representative.stage4-frames-text-assets.v23",
+          "case_id": "representative.stage4-frames-text-assets.v24",
           "comparison_id": "pdf-pdfium",
           "format": "pdf",
           "max_changed_pixels": 118,
@@ -90,7 +90,7 @@
             200,
             120
           ],
-          "case_id": "representative.stage4-frames-text-assets.v23",
+          "case_id": "representative.stage4-frames-text-assets.v24",
           "comparison_id": "pdf-pdfjs",
           "format": "pdf",
           "max_changed_pixels": 16,
