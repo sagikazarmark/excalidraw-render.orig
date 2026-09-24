@@ -9552,17 +9552,59 @@
     {
       "id": "codec:jpeg:alpha",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_container_contract.rs",
+            "sha256": "dd4ad3e1c4498ca2ed72f54622d65b83a67d3d25fcec9ce6cb7681315ef3866a"
+          },
+          "function": "jpeg_draws_opaque_in_every_raster_view",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_container_contract::jpeg_draws_opaque_in_every_raster_view",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "JPEG alpha facet: every admitted row of the 65-row record, across YCbCr, gray and CMYK, markers and orientations, draws fully opaque in PNG and PDF (no soft-mask transparency; CMYK K is never alpha). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
       "id": "codec:jpeg:color-profile",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_container_contract.rs",
+            "sha256": "dd4ad3e1c4498ca2ed72f54622d65b83a67d3d25fcec9ce6cb7681315ef3866a"
+          },
+          "function": "jpeg_color_profiles_apply_as_the_reference_applies_them",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_container_contract::jpeg_color_profiles_apply_as_the_reference_applies_them",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "JPEG color-profile facet: 11 reference rows (sRGB-equivalent snapping, P3/linear on RGB and gray, mismatched and truncated profiles ignored, JFIF over Adobe transform and component identifiers); plus the JPEG ICC record (accepted, malformed and incomplete sequences drawn untagged, gray precision and model mismatches, multipart) and the JPEG color record (gray/RGB/YCbCr cells, CMYK and YCCK conversion). The #187 baseline sampling cells remain separate gaps. See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -10544,9 +10586,30 @@
     {
       "id": "codec:jpeg:default-frame",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_container_contract.rs",
+            "sha256": "dd4ad3e1c4498ca2ed72f54622d65b83a67d3d25fcec9ce6cb7681315ef3866a"
+          },
+          "function": "jpeg_default_image_is_the_first_as_in_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_container_contract::jpeg_default_image_is_the_first_as_in_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "JPEG default-frame facet: 9 reference rows: the first image draws; appended images, EXIF IFD1 and JFXX thumbnails and non-hdrgm gain-map containers are data after it; plus valid SDR-base MPF gain maps drawing their base as the reference does. See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -12930,9 +12993,30 @@
     {
       "id": "codec:jpeg:hdr-gain-map",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_container_contract.rs",
+            "sha256": "dd4ad3e1c4498ca2ed72f54622d65b83a67d3d25fcec9ce6cb7681315ef3866a"
+          },
+          "function": "jpeg_gain_maps_match_the_reference_with_the_190_divergence_pinned",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_container_contract::jpeg_gain_maps_match_the_reference_with_the_190_divergence_pinned",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "JPEG HDR gain-map facet: ISO 21496-1 and GContainer-only containers draw the primary image as the reference does; valid SDR-base MPF + hdrgm containers draw their base; invalid indexes and framing keep the approved strict recovery (declared divergence); HDR-base projection is the known #190 divergence pinned to its exact output (the eight #190 cells remain separate gaps). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -12945,7 +13029,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -12956,12 +13040,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13003,7 +13087,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13014,12 +13098,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13032,7 +13116,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13043,12 +13127,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13061,7 +13145,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13072,12 +13156,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13090,7 +13174,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13101,12 +13185,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13119,7 +13203,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13130,12 +13214,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13235,7 +13319,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13246,12 +13330,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13525,7 +13609,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13536,12 +13620,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13583,7 +13667,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13594,12 +13678,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13612,7 +13696,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13623,12 +13707,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13641,7 +13725,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13652,12 +13736,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13670,7 +13754,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13681,12 +13765,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13699,7 +13783,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13710,12 +13794,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -13815,7 +13899,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -13826,12 +13910,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14105,7 +14189,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14116,12 +14200,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14163,7 +14247,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14174,12 +14258,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14192,7 +14276,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14203,12 +14287,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14221,7 +14305,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14232,12 +14316,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14250,7 +14334,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14261,12 +14345,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14279,7 +14363,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14290,12 +14374,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14395,7 +14479,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14406,12 +14490,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14685,7 +14769,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14696,12 +14780,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14743,7 +14827,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14754,12 +14838,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14772,7 +14856,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14783,12 +14867,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14801,7 +14885,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14812,12 +14896,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14830,7 +14914,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14841,12 +14925,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14859,7 +14943,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14870,12 +14954,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -14975,7 +15059,7 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "50ab42065c1040f0327c1fdbb55568d419addccf98752748934bf1ffff80a0af"
           },
-          "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+          "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
           "binary": "fast",
           "command": [
             "cargo",
@@ -14986,12 +15070,12 @@
             "excalidraw-render",
             "--test",
             "fast",
-            "jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+            "jpeg_icc_contract::malformed_profiles_and_sequences_draw_untagged_as_the_reference",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Independent pinned-browser ICC matrix with exact APP2/source reconstruction, reports/recovery, extents, alpha and replay; passing color cells compare both reference authorities. Strict rejection cells characterize recovery rather than granting a visual exception. See docs/research/jpeg-icc-qualification.md; #188 cells stay gaps."
+        "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -15258,17 +15342,59 @@
     {
       "id": "codec:jpeg:limits",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_limit_contract.rs",
+            "sha256": "a679aeedf20293be853ec8b2452b36073bed0b95270e561c6f83ce11e7980a56"
+          },
+          "function": "jpeg_limits_have_exact_boundaries_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_limit_contract::jpeg_limits_have_exact_boundaries_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "JPEG limits facet: byte, dimension, pixel and work equality and first crossing with exact reports and missing-asset recovery for baseline, progressive, CMYK, EXIF-rotated and SDR gain-map JPEGs in every format, and the 13.2 multi-crossing precedence on oriented dimensions. See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
       "id": "codec:jpeg:malformed",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_container_contract.rs",
+            "sha256": "dd4ad3e1c4498ca2ed72f54622d65b83a67d3d25fcec9ce6cb7681315ef3866a"
+          },
+          "function": "jpeg_containers_and_malformed_payloads_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_container_contract::jpeg_containers_and_malformed_payloads_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "JPEG malformed facet: 32 reference rows (tests/oracle/jpeg-container): trailing data, junk and fill bytes, unknown and oversized application segments, stray RST/TEM, missing DHT, a progressive file missing only its EOI and corrupt entropy pass the canonical comparison with the reference in PNG and PDF with SVG octets preserved; truncated scans, a baseline file missing its EOI, a missing DQT and a restart interval without its markers (the declared partial-paint divergence) and reference-rejected files recover exactly; plus the malformed-marker, trailing-data/ICC-sequence and approved strict MPF recovery suites. See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -16614,17 +16740,59 @@
     {
       "id": "codec:jpeg:orientation",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_container_contract.rs",
+            "sha256": "dd4ad3e1c4498ca2ed72f54622d65b83a67d3d25fcec9ce6cb7681315ef3866a"
+          },
+          "function": "jpeg_orientation_matches_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_container_contract::jpeg_orientation_matches_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "JPEG orientation facet: 22 reference rows: EXIF orientations 1-8 in both byte orders, out-of-range values, other tag types and counts, IFD1-only and XMP-only orientation ignored, EXIF over XMP, the Exif header fill-byte variant and a looping IFD on YCbCr, gray and CMYK; plus the 164-row EXIF precedence record suites and the native all-orientation and invalid-TIFF suites. See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
       "id": "codec:jpeg:passthrough",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_container_contract.rs",
+            "sha256": "dd4ad3e1c4498ca2ed72f54622d65b83a67d3d25fcec9ce6cb7681315ef3866a"
+          },
+          "function": "jpeg_svg_embeds_every_admitted_payload_exactly",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_container_contract::jpeg_svg_embeds_every_admitted_payload_exactly",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "JPEG passthrough facet: direct SVG embeds the exact source octets of every row the reference draws in the 65-row record, and recovers exactly for the rest. See docs/research/jpeg-umbrella-facets.md."
       }
     },
     {
@@ -47539,7 +47707,7 @@
             "--exact"
           ]
         },
-        "rationale": "pdf: Exact top-level and nested reports, source/supplemental authority/order, mixed-status first-reference recipes, frame replay, nested path multiplicity and unreferenced silence; JPEG/WebP profile rejection and SVG pass-through; repaired-document pixels prove surrounding nested text survives. Reviewed unsupported paths reject unaccepted media or raster profiles, not admitted nested text/link semantics. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
+        "rationale": "pdf: Exact top-level and nested reports, source/supplemental authority/order, mixed-status first-reference recipes, frame replay, nested path multiplicity and unreferenced silence; unparseable JPEG/WebP profiles ignored and SVG pass-through; repaired-document pixels prove surrounding nested text survives. Reviewed unsupported paths reject unaccepted media or raster profiles, not admitted nested text/link semantics. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
       }
     },
     {
@@ -47568,7 +47736,7 @@
             "--exact"
           ]
         },
-        "rationale": "png: Exact top-level and nested reports, source/supplemental authority/order, mixed-status first-reference recipes, frame replay, nested path multiplicity and unreferenced silence; JPEG/WebP profile rejection and SVG pass-through; repaired-document pixels prove surrounding nested text survives. Reviewed unsupported paths reject unaccepted media or raster profiles, not admitted nested text/link semantics. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
+        "rationale": "png: Exact top-level and nested reports, source/supplemental authority/order, mixed-status first-reference recipes, frame replay, nested path multiplicity and unreferenced silence; unparseable JPEG/WebP profiles ignored and SVG pass-through; repaired-document pixels prove surrounding nested text survives. Reviewed unsupported paths reject unaccepted media or raster profiles, not admitted nested text/link semantics. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
       }
     },
     {
@@ -47597,7 +47765,7 @@
             "--exact"
           ]
         },
-        "rationale": "svg: Exact top-level and nested reports, source/supplemental authority/order, mixed-status first-reference recipes, frame replay, nested path multiplicity and unreferenced silence; JPEG/WebP profile rejection and SVG pass-through; repaired-document pixels prove surrounding nested text survives. Reviewed unsupported paths reject unaccepted media or raster profiles, not admitted nested text/link semantics. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
+        "rationale": "svg: Exact top-level and nested reports, source/supplemental authority/order, mixed-status first-reference recipes, frame replay, nested path multiplicity and unreferenced silence; unparseable JPEG/WebP profiles ignored and SVG pass-through; repaired-document pixels prove surrounding nested text survives. Reviewed unsupported paths reject unaccepted media or raster profiles, not admitted nested text/link semantics. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
       }
     },
     {
@@ -50311,16 +50479,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v21",
+            "case": "representative.stage4-frames-text-assets.v22",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "5dbbf833a465994d4ba87239da33793e150390b3a97c83f5d8f97139e2311ceb"
+              "sha256": "42a2c6fc0130e3a4a11ec1b249addffa9fbe22535c039332bc3871824e7c3615"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v21/manifest.json",
-              "sha256": "3743bb9b79b5e79691f98bc24e2ccae996e0752293946b1ff573b8761d22ffce"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v22/manifest.json",
+              "sha256": "e5af14e40d4eb27850c891fa04eff3c0ef1dd0582fa2c8721f9fb2708a6f58a5"
             },
-            "approval_subject_sha256": "sha256:1f9e1f8ad8b92823984342194ca9bcd93fcd67db6ce52137ffe3931ef7feed50",
+            "approval_subject_sha256": "sha256:ae96b4c98f3ab2cbb61b4c31bddb7391ba8be2500d34785b2114da30864ecb31",
             "command": [
               "cargo",
               "run",
@@ -50331,7 +50499,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v21"
+              "tests/conformance/candidates/stage4-frames-text-assets-v22"
             ]
           }
         },
