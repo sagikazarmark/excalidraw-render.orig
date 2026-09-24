@@ -1,0 +1,123 @@
+{
+  "schema": "excalidraw-render/ownership-tranche/v1",
+  "approval": null,
+  "native_baseline_subject": "sha256:9dfb7dc101a5bf5350248bee33028aa17e8b0b8228fb622f10839bb13985c2e7",
+  "reassignments": [
+    {
+      "module": "jpeg_icc_contract",
+      "function": "malformed_profiles_and_sequences_draw_untagged_as_the_reference",
+      "source": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+      "from_function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
+      "ids": [
+        "codec:jpeg:icc:gray-baseline-bad-signature-single",
+        "codec:jpeg:icc:gray-baseline-tag-out-of-bounds-single",
+        "codec:jpeg:icc:gray-baseline-truncated-single",
+        "codec:jpeg:icc:gray-baseline-v2-g1-duplicate",
+        "codec:jpeg:icc:gray-baseline-v2-g1-inconsistent-count",
+        "codec:jpeg:icc:gray-baseline-v2-g1-missing",
+        "codec:jpeg:icc:gray-baseline-v2-g1-zero-index",
+        "codec:jpeg:icc:gray-progressive-bad-signature-single",
+        "codec:jpeg:icc:gray-progressive-tag-out-of-bounds-single",
+        "codec:jpeg:icc:gray-progressive-truncated-single",
+        "codec:jpeg:icc:gray-progressive-v2-g1-duplicate",
+        "codec:jpeg:icc:gray-progressive-v2-g1-inconsistent-count",
+        "codec:jpeg:icc:gray-progressive-v2-g1-missing",
+        "codec:jpeg:icc:gray-progressive-v2-g1-zero-index",
+        "codec:jpeg:icc:rgb-baseline-bad-signature-single",
+        "codec:jpeg:icc:rgb-baseline-tag-out-of-bounds-single",
+        "codec:jpeg:icc:rgb-baseline-truncated-single",
+        "codec:jpeg:icc:rgb-baseline-v2-g1-duplicate",
+        "codec:jpeg:icc:rgb-baseline-v2-g1-inconsistent-count",
+        "codec:jpeg:icc:rgb-baseline-v2-g1-missing",
+        "codec:jpeg:icc:rgb-baseline-v2-g1-zero-index",
+        "codec:jpeg:icc:rgb-progressive-bad-signature-single",
+        "codec:jpeg:icc:rgb-progressive-tag-out-of-bounds-single",
+        "codec:jpeg:icc:rgb-progressive-truncated-single",
+        "codec:jpeg:icc:rgb-progressive-v2-g1-duplicate",
+        "codec:jpeg:icc:rgb-progressive-v2-g1-inconsistent-count",
+        "codec:jpeg:icc:rgb-progressive-v2-g1-missing",
+        "codec:jpeg:icc:rgb-progressive-v2-g1-zero-index"
+      ],
+      "rationale": "Pinned-browser ICC matrix (tests/oracle/jpeg-icc): the reference ignores malformed and incomplete ICC sequences and draws the untagged image; the owner judges every such row against the reference drawing in all formats with exact reports, extents, alpha, SVG octets and replay. Criterion rewritten from strict recovery (policy chosen on #85). See docs/research/jpeg-umbrella-facets.md."
+    }
+  ],
+  "rationale_updates": [
+    {
+      "ids": [
+        "diagnostic:image.unsupported-format:svg",
+        "diagnostic:image.unsupported-format:png",
+        "diagnostic:image.unsupported-format:pdf"
+      ],
+      "rationale_replace": [
+        "JPEG/WebP profile rejection",
+        "unparseable JPEG/WebP profiles ignored"
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "module": "jpeg_container_contract",
+      "function": "jpeg_containers_and_malformed_payloads_match_the_reference",
+      "ids": [
+        "codec:jpeg:malformed"
+      ],
+      "rationale": "JPEG malformed facet: 32 reference rows (tests/oracle/jpeg-container): trailing data, junk and fill bytes, unknown and oversized application segments, stray RST/TEM, missing DHT, a progressive file missing only its EOI and corrupt entropy pass the canonical comparison with the reference in PNG and PDF with SVG octets preserved; truncated scans, a baseline file missing its EOI, a missing DQT and a restart interval without its markers (the declared partial-paint divergence) and reference-rejected files recover exactly; plus the malformed-marker, trailing-data/ICC-sequence and approved strict MPF recovery suites. See docs/research/jpeg-umbrella-facets.md."
+    },
+    {
+      "module": "jpeg_container_contract",
+      "function": "jpeg_default_image_is_the_first_as_in_the_reference",
+      "ids": [
+        "codec:jpeg:default-frame"
+      ],
+      "rationale": "JPEG default-frame facet: 9 reference rows: the first image draws; appended images, EXIF IFD1 and JFXX thumbnails and non-hdrgm gain-map containers are data after it; plus valid SDR-base MPF gain maps drawing their base as the reference does. See docs/research/jpeg-umbrella-facets.md."
+    },
+    {
+      "module": "jpeg_container_contract",
+      "function": "jpeg_orientation_matches_the_reference",
+      "ids": [
+        "codec:jpeg:orientation"
+      ],
+      "rationale": "JPEG orientation facet: 22 reference rows: EXIF orientations 1-8 in both byte orders, out-of-range values, other tag types and counts, IFD1-only and XMP-only orientation ignored, EXIF over XMP, the Exif header fill-byte variant and a looping IFD on YCbCr, gray and CMYK; plus the 164-row EXIF precedence record suites and the native all-orientation and invalid-TIFF suites. See docs/research/jpeg-umbrella-facets.md."
+    },
+    {
+      "module": "jpeg_container_contract",
+      "function": "jpeg_color_profiles_apply_as_the_reference_applies_them",
+      "ids": [
+        "codec:jpeg:color-profile"
+      ],
+      "rationale": "JPEG color-profile facet: 11 reference rows (sRGB-equivalent snapping, P3/linear on RGB and gray, mismatched and truncated profiles ignored, JFIF over Adobe transform and component identifiers); plus the JPEG ICC record (accepted, malformed and incomplete sequences drawn untagged, gray precision and model mismatches, multipart) and the JPEG color record (gray/RGB/YCbCr cells, CMYK and YCCK conversion). The #187 baseline sampling cells remain separate gaps. See docs/research/jpeg-umbrella-facets.md."
+    },
+    {
+      "module": "jpeg_container_contract",
+      "function": "jpeg_gain_maps_match_the_reference_with_the_190_divergence_pinned",
+      "ids": [
+        "codec:jpeg:hdr-gain-map"
+      ],
+      "rationale": "JPEG HDR gain-map facet: ISO 21496-1 and GContainer-only containers draw the primary image as the reference does; valid SDR-base MPF + hdrgm containers draw their base; invalid indexes and framing keep the approved strict recovery (declared divergence); HDR-base projection is the known #190 divergence pinned to its exact output (the eight #190 cells remain separate gaps). See docs/research/jpeg-umbrella-facets.md."
+    },
+    {
+      "module": "jpeg_container_contract",
+      "function": "jpeg_svg_embeds_every_admitted_payload_exactly",
+      "ids": [
+        "codec:jpeg:passthrough"
+      ],
+      "rationale": "JPEG passthrough facet: direct SVG embeds the exact source octets of every row the reference draws in the 65-row record, and recovers exactly for the rest. See docs/research/jpeg-umbrella-facets.md."
+    },
+    {
+      "module": "jpeg_container_contract",
+      "function": "jpeg_draws_opaque_in_every_raster_view",
+      "ids": [
+        "codec:jpeg:alpha"
+      ],
+      "rationale": "JPEG alpha facet: every admitted row of the 65-row record, across YCbCr, gray and CMYK, markers and orientations, draws fully opaque in PNG and PDF (no soft-mask transparency; CMYK K is never alpha). See docs/research/jpeg-umbrella-facets.md."
+    },
+    {
+      "module": "jpeg_limit_contract",
+      "function": "jpeg_limits_have_exact_boundaries_and_precedence",
+      "ids": [
+        "codec:jpeg:limits"
+      ],
+      "rationale": "JPEG limits facet: byte, dimension, pixel and work equality and first crossing with exact reports and missing-asset recovery for baseline, progressive, CMYK, EXIF-rotated and SDR gain-map JPEGs in every format, and the 13.2 multi-crossing precedence on oriented dimensions. See docs/research/jpeg-umbrella-facets.md."
+    }
+  ]
+}
