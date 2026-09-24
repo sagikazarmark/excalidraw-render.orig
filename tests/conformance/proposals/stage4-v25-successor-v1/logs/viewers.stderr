@@ -1,0 +1,8 @@
+    Finished `dev` profile [unoptimized] target(s) in 0.03s
+     Running `tools/svg-viewer-rust/target/debug/excalidraw-render-svg-viewer render tests/conformance/candidates/stage4-frames-text-assets-v25/official-rust.svg tests/conformance/candidates/stage4-frames-text-assets-v25/viewer-evidence/official-rust.rgba tests/conformance/candidates/stage4-frames-text-assets-v25/official-assets.json`
+    Finished `dev` profile [unoptimized] target(s) in 0.03s
+     Running `tools/svg-viewer-rust/target/debug/excalidraw-render-svg-viewer render tests/conformance/candidates/stage4-frames-text-assets-v25/official-rust.svg tests/conformance/candidates/stage4-frames-text-assets-v25/viewer-evidence/official-rust.repeat.rgba tests/conformance/candidates/stage4-frames-text-assets-v25/official-assets.json`
+    Finished `dev` profile [unoptimized] target(s) in 0.02s
+     Running `tools/svg-viewer-rust/target/debug/excalidraw-render-svg-viewer render tests/conformance/candidates/stage4-frames-text-assets-v25/native-rust.svg tests/conformance/candidates/stage4-frames-text-assets-v25/viewer-evidence/native-rust.rgba tests/conformance/candidates/stage4-frames-text-assets-v25/native-assets.json`
+    Finished `dev` profile [unoptimized] target(s) in 0.03s
+     Running `tools/svg-viewer-rust/target/debug/excalidraw-render-svg-viewer render tests/conformance/candidates/stage4-frames-text-assets-v25/native-rust.svg tests/conformance/candidates/stage4-frames-text-assets-v25/viewer-evidence/native-rust.repeat.rgba tests/conformance/candidates/stage4-frames-text-assets-v25/native-assets.json`
