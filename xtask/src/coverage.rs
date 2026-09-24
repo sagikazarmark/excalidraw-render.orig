@@ -18,6 +18,7 @@ const RESULT_SCHEMA: &str = "excalidraw-render/coverage-results/v1";
 const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 
 mod ownership;
+mod pdf_judgments;
 mod snapshots;
 pub use ownership::{
     extend_ownership, ownership_authority_migration, ownership_catalog, ownership_subject,
@@ -27,6 +28,10 @@ pub use ownership::{
     verify_representative_owner,
 };
 mod traces;
+pub use pdf_judgments::{
+    generate_pdf_judgments, pdf_judgments_subject, record_pdf_judgments_approval,
+    verify_pdf_judgments,
+};
 pub use snapshots::{
     baseline_subject, record_baseline_approval, replay_snapshots, report_wasm_snapshots,
     stage_baseline, stage_wasm_snapshots, verify_baseline, verify_snapshots, verify_wasm_snapshots,

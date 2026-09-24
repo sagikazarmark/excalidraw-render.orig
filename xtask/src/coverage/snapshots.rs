@@ -233,6 +233,24 @@ fn validate_report(report: &Value, format: &Format) -> Result<(), String> {
     Ok(())
 }
 
+/// Compares every actual report with its expected report: PDF byte for byte
+/// with `pdf-judgments.json`, SVG/PNG as JSON values with the manifest-owned
+/// declarations. Returns (reports, PDF reports) compared.
+fn expected_reports<'a>(
+    root: &Path,
+    reports: impl Iterator<Item = (&'a CaseKey, &'a Bytes)>,
+) -> Result<(usize, usize), String> {
+    let reports = reports
+        .map(|(key, report)| {
+            Ok((
+                key.clone(),
+                read_repository_file(root, &format!("blobs/{}", report.sha256))?,
+            ))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    super::pdf_judgments::check_actual_reports(&reports)
+}
+
 pub fn verify_snapshots(directory: &str) -> Result<(), String> {
     let inventory = load_inventory()?;
     let root = Path::new(directory);
@@ -291,13 +309,20 @@ pub fn verify_snapshots(directory: &str) -> Result<(), String> {
         return Err("incomplete snapshot package inventory".into());
     }
     validate(root, &inventory, &bundle)?;
+    let (reports, pdf) = expected_reports(
+        root,
+        bundle.runs[0]
+            .results
+            .iter()
+            .map(|r| (&r.key, &r.samples[0].report)),
+    )?;
     for (run, name) in bundle.runs.iter().zip(["forward.json", "reverse.json"]) {
         let recorded: SnapshotRun = parse(&read_repository_file(root, name)?)?;
         if recorded != *run {
             return Err(format!("snapshot worker file disagrees: {name}"));
         }
     }
-    println!("verified {} native snapshot candidates (two sessions, forward/reverse processes); source {}; approval, WASM and traces pending",
+    println!("verified {} native snapshot candidates (two sessions, forward/reverse processes); {reports} actual reports equal their expected reports ({pdf} PDF from pdf-judgments.json); source {}; approval, WASM and traces pending",
         inventory.executions.len(),if bundle.source_status.is_empty(){"clean"}else{"modified"});
     Ok(())
 }

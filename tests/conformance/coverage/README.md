@@ -292,6 +292,55 @@ does not waive that missing conformance coverage or complete #85/#86. Full rende
 tier and conformance checks pass independently. See the release-readiness audit
 for the remaining representative/PDF/ownership work.
 
+### PDF judgments (`closure:pdf-judgments`)
+
+`pdf-judgments.json` is one record, approved on #85, that closes the 48 PDF
+report gaps above and binds the specialized PDF judgment files no ledger row
+binds. It carries:
+
+- `executions`: an expected report for every PDF inventory execution (56),
+  derived by `xtask/src/coverage/pdf_judgments/derive.rs` from approved
+  declarations only, never from renderer output. Scene cases start from the
+  registry's `expected_diagnostics.svg` (SVG is the PDF authority, spec 8.6),
+  rewrite `format` to `pdf`, and require the PNG declaration to equal the SVG
+  one minus PNG-silent codes (`link.unsafe-omitted`). Typography/frame cases
+  transfer their single format-neutral manifest report, which must be the
+  canonical empty report. Only codes in the spec-anchored `format_rules` table
+  transfer. Each `sources` entry binds the registry member (canonical digest)
+  and manifest report files (path + sha256); the report bytes follow the spec
+  11.3 member order.
+- `pdf_declarations`: the only authored input, one per PDF case, with its
+  `pdf.*` diagnostics (all empty today), `insert_at`, spec anchor and
+  justification. A scene whose nested SVG contains a pixel-domain filter must
+  declare its `pdf.raster-fallback` warnings.
+- `judgments`: path, sha256, role and existing approval references (embedded
+  approval, recorded `approved_issue`, approved records naming the file and its
+  digest) of every file under `tests/conformance` whose path contains `pdf`,
+  outside `candidates/`, `coverage/` and `proposals/`, that matches a
+  `judgment_scope` judgment pattern. Schemas, sidecars, READMEs, artifacts and
+  viewer-qualification measurement evidence are listed as `non_judgment_files`.
+  A discovered file that matches no pattern, or a judgment the record does not
+  bind, fails verification.
+
+```sh
+cargo run --locked -p xtask -- conformance pdf-judgments-generate
+cargo run --locked -p xtask -- conformance pdf-judgments-approval-subject
+cargo run --locked -p xtask -- conformance record-pdf-judgments-approval \
+  <login> <UTC-date> <issue-85-comment-URL> <exact-subject>
+cargo run --locked -p xtask -- conformance verify-pdf-judgments [--require-approval]
+```
+
+Generation keeps the authored declarations and rewrites everything else with a
+null approval. Verification checks exact PDF execution coverage, report and
+judgment digests, spec anchors, completeness, that derivation reproduces the
+record, the #85 approval subject when present, and cross-checks all 56 derived
+reports byte for byte against the approved native baseline (all equal).
+`verify-native-snapshots`, `verify-native-baseline`, `stage-native-baseline` and
+`replay-native-snapshots` now compare every actual report with its expected
+report: PDF byte for byte with this record, SVG/PNG as complete JSON values with
+the manifest-owned declarations. All 168 executions, not 120, have an expected
+report.
+
 ### Native snapshot candidates
 
 The native public-facade collector is implemented as the non-published

@@ -168,6 +168,13 @@ fn validate_baseline(
     if actual != referenced {
         return Err("baseline contains extra or missing blobs".into());
     }
+    expected_reports(
+        root,
+        baseline
+            .expectations
+            .iter()
+            .map(|e| (&e.key, &e.sample.report)),
+    )?;
     if approval || !baseline.approval.is_null() {
         if baseline.approval.is_null() {
             return Err("native snapshot baseline awaits explicit #85 approval".into());
@@ -242,8 +249,9 @@ pub fn record_baseline_approval(
 
 pub fn verify_baseline() -> Result<(), String> {
     let root = repo_root().join(BASELINE);
-    validate_baseline(&root, &load_inventory()?, &load(&root)?, true)?;
-    println!("verified approved native snapshot baseline; global closure, WASM and traces remain separate");
+    let baseline = load(&root)?;
+    validate_baseline(&root, &load_inventory()?, &baseline, true)?;
+    println!("verified approved native snapshot baseline; all {} actual reports equal their expected reports (PDF from pdf-judgments.json); global closure, WASM and traces remain separate", baseline.expectations.len());
     Ok(())
 }
 
