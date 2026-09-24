@@ -1,7 +1,11 @@
-# PDF judgment record and V23 successor — proposal
+# PDF judgment record and V23 successor — approved and applied
 
-Two exact subjects for one #85 decision. Nothing is applied until a genuine
-approval comment exists on #85.
+Two exact subjects for one #85 decision, approved by the user on 2026-09-24
+([#85 comment](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5810015754))
+and applied with `apply.py`. After application,
+`verify-pdf-judgments --require-approval`, V23 `candidate-verify` and
+`verify-ownership` passed. The rest of this README preserves the reviewed
+proposal.
 
 | Subject | SHA-256 |
 | --- | --- |

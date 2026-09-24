@@ -50479,16 +50479,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v22",
+            "case": "representative.stage4-frames-text-assets.v23",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "42a2c6fc0130e3a4a11ec1b249addffa9fbe22535c039332bc3871824e7c3615"
+              "sha256": "241943c4f37baddb359538ea53582ac0b8e51d6e9d9c0ee61d9456589d3babc8"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v22/manifest.json",
-              "sha256": "e5af14e40d4eb27850c891fa04eff3c0ef1dd0582fa2c8721f9fb2708a6f58a5"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v23/manifest.json",
+              "sha256": "c79147e6118e1023aaadb2a4f08db6756cb1cdeef82a18d02576027a18ad0093"
             },
-            "approval_subject_sha256": "sha256:ae96b4c98f3ab2cbb61b4c31bddb7391ba8be2500d34785b2114da30864ecb31",
+            "approval_subject_sha256": "sha256:cc937c4080445feaa4457256a6295174374612fc219202d9371ac97c8fc6c7dd",
             "command": [
               "cargo",
               "run",
@@ -50499,7 +50499,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v22"
+              "tests/conformance/candidates/stage4-frames-text-assets-v23"
             ]
           }
         },
