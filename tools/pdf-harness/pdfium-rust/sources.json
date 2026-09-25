@@ -1,0 +1,7 @@
+[
+  "tools/pdf-harness/pdfium-rust/Cargo.toml",
+  "tools/pdf-harness/pdfium-rust/Cargo.lock",
+  "tools/pdf-harness/pdfium-rust/src/main.rs",
+  "tools/pdf-harness/pdfium-rust/src/lib.rs",
+  "tools/pdf-harness/pdfium-native.lock.json"
+]

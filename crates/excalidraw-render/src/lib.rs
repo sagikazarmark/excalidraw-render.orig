@@ -1,9 +1,10 @@
 //! Pure-Rust rendering of Excalidraw scene documents.
 //!
 //! Scene and frame exports to SVG, PNG, and vector-first PDF are produced
-//! against a compatibility revision: an immutable static-export promise
-//! covering artifact bytes, compatibility diagnostics, and failure behavior.
-//! The compatibility-revision public API is being implemented incrementally.
+//! against a compatibility revision identifying the rendering profile.
+//! In 0.x, output and diagnostics may change between reviewed releases;
+//! pin the renderer version and dependency lockfile for reproducible output.
+//! Linux x86-64 GNU is release-qualified; browser WASM is experimental.
 
 mod catalog;
 #[cfg(test)]

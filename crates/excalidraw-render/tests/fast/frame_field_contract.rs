@@ -5,10 +5,6 @@ use excalidraw_render::{
 };
 use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
-pub(super) fn unsupported_value_contract() {
-    frame_rendering_container_and_members_have_global_exact_recovery();
-    frame_names_validate_only_when_painted_and_preserve_source_metadata();
-}
 fn scene(kind: &str) -> Value {
     json!({"type":"excalidraw","version":2,"elements":[
     {"id":"frame","type":kind,"x":0,"y":0,"width":80,"height":60,"name":"Board","updated":0},

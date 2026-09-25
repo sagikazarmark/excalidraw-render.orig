@@ -350,6 +350,9 @@ fn main() -> ExitCode {
         frame_args.remove(1);
         let frames = match FramesCli::try_parse_from(&frame_args) {
             Ok(frames) => frames,
+            Err(error) if error.kind() == clap::error::ErrorKind::DisplayHelp => {
+                return print_help(error);
+            }
             Err(error) => {
                 let failure = Failure::cli(
                     "cli.invalid-arguments",
@@ -365,6 +368,9 @@ fn main() -> ExitCode {
     }
     let cli = match Cli::try_parse_from(&args) {
         Ok(cli) => cli,
+        Err(error) if error.kind() == clap::error::ErrorKind::DisplayHelp => {
+            return print_help(error);
+        }
         Err(error) => {
             let failure = Failure::cli(
                 "cli.invalid-arguments",
@@ -378,6 +384,14 @@ fn main() -> ExitCode {
     };
 
     ExitCode::from(run(cli))
+}
+
+fn print_help(help: clap::Error) -> ExitCode {
+    if help.print().is_ok() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(EXIT_OPERATIONAL)
+    }
 }
 
 fn validate_report_options(cli: &Cli) -> Result<(), Failure> {

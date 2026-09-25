@@ -2,10 +2,19 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-IMAGE="mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9"
-case "${1:-}" in prepare|generate|verify) ;; *) echo "usage: $0 <prepare|generate|verify>" >&2; exit 2 ;; esac
+# webp-helper.Dockerfile pins both stages to the canonical Playwright digest.
+HELPER_IMAGE="excalidraw-reference-webp-helper:local"
+case "${1:-}" in
+  build-helper)
+    docker build --platform linux/amd64 --file "${SCRIPT_DIR}/webp-helper.Dockerfile" --tag "${HELPER_IMAGE}" "${SCRIPT_DIR}"
+    exit ;;
+  prepare|generate|verify|test-helper) ;;
+  *) echo "usage: $0 <build-helper|test-helper|prepare|generate|verify>" >&2; exit 2 ;;
+esac
+docker image inspect "${HELPER_IMAGE}" >/dev/null || { echo "run $0 build-helper first (compiler acquisition may use network)" >&2; exit 1; }
+HELPER_IMAGE="$(docker image inspect --format '{{.Id}}' "${HELPER_IMAGE}")"
 OUTPUT_MOUNT=()
-if [[ "$1" != verify ]]; then
+if [[ "$1" == prepare || "$1" == generate ]]; then
   OUTPUT=reference.json
   [[ "$1" != prepare ]] || OUTPUT=inputs.json
   [[ ! -e "${REPO_ROOT}/tests/oracle/webp-sample/${OUTPUT}" ]] || { echo "immutable ${OUTPUT} exists; use verify" >&2; exit 1; }
@@ -18,4 +27,4 @@ docker run --rm --init --ipc=host --network none --platform linux/amd64 \
   --tmpfs /workspace/tools/reference-oracle/dist:rw,mode=1777 \
   --tmpfs /workspace/tools/reference-oracle/node_modules/.vite-temp:rw,mode=1777 \
   --workdir /workspace/tools/reference-oracle \
-  "${IMAGE}" bash -eu -c 'if [[ "$1" != prepare ]]; then npm run build -- --logLevel error && npm run profile:verify; fi; node scripts/webp-sample-evidence.mjs "$@"' webp-sample "$@"
+  "${HELPER_IMAGE}" bash -eu -c 'if [[ "$1" == test-helper ]]; then exec node --test scripts/webp-encode-inputs.test.mjs; fi; if [[ "$1" != prepare ]]; then npm run build -- --logLevel error && npm run profile:verify; fi; node scripts/webp-sample-evidence.mjs "$@"' webp-sample "$@"

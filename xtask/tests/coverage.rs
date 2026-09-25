@@ -281,6 +281,32 @@ fn rejects_incomplete_stale_or_divergent_collector_results() {
 }
 
 #[test]
+fn layer_reporting_is_read_only_and_maintenance_commands_are_retired() {
+    let path = root().join("tests/conformance/coverage/layers.json");
+    let before = fs::read(&path).unwrap();
+    let output = command(&["conformance", "layers-report"]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["schema"], "excalidraw-render/five-layers-report/v1");
+    assert_eq!(report["advisory"], true);
+    assert!(report["findings"].is_array());
+    for retired in [
+        "layers-generate",
+        "layers-approval-subject",
+        "record-layers-approval",
+    ] {
+        let output = command(&["conformance", retired]);
+        assert!(!output.status.success());
+        assert!(String::from_utf8_lossy(&output.stderr).contains("retired"));
+    }
+    assert_eq!(fs::read(path).unwrap(), before);
+}
+
+#[test]
 fn closure_record_and_ledger_approval_recorders_refuse_without_changing_the_ledger() {
     let path = root().join("tests/conformance/coverage/ownership.json");
     let before = fs::read(&path).unwrap();

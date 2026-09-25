@@ -3,6 +3,7 @@
 //! serialization is promoted to an RFC8785 approval subject.
 use super::*;
 use crate::conformance::verify_approval_for_issue;
+use std::path::Component;
 use std::process::Command;
 
 const BASELINE: &str = "tests/conformance/coverage/native-baseline";
@@ -103,13 +104,28 @@ fn validate_baseline(
     {
         return Err("invalid native baseline identity".into());
     }
-    current_file(&baseline.inventory, INVENTORY)?;
-    current_file(&baseline.implementation, IMPLEMENTATION)?;
+    // The inventory also contains ordinary source-anchor bookkeeping. Preserve
+    // its generating-run identity as provenance; exact current execution keys
+    // below bind all scene/profile/options inputs without making an unrelated
+    // test-source edit invalidate otherwise identical approved expectations.
+    if baseline.inventory.path != INVENTORY
+        || !hex(&baseline.inventory.sha256, 64)
+        || baseline.inventory.byte_length == 0
+    {
+        return Err("invalid historical baseline inventory descriptor".into());
+    }
+    if baseline.approval.is_null() {
+        current_file(&baseline.inventory, INVENTORY)?;
+    }
     let provenance = &baseline.provenance;
     if !hex(&provenance.commit, 40) || provenance.rustc.trim().is_empty() {
         return Err("invalid baseline provenance".into());
     }
+    // These descriptors identify the generating run, not today's source tree.
+    // Fresh snapshot candidates still bind their current collector and inputs;
+    // the baseline is checked by execution keys and exact output bytes below.
     for record in [
+        &baseline.implementation,
         &provenance.tool_manifest,
         &provenance.dagger_lock,
         &provenance.consumer_lock,
@@ -117,16 +133,16 @@ fn validate_baseline(
         &provenance.consumer_config,
         &provenance.collector,
     ] {
-        if !hex(&record.sha256, 64) || record.byte_length == 0 || record.path.is_empty() {
+        if !hex(&record.sha256, 64)
+            || record.byte_length == 0
+            || record.path.is_empty()
+            || Path::new(&record.path)
+                .components()
+                .any(|part| !matches!(part, Component::Normal(_)))
+        {
             return Err("invalid baseline provenance descriptor".into());
         }
     }
-    // Collector/request mapping changes require reapproval; a renderer bug fix
-    // is detected by replay, not by a current-package-provenance mismatch.
-    current_file(
-        &baseline.provenance.collector,
-        "tests/package-consumer/examples/native_snapshots.rs",
-    )?;
     let expected: Vec<_> = inventory.executions.iter().map(|e| &e.key).collect();
     if expected.is_empty()
         || baseline
@@ -319,6 +335,105 @@ pub(super) fn compare_results(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn approve_in_memory(baseline: &mut Baseline) {
+        // Synthetic acceptance for isolated verifier tests; never written out.
+        baseline.approval = json!({
+            "approved_by": "snapshot-test",
+            "approved_at": "2026-09-25",
+            "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1",
+            "approval_subject_sha256": format!("sha256:{}", subject(baseline).unwrap()),
+        });
+    }
+
+    #[test]
+    fn historical_tool_sources_need_not_match_the_current_checkout() {
+        let root = repo_root().join(BASELINE);
+        let inventory = load_inventory().unwrap();
+        for tool in ["generator", "collector"] {
+            let mut historical = load(&root).unwrap();
+            let source = if tool == "generator" {
+                &mut historical.implementation
+            } else {
+                &mut historical.provenance.collector
+            };
+            // A historical run can have different source bytes, lengths and a
+            // path that disappeared in a refactor. Its expectations still apply.
+            source.path = format!("retired/{tool}.rs");
+            source.sha256 = "0".repeat(64);
+            source.byte_length = 1;
+            approve_in_memory(&mut historical);
+            validate_baseline(&root, &inventory, &historical, true).unwrap();
+        }
+    }
+
+    #[test]
+    fn historical_tool_records_remain_bound_by_the_original_acceptance() {
+        let root = repo_root().join(BASELINE);
+        let inventory = load_inventory().unwrap();
+        for collector in [false, true] {
+            let mut changed = load(&root).unwrap();
+            let source = if collector {
+                &mut changed.provenance.collector
+            } else {
+                &mut changed.implementation
+            };
+            source.sha256 = "0".repeat(64);
+            assert!(validate_baseline(&root, &inventory, &changed, true)
+                .unwrap_err()
+                .contains("approval subject"));
+        }
+    }
+
+    #[test]
+    fn historical_tool_records_require_valid_relative_paths_hashes_and_lengths() {
+        let root = repo_root().join(BASELINE);
+        let inventory = load_inventory().unwrap();
+        type Mutation = fn(&mut FileRecord);
+        let mutations: &[Mutation] = &[
+            |r| r.path.clear(),
+            |r| r.path = "../outside.rs".into(),
+            |r| r.path = "/absolute.rs".into(),
+            |r| r.sha256 = "not-a-digest".into(),
+            |r| r.byte_length = 0,
+        ];
+        for collector in [false, true] {
+            for mutate in mutations {
+                let mut changed = load(&root).unwrap();
+                let source = if collector {
+                    &mut changed.provenance.collector
+                } else {
+                    &mut changed.implementation
+                };
+                mutate(source);
+                approve_in_memory(&mut changed);
+                assert!(validate_baseline(&root, &inventory, &changed, true)
+                    .unwrap_err()
+                    .contains("invalid baseline provenance descriptor"));
+            }
+        }
+    }
+
+    #[test]
+    fn inventory_bookkeeping_can_move_but_render_inputs_cannot() {
+        let root = repo_root().join(BASELINE);
+        let baseline = load(&root).unwrap();
+        let mut inventory = load_inventory().unwrap();
+        inventory.requirements[0]
+            .remaining
+            .push_str(" (bookkeeping-only test)");
+        validate_baseline(&root, &inventory, &baseline, true).unwrap();
+        inventory.executions[0].key.inputs_sha256 = "0".repeat(64);
+        assert!(validate_baseline(&root, &inventory, &baseline, true)
+            .unwrap_err()
+            .contains("execution keys"));
+        let mut changed_record = baseline.clone();
+        changed_record.inventory.sha256 = "0".repeat(64);
+        assert!(
+            validate_baseline(&root, &load_inventory().unwrap(), &changed_record, true).is_err(),
+            "historical provenance remains approval-bound"
+        );
+    }
     fn baseline() -> Baseline {
         let file = FileRecord {
             path: "fixture".into(),

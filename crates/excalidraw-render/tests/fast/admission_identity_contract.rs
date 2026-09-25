@@ -7,10 +7,6 @@ use excalidraw_render::{
 use serde_json::{json, Value};
 
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
-pub(super) fn unsupported_value_contract() {
-    missing_and_invalid_ids_have_exact_recovery_and_target_participation();
-    deletion_controls_paint_diagnostics_assets_and_frame_discovery();
-}
 
 fn scene(elements: Value) -> Value {
     json!({"type":"excalidraw","version":2,"elements":elements,"appState":{},"files":{}})

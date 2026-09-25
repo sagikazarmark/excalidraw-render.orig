@@ -10,9 +10,13 @@ Install exact-pinned tools and package locks from the network:
 bash tools/pdf-harness/install.sh
 ```
 
-The installer verifies the pypdfium2 wheel and relocatable qpdf archive by
-SHA-256 and installs the exact PDF.js npm lock in the canonical Linux/amd64 Node
-container. Installed bytes live under ignored `target/` or `node_modules/` paths.
+The installer verifies the PDFium distribution wheel and relocatable qpdf archive
+by SHA-256, extracts them with `unzip`, checks the extracted PDFium library hash,
+builds the isolated Rust PDFium worker, and installs the exact PDF.js npm lock in
+the canonical Linux/amd64 Node container. It does not execute Python. The wheel
+is retained as the distribution of the already-qualified native engine, not a
+runtime dependency on its Python bindings. Installed bytes live under ignored
+`target/` or `node_modules/` paths.
 Viewer and parser execution is offline after installation.
 
 The narrow process interfaces are:
@@ -21,11 +25,29 @@ The narrow process interfaces are:
 bash tools/pdf-harness/run-pdfium.sh render input.pdf output.rgba width height
 bash tools/pdf-harness/run-pdfjs.sh render input.pdf output.rgba width height
 bash tools/pdf-harness/run-structure.sh inspect input.pdf expectation.json pass output.json
+bash tools/pdf-harness/run-xtask.sh generate-fixtures target/pdf-fixtures
 ```
+
+Structural inspection and fixture generation run the Rust `xtask pdf-harness`
+commands. The wrappers accept `XTASK_PDF_HARNESS` as a prebuilt xtask executable
+(prefer an absolute path):
+
+```sh
+cargo build --locked -p xtask
+export XTASK_PDF_HARNESS="$PWD/target/debug/xtask"
+```
+
+Without that override, the launcher uses `cargo run --locked` with the absolute
+xtask manifest and a dedicated `target/pdf-harness/xtask` target directory. This
+avoids the parent target lock when renderer tests invoke the structural wrapper
+from `cargo test`. Cargo checks freshness on each invocation and reuses compiled
+artifacts; there is no unchecked stale-binary shortcut. Reserve that directory
+for the launcher, or supply the prebuilt override when testing in it. Inspection
+keeps the repository path checks and pinned qpdf selection; it needs no Python.
 
 PDFium emits packed top-left straight RGBA after explicit byte-order selection
 and zeroes invisible RGB. Independent vector-opacity and image-soft-mask controls
-in `pdfium/test_alpha.py` verify its straight-alpha bitmap representation; no
+in `pdfium-rust/tests/` verify its straight-alpha bitmap representation; no
 second unpremultiplication is applied. PDF.js accepts only in-memory bytes, disables
 network, streaming, range fetching, system fonts, external font data, forms,
 annotations, XFA, WASM, and hardware acceleration, and emits canvas
@@ -39,12 +61,12 @@ the supplied size, so an integral page must match exactly; a rejected request
 names the page's 96 DPI size and the supplied size. The page is never scaled,
 stretched, or offset to fit: device pixels beyond the canvas are discarded and
 canvas pixels the page does not cover stay transparent. PDFium renders through
-`FPDF_RenderPageBitmapWithMatrix` rather than pypdfium2's `PdfPage.render`,
-which would size its bitmap with `ceil` and stretch a fractional page onto it.
+`FPDF_RenderPageBitmapWithMatrix` using fixed-size safe `pdfium-render`
+configuration; bitmap dimensions and matrix scale are independent.
 The `#[ignore]`d `harness_pdf_viewers::adapters` tests in
 `crates/excalidraw-render` pin this contract for both adapters.
 
-The PDFium library is reinitialized with the checked `empty-fonts/` directory as
+The PDFium library is initialized with the checked `empty-fonts/` directory as
 its complete user font search path. Structural admission separately requires
 every used text font to be embedded, so host font directories cannot affect a
 candidate render.
@@ -56,6 +78,86 @@ Page inheritance, Form XObjects, and soft-mask forms are traversed recursively.
 The expectation file supplies exact operation-sequence and structural-inventory
 digests in addition to readable field checks; the report always contains the
 observed data even when that gate fails.
+
+The existing qualification manifest and profiles retain their approved
+Python-era producer identities. Verification treats the explicitly enumerated
+retired or migrated producer sources as historical provenance, including the
+Python inspector, fixture generator and PDFium adapter/alpha tests, migrated
+wrappers, installer and `xtask/src/pdf_viewers.rs`. Their descriptor shape and
+required membership are checked and their original hashes remain approval-bound.
+Parser/viewer locks, schemas, comparator, fixtures, expectations, reports and
+other live bindings are still verified against current bytes. The historical
+`pdfium.lock.json` remains intact; the Rust worker's native library identity is
+recorded separately in `pdfium-native.lock.json`.
+
+The Rust inspector also validates the expectation object before invoking qpdf;
+missing or malformed fields are configuration errors, even when the requested
+PDF outcome is `fail`. Rust tests compare generated fixtures and all 14 retained
+calibration/backend structural reports against their checked-in bytes, without
+executing Python. Independent protocol and expectation tests cover malformed
+and boundary inputs. Nonempty malformed qpdf JSON uses
+Rust parser diagnostics rather than promising byte-identical Python exception
+wording; the malformed PDF still fails structural qualification.
+
+### Historical tooling and retained checks
+
+The Python fixture generator, structural inspector, PDFium adapter and alpha
+tests, and optional Python parity driver have been deleted. The completed PDF
+backend requalification production commands are retired.
+`xtask/src/conformance_pdf_requalification.rs` retains test-only scoped approval
+and exact pin-transition checks. Fixture reproduction, structural report replay,
+wrapper checks and independent Rust PDFium alpha controls remain active.
+
+Deleted diagnostic and proposal drivers described in archived research are
+historical reproduction recipes, with source available in Git history. See
+[historical tooling](../historical-tooling.md) for the retirement record.
+`node tools/pdf-harness/diagnostics/webp191-verify-boundary.mjs` is the offline
+WebP evidence audit. It checks retained artifact hashes, all 144 paired viewer
+observations, and 672 negative buffer/semantic mutations. It also runs as
+`cargo test --locked -p xtask --test webp_boundary`; no viewers are launched.
+
+After installing the pinned harness tools, run the current Rust checks:
+
+```sh
+cargo test --locked -p xtask \
+  --test pdf_fixtures --test pdf_inspection --test pdf_inspection_expectations \
+  --test pdf_inspection_parity --test pdf_harness_wrappers
+```
+
+### Rust PDFium runtime
+
+The old `candidate-pdf-requalify`, `pdf-requalification-subject`, and
+`refresh-pdf-viewer-dependencies` commands are retired. They now return explicit
+guidance instead of reading deleted producers or refreshing historical hashes.
+Use current harness reproduction and `conformance verify-pdf-viewers` for
+verification; meaningful historical pin-transition assertions remain Rust tests.
+
+`pdfium-rust/` is an isolated unpublished crate with a separate lockfile and
+`unsafe_code = "forbid"`. The launcher uses its release binary via locked Cargo,
+with an isolated target directory so it can be called from workspace tests.
+It verifies the exact library SHA-256, selects AGG/FreeType explicitly, and uses
+the controlled empty font directory. `pdfium-native.lock.json` records native
+archive/library identity separately from the historical `pdfium.lock.json`.
+`pdfium-rust/sources.json` is the shared producer-file inventory consumed by the
+Rust and Node collection paths.
+
+Fresh receipts contain `adapter: pdfium-render/0.9.4` and `library_sha256`, not
+`pypdfium2`. Representative evidence accepts either a complete historical Python
+receipt/source set or the current Rust set; mixed identities are rejected.
+The approved profile's original Python runtime record is preserved as provenance,
+and all retained raster bytes remain unchanged. The installer/launcher descriptors
+are historical; the library is checked by the worker on every render.
+
+```sh
+cargo test --locked --release --manifest-path tools/pdf-harness/pdfium-rust/Cargo.toml \
+  --target-dir target/pdf-harness/pdfium-rust
+```
+
+The prototype was retired after safe-API parity: 92 distinct PDFs from 502 tracked
+paths, four independent alpha/fractional controls, and 11 rejection comparisons,
+each run twice per adapter. The maintained worker keeps the same configuration.
+
+### Reproduction
 
 Reproduce every fixture, fresh-process render, comparison, and structural report:
 

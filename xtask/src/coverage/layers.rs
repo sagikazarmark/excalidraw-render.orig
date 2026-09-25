@@ -1,9 +1,6 @@
-//! `closure:all-five-layers`: one #85-approved record that maps every item of
-//! the five conformance layers (spec 14.2) to the ownership ledger. Items are
-//! discovered by the rules in `derive.rs`, which is bound by digest; the only
-//! authored part is `declarations` (vector family, corpus and oracle mappings).
-//! Verification rebuilds the record, requires equality, and then requires
-//! completeness against the ledger's current owners.
+//! Optional five-layer coverage reporting. Historical declarations seed the
+//! report; stale mappings and incomplete coverage are findings, not test gates.
+//! Read-only legacy audits can still inspect the old approval-bearing record.
 use super::ownership::LedgerView;
 use super::pdf_judgments::Repo;
 use super::*;
@@ -15,6 +12,42 @@ use derive::{build_record, completeness};
 pub(super) const RECORD: &str = "tests/conformance/coverage/layers.json";
 pub(super) const SCHEMA: &str = "excalidraw-render/five-layers/v1";
 const SUBJECT: &str = "excalidraw-render/five-layers-approval-subject/v1";
+
+pub(super) fn verify_representative_cases() -> Result<(), String> {
+    derive::verify_representative_cases(&Repo::real())
+}
+
+/// Current coverage observations, never a claim that renderer tests passed.
+fn report_in(repo: &Repo, view: Result<&LedgerView, String>) -> Value {
+    let mut findings = Vec::new();
+    let current = match generate_in(repo) {
+        Ok(record) => Some(record),
+        Err(error) => {
+            findings.push(format!("coverage discovery: {error}"));
+            None
+        }
+    };
+    match (current.as_ref(), view) {
+        (Some(record), Ok(view)) => findings.extend(completeness(record, repo, view)),
+        (_, Err(error)) => findings.push(format!("ownership mapping: {error}")),
+        _ => {}
+    }
+    json!({
+        "schema": "excalidraw-render/five-layers-report/v1",
+        "advisory": true,
+        "current": current,
+        "findings": findings,
+    })
+}
+
+pub fn report_layers() -> Result<String, String> {
+    let view = LedgerView::load();
+    serde_json::to_string_pretty(&report_in(
+        &Repo::real(),
+        view.as_ref().map_err(Clone::clone),
+    ))
+    .map_err(|e| e.to_string())
+}
 
 fn record_bytes(record: &Value) -> Result<Vec<u8>, String> {
     Ok([&canonical_bytes(record)?[..], b"\n"].concat())
@@ -49,7 +82,7 @@ fn current_record(repo: &Repo) -> Result<Value, String> {
     rebuilt["approval"] = record["approval"].clone();
     if rebuilt != record {
         return Err(
-            "derivation does not reproduce layers.json; run layers-generate and review the diff"
+            "derivation does not reproduce historical layers.json; use layers-report for current advisory coverage"
                 .into(),
         );
     }
@@ -90,6 +123,7 @@ fn generate_in(repo: &Repo) -> Result<Value, String> {
 }
 
 /// Adds the approval to a record whose subject equals `expected`.
+#[cfg(test)]
 fn apply_approval(
     record: &mut Value,
     login: &str,
@@ -111,10 +145,6 @@ fn apply_approval(
     verify_approval_for_issue(&record["approval"], &subject, "85")
 }
 
-fn write_record(record: &Value) -> Result<(), String> {
-    fs::write(repo_root().join(RECORD), record_bytes(record)?).map_err(|e| e.to_string())
-}
-
 fn count(record: &Value, pointer: &str) -> usize {
     record
         .pointer(pointer)
@@ -134,45 +164,6 @@ fn summary(record: &Value) -> String {
         count(record, "/adversarial/targets"),
         count(record, "/regression/corpora"),
     )
-}
-
-pub fn generate_layers() -> Result<(), String> {
-    let repo = Repo::real();
-    let view = LedgerView::load()?;
-    let record = generate_in(&repo)?;
-    write_record(&record)?;
-    let problems = completeness(&record, &repo, &view);
-    println!(
-        "wrote {RECORD}: {}; {} completeness problem(s); approval subject sha256:{}",
-        summary(&record),
-        problems.len(),
-        subject_of(&record)?
-    );
-    for problem in problems {
-        println!("  {problem}");
-    }
-    Ok(())
-}
-
-/// The subject binds the record alone, never the ledger, so it is computed
-/// from the reproduced structure; completeness is required when the approval
-/// is recorded and whenever the record owner is verified.
-pub fn layers_subject() -> Result<String, String> {
-    subject_of(&current_record(&Repo::real())?)
-}
-
-pub fn record_layers_approval(
-    login: &str,
-    date: &str,
-    url: &str,
-    expected: &str,
-) -> Result<(), String> {
-    let repo = Repo::real();
-    let view = LedgerView::load()?;
-    let mut record = verify_record(&repo, &view, false)?;
-    apply_approval(&mut record, login, date, url, expected)?;
-    write_record(&record)?;
-    verify_record(&repo, &view, true).map(|_| ())
 }
 
 /// The compiled-in `layers` record-owner verifier (ADR-0015): exactly
@@ -220,8 +211,8 @@ mod tests {
     }
 
     impl Fixture {
-        /// The repository's declarations, rebuilt in memory and installed as
-        /// the record, so the tests never depend on the committed record.
+        /// Historical audit fixture: rebuilds live repository declarations.
+        /// Tests using this fixture must remain opt-in historical audits.
         fn new() -> Self {
             let mut repo = Repo::real();
             let mut view = LedgerView::load().unwrap();
@@ -268,7 +259,131 @@ mod tests {
         assert!(error.contains(expected), "{expected}: {error}");
     }
 
+    /// Minimal discovery inputs, independent of the checkout and its ledger.
+    fn report_repo() -> Repo {
+        let mut repo = Repo::empty(
+            std::env::temp_dir().join(format!("excalidraw-layers-report-{}", std::process::id())),
+        );
+        let spec = format!(
+            "Exact vectors cover geometry.\n{}",
+            derive::RULES
+                .iter()
+                .map(|rule| rule.spec_anchor)
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        repo.overrides
+            .insert(derive::SPEC.into(), Some(spec.into_bytes()));
+        repo.overrides.insert(
+            derive::IMPLEMENTATION.into(),
+            Some(b"// Fixture derivation source.\n".to_vec()),
+        );
+        for (path, value) in [
+            (
+                RECORD,
+                json!({"declarations": {
+                    "vector_families": [{
+                        "family": "geometry",
+                        "rows": ["layer:vector:geometry"],
+                        "rationale": "Fixture vector family"
+                    }],
+                    "vector_domains": [],
+                    "vector_corpora": [],
+                    "oracles": []
+                }}),
+            ),
+            (REGISTRY, json!({"cases": []})),
+            (
+                CANDIDATES,
+                json!({"schema": "excalidraw-render/representative-corpus-adapter/v1", "cases": []}),
+            ),
+            (
+                "tests/conformance/cases/representative/registry.json",
+                json!({"schema": "excalidraw-render/representative-case-registry/v1", "cases": []}),
+            ),
+            (SCENE_REGRESSIONS, json!({"cases": []})),
+        ] {
+            repo.overrides
+                .insert(path.into(), Some(canonical_bytes(&value).unwrap()));
+        }
+        let record = generate_in(&repo).unwrap();
+        repo.overrides
+            .insert(RECORD.into(), Some(record_bytes(&record).unwrap()));
+        repo
+    }
+
     #[test]
+    fn report_discovers_new_regressions_without_refreshing_or_approving_the_record() {
+        let mut repo = report_repo();
+        let original = repo.read(RECORD).unwrap();
+        let historical: Value = parse(&original).unwrap();
+        assert_eq!(
+            historical["regression"]["corpora"][0]["case_ids"],
+            json!([])
+        );
+        repo.overrides.insert(
+            SCENE_REGRESSIONS.into(),
+            Some(canonical_bytes(&json!({"cases": [{"id": "new-confirmed-failure"}]})).unwrap()),
+        );
+        let report = report_in(&repo, Err("no ownership ledger".into()));
+        assert_eq!(report["advisory"], true);
+        assert!(report["current"]["approval"].is_null());
+        assert!(report["current"]["regression"]["corpora"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|c| {
+                c["case_ids"]
+                    .as_array()
+                    .unwrap()
+                    .contains(&json!("new-confirmed-failure"))
+            }));
+        assert_eq!(
+            report["findings"],
+            json!(["ownership mapping: no ownership ledger"])
+        );
+        assert_eq!(repo.read(RECORD).unwrap(), original);
+    }
+
+    #[test]
+    fn report_exposes_missing_maps_and_undeclared_corpora_as_findings() {
+        let mut repo = report_repo();
+        let before = report_in(&repo, Err("no ownership ledger".into()));
+        assert!(before["current"].is_object());
+        assert_eq!(
+            before["findings"],
+            json!(["ownership mapping: no ownership ledger"])
+        );
+        repo.overrides.insert(
+            "crates/excalidraw-render/tests/fixtures/new-vectors.json".into(),
+            Some(b"{}".to_vec()),
+        );
+        let report = report_in(&repo, Err("no ownership ledger".into()));
+        assert_eq!(report["advisory"], true);
+        assert!(report["current"].is_null());
+        let findings = report["findings"].as_array().unwrap();
+        assert!(findings
+            .iter()
+            .any(|f| f.as_str().unwrap().contains("undeclared")));
+        assert!(findings
+            .iter()
+            .any(|f| f.as_str().unwrap().contains("no ownership ledger")));
+    }
+
+    #[test]
+    fn representative_evidence_validation_does_not_depend_on_layer_records() {
+        let mut repo = Repo::real();
+        repo.overrides.insert(RECORD.into(), None);
+        derive::verify_representative_cases(&repo).unwrap();
+        let mut case: Value = parse(&repo.read(VARMQ).unwrap()).unwrap();
+        case["approval"]["approval_subject_sha256"] = json!("sha256:invalid");
+        repo.overrides
+            .insert(VARMQ.into(), Some(canonical_bytes(&case).unwrap()));
+        assert!(derive::verify_representative_cases(&repo).is_err());
+    }
+
+    #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn generation_is_deterministic_canonical_and_discovers_every_layer() {
         let fixture = Fixture::new();
         assert_eq!(generate_in(&fixture.repo).unwrap(), fixture.record);
@@ -299,6 +414,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn successors_spec_edits_and_catalog_growth_do_not_stale_the_record() {
         // A representative successor, as the V25 apply moves the registry,
         // plus its collection directory and a new intake bundle and public
@@ -342,6 +458,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn the_candidate_registry_holds_exactly_the_bound_representative() {
         let mut fixture = Fixture::new();
         let mut registry = fixture.json(CANDIDATES);
@@ -359,6 +476,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn a_new_vector_corpus_or_oracle_directory_must_be_declared() {
         for path in [
             "crates/excalidraw-render/tests/fixtures/color-vectors.json",
@@ -383,6 +501,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn a_new_case_changes_the_record_and_needs_an_owner() {
         let mut fixture = Fixture::new();
         let mut registry = fixture.json(REGISTRY);
@@ -397,6 +516,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn new_fuzz_targets_risks_and_regression_ids_fail_until_regenerated() {
         for (path, row) in [
             (
@@ -466,6 +586,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn every_layer_row_is_referenced_existing_and_owned() {
         let mut fixture = Fixture::new();
         fixture.view.add_row("layer:vector:orphan", "layer", &[]);
@@ -506,6 +627,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn recording_a_reviewed_owner_clears_exactly_its_items() {
         let mut fixture = Fixture::new();
         for row in [
@@ -557,6 +679,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn representative_84_cases_need_approval_sanitization_license_and_crops() {
         // case.py's subject computation reproduces every approved subject.
         for entry in Fixture::new().record["representative"]["cases"]
@@ -582,7 +705,10 @@ mod tests {
             &|c| c["approval"]["approval_url"] = json!(URL.replace("/issues/85#", "/issues/84#")),
             "approval identity, date, or URL is invalid",
         );
-        edit(&|c| c["approval"] = Value::Null, "is not approved");
+        edit(
+            &|c| c["approval"]["approval_subject_sha256"] = json!("sha256:invalid"),
+            "approval subject",
+        );
         edit(
             &|c| c["semantic_expectations"]["light"]["links"] = json!(1),
             "approval subject does not match",
@@ -670,7 +796,7 @@ mod tests {
     }
 
     #[test]
-    fn the_family_sentence_is_bound_and_parsed() {
+    fn the_family_sentence_is_parsed() {
         let spec = "x\nExact vectors cover Rough.js, the qualified\nPerfect Freehand path, and format planning. Next.";
         let (sentence, families) = derive::spec_families(spec).unwrap();
         assert_eq!(
@@ -685,6 +811,11 @@ mod tests {
                 "format planning"
             ]
         );
+    }
+
+    #[test]
+    #[ignore = "optional historical five-layer audit"]
+    fn the_family_sentence_is_bound() {
         let mut fixture = Fixture::new();
         let spec = String::from_utf8(fixture.repo.read(derive::SPEC).unwrap()).unwrap();
         fixture.set(
@@ -712,6 +843,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "optional historical five-layer audit"]
     fn approval_binds_the_exact_subject_on_issue_85() {
         let fixture = Fixture::new();
         let subject = subject_of(&fixture.record).unwrap();

@@ -208,11 +208,15 @@ fn verify_internal(require_approval: bool) -> Result<(), String> {
         return Err("SVG font subset viewer manifest is not canonical JSON plus LF".to_owned());
     }
     verify_sidecar(MANIFEST_DIGEST_PATH, &canonical)?;
-    verify_schema(&manifest)?;
-    verify_identity_and_inputs(&manifest)?;
+    verify_manifest(&manifest, require_approval)
+}
+
+fn verify_manifest(manifest: &Value, require_approval: bool) -> Result<(), String> {
+    verify_schema(manifest)?;
+    verify_identity_and_inputs(manifest)?;
 
     let expected = expected_cells()?;
-    let executions = verify_execution_coverage(&manifest, &expected)?;
+    let executions = verify_execution_coverage(manifest, &expected)?;
     let input_sha256 = string(
         &manifest["input_manifest_sha256"],
         "viewer input manifest digest",
@@ -253,7 +257,7 @@ fn verify_internal(require_approval: bool) -> Result<(), String> {
     if manifest["decision"] != json!("pass") {
         return Err("SVG font subset viewer qualification is not passing".to_owned());
     }
-    let subject = approval_subject_from_manifest(&manifest)?;
+    let subject = approval_subject_from_manifest(manifest)?;
     match &manifest["approval"] {
         Value::Null if require_approval => {
             return Err("SVG font subset viewer qualification has no approval record".to_owned())
@@ -343,8 +347,19 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
     {
         return Err("qualification dependency identity is stale".to_owned());
     }
+    // Implementation identities describe the run that produced the accepted
+    // evidence. They stay inside its approval subject, but need not match the
+    // current source tree. The corpus test checks today's generated subsets;
+    // viewer reproduction checks today's adapters against the retained reports.
+    let mut sources = BTreeSet::new();
     for source in array(&manifest["implementation"], "qualification implementation")? {
-        verify_descriptor(source)?;
+        let (path, _) = descriptor_identity(source)?;
+        if !sources.insert(path) {
+            return Err(format!("duplicate qualification implementation {path}"));
+        }
+    }
+    if sources.is_empty() {
+        return Err("qualification implementation provenance is empty".to_owned());
     }
     let commands = array(&manifest["reproduction_commands"], "reproduction commands")?;
     if commands.len() != 2
@@ -745,7 +760,7 @@ fn verify_schema(value: &Value) -> Result<(), String> {
         .map_err(|error| format!("SVG font subset viewer manifest fails its schema: {error}"))
 }
 
-fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
+fn descriptor_identity(descriptor: &Value) -> Result<(&str, &str), String> {
     let descriptor = object(descriptor, "file descriptor")?;
     let relative = string(
         descriptor
@@ -754,16 +769,29 @@ fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
         "file descriptor path",
     )?;
     let path = Path::new(relative);
-    if path.is_absolute()
+    if relative.is_empty()
+        || path.is_absolute()
         || path
             .components()
             .any(|component| !matches!(component, Component::Normal(_)))
     {
         return Err(format!("unsafe repository-relative path {relative:?}"));
     }
+    let expected = string(
+        descriptor
+            .get("sha256")
+            .ok_or_else(|| "file descriptor digest is required".to_owned())?,
+        "file descriptor digest",
+    )?;
+    verify_sha256(expected, "file descriptor digest")?;
+    Ok((relative, expected))
+}
+
+fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
+    let (relative, expected) = descriptor_identity(descriptor)?;
     let root = fs::canonicalize(repo_root())
         .map_err(|error| format!("failed to resolve repository root: {error}"))?;
-    let resolved = fs::canonicalize(root.join(path))
+    let resolved = fs::canonicalize(root.join(relative))
         .map_err(|error| format!("failed to resolve {relative}: {error}"))?;
     if !resolved.starts_with(&root) {
         return Err(format!(
@@ -772,12 +800,6 @@ fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
     }
     let bytes =
         fs::read(resolved).map_err(|error| format!("failed to read {relative}: {error}"))?;
-    let expected = string(
-        descriptor
-            .get("sha256")
-            .ok_or_else(|| "file descriptor digest is required".to_owned())?,
-        "file descriptor digest",
-    )?;
     if sha256(&bytes) != expected {
         return Err(format!("stale digest for {relative}"));
     }
@@ -815,4 +837,112 @@ fn string<'a>(value: &'a Value, subject: &str) -> Result<&'a str, String> {
     value
         .as_str()
         .ok_or_else(|| format!("{subject} must be a string"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn accepted_manifest() -> Value {
+        serde_json::from_slice(&read_repository_file(MANIFEST_PATH).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn accepted_qualification_survives_implementation_edits() {
+        // This verifier is itself a recorded producer. Adding this test changes
+        // its source bytes without changing any subset, input or viewer result.
+        verify().unwrap();
+    }
+
+    #[test]
+    fn historical_implementation_need_not_exist_in_the_current_tree() {
+        let mut manifest = accepted_manifest();
+        // In-memory proposal only: changing the historical record itself still
+        // requires acceptance, tested separately below.
+        manifest["approval"] = Value::Null;
+        manifest["implementation"][0] = json!({
+            "path": "retired/font-subsetter.rs",
+            "sha256": "0".repeat(64),
+        });
+        verify_manifest(&manifest, false).unwrap();
+    }
+
+    #[test]
+    fn historical_implementation_remains_inside_the_accepted_subject() {
+        for field in ["path", "sha256"] {
+            let mut manifest = accepted_manifest();
+            manifest["implementation"][0][field] = json!(if field == "path" {
+                "retired/font-subsetter.rs".to_owned()
+            } else {
+                "0".repeat(64)
+            });
+            assert!(verify_manifest(&manifest, true)
+                .unwrap_err()
+                .contains("approval is invalid"));
+        }
+        let mut manifest = accepted_manifest();
+        manifest["implementation"].as_array_mut().unwrap().remove(0);
+        assert!(verify_manifest(&manifest, true)
+            .unwrap_err()
+            .contains("approval is invalid"));
+    }
+
+    #[test]
+    fn historical_implementation_rejects_malformed_or_duplicate_descriptors() {
+        let original = accepted_manifest();
+        let source = original["implementation"][0].clone();
+        for implementation in [
+            json!([]),
+            json!([source, source]),
+            json!([{"path": "../outside.rs", "sha256": "0".repeat(64)}]),
+            json!([{"path": "/absolute.rs", "sha256": "0".repeat(64)}]),
+            json!([{"path": "", "sha256": "0".repeat(64)}]),
+            json!([{"path": "retired/font-subsetter.rs", "sha256": "not-a-digest"}]),
+        ] {
+            let mut manifest = original.clone();
+            manifest["approval"] = Value::Null;
+            manifest["implementation"] = implementation;
+            assert!(verify_manifest(&manifest, false).is_err());
+        }
+    }
+
+    #[test]
+    fn corpus_profiles_and_viewer_reports_still_bind_current_bytes() {
+        let mut original = accepted_manifest();
+        original["approval"] = Value::Null;
+        verify_manifest(&original, false).unwrap();
+        for pointer in [
+            "/corpus/sha256",
+            "/subset_profile/sha256",
+            "/viewer_profiles/chromium/sha256",
+            "/viewer_profiles/pure_rust/sha256",
+            "/viewer_reports/chromium/sha256",
+            "/viewer_reports/pure_rust/sha256",
+        ] {
+            let mut changed = original.clone();
+            *changed.pointer_mut(pointer).unwrap() = json!("0".repeat(64));
+            assert!(
+                verify_manifest(&changed, false)
+                    .unwrap_err()
+                    .contains("stale digest"),
+                "accepted changed {pointer}"
+            );
+        }
+    }
+
+    #[test]
+    fn changed_font_bytes_or_missing_executions_still_fail_qualification() {
+        let mut original = accepted_manifest();
+        original["approval"] = Value::Null;
+        for field in ["source_woff2_sha256", "subset_woff2_sha256"] {
+            let mut changed = original.clone();
+            changed["executions"][0][field] = json!("0".repeat(64));
+            assert!(verify_manifest(&changed, false)
+                .unwrap_err()
+                .contains("stale or duplicate coverage"));
+        }
+        let mut changed = original;
+        changed["executions"].as_array_mut().unwrap().pop();
+        assert!(verify_manifest(&changed, false).is_err());
+    }
 }

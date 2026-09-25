@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 [[ $# -eq 2 ]] || { printf '%s\n' 'usage: reference.sh <intake> <new-output>' >&2; exit 2; }
-python3 -B "${ROOT}/tools/representative-intake/intake.py" verify "$1"
+cargo run --quiet --locked --manifest-path "${ROOT}/xtask/Cargo.toml" -- representative verify "$1"
 docker run --rm --init --ipc=host --network none --platform linux/amd64 \
   --user "$(id -u):$(id -g)" --env HOME=/tmp --env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
   --env REFERENCE_ORACLE_CANONICAL=1 --mount "type=bind,src=${ROOT},dst=/workspace" \

@@ -5,7 +5,13 @@ implementation with **kurbo 0.11.3**. Read the
 [recommendation](../../docs/research/kurbo-cubic-bounds-evaluation.md) and
 [numeric/artifact/resource matrix](matrix.md).
 
-## Reproduce
+## Historical reproduction
+
+This evaluation is complete. Its Python runner and comparator were retired on
+2026-09-25. Commands below document the original procedure, not a supported
+maintenance workflow. Probe sources, matrices and conclusions remain; recover
+the runners from Git history if reopening the investigation.
+Use [CONTRIBUTING.md](../../CONTRIBUTING.md) for current renderer checks.
 
 Requirements: Python 3.11+, Rust **1.97.1** with the
 `wasm32-unknown-unknown` standard library, wasm-bindgen-test-runner **0.2.126**,

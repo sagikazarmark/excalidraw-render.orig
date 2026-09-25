@@ -7,10 +7,49 @@ approval changes. It adds **48 cells**: 36 sample cells / 72 browser vectors and
 ## Independent encoded inputs and reference capture
 
 Original RGBA patterns are independently encoded using C libwebp **1.3.2**,
-preinstalled in the pinned Playwright OCI image, through Python ctypes. No Rust
-production codec, Pillow, browser encoder, download or runtime network is used.
-Encoder calls, quality and library/interpreter/OCI hashes are recorded. The 28
-standalone frames are frozen and reproduced byte-for-byte during verification.
+preinstalled in the pinned Playwright OCI image. The original collection used
+Python ctypes; its interpreter, library, invocation and author-source hashes
+remain historical provenance in the unchanged frozen records. Active reproduction
+uses a tiny C simple-API helper with a Node JSON/base64/hash wrapper. No Rust
+production codec or browser encoder is involved. All 28 standalone frames must
+reproduce both encoded bytes and decoded straight RGBA byte-for-byte.
+
+The API/options remain `WebPEncodeLosslessRGBA` with simple-API defaults and
+`WebPEncodeRGBA` with `quality_factor=75.0f`, packed RGBA and `stride=width*4`.
+`WebPDecodeRGBA` remains a same-library diagnostic, not an independent decoder.
+Runtime checks pin both encoder/decoder versions, Ubuntu `libwebp7` package
+`1.3.2-0.4build3`, and the SHA-256 of libwebp and libsharpyuv.
+
+The canonical image has neither GCC nor libc/libwebp development headers.
+`webp-helper.Dockerfile` acquires GCC/libc headers in a build stage based on that
+digest, compiles offline, then copies only the helper and its build records into
+the original pinned runtime image. Six public simple-API function declarations
+avoid struct ABI bindings and any development-package codec replacement. Build
+package versions and compiler identity are recorded, not assumed pinned across
+future apt acquisition; helper/source/build-recipe hashes identify each build.
+The required reproducibility is exact frame evidence under the pinned runtime
+codec libraries. Compiler acquisition may use networking; tests and collection
+always run with `--network none` and read-only fixture mounts.
+
+Verification authenticates the original input/reference files by their existing
+whole-file SHA-256 values, compares every frame record, reconstructs every case
+and control, and compares complete browser observations. Historical producer
+hashes are not required to match replacement producers. Current source hashes
+are still checked for mutation during collection. Rust skips live-source checks
+only for the retired bridge and the migrated WebP caller/runner; all data,
+codec expectations, profile bindings and other source checks remain intact.
+
+### Native helper protocol
+
+Each process accepts exactly one binary request followed by EOF. All integers
+are unsigned 32-bit little-endian. Input is the four-byte magic `WPI1`, width,
+height, codec (`0` lossless / `1` lossy), quality (`0` / `75` respectively), RGBA
+byte length, then packed RGBA. Output is `WPO1`, encoder version, decoder version
+(both `0x010302`), encoded byte length, decoded byte length, then WebP bytes and
+straight RGBA bytes. The fixture protocol bounds dimensions to 1–16383 and RGBA
+to 16 MiB. Unsupported options, inconsistent lengths, truncation and trailing
+data fail with a nonzero exit and stderr diagnostic; no successful partial frame
+is accepted by Node. JSON/base64, fixture metadata and hashes never enter C.
 
 The finite matrix crosses VP8L versus VP8/ALPH, opaque/partial/binary alpha and
 six declared static/animation configurations with two asymmetric patterns. It is
@@ -86,6 +125,8 @@ and fuzz qualification remain open, as do the deferred JPEG and #178 work.
 ## Reproduction
 
 ```sh
+bash tools/reference-oracle/run-webp-sample.sh build-helper
+bash tools/reference-oracle/run-webp-sample.sh test-helper
 bash tools/reference-oracle/run-webp-sample.sh verify
 cargo test --locked -p excalidraw-render --test fast webp_sample_contract::
 node tools/reference-oracle/scripts/webp-sample-ownership.mjs verify
@@ -95,6 +136,9 @@ cargo run --locked -p xtask -- conformance verify-ownership
 Use Rust 1.97.1 with incremental/debug profiles disabled. Ordinary Rust tests use
 frozen data without external processes or networking. Both input preparation and
 reference generation are create-only; verification re-encodes/recollects read-only.
+`test-helper` needs no npm packages, browser launch or Python: it exercises native
+framing/options/length errors, Node request/response validation, rehashed-byte
+drift rejection, all frozen frames in opposite orders, and fixture reconstruction.
 
 ## Final verification and review
 

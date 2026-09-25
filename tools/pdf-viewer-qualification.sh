@@ -22,7 +22,9 @@ fi
 
 # Independent translucent vectors and image soft masks qualify the bitmap's
 # straight-alpha representation; opaque calibration alone cannot distinguish it.
-PYTHONDONTWRITEBYTECODE=1 python3 "${REPO_ROOT}/tools/pdf-harness/pdfium/test_alpha.py"
+cargo test --quiet --locked --release \
+  --manifest-path "${REPO_ROOT}/tools/pdf-harness/pdfium-rust/Cargo.toml" \
+  --target-dir "${REPO_ROOT}/target/pdf-harness/pdfium-rust"
 
 case "${1:-}" in
   generate)
@@ -65,7 +67,7 @@ case "${1:-}" in
 esac
 
 mkdir -p "${OUTPUT_ROOT}/evidence"
-python3 "${REPO_ROOT}/tools/pdf-harness/generate-fixtures.py" "${OUTPUT_ROOT}" > /dev/null
+bash "${REPO_ROOT}/tools/pdf-harness/run-xtask.sh" generate-fixtures "${OUTPUT_ROOT}" > /dev/null
 
 render() {
   local viewer="$1"

@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 description = "Implementation-detail asset shard for excalidraw-render"
 license-file = "LICENSE-BUNDLE.txt"
+repository.workspace = true
 include = ["/src/", "/data/revision-1-000.bin", "/LICENSE-BUNDLE.txt"]
 
 [lints]

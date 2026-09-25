@@ -56,6 +56,53 @@ pub(crate) fn read(root: &Path, path: &str) -> Result<Vec<u8>> {
     }
     fs::read(p).map_err(|e| e.to_string())
 }
+/// Source identities describe the run that produced frozen evidence. Approval
+/// binds these records; replay checks today's renderer against the frozen bytes.
+/// Do not require today's source files to be byte-identical to historical ones.
+pub(crate) fn historical_sources(descriptors: &Value) -> Result<()> {
+    let rows = descriptors
+        .as_array()
+        .ok_or("missing historical production/source bindings")?;
+    if rows.is_empty() {
+        return Err("empty historical production/source bindings".into());
+    }
+    let mut names = BTreeSet::new();
+    for row in rows {
+        let path = row["path"].as_str().ok_or("historical source path")?;
+        let hash = row["sha256"].as_str().unwrap_or_default();
+        if path.is_empty()
+            || Path::new(path)
+                .components()
+                .any(|c| !matches!(c, Component::Normal(_)))
+            || !names.insert(path)
+            || hash.len() != 64
+            || !hash
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+            || row.get("byte_length").is_some_and(|n| n.as_u64().is_none())
+            || row.as_object().is_none_or(|o| {
+                o.keys()
+                    .any(|k| !matches!(k.as_str(), "path" | "sha256" | "byte_length"))
+            })
+        {
+            return Err("invalid historical production/source binding".into());
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn require_historical_sources(descriptors: &Value, required: &[&str]) -> Result<()> {
+    historical_sources(descriptors)?;
+    let rows = descriptors.as_array().ok_or("historical sources")?;
+    for path in required {
+        if !rows.iter().any(|row| row["path"] == *path) {
+            return Err(format!(
+                "missing historical production/source binding: {path}"
+            ));
+        }
+    }
+    Ok(())
+}
 pub(crate) fn value(root: &Path, path: &str) -> Result<Value> {
     serde_json::from_slice(&read(root, path)?).map_err(|e| e.to_string())
 }
@@ -117,7 +164,58 @@ fn repo_chain_at(v: &Value, visited: &mut BTreeSet<String>, context: &Path) -> R
                 )?;
             }
         }
-        for child in o.values() {
+        for (name, child) in o {
+            // Approved viewer profiles describe their generating adapters.
+            // The PDFium Rust migration changed only the launcher/installer;
+            // profile bytes and every non-producer binding remain live.
+            if name == "implementation"
+                && matches!(
+                    v["id"].as_str(),
+                    Some(
+                        "canonical-pdf.pdfium.v1"
+                            | "canonical-pdf.pdfjs.v1"
+                            | "canonical-pdf-structure.qpdf.v1"
+                    )
+                )
+            {
+                let mut current = child.clone();
+                if let Some(sources) = current["sources"].as_array_mut() {
+                    let mut retained = Vec::new();
+                    for source in sources.iter() {
+                        let path = source["path"].as_str().unwrap_or_default();
+                        if path == "tools/pdf-harness/install.sh"
+                            || (v["id"] == "canonical-pdf-structure.qpdf.v1"
+                                && matches!(
+                                    path,
+                                    "tools/pdf-harness/structure/inspect.py"
+                                        | "tools/pdf-harness/generate-fixtures.py"
+                                        | "tools/pdf-harness/run-structure.sh"
+                                ))
+                            || (v["id"] == "canonical-pdf.pdfium.v1"
+                                && matches!(
+                                    path,
+                                    "tools/pdf-harness/run-pdfium.sh"
+                                        | "tools/pdf-harness/pdfium/render.py"
+                                        | "tools/pdf-harness/pdfium/test_alpha.py"
+                                ))
+                        {
+                            historical_sources(&json!([source]))?;
+                        } else {
+                            retained.push(source.clone());
+                        }
+                    }
+                    *sources = retained;
+                }
+                repo_chain_at(&current, visited, context)?;
+                continue;
+            }
+            if name == "sources"
+                && o.get("schema").and_then(Value::as_str)
+                    == Some("excalidraw-render/candidate-svg-text-audit-profile/v1")
+            {
+                historical_sources(child)?;
+                continue;
+            }
             repo_chain_at(child, visited, context)?;
         }
     } else if let Some(a) = v.as_array() {
@@ -213,12 +311,60 @@ fn font_audit_sources(directory: &str) -> Vec<String> {
     paths
 }
 fn producer_sets(directory: &str, collection: &Value, profile: &Value) -> Result<()> {
-    descriptor_set(&repo_root(), &collection["sources"], &viewer_sources())?;
-    descriptor_set(
-        &repo_root(),
-        &profile["sources"],
-        &font_audit_sources(directory),
-    )
+    let mut viewer_required = viewer_sources();
+    let rust_pdfium = collection["captures"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|c| c["id"] == "native-pdfium")
+        .flat_map(|c| c["runs"].as_array().into_iter().flatten())
+        .any(|r| r.get("adapter").is_some());
+    if rust_pdfium {
+        viewer_required.retain(|p| p != "tools/pdf-harness/pdfium/render.py");
+        viewer_required.extend(crate::pdf_viewers::rust_pdfium_sources()?);
+        for capture in collection["captures"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|c| c["id"] == "native-pdfium")
+        {
+            for run in capture["runs"].as_array().into_iter().flatten() {
+                if run["adapter"] != "pdfium-render/0.9.4"
+                    || run["pdfium"] != "152.0.7947.0"
+                    || run["library_sha256"]
+                        != "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33"
+                    || run.get("pypdfium2").is_some()
+                {
+                    return Err("invalid or mixed PDFium producer identity".into());
+                }
+            }
+        }
+    }
+    for (sources, required) in [
+        (&collection["sources"], viewer_required),
+        (&profile["sources"], font_audit_sources(directory)),
+    ] {
+        historical_sources(sources)?;
+        let paths: BTreeSet<_> = sources
+            .as_array()
+            .ok_or("historical sources")?
+            .iter()
+            .filter_map(|s| s["path"].as_str())
+            .collect();
+        if paths != required.iter().map(String::as_str).collect() {
+            return Err("incomplete historical producer set".into());
+        }
+        // Captured inputs remain live byte checks, unlike producer code.
+        for source in sources.as_array().ok_or("historical sources")? {
+            if source["path"]
+                .as_str()
+                .is_some_and(|p| p.starts_with(&format!("{directory}/")))
+            {
+                check_descriptor(&repo_root(), source)?;
+            }
+        }
+    }
+    Ok(())
 }
 fn collection(directory: &str) -> Result<Value> {
     crate::svg_viewers::verify(true).map_err(|e| format!("SVG viewer qualification: {e}"))?;
@@ -256,7 +402,6 @@ fn collection(directory: &str) -> Result<Value> {
     producer_sets(directory, &data, &profile)?;
     crate::conformance_candidate::verify_assets(directory)?;
     repo_chain(&data["profiles"], &mut BTreeSet::new())?;
-    repo_chain(&data["sources"], &mut BTreeSet::new())?;
     repo_chain(&data["assets"], &mut BTreeSet::new())?;
     let expected = [
         "official-chromium",
@@ -357,7 +502,6 @@ fn collection(directory: &str) -> Result<Value> {
     if seen.len() != expected.len() {
         return Err("incomplete SVG/PDF viewer set".into());
     }
-    repo_chain(&profile["sources"], &mut BTreeSet::new())?;
     let native = captures
         .iter()
         .find(|c| c["id"] == "native-chromium")
@@ -400,7 +544,7 @@ fn actual(directory: &str) -> Result<(Value, Value)> {
     {
         return Err("candidate crop qualification changed".into());
     }
-    repo_chain(&p["sources"], &mut BTreeSet::new())?;
+    historical_sources(&p["sources"])?;
     if p["fresh_process_runs"] != 2 || p["browser"] != "149.0.7827.55" || p["network"] != "none" {
         return Err("invalid reference producer protocol".into());
     }
@@ -503,15 +647,24 @@ fn bound_manifest(directory: &str) -> Result<Value> {
     )?;
     files_under(&root, &root, &mut names)?;
     descriptor_set(&root, &manifest["files"], &names)?;
-    if manifest["producer_sources"] != adapter_sources()? {
-        return Err("stale adapter production/source bindings".into());
-    }
+    require_historical_sources(
+        &manifest["producer_sources"],
+        &[
+            "Cargo.toml",
+            "Cargo.lock",
+            "xtask/Cargo.toml",
+            "docs/renderer-spec-v1.md",
+            "xtask/src/main.rs",
+            "xtask/src/conformance_candidate_gate.rs",
+            "xtask/src/conformance_candidate_native.rs",
+        ],
+    )?;
     if manifest["request_args"] != json!(crate::conformance_candidate_native::OPTIONS)
         || manifest["native_capture"] != descriptor(&root, "native-capture.json")?
     {
         return Err("native request/capture detached from manifest".into());
     }
-    crate::conformance_candidate_native::check_producers(
+    crate::conformance_candidate_native::historical_producers(
         &value(&root, "native-capture.json")?["producer_sources"],
     )?;
     if manifest["profiles"] != value(&root, "viewer-evidence/collection.json")?["profiles"] {
@@ -520,7 +673,6 @@ fn bound_manifest(directory: &str) -> Result<Value> {
     if manifest["exception_proposal"] != crate::conformance_candidate_exceptions::proposed(&root)? {
         return Err("exception proposal is detached from the approval-bearing manifest".into());
     }
-    repo_chain(&manifest["producer_sources"], &mut BTreeSet::new())?;
     repo_chain(&manifest["profiles"], &mut BTreeSet::new())?;
     Ok(manifest)
 }
@@ -805,17 +957,45 @@ mod tests {
     #[test]
     fn provenance_requires_every_viewer_and_font_audit_producer() {
         let dir = "tests/conformance/candidates/stage4-frames-text-assets-v4";
+        let captured = value(
+            &repo_root(),
+            &format!("{dir}/viewer-evidence/collection.json"),
+        )
+        .unwrap();
         let descriptors = |paths: Vec<String>| {
             Value::Array(
                 paths
                     .iter()
-                    .map(|p| descriptor(&repo_root(), p).unwrap())
+                    .map(|p| {
+                        if p == "tools/pdf-harness/pdfium/render.py" {
+                            captured["sources"]
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .find(|s| s["path"] == *p)
+                                .unwrap()
+                                .clone()
+                        } else {
+                            descriptor(&repo_root(), p).unwrap()
+                        }
+                    })
                     .collect(),
             )
         };
         let collection = json!({"sources":descriptors(viewer_sources())});
         let profile = json!({"sources":descriptors(font_audit_sources(dir))});
         producer_sets(dir, &collection, &profile).unwrap();
+        let mut historical = collection.clone();
+        historical["sources"][0]["sha256"] = json!("a".repeat(64));
+        producer_sets(dir, &historical, &profile).unwrap();
+        // A captured input is never treated as historical producer code.
+        let mut detached = profile.clone();
+        for source in detached["sources"].as_array_mut().unwrap() {
+            if source["path"] == format!("{dir}/native.svg") {
+                source["sha256"] = json!("a".repeat(64));
+            }
+        }
+        assert!(producer_sets(dir, &collection, &detached).is_err());
         for font in [false, true] {
             let original = if font { &profile } else { &collection };
             for omitted in 0..original["sources"].as_array().unwrap().len() {
@@ -931,6 +1111,21 @@ mod tests {
         assert!(approved_operation(&Value::Null, &subject, true, run).is_err());
     }
     #[test]
+    fn historical_provenance_remains_inside_the_approved_subject() {
+        let directory = value(&repo_root(), "tests/conformance/candidates/registry.json").unwrap()
+            ["cases"][0]["directory"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let manifest = value(&candidate_root(&directory).unwrap(), "manifest.json").unwrap();
+        let subject = |m: &Value| sha256(&canonical_bytes(&approval_bundle(m).unwrap()).unwrap());
+        verify_approval_for_issue(&manifest["approval"], &subject(&manifest), "85").unwrap();
+        let mut changed = manifest.clone();
+        changed["producer_sources"][0]["sha256"] = json!("a".repeat(64));
+        historical_sources(&changed["producer_sources"]).unwrap();
+        assert!(verify_approval_for_issue(&changed["approval"], &subject(&changed), "85").is_err());
+    }
+    #[test]
     fn withdrawn_v1_subject_is_never_approval_ready() {
         for require_approval in [false, true] {
             assert!(verify(
@@ -951,6 +1146,30 @@ mod tests {
             .contains("refusing to overwrite"));
         assert_eq!(read(&root, "manifest.json").unwrap(), before);
     }
+    #[test]
+    fn pdfium_launcher_migration_preserves_nonproducer_profile_checks() {
+        let profile = value(
+            &repo_root(),
+            "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+        )
+        .unwrap();
+        repo_chain(&profile, &mut BTreeSet::new()).unwrap();
+        let mut malformed = profile.clone();
+        let source = malformed["implementation"]["sources"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|s| s["path"] == "tools/pdf-harness/run-pdfium.sh")
+            .unwrap();
+        source["sha256"] = json!("invalid");
+        assert!(repo_chain(&malformed, &mut BTreeSet::new()).is_err());
+        let mut changed = profile;
+        changed["implementation"]["lockfile"]["sha256"] = json!("0".repeat(64));
+        assert!(repo_chain(&changed, &mut BTreeSet::new())
+            .unwrap_err()
+            .contains("stale candidate evidence"));
+    }
+
     #[test]
     fn producer_sets_reject_missing_duplicate_stale_and_detached_entries() {
         let root = repo_root();

@@ -77,7 +77,9 @@ const PDF_RISK_SET: &[(&str, &[u8], &str, &str)] = &[
     (
         "source-image",
         SOURCE_IMAGE_SCENE,
-        "aaffc9250c9abe30efa9e220d86adefed2d3ccb8f2b0e4aab4e83219565e1b0f",
+        // c9fc43d corrected image orientation, explicit interpolation, and
+        // direct ICCBased image color spaces. The report is unchanged.
+        "121f3a7270cb1e1ebb9339c427b63d4ed7beebf6b5865a0696d191cb3ca39ed4",
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
     ),
     (
@@ -121,7 +123,10 @@ const PDF_FALLBACK_FAMILIES: &[(&str, &str, &str, &str)] = &[
     (
         "turbulence",
         r#"<feTurbulence baseFrequency="0.1" numOctaves="1"/>"#,
-        "ad1525688146b4016063c2ac96bcc2b066d7b5d0faf8c5148b48b272dda5d528",
+        // The old pin predates the shared raster-closure pipeline (9712833).
+        // Reconfirmed against the starting release tree, c5fec02; see the
+        // packaged-consumer diagnosis in docs/release-preparation.md.
+        "0048833bf470ed4ebca0acfdae0487390af563509583c771aab394d590cd4c1a",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
@@ -364,6 +369,8 @@ fn packaged_public_facade_preserves_png_scanline_filter_bytes_across_targets() {
     // #165: the 16x8 image at 128x64 is now resampled once per destination
     // pixel centre, as the canvas resamples it, instead of at every subpixel
     // centre of the supersample, so its interior pixels changed.
+    // c9fc43d subsequently matched the canvas's four-bit bilinear weights.
+    // That pre-existing change was missing from this companion snapshot.
     let scene =
         SceneDocument::parse(NOISY_RASTER_SCENE).expect("the noisy raster scene is admitted");
     let request = RenderRequest::builder(OutputFormat::Png)
@@ -385,7 +392,7 @@ fn packaged_public_facade_preserves_png_scanline_filter_bytes_across_targets() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "865cb1358fc686b1f7a271cccf9cb0923f33a15fdc1135d862c47a8b62023800"
+        "46501d857058f88ab033e3e5b2fbf1d1b3e1bdef71510420d907b2b40a8dcea7"
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(&report)),

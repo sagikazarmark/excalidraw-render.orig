@@ -1,237 +1,98 @@
 # excalidraw-render
 
-This repository contains a pure-Rust rendering library and native CLI targeting
-compatibility revision 1 of the approved static-renderer contract.
+A pure-Rust library and command-line tool for rendering Excalidraw scene
+documents to **SVG, PNG, and vector-first PDF**. Export a whole scene or each
+frame separately. Fonts and other required rendering assets are bundled;
+rendering needs no browser, Node.js, network access, or installed fonts.
 
-The approved implementation target is the
-[Excalidraw Static Renderer Specification](docs/renderer-spec-v1.md): a
-self-contained pure-Rust renderer for scene and frame SVG, PNG, and vector-first PDF
-with explicit compatibility diagnostics and no production browser or network
-dependency.
+**Status:** preparing the first `0.1.0` release. The intended public home is
+[`sagikazarmark/excalidraw`](https://github.com/sagikazarmark/excalidraw).
+The compatibility target is Excalidraw **0.18.1**, with
+[known limitations](docs/known-limitations.md). This is an initial release,
+not a claim of complete Excalidraw conformance.
 
-The performance and canonical WASM footprint protocols are specified but not yet
-activated; they live in [docs/roadmap.md](docs/roadmap.md) and gate nothing today.
+## Install
 
-## Build
-
-```sh
-cargo build --release -p excalidraw-render-cli
-```
-
-The workspace separates the supported `excalidraw-render` Rust library from the
-native `excalidraw-render-cli` package. They share one lockstep version, and the
-CLI is a thin adapter over the public library facade.
-
-Every dependency is pinned to an exact version (`=x.y.z`), because artifact
-bytes are the product and any transitive bump can change them. For a project
-that depends on the library this has consequences. Cargo resolves one version
-per semver-compatible range, so within each such range the pins decide which
-version of a shared crate (`serde`, `png`, `resvg`, ...) your whole build uses:
-a requirement of yours in the same range that the pinned version cannot satisfy
-fails to resolve, while one in a different range builds a second copy alongside
-it. A patch release of a pinned crate only reaches you through an
-`excalidraw-render` release that moves the pin and re-verifies the artifact
-bytes. The workspace and its published crates also declare `rust-version`, the
-toolchain the release gates build with; older compilers are not exercised.
-
-## Run
-
-```text
-excalidraw-render [OPTIONS] <INPUT> --output <OUTPUT>
-excalidraw-render frames [OPTIONS] <INPUT> --output <DIRECTORY> --format <svg|png|pdf>
-excalidraw-render frames [OPTIONS] <INPUT> --list
-```
-
-For scene export, `INPUT` and `OUTPUT` may be `-` for standard input and artifact
-standard output. Frame batches accept standard input but require an output
-directory. The scene output format is inferred from a recognized path extension
-or selected with `--format`; the default padding is 10 logical pixels. Run
-`excalidraw-render --help` for the complete request and reporting controls.
-For large scenes, prefer `--max-dimension <value>` for PNG and PDF output;
-the default scale of 1 preserves the full logical dimensions and may exceed the
-raster-surface or PDF page-size limits.
-
-The `frames` command writes one zero-padding artifact per selected live ordinary
-or magic frame. It uses readable frame-name basenames, falls back to the stable
-source-order name `frame-N`, and resolves unsafe or duplicate names
-deterministically. `--name-regex` filters nonempty source frame names. Batch
-publication is stage-all by default; `--allow-partial` publishes independent
-successes while retaining a nonzero exit status for any failed frame.
-
-`--list` is a dry run: it reports the ordinal, kind, name, and derived basename
-of every frame the same selection would export, and writes nothing. `--output`
-and `--format` are required only outside `--list`.
+Build from this checkout with Rust 1.97 or newer (release checks use 1.97.1):
 
 ```sh
-target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.svg
-target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.png --scale 2
-target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.pdf
-target/release/excalidraw-render frames drawing.excalidraw -o frames --format png --name-regex 'Slide'
-target/release/excalidraw-render frames drawing.excalidraw --list --report-format json
+cargo build --locked --release -p excalidraw-render-cli
+target/release/excalidraw-render --help
 ```
 
-## Reference renderer
-
-The pinned official Excalidraw browser renderer is development-only. Normal Rust
-builds and tests do not need Node, a browser, Docker, or network access. See
-[`tools/reference-oracle/README.md`](tools/reference-oracle/README.md) for the
-opt-in profile verification workflow.
-
-## Revision catalog
-
-Compatibility revision 1 incorporates its approved manifests, license bundle,
-and official rendering-font bytes into a sealed catalog. Ordinary verification
-is offline and read-only:
+After 0.1.0 is published, install the CLI from crates.io:
 
 ```sh
-cargo run --locked -p xtask -- catalog verify
+cargo install --locked excalidraw-render-cli --version 0.1.0
 ```
 
-Maintainers can reproduce the checked asset shards from an explicit local
-`@excalidraw/excalidraw` `dist/prod` directory. The importer verifies every
-source byte against the approved reference asset manifest and never downloads
-or generates production data during a build:
+The initial prebuilt archive targets Linux x86-64 with glibc. Other native
+platforms are not release-qualified. Browser-hosted WASM is tested but
+experimental; no JavaScript bindings or standalone WASM package are shipped.
+
+## Render
 
 ```sh
-cargo run --locked -p xtask -- catalog import <local-dist-prod>
+excalidraw-render drawing.excalidraw -o drawing.svg
+excalidraw-render drawing.excalidraw -o drawing.png --scale 2
+excalidraw-render drawing.excalidraw -o drawing.pdf
+excalidraw-render frames drawing.excalidraw --list
+excalidraw-render frames drawing.excalidraw -o frames --format png
 ```
 
-The catalog also records every official font chunk's reviewed decode, the sfnt
-the pinned `wuff 0.2.8` decode of its exact bytes produces and the only bytes
-PDF may embed for it (spec 8.6). `catalog verify` re-derives all 230 decodes
-and requires the maintainer approval that binds them; `import` and
-`materialize` regenerate the record and clear its approval when the decodes
-move. The approval round follows the other evidence families:
+The output extension selects the format, or use `--format`. Scene input and
+output may be `-` for standard input/output. For large drawings, use
+`--max-dimension 4096` to bound PNG/PDF dimensions. Compatibility diagnostics
+describe substitutions, omissions, and fallbacks; use `--report-format json`
+for machine-readable reporting. See `--help` for all options.
+
+## Rust library
+
+After publication, add `excalidraw-render = "=0.1.0"` to your dependencies.
+The library exposes `SceneDocument`, `Renderer`, `RenderRequest`, and the frame
+export API. It returns artifact bytes together with a compatibility report.
+Generate the API documentation locally with:
 
 ```sh
-cargo run --locked -p xtask -- catalog reviewed-decodes-approval-subject
-cargo run --locked -p xtask -- catalog record-reviewed-decodes-approval <login> <date> <issue-comment-url> <subject>
+cargo doc --no-deps -p excalidraw-render --open
 ```
 
-## Artifact byte stability
+Rendering dependencies are pinned to exact versions: dependency updates can
+change output bytes. These pins can constrain a consuming application's
+dependency resolution. Pin the renderer version and retain your lockfile when
+reproducible output matters; later 0.x releases may intentionally change
+rendering and diagnostics. Revision `1` identifies the current rendering
+profile, not a promise to preserve every historical output in future releases.
 
-`tests/package-consumer` depends on Cargo's unpacked package output rather than
-the workspace crate. It renders the approved rectangle through the public Rust
-facade to SVG, PNG, and PDF twice and compares complete artifact and report
-bytes with the checked native expectations.
+## Testing and contributing
 
 ```sh
-cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
-bash tests/package-consumer/check-packaged-cli.sh x86_64-unknown-linux-gnu
-(cd tests/package-consumer && cargo clean && cargo test --locked --release --test public_facade)
+cargo nextest run --locked --workspace --exclude xtask --lib --bins --profile ci-fast  # unit feedback
+cargo nextest run --locked --workspace                    # includes parity tests
+dagger --engine cloud check                              # canonical CI
 ```
 
-Run the consumer from its own directory so its `.cargo/config.toml` (target
-directory, WASM test runner) applies, and clean it first: `cargo package`
-stamps the unpacked sources with a fixed mtime, so a consumer build left over
-from an earlier package never notices that the crate changed.
+Use Rust 1.97.1 for the full suite. Renderer/CLI tests use checked-in reference
+evidence and need no browser or container runtime. Workspace `xtask` tests also
+need Node and pinned qpdf for
+evidence replay; Dagger installs them and runs the packaging and browser checks too.
+A successful Dagger run is green CI; GitHub Actions is an optional caller.
 
-The target workflow executes this consumer on Linux and in the pinned
-browser-hosted `wasm32-unknown-unknown` harness (ADR-0006).
+For fresh PDF harness and representative-intake work, use the current Rust
+commands in the [PDF harness guide](tools/pdf-harness/README.md) and
+[representative-intake guide](tools/representative-intake/README.md). Python
+remains in CI/release tooling, legacy representative bindings and approval
+recording, and selected research/audit tools; see the
+[Python inventory and CI handoff](tools/python-inventory.md). Archived commands
+for deleted diagnostic and requalification drivers are historical research.
 
-## Tests
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the test tiers and expected-output
+review, [development operations](docs/development.md) for detailed commands,
+and the [release policy](docs/release-0.1.0.md) for the 0.1.0 scope.
 
-The suite is tiered, and `.config/nextest.toml` gives each tier a
-[cargo-nextest](https://nexte.st) profile that selects it by binary name and
-kind, so neither a workflow nor a developer names individual tests. The
-renderer's integration binaries under `crates/excalidraw-render/tests` are named
-by tier:
+## License
 
-| binary | tier | profile |
-|---|---|---|
-| `fast` (one module per former binary) and every other crate's targets | every unit, component and full-pipeline test | `ci-fast` |
-| `parity_registered_case_svg`, `parity_registered_case_png`, `parity_frame_export` | parity against official evidence: the registry-driven scene harnesses and the frame-export case | `ci-render` |
-| `limits_scene_admission` | fixed parser ceilings that build 64 MiB and million-entry scenes | `ci-render` |
-| `harness_pdf_viewers`, `harness_svg_viewers` | `#[ignore]`d gates that need the pinned PDFium, PDF.js, qpdf and Chromium harnesses | `harness` |
-
-```sh
-cargo nextest run --workspace                      # a developer's run: ci-fast and ci-render together
-cargo nextest run --workspace --profile ci-fast    # the push gate's fast leg
-cargo nextest run --workspace --profile ci-render  # the push gate's render leg
-cargo nextest run -p excalidraw-render --profile harness --run-ignored only
-cargo test --workspace --doc                       # nextest runs no doc tests
-```
-
-`cargo test --workspace` still runs every non-ignored test in one go, without
-the tiers. The pinned nextest release is installed from
-`tests/package-consumer/tool-manifest.json` with
-`bash tests/package-consumer/install-cargo-nextest.sh <download-directory>`.
-
-The two registry parity harnesses render each registered variant once per
-format per run: the SVG harness judges one render on path geometry, root extent
-and the rasterized document, the PNG harness one render against the direct
-official raster, and each spreads its variants over the available cores. The
-comparator, not the renderer, is what their time goes to.
-
-The root `Cargo.toml` optimizes the `test` profile (`opt-level = 2`, keeping
-debug assertions, overflow checks, and debuginfo), because brotli quality-11
-encoding, WOFF2 decoding, SSIM, and resvg rasterization dominate the suite and
-run an order of magnitude slower unoptimized. Dependencies are optimized under
-the `dev` profile as well, so `cargo run -p xtask` verification shares the
-compiled external dependencies with `cargo test`.
-
-Two corpus-driven tests form the release-mode qualification set and are not
-part of the push gate: the SVG font subset qualification corpus
-(`render::font_subset_qualification::complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces`)
-and the frame batch property test
-(`render::frame_batch_property::frame_batch_rendering_matches_standalone_around_resource_limits`).
-The `Packaged public facade` workflow's native leg and the
-`packaging:qualification` Dagger check run the complete renderer unit target in
-`--release` with the feature that lifts their `#[ignore]`, without a name
-filter, so a renamed test cannot drop out silently:
-
-```sh
-cargo test --locked --release -p excalidraw-render --features release-qualification --lib
-```
-
-Both tests are `#[ignore]`d unless `release-qualification` is enabled, so a
-plain `cargo test` or `cargo nextest run` leaves them to the release-mode run
-without naming them.
-
-## Canonical CI and evidence generation
-
-Dagger owns CI for both supported targets: Linux x86-64 and browser WASM.
-Run the push gates locally or on any Dagger runner:
-
-```sh
-dagger check
-```
-
-The devenv shell carries the pinned Dagger CLI (`dagger.enable` in
-`devenv.nix`); the engine needs a working container runtime and nothing else.
-`dagger check --list` names every check, and a selector runs a subset:
-
-```sh
-dagger check --list
-dagger check excalidraw-render:lint
-dagger check excalidraw-render:test:fast
-```
-
-`lint` checks formatting and clippy; `test` runs the fast/render tiers and
-doctests; `conformance` verifies catalog and approved evidence; `packaging`
-executes the native qualification and packaged CLI/facade; `wasm` executes
-the browser tests and packaged facade in Chromium **149.0.7827.55**.
-Longer scheduled operations are explicit calls:
-
-```sh
-dagger api call nightly font-subset-fuzz
-dagger api call nightly frame-batch-property --cases 64
-dagger api call nightly scene-fuzz --cases 512
-dagger api call evidence pdf
-```
-
-`.github/workflows/dagger.yaml` is generated from `dagger.toml`. The
-`dagger-gha:generate` check fails when the committed file drifts from the
-configuration; regenerate it with:
-
-```sh
-dagger generate dagger-gha:generate
-```
-
-`dagger.lock` pins module revisions and base image resolution. The package-consumer
-tool manifest pins Rust, nextest, Chromium, ChromeDriver, and the WASM runner;
-the reference/viewer harnesses retain their separately pinned images and tools.
-GitHub workflows only invoke Dagger and handle scheduling/artifact upload.
-
-See [the Dagger operation guide](docs/ci.md) for evidence reproduction,
-generation, the two-target aggregate, and the pending identity refresh.
+Project code is dual-licensed under [MIT](LICENSE-MIT) or
+[Apache-2.0](LICENSE-APACHE). Bundled assets have their own licenses, collected
+in the [asset license bundle](crates/excalidraw-render-assets-base/LICENSE-BUNDLE.txt).
+Exports carry the attribution required by the bundled resources they use.

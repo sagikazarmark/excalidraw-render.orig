@@ -6,9 +6,12 @@ mod conformance_candidate_gate;
 mod conformance_candidate_native;
 mod conformance_candidate_semantics;
 mod conformance_pdf_bridge;
+#[cfg(test)]
 mod conformance_pdf_requalification;
 mod coverage;
+mod pdf_harness;
 mod pdf_viewers;
+mod representative;
 mod svg_font_subset_runner;
 mod svg_font_subset_targets;
 mod svg_font_subsets;
@@ -32,6 +35,8 @@ fn run() -> Result<(), String> {
     match args.next().as_deref() {
         Some("catalog") => run_catalog(args),
         Some("conformance") => run_conformance(args),
+        Some("representative") => representative::run(args),
+        Some("pdf-harness") => pdf_harness::run(args),
         _ => Err(usage()),
     }
 }
@@ -246,6 +251,19 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             coverage::stage_wasm_snapshots()?;
         }
+        Some("test-group-filter") => {
+            let path = required_arg(&mut args, "test group manifest")?;
+            no_more_args(args)?;
+            println!("{}", coverage::test_group_filter(&path)?);
+        }
+        Some("build-native-cli") => {
+            no_more_args(args)?;
+            let (path, _) = conformance_candidate_native::build()?;
+            println!("prepared native release CLI: {}", path.display());
+        }
+        Some("refresh-test-owner-sources") => {
+            coverage::refresh_test_owner_sources(&args.collect::<Vec<_>>())?;
+        }
         Some("stage-traces") => {
             no_more_args(args)?;
             coverage::stage_traces()?;
@@ -327,21 +345,12 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             coverage::verify_pdf_judgments(require_approval)?;
         }
-        Some("layers-generate") => {
+        Some("layers-report") => {
             no_more_args(args)?;
-            coverage::generate_layers()?;
+            println!("{}", coverage::report_layers()?);
         }
-        Some("layers-approval-subject") => {
-            no_more_args(args)?;
-            println!("sha256:{}", coverage::layers_subject()?);
-        }
-        Some("record-layers-approval") => {
-            let login = required_arg(&mut args, "GitHub identity")?;
-            let date = required_arg(&mut args, "approval date")?;
-            let url = required_arg(&mut args, "approval comment URL")?;
-            let subject = required_arg(&mut args, "approval subject")?;
-            no_more_args(args)?;
-            coverage::record_layers_approval(&login, &date, &url, &subject)?;
+        Some("layers-generate" | "layers-approval-subject" | "record-layers-approval") => {
+            return Err("five-layer maintenance is retired; use conformance layers-report (read-only, advisory)".into());
         }
         Some("verify-layers") => {
             let require_approval = match args.next().as_deref() {
@@ -350,7 +359,11 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
                 Some(other) => return Err(format!("unexpected argument {other:?}")),
             };
             no_more_args(args)?;
-            coverage::verify_layers(require_approval)?;
+            if require_approval {
+                coverage::verify_layers(true)?;
+            } else {
+                println!("{}", coverage::report_layers()?);
+            }
         }
         Some("verify-closure") => {
             no_more_args(args)?;
@@ -489,24 +502,10 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             );
         }
         Some("candidate-pdf-requalify") => {
-            let path = required_arg(&mut args, "evidence directory")?;
-            let baseline = required_arg(&mut args, "protected baseline PDF")?;
-            let executable = required_arg(&mut args, "clean baseline executable")?;
-            no_more_args(args)?;
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&conformance_pdf_requalification::collect(
-                    &path,
-                    &baseline,
-                    &executable
-                )?)
-                .map_err(|e| e.to_string())?
-            );
+            return Err("completed PDF backend requalification workflow retired; use current PDF harness and native snapshot checks".into());
         }
         Some("pdf-requalification-subject") => {
-            let path = required_arg(&mut args, "requalification directory")?;
-            no_more_args(args)?;
-            println!("sha256:{}", conformance_pdf_requalification::verify(&path)?);
+            return Err("historical PDF requalification subject command retired; retained evidence remains available".into());
         }
         Some("collect-pdf-colorspace-bridge") => {
             no_more_args(args)?;
@@ -633,9 +632,7 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             println!("verified canonical PDF viewer and structural qualification");
         }
         Some("refresh-pdf-viewer-dependencies") => {
-            no_more_args(args)?;
-            pdf_viewers::refresh_dependencies()?;
-            println!("refreshed PDF viewer qualification dependencies");
+            return Err("historical PDF viewer dependency refresh retired; use conformance verify-pdf-viewers to check retained qualification evidence".into());
         }
         Some("pdf-viewer-approval-subject") => {
             no_more_args(args)?;
@@ -695,12 +692,15 @@ fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
 fn usage() -> String {
     concat!(
         "usage: cargo run --locked -p xtask -- ",
+        "representative <prepare|verify|capture|verify-capture|case|controls|viewer-assets|evidence|compact> | ",
+        "pdf-harness <generate-fixtures|inspect> | ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|record-case-owner|record-exception-test-owner|refresh-exception-test-owner-source|refresh-test-owner-source|refresh-library-test-owner-source|record-closure-owner|ownership-approval-subject|record-ownership-approval|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|pdf-judgments-generate|pdf-judgments-approval-subject|record-pdf-judgments-approval|verify-pdf-judgments|layers-generate|layers-approval-subject|record-layers-approval|verify-layers|verify-closure|generate|reproduce|verify|verify-all|approval-subject|candidate-approval-subject|record-approval|",
+        "conformance layers-report | conformance test-group-filter <manifest> | conformance refresh-test-owner-sources <module>... | conformance build-native-cli | ",
+        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|record-case-owner|record-exception-test-owner|refresh-exception-test-owner-source|refresh-test-owner-source|refresh-library-test-owner-source|record-closure-owner|ownership-approval-subject|record-ownership-approval|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|pdf-judgments-generate|pdf-judgments-approval-subject|record-pdf-judgments-approval|verify-pdf-judgments|verify-layers|verify-closure|generate|reproduce|verify|verify-all|approval-subject|candidate-approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
-        "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
-        "[case-id] [approval fields]"
+        "verify-pdf-viewers|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
+        "[case-id] [approval fields]\nSee CONTRIBUTING.md for tests and expectation updates."
     )
     .to_owned()
 }

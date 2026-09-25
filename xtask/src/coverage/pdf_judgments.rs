@@ -1,10 +1,11 @@
 //! `closure:pdf-judgments`: one #85-approved record that binds an independently
 //! derived expected report for every PDF inventory execution and, by digest,
 //! every specialized PDF structural/visual judgment file under
-//! `tests/conformance`. Derivation rules live in `derive.rs`, bound by digest.
+//! `tests/conformance`. Derivation source identity is historical provenance;
+//! verification still rebuilds every report, rule and judgment classification.
 use super::*;
 use crate::conformance::verify_approval_for_issue;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 mod derive;
 use derive::{build_record, classify_files, declared, report_bytes, FORMAT_RULES, RULES};
@@ -24,6 +25,16 @@ pub(super) struct Repo {
 }
 
 impl Repo {
+    /// An override-only test repository rooted at a nonexistent path.
+    #[cfg(test)]
+    pub(super) fn empty(root: PathBuf) -> Self {
+        assert!(!root.exists(), "test repository root must not exist");
+        Self {
+            root,
+            overrides: BTreeMap::new(),
+        }
+    }
+
     pub(super) fn real() -> Self {
         Self {
             root: repo_root(),
@@ -238,14 +249,45 @@ fn verify_record(
         ));
     }
     spec_anchors(repo, &record)?;
+    // Keep the generating source identity inside the accepted record, without
+    // requiring its historical file to exist in today's checkout. Only this
+    // descriptor is carried forward; all derivation results are rebuilt below.
+    let implementation = &record["implementation"];
+    let path = string(implementation, "path")?;
+    if path.is_empty()
+        || Path::new(path)
+            .components()
+            .any(|part| !matches!(part, Component::Normal(_)))
+        || !implementation["sha256"]
+            .as_str()
+            .is_some_and(|h| hex(h, 64))
+        || implementation.as_object().is_none_or(|o| o.len() != 2)
+    {
+        return Err("invalid historical PDF judgment implementation descriptor".into());
+    }
     let mut rebuilt = build_record(
         repo,
         inventory,
         record["pdf_declarations"]
             .as_array()
             .ok_or("pdf_declarations must be an array")?,
+        implementation,
     )?;
     rebuilt["approval"] = record["approval"].clone();
+    // Approved records keep the generating inventory as provenance. Its
+    // incidental test-source links may move while the exact PDF keys, reports,
+    // declarations, judgment files and derivation rules above remain identical.
+    // Newly generated, unapproved records must still bind today's inventory.
+    if !record["approval"].is_null() {
+        let historical = &record["inventory"];
+        if historical["path"] != INVENTORY
+            || !historical["sha256"].as_str().is_some_and(|h| hex(h, 64))
+            || historical.as_object().is_none_or(|o| o.len() != 2)
+        {
+            return Err("invalid historical PDF judgment inventory descriptor".into());
+        }
+        rebuilt["inventory"] = historical.clone();
+    }
     if rebuilt != record {
         return Err(
             "derivation does not reproduce pdf-judgments.json; run pdf-judgments-generate and review the diff"
@@ -366,7 +408,16 @@ fn existing_declarations(repo: &Repo) -> Result<Vec<Value>, String> {
 }
 
 fn generate_in(repo: &Repo, inventory: &Inventory) -> Result<Value, String> {
-    build_record(repo, inventory, &existing_declarations(repo)?)
+    let implementation = json!({
+        "path": derive::IMPLEMENTATION,
+        "sha256": sha256(&repo.read(derive::IMPLEMENTATION)?),
+    });
+    build_record(
+        repo,
+        inventory,
+        &existing_declarations(repo)?,
+        &implementation,
+    )
 }
 
 /// Adds the approval to a record whose subject equals `expected`.
@@ -495,6 +546,88 @@ mod tests {
     }
     const URL: &str =
         "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1";
+
+    #[test]
+    fn accepted_judgments_survive_derivation_source_edits_and_moves() {
+        let inventory = load_inventory().unwrap();
+        let repo = Repo::real();
+        let accepted: Value = parse(&repo.read(RECORD).unwrap()).unwrap();
+        let mut edited = repo.read(derive::IMPLEMENTATION).unwrap();
+        edited.extend_from_slice(b"\n// A source-only refactor.\n");
+        for source in [Some(edited), None] {
+            let mut repo = Repo::real();
+            repo.overrides.insert(derive::IMPLEMENTATION.into(), source);
+            let verified = verify_record(&repo, &inventory, true).unwrap();
+            assert_eq!(verified, accepted);
+            assert_eq!(cross_check_baseline(&repo, &verified).unwrap(), 56);
+        }
+    }
+
+    #[test]
+    fn generation_records_current_source_without_rebinding_accepted_judgments() {
+        let mut fixture = Fixture::new();
+        let mut edited = fixture.repo.read(derive::IMPLEMENTATION).unwrap();
+        edited.extend_from_slice(b"\n// Current generation source.\n");
+        fixture
+            .repo
+            .overrides
+            .insert(derive::IMPLEMENTATION.into(), Some(edited.clone()));
+        // Verification returns the original record even after the source edit.
+        assert_eq!(fixture.verify(false).unwrap(), fixture.record);
+        let generated = generate_in(&fixture.repo, &fixture.inventory).unwrap();
+        assert_eq!(generated["implementation"]["sha256"], sha256(&edited));
+        assert_ne!(
+            generated["implementation"],
+            fixture.record["implementation"]
+        );
+        assert_eq!(generated["executions"], fixture.record["executions"]);
+        assert!(generated["approval"].is_null());
+    }
+
+    #[test]
+    fn historical_implementation_is_well_formed_and_remains_acceptance_bound() {
+        let mut fixture = Fixture::new();
+        let original = fixture.record.clone();
+        for implementation in [
+            json!({"path": "", "sha256": "0".repeat(64)}),
+            json!({"path": "../outside.rs", "sha256": "0".repeat(64)}),
+            json!({"path": "/absolute.rs", "sha256": "0".repeat(64)}),
+            json!({"path": "retired/derive.rs", "sha256": "invalid"}),
+            json!({"path": "retired/derive.rs", "sha256": "0".repeat(64), "extra": true}),
+        ] {
+            let mut malformed = original.clone();
+            malformed["implementation"] = implementation;
+            fixture.with_record(&malformed);
+            assert!(fixture
+                .verify(false)
+                .unwrap_err()
+                .contains("implementation descriptor"));
+        }
+        // Use the actual accepted record, not Fixture's unapproved generation.
+        let mut changed: Value = parse(&Repo::real().read(RECORD).unwrap()).unwrap();
+        changed["implementation"]["sha256"] = json!("0".repeat(64));
+        fixture.with_record(&changed);
+        assert!(fixture
+            .verify(true)
+            .unwrap_err()
+            .contains("approval subject"));
+    }
+
+    #[test]
+    fn historical_source_does_not_exempt_rules_scope_or_inputs_from_rebuilding() {
+        let mut fixture = Fixture::new();
+        for pointer in [
+            "/derivation_rules/0/statement",
+            "/format_rules/0/png",
+            "/judgment_scope/root",
+            "/executions/0/key/inputs_sha256",
+        ] {
+            let mut changed = fixture.record.clone();
+            *changed.pointer_mut(pointer).unwrap() = json!("changed");
+            fixture.with_record(&changed);
+            assert!(fixture.verify(false).is_err(), "accepted changed {pointer}");
+        }
+    }
 
     #[test]
     fn generate_is_deterministic_and_verifies_against_the_baseline() {

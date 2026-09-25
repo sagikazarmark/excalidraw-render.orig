@@ -22,6 +22,37 @@ const REFERENCE_RASTER_DIGEST: &str =
 const VISUAL_FAIL_RASTER_DIGEST: &str =
     "67aee623b8731045330343370de0dfd30fdbb7a343bf2043d1f36473e4b9b88f";
 
+// These producer identities describe the approved Python-era capture. Keep
+// them in the approval subject while Rust replay checks the same frozen bytes.
+// Viewer adapters, parser locks, schemas, comparator and evidence stay live.
+const HISTORICAL_QUALIFICATION_SOURCES: &[&str] = &[
+    "tools/pdf-viewer-qualification.sh",
+    "tools/pdf-harness/generate-fixtures.py",
+    "xtask/src/pdf_viewers.rs",
+    "tools/pdf-harness/pdfium/test_alpha.py",
+];
+const HISTORICAL_STRUCTURE_SOURCES: &[&str] = &[
+    "tools/pdf-harness/structure/inspect.py",
+    "tools/pdf-harness/run-structure.sh",
+    "tools/pdf-harness/generate-fixtures.py",
+    "tools/pdf-harness/install.sh",
+];
+const HISTORICAL_PDFIUM_SOURCES: &[&str] = &[
+    "tools/pdf-harness/run-pdfium.sh",
+    "tools/pdf-harness/install.sh",
+    "tools/pdf-harness/pdfium/render.py",
+    "tools/pdf-harness/pdfium/test_alpha.py",
+];
+
+/// Shared with the Node collector. The declaration itself is not a producer
+/// entry: preserve the five-file inventory used by existing Rust collections.
+pub(crate) fn rust_pdfium_sources() -> Result<Vec<String>, String> {
+    serde_json::from_str(include_str!(
+        "../../tools/pdf-harness/pdfium-rust/sources.json"
+    ))
+    .map_err(|error| format!("invalid Rust PDFium source inventory: {error}"))
+}
+
 pub fn verify(require_approval: bool) -> Result<(), String> {
     let manifest_bytes = fs::read(repo_root().join(MANIFEST_PATH))
         .map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?;
@@ -76,9 +107,10 @@ pub fn verify(require_approval: bool) -> Result<(), String> {
     if manifest["comparator"]["sha256"] != json!(COMPARATOR_DIGEST) {
         return Err("PDF qualification does not use the approved comparator".to_owned());
     }
-    for source in array(&manifest["implementation"], "qualification implementation")? {
-        verify_descriptor(source)?;
-    }
+    verify_producer_sources(
+        &manifest["implementation"],
+        HISTORICAL_QUALIFICATION_SOURCES,
+    )?;
     verify_viewer_profile(&manifest["profiles"]["pdfium"], "pdfium")?;
     verify_viewer_profile(&manifest["profiles"]["pdfjs"], "pdfjs")?;
     verify_structure_profile(&manifest["profiles"]["structure"])?;
@@ -143,75 +175,6 @@ pub fn approval_subject() -> Result<String, String> {
     )
     .map_err(|error| format!("invalid qualification manifest: {error}"))?;
     approval_subject_from_manifest(&manifest)
-}
-
-/// Re-derives every pinned digest from disk: first the viewer and structure
-/// profiles' own descriptors and digest sidecars, then the manifest that pins
-/// those profiles. The approval is cleared because its subject moves with them.
-pub fn refresh_dependencies() -> Result<(), String> {
-    let root = repo_root();
-    let path = root.join(MANIFEST_PATH);
-    let mut manifest: Value = serde_json::from_slice(
-        &fs::read(&path).map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?,
-    )
-    .map_err(|error| format!("invalid qualification manifest: {error}"))?;
-    for profile in object(&manifest["profiles"], "qualification profiles")?.values() {
-        refresh_profile(string(&profile["path"], "profile path")?, &root)?;
-    }
-    manifest["approval"] = Value::Null;
-    refresh_descriptors(&mut manifest, &root)?;
-    let canonical = canonical_bytes(&manifest)?;
-    fs::write(&path, [&canonical[..], b"\n"].concat())
-        .map_err(|error| format!("failed to write {MANIFEST_PATH}: {error}"))?;
-    fs::write(
-        root.join(MANIFEST_DIGEST_PATH),
-        format!("{}\n", sha256(&canonical)),
-    )
-    .map_err(|error| format!("failed to write {MANIFEST_DIGEST_PATH}: {error}"))?;
-    verify(false)
-}
-
-/// Rewrites one profile with its file descriptors re-derived from disk, as
-/// canonical JSON plus LF, and its `.sha256` sidecar over those bytes.
-fn refresh_profile(relative: &str, root: &Path) -> Result<(), String> {
-    let mut profile: Value = serde_json::from_slice(&read_repository_file(root, relative)?)
-        .map_err(|error| format!("invalid profile {relative}: {error}"))?;
-    refresh_descriptors(&mut profile, root)?;
-    let bytes = [&canonical_bytes(&profile)?[..], b"\n"].concat();
-    fs::write(root.join(relative), &bytes)
-        .map_err(|error| format!("failed to write {relative}: {error}"))?;
-    let sidecar = relative.replace(".json", ".sha256");
-    fs::write(root.join(&sidecar), format!("{}\n", sha256(&bytes)))
-        .map_err(|error| format!("failed to write {sidecar}: {error}"))
-}
-
-fn refresh_descriptors(value: &mut Value, root: &Path) -> Result<(), String> {
-    match value {
-        Value::Object(object) => {
-            let descriptor_path = object
-                .get("path")
-                .and_then(Value::as_str)
-                .filter(|_| object.contains_key("sha256"))
-                .map(str::to_owned);
-            if let Some(descriptor_path) = descriptor_path {
-                let bytes = read_repository_file(root, &descriptor_path)?;
-                object.insert("sha256".to_owned(), json!(sha256(&bytes)));
-                if object.contains_key("byte_length") {
-                    object.insert("byte_length".to_owned(), json!(bytes.len()));
-                }
-            }
-            for child in object.values_mut() {
-                refresh_descriptors(child, root)?;
-            }
-        }
-        Value::Array(values) => {
-            for child in values {
-                refresh_descriptors(child, root)?;
-            }
-        }
-        _ => {}
-    }
-    Ok(())
 }
 
 pub fn record_approval(
@@ -318,8 +281,16 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
         return Err(format!("{viewer} PDF viewer profile identity is invalid"));
     }
     verify_descriptor(&profile["implementation"]["lockfile"])?;
-    for source in array(&profile["implementation"]["sources"], "viewer sources")? {
-        verify_descriptor(source)?;
+    if viewer == "pdfium" {
+        verify_producer_sources(
+            &profile["implementation"]["sources"],
+            HISTORICAL_PDFIUM_SOURCES,
+        )?;
+    } else {
+        verify_producer_sources(
+            &profile["implementation"]["sources"],
+            &["tools/pdf-harness/install.sh"],
+        )?;
     }
     match viewer {
         "pdfium" => {
@@ -407,9 +378,10 @@ fn verify_structure_profile(descriptor: &Value) -> Result<(), String> {
         return Err("canonical PDF structure profile identity is invalid".to_owned());
     }
     verify_descriptor(&profile["implementation"]["lockfile"])?;
-    for source in array(&profile["implementation"]["sources"], "structure sources")? {
-        verify_descriptor(source)?;
-    }
+    verify_producer_sources(
+        &profile["implementation"]["sources"],
+        HISTORICAL_STRUCTURE_SOURCES,
+    )?;
     verify_descriptor(&profile["qualification"]["report_schema"])?;
     verify_descriptor(&profile["qualification"]["expectation_schema"])?;
     Ok(())
@@ -648,6 +620,17 @@ fn validate_schema(definition: &Value, value: &Value, subject: &str) -> Result<(
         .map_err(|error| format!("document fails {subject}: {error}"))
 }
 
+fn verify_producer_sources(sources: &Value, historical: &[&str]) -> Result<(), String> {
+    crate::conformance_candidate_gate::require_historical_sources(sources, historical)?;
+    for source in array(sources, "producer sources")? {
+        let path = string(&source["path"], "producer source path")?;
+        if !historical.contains(&path) {
+            verify_descriptor(source)?;
+        }
+    }
+    Ok(())
+}
+
 fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
     let descriptor = object(descriptor, "file descriptor")?;
     let relative = string(&descriptor["path"], "file descriptor path")?;
@@ -771,4 +754,64 @@ fn string<'a>(value: &'a Value, subject: &str) -> Result<&'a str, String> {
     value
         .as_str()
         .ok_or_else(|| format!("{subject} must be a string"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn historical_producers_remain_approval_bound_and_require_valid_membership() {
+        let manifest: Value =
+            serde_json::from_slice(&fs::read(repo_root().join(MANIFEST_PATH)).unwrap()).unwrap();
+        let mut changed = manifest.clone();
+        let sources = changed["implementation"].as_array_mut().unwrap();
+        let source = sources
+            .iter_mut()
+            .find(|s| s["path"] == "tools/pdf-harness/generate-fixtures.py")
+            .unwrap();
+        source["sha256"] = json!("a".repeat(64));
+        verify_producer_sources(&changed["implementation"], HISTORICAL_QUALIFICATION_SOURCES)
+            .unwrap();
+        assert!(verify_approval(
+            &changed["approval"],
+            &approval_subject_from_manifest(&changed).unwrap()
+        )
+        .is_err());
+
+        for mutation in 0..5 {
+            let mut sources = manifest["implementation"].clone();
+            let rows = sources.as_array_mut().unwrap();
+            let index = rows
+                .iter()
+                .position(|s| s["path"] == "tools/pdf-harness/generate-fixtures.py")
+                .unwrap();
+            match mutation {
+                0 => rows[index]["sha256"] = json!("not-a-digest"),
+                1 => rows[index]["path"] = json!("../generate-fixtures.py"),
+                2 => {
+                    rows.remove(index);
+                }
+                3 => rows.push(rows[index].clone()),
+                _ => rows[index]["byte_length"] = json!(-1),
+            }
+            assert!(
+                verify_producer_sources(&sources, HISTORICAL_QUALIFICATION_SOURCES).is_err(),
+                "mutation {mutation}"
+            );
+        }
+    }
+
+    #[test]
+    fn producer_exceptions_do_not_relax_parser_or_comparator_hashes() {
+        for path in [
+            "tools/pdf-harness/structure/qpdf.lock.json",
+            "crates/excalidraw-render-compare/examples/compare_pdf_rgba.rs",
+        ] {
+            let sources = json!([{"path": path, "sha256": "a".repeat(64)}]);
+            assert!(verify_producer_sources(&sources, &[])
+                .unwrap_err()
+                .contains("stale digest"));
+        }
+    }
 }

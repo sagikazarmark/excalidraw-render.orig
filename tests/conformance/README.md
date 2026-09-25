@@ -1,5 +1,11 @@
 # Conformance corpus
 
+For 0.1.0, [ADR-0017](../../docs/adr/0017-separate-representative-expectations-from-producer-provenance.md)
+separates representative-case producer provenance from accepted expectations:
+current code is freshly replayed against approved bytes. Source-only changes
+no longer require representative successors. Other evidence families retain
+their documented binding rules.
+
 This directory contains immutable, approved scene documents and reference
 evidence used to judge format-specific parity. Ordinary verification is offline:
 
@@ -251,6 +257,15 @@ names a consumer drops it in the next round that re-approves that manifest
 anyway (the ride-along rule in `docs/cleanup-plan.md`), never in a round of its
 own.
 
+The Rust structural/fixture migration preserves these approved PDF records
+without refreshing their evidence. For the migrated producer descriptors only,
+`pdf_viewers.rs` checks historical descriptor shape and required membership;
+their original hashes remain inside the approval subject rather than having to
+match today's source bytes. Viewer adapters, parser locks, schemas, comparator
+and all expected evidence retain live byte checks. Current structural and fixture
+callers use `xtask pdf-harness`; see `tools/pdf-harness/README.md` for the prebuilt
+override, Cargo-lock-safe fallback and exact retained Python dependencies.
+
 ## Visual comparator
 
 `comparator-profiles/canonical-visual-v1.json` freezes the format-neutral
@@ -337,8 +352,12 @@ manifested face; the corpus records that encoding's digest as
 viewer renders from the sfnt itself, and the corpus test checks that the
 encoding reconstructs the face's outlines, advances and tables.
 
-Ordinary verification is offline; the corpus test is part of the release-mode
-qualification set and needs the `release-qualification` feature:
+Evidence verification is offline and read-only: it checks the accepted corpus,
+profiles, complete execution inventory and retained results from both viewers.
+The corpus test regenerates subsets with today's implementation and compares
+their exact bytes and qualification behavior with the accepted corpus. It is
+part of the release-mode qualification set and needs the `release-qualification`
+feature:
 
 ```sh
 cargo run --locked -p xtask -- conformance verify-svg-font-subsets
@@ -360,10 +379,23 @@ bash tools/svg-font-subset-qualification.sh generate
 bash tools/svg-font-subset-qualification.sh reproduce
 ```
 
-The manifest's `implementation` list follows the producer-only rule above:
-the subsetter, the qualification module that produces the corpus and viewer
+The manifest's `implementation` list records historical producer provenance:
+the subsetter, the qualification module that produced the corpus and viewer
 inputs, the two viewer drivers, the report runner, the materializer and the
-harness script. The release evidence beside it
+harness script. Its paths and digests remain inside the accepted subject, but
+verification does not require those source files to exist or match today's
+checkout. A source-only refactor therefore needs no manifest refresh. Generation
+still records the source identities actually used; changing a recorded identity
+itself changes the acceptance subject.
+
+After subsetter changes, run the corpus test above. After changing viewer adapters
+or input generation, use `bash tools/svg-font-subset-qualification.sh reproduce`
+to regenerate viewer inputs and compare fresh reports byte-for-byte with the
+retained reports. Changed subset bytes, reference inputs, viewer profiles or
+results still fail their checks and need review; implementation hashes are not
+a substitute for those checks.
+
+The release evidence beside it
 (`svg-font-subset-release-evidence/revision-1.json`) binds the approved
 viewer qualification to the supported-target measurement the packaged
 public facade workflow produces (`svg_font_subset_targets.rs`), and returns

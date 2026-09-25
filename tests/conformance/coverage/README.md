@@ -19,18 +19,22 @@ obligations alongside this execution inventory and proposes single owners for th
 27 collided labels. The ledger consistency check is separate from final approved
 coverage closure; explicit gaps remain blocking.
 
-`requirements.json` names the outstanding work and links existing tests/other
-evidence by source digest and exact textual anchor. These anchors establish
-where code exists, **not that it ran or completely covers a requirement**.
-The fixed milestone set cannot silently shrink. Source-anchor updates are ordinary
-reviewed edits; they are not additions to existing human approval subjects.
+`requirements.json` names the outstanding work and retains historical links to
+tests/other evidence by source digest and textual anchor. Those links describe
+where code existed when recorded, **not that it ran or completely covers a
+requirement**. Inventory derivation validates their metadata but does not read the
+linked source files or require the old anchors to exist. Editing or moving linked
+code therefore needs no source-hash refresh. The fixed milestone set cannot
+silently shrink.
 
 `inventory.json` is derived from those requirements, the case registry, current
 case manifests, scene-surface fields, scene bytes, reference profiles and the
-asset catalog. The verifier derives it again, checks referenced bytes and source
-anchors, then verifies all registered-case approvals. New/deleted/changed cases,
-variants, field rows, scene bytes, artifact bytes and source anchors cannot leave
-a stale inventory green. Do not edit derived records by hand.
+asset catalog. The verifier derives it again, checks render inputs and reference
+artifacts, then verifies all registered-case approvals. New/deleted/changed cases,
+variants, field rows, scene bytes and artifact bytes cannot leave a stale
+inventory green. Changes to the requirements record itself still require
+regenerating the inventory; changes to its historically linked source files do
+not. Do not edit derived records by hand.
 
 ```sh
 cargo run --locked -p xtask -- conformance inventory > target/inventory.json
@@ -280,6 +284,20 @@ remain in `target/native-snapshots-clean/packages`; the baseline keeps their
 digests, not duplicate archive copies. Source provenance checks run at staging;
 approval recording rechecks the subject and Git ancestry.
 
+The accepted baseline's generator and collector descriptors are historical
+provenance. Verification checks their relative paths, digest syntax and lengths,
+but does not require those historical files to exist or match today's source
+tree. Their recorded identities remain inside the acceptance subject. A
+collector or generator refactor therefore needs no baseline refresh when the
+render inputs and expected results are unchanged.
+
+Fresh snapshot candidates still record and verify the current collector, input
+inventory and tool/package identities. After changing the collector, recollect
+the candidate and run `conformance replay-native-snapshots <candidate-directory>`:
+the current execution set and complete artifact/report bytes must match the
+accepted baseline. Source hashes alone do not establish that a changed request
+mapping is correct.
+
 Replay requires explicit approval on #85, validates a newly collected candidate,
 and compares every key's complete outcome/artifact/report descriptors with the
 approved baseline. Missing cases, byte changes, artifact-to-failure changes and
@@ -350,6 +368,20 @@ null approval. Verification checks exact PDF execution coverage, report and
 judgment digests, spec anchors, completeness, that derivation reproduces the
 record, the #85 approval subject when present, and cross-checks all 56 derived
 reports byte for byte against the approved native baseline (all equal).
+The `implementation` descriptor records the derivation source used to generate
+the record. Its path and hash are historical provenance, not a requirement that
+today's source file have identical bytes or still occupy that path. Verification
+rebuilds the record using today's derivation code, carrying forward only that
+historical descriptor (and the accepted inventory provenance). The full
+derivation rules, format rules, declarations, reports, file classifications and
+judgment bindings must still match. Editing the historical descriptor itself
+changes the acceptance subject.
+
+A source-only derivation refactor needs no record regeneration. Run
+`conformance verify-pdf-judgments --require-approval` to check the retained record
+and baseline agreement. Explicit generation still records today's source hash
+and produces an unapproved record for review.
+
 `verify-native-snapshots`, `verify-native-baseline`, `stage-native-baseline` and
 `replay-native-snapshots` now compare every actual report with its expected
 report: PDF byte for byte with this record, SVG/PNG as complete JSON values with
@@ -357,6 +389,44 @@ the manifest-owned declarations. All 168 executions, not 120, have an expected
 report.
 
 ### Five-layer integration (`closure:all-five-layers`)
+
+**Status: optional reporting.** The historical `layers.json` record and its
+ownership assignments are no longer mandatory contribution checks.
+`verify-ownership` excludes `layer:*` and `closure:all-five-layers` mappings from
+ordinary validation, while continuing to check non-layer owners, PDF judgments,
+registered case evidence and representative intake evidence independently.
+Missing layer assignments are allowed. Actual test execution and input/output
+verification remain separate requirements.
+
+```sh
+cargo run --locked -p xtask -- conformance layers-report
+```
+
+The command emits JSON with `advisory: true`, a freshly discovered `current`
+record when discovery succeeds, and `findings`. It does not write `layers.json`
+or require approval. New regressions appear in the current record; missing
+owners and stale catalog bindings appear as findings. An undeclared corpus,
+missing mapping file, or other discovery failure is reported with `current:
+null`, rather than being presented as complete coverage. A zero exit status
+means the report was produced, not that coverage or renderer correctness passed.
+
+`verify-layers` without flags is a compatibility alias for this report.
+`verify-layers --require-approval` and explicit global closure audits retain
+strict historical verification for inspection only; a stale historical record
+can fail those opt-in audits. The generation/approval commands
+`layers-generate`, `layers-approval-subject`, `record-layers-approval`, and
+`record-closure-owner ... layers ...` are retired and return guidance to use the
+report. No CI configuration change is needed for the existing
+`verify-ownership` caller.
+
+The description below documents the historical record format, not a required
+update procedure.
+
+The old live-repository five-layer audits are ignored by default. They can be
+run explicitly with `cargo test --locked -p xtask --bin xtask
+coverage::layers::tests:: -- --ignored`; they may fail against an evolved corpus.
+Ordinary report tests use isolated inputs, so adding a corpus does not require
+updating historical declarations or fixed coverage counts to run the test suite.
 
 `layers.json` (`excalidraw-render/five-layers/v1`, approving issue #85) maps
 every item of the five corpus layers of spec 14.2 to the ownership ledger.
@@ -397,17 +467,9 @@ be owned by that candidate's representative binding. Every fuzz target and
 regression corpus row must be owned, and no `layer:*` row may be left
 unreferenced. Every problem is listed.
 
-```sh
-cargo run --locked -p xtask -- conformance layers-generate
-cargo run --locked -p xtask -- conformance layers-approval-subject
-cargo run --locked -p xtask -- conformance record-layers-approval \
-  <login> <UTC-date> <issue-85-comment-URL> <exact-subject>
-cargo run --locked -p xtask -- conformance verify-layers [--require-approval]
-```
-
-Once approved, `record-closure-owner closure:all-five-layers layers RATIONALE`
-binds the record through the compiled-in `layers` verifier, which is
-`verify-layers --require-approval` run in-process. See
+The retired writer/approval commands are not an update procedure. Historically,
+the closure owner bound this record through the compiled-in `layers` verifier
+(`verify-layers --require-approval` in-process). See
 [the five-layer note](../../../docs/research/five-layer-integration.md).
 
 ### Native snapshot candidates

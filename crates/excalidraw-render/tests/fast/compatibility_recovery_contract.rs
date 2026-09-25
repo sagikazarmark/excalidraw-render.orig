@@ -434,27 +434,6 @@ fn malformed_transform_opacity_and_clip_match_authored_geometry() {
 }
 
 #[test]
-fn unsupported_value_contract_covers_every_current_field_family() {
-    property_disposition_inventory_is_closed();
-    mixed_property_recovery_order_and_suppression();
-    // Each component compares full authored reports, clean-scene artifacts,
-    // source preservation, scope and silent/inapplicable branches. Running this
-    // exact selector therefore executes the evidence, not just source anchors.
-    super::admission_identity_contract::unsupported_value_contract();
-    super::geometry_style_contract::unsupported_value_contract();
-    super::text_field_contract::unsupported_value_contract();
-    super::image_field_contract::unsupported_value_contract();
-    super::point_stroke_contract::unsupported_value_contract();
-    super::relationship_field_contract::unsupported_value_contract();
-    super::frame_field_contract::unsupported_value_contract();
-    super::surface_metadata_contract::unsupported_value_contract();
-    invalid_property_link_values();
-    known_fallback_is_suppressed_by_exact_narrower_causes();
-    field_omission_keeps_required_point_placeholder();
-    payload_recovery_matches_exact_escaped_authority();
-}
-
-#[test]
 fn payload_recovery_matches_exact_escaped_authority() {
     for format in FORMATS {
         for (id, pointer) in [
@@ -660,6 +639,7 @@ fn known_kind_dispatch_and_image_failures_have_no_generic_fallback() {
     }
 }
 
+#[test]
 fn invalid_property_link_values() {
     for format in FORMATS {
         for value in [json!(false), json!(17), json!([]), json!({})] {

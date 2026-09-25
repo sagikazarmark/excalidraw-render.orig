@@ -1,8 +1,14 @@
 # Representative intake (#84)
 
-This standalone development tool prepares an immutable review bundle without
-changing the existing approval-bound Stage-4 adapter. Python 3 and its standard
-library are sufficient. The confirmed test seam is the tool's command interface.
+Representative intake is available through `cargo run --locked -p xtask --
+representative`. It prepares immutable review bundles and native observations.
+The confirmed test seam is the tool's command interface.
+
+Use the Rust commands below for preparation, capture, evidence and case
+verification. The Python implementation and standalone comparator have been
+retired. Representative cases are accepted through normal PR review; no separate
+issue-comment approval or approval-recording command is required. Historical
+non-null approvals remain validated.
 
 ## Velox plan
 
@@ -10,16 +16,16 @@ library are sufficient. The confirmed test seam is the tool's command interface.
 default padding and scale, background included, and all optional metadata on.
 The original 53-element board is retained byte for byte, with its MIT license and
 pinned upstream provenance. Its 23 technical text labels, null links, empty asset
-map and grid-only app state need no proposed redaction. This is an agent review
-record, not a maintainer sanitization sign-off. The proposed whole-region class
-and source-element crop anchors also await review. Pixel crop rectangles must be
-chosen against reference output; the tool does not invent them from native output.
+map and grid-only app state need no proposed redaction. Review sanitization, the
+proposed whole-region class and source-element crop anchors with the case PR.
+Pixel crop rectangles must be chosen against reference output; the tool does not
+invent them from native output.
 
 ```sh
-python3 -B tools/representative-intake/intake.py prepare \
+cargo run --locked -p xtask -- representative prepare \
   tests/public-scenes/velox-design tools/representative-intake/velox-plan.json \
   tests/conformance/intake/velox-design-v1
-python3 -B tools/representative-intake/intake.py verify \
+cargo run --locked -p xtask -- representative verify \
   tests/conformance/intake/velox-design-v1
 ```
 
@@ -45,10 +51,10 @@ reversed variant/format order on the second pass:
 
 ```sh
 cargo build --locked -p excalidraw-render-cli
-python3 -B tools/representative-intake/intake.py capture \
+cargo run --locked -p xtask -- representative capture \
   tests/conformance/intake/velox-design-v1 target/debug/excalidraw-render \
   /tmp/velox-native-observations
-python3 -B tools/representative-intake/intake.py verify-capture \
+cargo run --locked -p xtask -- representative verify-capture \
   tests/conformance/intake/velox-design-v1 /tmp/velox-native-observations
 ```
 
@@ -59,6 +65,10 @@ success and exact repeat bytes, and publishes its completion marker
 last. Rendering uses a private copy of the verified scene; capture rejects a
 changed source bundle or executable. A render timeout/failure leaves no capture
 directory. `--timeout` sets the per-process ceiling (default 180 seconds).
+On Unix, renderer wrappers run in an isolated process group, which is terminated
+on completion, failure or timeout before scratch cleanup. Windows uses best-effort
+`taskkill /T`; descendant cleanup after a wrapper has already exited is not
+guaranteed there. Use the renderer executable directly on Windows.
 `verify-capture`
 checks stored integrity; it does not re-execute the renderer or authenticate a
 human approval. Diagnostic detail objects remain opaque observed data; the tool
@@ -68,57 +78,88 @@ The binary digest is an observation identity, not release-build
 or source provenance. Local debug builds are useful here and cannot substitute
 for the pinned release/native/WASM qualification required for promotion.
 
+Rust preparation retains the v1 intake bundle format and verifies the existing
+Python-authored bundles byte-for-byte. Rust capture writes
+`excalidraw-render/representative-intake-capture/v2`: its `tool` records
+`implementation: cargo-xtask-representative`, the package version, and an
+executable descriptor. This is historical producer information, so rebuilding
+xtask does not invalidate stored observations. During capture the renderer and
+xtask binaries and the source bundle must remain unchanged.
+
+Rust `verify-capture` accepts both v2 and legacy Python v1 captures. A v1 `tool`
+descriptor is validated as historical producer identity, without reading the
+deleted `intake.py` source. Actual retained files, reports, requests and intake
+bindings are still checked. Verification checks integrity, not proof of execution
+or authorship, and captures remain observations awaiting review.
+
 Every result stays `pending-review` or `observed-unapproved`, has null approval,
 and exposes no eligible conformance executions. Captures are observations,
 **never generated expected reports or visual judgments**. The pending list in
-the intake manifest records reference/viewer evidence, independent semantics and
-notices, resource outcomes, canonical crops, exact approval and integration.
+the historical intake manifest records reference/viewer evidence, independent
+semantics and notices, resource outcomes, canonical crops, approval and
+integration. New cases complete acceptance through normal code review and
+registry integration as described below.
 
 ## Verification
 
 ```sh
+cargo test --locked -p xtask --test representative_intake
+cargo test --locked -p xtask --test representative_numeric
+cargo build --locked -p excalidraw-render-cli
 REPRESENTATIVE_RENDERER="$PWD/target/debug/excalidraw-render" \
-  python3 -B -m unittest discover -s tools/representative-intake -p test_intake.py
+  cargo test --locked -p xtask --test representative_intake -- --include-ignored
 ```
 
-The real-renderer capture tests are skipped without `REPRESENTATIVE_RENDERER`;
-the intake integrity tests still run. CI supplies a freshly built renderer.
+The real-renderer capture tests are opt-in and require `REPRESENTATIVE_RENDERER`;
+`--include-ignored` runs them alongside the ordinary intake integrity tests.
+Numeric tests are active Rust command-boundary checks with literal expectations;
+the optional Python parity tests have been removed.
 The process-boundary observer delegates to the real CLI, records invocation
 order and injects post-render drift/failure/delay to verify refusal and cleanup.
-No tests call private helpers or substitute fake renderer output. CI also
-captures and verifies all six Velox executions, each twice.
+No tests call private helpers or substitute fake renderer output. The independent
+Dagger check also captures and verifies all six Velox executions, each twice:
+
+```sh
+dagger api call --load-module tools/representative-intake/ci verify
+```
+
+The module uses Rust tests and smoke commands. Its dedicated GitHub Actions
+workflow has been removed. See [representative CI](ci/README.md) for check scope.
 
 ## Reference and viewer proposal
 
 `reference.sh` runs the unchanged official export entry point in the profile-pinned
 offline Playwright container, twice in fresh browsers and reversed variant order.
-It verifies the reference profile before collection. `evidence.py` consumes that
-collection and an intact native capture, derives font resources through
-`viewer_assets.py` (below), executes two fresh processes for each SVG/PDF
-viewer, and compares with the actual `excalidraw-render-compare` library. The
-standalone comparator has its own exact lockfile; no approved comparator source
-or workspace manifest changes. It supports canonical whole/crop budgets only.
+It first verifies the intake bundle through Cargo's `representative verify`, then
+verifies the reference profile before collection. Rust `representative evidence`
+consumes that collection and an intact native capture, derives font resources
+through `representative viewer-assets` (below), executes two fresh processes for
+each SVG/PDF viewer, and compares in-process with `excalidraw-render-compare`.
+It supports canonical whole/crop budgets only.
 
 ```sh
 bash tools/representative-intake/reference.sh \
   tests/conformance/intake/velox-design-v1 target/velox-reference
-python3 -B tools/representative-intake/intake.py capture \
+cargo build --locked --release -p excalidraw-render-cli
+cargo run --locked -p xtask -- representative capture \
   tests/conformance/intake/velox-design-v1 target/release/excalidraw-render target/velox-native
-python3 -B tools/representative-intake/evidence.py \
+cargo run --locked --release -p xtask -- representative evidence collect \
   tests/conformance/intake/velox-design-v1 target/velox-reference target/velox-native target/velox-viewers
 # Stored file/source/input bindings and actual canonical judgments are rechecked:
-python3 -B tools/representative-intake/evidence.py \
-  tests/conformance/intake/velox-design-v1 target/velox-reference target/velox-native target/velox-viewers --verify
+cargo run --locked --release -p xtask -- representative evidence verify \
+  tests/conformance/intake/velox-design-v1 target/velox-reference target/velox-native target/velox-viewers
 ```
 
-Use Rust 1.97.1, Node and browser versions pinned by the oracle, and install the
-PDF harness using `tools/pdf-harness/install.sh`. Collection writes new directories
+Use Rust 1.97.1 and the Node/browser environment in the
+[reference-oracle setup](../reference-oracle/README.md), and install the PDF
+harness using `tools/pdf-harness/install.sh`. Collection writes new directories
 only. Failed collections have no terminal `viewers.json`. Compressed RGBA files
 retain exact canonical samples without resizing, alignment or color fitting.
 
-The current authored adapter supports **unrotated source crop anchors**, any
-number of embedded WOFF2 faces, and observed substitutes for undeclared official
-families (see below). Unsupported inputs fail explicitly; it is not yet a
+The current authored adapter supports **unrotated source crop anchors**, embedded
+WOFF2 faces from distinct font families, and observed substitutes for undeclared
+official families (see below). Multiple faces of one family are rejected.
+Unsupported inputs fail explicitly; it is not yet a
 general representative admission adapter.
 `regions.json` records source-bounds-plus-four-pixel-context crop proposals.
 
@@ -130,25 +171,19 @@ checks). Rust viewer output is clipped at the right/bottom edge onto the same
 integer grid; its SVG geometry and transforms are unchanged. These adapter
 choices require qualification/review before becoming canonical authority.
 
-```sh
-REPRESENTATIVE_BROWSER_TESTS=1 \
-REPRESENTATIVE_COMPARE="$PWD/target/intake-compare/debug/representative-intake-compare" \
-python3 -B -m unittest discover -s tools/representative-intake -p test_evidence.py
-```
-
-The browser controls exercise fractional dimensions, fixed-position paint,
-LF admission and rejection of other numeric entities/external resources.
-`probe.py` localizes raw PNG channel differences. `diagnose.py` compares an
-expanded typography crop as a diagnostic only; it never rewrites original
-judgments, budgets or approvals.
+Current evidence tests are listed under [Rust viewer evidence](#rust-viewer-evidence).
+Completed typography, paint-isolation and stroke investigations are historical
+research. Their diagnostic drivers have been deleted; archived results and
+research prose remain. See [diagnostic retirement](diagnostic-retirement.md).
 
 ### Viewer font resources
 
-`viewer_assets.py` derives each SVG viewer's inputs and asset declarations. For
-single-face SVGs it reproduces the Stage-4 adapter (`stage4-viewer-assets.mjs`
-plus `xtask conformance candidate-prepare-assets`) byte for byte; the retained
-Velox resources are the regression test. It additionally declares every
-embedded face, so native SVGs may use more than one family.
+`representative viewer-assets` derives each SVG viewer's inputs and asset
+declarations. The retained Velox resources test reproduction of the Stage-4
+adapter's single-face output (`stage4-viewer-assets.mjs` plus
+`xtask conformance candidate-prepare-assets`), with a v2 plan encoding. It
+additionally declares each supported embedded face, so native SVGs may use more
+than one family.
 
 The official exporter does not embed every family it names: frame names use
 `Helvetica`. The canonical Chromium viewer rejects ambient platform fonts, so an
@@ -165,47 +200,187 @@ resolves to Liberation Sans (`LiberationSans-Regular.ttf`). This substitution is
 a proposed adapter choice that needs review before it becomes canonical.
 
 ```sh
-python3 -B tools/representative-intake/viewer_assets.py verify <viewer-variant-directory>
+cargo run --locked --release -p xtask -- representative viewer-assets verify <viewer-variant-directory>
 ```
 
 Verification requires the complete producer inventory, validates both viewer
 receipts against retained raw raster bytes, re-derives Rust origin clipping,
-and matches each report file to its canonical recomputation. Use
-`REPRESENTATIVE_EVIDENCE_TESTS=1` for command-boundary tampering checks.
-`--repeat-unapproved` re-executes an existing unapproved collection, refuses
-changed original files and requires every existing artifact/judgment byte to
-remain identical before replacing process receipts. This is for producer
-verification changes, never for changing a crop, budget or failed measurement.
+and matches each report file to its canonical recomputation. The opt-in Rust
+`representative_evidence` tests exercise command-boundary tampering checks and
+fresh collection with the pinned viewers.
 
 ## Compact retention
 
 Large scenes produce tens of megabytes of rasters, fonts and derived SVGs per
-collection. `compact.py retain` verifies a full collection, keeps only its JSON
+collection. `representative compact retain` verifies a full Rust v2 collection, keeps only its JSON
 records and writes `compact.json`: a digest inventory of every file in the
 reference, native and viewer collections, plus receipt signatures with process
 receipts and executable/tool identity removed. `verify` checks the retained
-records offline and reports stale producers. `check` requires a fresh full
+records offline. `check` requires a fresh full
 collection at the recorded `target/` paths to reproduce every other digest.
 
 ```sh
-python3 -B tools/representative-intake/compact.py retain <bundle> <reference> <native> <viewers> <new-proposal-dir>
-python3 -B tools/representative-intake/compact.py verify <proposal-dir>
-python3 -B tools/representative-intake/compact.py check <proposal-dir>
+cargo run --locked --release -p xtask -- representative compact retain <bundle> <reference> <native> <viewers> <new-proposal-dir>
+cargo run --locked -p xtask -- representative compact verify <proposal-dir>
+cargo run --locked --release -p xtask -- representative compact check <proposal-dir>
 ```
 
-`pdf_thin_lines.py` renders hand-authored single-stroke PDFs in both pinned PDF
-viewers and records the coverage each paints; it is an independent control for
-sub-pixel stroke comparisons, not a judgment.
+New compact records use v2. Offline `verify` also accepts the six retained v1
+records, including historical prose alongside their retained directories. It
+checks JSON integrity and receipt bindings without requiring discarded rasters.
+`check` requires v2 and a full collection at the recorded roots; legacy v1 fresh
+checks are retired. Fresh v2 checks allow only observer identities and the three
+volatile browser process fields to differ. Pixel artifacts, reports, derived
+resources, profiles and nonvolatile receipts must still match. The standalone
+Python compact script and its tests have been removed.
 
 ## Registered cases
 
-`case.py` promotes an intake bundle and its collection into a registered case
-under `tests/conformance/cases/representative/` (see that directory's README).
-`materialize` retains the pinned reference collection and writes the case
-record from a spec (formats, independently authored semantic expectations and
-expected reports, exact-ceiling exceptions). `verify` checks retained bytes and
-the approval subject; `--renderer` adds fresh-process native renders, reports,
-dimensions and semantics; `--viewers` adds every pinned viewer and requires
-each registered comparison to pass its budget or a matching exception, with
-unused exceptions rejected. `judge` applies a case's budgets and exceptions to
-an existing collection. CI runs `verify-registry --renderer` on every change.
+Create a new case for review from an authored spec:
+
+```sh
+cargo run --locked -p xtask -- representative case materialize <new-case-directory> \
+  --intake <bundle> --reference <reference-directory> \
+  --evidence-record <compact.json> --spec <spec.json>
+cargo run --locked -p xtask -- representative case subject <case-directory>
+```
+
+The spec supplies `case_id`, `formats`, `semantic_expectations`,
+`expected_reports`, `exceptions`, and optionally `resource_outcomes`.
+Materialization validates expectations and inputs before publishing, retains the
+reference bytes, refuses existing destinations, and writes `approval: null`.
+It does not register the case. Review the authored expectations, reference and
+viewer evidence, sanitization, resources and comparisons through a normal PR;
+after review, add the case to
+`tests/conformance/cases/representative/registry.json` through the PR. No separate
+issue-comment approval or `record-approval` ceremony is needed.
+`--evidence-record` is a provenance binding, not an assertion that the referenced
+observations prove the expectations correct. `case subject` remains useful as a
+diagnostic hash and for checking retained historical approval bindings.
+
+Read-only case verification is available in Rust:
+
+```sh
+cargo run --locked -p xtask -- representative case verify \
+  tests/conformance/cases/representative/excali-local-slides
+cargo run --locked -p xtask -- representative case verify-registry
+cargo run --locked -p xtask -- representative case verify-registry \
+  --renderer target/debug/excalidraw-render
+```
+
+Offline verification checks retained file hashes, the intake bundle, variants,
+formats and comparison/exception declarations. Both single-case and registry
+verification accept `approval: null`; registry identities must match and be
+unique. Coverage's independent-case validation also accepts null approval.
+When a historical non-null approval is present, its metadata and exact
+Python-compatible subject hash are still validated. Other evidence families'
+approval requirements are separate from this representative-case review flow.
+`--renderer` uses Rust v2 captures, checks repeated artifact/report bytes,
+expected diagnostics, dimensions, selectable text, links, theme/embedding flags
+and mandatory notices, and replays declared resource failures twice. Each failed
+resource render must leave no artifact and match its expected report fields.
+
+Offline and native-only verification do not claim visual comparison success.
+Add `--viewers` alongside `--renderer` to collect fresh viewer evidence in Rust,
+verify it and judge every registered comparison. Use a release-built xtask for
+the raster comparisons:
+
+```sh
+cargo run --locked --release -p xtask -- representative case verify-registry \
+  --renderer target/debug/excalidraw-render --viewers
+```
+
+The required pinned harnesses are installed with `tools/pdf-harness/install.sh`
+and the reference-oracle setup documented above. Collection invokes the existing
+JavaScript SVG/PDF.js adapters, Rust SVG viewer and Rust font codec helper.
+PDFium uses the isolated safe-Rust worker. The current viewer workflow and its
+Rust tests do not invoke Python.
+
+Rust can judge an existing raster collection separately:
+
+```sh
+cargo run --locked -p xtask -- representative case judge <case-directory> <viewer-collection>
+cargo run --locked -p xtask -- representative controls <viewer-collection/light> \
+  --comparison pdf-pdfium --tiles 64 --output <new-report.json>
+```
+
+`case judge` validates the case, requires all registered variant/comparison
+entries in `viewers.json`, and recomputes candidate and identical-input control
+comparisons directly from each variant's retained rasters and `regions.json`.
+Stored result flags and measurements are not trusted. Each region passes by its
+canonical budget, then its format-specific control envelope, then a matching
+exception ceiling. Unused exceptions, missing/duplicate comparisons, invalid
+crops, malformed rasters, non-finite SSIM ceilings and exceeded limits fail.
+This measures the supplied collection; it does not authenticate its producer,
+re-derive crop anchors or rerun viewers. Use evidence verification or case
+`--viewers` for those additional consistency checks.
+
+`controls` emits JSON observations, including every control pair's changed-pixel
+count and SSIM, the worst-case envelope, and `within`/`beyond` for failing regions.
+Repeat `--comparison` to select several; the default is all five comparisons.
+`--output` is create-only. Tiles must be at least 11 pixels per side; edge strips
+smaller than 11 pixels merge into the preceding tile so no pixels are discarded.
+A valid out-of-budget controls report exits successfully; `case judge` enforces
+the case decision. Both commands use the existing Rust comparator in-process.
+
+```sh
+cargo test --locked -p xtask --test representative_judge
+```
+
+### Rust viewer evidence
+
+```sh
+cargo run --locked --release -p xtask -- representative evidence collect \
+  <bundle> <reference> <native-capture> <new-output>
+cargo run --locked --release -p xtask -- representative evidence verify \
+  <bundle> <reference> <native-capture> <output>
+cargo run --locked --release -p xtask -- representative viewer-assets collect <variant-directory>
+cargo run --locked --release -p xtask -- representative viewer-assets verify <variant-directory>
+```
+
+Harness input/output paths must be inside the repository. Collection is
+create-only, removes incomplete output on a returned failure, and writes a
+`representative-intake-viewers/v2` record. It accepts both Python v1 and Rust v2
+native captures. Rust evidence verification requires a v2 collection. Existing
+retained evidence is not rewritten; offline compact verification continues to
+read historical v1 records and their retained files as described above.
+
+Verification re-derives assets and source-anchored crops, checks reference options
+against the intake plan, checks every copied reference/native byte, both raw
+viewer repeats, receipt identities, declared custom fonts, Rust origin clipping,
+and freshly recomputed comparison results. It also checks the complete file,
+viewer and judgment inventories. Producer sources are historical provenance;
+reference profiles, viewer profiles and actual inputs remain live bindings.
+Observations cannot grant approval or prove authorship.
+
+Viewer preparation supports multiple distinct font families. Multiple faces of
+the same family are explicitly rejected until the Rust viewer's runtime font
+resolver can honor family and Unicode-range selection without fallback ambiguity.
+Undeclared official families require a pinned-browser/fontconfig agreement and
+the exact profile-pinned substitute file. Reference option checks and anchored
+crop derivation reject malformed or rotated geometry rather than fitting crops
+to candidate differences.
+
+Internal command timeouts remove tracked Docker containers as well as host
+process groups. External termination of xtask (for example SIGKILL) cannot run
+cleanup; inspect leftover Docker containers and incomplete `target/` directories
+after an interrupted harness run. Full registry collection is an opt-in check
+(about 26 minutes on the development machine):
+
+```sh
+REPRESENTATIVE_RENDERER="$PWD/target/debug/excalidraw-render" \
+  cargo test --locked --release -p xtask --test representative_evidence -- --include-ignored --test-threads=1
+cargo test --locked -p xtask --test representative_viewer_assets
+```
+
+```sh
+cargo test --locked -p xtask --test representative_case
+REPRESENTATIVE_RENDERER="$PWD/target/debug/excalidraw-render" \
+  cargo test --locked -p xtask --test representative_case -- --include-ignored
+```
+
+The ignored case tests exercise fresh native renders, semantics and resource
+failures. There are no Python parity tests in the Rust representative suite.
+
+See the [Python inventory and completed CI handoff](../python-inventory.md) for
+the repository's remaining Python tools and the representative migration summary.

@@ -1,5 +1,5 @@
 //! The scratch directory the harness tiers write their candidates into: it
-//! lives under Cargo's target directory, is removed when the test passes, and
+//! lives inside the checkout even with external Cargo build output, is removed when the test passes, and
 //! is kept for inspection when the test panics.
 
 use std::fs;
@@ -14,8 +14,8 @@ fn a_scratch_dir_lives_under_the_target_scratch_space_and_goes_away_on_drop() {
         let path = scratch.path().to_owned();
         assert!(path.is_dir(), "scratch dir is created on construction");
         assert!(
-            path.starts_with(env!("CARGO_TARGET_TMPDIR")),
-            "{} is not under CARGO_TARGET_TMPDIR",
+            path.starts_with(repository_root().join("target/tmp")),
+            "{} is not under the repository's harness scratch directory",
             path.display()
         );
         assert!(path

@@ -1,5 +1,5 @@
-//! Evidence-producing projection and approval preimage. Validators/replay are
-//! consumers and remain outside this approval-bearing file.
+//! Evidence-producing projection and approval preimage. Each generated baseline
+//! records this file's identity as historical provenance; replay judges outputs.
 use super::*;
 
 pub(super) fn subject(baseline: &Baseline) -> Result<String, String> {

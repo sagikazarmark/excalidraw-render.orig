@@ -25,14 +25,6 @@ const KINDS: &[&str] = &[
     "selection",
 ];
 
-/// The diagnostic owner reuses these independently authored field matrices.
-pub(super) fn unsupported_value_contract() {
-    coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery();
-    style_domains_default_recover_and_respect_kind_participation();
-    roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence();
-    rough_seed_defaults_zero_repairs_and_invalid_values_are_target_stable();
-}
-
 fn scene(kind: &str) -> Value {
     let mut element = json!({"id":"paint","type":kind,"x":10,"y":10,"width":40,"height":30,
         "seed":1,"updated":0});

@@ -8,13 +8,6 @@ use excalidraw_render::{
 use serde_json::{json, Value};
 
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
-pub(super) fn unsupported_value_contract() {
-    crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority();
-    image_scale_and_status_default_recover_and_preserve_valid_payloads();
-    file_id_and_status_cover_missing_invalid_and_authoritative_payloads();
-    file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids();
-    payload_and_mime_fields_bind_validation_recovery_and_original_bytes();
-}
 const KEY: &str = "a/b~c";
 fn png() -> Vec<u8> {
     crate::common::codec_fixtures::png_rgba(

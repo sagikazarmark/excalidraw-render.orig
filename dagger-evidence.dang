@@ -82,6 +82,16 @@ type Evidence {
   }
 
   """
+  Execute the ignored SVG renderer gate in both pinned canonical viewers.
+  """
+  svg: String! {
+    self.run([
+      "bash", "-eu", "-c",
+      "bash tools/reference-oracle/run-container.sh install && cargo fetch --locked --manifest-path tools/svg-viewer-rust/Cargo.toml && cargo nextest run --locked --release -p excalidraw-render --profile harness --run-ignored only -E 'binary(/^harness_svg_/)'",
+    ]).combinedOutput
+  }
+
+  """
   Reproduce or generate font-subset, SVG, or PDF viewer evidence.
   Existing scripts enforce their overwrite and approval rules.
   """

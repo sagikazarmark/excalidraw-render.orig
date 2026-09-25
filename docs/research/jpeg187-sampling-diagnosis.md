@@ -1,6 +1,11 @@
 # #187 baseline sampling: stable-decoder diagnosis
 
-Status: reproducible external experiment, not a production fix or new ownership.
+Status: archived external experiment, not a production fix or new ownership.
+The Python runner was retired on 2026-09-25; reproduction commands below are
+historical transcripts, with runner source available in Git history. Patches,
+probe sources and results remain. Current regression checks live in
+`crates/excalidraw-render/tests/fast/jpeg_color_contract.rs` (sampling) and
+`crates/excalidraw-render/tests/jpeg_release_limitation.rs` (truncated entropy).
 Base `6eb4b22`; renderer remains on unchanged zune-jpeg 0.5.15 and root/consumer
 locks. Six baseline YCbCr/YCCK sampling cells remain gaps.
 

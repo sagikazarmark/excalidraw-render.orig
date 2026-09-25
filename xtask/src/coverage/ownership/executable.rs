@@ -312,7 +312,7 @@ fn unconditional_function(items: &[syn::Item], function: &str) -> Result<(), Str
 
 /// Resolve `module` from `root` and require `function` to be an
 /// unconditional test there. Returns the file holding the final module, which
-/// is the owner's hashed source.
+/// is the owner's source location.
 pub(super) fn resolve(
     root: &str,
     module: &str,
@@ -418,7 +418,7 @@ pub(super) fn resolve(
     let last = stack.len() - 1;
     let source = stack[last].file.clone();
     check_scope(&stack, 0, false)?;
-    // Every scope from the hashed source file down to the selected module.
+    // Every scope from the source file down to the selected module.
     let first = stack.iter().rposition(|s| !s.inline).unwrap();
     for index in first..=last {
         check_scope(&stack, index, false)?;

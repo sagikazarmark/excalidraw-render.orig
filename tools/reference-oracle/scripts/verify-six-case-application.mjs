@@ -23,7 +23,12 @@ export function verifySixCaseApplication(root) {
   const batch = json(`${packet}/batch-manifest.json`);
   const bare = structuredClone(batch); delete bare.approval;
   assert.deepEqual(bundle, {schema: "excalidraw-render/conformance-approval-subject/v1", manifest: bare, files: batch.files});
-  for (const d of batch.files) check({...d, path: `${packet}/${d.path}`});
+  // The pinned approval subject authenticates this retired author's descriptor.
+  // Every evidence/metadata file still requires its actual archived bytes.
+  for (const d of batch.files) {
+    if (d.path === "prepare.py") continue;
+    check({...d, path: `${packet}/${d.path}`});
+  }
   const record = json(`${directory}/applied-transition.json`);
   const plan = json(`${packet}/migration-plan.json`);
   assert.equal(record.schema, "excalidraw-render/six-case-approved-metadata-transition/v1");

@@ -1,5 +1,67 @@
 # CI and evidence operations
 
+## 0.1.0 preparation
+
+Use Dagger `v1.0.0-beta.14`, with `dagger --engine cloud check` as the CI
+authority. GitHub Actions is an optional caller and its billing-related failures
+do not determine CI status. Beta.14 names checks relative to the entrypoint:
+`test:fast`, `conformance:catalog`, `packaging:snapshot-replay`, etc.; discover
+the current names with `dagger check --list`. Older prefixed commands below
+describe historical runs.
+
+The [release policy](release-0.1.0.md) and [runbook](../release.md) define the
+initial scope. Experimental-WASM checks execute every key but accept only the
+exact #178 differences in `tests/package-consumer/experimental-wasm.json`.
+`dagger api call strict-full-equality` retains the strict qualification goal.
+Representative evidence uses fresh replay against approved outputs with
+historical source provenance (ADR-0017), so source-only edits do not require
+another numbered case. Existing accepted evidence is not rewritten.
+
+The Rust module's automatic Cargo cache mounts are disabled: their `LOCKED`
+sharing holds registry locks for whole container commands. `dagger-builds.dang`
+instead owns immutable, profile-specific cargo-chef 0.1.78 dependency layers.
+Workspace recipes depend on manifests/locks, so ordinary source edits reuse
+their compiled dependencies. Native workspace tests and the qualified release CLI are compiled
+once; conformance runs the resulting `xtask` directly. Native and WASM consume
+one shared set of package archives, and each target compiles its public-facade
+and snapshot consumer together. Artifact/report comparisons remain unchanged.
+The standalone consumers keep their separate dependency lock and release profile:
+their builds are shared within each target, but do not reuse the workspace's
+different-profile dependency objects. A dedicated consumer recipe cache is a
+further optimization, not a reason to unify the consumer and workspace graphs.
+
+Heavy real compilations have explicit dependencies: native workspace/CLI,
+native release-library and trace builds, then WASM release-library and trace
+builds. Each target's consumers wait for its trace build. Profile/target-specific
+dependency cooks can run concurrently, but qualification, trace and consumer
+checks no longer each start their own competing dependency compilation. Native
+checks remain native-only. Staged trace code and unpacked consumer sources are
+also compiled from narrow views before restoring runtime data.
+
+Inputs have four views (`dagger api call ci-inputs --kind <view> --output PATH`):
+
+- `format`: Rust source and Cargo/configuration files, without asset blobs,
+  external fixtures, or Git history (about 8 MB in the initial measurement).
+- `code`: workspace source and bundled assets.
+- `compile`: code plus compile-time `include_bytes!`/`include_str!` fixtures
+  (about 216 MB, versus the roughly 1 GiB full checkout).
+- `runtime`: the full working tree and history, attached after compilation for
+  evidence, ancestry, and source-binding checks.
+
+`input-boundaries` rejects accidentally broad format/compile inputs. Real Cargo
+builds check compile-input completeness. Cargo target output lives in `/target`,
+outside the source mount; package archives retain real paths under
+`/work/src/target/package` for the snapshot collector's checked path boundary.
+Browser tools are installed from their own small input view before code/evidence
+is attached. Dagger module loading includes only the Dang implementation files.
+Harness scratch files live in the checkout's `target/tmp` independently of the
+external Cargo compilation directory, retaining safe repository-relative paths.
+
+For cache misses, start with the engine's available disk space, GC policy, and
+pruning logs. Beta.14 can evict even fresh layers under free-space pressure;
+[the measured diagnosis and bounded probes](ci-performance.md#local-cache-eviction-diagnosis-beta14)
+distinguish that behavior from source-input invalidation.
+
 `dagger.dang`, `dagger-evidence.dang`, `dagger.toml`, and `dagger.lock` are the
 canonical CI implementation. GitHub Actions is an optional scheduler, caller,
 and artifact store. A Dagger run on a laptop or another runner has the same

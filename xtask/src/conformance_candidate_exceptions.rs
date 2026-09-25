@@ -35,11 +35,36 @@ fn proof() -> Result<Value> {
         .ok_or("diagnosis producer chain")?
     {
         let path = d["path"].as_str().ok_or("proof path")?;
+        if matches!(
+            path,
+            "tools/pdf-harness/diagnostics/stage4-typography.py"
+                | "tools/pdf-harness/pdfium/render.py"
+        ) {
+            validate_retired_producer(d)?;
+            continue;
+        }
         if d != &descriptor(&root, path)? {
             validate_pdfium_alpha_successor(d)?;
         }
     }
     Ok(evidence)
+}
+fn validate_retired_producer(binding: &Value) -> Result<()> {
+    let expected = match binding["path"].as_str() {
+        Some("tools/pdf-harness/diagnostics/stage4-typography.py") => (
+            15075,
+            "dd168deb66a8027c3088a24eaabc68f204bd391193c72c5c564527e005b6791b",
+        ),
+        Some("tools/pdf-harness/pdfium/render.py") => (
+            6188,
+            "2b3f28ba7633f739cdd1b8617361f8d1a82f51f62204286598e38a5d29ad1c6d",
+        ),
+        _ => return Err("unknown retired diagnosis producer".into()),
+    };
+    if binding["byte_length"] != expected.0 || binding["sha256"] != expected.1 {
+        return Err("retired diagnosis producer identity changed".into());
+    }
+    Ok(())
 }
 // Preserve the diagnosed producer bytes. Only the explicitly approved #192
 // adapter/profile pair may supersede these two historical bindings; candidate
@@ -47,9 +72,6 @@ fn proof() -> Result<Value> {
 fn validate_pdfium_alpha_successor(historical: &Value) -> Result<()> {
     let path = historical["path"].as_str().ok_or("proof path")?;
     let expected = match path {
-        "tools/pdf-harness/pdfium/render.py" => {
-            "f01b2b38bdd2341602ce9f333423c79be5188328184e274bdd7c8acb2f83df3a"
-        }
         "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json" => {
             "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
         }
@@ -255,15 +277,28 @@ mod tests {
         let proposal = expected(&dir).unwrap();
         let evidence = proof().unwrap();
         for historical in evidence["repository_bindings"].as_array().unwrap() {
-            if historical["path"] == "tools/pdf-harness/pdfium/render.py"
-                || historical["path"]
-                    == "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json"
+            if historical["path"]
+                == "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json"
             {
                 validate_pdfium_alpha_successor(historical).unwrap();
                 for key in ["path", "sha256", "byte_length"] {
                     let mut bad = historical.clone();
                     bad[key] = json!("unreviewed");
                     assert!(validate_pdfium_alpha_successor(&bad).is_err());
+                }
+            }
+            if matches!(
+                historical["path"].as_str(),
+                Some(
+                    "tools/pdf-harness/pdfium/render.py"
+                        | "tools/pdf-harness/diagnostics/stage4-typography.py"
+                )
+            ) {
+                validate_retired_producer(historical).unwrap();
+                for key in ["path", "sha256", "byte_length"] {
+                    let mut bad = historical.clone();
+                    bad[key] = json!("changed");
+                    assert!(validate_retired_producer(&bad).is_err());
                 }
             }
         }

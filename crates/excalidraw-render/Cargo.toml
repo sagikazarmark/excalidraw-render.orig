@@ -5,6 +5,12 @@ edition.workspace = true
 rust-version.workspace = true
 description = "Pure-Rust rendering of Excalidraw scene documents"
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/excalidraw-render"
+readme = "../../README.md"
+keywords = ["excalidraw", "rendering", "svg", "png", "pdf"]
+categories = ["graphics", "rendering"]
 
 [lints]
 workspace = true

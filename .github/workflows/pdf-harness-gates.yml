@@ -18,6 +18,6 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77
         with:
-          version: v1.0.0-beta.11
+          version: v1.0.0-beta.14
           verb: api
           args: call evidence pdf

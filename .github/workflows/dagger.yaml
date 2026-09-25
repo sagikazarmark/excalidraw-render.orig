@@ -12,18 +12,35 @@ jobs:
               with:
                 args: ${{ matrix.check }}
                 verb: check
-                version: v1.0.0-beta.11
+                version: v1.0.0-beta.14
         strategy:
             fail-fast: false
             matrix:
                 check:
                     - dagger-gha:generate
-                    - excalidraw-render:conformance
-                    - excalidraw-render:full-equality
-                    - excalidraw-render:lint
-                    - excalidraw-render:packaging
-                    - excalidraw-render:test
-                    - excalidraw-render:wasm
+                    - conformance:catalog
+                    - conformance:coverage-inventory
+                    - conformance:coverage-ownership
+                    - conformance:pdf-viewers
+                    - conformance:registered-cases
+                    - conformance:svg-font-subset-release
+                    - conformance:svg-font-subsets
+                    - conformance:svg-viewers
+                    - full-equality
+                    - input-boundaries
+                    - lint:clippy
+                    - lint:fmt
+                    - packaging:cli
+                    - packaging:public-facade
+                    - packaging:qualification
+                    - packaging:snapshot-replay
+                    - test:doc
+                    - test:fast
+                    - test:render
+                    - wasm:cli
+                    - wasm:public-facade
+                    - wasm:qualification
+                    - wasm:snapshot-replay
 name: Dagger
 "on":
     pull_request: {}

@@ -1,7 +1,7 @@
-//! Evidence-producing derivation for `pdf-judgments.json`. This file is bound by
-//! digest in the record (like the native baseline producer), so a change to any
-//! derivation rule, report serialization, or judgment classification requires a
-//! fresh #85 approval. Verification and replay consumers live in the parent.
+//! Evidence-producing derivation for `pdf-judgments.json`. Generation records
+//! this file's identity as historical provenance. Verification recomputes the
+//! rules, reports and judgment classifications with today's implementation;
+//! changed results require review, source-only refactors do not.
 //!
 //! Expected PDF reports are derived only from approved declarations: the case
 //! registry's `expected_diagnostics` and the manifests' expected reports, plus
@@ -746,6 +746,7 @@ pub(super) fn build_record(
     repo: &Repo,
     inventory: &Inventory,
     declarations: &[Value],
+    implementation: &Value,
 ) -> Result<Value, String> {
     let registry: Value = parse(&repo.read(REGISTRY)?)?;
     let pdf_cases: BTreeSet<_> = inventory
@@ -793,7 +794,6 @@ pub(super) fn build_record(
         .collect::<Result<Vec<_>, _>>()?;
     let (files, others) = classify_files(repo)?;
     let (inventory_source, _) = file_source(repo, INVENTORY)?;
-    let (implementation, _) = file_source(repo, IMPLEMENTATION)?;
     Ok(json!({
         "schema": SCHEMA,
         "compatibility_revision": 1,

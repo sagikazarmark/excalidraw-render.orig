@@ -15,10 +15,6 @@ if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
   echo "PDF harness installation requires Linux x86_64" >&2
   exit 1
 fi
-if [[ "$(python3 --version)" != "Python 3.12.3" ]]; then
-  echo "PDF harness installation requires Python 3.12.3" >&2
-  exit 1
-fi
 if [[ -L "${REPO_ROOT}/target" ]]; then
   echo "repository target directory must not be a symlink" >&2
   exit 1
@@ -73,9 +69,15 @@ fetch \
   "https://files.pythonhosted.org/packages/23/16/21420a6f2bc5f981299c336817dd5d72709dad5fda30ac38cbd5f0f7b372/${PDFIUM_WHEEL}" \
   "${DOWNLOAD_ROOT}/${PDFIUM_WHEEL}" "${PDFIUM_SHA256}"
 rm -rf "${TARGET_ROOT}/pdfium"
-python3 -m zipfile -e "${DOWNLOAD_ROOT}/${PDFIUM_WHEEL}" "${TARGET_ROOT}/pdfium"
-PYTHONPATH="${TARGET_ROOT}/pdfium" python3 -c \
-  'from pypdfium2.version import PDFIUM_INFO, PYPDFIUM_INFO; assert str(PYPDFIUM_INFO) == "5.12.1"; assert str(PDFIUM_INFO) == "152.0.7947.0"'
+# The wheel is a checksum-pinned ZIP distribution of the exact native engine.
+# Extracting it does not require or execute Python. Python files remain usable
+# only by explicit historical diagnostics and migration-parity commands.
+unzip -q "${DOWNLOAD_ROOT}/${PDFIUM_WHEEL}" -d "${TARGET_ROOT}/pdfium"
+printf '%s  %s\n' \
+  '61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33' \
+  "${TARGET_ROOT}/pdfium/pypdfium2_raw/libpdfium.so" | sha256sum --check --status
+cargo build --locked --release --manifest-path "${SCRIPT_DIR}/pdfium-rust/Cargo.toml" \
+  --target-dir "${TARGET_ROOT}/pdfium-rust"
 
 docker run --rm --init --network bridge --platform linux/amd64 \
   --user "$(id -u):$(id -g)" --env HOME=/tmp \

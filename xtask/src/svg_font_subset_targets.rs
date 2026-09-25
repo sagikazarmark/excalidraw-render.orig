@@ -651,6 +651,46 @@ fn validate_measurement(measurement: &Value) -> Result<(), String> {
 }
 
 fn verify_descriptors(root: &Path, value: &Value) -> Result<(), String> {
+    let mut live = value.clone();
+    if let Some(target) = live
+        .get_mut("targetEvidence")
+        .and_then(Value::as_object_mut)
+    {
+        // These slots describe how the retained qualification was produced.
+        // Corpus/profile/schema/measurement/aggregate bindings remain live.
+        for key in ["workflow", "generatorAndAggregator", "runnerInputs"] {
+            if let Some(producer) = target.remove(key) {
+                verify_producer_descriptors(&producer)?;
+            }
+        }
+    }
+    verify_live_descriptors(root, &live)
+}
+
+fn verify_producer_descriptors(value: &Value) -> Result<(), String> {
+    if let Some(values) = value.as_array() {
+        for value in values {
+            verify_producer_descriptors(value)?;
+        }
+        return Ok(());
+    }
+    let path = required_string(value, "path")?;
+    if path.is_empty()
+        || path.contains('\\')
+        || Path::new(path)
+            .components()
+            .any(|c| !matches!(c, std::path::Component::Normal(_)))
+    {
+        return Err("invalid historical release producer path".into());
+    }
+    require_digest(
+        required_string(value, "sha256")?,
+        64,
+        "historical release producer",
+    )
+}
+
+fn verify_live_descriptors(root: &Path, value: &Value) -> Result<(), String> {
     match value {
         Value::Object(object) => {
             if let (Some(Value::String(path)), Some(Value::String(expected))) =
@@ -661,12 +701,12 @@ fn verify_descriptors(root: &Path, value: &Value) -> Result<(), String> {
                 }
             }
             for child in object.values() {
-                verify_descriptors(root, child)?;
+                verify_live_descriptors(root, child)?;
             }
         }
         Value::Array(values) => {
             for child in values {
-                verify_descriptors(root, child)?;
+                verify_live_descriptors(root, child)?;
             }
         }
         _ => {}
@@ -1118,6 +1158,30 @@ mod tests {
         }
         rebind(&mut aggregate);
         serde_json::to_vec_pretty(&aggregate).unwrap()
+    }
+
+    #[test]
+    fn release_checks_observations_without_requiring_historical_producer_bytes() {
+        let root = scratch_repository("historical-producers");
+        let manifest: Value =
+            serde_json::from_slice(&fs::read(root.join(RELEASE_PATH)).unwrap()).unwrap();
+        let target = &manifest["targetEvidence"];
+        for descriptor in target["runnerInputs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .chain([&target["workflow"], &target["generatorAndAggregator"]])
+        {
+            fs::remove_file(root.join(descriptor["path"].as_str().unwrap())).unwrap();
+        }
+        assert_eq!(verify_release_in(&root), Ok(TargetEvidenceState::PendingCi));
+        let corpus = root.join(manifest["corpus"]["path"].as_str().unwrap());
+        fs::write(corpus, b"changed qualification corpus").unwrap();
+        assert_rejected(
+            verify_release_in(&root),
+            "stale SVG font subset release descriptor",
+        );
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

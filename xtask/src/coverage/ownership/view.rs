@@ -134,6 +134,7 @@ impl LedgerView {
                 PrimaryOwner::Representative(binding.case().into())
             }
             Owner::Record { verifier, .. } => PrimaryOwner::Record(verifier.clone()),
+            Owner::TestGroup { group } => PrimaryOwner::Test(format!("group {}", group.path)),
         }))
     }
 }

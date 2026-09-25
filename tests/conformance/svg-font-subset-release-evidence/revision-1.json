@@ -53,12 +53,20 @@
     },
     "runnerInputs": [
       {
+        "path": "dagger-builds.dang",
+        "sha256": "ec6acb3404c9063c67abcb40af86ea1ade4c35228091ac9705e156c8bd2a29d1"
+      },
+      {
+        "path": "dagger-module.toml",
+        "sha256": "da431728a58dd46366ec1f84344a1244e8efef730e1a96a0bf79ff2205d366e9"
+      },
+      {
         "path": "dagger-evidence.dang",
-        "sha256": "7a8b7c812779073aae7918f24148198db74d13309ba7d353a2833f8cc405b661"
+        "sha256": "72eefcb8fd713f2fdfd5c1f5bbf0eb1889be7321b905ebecdffe863cac4b2842"
       },
       {
         "path": "dagger.lock",
-        "sha256": "e0096e1231bdb9a2c98f4d6f6e1c776fe4246cfd1bacc057787ec7e3f582fb9b"
+        "sha256": "39d0b10749cf4df58ee9729aca0b2f85f337a818c82ea842b04f0a95c77b3b00"
       },
       {
         "path": "dagger.toml",
@@ -80,7 +88,7 @@
     "status": "aggregated",
     "workflow": {
       "path": "dagger.dang",
-      "sha256": "88b93b8a4c27d074fe113a5a35980f8ca6268bd4614c4da8782870b287abf232"
+      "sha256": "38f47d2e8a644b8594f08f0f7f5d034de9175f4ac9c2c26084e1a9ac8de4daee"
     }
   },
   "viewerEvidence": {

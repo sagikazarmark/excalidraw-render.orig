@@ -6,6 +6,25 @@ use std::process::{Command, Stdio};
 use excalidraw_render::{CompatibilityRevision, Renderer};
 
 #[test]
+fn help_is_successful_stdout_for_scene_and_frame_commands() {
+    for args in [
+        vec!["--help"],
+        vec!["-h"],
+        vec!["frames", "--help"],
+        vec!["frames", "-h"],
+        vec!["--report-format", "json", "--help"],
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+            .args(&args)
+            .output()
+            .expect("print help");
+        assert!(output.status.success(), "{args:?}: {output:?}");
+        assert!(String::from_utf8_lossy(&output.stdout).contains("Usage:"));
+        assert!(output.stderr.is_empty(), "{args:?}: {output:?}");
+    }
+}
+
+#[test]
 fn standalone_commands_expose_revision_identity_and_exact_licenses() {
     let revisions = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .args(["--list-revisions", "--report-format", "json"])

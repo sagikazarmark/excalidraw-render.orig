@@ -83,6 +83,30 @@ the reference profile. Generation refuses to replace approved evidence.
 Reproduction writes no corpus files. Verification requires no Node, browser,
 container, network, or system fonts.
 
+## WebP sample encoder
+
+The development-only native helper uses the pinned external libwebp **1.3.2**
+simple API. Node handles JSON/base64, hashes and provenance. Build it once, then
+run offline parity/invalid-input tests and full browser reproduction:
+
+```sh
+bash tools/reference-oracle/run-webp-sample.sh build-helper
+bash tools/reference-oracle/run-webp-sample.sh test-helper
+bash tools/reference-oracle/run-webp-sample.sh verify
+```
+
+The pinned Playwright image lacks GCC and development headers. The WebP-only
+multi-stage build acquires GCC/libc headers, compiles the helper offline, and
+copies it into the original pinned runtime without replacing codec libraries.
+Rebuild after changing the C source or Dockerfile; stale builds are rejected.
+Compiler/package/helper provenance is recorded separately from immutable
+historical Python producer provenance. Tests compare all 28 encoded/decoded
+frames and reconstruct 72 cases plus 12 controls from existing evidence;
+verification never refreshes expected bytes. See
+[WebP sample qualification](../../docs/research/webp-sample-qualification.md)
+for the protocol, API options and migration guarantees. No production dependency
+or ordinary Rust test needs this helper.
+
 ## Canonical SVG viewer
 
 The candidate-comparison Chromium viewer is separate from the reference

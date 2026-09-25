@@ -20,15 +20,15 @@ const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"
 mod layers;
 mod ownership;
 mod pdf_judgments;
-pub use layers::{generate_layers, layers_subject, record_layers_approval, verify_layers};
+pub use layers::{report_layers, verify_layers};
 mod snapshots;
 pub use ownership::{
     extend_ownership, ownership_authority_migration, ownership_catalog, ownership_subject,
     reconcile_stage4_bindings, record_case_owner, record_closure_owner,
     record_exception_test_owner, record_library_test_owner, record_ownership_approval,
     record_representative_owner, record_test_owner, refresh_exception_test_owner_source,
-    refresh_library_test_owner_source, refresh_test_owner_source, seed_ownership, verify_ownership,
-    verify_representative_owner,
+    refresh_library_test_owner_source, refresh_test_owner_source, refresh_test_owner_sources,
+    seed_ownership, test_group_filter, verify_ownership, verify_representative_owner,
 };
 mod traces;
 pub use pdf_judgments::{
@@ -188,12 +188,17 @@ fn derive_inventory_with_requirements(
             return Err("invalid or duplicate coverage requirement".into());
         }
         for evidence in &requirement.evidence {
-            if descriptor(&evidence.source.path)? != evidence.source
-                || evidence.anchor.is_empty()
-                || !String::from_utf8_lossy(&read(&evidence.source.path)?)
-                    .contains(&evidence.anchor)
+            // Milestone links describe the backlog at the time it was recorded,
+            // not inputs to a render. Preserve them without opening today's
+            // source files: edits and moves must not invalidate execution keys.
+            if evidence.source.path.trim().is_empty()
+                || !hex(&evidence.source.sha256, 64)
+                || evidence.anchor.trim().is_empty()
             {
-                return Err(format!("stale evidence anchor for {}", requirement.id));
+                return Err(format!(
+                    "invalid historical evidence link for {}",
+                    requirement.id
+                ));
             }
         }
     }
@@ -544,4 +549,31 @@ pub fn verify_results(path: &str) -> Result<(), String> {
     validate_results(&inventory, &bundle)?;
     println!("verified result equality for the draft inventory; canonical snapshot approval and release closure remain pending");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn historical_milestone_links_do_not_gate_execution_inventory() {
+        let stored: Inventory = parse(&read(INVENTORY).unwrap()).unwrap();
+        let mut requirements: Requirements = parse(&read(REQUIREMENTS).unwrap()).unwrap();
+        // Model a linked implementation that has changed, and another whose
+        // old path/anchor disappeared in a refactor. Neither is a render input.
+        requirements.requirements[0].evidence[0].source.sha256 = "0".repeat(64);
+        requirements.requirements[1].evidence[0].source.path =
+            "xtask/src/retired-milestone-location.rs".into();
+        requirements.requirements[1].evidence[0].anchor = "fn retired_name()".into();
+        let derived = derive_inventory_with_requirements(
+            requirements.clone(),
+            descriptor(REQUIREMENTS).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(derived.executions, stored.executions);
+        assert_eq!(derived.coverage, stored.coverage);
+        assert_eq!(derived.requirements, requirements.requirements);
+        // Ordinary generation still reproduces the checked-in record exactly.
+        assert_eq!(derive_inventory().unwrap(), stored);
+    }
 }

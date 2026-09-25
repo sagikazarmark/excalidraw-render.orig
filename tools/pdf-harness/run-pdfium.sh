@@ -8,10 +8,6 @@ if [[ "${1:-}" != "render" || $# -ne 5 ]]; then
   echo "usage: $0 render <input.pdf> <output.rgba> <width> <height>" >&2
   exit 2
 fi
-if [[ "$(python3 --version)" != "Python 3.12.3" ]]; then
-  echo "PDFium harness requires Python 3.12.3" >&2
-  exit 1
-fi
 
 INPUT="$(realpath "${2}")"
 OUTPUT_PARENT="$(realpath "$(dirname "${3}")")"
@@ -23,5 +19,7 @@ if [[ -L "${3}" ]]; then
   exit 1
 fi
 
-PYTHONPATH="${REPO_ROOT}/target/pdf-harness/pdfium" \
-  python3 "${SCRIPT_DIR}/pdfium/render.py" "${INPUT}" "${OUTPUT}" "${4}" "${5}"
+exec cargo run --quiet --locked --release \
+  --manifest-path "${SCRIPT_DIR}/pdfium-rust/Cargo.toml" \
+  --target-dir "${REPO_ROOT}/target/pdf-harness/pdfium-rust" \
+  --bin excalidraw-render-pdfium -- "${INPUT}" "${OUTPUT}" "${4}" "${5}"

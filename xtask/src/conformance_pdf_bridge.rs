@@ -80,17 +80,23 @@ fn sources() -> Result<Vec<Value>> {
         "xtask/src/conformance_pdf_bridge.rs",
         "xtask/src/conformance_candidate_native.rs",
         "tools/pdf-harness/run-pdfium.sh",
-        "tools/pdf-harness/pdfium/render.py",
-        "tools/pdf-harness/run-pdfjs.sh",
-        "tools/pdf-harness/pdfjs/render.mjs",
-        "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
-        "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
-        "tests/conformance/structure-profiles/canonical-pdf-structure-v1.json",
-        "tests/conformance/comparator-profiles/canonical-visual-v1.json",
-        "target/pdf-harness/qpdf/bin/qpdf",
     ]
-    .iter()
-    .map(|p| descriptor(&repo_root(), p))
+    .into_iter()
+    .map(str::to_owned)
+    .chain(crate::pdf_viewers::rust_pdfium_sources()?)
+    .chain(
+        [
+            "tools/pdf-harness/run-pdfjs.sh",
+            "tools/pdf-harness/pdfjs/render.mjs",
+            "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+            "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+            "tests/conformance/structure-profiles/canonical-pdf-structure-v1.json",
+            "tests/conformance/comparator-profiles/canonical-visual-v1.json",
+            "target/pdf-harness/qpdf/bin/qpdf",
+        ]
+        .map(str::to_owned),
+    )
+    .map(|p| descriptor(&repo_root(), &p))
     .collect()
 }
 fn put(root: &Path, path: &str, v: &Value) -> Result<()> {
@@ -225,11 +231,11 @@ pub fn validate(current_pdf: &[u8]) -> Result<Value> {
         || record["diagnosed_pdf"]["sha256"] != OLD_HASH
         || record["fixed_pdf"] != descriptor(&root, "native.pdf")?
         || sha256(current_pdf) != record["fixed_pdf"]["sha256"]
-        || record["tool_sources"] != json!(sources()?)
     {
         return Err("stale or unrelated PDF colourspec bridge".into());
     }
-    native::check_producers(&record["native_producers"])?;
+    native::historical_producers(&record["native_producers"])?;
+    crate::conformance_candidate_gate::historical_sources(&record["tool_sources"])?;
     if record["diagnosed_pdf"] != descriptor(&repo_root(), &format!("{OLD}/native.pdf"))?
         || record["scene"] != descriptor(&repo_root(), &format!("{OLD}/scene.json"))?
     {

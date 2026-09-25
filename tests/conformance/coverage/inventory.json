@@ -161,7 +161,7 @@
     },
     {
       "path": "tests/conformance/coverage/requirements.json",
-      "sha256": "5afeb406df82bacbac41c5a30e5eb010c02b6ba739dbe76b9db692163147885c"
+      "sha256": "468dd882818cc69c8aa0b346b8b1523701cd11ae20636cd106dc2b864fb0de49"
     },
     {
       "path": "tests/oracle/reference-profiles/revision-1-frame.json",
@@ -6622,7 +6622,7 @@
         {
           "source": {
             "path": "tests/package-consumer/tests/public_facade.rs",
-            "sha256": "bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed"
+            "sha256": "9b6bfa28e6cd75e7993e04f0cdb54291700d568710310a9e7b3facbb6d3b2125"
           },
           "anchor": "fn packaged_public_facade_preserves_artifact_byte_stability()"
         }
@@ -6636,7 +6636,7 @@
         {
           "source": {
             "path": "tests/package-consumer/tests/public_facade.rs",
-            "sha256": "bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed"
+            "sha256": "9b6bfa28e6cd75e7993e04f0cdb54291700d568710310a9e7b3facbb6d3b2125"
           },
           "anchor": "let mut reverse_round ="
         }
@@ -6664,7 +6664,7 @@
         {
           "source": {
             "path": "tests/package-consumer/tests/public_facade.rs",
-            "sha256": "bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed"
+            "sha256": "9b6bfa28e6cd75e7993e04f0cdb54291700d568710310a9e7b3facbb6d3b2125"
           },
           "anchor": "fn packaged_public_facade_renders_discovered_frames_directly_and_lazily()"
         }

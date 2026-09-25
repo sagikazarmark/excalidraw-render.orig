@@ -1,7 +1,6 @@
 //! A per-test scratch directory for the harness tiers, which hand candidates to
-//! external viewers and read their rasters back. It lives under Cargo's scratch
-//! space for integration tests (`CARGO_TARGET_TMPDIR`, `target/tmp` by
-//! default) rather than at a literal `target/` path, is removed when the guard
+//! external viewers and read their rasters back. It lives under the checkout's
+//! `target/tmp`, independently of Cargo's compilation output directory. It is removed when the guard
 //! drops normally, and is kept — with its path printed — when the guard drops
 //! while the test is panicking, so a failed gate leaves its evidence behind.
 //!
@@ -9,7 +8,7 @@
 //! `realpath` and refuse anything outside the repository, and the Chromium
 //! viewer bind-mounts the repository root into its container and takes
 //! repository-relative paths. [`ScratchDir::relative`] gives a file that form,
-//! which holds whenever the target directory is inside the checkout.
+//! so moving compilation output outside the checkout cannot invalidate candidates.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -21,10 +20,11 @@ pub struct ScratchDir {
 }
 
 impl ScratchDir {
-    /// Creates a fresh `<CARGO_TARGET_TMPDIR>/<name>-<pid>` directory.
+    /// Creates a fresh `<repository>/target/tmp/<name>-<pid>` directory.
     pub fn new(name: &str) -> Self {
-        let path =
-            Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("{name}-{}", std::process::id()));
+        let path = repository_root()
+            .join("target/tmp")
+            .join(format!("{name}-{}", std::process::id()));
         if path.exists() {
             fs::remove_dir_all(&path).expect("stale scratch directory is removable");
         }
@@ -56,7 +56,7 @@ impl ScratchDir {
         let relative = self.path.strip_prefix(&root).unwrap_or_else(|_| {
             panic!(
                 "the harness scripts only accept paths inside the checkout, but the scratch \
-                 directory {} is outside {}; keep CARGO_TARGET_DIR inside the repository",
+                 directory {} is outside {}",
                 self.path.display(),
                 root.display()
             )

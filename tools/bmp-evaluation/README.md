@@ -5,7 +5,13 @@ and EXIF reader with `image 0.25.10`. It does not enable BMP in the production
 dependency graph. Read the [recommendation and audit](../../docs/research/bmp-image-evaluation.md)
 and the [exact matrix](matrix.md).
 
-## Reproduce
+## Historical reproduction
+
+This evaluation is complete. The Python browser runner was retired on
+2026-09-25; the commands below describe the original experiment, not a supported
+maintenance workflow. Probe sources, observations and the recommendation remain
+for research; recover the runner from Git history if reopening the evaluation.
+Use [CONTRIBUTING.md](../../CONTRIBUTING.md) for current renderer checks.
 
 From the repository root, with Rust 1.97.1, its `wasm32-unknown-unknown` standard
 library, and wasm-bindgen-test-runner 0.2.126 installed:

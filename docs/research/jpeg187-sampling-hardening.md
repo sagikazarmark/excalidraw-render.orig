@@ -3,6 +3,14 @@
 Status: diagnostic candidate, not integrated into production. The production
 dependency graph, failure pins, owners and six sampling gaps remain unchanged.
 
+Archived on 2026-09-25: the Python orchestration runner was retired. The command
+below is a historical transcript; Git history retains the runner. The patch,
+independent mixed-scan fixtures/probe sources and raw results remain research
+inputs, including the unresolved reverse-order browser discrepancy. Ordinary
+sampling and truncated-entropy regressions are in `jpeg_color_contract.rs` and
+`jpeg_release_limitation.rs` under `crates/excalidraw-render/tests/` (the former
+under `fast/`).
+
 ## Changes tested
 
 The expanded stable-0.5.15 experiment adds explicit accounting for real entropy
@@ -22,7 +30,7 @@ first path were not covered by the initial boundary checks. Both were addressed
 and exercised with new controls, including a hand-authored one-bit DC/EOB
 grayscale stream where fabricated zeroes could otherwise look correct.
 
-## Fresh reproducible execution
+## Historical execution
 
 ```sh
 python3 tools/jpeg187-diagnosis/hardening/run.py /tmp/opencode/jpeg187-hardening-new

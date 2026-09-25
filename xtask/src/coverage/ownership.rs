@@ -8,9 +8,11 @@ mod png_profiles;
 mod reconciliation;
 mod record;
 mod representative;
+mod test_group;
 mod view;
 pub use authority_migration::ownership_authority_migration;
 pub use reconciliation::reconcile_stage4_bindings;
+pub use test_group::filter as test_group_filter;
 pub(super) use view::{LedgerView, PrimaryOwner};
 
 const POLICY: &str = "tests/conformance/coverage/ownership-policy.json";
@@ -63,6 +65,11 @@ struct Catalog {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum Owner {
+    /// Membership is a checked manifest of unconditional tests. The normal CI
+    /// runner schedules each member once, rather than an umbrella re-running it.
+    TestGroup {
+        group: Descriptor,
+    },
     Representative {
         binding: representative::Binding,
     },
@@ -441,8 +448,10 @@ fn check_test_owner(
     if resolved != source.path {
         return Err("test owner source is not the selected compiled module".into());
     }
-    if descriptor(&source.path)? != *source {
-        return Err("stale ownership evidence".into());
+    // The digest records the source when this owner was selected. Resolve the
+    // test against today's tree above; unrelated edits need no ledger refresh.
+    if !hex(&source.sha256, 64) {
+        return Err("invalid historical test source digest".into());
     }
     if command != executable::command(&package, binary, &module, function) {
         return Err("test owner command does not select its exact executable test".into());
@@ -586,6 +595,7 @@ fn check_disposition(row: &Obligation, disposition: &Disposition) -> Result<bool
                 exception_scope(row)?;
             }
             match owner {
+                Owner::TestGroup { group } => test_group::verify(group)?,
                 Owner::Representative { binding } => {
                     if row.category != "interaction" {
                         return Err(
@@ -659,6 +669,19 @@ fn check_disposition(row: &Obligation, disposition: &Disposition) -> Result<bool
 }
 
 fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, String> {
+    validate_with_layers(catalog, ledger, closed, closed)
+}
+
+fn advisory_layer(row: &Obligation) -> bool {
+    row.id == "closure:all-five-layers" || row.category == "layer"
+}
+
+fn validate_with_layers(
+    catalog: &Catalog,
+    ledger: &Ledger,
+    closed: bool,
+    audit_layers: bool,
+) -> Result<usize, String> {
     if ledger.schema != SCHEMA
         || ledger.compatibility_revision != 1
         || ledger.catalog_sha256 != digest(catalog)?
@@ -679,11 +702,20 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
         if !seen.insert(assignment.id.as_str()) {
             return Err(format!("duplicate primary ownership {}", assignment.id));
         }
+        // Five-layer mappings are advisory. Keep historical rows in the ledger,
+        // but ordinary verification does not demand current mappings or a
+        // regenerated/approved layers.json. Explicit closure audits stay strict.
+        if !audit_layers && advisory_layer(row) {
+            continue;
+        }
         if check_disposition(row, &assignment.disposition)? {
             gaps += 1;
         }
     }
-    if seen != expected.keys().copied().collect() {
+    if expected
+        .values()
+        .any(|row| (audit_layers || !advisory_layer(row)) && !seen.contains(row.id.as_str()))
+    {
         return Err("missing ownership assignments (use explicit gaps)".into());
     }
     if closed && gaps > 0 {
@@ -698,7 +730,7 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
 fn subject(catalog: &Catalog, ledger: &Ledger) -> Result<String, String> {
     let mut value = serde_json::to_value(ledger).map_err(|e| e.to_string())?;
     value.as_object_mut().unwrap().remove("approval");
-    // Test source hashes are live location checks, not judgment-bearing output.
+    // Test source hashes are historical provenance, not judgment-bearing output.
     // Approve the selected executable and rationale without pinning unrelated
     // consuming tests in the same source module.
     for assignment in value["assignments"].as_array_mut().unwrap() {
@@ -806,8 +838,21 @@ pub fn verify_ownership() -> Result<(), String> {
     for case in crate::conformance::case_ids()? {
         crate::conformance::verify(&case, true)?;
     }
-    println!("verified {} ownership assignments: {} assigned/excluded, {gaps} explicit gaps; ledger approval {}",
-        ledger.assignments.len(),ledger.assignments.len()-gaps,if ledger.approval.is_null(){"pending"}else{"recorded"});
+    // These checks previously ran as a side effect of five-layer completeness.
+    // Preserve the actual registered representative evidence checks separately.
+    layers::verify_representative_cases()?;
+    let advisory = ledger
+        .assignments
+        .iter()
+        .filter(|a| {
+            catalog
+                .obligations
+                .iter()
+                .any(|row| row.id == a.id && advisory_layer(row))
+        })
+        .count();
+    println!("verified {} non-layer ownership assignments: {} assigned/excluded, {gaps} explicit gaps; {advisory} five-layer mappings advisory; ledger approval {}",
+        ledger.assignments.len()-advisory,ledger.assignments.len()-advisory-gaps,if ledger.approval.is_null(){"pending"}else{"recorded"});
     Ok(())
 }
 
@@ -873,7 +918,7 @@ pub fn record_exception_test_owner(rationale: &str, ids: &[String]) -> Result<()
     )
 }
 pub fn refresh_exception_test_owner_source() -> Result<(), String> {
-    refresh_owner_source(EXCEPTION_BINARY, EXCEPTION_BINARY)
+    refresh_owner_sources(EXCEPTION_BINARY, &[EXCEPTION_BINARY])
 }
 fn owner_source(binary: &str, module: &str) -> String {
     match binary {
@@ -962,23 +1007,36 @@ fn assign_gaps(
     Ok(())
 }
 
-/// Refresh a consuming test's live location binding after editing its source.
+/// Explicitly record newer test-source provenance in an unapproved ledger.
+/// Ordinary source edits do not require this legacy maintenance operation.
 /// The selected executable and reviewed rationale are preserved and revalidated.
 pub fn refresh_test_owner_source(module: &str) -> Result<(), String> {
-    refresh_owner_source("fast", module)
+    refresh_owner_sources("fast", &[module])
+}
+pub fn refresh_test_owner_sources(modules: &[String]) -> Result<(), String> {
+    refresh_owner_sources(
+        "fast",
+        &modules.iter().map(String::as_str).collect::<Vec<_>>(),
+    )
 }
 pub fn refresh_library_test_owner_source(module: &str) -> Result<(), String> {
-    refresh_owner_source("lib", module)
+    refresh_owner_sources("lib", &[module])
 }
-fn refresh_owner_source(binary: &str, module: &str) -> Result<(), String> {
+fn refresh_owner_sources(binary: &str, modules: &[&str]) -> Result<(), String> {
+    if modules.is_empty() || modules.iter().any(|m| !executable::valid_name(m)) {
+        return Err("source refresh requires valid module names".into());
+    }
     let (catalog, mut ledger) = load()?;
     if !ledger.approval.is_null() {
         return Err(
             "approved ownership requires explicit review before refreshing test sources".into(),
         );
     }
-    let source = descriptor(&owner_source(binary, module))?;
-    let mut count = 0;
+    let sources = modules
+        .iter()
+        .map(|module| descriptor(&owner_source(binary, module)))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut refreshed = BTreeSet::new();
     for assignment in &mut ledger.assignments {
         if let Disposition::Owned {
             owner:
@@ -991,14 +1049,14 @@ fn refresh_owner_source(binary: &str, module: &str) -> Result<(), String> {
             ..
         } = &mut assignment.disposition
         {
-            if existing.path == source.path {
+            if let Some(source) = sources.iter().find(|s| s.path == existing.path) {
                 *existing = source.clone();
-                count += 1;
+                refreshed.insert(source.path.clone());
             }
         }
     }
-    if count == 0 {
-        return Err("no existing test owners for source".into());
+    if sources.iter().any(|s| !refreshed.contains(&s.path)) {
+        return Err("no existing test owners for one or more sources".into());
     }
     validate(&catalog, &ledger, false)?;
     let mut bytes = serde_json::to_vec_pretty(&ledger).map_err(|e| e.to_string())?;
@@ -1013,7 +1071,7 @@ pub fn ownership_subject() -> Result<String, String> {
 }
 
 fn completed_subject(catalog: &Catalog, ledger: &Ledger) -> Result<String, String> {
-    let gaps = validate(catalog, ledger, false)?;
+    let gaps = validate_with_layers(catalog, ledger, false, true)?;
     if gaps > 0 {
         return Err(format!(
             "cannot approve completed ownership: {gaps} gaps remain"
@@ -1079,6 +1137,11 @@ pub fn record_closure_owner(
     verifier: &str,
     rationale: &str,
 ) -> Result<(), String> {
+    if verifier == "layers" {
+        return Err(
+            "five-layer ownership maintenance is retired; use conformance layers-report".into(),
+        );
+    }
     if !obligation.starts_with("closure:") {
         return Err(format!(
             "record owners are allowed only for closure obligations: {obligation}"
@@ -1152,6 +1215,49 @@ pub(super) fn verify_closed() -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn five_layer_mapping_is_optional_but_pdf_judgments_remain_required() {
+        let (catalog, mut ledger) = load().unwrap();
+        for assignment in &mut ledger.assignments {
+            if assignment.id == "closure:all-five-layers" || assignment.id.starts_with("layer:") {
+                assignment.disposition = Disposition::Owned {
+                    owner: Owner::Record {
+                        record: Descriptor {
+                            path: "retired/layers.json".into(),
+                            sha256: "0".repeat(64),
+                        },
+                        approval_subject_sha256: "historical".into(),
+                        verifier: "layers".into(),
+                    },
+                    rationale: "historical coverage mapping".into(),
+                };
+            }
+        }
+        validate(&catalog, &ledger, false).unwrap();
+        ledger
+            .assignments
+            .retain(|a| a.id != "closure:all-five-layers" && !a.id.starts_with("layer:"));
+        validate(&catalog, &ledger, false).unwrap();
+        assert!(validate_with_layers(&catalog, &ledger, false, true).is_err());
+        let pdf = ledger
+            .assignments
+            .iter_mut()
+            .find(|a| a.id == "closure:pdf-judgments")
+            .unwrap();
+        if let Disposition::Owned {
+            owner: Owner::Record { record, .. },
+            ..
+        } = &mut pdf.disposition
+        {
+            record.sha256 = "0".repeat(64);
+        } else {
+            panic!("PDF judgments must remain independently owned");
+        }
+        assert!(validate(&catalog, &ledger, false)
+            .unwrap_err()
+            .contains("record digest mismatch"));
+    }
 
     #[test]
     fn inventory_extension_preserves_dispositions_and_only_adds_gaps() {
@@ -1431,7 +1537,7 @@ mod tests {
     }
 
     #[test]
-    fn library_owner_binds_source_digest_and_exact_executable_command() {
+    fn library_owner_accepts_historical_source_but_requires_exact_executable_command() {
         let (catalog, mut ledger) = fixture();
         let module = "metadata_failure_contract";
         let function = "metadata_failures_have_exact_recovery_in_every_format";
@@ -1456,9 +1562,7 @@ mod tests {
         {
             source.sha256 = "0".repeat(64);
         }
-        assert!(validate(&catalog, &stale, false)
-            .unwrap_err()
-            .contains("stale ownership evidence"));
+        assert_eq!(validate(&catalog, &stale, false).unwrap(), 0);
         let mut redirected = ledger.clone();
         if let Disposition::Owned {
             owner: Owner::Test { command, .. },
@@ -1870,7 +1974,7 @@ mod tests {
     }
 
     #[test]
-    fn test_owner_checks_compiled_module_exact_selector_and_source_digest() {
+    fn test_owner_checks_compiled_module_and_selector_not_historical_source_digest() {
         let (catalog, mut ledger) = load().unwrap();
         validate(&catalog, &ledger, false).unwrap();
         let row = ledger
@@ -1903,9 +2007,7 @@ mod tests {
             panic!()
         };
         source.sha256 = "0".repeat(64);
-        assert!(validate(&catalog, &ledger, false)
-            .unwrap_err()
-            .contains("stale ownership evidence"));
+        validate(&catalog, &ledger, false).unwrap();
     }
 
     #[test]
@@ -2189,12 +2291,21 @@ mod tests {
             let (catalog, ledger) = owned_fixture(owner);
             validate(&catalog, &ledger, false).unwrap_err()
         };
-        let stale = mutate(&|o| {
+        let invalid = mutate(&|o| {
             if let Owner::Test { source, .. } = o {
-                source.sha256 = "0".repeat(64);
+                source.sha256 = "not-a-digest".into();
             }
         });
-        assert!(stale.contains("stale ownership evidence"), "{stale}");
+        assert!(
+            invalid.contains("invalid historical test source digest"),
+            "{invalid}"
+        );
+        let mut historical = valid.clone();
+        if let Owner::Test { source, .. } = &mut historical {
+            source.sha256 = "0".repeat(64);
+        }
+        let (catalog, ledger) = owned_fixture(historical);
+        validate(&catalog, &ledger, false).unwrap();
         let moved = mutate(&|o| {
             if let Owner::Test { module, .. } = o {
                 *module = Some("render::tests".into());
@@ -2485,7 +2596,8 @@ mod tests {
                 &["layer:focused:frame-export".into()],
             )
             .unwrap();
-            validate(catalog, &ledger, false)
+            check_disposition(&catalog.obligations[0], &ledger.assignments[0].disposition)
+                .map(usize::from)
         };
         assert_eq!(
             with(case("focused.frame-export.v1", "frame-export"), &catalog).unwrap(),
@@ -2517,9 +2629,11 @@ mod tests {
             &["layer:focused:frame-export".into()],
         )
         .unwrap();
-        assert!(validate(&two, &assigned, false)
-            .unwrap_err()
-            .contains("does not establish"));
+        assert!(
+            check_disposition(&two.obligations[0], &assigned.assignments[0].disposition)
+                .unwrap_err()
+                .contains("does not establish")
+        );
         // An executable test may own a layer row; a record may not.
         assert_eq!(with(library_owner(), &catalog).unwrap(), 0);
         // Only gaps are assigned.

@@ -1,5 +1,13 @@
 # Excalidraw Static Renderer Specification
 
+> **Initial-release amendment (ADR-0016/0017):**
+> [The 0.1.0 release policy](release-0.1.0.md) supersedes the publication,
+> historical-retention, exhaustive-coverage, and cross-target-equality requirements
+> below for the initial release. Representative producer identities are historical
+> provenance; current code must replay the accepted artifact/report bytes.
+> This document remains the rendering design and conformance target, not a claim
+> that 0.1.0 has completed every obligation.
+
 Document version: `1.2.1`
 
 Compatibility revision: `1`

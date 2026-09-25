@@ -12,9 +12,12 @@ type RepresentativeIntake {
         container: Dagger
           .container(platform: "linux/amd64")
           .from("rust:1.97.1-slim-trixie")
-          .withExec(["bash", "-eu", "-c", "apt-get update && apt-get install -y --no-install-recommends git python3"]),
+          .withExec(["bash", "-eu", "-c", "apt-get update && apt-get install -y --no-install-recommends git"]),
       )
       .withEnvVariable("CARGO_BUILD_JOBS", "2")
+      .withEnvVariable("CARGO_TARGET_DIR", "/work/src/target")
+      .withEnvVariable("CARGO_PROFILE_DEV_DEBUG", "0")
+      .withEnvVariable("CARGO_PROFILE_TEST_DEBUG", "0")
       .container
     self
   }
@@ -25,15 +28,14 @@ type RepresentativeIntake {
   verify: String! @check {
     self
       .container
-      .withExec(["cargo", "build", "--locked", "-p", "excalidraw-render-cli", "--target-dir", "/work/src/target"])
+      .withExec(["cargo", "build", "--locked", "-p", "excalidraw-render-cli", "-p", "xtask"])
       .withEnvVariable("REPRESENTATIVE_RENDERER", "/work/src/target/debug/excalidraw-render")
-      .withExec(["cargo", "build", "--locked", "--manifest-path", "tools/representative-intake/compare/Cargo.toml", "--target-dir", "/work/src/target/intake-compare"])
-      .withEnvVariable("REPRESENTATIVE_COMPARE", "/work/src/target/intake-compare/debug/representative-intake-compare")
-      .withExec(["python3", "-B", "-m", "unittest", "discover", "-s", "tools/representative-intake", "-p", "test_*.py"])
-      .withExec(["python3", "-B", "tools/representative-intake/intake.py", "verify", "tests/conformance/intake/velox-design-v1"])
-      .withExec(["python3", "-B", "tools/representative-intake/intake.py", "capture", "tests/conformance/intake/velox-design-v1", "/work/src/target/debug/excalidraw-render", "/tmp/velox-intake-capture"])
-      .withExec(["python3", "-B", "tools/representative-intake/intake.py", "verify-capture", "tests/conformance/intake/velox-design-v1", "/tmp/velox-intake-capture"])
-      .withExec(["python3", "-B", "tools/representative-intake/case.py", "verify-registry", "--renderer", "/work/src/target/debug/excalidraw-render"])
+      .withExec(["cargo", "test", "--locked", "-p", "xtask", "--test", "representative_intake", "--test", "representative_case", "--", "--include-ignored"])
+      .withExec(["cargo", "test", "--locked", "-p", "xtask", "--test", "representative_numeric", "--test", "representative_judge", "--test", "representative_viewer_assets", "--test", "representative_retention", "--test", "representative_evidence"])
+      .withExec(["/work/src/target/debug/xtask", "representative", "verify", "tests/conformance/intake/velox-design-v1"])
+      .withExec(["/work/src/target/debug/xtask", "representative", "capture", "tests/conformance/intake/velox-design-v1", "/work/src/target/debug/excalidraw-render", "/tmp/velox-intake-capture"])
+      .withExec(["/work/src/target/debug/xtask", "representative", "verify-capture", "tests/conformance/intake/velox-design-v1", "/tmp/velox-intake-capture"])
+      .withExec(["/work/src/target/debug/xtask", "representative", "case", "verify-registry", "--renderer", "/work/src/target/debug/excalidraw-render"])
       .combinedOutput
   }
 }

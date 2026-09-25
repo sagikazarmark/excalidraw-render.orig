@@ -6,7 +6,13 @@ Isolated, non-published experiment against the renderer at
 [source audit](../../docs/research/color-library-source-audit.md), and
 [generated matrix](matrix.md).
 
-## Reproduce
+## Historical reproduction
+
+This evaluation is complete. Its three Python runners were retired on
+2026-09-25. The commands and procedure below are an archival transcript, not
+current maintenance instructions. Observations, probe sources, matrices and
+conclusions remain; Git history holds the retired runners.
+Use [CONTRIBUTING.md](../../CONTRIBUTING.md) for current renderer checks.
 
 Python 3.11+, Rust **1.97.1** with `wasm32-unknown-unknown`,
 wasm-bindgen-test-runner **0.2.126**, Chrome for Testing and ChromeDriver

@@ -7,10 +7,6 @@ use excalidraw_render::{
 use serde_json::{json, Value};
 
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
-pub(super) fn unsupported_value_contract() {
-    persisted_request_controls_validate_but_never_override_the_request();
-    line_arrowheads_are_validated_but_do_not_paint_or_change_frame_exports();
-}
 
 const EDITOR_FIELDS: &[&str] = &[
     "contextMenu",

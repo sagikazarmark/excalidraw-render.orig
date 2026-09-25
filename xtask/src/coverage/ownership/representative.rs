@@ -202,26 +202,21 @@ pub(super) fn verify(obligation: &str, binding: &Binding) -> Result<(), String> 
         &read(&binding.manifest.path)?,
         |dir, manifest| {
             check_adapter_sources(manifest)?;
-            // This consumer verifies current sources, approval, semantic and visual
+            // This consumer verifies frozen evidence, approval, semantic and visual
             // judgments, and fresh release native artifacts/reports for all formats.
             crate::conformance_candidate_gate::execute(dir)
         },
     )
 }
 fn check_adapter_sources(manifest: &Value) -> Result<(), String> {
+    crate::conformance_candidate_gate::historical_sources(&manifest["producer_sources"])?;
     let sources = manifest["producer_sources"]
         .as_array()
         .ok_or("missing representative adapter source bindings")?;
     for path in ADAPTER_SOURCES {
-        let current = crate::conformance_candidate_gate::descriptor(&repo_root(), path)?;
-        if sources
-            .iter()
-            .filter(|s| s["path"] == path)
-            .collect::<Vec<_>>()
-            != vec![&current]
-        {
+        if sources.iter().filter(|s| s["path"] == path).count() != 1 {
             return Err(format!(
-                "representative owner adapter source is unbound or stale: {path}"
+                "representative owner historical adapter source is unbound: {path}"
             ));
         }
     }
@@ -322,6 +317,9 @@ mod tests {
         }
         for field in ["sources", "profiles", "assets"] {
             for d in collection[field].as_array_mut().unwrap() {
+                if field == "sources" && d["path"] == "tools/pdf-harness/pdfium/render.py" {
+                    continue;
+                }
                 *d = gate::descriptor(&repo_root(), &rebase(d["path"].as_str().unwrap())).unwrap();
             }
         }

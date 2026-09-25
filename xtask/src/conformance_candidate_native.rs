@@ -94,6 +94,26 @@ pub fn check_producers(record: &Value) -> Result<()> {
     }
     Ok(())
 }
+pub(crate) fn historical_producers(record: &Value) -> Result<()> {
+    crate::conformance_candidate_gate::require_historical_sources(
+        record,
+        &[
+            "Cargo.toml",
+            "Cargo.lock",
+            "docs/renderer-spec-v1.md",
+            "crates/excalidraw-render/Cargo.toml",
+            "crates/excalidraw-render/src/lib.rs",
+            "crates/excalidraw-render-cli/Cargo.toml",
+            "crates/excalidraw-render-cli/src/main.rs",
+            "crates/excalidraw-render-assets-base/Cargo.toml",
+            "crates/excalidraw-render-assets-base/src/lib.rs",
+            "crates/excalidraw-render-assets-data-000/Cargo.toml",
+            "crates/excalidraw-render-assets-data-000/src/lib.rs",
+            "crates/excalidraw-render-assets-data-001/Cargo.toml",
+            "crates/excalidraw-render-assets-data-001/src/lib.rs",
+        ],
+    )
+}
 fn tool(program: &str, args: &[&str]) -> Result<String> {
     let o = Command::new(program)
         .args(args)
@@ -296,11 +316,19 @@ pub fn replay(directory: &str) -> Result<Value> {
         return Err("native capture source/request/schema mismatch".into());
     }
     validate_build_identity(&record["build"])?;
-    check_producers(&record["producer_sources"])?;
-    let (executable, build) = build()?;
-    if record["build"] != build {
-        return Err("stale native compiler/executable identity".into());
+    historical_producers(&record["producer_sources"])?;
+    let recorded_executable = record["build"]["executable_sha256"]
+        .as_str()
+        .unwrap_or_default();
+    if recorded_executable.len() != 64
+        || !recorded_executable
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    {
+        return Err("invalid historical compiler/executable identity".into());
     }
+    let before = producers()?;
+    let (executable, build) = build()?;
     let source = read(&root, "scene.json")?;
     let rows = record["rows"].as_array().ok_or("native capture rows")?;
     if rows.len() != 3 {
@@ -331,12 +359,12 @@ pub fn replay(directory: &str) -> Result<Value> {
         }
         results.push(json!({"format":format,"fresh_process_runs":2,"artifact_sha256":sha256(&wanted.0),"report_sha256":sha256(&wanted.1)}));
     }
-    check_producers(&record["producer_sources"])?;
+    check_producers(&before)?;
     if source != read(&root, "scene.json")? {
         return Err("scene changed during replay".into());
     }
     Ok(
-        json!({"schema":"excalidraw-render/candidate-native-replay/v1","build":build,"rows":results}),
+        json!({"schema":"excalidraw-render/candidate-native-replay/v1","build":build,"historical_build":record["build"],"producer_sources":before,"rows":results}),
     )
 }
 fn check_output(
@@ -517,6 +545,22 @@ mod tests {
         let base = capture(&directory).unwrap();
         let result = replay(&directory).unwrap();
         assert_eq!(result["rows"].as_array().unwrap().len(), 3);
+        // A previous executable/source identity is historical provenance, not
+        // an expected output. Today's binary still renders every format twice.
+        let mut historical = base.clone();
+        historical["producer_sources"][0]["sha256"] = json!("a".repeat(64));
+        historical["build"]["executable_sha256"] = json!("b".repeat(64));
+        fs::write(
+            root.join("native-capture.json"),
+            canonical_bytes(&historical).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(replay(&directory).unwrap()["rows"], result["rows"]);
+        fs::write(
+            root.join("native-capture.json"),
+            canonical_bytes(&base).unwrap(),
+        )
+        .unwrap();
         // Rehash the corrupted file in the stored capture, so these controls
         // must reach and fail the actual fresh producer, not just a hash check.
         for (name, key) in [
@@ -599,6 +643,19 @@ mod tests {
             }
             assert!(check_output(&changed, &valid, "svg").is_err());
         }
+    }
+    #[test]
+    fn historical_native_provenance_requires_each_package_root() {
+        let sources = producers().unwrap();
+        historical_producers(&sources).unwrap();
+        let incomplete = json!([sources[0]]);
+        assert!(historical_producers(&incomplete).is_err());
+        let mut missing_cli = sources.clone();
+        missing_cli
+            .as_array_mut()
+            .unwrap()
+            .retain(|s| s["path"] != "crates/excalidraw-render-cli/src/main.rs");
+        assert!(historical_producers(&missing_cli).is_err());
     }
     #[test]
     fn cli_success_alone_does_not_satisfy_the_report_contract() {

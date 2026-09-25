@@ -8,11 +8,6 @@ if [[ "${1:-}" != "inspect" || $# -ne 5 ]]; then
   echo "usage: $0 inspect <input.pdf> <expectation.json> <pass|fail> <output.json>" >&2
   exit 2
 fi
-if [[ "$(python3 --version)" != "Python 3.12.3" ]]; then
-  echo "PDF structure harness requires Python 3.12.3" >&2
-  exit 1
-fi
-
 INPUT="$(realpath "${2}")"
 EXPECTATION="$(realpath "${3}")"
 OUTPUT_PARENT="$(realpath "$(dirname "${5}")")"
@@ -26,4 +21,4 @@ if [[ -L "${5}" ]]; then
 fi
 
 QPDF="${REPO_ROOT}/target/pdf-harness/qpdf/bin/qpdf" \
-  python3 "${SCRIPT_DIR}/structure/inspect.py" "${INPUT}" "${EXPECTATION}" "${4}" "${OUTPUT}"
+  exec bash "${SCRIPT_DIR}/run-xtask.sh" inspect "${INPUT}" "${EXPECTATION}" "${4}" "${OUTPUT}"

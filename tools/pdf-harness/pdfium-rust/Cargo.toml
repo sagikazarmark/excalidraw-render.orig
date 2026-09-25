@@ -1,0 +1,16 @@
+[package]
+name = "excalidraw-render-pdfium"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# The native harness has its own dependency closure, separate from the renderer.
+[workspace]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[dependencies]
+pdfium-render = { version = "=0.9.4", default-features = false, features = ["pdfium_7881"] }
+serde_json = "=1.0.141"
+sha2 = "=0.10.9"

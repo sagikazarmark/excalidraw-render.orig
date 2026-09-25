@@ -108,13 +108,18 @@ The ledger remains 2,418 obligations / 2,321 assigned-excluded / 97 gaps.
 
 ## Checks
 
-`tools/pdf-harness/diagnostics/webp191-verify-boundary.py` authenticates the current
-collector and CLI identities, approved PDF viewer profile dependencies, and both
+`node tools/pdf-harness/diagnostics/webp191-verify-boundary.mjs` checks approved
+PDF viewer profile dependencies and both
 evidence sets, reconstructs independent placement, checks all
 three canonical views and actual failure outcomes, and rejects **336 mutations**
 (RGB drift, alpha drift, and substitution with passing browser pixels). These
 mutations exercise the independent-buffer guard; additional paired mutations
 exercise the alpha, exact-sample and failure-preservation guards separately.
+The Node audit replaces the retired Python verifier and runs in the xtask suite.
+Collector/CLI identities describe the historical capture; inputs, profiles and
+output bytes remain live checks. There are 336 independent-buffer and 336 paired
+semantic rejections, with all 48 partial-alpha viewer comparisons still failing
+their canonical browser comparison.
 All seven existing WebP contract tests pass. Production, approved profiles, spec,
 comparator, frozen historical records and the ledger are unchanged. No full
 workspace rerun was needed for this evidence-only decision preparation.

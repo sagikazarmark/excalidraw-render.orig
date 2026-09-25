@@ -5,7 +5,22 @@
 consistency check means assignments/links are well formed; it does not mean
 coverage is complete or the chosen primary owners have received human approval.
 
+Test owners resolve their package, module and exact test selector against the
+current Rust tree. Their recorded source digests are historical provenance:
+adding tests, comments or implementation changes to the same file needs no
+ledger refresh. Removing, renaming, disabling or redirecting a selected test
+still fails verification. Group membership, case manifests, exclusion proofs and
+judgment records retain their existing integrity checks.
+
 ## Current scope
+
+Five-layer mappings are now advisory. Ordinary `verify-ownership` does not
+validate or require `layer:*` assignments or the `closure:all-five-layers`
+record owner. Run `conformance layers-report` to inspect current discovery and
+mapping findings without refreshing or approving a stored record. Non-layer
+owners and actual case/evidence validation remain enforced. Explicit global
+closure audits still check the complete historical ledger and cannot treat
+advisory gaps as completed coverage.
 
 ### JPEG color/sampling extension
 
@@ -197,14 +212,12 @@ dagger api call evidence ownership-catalog --output target/ownership-catalog.jso
 cargo run --locked -p xtask -- conformance verify-ownership
 # Record explicit reviewed gap selections; this does not grant approval:
 cargo run --locked -p xtask -- conformance record-test-owner MODULE FUNCTION RATIONALE ID...
-# Refresh consuming-test location hashes in an unapproved ledger after review:
-cargo run --locked -p xtask -- conformance refresh-test-owner-source MODULE
 # Explicit root library tests using private test-only operation seams:
 cargo run --locked -p xtask -- conformance record-library-test-owner MODULE FUNCTION RATIONALE ID...
-cargo run --locked -p xtask -- conformance refresh-library-test-owner-source MODULE
 # Own a closure row with its approved judgment record (ADR-0015):
 cargo run --locked -p xtask -- conformance record-closure-owner closure:pdf-judgments pdf-judgments RATIONALE
-cargo run --locked -p xtask -- conformance record-closure-owner closure:all-five-layers layers RATIONALE
+# Inspect optional five-layer coverage without changing the ledger:
+cargo run --locked -p xtask -- conformance layers-report
 # Own a `layer:*` row with the registered case that is its single candidate:
 cargo run --locked -p xtask -- conformance record-case-owner CASE RATIONALE ID...
 # Capture the old catalog before editing inventory inputs, then extend only:
@@ -243,7 +256,7 @@ Dispositions are strict tagged objects:
 - `owned`: one `owner` plus rationale. Case owners are allowed only for existing
   case labels and must be registered candidates with exact manifest digests.
 - `owned` test adapter: an exact non-ignored `#[test]` function in a compiled
-  renderer `fast` integration-test module, source digest, binary and complete
+  renderer `fast` integration-test module, historical source digest, binary and complete
   `cargo test --locked --release -p excalidraw-render --test fast MODULE::TEST -- --exact`
   argument list. Other layouts require an explicit adapter that validates their
   executable selection. Anchors establish executable presence;
@@ -251,7 +264,7 @@ Dispositions are strict tagged objects:
   the assertions actually meet the named criterion.
 - `owned` library-test adapter: `kind: test`, `binary: lib`, a root renderer
   `src/MODULE.rs` registered exactly as `#[cfg(test)] mod MODULE;` in `src/lib.rs`,
-  a source digest, and the exact
+  a historical source digest, and the exact
   `cargo test --locked --release -p excalidraw-render --lib MODULE::TEST -- --exact`
   command. Selected functions are unconditional built-in tests without ignore or
   feature/target guards. Parsed Cargo manifests must retain the standard library
@@ -290,9 +303,10 @@ resolve imports or expand macros: imports named `test`, glob imports, item macro
 invocations and macro-use imports in the checked scopes require an explicit
 adapter rather than guessing whether `#[test]` is built-in. The test marker must
 be an outer attribute. These checks do not replace compiled test execution.
-Live source hashes are excluded
-from the final ownership decision subject for test owners, preserving producer-only
-approval scope when unrelated consuming tests change.
+Historical source hashes are excluded from the final ownership decision subject
+for test owners. Verification checks their digest syntax and resolves the selected
+test in the current tree, without requiring its source bytes to match the recorded
+digest.
 
 A completed-ledger subject binds the whole catalog and every disposition,
 excluding only the ledger's approval object. It contains strings/integers, not
@@ -315,3 +329,29 @@ Expand codec facets into explicit accepted profile/color/orientation/alpha/anima
 subrows; add representative interactions. The five corpus layers are registered
 in `layers.json`; apply the layer owner tranche and approve that record.
 Only then request final ledger approval and attempt #85 release closure.
+## Executable test groups (ADR-0018)
+
+An owner may select a digest-bound `test_group` manifest under `test-groups/`.
+The group has one package, one binary and a nonempty list of unique exact test
+selectors. Every member must resolve to an unconditional compiled Rust test.
+Closure obligations still require approved judgment records, and tolerance
+exceptions still require the dedicated direct-PNG adapter.
+
+The unsupported-property-value group preserves all 33 routines of the former
+umbrella. Its members run independently in the existing CI tiers, so the runner
+does not repeat 31 tests through a second serial caller. Two formerly private
+helpers are now standalone tests. The three format-scoped obligations keep one
+primary owner each, all referencing that same group manifest.
+
+To run the group alone:
+
+```sh
+filter=$(cargo run --quiet --locked -p xtask -- conformance test-group-filter \
+  tests/conformance/coverage/test-groups/unsupported-property-values.json)
+cargo nextest run --locked -p excalidraw-render --test fast -E "$filter"
+```
+
+The legacy `refresh-test-owner-source`, `refresh-test-owner-sources`,
+`refresh-library-test-owner-source` and `refresh-exception-test-owner-source`
+commands remain available for explicitly recording newer provenance in an
+unapproved ledger. They are not needed after ordinary source edits.

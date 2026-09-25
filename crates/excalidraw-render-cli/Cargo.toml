@@ -5,6 +5,11 @@ edition.workspace = true
 rust-version.workspace = true
 description = "Native CLI for rendering Excalidraw scene documents"
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "../../README.md"
+keywords = ["excalidraw", "cli", "svg", "png", "pdf"]
+categories = ["command-line-utilities", "graphics"]
 
 [lints]
 workspace = true

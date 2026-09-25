@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execFileSync } from "node:child_process";
 import { chromium } from "playwright";
 import { fixtures, frameRequests, scene, sha, OCI, CONFIGURATIONS, INITIAL_DURATION_MS } from "./webp-sample-fixtures.mjs";
+import { encodeFrames } from "./webp-encode-inputs.mjs";
+import { assertFrameParity, frozenEvidence } from "./webp-sample-parity.mjs";
 
 const ORACLE = resolve(dirname(fileURLToPath(import.meta.url)), ".."), ROOT = resolve(ORACLE, "../..");
 const PROFILE = "tests/oracle/reference-profiles/revision-1.json";
@@ -16,13 +17,14 @@ assert.equal(process.version, "v24.16.0"); assert.equal(process.platform, "linux
 const profile = JSON.parse(readFileSync(resolve(ROOT, PROFILE)));
 assert.equal(profile.referenceRenderer.sourceTag, "v0.18.1");
 assert.equal(profile.canonicalPlatform.runtime.chromium, "149.0.7827.55");
-const authorPaths = ["tools/reference-oracle/scripts/webp-sample-fixtures.mjs", "tools/reference-oracle/scripts/webp-encode-inputs.py",
+const authorPaths = ["tools/reference-oracle/scripts/webp-sample-fixtures.mjs", "tools/reference-oracle/scripts/webp-encode-inputs.mjs",
+  "tools/reference-oracle/scripts/webp-encode-inputs.c", "tools/reference-oracle/webp-helper.Dockerfile",
+  "tools/reference-oracle/scripts/webp-sample-parity.mjs",
   "tools/reference-oracle/scripts/webp-sample-evidence.mjs", "tools/reference-oracle/run-webp-sample.sh",
   "tools/reference-oracle/scripts/jpeg-icc-fixtures.mjs"].sort();
 const hashes = paths => paths.map(path => ({ path, sha256: sha(readFileSync(resolve(ROOT, path))) }));
 const authorSources = hashes(authorPaths);
-const encode = () => JSON.parse(execFileSync("/usr/bin/python3", [resolve(ORACLE, "scripts/webp-encode-inputs.py")],
-  { input: JSON.stringify(frameRequests()), maxBuffer: 8 * 1024 * 1024, timeout: 30000 }));
+const encode = () => encodeFrames(frameRequests());
 const inputRecord = () => ({ schema: "excalidraw-render/webp-sample-inputs/v1", oci: OCI,
   author_sources: authorSources, ...encode() });
 const serialize = value => Buffer.from(JSON.stringify(value, null, 2) + "\n");
@@ -36,9 +38,12 @@ if (mode === "prepare") {
 }
 if (mode === "generate") assert.ok(!existsSync(OUTPUT), "immutable reference exists; use verify");
 const inputsBytes = readFileSync(resolve(ROOT, INPUT)), inputs = JSON.parse(inputsBytes);
-assert.deepEqual(inputs.author_sources, authorSources, "frozen input source closure changed");
 // Re-encoding is offline and compared before any browser observation, in both modes.
-assert.deepEqual(serialize(inputRecord()), inputsBytes, "external encoder/input reproducibility");
+const historical = mode === "verify" ? frozenEvidence() : null;
+const reproduced = encode();
+if (historical) assertFrameParity(reproduced, historical.inputs, historical.reference);
+else assert.deepEqual(reproduced.frames, inputs.frames, "external encoder/input reproducibility");
+console.log(`encoder parity: ${reproduced.frames.length} frames; libwebp ${reproduced.encoder.version}; libraries/helper ${JSON.stringify(reproduced.encoder.binaries)}`);
 const { cases: rows, controls } = fixtures(inputs);
 const frames = new Map(inputs.frames.map(frame => [frame.id, frame]));
 const options = { exportBackground: false, exportEmbedScene: false, exportPadding: 0, exportScale: 1,
@@ -197,8 +202,12 @@ const record = {
   expectation_policy: "Authored source RGBA and two composition hypotheses never changed by browser; lossy RGB canonical is exact browser sample, not source RGB or a tolerance; exact alpha separately recorded",
   inputs_sha256: sha(inputsBytes), encoder: inputs.encoder, differences, cases, controls,
 };
-const encoded = serialize(record);
-if (mode === "verify") assert.deepEqual(encoded, readFileSync(OUTPUT));
+const encoded = serialize(historical ? { ...record, sources: historical.reference.sources } : record);
+if (mode === "verify") {
+  // The hash-pinned historical record authenticates its original producers.
+  // Current producers are checked for mutation above, not forced to old hashes.
+  assert.deepEqual(encoded, readFileSync(OUTPUT));
+}
 else writeFileSync(OUTPUT, encoded, { flag: "wx" });
 console.log(`${mode}: 36 cells / 72 vectors + 12 uncollected controls; ${cases.filter(r => r.reference.admitted).length} admitted; ${differences.length} vectors with hypothesis differences; sha256:${sha(encoded)}`);
 console.log(`timing: collection ${(performance.now() - started).toFixed(0)}ms; max capture ${Math.max(...timings).toFixed(1)}ms; ${timings.length} captures, all <30000ms`);

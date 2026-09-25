@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 description = "Implementation-detail catalog for excalidraw-render"
 license.workspace = true
+repository.workspace = true
 include = [
     "/src/",
     "/tests/",

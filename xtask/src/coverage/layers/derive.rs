@@ -1,8 +1,6 @@
-//! Discovery, derivation and completeness rules for `layers.json`
-//! (`closure:all-five-layers`, ADR-0015). This file is bound by digest in the
-//! record, so a change to any discovery rule, derived field or completeness
-//! rule requires a fresh #85 approval. I/O, approval and commands live in the
-//! parent.
+//! Discovery and completeness rules for optional five-layer coverage reports.
+//! The historical `layers.json` still binds the old rules for explicit audits;
+//! current reports recompute observations without requiring record refreshes.
 //!
 //! Every item is discovered by a rule below from the repository and the
 //! ownership catalog, never from ledger dispositions, so recording an owner
@@ -343,84 +341,10 @@ pub(super) fn required_risks(sources: &[(String, String)]) -> Result<Vec<String>
     }
 }
 
-/// `json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`.
-pub(super) fn python_json(value: &Value, out: &mut String) -> Result<(), String> {
-    match value {
-        Value::Null => out.push_str("null"),
-        Value::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
-        Value::Number(n) => match (n.as_i64(), n.as_u64(), n.as_f64()) {
-            (Some(i), _, _) => out.push_str(&i.to_string()),
-            (_, Some(u), _) => out.push_str(&u.to_string()),
-            (_, _, Some(f)) => out.push_str(&python_float(f)?),
-            _ => return Err("unsupported JSON number".into()),
-        },
-        Value::String(s) => out.push_str(&serde_json::to_string(s).map_err(|e| e.to_string())?),
-        Value::Array(values) => {
-            out.push('[');
-            for (i, v) in values.iter().enumerate() {
-                if i > 0 {
-                    out.push(',');
-                }
-                python_json(v, out)?;
-            }
-            out.push(']');
-        }
-        Value::Object(map) => {
-            out.push('{');
-            let mut keys: Vec<&String> = map.keys().collect();
-            keys.sort();
-            for (i, k) in keys.into_iter().enumerate() {
-                if i > 0 {
-                    out.push(',');
-                }
-                out.push_str(&serde_json::to_string(k).map_err(|e| e.to_string())?);
-                out.push(':');
-                python_json(&map[k], out)?;
-            }
-            out.push('}');
-        }
-    }
-    Ok(())
-}
-
-/// Python's `repr(float)`: shortest round-trip digits, positional for
-/// decimal exponents -4..16, otherwise `d.ddde±XX`.
-pub(super) fn python_float(f: f64) -> Result<String, String> {
-    if !f.is_finite() {
-        return Err("non-finite JSON number".into());
-    }
-    if f == 0.0 {
-        return Ok(if f.is_sign_negative() { "-0.0" } else { "0.0" }.into());
-    }
-    let formatted = format!("{:e}", f.abs());
-    let (mantissa, exponent) = formatted.split_once('e').ok_or("float format")?;
-    let exp: i32 = exponent.parse().map_err(|_| "float exponent")?;
-    let digits = mantissa.replace('.', "");
-    let n = digits.len() as i32;
-    let body = if (-4..16).contains(&exp) {
-        if exp < 0 {
-            format!("0.{}{digits}", "0".repeat((-exp - 1) as usize))
-        } else if n <= exp + 1 {
-            format!("{digits}{}.0", "0".repeat((exp + 1 - n) as usize))
-        } else {
-            let (int, frac) = digits.split_at((exp + 1) as usize);
-            format!("{int}.{frac}")
-        }
-    } else {
-        let (first, rest) = digits.split_at(1);
-        let mantissa = if rest.is_empty() {
-            first.to_owned()
-        } else {
-            format!("{first}.{rest}")
-        };
-        format!(
-            "{mantissa}e{}{:02}",
-            if exp < 0 { '-' } else { '+' },
-            exp.abs()
-        )
-    };
-    Ok(format!("{}{body}", if f < 0.0 { "-" } else { "" }))
-}
+// Approval subjects use the same Python-compatible serialization as intake.
+pub(super) use crate::representative::json::compact_into as python_json;
+#[cfg(test)]
+pub(super) use crate::representative::json::python_float;
 
 /// `case.py subject`: SHA-256 of the canonical case record without its approval.
 pub(super) fn case_subject(case: &Value) -> Result<String, String> {
@@ -539,17 +463,34 @@ fn representative_case(repo: &Repo, entry: &Value) -> Result<Value, String> {
         ));
     }
     let subject = case_subject(&case)?;
-    let approval = &case["approval"];
-    if approval.is_null() {
-        return Err(fail("case.json is not approved"));
+    let approval = case
+        .get("approval")
+        .ok_or_else(|| fail("missing historical approval field"))?;
+    if !approval.is_null() {
+        verify_approval_for_issue(approval, &subject, "85").map_err(|e| fail(&e))?;
     }
-    verify_approval_for_issue(approval, &subject, "85").map_err(|e| fail(&e))?;
     Ok(
         json!({"case":id,"path":dir,"case_sha256":sha256(&case_bytes),
             "subject_sha256":format!("sha256:{subject}"),"approval_url":approval["approval_url"],
             "intake":{"path":bundle,"manifest_sha256":sha256(&manifest_bytes),"scene_sha256":scene,"license":license},
             "comparisons":comparisons,"crops":crops}),
     )
+}
+
+/// Validate actual representative case evidence independently of coverage maps.
+pub(super) fn verify_representative_cases(repo: &Repo) -> Result<(), String> {
+    representative_cases(repo).map(|_| ())
+}
+
+fn representative_cases(repo: &Repo) -> Result<Vec<Value>, String> {
+    let registry: Value = parse(&repo.read(CASE_REGISTRY)?)?;
+    if registry["schema"] != "excalidraw-render/representative-case-registry/v1" {
+        return Err("invalid representative case registry schema".into());
+    }
+    array(&registry, "cases")?
+        .iter()
+        .map(|entry| representative_case(repo, entry))
+        .collect()
 }
 
 fn exact_keys(value: &Value, keys: &[&str], item: &str) -> Result<(), String> {
@@ -690,14 +631,7 @@ pub(super) fn build_record(repo: &Repo, declarations: &Value) -> Result<Value, S
         .collect::<Result<Vec<_>, _>>()?;
 
     // Layer 3: the #84 cases. Candidates are checked by rule at verification.
-    let representative: Value = parse(&repo.read(CASE_REGISTRY)?)?;
-    if representative["schema"] != "excalidraw-render/representative-case-registry/v1" {
-        return Err("invalid representative case registry schema".into());
-    }
-    let representative_items = array(&representative, "cases")?
-        .iter()
-        .map(|entry| representative_case(repo, entry))
-        .collect::<Result<Vec<_>, _>>()?;
+    let representative_items = representative_cases(repo)?;
 
     // Layer 4: adversarial targets and their declared risks.
     let mut target_items = Vec::new();

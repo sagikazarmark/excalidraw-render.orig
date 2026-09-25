@@ -10,7 +10,9 @@ use crate::outcome::{RenderError, RenderErrorCategory, RenderOutcome};
 use crate::request::{OutputFormat, RenderRequest};
 use crate::scene::SceneDocument;
 
-/// Identifies a retained static-export compatibility promise.
+/// Identifies a static-export profile available in this renderer release.
+/// During 0.x, a profile may evolve between releases; pin the package version
+/// and dependency lockfile when historical output bytes are required.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(transparent)]
 pub struct CompatibilityRevision(u64);
@@ -104,19 +106,19 @@ impl Renderer {
         }
     }
 
-    /// Constructs a renderer for a retained compatibility revision.
+    /// Constructs a renderer for an available compatibility revision.
     pub fn for_revision(revision: CompatibilityRevision) -> Result<Self, UnsupportedRevisionError> {
         crate::catalog::for_revision(revision)
             .map(|catalog| Self { catalog })
             .ok_or(UnsupportedRevisionError { revision })
     }
 
-    /// Returns retained compatibility revisions in increasing order.
+    /// Returns available compatibility revisions in increasing order.
     pub const fn supported_revisions() -> &'static [CompatibilityRevision] {
         crate::catalog::SUPPORTED_REVISIONS
     }
 
-    /// Returns the reference profile identity for a retained revision.
+    /// Returns the reference profile identity for an available revision.
     pub fn profile_identity(
         revision: CompatibilityRevision,
     ) -> Result<&'static ReferenceProfileIdentity, UnsupportedRevisionError> {
@@ -125,7 +127,7 @@ impl Renderer {
             .ok_or(UnsupportedRevisionError { revision })
     }
 
-    /// Returns the frame-export reference profile for a retained revision.
+    /// Returns the frame-export reference profile for an available revision.
     pub fn frame_profile_identity(
         revision: CompatibilityRevision,
     ) -> Result<&'static ReferenceProfileIdentity, UnsupportedRevisionError> {
@@ -179,7 +181,7 @@ impl Default for Renderer {
     }
 }
 
-/// Indicates that a requested compatibility revision is not retained.
+/// Indicates that a requested compatibility revision is not available.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct UnsupportedRevisionError {
     revision: CompatibilityRevision,
@@ -235,7 +237,7 @@ pub enum ErrorFamily {
     Render,
     /// A lazy frame batch could not be constructed.
     FrameBatch,
-    /// A requested compatibility revision is not retained.
+    /// A requested compatibility revision is not available.
     UnsupportedRevision,
 }
 
@@ -392,7 +394,7 @@ impl ErrorCode {
     /// Canonical parser live bytes exceed the fixed parser memory ceiling.
     pub const SCENE_PARSE_MEMORY_EXCEEDED: Self = Self("scene.parse-memory-exceeded");
 
-    /// The requested compatibility revision is not retained.
+    /// The requested compatibility revision is not available.
     pub const REVISION_UNSUPPORTED: Self = Self("revision.unsupported");
 
     /// Returns the stable serialized spelling.

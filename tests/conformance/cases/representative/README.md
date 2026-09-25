@@ -22,18 +22,22 @@ fields. varmq pins its scale-1 PNG failure,
 `resource.raster-surface-exceeded`, at 6524 × 5993 = 39098332 attempted pixels,
 the official SVG size at scale 1.
 
-`tools/representative-intake/case.py` is the verifier (see its docstring):
+Rust verifies registered cases:
 
 ```sh
-python3 -B tools/representative-intake/case.py verify-registry --renderer target/release/excalidraw-render            # offline + native
-python3 -B tools/representative-intake/case.py verify <case> --renderer target/release/excalidraw-render --viewers    # + pinned viewers
+cargo run --locked --release -p xtask -- representative case verify-registry --renderer target/release/excalidraw-render
+cargo run --locked --release -p xtask -- representative case verify <case> --renderer target/release/excalidraw-render --viewers
 ```
 
 A case passes when its native renders repeat in fresh processes, reports,
 dimensions and semantics match, and every registered comparison passes its
-canonical budget or an approved exact-ceiling exception. Unused exceptions are
-rejected. Approval binds the exact `case.json` subject (`case.py subject`) to a
-maintainer comment on #85.
+canonical budget, identical-input controls or a reviewed exact-ceiling exception.
+Unused exceptions are rejected. New cases and expectation changes are reviewed
+through normal pull requests and deliberately added to `registry.json`; they
+may retain `approval: null`. Historical non-null approval records still bind
+their exact subjects and must remain valid when present. No issue-comment
+recording command is required. `representative case subject` is available for
+inspection, not as an additional contribution gate.
 
 Regions that fail their class budget are judged against identical-input
 controls before exceptions (ADR-0014).
