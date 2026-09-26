@@ -1,7 +1,7 @@
 use std::collections::TryReserveError;
 use std::sync::Arc;
 
-use excalidraw_fonts::fonts::{Face, FaceId, FamilyId};
+use crate::fonts::{Face, FaceId, FamilyId};
 use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder, Tag};
 
 use crate::font_metadata::FamilyMetrics;
@@ -132,7 +132,7 @@ impl CjkSubsetTrigger {
             xiaolai_selected: excalifont_texts
                 .into_iter()
                 .flat_map(str::chars)
-                .any(|scalar| excalidraw_fonts::is_cjk_scalar_v1(u32::from(scalar))),
+                .any(|scalar| crate::fonts::is_cjk_scalar_v1(u32::from(scalar))),
         }
     }
 
@@ -1791,7 +1791,7 @@ mod optional_font_tests {
             panic!("expected unavailable font, got {error:?}");
         };
         assert_eq!(font.resolved_family, "Xiaolai");
-        let record = excalidraw_fonts::revision_1()
+        let record = crate::fonts::revision_1()
             .assets
             .iter()
             .find(|record| record.identity == font.asset_identity)

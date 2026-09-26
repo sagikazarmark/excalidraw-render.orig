@@ -102,7 +102,7 @@ pub(super) struct FontUnavailable {
 }
 
 impl FontUnavailable {
-    fn face(face: &excalidraw_fonts::fonts::Face) -> Self {
+    fn face(face: &crate::fonts::Face) -> Self {
         Self {
             resolved_family: face.family().catalog_name(),
             asset_identity: face.identity(),

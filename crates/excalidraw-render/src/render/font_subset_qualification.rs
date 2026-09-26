@@ -56,7 +56,7 @@ struct QualificationSource {
 }
 
 impl QualificationSource {
-    fn chunk(record: &'static excalidraw_fonts::AssetRecord) -> Self {
+    fn chunk(record: &'static crate::fonts::inspection::AssetRecord) -> Self {
         Self {
             source: svg_fonts::SubsetSource::chunk(record),
             upstream_path: record.upstream_path,
@@ -73,7 +73,7 @@ impl QualificationSource {
         Self {
             source: svg_fonts::SubsetSource::noto_emoji(),
             upstream_path: "scripts/woff2/assets/NotoEmoji-Regular.ttf",
-            family: excalidraw_fonts::NOTO_EMOJI_FAMILY,
+            family: crate::fonts::inspection::NOTO_EMOJI_FAMILY,
             license_identity: "font.noto-emoji.ofl-1.1",
             reserved_font_names: &[],
         }
@@ -106,7 +106,7 @@ impl QualificationSource {
             .expect("qualified source has declared ranges")
     }
 
-    fn load(self) -> excalidraw_fonts::VerifiedAsset {
+    fn load(self) -> crate::fonts::inspection::VerifiedAsset {
         self.source
             .load()
             .expect("qualified source verifies")
@@ -161,7 +161,7 @@ impl QualificationSource {
 
 /// Every qualified source in corpus order.
 fn qualification_sources() -> Vec<QualificationSource> {
-    let catalog = excalidraw_fonts::revision_1();
+    let catalog = crate::fonts::revision_1();
     let mut sources = catalog
         .assets
         .iter()
@@ -337,7 +337,7 @@ pub(crate) fn assert_complete_font_subset_qualification_corpus() {
     assert_eq!(corpus.sources.len(), SOURCE_COUNT);
     assert_eq!(
         corpus.sources.len(),
-        excalidraw_fonts::revision_1().assets.len() + 1
+        crate::fonts::revision_1().assets.len() + 1
     );
 
     let mut measurement = QualificationMeasurement::new();
@@ -612,8 +612,8 @@ fn assert_failure_cells(failures: &[FailureQualification]) {
         ("empty-generated-sfnt", "validate"),
     ];
     assert_eq!(failures.len(), expected.len());
-    let record = &excalidraw_fonts::revision_1().assets[0];
-    let asset = excalidraw_fonts::load_asset(record.upstream_path)
+    let record = &crate::fonts::revision_1().assets[0];
+    let asset = crate::fonts::inspection::load_asset(record.upstream_path)
         .expect("failure fixture source verifies")
         .expect("failure fixture source exists");
     for (failure, (id, stage)) in failures.iter().zip(expected) {
@@ -842,7 +842,7 @@ fn push_scalar(scalars: &mut Vec<u32>, scalar: u32) {
 fn first_outside(family: &str, ranges: &[(u32, u32)]) -> Option<u32> {
     let candidates: Box<dyn Iterator<Item = u32>> = if family == "Xiaolai" {
         Box::new(
-            excalidraw_fonts::CJK_SCALAR_RANGES_V1
+            crate::fonts::inspection::CJK_SCALAR_RANGES_V1
                 .iter()
                 .flat_map(|(start, end)| *start..=*end),
         )
@@ -1115,7 +1115,7 @@ fn stage_name(stage: crate::SvgFontSubsetStage) -> &'static str {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn build_corpus() -> Corpus {
-    let catalog = excalidraw_fonts::revision_1();
+    let catalog = crate::fonts::revision_1();
     let mut sources = Vec::with_capacity(SOURCE_COUNT);
     for source in qualification_sources() {
         let asset = source.load();
@@ -1646,12 +1646,12 @@ fn json_bytes(value: &serde_json::Value) -> Vec<u8> {
 
 #[test]
 fn layout_probe_detects_horizontal_advance_only_gpos() {
-    for record in excalidraw_fonts::revision_1()
+    for record in crate::fonts::revision_1()
         .assets
         .iter()
         .filter(|record| record.family == "Liberation")
     {
-        let asset = excalidraw_fonts::load_asset(record.upstream_path)
+        let asset = crate::fonts::inspection::load_asset(record.upstream_path)
             .expect("Liberation source verifies")
             .expect("Liberation source exists");
         let sfnt = wuff::decompress_woff2(asset.bytes()).expect("Liberation source decodes");

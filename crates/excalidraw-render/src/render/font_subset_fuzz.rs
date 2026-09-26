@@ -33,7 +33,7 @@ enum Outcome {
 }
 
 struct Context {
-    record: &'static excalidraw_fonts::AssetRecord,
+    record: &'static crate::fonts::inspection::AssetRecord,
     source_woff2: Vec<u8>,
     source_sfnt: Vec<u8>,
     baseline_scalars: Vec<u32>,
@@ -132,12 +132,12 @@ impl ExpectedStage {
 
 impl Context {
     fn new() -> Self {
-        let record = excalidraw_fonts::revision_1()
+        let record = crate::fonts::revision_1()
             .assets
             .iter()
             .find(|record| record.family == "Liberation")
             .expect("the fuzz seam has a qualified TrueType source");
-        let source_woff2 = excalidraw_fonts::load_asset(record.upstream_path)
+        let source_woff2 = crate::fonts::inspection::load_asset(record.upstream_path)
             .expect("the fuzz source verifies")
             .expect("the fuzz source exists")
             .bytes()
@@ -337,7 +337,7 @@ fn derive_outcome(source: &[u8], scalars: &[u32], alias: &str, identity: &str) -
             if derived.decoded_sfnt_bytes > MAX_DECODED_SFNT_BYTES
                 || derived.subset_sfnt_bytes > MAX_DECODED_SFNT_BYTES
                 || derived.woff2.len() > MAX_DERIVED_WOFF2_BYTES
-                || derived.subset_tables > excalidraw_fonts::FONT_SUBSET_TABLE_RULES_V1.len()
+                || derived.subset_tables > crate::fonts::FONT_SUBSET_TABLE_RULES_V1.len()
                 || derived.woff2.as_ref() == source
             {
                 return Outcome::Failure(crate::SvgFontSubsetStage::Validate);
@@ -544,7 +544,7 @@ pub(crate) fn assert_font_subset_fuzz_regression_corpus() {
     assert_eq!(corpus.broader_fuzz_issue, 83);
     assert_eq!(corpus.subset_profile_sha256, PROFILE_SHA256);
     assert_eq!(
-        encode_hex(&excalidraw_fonts::font_subset_profile_digest_v1()),
+        encode_hex(&crate::fonts::font_subset_profile_digest_v1()),
         PROFILE_SHA256
     );
     assert_eq!(corpus.fixed_seed_hex, format!("{FIXED_SEED:016x}"));

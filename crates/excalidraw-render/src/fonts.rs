@@ -1,4 +1,7 @@
-//! Verified source-font loading, independent of Excalidraw selection policy.
+//! The crate-local interface to bundled font metadata and verified loading.
+//! Only this module knows which external crate supplies the catalog. Exports
+//! are explicit: renderer consumers use `crate::fonts`, never the dependency.
+//! Excalidraw selection policy remains independent of physical font storage.
 //! A loader is local to its caller's preparation scope. It caches physical
 //! decodes only: fallback probes, primary-face choices, and SVG font demand
 //! remain with the renderer and do not depend on cache hits.
@@ -6,8 +9,51 @@
 use std::collections::TryReserveError;
 use std::sync::Arc;
 
-use excalidraw_fonts::fonts::{Container, FaceId};
+pub(crate) use excalidraw_fonts::fonts::{Container, Face, FaceId, FamilyId};
+pub(crate) use excalidraw_fonts::{
+    font_subset_profile_digest_v1, is_cjk_scalar_v1, revision_1, FontNotice, FontSubsetTableAction,
+    FontSubsetTableRule, RevisionCatalog as BundledCatalog, FONT_SUBSET_TABLE_RULES_V1,
+};
 use excalidraw_fonts::{AssetIntegrityError, VerifiedAsset};
+
+// Qualification exercises exact source programs and manifests, rather than
+// renderer selection. Keep that inspection surface out of production callers.
+#[cfg(test)]
+pub(crate) mod inspection {
+    pub(crate) use excalidraw_fonts::{
+        find_asset, font_face_order, font_face_unicode_ranges, load_asset, load_noto_emoji_sfnt,
+        AssetIntegrityError, AssetRecord, FontLicense, VerifiedAsset, CJK_SCALAR_RANGES_V1,
+        NOTO_EMOJI_FAMILY, NOTO_EMOJI_IDENTITY,
+    };
+}
+
+pub(crate) fn find_face(upstream_path: &str) -> Option<&'static Face> {
+    excalidraw_fonts::fonts::find_face(upstream_path)
+}
+
+/// The reviewed Latin face used by the isolated nested-SVG viewer.
+pub(crate) fn excalifont_latin() -> Option<&'static Face> {
+    find_face(excalidraw_fonts::excalifont_basic_latin_sfnt_transformation().source_path)
+}
+
+/// Resolve manifested identities exactly; a matching path with a different
+/// digest is not the same face. Complete fallback programs have no chunk tag.
+pub(crate) fn official_chunk_digest(identity: &str) -> Option<&'static str> {
+    let (path, _) = identity.split_once("@sha256:")?;
+    let face = find_face(path)?;
+    (face.is_official_chunk() && face.identity() == identity).then(|| face.source_sha256())
+}
+
+pub(crate) fn font_notice(identity: &str) -> Option<&'static FontNotice> {
+    if identity == excalidraw_fonts::NOTO_EMOJI_IDENTITY {
+        return FamilyId::NotoEmoji.notice();
+    }
+    let (path, _) = identity.split_once("@sha256:")?;
+    let face = find_face(path)?;
+    (face.identity() == identity)
+        .then(|| face.family().notice())
+        .flatten()
+}
 
 #[derive(Debug)]
 pub(crate) enum FontError {

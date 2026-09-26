@@ -1,9 +1,8 @@
 use super::font_subset;
+use crate::fonts::{Container, Face, FamilyId, FontNotice};
 use crate::resource_accounting::{
     ResourceAccount, ResourceContext, ResourceDelta, ResourcePhase, ResourceRecordKind,
 };
-use excalidraw_fonts::fonts::{Container, Face, FamilyId};
-use excalidraw_fonts::FontNotice;
 use sha2::{Digest, Sha256};
 use std::collections::{hash_map::DefaultHasher, HashSet, TryReserveError};
 use std::hash::BuildHasherDefault;
@@ -74,10 +73,9 @@ const MAX_FAMILY_SOURCES: usize = 230;
 
 impl SubsetSource {
     #[cfg(test)]
-    pub(super) fn chunk(record: &'static excalidraw_fonts::AssetRecord) -> Self {
+    pub(super) fn chunk(record: &'static crate::fonts::inspection::AssetRecord) -> Self {
         Self {
-            face: excalidraw_fonts::fonts::find_face(record.upstream_path)
-                .expect("catalog chunk has a face"),
+            face: crate::fonts::find_face(record.upstream_path).expect("catalog chunk has a face"),
         }
     }
 
@@ -148,8 +146,10 @@ impl SubsetSource {
     #[cfg(test)]
     pub(super) fn load(
         self,
-    ) -> Result<Option<excalidraw_fonts::VerifiedAsset>, excalidraw_fonts::AssetIntegrityError>
-    {
+    ) -> Result<
+        Option<crate::fonts::inspection::VerifiedAsset>,
+        crate::fonts::inspection::AssetIntegrityError,
+    > {
         crate::fonts::load_source(self.face.id()).map(Some)
     }
 }
@@ -935,7 +935,7 @@ pub(super) fn subset_notice(
 ) -> Result<SubsetNotice, BuildError> {
     let provenance = family_notice(source, family)?;
     let output_digest = format!("{:x}", Sha256::digest(derived.woff2.as_ref()));
-    let profile_digest = encode_hex_32(&excalidraw_fonts::font_subset_profile_digest_v1());
+    let profile_digest = encode_hex_32(&crate::fonts::font_subset_profile_digest_v1());
     Ok(SubsetNotice {
         provenance,
         resource_identity: format!("svg-font-subset@sha256:{semantic_identity}"),
@@ -971,7 +971,7 @@ fn family_notice(
 /// as the qualification corpus and the fuzz regressions name it.
 #[cfg(test)]
 pub(super) fn semantic_identity(
-    record: &'static excalidraw_fonts::AssetRecord,
+    record: &'static crate::fonts::inspection::AssetRecord,
     scalars: &[u32],
 ) -> Option<String> {
     source_semantic_identity(SubsetSource::chunk(record), scalars)
@@ -981,7 +981,7 @@ pub(super) fn semantic_identity(
 /// preimage over the source's catalog identity and complete-bytes digest,
 /// which for the Noto Emoji fallback are its manifested path and sfnt digest.
 pub(super) fn source_semantic_identity(source: SubsetSource, scalars: &[u32]) -> Option<String> {
-    let profile_digest = excalidraw_fonts::font_subset_profile_digest_v1();
+    let profile_digest = crate::fonts::font_subset_profile_digest_v1();
     let source_digest = decode_hex_32(source.complete_sha256())?;
     let identity = source.identity();
     let mut hasher = Sha256::new();
@@ -1040,7 +1040,7 @@ mod optional_font_tests {
             panic!("expected unavailable font, got {error:?}");
         };
         assert_eq!(font.resolved_family, "Xiaolai");
-        assert!(excalidraw_fonts::revision_1()
+        assert!(crate::fonts::revision_1()
             .assets
             .iter()
             .any(|record| record.identity == font.asset_identity && !record.is_available()));

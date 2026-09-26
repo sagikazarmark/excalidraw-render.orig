@@ -2274,10 +2274,8 @@ fn escape_attribute(output: &mut String, value: &str) {
 }
 
 pub(super) fn viewer_options() -> Result<usvg::Options<'static>, ResolveError> {
-    use excalidraw_fonts::fonts::{find_face, FamilyId};
-    let latin =
-        find_face(excalidraw_fonts::excalifont_basic_latin_sfnt_transformation().source_path)
-            .ok_or(ResolveError::SvgDecodeFailed)?;
+    use crate::fonts::{excalifont_latin, FamilyId};
+    let latin = excalifont_latin().ok_or(ResolveError::SvgDecodeFailed)?;
     let excalifont =
         crate::fonts::load_sfnt(latin.id()).map_err(|_| ResolveError::SvgDecodeFailed)?;
     let liberation_sans = crate::fonts::load_sfnt(FamilyId::Liberation.faces()[0].id())

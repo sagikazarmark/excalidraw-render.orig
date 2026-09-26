@@ -9,8 +9,6 @@
 
 use std::fmt::Write as _;
 
-use excalidraw_fonts::AssetRecord;
-
 use super::super::text::{ResolvedGlyph, ResolvedLabel};
 use super::super::FormatEncodeError;
 use super::streams::deflate_stream;
@@ -39,7 +37,7 @@ pub(super) fn embedded_font_name(
     identity: &str,
     pdf_name: &str,
 ) -> Result<String, FormatEncodeError> {
-    let Some(record) = official_chunk_record(identity) else {
+    let Some(digest) = crate::fonts::official_chunk_digest(identity) else {
         return Ok(pdf_name.to_owned());
     };
     let mut name = String::new();
@@ -48,7 +46,7 @@ pub(super) fn embedded_font_name(
             subject_kind: "format_workspace",
             subject: "pdf_font_name",
         })?;
-    for nibble in record.complete_sha256.bytes().take(6) {
+    for nibble in digest.bytes().take(6) {
         let value = (nibble as char).to_digit(16).ok_or_else(|| {
             FormatEncodeError::Encoding("official font chunk digest is not hexadecimal".to_owned())
         })?;
@@ -62,14 +60,6 @@ pub(super) fn embedded_font_name(
     name.push('+');
     name.push_str(pdf_name);
     Ok(name)
-}
-
-/// The catalog record of the official font chunk `identity` names
-/// (`<upstream path>@sha256:<manifested digest>`), or `None` for a face the
-/// catalog does not list as a chunk.
-fn official_chunk_record(identity: &str) -> Option<&'static AssetRecord> {
-    let (upstream_path, _) = identity.split_once("@sha256:")?;
-    excalidraw_fonts::find_asset(upstream_path).filter(|record| record.identity == identity)
 }
 
 impl PdfPlan {
@@ -403,7 +393,7 @@ mod tests {
             .expect("tag derives"),
             "AAGKCL+LiberationSans"
         );
-        let excalifont = excalidraw_fonts::find_asset(
+        let excalifont = crate::fonts::inspection::find_asset(
             "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
         )
         .expect("the Excalifont basic-Latin chunk is catalogued");
@@ -432,6 +422,6 @@ mod tests {
             "fonts/Liberation/LiberationSans-Regular.woff2@sha256:",
             "0000000000000000000000000000000000000000000000000000000000000000"
         );
-        assert!(official_chunk_record(identity).is_none());
+        assert!(crate::fonts::official_chunk_digest(identity).is_none());
     }
 }

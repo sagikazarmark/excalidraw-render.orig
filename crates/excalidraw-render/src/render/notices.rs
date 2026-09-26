@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use excalidraw_fonts::FontNotice;
+use crate::fonts::FontNotice;
 
 #[derive(Debug)]
 pub(super) struct MandatoryNotices(String);

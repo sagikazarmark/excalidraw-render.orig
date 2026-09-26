@@ -130,8 +130,15 @@ container format, and availability. Noto Emoji is a complete sfnt face; official
 fonts are WOFF2 chunks. Metadata remains enumerable with CJK payloads disabled.
 
 `crates/excalidraw-render/src/fonts.rs` owns verified source-program loading and
-a preparation-local `FontLoader`. Its independent source and decoded caches each
-retain at most 16 MiB, evict in insertion order, and bypass larger entries.
+a preparation-local `FontLoader`. It is also the renderer crate's sole interface
+to the external font package: production and unit-test modules import through
+`crate::fonts`. Explicit crate-private exports provide font metadata and subset
+policy; `fonts::inspection` exposes raw catalog inspection only for tests and
+qualification. Identity-based notice and PDF chunk-digest lookup live behind
+this interface as well.
+
+Its independent source and decoded caches each retain at most 16 MiB, evict in
+insertion order, and bypass larger entries.
 `load_sfnt` accepts only the exact reviewed program, using the checked-in
 Excalifont Latin decode where available. SVG uses verified original containers
 through its own session loader and retains the qualified subsetter's decode path.

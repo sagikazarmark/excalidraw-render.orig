@@ -47,7 +47,7 @@ mod optional_font_tests {
             panic!("expected unavailable font details: {error:?}");
         };
         assert_eq!(resolved_family, "Xiaolai");
-        let record = excalidraw_fonts::revision_1()
+        let record = crate::fonts::revision_1()
             .assets
             .iter()
             .find(|record| record.identity == asset_identity)
@@ -75,12 +75,12 @@ mod optional_font_tests {
         // face declares it. The trigger alone must not cause a capability failure.
         let text = "\u{20000}";
         assert!(text::CjkSubsetTrigger::evaluate([text]).selects_xiaolai());
-        assert!(excalidraw_fonts::revision_1()
+        assert!(crate::fonts::revision_1()
             .assets
             .iter()
             .filter(|record| record.family == "Xiaolai")
             .all(|record| {
-                excalidraw_fonts::font_face_unicode_ranges("Xiaolai", record.upstream_path)
+                crate::fonts::inspection::font_face_unicode_ranges("Xiaolai", record.upstream_path)
                     .unwrap()
                     .iter()
                     .all(|(start, end)| !(*start..=*end).contains(&0x20000))
@@ -247,19 +247,19 @@ fn full_intersection_svg_font_subset_does_not_grow_against_complete_chunk_contro
     assert!(!control_svg.contains("svg-font-subset@sha256:"));
     assert!(candidate.artifact().bytes().len() <= control.artifact().bytes().len());
 
-    let mut expected_records = excalidraw_fonts::revision_1()
+    let mut expected_records = crate::fonts::revision_1()
         .assets
         .iter()
         .filter(|record| record.family == "Excalifont")
         .collect::<Vec<_>>();
     expected_records.sort_unstable_by_key(|record| {
-        excalidraw_fonts::font_face_order("Excalifont", record.upstream_path)
+        crate::fonts::inspection::font_face_order("Excalifont", record.upstream_path)
             .expect("Excalifont chunk has a pinned order")
     });
     let expected = expected_records
         .into_iter()
         .map(|record| {
-            excalidraw_fonts::load_asset(record.upstream_path)
+            crate::fonts::inspection::load_asset(record.upstream_path)
                 .expect("official Excalifont chunk is readable")
                 .expect("official Excalifont chunk is present")
                 .bytes()
@@ -2634,12 +2634,12 @@ fn bundled_faces_carry_their_families_metadata_metrics_and_only_helvetica_differ
         other => panic!("unexpected bundled font family {other}"),
     };
     let mut checked = 0_usize;
-    for record in excalidraw_fonts::revision_1()
+    for record in crate::fonts::revision_1()
         .assets
         .iter()
         .filter(|record| record.role == "official-rendering-font")
     {
-        let asset = excalidraw_fonts::load_asset(record.upstream_path)
+        let asset = crate::fonts::inspection::load_asset(record.upstream_path)
             .expect("bundled font is intact")
             .expect("bundled font is present");
         let sfnt = wuff::decompress_woff2(asset.bytes()).expect("bundled font decodes");
