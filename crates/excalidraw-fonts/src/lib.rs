@@ -248,13 +248,12 @@ pub struct IncorporatedArtifact {
     pub bytes: &'static [u8],
 }
 
-/// One ordered byte segment of a built-in asset.
+/// Historical packing coordinates retained for frozen catalog provenance.
+/// Runtime loading uses the asset's individual embedded file instead.
 #[derive(Clone, Copy, Debug)]
 pub struct AssetSegment {
     pub identity: &'static str,
     pub shard: &'static str,
-    /// The physical payload, or `None` when its bundling feature is disabled.
-    pub bytes: Option<&'static [u8]>,
     pub offset: usize,
     pub length: usize,
     pub sha256: &'static str,
@@ -285,13 +284,15 @@ pub struct AssetRecord {
     pub reserved_font_names: &'static [&'static str],
     pub role: &'static str,
     pub output_formats: &'static [&'static str],
+    /// The complete original file, absent only when its bundling feature is disabled.
+    pub bytes: Option<&'static [u8]>,
     pub segments: &'static [AssetSegment],
 }
 
 impl AssetRecord {
-    /// Whether all payload segments are bundled. This does not verify integrity.
+    /// Whether the font file is bundled. This does not verify integrity.
     pub fn is_available(&self) -> bool {
-        self.segments.iter().all(|segment| segment.bytes.is_some())
+        self.bytes.is_some()
     }
 }
 
@@ -404,10 +405,11 @@ impl RevisionCatalog {
     }
 }
 
-/// Bytes returned only after segment and complete-file digest verification.
+/// Bytes returned only after complete-file digest verification. Embedded files
+/// are borrowed; reviewed runtime decodes own their bytes.
 #[derive(Debug)]
 pub struct VerifiedAsset {
-    bytes: Vec<u8>,
+    bytes: std::borrow::Cow<'static, [u8]>,
 }
 
 /// Auditable transformation metadata for one checked-in predecoded font.
@@ -433,7 +435,7 @@ impl VerifiedAsset {
 
     /// Consumes the verification, yielding the verified bytes.
     pub fn into_bytes(self) -> Vec<u8> {
-        self.bytes
+        self.bytes.into_owned()
     }
 }
 
@@ -444,12 +446,10 @@ pub struct AssetIntegrityError {
     stage: IntegrityStage,
 }
 
-/// Which digest of an asset failed to verify: one stored segment, the
-/// reassembled complete bytes, or the decode measured against the reviewed one.
+/// Whether the complete file or its reviewed decode failed verification.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum IntegrityStage {
     Unavailable,
-    Segment(&'static str),
     Complete,
     ReviewedDecode,
 }
@@ -465,11 +465,10 @@ impl AssetIntegrityError {
         self.asset_identity
     }
 
-    /// Returns the affected segment identity, or `None` for unavailable bytes,
-    /// a complete-digest failure, or a reviewed-decode failure.
+    /// Historical compatibility accessor. Individual files have no failing
+    /// segment identity; use `asset_identity` to identify the font.
     pub const fn segment_identity(&self) -> Option<&'static str> {
         match self.stage {
-            IntegrityStage::Segment(segment) => Some(segment),
             IntegrityStage::Unavailable
             | IntegrityStage::Complete
             | IntegrityStage::ReviewedDecode => None,
@@ -483,11 +482,6 @@ impl fmt::Display for AssetIntegrityError {
             IntegrityStage::Unavailable => write!(
                 formatter,
                 "asset {} is unavailable in this build",
-                self.asset_identity
-            ),
-            IntegrityStage::Segment(segment) => write!(
-                formatter,
-                "asset {} has invalid segment {segment}",
                 self.asset_identity
             ),
             IntegrityStage::Complete => write!(
@@ -553,7 +547,9 @@ pub fn verify_reviewed_decode(
             stage: IntegrityStage::ReviewedDecode,
         });
     }
-    Ok(VerifiedAsset { bytes: decoded })
+    Ok(VerifiedAsset {
+        bytes: decoded.into(),
+    })
 }
 
 const EXCALIFONT_BASIC_LATIN_SFNT_IDENTITY: &str = concat!(
@@ -576,7 +572,7 @@ pub fn load_excalifont_basic_latin_sfnt() -> Result<VerifiedAsset, AssetIntegrit
         });
     }
     Ok(VerifiedAsset {
-        bytes: EXCALIFONT_BASIC_LATIN_SFNT.to_vec(),
+        bytes: std::borrow::Cow::Borrowed(EXCALIFONT_BASIC_LATIN_SFNT),
     })
 }
 
@@ -606,7 +602,7 @@ pub fn load_noto_emoji_sfnt() -> Result<VerifiedAsset, AssetIntegrityError> {
         });
     }
     Ok(VerifiedAsset {
-        bytes: NOTO_EMOJI_SFNT.to_vec(),
+        bytes: std::borrow::Cow::Borrowed(NOTO_EMOJI_SFNT),
     })
 }
 
@@ -877,49 +873,39 @@ pub const fn license_bundle() -> &'static str {
 }
 
 fn verify_asset(asset: &'static AssetRecord) -> Result<VerifiedAsset, AssetIntegrityError> {
-    if !asset.is_available() {
-        return Err(AssetIntegrityError {
-            asset_identity: asset.identity,
-            stage: IntegrityStage::Unavailable,
-        });
-    }
-    let mut complete = Vec::with_capacity(asset.complete_length);
-    for (expected_order, segment) in asset.segments.iter().enumerate() {
-        let end = segment
-            .offset
-            .checked_add(segment.length)
-            .ok_or(AssetIntegrityError {
-                asset_identity: asset.identity,
-                stage: IntegrityStage::Segment(segment.identity),
-            })?;
-        let bytes = segment
-            .bytes
-            .ok_or(AssetIntegrityError {
-                asset_identity: asset.identity,
-                stage: IntegrityStage::Unavailable,
-            })?
-            .get(segment.offset..end)
-            .ok_or(AssetIntegrityError {
-                asset_identity: asset.identity,
-                stage: IntegrityStage::Segment(segment.identity),
-            })?;
-        if segment.order != expected_order || sha256(bytes) != segment.sha256 {
-            return Err(AssetIntegrityError {
-                asset_identity: asset.identity,
-                stage: IntegrityStage::Segment(segment.identity),
-            });
-        }
-        complete.extend_from_slice(bytes);
-    }
-    if complete.len() != asset.complete_length || sha256(&complete) != asset.complete_sha256 {
+    let bytes = asset.bytes.ok_or(AssetIntegrityError {
+        asset_identity: asset.identity,
+        stage: IntegrityStage::Unavailable,
+    })?;
+    if bytes.len() != asset.complete_length || sha256(bytes) != asset.complete_sha256 {
         return Err(AssetIntegrityError {
             asset_identity: asset.identity,
             stage: IntegrityStage::Complete,
         });
     }
-    Ok(VerifiedAsset { bytes: complete })
+    Ok(VerifiedAsset {
+        bytes: std::borrow::Cow::Borrowed(bytes),
+    })
 }
 
 fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+
+#[cfg(test)]
+mod source_file_tests {
+    use super::*;
+
+    #[test]
+    fn complete_file_verification_rejects_corruption_and_ignores_historical_offsets() {
+        let mut record = ASSETS[0];
+        record.segments = &[];
+        let verified = verify_asset(Box::leak(Box::new(record))).unwrap();
+        assert!(std::ptr::eq(verified.bytes(), record.bytes.unwrap()));
+
+        record.bytes = Some(b"not a WOFF2 file");
+        let error = verify_asset(Box::leak(Box::new(record))).unwrap_err();
+        assert_eq!(error.asset_identity(), record.identity);
+        assert_eq!(error.stage, IntegrityStage::Complete);
+    }
 }

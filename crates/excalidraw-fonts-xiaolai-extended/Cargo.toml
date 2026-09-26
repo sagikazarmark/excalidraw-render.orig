@@ -6,7 +6,7 @@ rust-version.workspace = true
 description = "Pinned Excalidraw Xiaolai fonts for extended CJK Unicode blocks"
 license-file = "LICENSE-BUNDLE.txt"
 repository.workspace = true
-include = ["/src/", "/data/fonts.bin", "/LICENSE-BUNDLE.txt"]
+include = ["/src/", "/fonts/", "/LICENSE-BUNDLE.txt"]
 
 [lints]
 workspace = true

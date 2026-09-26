@@ -101,7 +101,7 @@ is offline and read-only:
 cargo run --locked -p xtask -- catalog verify
 ```
 
-Maintainers can reproduce the checked asset shards from an explicit local
+Maintainers can reproduce the checked font files from an explicit local
 `@excalidraw/excalidraw` `dist/prod` directory. The importer verifies every
 source byte against the approved reference asset manifest and never downloads
 or generates production data during a build:
@@ -121,6 +121,15 @@ cargo run --locked -p xtask -- catalog verify
 ```
 
 ## Font catalog and loading
+
+Original WOFF2 files live under each font crate's `fonts/<family>/` directory.
+The generated Rust embeds each file with `include_bytes!`; there is no packed
+font blob or runtime segment reconstruction. The optional Xiaolai crates expose
+generated file indexes, while the base crate embeds its fonts directly.
+`catalog verify` checks exact source bytes, file inventory, package membership,
+and generated indexes. The frozen JSON catalog retains historical segment
+coordinates as provenance so its identity and downstream evidence stay stable;
+runtime loading does not use those coordinates.
 
 `excalidraw-fonts::fonts` presents the bundled fonts as typed `FamilyId`s and
 opaque `FaceId`s. `FamilyId::faces()` returns an immutable slice in upstream

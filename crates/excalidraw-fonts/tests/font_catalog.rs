@@ -52,6 +52,12 @@ fn font_source_loading_preserves_manifested_bytes_and_optional_payloads() {
     for face in FamilyId::ALL.into_iter().flat_map(FamilyId::faces) {
         if face.is_available() {
             let source = face.load_source().unwrap();
+            if let Some(record) = revision_1().asset(face.identity()) {
+                assert!(
+                    std::ptr::eq(source.bytes(), record.bytes.unwrap()),
+                    "verified source borrows the individual embedded file"
+                );
+            }
             assert_eq!(source.bytes().len(), face.source_length());
             assert_eq!(
                 format!("{:x}", Sha256::digest(source.bytes())),

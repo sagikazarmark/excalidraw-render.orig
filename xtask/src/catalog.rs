@@ -24,10 +24,10 @@ const SCENE_SURFACE_EVIDENCE_DIGEST: &str =
     "29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb";
 /// Three physical payloads: small official fonts, common Xiaolai, extended
 /// Xiaolai. Whole chunks retain upstream declaration order within each group.
-const SHARD_PATHS: [&str; 3] = [
-    "crates/excalidraw-fonts/data/revision-1-000.bin",
-    "crates/excalidraw-fonts-xiaolai/data/fonts.bin",
-    "crates/excalidraw-fonts-xiaolai-extended/data/fonts.bin",
+const FONT_PACKAGES: [&str; 3] = [
+    "crates/excalidraw-fonts",
+    "crates/excalidraw-fonts-xiaolai",
+    "crates/excalidraw-fonts-xiaolai-extended",
 ];
 const SHARD_LENGTHS: [usize; 3] = [358_432, 9_596_296, 3_071_196];
 const CATALOG_SCHEMA: &str = "excalidraw-render/revision-catalog/v1";
@@ -553,19 +553,20 @@ pub fn import(source_root: &str) -> Result<(), String> {
     let reviewed_decodes = materialize_reviewed_decodes(&root, &assets)?;
     materialize_predecoded_excalifont(&root, &assets)?;
 
-    let shards = partition(&mut assets)?;
+    assign_layout(&mut assets)?;
 
     let base = root.join("crates/excalidraw-fonts");
     materialize_incorporated_artifacts(&root, &base)?;
 
-    for (index, bytes) in shards.iter().enumerate() {
-        let data_path = root.join(SHARD_PATHS[index]);
+    for asset in &assets {
+        let data_path = root.join(FONT_PACKAGES[asset.shard]).join(&asset.path);
         if let Some(parent) = data_path.parent() {
             fs::create_dir_all(parent)
                 .map_err(|error| format!("failed to create {}: {error}", parent.display()))?;
         }
-        write_if_changed(&data_path, bytes)?;
+        write_if_changed(&data_path, &asset.bytes)?;
     }
+    materialize_payload_indexes(&root, &assets)?;
 
     let scene_surface = read_canonical_json(
         &root.join("tests/oracle/scene-surfaces/revision-1.json"),
@@ -624,8 +625,8 @@ pub fn materialize() -> Result<(), String> {
         &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
         "reference asset manifest",
     )?;
-    let mut assets = expected_assets(&reference_assets)?;
-    load_shard_bytes(&root, &mut assets)?;
+    let assets = expected_assets(&reference_assets)?;
+    materialize_payload_indexes(&root, &assets)?;
     let reviewed_decodes = materialize_reviewed_decodes(&root, &assets)?;
     let catalog = build_catalog(&assets, &scene_surface, &reviewed_decodes)?;
     let catalog_bytes = serde_json::to_vec(&catalog)
@@ -875,6 +876,18 @@ pub fn verify() -> Result<(), String> {
     let expected_catalog = expected_catalog(&reference_assets, &scene_surface, &reviewed_decodes)?;
     if catalog != expected_catalog {
         return Err("revision catalog differs from its authoritative materialization".to_owned());
+    }
+    let imported = expected_assets(&reference_assets)?;
+    for (ordinal, package) in FONT_PACKAGES.iter().enumerate().skip(1) {
+        let path = root.join(package).join("src/generated.rs");
+        if fs::read_to_string(&path).map_err(|error| error.to_string())?
+            != payload_index(&imported, ordinal)
+        {
+            return Err(format!(
+                "generated font file index is stale: {}",
+                path.display()
+            ));
+        }
     }
     let excalifont_source = sources
         .get(EXCALIFONT_BASIC_LATIN_PATH)
@@ -1380,27 +1393,17 @@ fn reviewed_decode_index(record: &Value) -> Result<BTreeMap<&str, (usize, &str)>
 }
 
 /// The 230 official assets as the authoritative reference manifest lists them,
-/// in catalog order with the shard layout `partition` gives their bytes.
-/// Read whole WOFF2 containers by their own length headers, so regenerating the
-/// layout does not depend on a previously generated catalog or its offsets.
+/// in catalog order. Files are read directly; historical segment coordinates
+/// remain reproducible provenance and never participate in loading.
 fn expected_assets(reference_assets: &Value) -> Result<Vec<ImportedAsset>, String> {
     let root = crate::conformance::repo_root();
     let mut sources = BTreeMap::new();
-    for ordinal in 0..SHARD_PATHS.len() {
-        let bytes = read_shard(&root, &format!("revision-1-{ordinal:03}"))?;
-        let mut remaining = bytes.as_slice();
-        while !remaining.is_empty() {
-            let length = remaining
-                .get(..12)
-                .filter(|header| &header[..4] == b"wOF2")
-                .map(|header| u32::from_be_bytes(header[8..12].try_into().unwrap()) as usize)
-                .filter(|length| *length >= 48 && *length <= remaining.len())
-                .ok_or("invalid whole WOFF2 container in font payload")?;
-            let (source, rest) = remaining.split_at(length);
-            if sources.insert(sha256(source), source.to_vec()).is_some() {
-                return Err("duplicate source in font payloads".to_owned());
+    for package in FONT_PACKAGES {
+        for path in font_files(&root.join(package).join("fonts"))? {
+            let bytes = fs::read(&path).map_err(|error| error.to_string())?;
+            if sources.insert(sha256(&bytes), bytes).is_some() {
+                return Err("duplicate source in font packages".to_owned());
             }
-            remaining = rest;
         }
     }
     let manifest_assets = array_at(
@@ -1436,61 +1439,59 @@ fn expected_assets(reference_assets: &Value) -> Result<Vec<ImportedAsset>, Strin
         .collect::<Result<Vec<_>, String>>()?;
     assets.sort_by(|left, right| left.path.cmp(&right.path));
     if !sources.is_empty() {
-        return Err("unmanifested sources in font payloads".to_owned());
+        return Err("unmanifested sources in font packages".to_owned());
     }
     assign_layout(&mut assets)?;
     Ok(assets)
 }
 
-/// Reads one checked-in raw asset shard by its identity (`revision-1-NNN`),
-/// refusing a shard above the raw limit before anything is sliced out of it.
-fn read_shard(root: &Path, shard: &str) -> Result<Vec<u8>, String> {
-    let ordinal = shard
-        .strip_prefix("revision-1-")
-        .and_then(|suffix| suffix.parse::<usize>().ok())
-        .ok_or_else(|| format!("unknown shard identity {shard}"))?;
-    let shard_path = root.join(
-        SHARD_PATHS
-            .get(ordinal)
-            .ok_or_else(|| format!("unknown shard identity {shard}"))?,
-    );
-    let bytes = fs::read(&shard_path)
-        .map_err(|error| format!("failed to read {}: {error}", shard_path.display()))?;
-    let limit = if ordinal == 1 {
-        excalidraw_fonts::XIAOLAI_RAW_SHARD_LIMIT
-    } else {
-        excalidraw_fonts::RAW_SHARD_LIMIT
-    };
-    if bytes.len() > limit || bytes.len() != SHARD_LENGTHS[ordinal] {
-        return Err(format!("asset shard {shard} has an invalid payload length"));
+fn font_files(directory: &Path) -> Result<Vec<PathBuf>, String> {
+    let mut files = Vec::new();
+    for entry in
+        fs::read_dir(directory).map_err(|error| format!("{}: {error}", directory.display()))?
+    {
+        let entry = entry.map_err(|error| error.to_string())?;
+        let kind = entry.file_type().map_err(|error| error.to_string())?;
+        if kind.is_dir() {
+            files.extend(font_files(&entry.path())?);
+        } else if kind.is_file() && entry.path().extension().is_some_and(|ext| ext == "woff2") {
+            files.push(entry.path());
+        } else {
+            return Err(format!(
+                "unexpected font package entry: {}",
+                entry.path().display()
+            ));
+        }
     }
-    Ok(bytes)
+    files.sort();
+    Ok(files)
 }
 
-/// Fills each asset's bytes from the checked-in shard its layout names,
-/// accepting them only when they carry the manifested digest.
-fn load_shard_bytes(root: &Path, assets: &mut [ImportedAsset]) -> Result<(), String> {
-    let mut shards = BTreeMap::<String, Vec<u8>>::new();
-    for asset in assets {
-        let shard = format!("revision-1-{:03}", asset.shard);
-        let bytes = match shards.entry(shard) {
-            std::collections::btree_map::Entry::Occupied(entry) => entry.into_mut(),
-            std::collections::btree_map::Entry::Vacant(entry) => {
-                let bytes = read_shard(root, entry.key())?;
-                entry.insert(bytes)
-            }
-        };
-        let end = asset
-            .offset
-            .checked_add(asset.length)
-            .ok_or_else(|| format!("asset {} overflows its shard", asset.path))?;
-        let bytes = bytes
-            .get(asset.offset..end)
-            .ok_or_else(|| format!("asset {} lies outside its shard", asset.path))?;
-        if sha256(bytes) != asset.digest {
-            return Err(format!("checked-in shard bytes differ for {}", asset.path));
-        }
-        asset.bytes = bytes.to_vec();
+fn payload_index(assets: &[ImportedAsset], ordinal: usize) -> String {
+    let mut output = String::from("// Generated by `xtask catalog materialize`; do not edit.\n#[rustfmt::skip]\npub static FILES: &[&[u8]] = &[\n");
+    for asset in assets.iter().filter(|asset| asset.shard == ordinal) {
+        output.push_str(&format!("    include_bytes!(\"../{}\"),\n", asset.path));
+    }
+    output.push_str("];\n");
+    output
+}
+
+/// Map frozen provenance to today's package, without interpreting byte offsets.
+fn font_package_group(asset: &Value) -> Result<usize, String> {
+    asset["segments"][0]["shard"]
+        .as_str()
+        .and_then(|shard| shard.strip_prefix("revision-1-"))
+        .and_then(|ordinal| ordinal.parse::<usize>().ok())
+        .filter(|ordinal| *ordinal < FONT_PACKAGES.len())
+        .ok_or_else(|| "invalid historical font group".to_owned())
+}
+
+fn materialize_payload_indexes(root: &Path, assets: &[ImportedAsset]) -> Result<(), String> {
+    for (ordinal, package) in FONT_PACKAGES.iter().enumerate().skip(1) {
+        write_if_changed(
+            &root.join(package).join("src/generated.rs"),
+            payload_index(assets, ordinal).as_bytes(),
+        )?;
     }
     Ok(())
 }
@@ -1507,19 +1508,8 @@ fn expected_catalog(
     )
 }
 
-fn partition(assets: &mut [ImportedAsset]) -> Result<Vec<Vec<u8>>, String> {
-    assign_layout(assets)?;
-    let mut shards = SHARD_LENGTHS.map(|length| vec![0; length]).to_vec();
-    for asset in assets {
-        if asset.bytes.len() != asset.length {
-            return Err(format!("asset {} has incorrect source length", asset.path));
-        }
-        shards[asset.shard][asset.offset..asset.offset + asset.length]
-            .copy_from_slice(&asset.bytes);
-    }
-    Ok(shards)
-}
-
+// Preserve the frozen catalog's historical packing coordinates. They are
+// provenance only; file paths and per-package indexes locate actual bytes.
 fn assign_layout(assets: &mut [ImportedAsset]) -> Result<(), String> {
     let mut ordered = assets
         .iter_mut()
@@ -1680,12 +1670,11 @@ fn generate_rust(
     let mut output = String::from(
         "// Generated by `cargo run --locked -p xtask -- catalog import` or `catalog materialize`; do not edit.\n\n",
     );
-    output.push_str("const PAYLOAD_0: Option<&[u8]> = Some(include_bytes!(\"../../data/revision-1-000.bin\"));\n");
     for (ordinal, package) in [
         (1, "excalidraw_fonts_xiaolai"),
         (2, "excalidraw_fonts_xiaolai_extended"),
     ] {
-        output.push_str(&format!("#[cfg(feature = \"cjk\")]\nconst PAYLOAD_{ordinal}: Option<&[u8]> = Some({package}::BYTES);\n#[cfg(not(feature = \"cjk\"))]\nconst PAYLOAD_{ordinal}: Option<&[u8]> = None;\n"));
+        output.push_str(&format!("#[cfg(feature = \"cjk\")]\nconst fn payload_{ordinal}(index: usize) -> Option<&'static [u8]> {{ Some({package}::FILES[index]) }}\n#[cfg(not(feature = \"cjk\"))]\nconst fn payload_{ordinal}(_index: usize) -> Option<&'static [u8]> {{ None }}\n"));
     }
     output.push('\n');
     output.push_str("#[rustfmt::skip]\npub static ASSETS: [AssetRecord; 230] = [\n");
@@ -1693,6 +1682,7 @@ fn generate_rust(
         .as_array()
         .ok_or_else(|| "revision catalog assets must be an array".to_owned())?;
     let mut families = BTreeSet::new();
+    let mut file_indexes = [0; 3];
     for asset in assets {
         families.insert(string(asset, "family", "catalog asset")?);
         output.push_str("    AssetRecord {\n");
@@ -1758,18 +1748,22 @@ fn generate_rust(
                     .ok_or_else(|| "output formats must be strings".to_owned())?
             ));
         }
-        output.push_str("],\n        segments: &[\n");
+        let group = font_package_group(asset)?;
+        let path = string(asset, "upstreamPath", "catalog asset")?;
+        let bytes = if group == 0 {
+            format!("Some(include_bytes!(\"../../{path}\"))")
+        } else {
+            format!("payload_{group}({})", file_indexes[group])
+        };
+        file_indexes[group] += 1;
+        output.push_str(&format!(
+            "],\n        bytes: {bytes},\n        segments: &[\n"
+        ));
         for segment in asset["segments"]
             .as_array()
             .ok_or_else(|| "catalog asset segments must be an array".to_owned())?
         {
             let shard = string(segment, "shard", "catalog segment")?;
-            let ordinal = shard
-                .strip_prefix("revision-1-")
-                .and_then(|ordinal| ordinal.parse::<usize>().ok())
-                .filter(|ordinal| *ordinal < SHARD_PATHS.len())
-                .ok_or_else(|| format!("no data crate exists for shard {shard}"))?;
-            let shard_expr = format!("PAYLOAD_{ordinal}");
             output.push_str("            AssetSegment {\n");
             rust_field_indented(
                 &mut output,
@@ -1778,7 +1772,6 @@ fn generate_rust(
                 16,
             );
             rust_field_indented(&mut output, "shard", shard, 16);
-            output.push_str(&format!("                bytes: {shard_expr},\n"));
             for field in ["offset", "length", "order"] {
                 output.push_str(&format!(
                     "                {field}: {},\n",
@@ -2569,8 +2562,8 @@ fn verify_catalog_identity(catalog: &Value, scene_surface: &Value) -> Result<(),
     Ok(())
 }
 
-/// Verifies every catalog asset against the reference manifest and the shards,
-/// returning each reassembled source keyed by upstream path for the checks that
+/// Verifies every catalog asset against the reference manifest and font files,
+/// returning each complete source keyed by upstream path for the checks that
 /// need the bytes themselves.
 fn verify_assets(root: &Path, catalog: &Value) -> Result<BTreeMap<String, Vec<u8>>, String> {
     let reference = read_canonical_json(
@@ -2612,8 +2605,7 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<BTreeMap<String, Vec<u8
         .filter_map(|entry| entry["id"].as_str())
         .collect::<BTreeSet<_>>();
     let mut paths = BTreeSet::new();
-    let mut shard_cache = BTreeMap::<String, Vec<u8>>::new();
-    let mut extents = BTreeMap::<String, Vec<(usize, usize)>>::new();
+    let mut expected_files = BTreeSet::new();
     let mut sources = BTreeMap::new();
     for asset in assets {
         let path = string(asset, "upstreamPath", "catalog asset")?;
@@ -2632,61 +2624,24 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<BTreeMap<String, Vec<u8
         {
             return Err(format!("catalog metadata is stale for {path}"));
         }
-        let segments = asset["segments"]
-            .as_array()
-            .ok_or_else(|| format!("catalog asset {path} has no segments"))?;
-        let mut complete = Vec::new();
-        for (order, segment) in segments.iter().enumerate() {
-            if integer(segment, "order", "asset segment")? as usize != order {
-                return Err(format!("catalog asset {path} has unordered segments"));
-            }
-            let shard = string(segment, "shard", "asset segment")?;
-            let bytes = if let Some(bytes) = shard_cache.get(shard) {
-                bytes
-            } else {
-                shard_cache.insert(shard.to_owned(), read_shard(root, shard)?);
-                shard_cache.get(shard).unwrap()
-            };
-            let offset = integer(segment, "offset", "asset segment")? as usize;
-            let length = integer(segment, "length", "asset segment")? as usize;
-            let end = offset
-                .checked_add(length)
-                .ok_or_else(|| format!("asset segment overflows for {path}"))?;
-            extents
-                .entry(shard.to_owned())
-                .or_default()
-                .push((offset, end));
-            let segment_bytes = bytes
-                .get(offset..end)
-                .ok_or_else(|| format!("asset segment is outside shard for {path}"))?;
-            if sha256(segment_bytes) != string(segment, "sha256", "asset segment")? {
-                return Err(format!("asset segment digest mismatch for {path}"));
-            }
-            complete.extend_from_slice(segment_bytes);
-        }
+        let group = font_package_group(asset)?;
+        let file = root.join(FONT_PACKAGES[group]).join(path);
+        expected_files.insert(file.clone());
+        let complete = fs::read(&file).map_err(|error| format!("{}: {error}", file.display()))?;
         if complete.len() != *expected_length || sha256(&complete) != *expected_digest {
-            return Err(format!("reassembled asset digest mismatch for {path}"));
+            return Err(format!("font file digest mismatch for {path}"));
         }
         sources.insert(path.to_owned(), complete);
     }
     if paths != expected.keys().map(String::as_str).collect() {
         return Err("revision catalog asset inventory is incomplete".to_owned());
     }
-    for (shard, bytes) in &shard_cache {
-        let ranges = extents.get_mut(shard).unwrap();
-        ranges.sort_unstable();
-        let mut covered_end = 0;
-        for &(offset, end) in ranges.iter() {
-            if offset != covered_end {
-                return Err(format!("asset shard {shard} has a gap or overlap"));
-            }
-            covered_end = end;
-        }
-        if covered_end != bytes.len() {
-            return Err(format!(
-                "asset shard {shard} contains unmanifested or uncovered bytes"
-            ));
-        }
+    let mut actual_files = BTreeSet::new();
+    for package in FONT_PACKAGES {
+        actual_files.extend(font_files(&root.join(package).join("fonts"))?);
+    }
+    if actual_files != expected_files {
+        return Err("font packages contain missing or unmanifested files".into());
     }
     Ok(sources)
 }
@@ -3717,17 +3672,18 @@ mod tests {
             "reference assets",
         )
         .unwrap();
-        let mut assets = super::expected_assets(&reference).unwrap();
-        super::load_shard_bytes(&root, &mut assets).unwrap();
-        let shards = super::partition(&mut assets).unwrap();
-        assert_eq!(shards.len(), 3);
-        for (ordinal, bytes) in shards.iter().enumerate() {
-            assert_eq!(bytes.len(), super::SHARD_LENGTHS[ordinal]);
-            assert_eq!(
-                *bytes,
-                super::read_shard(&root, &format!("revision-1-{ordinal:03}")).unwrap()
-            );
+        let assets = super::expected_assets(&reference).unwrap();
+        let mut lengths = [0; 3];
+        for asset in assets {
+            let bytes = std::fs::read(
+                root.join(super::FONT_PACKAGES[asset.shard])
+                    .join(&asset.path),
+            )
+            .unwrap();
+            assert_eq!(bytes, asset.bytes);
+            lengths[asset.shard] += bytes.len();
         }
+        assert_eq!(lengths, super::SHARD_LENGTHS);
     }
 
     /// The bundle prints each family's attribution, license sentence and

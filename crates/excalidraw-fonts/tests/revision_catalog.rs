@@ -5,7 +5,7 @@ use excalidraw_fonts::{
     load_excalifont_basic_latin_sfnt, revision_1, verify_reviewed_decode, FontLicense,
     FontSubsetTableAction, CJK_SCALAR_COUNT_V1, CJK_SCALAR_RANGES_V1, CJK_SCALAR_TABLE_BYTES_V1,
     CJK_SCALAR_TABLE_SHA256_V1, FONT_SUBSET_PROFILE_SETTINGS_V1, FONT_SUBSET_TABLE_RULES_V1,
-    NOTO_EMOJI_FAMILY, NOTO_EMOJI_IDENTITY, RAW_SHARD_LIMIT, XIAOLAI_RAW_SHARD_LIMIT,
+    NOTO_EMOJI_FAMILY, NOTO_EMOJI_IDENTITY,
 };
 use sha2::{Digest, Sha256};
 
@@ -130,19 +130,17 @@ fn every_catalog_asset_reassembles_and_verifies_before_use() {
             excalidraw_fonts::font_face_decoded_length(asset.upstream_path)
                 .is_some_and(|length| length > 0)
         );
-        assert!(asset.segments.iter().all(|segment| {
-            let limit = if segment.shard == "revision-1-001" {
-                XIAOLAI_RAW_SHARD_LIMIT
-            } else {
-                RAW_SHARD_LIMIT
-            };
-            segment.bytes.unwrap().len() <= limit && segment.order < asset.segments.len()
-        }));
+        assert_eq!(asset.bytes.unwrap(), verified.bytes());
         for segment in asset.segments {
             shard_extents.entry(segment.shard).or_default().push((
                 segment.offset,
                 segment.offset + segment.length,
-                segment.bytes.unwrap().len(),
+                match segment.shard {
+                    "revision-1-000" => 358_432,
+                    "revision-1-001" => 9_596_296,
+                    "revision-1-002" => 3_071_196,
+                    other => panic!("unknown historical packing group: {other}"),
+                },
             ));
         }
     }

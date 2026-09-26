@@ -10,7 +10,7 @@ include = [
     "/src/",
     "/tests/",
     "/catalog/",
-    "/data/",
+    "/fonts/",
     "/license-parts/",
     "/LICENSE-BUNDLE.txt",
     "/LICENSE-BUNDLE.sha256",

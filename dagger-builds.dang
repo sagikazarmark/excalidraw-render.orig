@@ -54,9 +54,9 @@ type Builds {
     }
     if (!self.source.exists(".git")
       or !self.source.exists("tests/conformance/coverage/ownership.json")
-      or !self.compileSource.exists("crates/excalidraw-fonts/data/revision-1-000.bin")
-      or !self.compileSource.exists("crates/excalidraw-fonts-xiaolai/data/fonts.bin")
-      or !self.compileSource.exists("crates/excalidraw-fonts-xiaolai-extended/data/fonts.bin")
+      or !self.compileSource.exists("crates/excalidraw-fonts/fonts")
+      or !self.compileSource.exists("crates/excalidraw-fonts-xiaolai/fonts")
+      or !self.compileSource.exists("crates/excalidraw-fonts-xiaolai-extended/fonts")
       or !self.formatSource.exists("xtask/src/main.rs")) {
       raise "required source input is missing"
     }

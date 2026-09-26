@@ -2,5 +2,4 @@
 
 #![doc(hidden)]
 
-/// Immutable whole chunks in upstream face order (catalog shard revision-1-002).
-pub static BYTES: &[u8] = include_bytes!("../data/fonts.bin");
+include!("generated.rs");
