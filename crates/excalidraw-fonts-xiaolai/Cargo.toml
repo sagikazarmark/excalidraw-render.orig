@@ -1,12 +1,12 @@
 [package]
-name = "excalidraw-fonts-cjk-000"
+name = "excalidraw-fonts-xiaolai"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "Pinned Excalidraw Xiaolai font chunks 0–105"
+description = "Pinned Excalidraw Xiaolai fonts for common CJK Unicode blocks"
 license-file = "LICENSE-BUNDLE.txt"
 repository.workspace = true
-include = ["/src/", "/data/revision-1-000.bin", "/LICENSE-BUNDLE.txt"]
+include = ["/src/", "/data/fonts.bin", "/LICENSE-BUNDLE.txt"]
 
 [lints]
 workspace = true

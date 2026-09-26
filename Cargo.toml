@@ -2,8 +2,8 @@
 members = [
     "crates/excalidraw-render",
     "crates/excalidraw-fonts",
-    "crates/excalidraw-fonts-cjk-000",
-    "crates/excalidraw-fonts-cjk-001",
+    "crates/excalidraw-fonts-xiaolai",
+    "crates/excalidraw-fonts-xiaolai-extended",
     "crates/excalidraw-render-cli",
     "crates/excalidraw-render-compare",
     "xtask",
@@ -25,8 +25,8 @@ base64 = { version = "=0.22.1", default-features = false, features = ["alloc"] }
 clap = { version = "=4.5.41", features = ["derive"] }
 excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
 excalidraw-fonts = { path = "crates/excalidraw-fonts", version = "=0.1.0", default-features = false }
-excalidraw-fonts-cjk-000 = { path = "crates/excalidraw-fonts-cjk-000", version = "=0.1.0" }
-excalidraw-fonts-cjk-001 = { path = "crates/excalidraw-fonts-cjk-001", version = "=0.1.0" }
+excalidraw-fonts-xiaolai = { path = "crates/excalidraw-fonts-xiaolai", version = "=0.1.0" }
+excalidraw-fonts-xiaolai-extended = { path = "crates/excalidraw-fonts-xiaolai-extended", version = "=0.1.0" }
 csscolorparser = "=0.8.3"
 cssparser = "=0.37.0"
 cssparser-color = "=0.5.0"

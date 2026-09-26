@@ -82,9 +82,13 @@ font demand, including SVG font embedding; it does not reject every scene that
 contains CJK characters. The CLI retains the complete default bundle.
 
 `excalidraw-fonts` holds the catalog and non-Xiaolai fonts. Its default-enabled
-`cjk` feature includes `excalidraw-fonts-cjk-000` and `excalidraw-fonts-cjk-001`,
-two balanced storage shards of the original Xiaolai chunks. These are packaging
-boundaries, not language subsets. Cargo features are additive: another dependency
+`cjk` feature includes `excalidraw-fonts-xiaolai` (165 common-coverage chunks) and
+`excalidraw-fonts-xiaolai-extended` (44 extended-coverage chunks). The shared
+`excalidraw-fonts-` prefix identifies the package family; Xiaolai is the font.
+Chunks are grouped by their dominant Unicode block, preserving every original
+font file. Mixed chunks stay together, so these are approximate coverage groups,
+not Chinese/Japanese/Korean language subsets. `cjk` enables both packages together.
+Cargo features are additive: another dependency
 can enable CJK again. Disabling it removes the shards from the active build graph,
 not necessarily from the lockfile or a `cargo fetch` download.
 

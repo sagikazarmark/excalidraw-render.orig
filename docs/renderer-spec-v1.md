@@ -2023,14 +2023,22 @@ indexes, manifests, and notices are checked in. A repository-owned Rust `xtask`
 is the sole importer; `build.rs` never downloads or generates production assets.
 
 Asset shards SHOULD remain at or below 8 MiB raw and MUST produce `.crate`
-archives below 9.5 MB. Reassembly verifies the complete digest before parsing.
+archives below 9.5 MB (9,500,000 bytes). The common Xiaolai package is an explicit
+exception: its raw payload is at most 10,000,000 bytes and its `.crate` archive
+MUST be below 10,000,000 bytes, still below the registry's default 10 MiB limit.
+Reassembly verifies the complete digest before parsing.
 
 The published virtual workspace exposes only `excalidraw-render` as supported
 Rust API and `excalidraw-render-cli` as the native CLI. Doc-hidden unsupported
 `excalidraw-fonts` carries the complete catalog and non-Xiaolai font payloads;
-`excalidraw-fonts-cjk-000` and `excalidraw-fonts-cjk-001` carry Xiaolai chunks
-0–105 and 106–208 respectively, in pinned declaration order. The numbered
-packages are balanced storage shards, not language subsets. All packages use
+`excalidraw-fonts-xiaolai` carries 165 common-coverage Xiaolai chunks and
+`excalidraw-fonts-xiaolai-extended` carries 44 extended-coverage chunks. Whole
+chunks are classified by their dominant mapped Unicode block using the pinned
+`excalidraw-image` 1.0.0 grouping: Extension A, Compatibility Ideographs,
+Extension B+, and its Other bucket select the extended package. Each package
+retains upstream declaration order. These are approximate coverage groups, not
+language subsets; mixed chunks are never rewritten. The `cjk` feature enables
+both packages together. All packages use
 one lockstep semver and exact internal versions.
 Owned ports/assets publish first, then library, then CLI; partial publication
 requires a new version. Production git dependencies are forbidden.

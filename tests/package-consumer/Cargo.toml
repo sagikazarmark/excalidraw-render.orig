@@ -21,7 +21,7 @@ wasm-bindgen-test = "=0.3.76"
 
 [patch.crates-io]
 excalidraw-fonts = { path = "../../target/package/excalidraw-fonts-0.1.0" }
-excalidraw-fonts-cjk-000 = { path = "../../target/package/excalidraw-fonts-cjk-000-0.1.0" }
-excalidraw-fonts-cjk-001 = { path = "../../target/package/excalidraw-fonts-cjk-001-0.1.0" }
+excalidraw-fonts-xiaolai = { path = "../../target/package/excalidraw-fonts-xiaolai-0.1.0" }
+excalidraw-fonts-xiaolai-extended = { path = "../../target/package/excalidraw-fonts-xiaolai-extended-0.1.0" }
 
 [workspace]

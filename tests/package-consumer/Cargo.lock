@@ -356,17 +356,17 @@ dependencies = [
 name = "excalidraw-fonts"
 version = "0.1.0"
 dependencies = [
- "excalidraw-fonts-cjk-000",
- "excalidraw-fonts-cjk-001",
+ "excalidraw-fonts-xiaolai",
+ "excalidraw-fonts-xiaolai-extended",
  "sha2",
 ]
 
 [[package]]
-name = "excalidraw-fonts-cjk-000"
+name = "excalidraw-fonts-xiaolai"
 version = "0.1.0"
 
 [[package]]
-name = "excalidraw-fonts-cjk-001"
+name = "excalidraw-fonts-xiaolai-extended"
 version = "0.1.0"
 
 [[package]]

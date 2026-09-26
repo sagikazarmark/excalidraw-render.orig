@@ -5,7 +5,7 @@ use excalidraw_fonts::{
     load_excalifont_basic_latin_sfnt, revision_1, verify_reviewed_decode, FontLicense,
     FontSubsetTableAction, CJK_SCALAR_COUNT_V1, CJK_SCALAR_RANGES_V1, CJK_SCALAR_TABLE_BYTES_V1,
     CJK_SCALAR_TABLE_SHA256_V1, FONT_SUBSET_PROFILE_SETTINGS_V1, FONT_SUBSET_TABLE_RULES_V1,
-    NOTO_EMOJI_FAMILY, NOTO_EMOJI_IDENTITY, RAW_SHARD_LIMIT,
+    NOTO_EMOJI_FAMILY, NOTO_EMOJI_IDENTITY, RAW_SHARD_LIMIT, XIAOLAI_RAW_SHARD_LIMIT,
 };
 use sha2::{Digest, Sha256};
 
@@ -17,16 +17,11 @@ fn payloads_keep_whole_chunks_in_the_approved_family_and_declaration_order() {
         let segment = &asset.segments[0];
         assert_eq!(segment.length, asset.complete_length);
         assert_eq!(segment.sha256, asset.complete_sha256);
-        let expected = if asset.family == "Xiaolai" {
-            match excalidraw_fonts::font_face_order(asset.family, asset.upstream_path).unwrap() {
-                0..=105 => "revision-1-001",
-                106..=208 => "revision-1-002",
-                _ => panic!("unexpected Xiaolai chunk"),
-            }
+        if asset.family == "Xiaolai" {
+            assert!(matches!(segment.shard, "revision-1-001" | "revision-1-002"));
         } else {
-            "revision-1-000"
-        };
-        assert_eq!(segment.shard, expected);
+            assert_eq!(segment.shard, "revision-1-000");
+        }
         payloads
             .entry(segment.shard)
             .or_default()
@@ -36,7 +31,7 @@ fn payloads_keep_whole_chunks_in_the_approved_family_and_declaration_order() {
     for ((_, assets), (count, length)) in
         payloads
             .iter_mut()
-            .zip([(21, 358_432), (106, 6_338_736), (103, 6_328_756)])
+            .zip([(21, 358_432), (165, 9_596_296), (44, 3_071_196)])
     {
         assets.sort_by_key(|(offset, _)| *offset);
         assert_eq!(assets.len(), count);
@@ -51,9 +46,47 @@ fn payloads_keep_whole_chunks_in_the_approved_family_and_declaration_order() {
                 let order = |asset: &excalidraw_fonts::AssetRecord| {
                     excalidraw_fonts::font_face_order(asset.family, asset.upstream_path).unwrap()
                 };
-                assert_eq!(order(pair[0].1) + 1, order(pair[1].1));
+                assert!(order(pair[0].1) < order(pair[1].1));
             }
         }
+    }
+}
+
+#[test]
+fn xiaolai_groups_match_published_path_and_content_fingerprints() {
+    // Published excalidraw-image-fonts-cjk{,-extra} 1.0.0 fingerprints. This
+    // remains testable without CJK bytes; the available-byte test below binds
+    // the catalog source hashes to actual bytes when the feature is enabled.
+    for (shard, count, fingerprint) in [
+        (
+            "revision-1-001",
+            165,
+            "630cb497d7b7de4fea58a890b78a2de5ea0e74221d8b876156de4993698e24ad",
+        ),
+        (
+            "revision-1-002",
+            44,
+            "023c933b9a01e3b09cc6d8f58dbb7c9aaf6376086290338814ffa1e51c1a8a61",
+        ),
+    ] {
+        let mut lines = revision_1()
+            .assets
+            .iter()
+            .filter(|asset| asset.segments[0].shard == shard)
+            .map(|asset| {
+                format!(
+                    "{}:{}",
+                    asset.upstream_path.strip_prefix("fonts/").unwrap(),
+                    asset.complete_sha256
+                )
+            })
+            .collect::<Vec<_>>();
+        lines.sort();
+        assert_eq!(lines.len(), count);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(lines.join("\n"))),
+            fingerprint
+        );
     }
 }
 
@@ -98,7 +131,12 @@ fn every_catalog_asset_reassembles_and_verifies_before_use() {
                 .is_some_and(|length| length > 0)
         );
         assert!(asset.segments.iter().all(|segment| {
-            segment.bytes.unwrap().len() <= RAW_SHARD_LIMIT && segment.order < asset.segments.len()
+            let limit = if segment.shard == "revision-1-001" {
+                XIAOLAI_RAW_SHARD_LIMIT
+            } else {
+                RAW_SHARD_LIMIT
+            };
+            segment.bytes.unwrap().len() <= limit && segment.order < asset.segments.len()
         }));
         for segment in asset.segments {
             shard_extents.entry(segment.shard).or_default().push((

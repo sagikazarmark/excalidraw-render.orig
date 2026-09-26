@@ -68,8 +68,8 @@ pub fn producers() -> Result<Value> {
         "excalidraw-render",
         "excalidraw-render-cli",
         "excalidraw-fonts",
-        "excalidraw-fonts-cjk-000",
-        "excalidraw-fonts-cjk-001",
+        "excalidraw-fonts-xiaolai",
+        "excalidraw-fonts-xiaolai-extended",
     ] {
         tree(&repo_root().join("crates").join(name), &mut paths)?;
     }
@@ -106,6 +106,15 @@ pub(crate) fn historical_producers(record: &Value) -> Result<()> {
             "excalidraw-render-assets-base",
             "excalidraw-render-assets-data-000",
             "excalidraw-render-assets-data-001",
+        ]
+    } else if record.as_array().is_some_and(|rows| {
+        rows.iter()
+            .any(|r| r["path"] == "crates/excalidraw-fonts-xiaolai/Cargo.toml")
+    }) {
+        [
+            "excalidraw-fonts",
+            "excalidraw-fonts-xiaolai",
+            "excalidraw-fonts-xiaolai-extended",
         ]
     } else {
         [
@@ -504,7 +513,19 @@ mod tests {
     use super::*;
     #[test]
     fn historical_font_layouts_remain_complete_without_current_files() {
-        let mut old = producers().unwrap();
+        let current = producers().unwrap();
+        historical_producers(&current).unwrap();
+        let mut numbered = current.clone();
+        for row in numbered.as_array_mut().unwrap() {
+            let path = row["path"].as_str().unwrap().to_owned();
+            row["path"] = json!(path
+                .replace(
+                    "excalidraw-fonts-xiaolai-extended",
+                    "excalidraw-fonts-cjk-001"
+                )
+                .replace("excalidraw-fonts-xiaolai", "excalidraw-fonts-cjk-000"));
+        }
+        let mut old = numbered;
         for row in old.as_array_mut().unwrap() {
             let path = row["path"].as_str().unwrap().to_owned();
             row["path"] = json!(path
@@ -534,11 +555,11 @@ mod tests {
                 ));
         }
         historical_producers(&new).unwrap();
-        for mut record in [old, new] {
-            record
-                .as_array_mut()
-                .unwrap()
-                .retain(|r| !r["path"].as_str().unwrap().contains("001/src/lib.rs"));
+        for mut record in [old, new, current] {
+            record.as_array_mut().unwrap().retain(|r| {
+                let path = r["path"].as_str().unwrap();
+                !path.contains("001/src/lib.rs") && !path.contains("xiaolai-extended/src/lib.rs")
+            });
             assert!(historical_producers(&record)
                 .unwrap_err()
                 .contains("missing historical"));

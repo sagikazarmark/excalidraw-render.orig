@@ -10,6 +10,15 @@ Recommendations are proposals, not changes to the rendering contract.
 
 ## Recommendation
 
+**Implementation update:** the initial balanced-shard implementation was committed
+as `391e68e`. The subsequent approved layout uses the shared `excalidraw-fonts-`
+prefix with `excalidraw-fonts-xiaolai` (165 chunks, 9,596,296 payload bytes) and
+`excalidraw-fonts-xiaolai-extended` (44 chunks, 3,071,196 bytes). The importer
+reproduces the linked project's dominant-Unicode-block grouping and verifies its
+published membership fingerprints. Both remain enabled together by `cjk`.
+The common package has a targeted decimal 10 MB archive ceiling. Earlier balanced
+layout recommendations and measurements below document the alternatives explored.
+
 Separate **which font bytes define rendering** from **where those bytes come
 from**. Keep a pinned metadata catalog and accept an explicit set of verified font
 bytes. Optional bundled crates and an application-owned build helper can both

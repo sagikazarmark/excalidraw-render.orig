@@ -1,15 +1,15 @@
-//! Explicit, one-layout migration, not an alternate execution-key contract.
+//! Explicit packaging migration, not an alternate execution-key contract.
 //! Authenticates the previous inventory from Git, proves that only physical font
 //! locations moved, then requires exact fresh-process public-facade equality.
 use super::*;
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
-const OLD_CATALOG: &str = "crates/excalidraw-render-assets-base/catalog/revision-1.json";
 const NEW_CATALOG: &str = "crates/excalidraw-fonts/catalog/revision-1.json";
 const BASELINE: &str = "tests/conformance/coverage/native-baseline/revision-1.json";
 const SIDECAR: &str = "tests/conformance/coverage/native-baseline/revision-1.sha256";
-pub(super) const RECEIPT: &str = "tests/conformance/coverage/font-packaging-reconciliation.json";
+const RECEIPT: &str = "tests/conformance/coverage/font-packaging-reconciliation.json";
 
 #[derive(Debug, Deserialize, Serialize)]
 enum ReceiptSchema {
@@ -50,8 +50,8 @@ pub(super) struct OwnershipReceipt {
 }
 
 impl Receipt {
-    pub(super) fn load() -> Result<(Vec<u8>, Self), String> {
-        let bytes = read(RECEIPT)?;
+    pub(super) fn load(path: &str) -> Result<(Vec<u8>, Self), String> {
+        let bytes = read(path)?;
         let receipt = parse(&bytes)?;
         Ok((bytes, receipt))
     }
@@ -110,17 +110,32 @@ fn storage_only(old: &Value, new: &Value) -> Result<usize, String> {
     Ok(moved)
 }
 
+fn catalog_source(inventory: &Inventory) -> Result<&Descriptor, String> {
+    let mut sources = inventory
+        .sources
+        .iter()
+        .filter(|source| source.path.ends_with("/catalog/revision-1.json"));
+    let source = sources
+        .next()
+        .ok_or("previous inventory has no font catalog")?;
+    if sources.next().is_some() {
+        return Err("previous inventory has ambiguous font catalogs".into());
+    }
+    Ok(source)
+}
+
 fn audit(base: &str) -> Result<(Inventory, Inventory, usize), String> {
-    let old_bytes = previous(base, OLD_CATALOG)?;
-    let moved = storage_only(&parse(&old_bytes)?, &parse(&read(NEW_CATALOG)?)?)?;
     let old: Inventory = parse(&previous(base, INVENTORY)?)?;
+    let old_catalog = catalog_source(&old)?;
+    let old_bytes = previous(base, &old_catalog.path)?;
+    if sha256(&old_bytes) != old_catalog.sha256 {
+        return Err("previous inventory font catalog digest mismatch".into());
+    }
+    let moved = storage_only(&parse(&old_bytes)?, &parse(&read(NEW_CATALOG)?)?)?;
     let reconstructed = derive_inventory_with_catalog(
         parse(&read(REQUIREMENTS)?)?,
         descriptor(REQUIREMENTS)?,
-        Descriptor {
-            path: OLD_CATALOG.into(),
-            sha256: sha256(&old_bytes),
-        },
+        old_catalog.clone(),
     )?;
     if reconstructed != old {
         return Err("font packaging changed non-catalog execution inputs or coverage".into());
@@ -144,7 +159,13 @@ fn rekey(record: &mut Value, field: &str, old: &Inventory, new: &Inventory) -> R
     Ok(())
 }
 
-pub fn rebind_font_packaging(base: &str, candidate: &str) -> Result<(), String> {
+pub fn rebind_font_packaging(
+    base: &str,
+    candidate: &str,
+    receipt_path: Option<&str>,
+) -> Result<(), String> {
+    let receipt_path = receipt_path.unwrap_or(RECEIPT);
+    validate_receipt_destination(&repo_root().join(receipt_path))?;
     let (old, current, moved) = audit(base)?;
     crate::catalog::verify()?;
     let before_baseline = read(BASELINE)?;
@@ -171,10 +192,7 @@ pub fn rebind_font_packaging(base: &str, candidate: &str) -> Result<(), String> 
     let receipt = Receipt {
         schema: ReceiptSchema::V1,
         base_commit: base.into(),
-        old_catalog: Descriptor {
-            path: OLD_CATALOG.into(),
-            sha256: sha256(&previous(base, OLD_CATALOG)?),
-        },
+        old_catalog: catalog_source(&old)?.clone(),
         new_catalog: descriptor(NEW_CATALOG)?,
         audit: json!({"assets": array(&catalog, "assets")?.len(), "moved_segments": moved,
             "only_segment_offsets_and_shards_changed": true,
@@ -188,9 +206,6 @@ pub fn rebind_font_packaging(base: &str, candidate: &str) -> Result<(), String> 
         replay,
         ownership: None,
     };
-    if repo_root().join(RECEIPT).exists() {
-        return Err("font packaging reconciliation already exists".into());
-    }
     if read(BASELINE)? != before_baseline
         || read(SIDECAR)? != before_sidecar
         || read(pdf_judgments::RECORD)? != before_pdf
@@ -199,14 +214,16 @@ pub fn rebind_font_packaging(base: &str, candidate: &str) -> Result<(), String> 
         return Err("evidence changed while preparing packaging migration".into());
     }
     // No artifact blobs, report bytes, tolerances, provenance or approvals change.
-    for (path, bytes) in [
-        (BASELINE, baseline),
-        (SIDECAR, sidecar),
-        (pdf_judgments::RECORD, pdf_bytes),
-    ] {
-        fs::write(repo_root().join(path), bytes).map_err(|e| e.to_string())?;
-    }
-    fs::write(repo_root().join(RECEIPT), receipt.bytes()?).map_err(|e| e.to_string())?;
+    write_packaging_evidence(
+        &repo_root(),
+        receipt_path,
+        &receipt.bytes()?,
+        [
+            (BASELINE, baseline.as_slice()),
+            (SIDECAR, sidecar.as_slice()),
+            (pdf_judgments::RECORD, pdf_bytes.as_slice()),
+        ],
+    )?;
     snapshots::replay_snapshots(candidate)?;
     println!(
         "rebound {} executions after exact output equality; {moved} physical segments moved",
@@ -215,9 +232,67 @@ pub fn rebind_font_packaging(base: &str, candidate: &str) -> Result<(), String> 
     Ok(())
 }
 
-pub fn rebind_font_packaging_ownership(base: &str, spec: &str) -> Result<(), String> {
+fn validate_receipt_destination(path: &Path) -> Result<(), String> {
+    if path.exists() {
+        return Err("font packaging reconciliation already exists".into());
+    }
+    if !path.parent().is_some_and(Path::is_dir) {
+        return Err("font packaging reconciliation parent must be an existing directory".into());
+    }
+    Ok(())
+}
+
+/// Stage the complete receipt at its reserved destination before any accepted
+/// evidence changes. On an evidence-write failure, restore the attempted files
+/// before removing the receipt; retain it if restoration itself fails.
+fn write_packaging_evidence(
+    root: &Path,
+    receipt_path: &str,
+    receipt: &[u8],
+    evidence: [(&str, &[u8]); 3],
+) -> Result<(), String> {
+    let receipt_path = root.join(receipt_path);
+    validate_receipt_destination(&receipt_path)?;
+    let originals = evidence
+        .iter()
+        .map(|(path, _)| fs::read(root.join(path)).map_err(|e| e.to_string()))
+        .collect::<Result<Vec<_>, _>>()?;
+    // create_new also refuses dangling symlinks and destinations created since
+    // validation, preserving historical receipts even under a concurrent writer.
+    let mut staged = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&receipt_path)
+        .map_err(|e| format!("cannot stage packaging receipt: {e}"))?;
+    let staged_result = staged.write_all(receipt).and_then(|()| staged.sync_all());
+    drop(staged);
+    if let Err(error) = staged_result {
+        fs::remove_file(&receipt_path)
+            .map_err(|e| format!("{error}; receipt cleanup failed: {e}"))?;
+        return Err(format!("cannot stage packaging receipt: {error}"));
+    }
+    for (index, (path, bytes)) in evidence.iter().enumerate() {
+        if let Err(error) = fs::write(root.join(path), bytes) {
+            for ((path, _), original) in evidence[..=index].iter().zip(&originals) {
+                fs::write(root.join(path), original)
+                    .map_err(|e| format!("{error}; restoring {path} failed: {e}"))?;
+            }
+            fs::remove_file(&receipt_path)
+                .map_err(|e| format!("{error}; receipt cleanup failed: {e}"))?;
+            return Err(error.to_string());
+        }
+    }
+    Ok(())
+}
+
+pub fn rebind_font_packaging_ownership(
+    base: &str,
+    spec: &str,
+    receipt_path: Option<&str>,
+) -> Result<(), String> {
+    let receipt_path = receipt_path.unwrap_or(RECEIPT);
     let (old, current, _) = audit(base)?;
-    let (_, receipt) = Receipt::load()?;
+    let (_, receipt) = Receipt::load(receipt_path)?;
     if receipt.base_commit != base
         || receipt.new_inventory_sha256 != sha256(&read(INVENTORY)?)
         || receipt.new_catalog != descriptor(NEW_CATALOG)?
@@ -227,12 +302,62 @@ pub fn rebind_font_packaging_ownership(base: &str, spec: &str) -> Result<(), Str
         return Err("font packaging receipt does not bind current evidence".into());
     }
     snapshots::verify_baseline()?;
-    ownership::storage_rebind(base, spec, old, current)
+    ownership::storage_rebind(base, spec, old, current, receipt_path)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn invalid_receipt_destination_preserves_accepted_evidence() {
+        let root = std::env::temp_dir().join(format!(
+            "packaging-receipt-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&root).unwrap();
+        let evidence = [
+            ("baseline.json", b"new baseline".as_slice()),
+            ("baseline.sha256", b"new sidecar".as_slice()),
+            ("pdf.json", b"new PDF keys".as_slice()),
+        ];
+        for (path, _) in &evidence {
+            fs::write(root.join(path), format!("accepted {path}")).unwrap();
+        }
+        fs::write(root.join("historical.json"), b"historical receipt").unwrap();
+        for destination in [
+            "missing/receipt.json",
+            "baseline.json/receipt.json",
+            "historical.json",
+            "invalid\0receipt.json",
+        ] {
+            assert!(write_packaging_evidence(&root, destination, b"receipt", evidence).is_err());
+            for (path, _) in &evidence {
+                assert_eq!(
+                    fs::read(root.join(path)).unwrap(),
+                    format!("accepted {path}").as_bytes()
+                );
+            }
+            assert_eq!(
+                fs::read(root.join("historical.json")).unwrap(),
+                b"historical receipt"
+            );
+            assert_eq!(fs::read_dir(&root).unwrap().count(), 4);
+        }
+        write_packaging_evidence(&root, "second.json", b"second receipt", evidence).unwrap();
+        for (path, bytes) in &evidence {
+            assert_eq!(fs::read(root.join(path)).unwrap(), *bytes);
+        }
+        assert_eq!(
+            fs::read(root.join("second.json")).unwrap(),
+            b"second receipt"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
 
     // Deliberately self-contained: routine tests neither invoke Git nor read
     // migration receipts/current baselines, which may legitimately evolve.
@@ -259,12 +384,30 @@ mod tests {
     }
 
     #[test]
+    fn previous_catalog_follows_inventory_across_packaging_layouts() {
+        let mut inventory = inventory('a');
+        assert!(catalog_source(&inventory).is_err());
+        for path in [
+            "crates/excalidraw-render-assets-base/catalog/revision-1.json",
+            NEW_CATALOG,
+        ] {
+            inventory.sources = vec![Descriptor {
+                path: path.into(),
+                sha256: "a".repeat(64),
+            }];
+            assert_eq!(catalog_source(&inventory).unwrap().path, path);
+        }
+        inventory.sources.push(inventory.sources[0].clone());
+        assert!(catalog_source(&inventory).is_err());
+    }
+
+    #[test]
     fn receipt_schema_and_ownership_fields_are_checked_without_live_evidence() {
         let hash = "a".repeat(64);
         let mut value = json!({
             "schema":"excalidraw-render/font-packaging-reconciliation/v1",
             "base_commit":"b".repeat(40),
-            "old_catalog":{"path":OLD_CATALOG,"sha256":hash},
+            "old_catalog":{"path":NEW_CATALOG,"sha256":hash},
             "new_catalog":{"path":NEW_CATALOG,"sha256":hash},
             "audit":{"fixture":"preserved"}, "replay":{"fixture":"preserved"},
             "old_inventory_sha256":hash, "new_inventory_sha256":hash,

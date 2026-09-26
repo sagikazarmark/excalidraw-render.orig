@@ -220,14 +220,16 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
         Some("rebind-font-packaging") => {
             let base = required_arg(&mut args, "previous commit")?;
             let candidate = required_arg(&mut args, "current snapshot directory")?;
+            let receipt = args.next();
             no_more_args(args)?;
-            coverage::rebind_font_packaging(&base, &candidate)?;
+            coverage::rebind_font_packaging(&base, &candidate, receipt.as_deref())?;
         }
         Some("rebind-font-packaging-ownership") => {
             let base = required_arg(&mut args, "previous commit")?;
             let spec = required_arg(&mut args, "final spec SHA-256")?;
+            let receipt = args.next();
             no_more_args(args)?;
-            coverage::rebind_font_packaging_ownership(&base, &spec)?;
+            coverage::rebind_font_packaging_ownership(&base, &spec, receipt.as_deref())?;
         }
         Some("verify-results") => {
             let report = required_arg(&mut args, "result bundle path")?;

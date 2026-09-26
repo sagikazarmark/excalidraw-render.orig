@@ -13,8 +13,12 @@ use sha2::{Digest, Sha256};
 
 pub mod fonts;
 
-/// Maximum raw byte length targeted by one generated data shard.
+/// Default raw byte ceiling; the common Xiaolai payload has a targeted exception.
 pub const RAW_SHARD_LIMIT: usize = 8 * 1024 * 1024;
+
+/// Raw ceiling for the published common-Xiaolai grouping. Package archives are
+/// separately required to be smaller than 10,000,000 decimal bytes.
+pub const XIAOLAI_RAW_SHARD_LIMIT: usize = 10_000_000;
 
 /// Renderer-owned treatment for one table in the sealed SVG subset profile.
 #[repr(u8)]

@@ -109,8 +109,8 @@ fn collect(root: &Path, output: &Path) -> Result<(), String> {
     for package in [
         "excalidraw-render",
         "excalidraw-fonts",
-        "excalidraw-fonts-cjk-000",
-        "excalidraw-fonts-cjk-001",
+        "excalidraw-fonts-xiaolai",
+        "excalidraw-fonts-xiaolai-extended",
     ] {
         let matches: Vec<_> = metadata["packages"]
             .as_array()
@@ -137,8 +137,8 @@ fn collect(root: &Path, output: &Path) -> Result<(), String> {
     for package in [
         "excalidraw-render",
         "excalidraw-fonts",
-        "excalidraw-fonts-cjk-000",
-        "excalidraw-fonts-cjk-001",
+        "excalidraw-fonts-xiaolai",
+        "excalidraw-fonts-xiaolai-extended",
     ] {
         packages.push(describe_file(
             &root,

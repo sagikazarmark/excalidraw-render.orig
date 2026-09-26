@@ -317,8 +317,8 @@ fn verified_bundle(root: &Path, inventory: &Inventory) -> Result<Snapshots, Stri
     let expected: [&str; 4] = [
         "target/package/excalidraw-render-0.1.0.crate",
         "target/package/excalidraw-fonts-0.1.0.crate",
-        "target/package/excalidraw-fonts-cjk-000-0.1.0.crate",
-        "target/package/excalidraw-fonts-cjk-001-0.1.0.crate",
+        "target/package/excalidraw-fonts-xiaolai-0.1.0.crate",
+        "target/package/excalidraw-fonts-xiaolai-extended-0.1.0.crate",
     ];
     if packages != expected.into_iter().collect() {
         return Err("incomplete snapshot package inventory".into());

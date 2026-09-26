@@ -748,6 +748,7 @@ pub(super) fn storage_rebind(
     expected_spec: &str,
     old_inventory: Inventory,
     inventory: Inventory,
+    receipt_path: &str,
 ) -> Result<(), String> {
     let historical = |path| super::storage_migration::previous(base, path);
     let old_inventory_bytes = historical(INVENTORY)?;
@@ -767,8 +768,7 @@ pub(super) fn storage_rebind(
     let after = catalog_from_inventory(&spec, inventory, descriptor(INVENTORY)?)?;
     let before_bytes = read(LEDGER)?;
     let original_bytes = historical(LEDGER)?;
-    let receipt_path = super::storage_migration::RECEIPT;
-    let (receipt_bytes, mut receipt) = super::storage_migration::Receipt::load()?;
+    let (receipt_bytes, mut receipt) = super::storage_migration::Receipt::load(receipt_path)?;
     let mut ledger: Ledger = parse(&original_bytes)?;
     if ledger.catalog_sha256 != digest(&before)? {
         return Err(

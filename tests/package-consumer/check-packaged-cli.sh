@@ -15,12 +15,23 @@ for package in \
   excalidraw-render-cli \
   excalidraw-render \
   excalidraw-fonts \
-  excalidraw-fonts-cjk-000 \
-  excalidraw-fonts-cjk-001
+  excalidraw-fonts-xiaolai \
+  excalidraw-fonts-xiaolai-extended
 do
   archive="target/package/${package}-0.1.0.crate"
   if [[ ! -f "${archive}" ]]; then
     echo "missing packaged crate archive: ${archive}" >&2
+    exit 1
+  fi
+  # Common Xiaolai deliberately matches the published 165-chunk group. Only
+  # that package exceeds the usual 9.5 MB archive budget; it must remain below
+  # the stricter decimal 10 MB ceiling (also below the registry's 10 MiB).
+  ceiling=9500000
+  if [[ "${package}" == excalidraw-fonts-xiaolai ]]; then
+    ceiling=10000000
+  fi
+  if (( $(wc -c < "${archive}") >= ceiling )); then
+    echo "package archive exceeds exclusive ${ceiling}-byte ceiling: ${archive}" >&2
     exit 1
   fi
   tar -xzf "${archive}" -C target/package
@@ -31,5 +42,5 @@ cargo check \
   --manifest-path target/package/excalidraw-render-cli-0.1.0/Cargo.toml \
   --config 'patch.crates-io.excalidraw-render.path="target/package/excalidraw-render-0.1.0"' \
   --config 'patch.crates-io.excalidraw-fonts.path="target/package/excalidraw-fonts-0.1.0"' \
-  --config 'patch.crates-io.excalidraw-fonts-cjk-000.path="target/package/excalidraw-fonts-cjk-000-0.1.0"' \
-  --config 'patch.crates-io.excalidraw-fonts-cjk-001.path="target/package/excalidraw-fonts-cjk-001-0.1.0"'
+  --config 'patch.crates-io.excalidraw-fonts-xiaolai.path="target/package/excalidraw-fonts-xiaolai-0.1.0"' \
+  --config 'patch.crates-io.excalidraw-fonts-xiaolai-extended.path="target/package/excalidraw-fonts-xiaolai-extended-0.1.0"'

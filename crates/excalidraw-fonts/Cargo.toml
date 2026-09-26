@@ -21,11 +21,11 @@ workspace = true
 
 [features]
 default = ["cjk"]
-cjk = ["dep:excalidraw-fonts-cjk-000", "dep:excalidraw-fonts-cjk-001"]
+cjk = ["dep:excalidraw-fonts-xiaolai", "dep:excalidraw-fonts-xiaolai-extended"]
 
 [dependencies]
-excalidraw-fonts-cjk-000 = { workspace = true, optional = true }
-excalidraw-fonts-cjk-001 = { workspace = true, optional = true }
+excalidraw-fonts-xiaolai = { workspace = true, optional = true }
+excalidraw-fonts-xiaolai-extended = { workspace = true, optional = true }
 sha2.workspace = true
 
 [dev-dependencies]

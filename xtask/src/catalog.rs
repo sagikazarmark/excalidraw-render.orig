@@ -22,15 +22,14 @@ const SCENE_SURFACE_SCHEMA_DIGEST: &str =
     "c8af2987f69e320bbc2673e252284fda77a18ddaf667bf998055c47cd3aa7341";
 const SCENE_SURFACE_EVIDENCE_DIGEST: &str =
     "29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb";
-const RAW_SHARD_LIMIT: usize = 8 * 1024 * 1024;
-/// Three physical payloads: small official fonts, then whole Xiaolai chunks
-/// 0–105 and 106–208 in upstream declaration order.
+/// Three physical payloads: small official fonts, common Xiaolai, extended
+/// Xiaolai. Whole chunks retain upstream declaration order within each group.
 const SHARD_PATHS: [&str; 3] = [
     "crates/excalidraw-fonts/data/revision-1-000.bin",
-    "crates/excalidraw-fonts-cjk-000/data/revision-1-000.bin",
-    "crates/excalidraw-fonts-cjk-001/data/revision-1-001.bin",
+    "crates/excalidraw-fonts-xiaolai/data/fonts.bin",
+    "crates/excalidraw-fonts-xiaolai-extended/data/fonts.bin",
 ];
-const SHARD_LENGTHS: [usize; 3] = [358_432, 6_338_736, 6_328_756];
+const SHARD_LENGTHS: [usize; 3] = [358_432, 9_596_296, 3_071_196];
 const CATALOG_SCHEMA: &str = "excalidraw-render/revision-catalog/v1";
 const CATALOG_SCHEMA_DIGEST: &str =
     "eabf5de65012d514ef7b21e340eb80d39943f7c666f496ae6ceeb32d57e7ce5b";
@@ -1277,8 +1276,8 @@ fn verify_noto_emoji(root: &Path) -> Result<(), String> {
 fn bundle_paths(root: &Path) -> [PathBuf; 5] {
     [
         root.join("crates/excalidraw-fonts/LICENSE-BUNDLE.txt"),
-        root.join("crates/excalidraw-fonts-cjk-000/LICENSE-BUNDLE.txt"),
-        root.join("crates/excalidraw-fonts-cjk-001/LICENSE-BUNDLE.txt"),
+        root.join("crates/excalidraw-fonts-xiaolai/LICENSE-BUNDLE.txt"),
+        root.join("crates/excalidraw-fonts-xiaolai-extended/LICENSE-BUNDLE.txt"),
         root.join("crates/excalidraw-render/LICENSE-BUNDLE.txt"),
         root.join("crates/excalidraw-render-cli/LICENSE-BUNDLE.txt"),
     ]
@@ -1381,9 +1380,29 @@ fn reviewed_decode_index(record: &Value) -> Result<BTreeMap<&str, (usize, &str)>
 }
 
 /// The 230 official assets as the authoritative reference manifest lists them,
-/// in catalog order with the shard layout `partition` gives their bytes. The
-/// bytes themselves are empty until `load_shard_bytes` fills them.
+/// in catalog order with the shard layout `partition` gives their bytes.
+/// Read whole WOFF2 containers by their own length headers, so regenerating the
+/// layout does not depend on a previously generated catalog or its offsets.
 fn expected_assets(reference_assets: &Value) -> Result<Vec<ImportedAsset>, String> {
+    let root = crate::conformance::repo_root();
+    let mut sources = BTreeMap::new();
+    for ordinal in 0..SHARD_PATHS.len() {
+        let bytes = read_shard(&root, &format!("revision-1-{ordinal:03}"))?;
+        let mut remaining = bytes.as_slice();
+        while !remaining.is_empty() {
+            let length = remaining
+                .get(..12)
+                .filter(|header| &header[..4] == b"wOF2")
+                .map(|header| u32::from_be_bytes(header[8..12].try_into().unwrap()) as usize)
+                .filter(|length| *length >= 48 && *length <= remaining.len())
+                .ok_or("invalid whole WOFF2 container in font payload")?;
+            let (source, rest) = remaining.split_at(length);
+            if sources.insert(sha256(source), source.to_vec()).is_some() {
+                return Err("duplicate source in font payloads".to_owned());
+            }
+            remaining = rest;
+        }
+    }
     let manifest_assets = array_at(
         reference_assets,
         &["officialPackage", "assets"],
@@ -1400,8 +1419,10 @@ fn expected_assets(reference_assets: &Value) -> Result<Vec<ImportedAsset>, Strin
                 .to_owned();
             let metadata = family_metadata(&family)?;
             Ok(ImportedAsset {
-                path,
-                bytes: Vec::new(),
+                path: path.clone(),
+                bytes: sources
+                    .remove(string(entry, "sha256", "reference asset")?)
+                    .ok_or_else(|| format!("missing manifested font source {path}"))?,
                 length: integer(entry, "bytes", "reference asset")? as usize,
                 digest: string(entry, "sha256", "reference asset")?.to_owned(),
                 family,
@@ -1414,7 +1435,9 @@ fn expected_assets(reference_assets: &Value) -> Result<Vec<ImportedAsset>, Strin
         })
         .collect::<Result<Vec<_>, String>>()?;
     assets.sort_by(|left, right| left.path.cmp(&right.path));
-
+    if !sources.is_empty() {
+        return Err("unmanifested sources in font payloads".to_owned());
+    }
     assign_layout(&mut assets)?;
     Ok(assets)
 }
@@ -1433,7 +1456,12 @@ fn read_shard(root: &Path, shard: &str) -> Result<Vec<u8>, String> {
     );
     let bytes = fs::read(&shard_path)
         .map_err(|error| format!("failed to read {}: {error}", shard_path.display()))?;
-    if bytes.len() > RAW_SHARD_LIMIT || bytes.len() != SHARD_LENGTHS[ordinal] {
+    let limit = if ordinal == 1 {
+        excalidraw_fonts::XIAOLAI_RAW_SHARD_LIMIT
+    } else {
+        excalidraw_fonts::RAW_SHARD_LIMIT
+    };
+    if bytes.len() > limit || bytes.len() != SHARD_LENGTHS[ordinal] {
         return Err(format!("asset shard {shard} has an invalid payload length"));
     }
     Ok(bytes)
@@ -1516,8 +1544,7 @@ fn assign_layout(assets: &mut [ImportedAsset]) -> Result<(), String> {
     for (order, asset) in ordered {
         let shard = match order {
             None => 0,
-            Some(0..=105) => 1,
-            Some(106..=208) => 2,
+            Some(0..=208) => xiaolai_shard(&asset.bytes)?,
             Some(_) => return Err("Xiaolai declaration order exceeds 208".to_owned()),
         };
         asset.shard = shard;
@@ -1530,6 +1557,116 @@ fn assign_layout(assets: &mut [ImportedAsset]) -> Result<(), String> {
         return Err(format!(
             "font payload layout has unexpected lengths: {lengths:?}"
         ));
+    }
+    verify_published_xiaolai_groups(assets)?;
+    Ok(())
+}
+
+/// Port of dominantBucket/bucketOf/EXTRA_BUCKETS in
+/// https://github.com/rickardp/excalidraw-image/blob/c33f236d9167845c327893b6e1a19728e763d173/src/scripts/sync-fonts.mjs
+/// These are upstream's named buckets (some combine Unicode blocks), not CSS
+/// unicodeRange declarations. Count distinct cmap codepoints in ascending order;
+/// ties retain the first encountered bucket, matching fontkit's characterSet and
+/// JavaScript Map insertion order. Unmapped glyph zero is not a character.
+fn xiaolai_shard(source: &[u8]) -> Result<usize, String> {
+    let decoded = wuff::decompress_woff2(source)
+        .map_err(|error| format!("Xiaolai classification decode failed: {error}"))?;
+    let face = rustybuzz::ttf_parser::Face::parse(&decoded, 0)
+        .map_err(|error| format!("Xiaolai classification cmap parse failed: {error}"))?;
+    let cmap = face.tables().cmap.ok_or("Xiaolai has no cmap")?;
+    let mut codepoints = BTreeSet::new();
+    for table in cmap
+        .subtables
+        .into_iter()
+        .filter(|table| table.is_unicode())
+    {
+        table.codepoints(|cp| {
+            if table.glyph_index(cp).is_some() {
+                codepoints.insert(cp);
+            }
+        });
+    }
+    dominant_xiaolai_shard(codepoints)
+}
+
+fn dominant_xiaolai_shard(codepoints: BTreeSet<u32>) -> Result<usize, String> {
+    // (inclusive bounds, extended group). Last bucket is Other.
+    const BUCKETS: &[(u32, u32, bool)] = &[
+        (0x0000, 0x04ff, false),  // Latin/Greek/Cyrillic
+        (0x2000, 0x206f, false),  // General Punctuation
+        (0x3000, 0x303f, false),  // CJK Symbols & Punct
+        (0x3040, 0x309f, false),  // Hiragana
+        (0x30a0, 0x30ff, false),  // Katakana
+        (0x3100, 0x312f, false),  // Bopomofo
+        (0x3130, 0x318f, false),  // Hangul Compat Jamo
+        (0x3200, 0x32ff, false),  // Enclosed CJK
+        (0x3300, 0x33ff, false),  // CJK Compat
+        (0x3400, 0x4dbf, true),   // CJK Ext A
+        (0x4e00, 0x9fff, false),  // CJK Unified
+        (0xac00, 0xd7af, false),  // Hangul Syllables
+        (0xf900, 0xfaff, true),   // CJK Compat Ideographs
+        (0xff00, 0xffef, false),  // Halfwidth/Fullwidth
+        (0x20000, 0x3ffff, true), // CJK Ext B+
+        (0, u32::MAX, true),      // Other
+    ];
+    let mut counts = Vec::<(usize, usize)>::new();
+    for cp in codepoints {
+        let bucket = BUCKETS
+            .iter()
+            .position(|&(lo, hi, _)| (lo..=hi).contains(&cp))
+            .unwrap();
+        if let Some((_, count)) = counts.iter_mut().find(|(index, _)| *index == bucket) {
+            *count += 1;
+        } else {
+            counts.push((bucket, 1));
+        }
+    }
+    let mut best = None;
+    let mut best_count = 0;
+    for (bucket, count) in counts {
+        if count > best_count {
+            best = Some(bucket);
+            best_count = count;
+        }
+    }
+    let bucket = best.ok_or("Xiaolai has no mapped Unicode codepoints")?;
+    Ok(if BUCKETS[bucket].2 { 2 } else { 1 })
+}
+
+/// Published 1.0.0 Cargo.toml font-fingerprint values for excalidraw-image-fonts-cjk
+/// and excalidraw-image-fonts-cjk-extra. Reproduce their exact sorted
+/// `Xiaolai/file.woff2:sha256` lines joined by LF with no trailing LF. This pins
+/// membership AND original bytes, independently of our payload offsets/order.
+fn verify_published_xiaolai_groups(assets: &[ImportedAsset]) -> Result<(), String> {
+    for (shard, count, fingerprint) in [
+        (
+            1,
+            165,
+            "630cb497d7b7de4fea58a890b78a2de5ea0e74221d8b876156de4993698e24ad",
+        ),
+        (
+            2,
+            44,
+            "023c933b9a01e3b09cc6d8f58dbb7c9aaf6376086290338814ffa1e51c1a8a61",
+        ),
+    ] {
+        let mut lines = assets
+            .iter()
+            .filter(|asset| asset.shard == shard)
+            .map(|asset| {
+                format!(
+                    "{}:{}",
+                    asset.path.strip_prefix("fonts/").unwrap(),
+                    sha256(&asset.bytes)
+                )
+            })
+            .collect::<Vec<_>>();
+        lines.sort();
+        if lines.len() != count || sha256(lines.join("\n").as_bytes()) != fingerprint {
+            return Err(format!(
+                "Xiaolai shard {shard} differs from published 1.0.0 classification/bytes"
+            ));
+        }
     }
     Ok(())
 }
@@ -1545,8 +1682,8 @@ fn generate_rust(
     );
     output.push_str("const PAYLOAD_0: Option<&[u8]> = Some(include_bytes!(\"../../data/revision-1-000.bin\"));\n");
     for (ordinal, package) in [
-        (1, "excalidraw_fonts_cjk_000"),
-        (2, "excalidraw_fonts_cjk_001"),
+        (1, "excalidraw_fonts_xiaolai"),
+        (2, "excalidraw_fonts_xiaolai_extended"),
     ] {
         output.push_str(&format!("#[cfg(feature = \"cjk\")]\nconst PAYLOAD_{ordinal}: Option<&[u8]> = Some({package}::BYTES);\n#[cfg(not(feature = \"cjk\"))]\nconst PAYLOAD_{ordinal}: Option<&[u8]> = None;\n"));
     }
@@ -3549,6 +3686,28 @@ mod tests {
         review_decode, reviewed_decodes_record, reviewed_decodes_subject, verify_scene_surface,
         XiaolaiIndexFace, EXCALIFONT_BASIC_LATIN_PATH, EXCALIFONT_BASIC_LATIN_SHA256, FONT_NOTICES,
     };
+
+    #[test]
+    fn dominant_cmap_bucket_uses_upstream_ties_and_long_tail_rules() {
+        let classify =
+            |points: &[u32]| super::dominant_xiaolai_shard(points.iter().copied().collect());
+        assert_eq!(classify(&[0x4e00, 0x4e01, 0x3400]).unwrap(), 1);
+        assert_eq!(classify(&[0x4e00, 0x3400, 0x3401]).unwrap(), 2);
+        // First encountered block wins a tie, not bucket-table order or the
+        // last block. Other precedes CJK Unified here despite being listed last.
+        assert_eq!(classify(&[0x1100, 0x4e00]).unwrap(), 2);
+        assert_eq!(classify(&[0x3042, 0xf900]).unwrap(), 1);
+        for cp in [0x3400, 0x4dbf, 0xf900, 0xfaff, 0x20000, 0x3ffff, 0x1100] {
+            assert_eq!(classify(&[cp]).unwrap(), 2);
+        }
+        for cp in [
+            0x3042, 0x30a2, 0x3105, 0x3131, 0x4e00, 0x9fff, 0xac00, 0xd7af,
+        ] {
+            assert_eq!(classify(&[cp]).unwrap(), 1);
+        }
+        assert!(classify(&[]).is_err());
+        assert!(super::xiaolai_shard(b"not a font").is_err());
+    }
 
     #[test]
     fn importer_reproduces_all_three_checked_in_payloads_byte_for_byte() {
