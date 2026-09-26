@@ -137,7 +137,7 @@ pub fn verify_wasm_snapshots(directory: &str) -> Result<(), String> {
             report["differences"].as_array().unwrap().len()
         ));
     }
-    println!("WASM replay matches the approved native artifact/report expectations in both fresh instance orders; traces remain pending");
+    println!("WASM replay matches the checked-in native artifact/report expectations in both fresh instance orders; traces remain pending");
     Ok(())
 }
 

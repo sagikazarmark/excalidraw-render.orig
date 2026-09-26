@@ -165,7 +165,7 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             let case = required_arg(&mut args, "representative case")?;
             no_more_args(args)?;
             coverage::verify_representative_owner(&case)?;
-            println!("verified approved representative owner {case}");
+            println!("verified representative owner {case}");
         }
         Some("record-representative-owner") => {
             let case = required_arg(&mut args, "representative case")?;
@@ -293,13 +293,8 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             coverage::generate_pdf_judgments()?;
         }
         Some("verify-pdf-judgments") => {
-            let require_approval = match args.next().as_deref() {
-                None => false,
-                Some("--require-approval") => true,
-                Some(other) => return Err(format!("unexpected argument {other:?}")),
-            };
             no_more_args(args)?;
-            coverage::verify_pdf_judgments(require_approval)?;
+            coverage::verify_pdf_judgments()?;
         }
         Some("layers-report") => {
             no_more_args(args)?;
@@ -309,14 +304,14 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             return Err("five-layer maintenance is retired; use conformance layers-report (read-only, advisory)".into());
         }
         Some("verify-layers") => {
-            let require_approval = match args.next().as_deref() {
+            let strict = match args.next().as_deref() {
                 None => false,
-                Some("--require-approval") => true,
+                Some("--strict") => true,
                 Some(other) => return Err(format!("unexpected argument {other:?}")),
             };
             no_more_args(args)?;
-            if require_approval {
-                coverage::verify_layers(true)?;
+            if strict {
+                coverage::verify_layers()?;
             } else {
                 println!("{}", coverage::report_layers()?);
             }

@@ -185,7 +185,7 @@ fn inventory_is_current_and_release_closure_does_not_pass_for_a_draft() {
     assert_success(command(&["conformance", "verify-inventory"]));
     let output = command(&["conformance", "verify-closure"]);
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("draft and unapproved"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("release coverage is incomplete"));
     let inventory = inventory();
     assert_eq!(inventory["executions"].as_array().unwrap().len(), 168);
     assert!(inventory["coverage"]
@@ -294,6 +294,21 @@ fn layer_reporting_is_read_only_and_maintenance_commands_are_retired() {
     assert_eq!(report["schema"], "excalidraw-render/five-layers-report/v1");
     assert_eq!(report["advisory"], true);
     assert!(report["findings"].is_array());
+    let alias = command(&["conformance", "verify-layers"]);
+    assert!(alias.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&alias.stdout).unwrap(),
+        report
+    );
+    let strict = command(&["conformance", "verify-layers", "--strict"]);
+    // Historical records can be stale: strict audit must either verify or fail
+    // on evidence, rather than rejecting the newly named option.
+    assert!(!String::from_utf8_lossy(&strict.stderr).contains("unexpected argument"));
+    for verifier in ["verify-layers", "verify-pdf-judgments"] {
+        let obsolete = command(&["conformance", verifier, "--require-approval"]);
+        assert!(!obsolete.status.success());
+        assert!(String::from_utf8_lossy(&obsolete.stderr).contains("unexpected argument"));
+    }
     for retired in [
         "layers-generate",
         "layers-approval-subject",

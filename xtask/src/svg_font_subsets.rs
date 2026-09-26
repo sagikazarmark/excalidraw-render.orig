@@ -287,7 +287,7 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
         return Err("qualification dependency identity is stale".to_owned());
     }
     // Implementation identities describe the run that produced the accepted
-    // evidence. They stay inside its approval subject, but need not match the
+    // evidence. They describe that run, but need not match the
     // current source tree. The corpus test checks today's generated subsets;
     // viewer reproduction checks today's adapters against the retained reports.
     let mut sources = BTreeSet::new();

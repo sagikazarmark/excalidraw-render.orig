@@ -256,7 +256,7 @@ after review, add the case to
 issue-comment approval or `record-approval` ceremony is needed.
 `--evidence-record` is a provenance binding, not an assertion that the referenced
 observations prove the expectations correct. `case subject` remains useful as a
-diagnostic hash and for checking retained historical approval bindings.
+diagnostic hash of case contents; it is not an acceptance gate.
 
 Read-only case verification is available in Rust:
 
@@ -272,9 +272,8 @@ Offline verification checks retained file hashes, the intake bundle, variants,
 formats and comparison/exception declarations. Both single-case and registry
 verification accept `approval: null`; registry identities must match and be
 unique. Coverage's independent-case validation also accepts null approval.
-When a historical non-null approval is present, its metadata and exact
-Python-compatible subject hash are still validated. Other evidence families'
-approval requirements are separate from this representative-case review flow.
+Historical approval fields are opaque metadata. All evidence families use
+Git/PR review and reproducible checks rather than approval hashes (ADR-0019).
 `--renderer` uses Rust v2 captures, checks repeated artifact/report bytes,
 expected diagnostics, dimensions, selectable text, links, theme/embedding flags
 and mandatory notices, and replays declared resource failures twice. Each failed

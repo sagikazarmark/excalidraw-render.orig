@@ -1,6 +1,5 @@
-//! Approved canonical native expectations, separate from run-specific provenance.
-//! The subject contains only strings, integers and null: no draft option-number
-//! serialization is promoted to an RFC8785 approval subject.
+//! Checked-in native expectations, separate from run-specific provenance.
+//! The legacy subject encoding remains readable for historical snapshot receipts.
 use super::*;
 use std::path::Component;
 use std::process::Command;
@@ -94,7 +93,6 @@ fn validate_baseline(
     root: &Path,
     inventory: &Inventory,
     baseline: &Baseline,
-    _approval: bool,
 ) -> Result<(), String> {
     if baseline.schema != SCHEMA
         || baseline.compatibility_revision != 1
@@ -214,7 +212,7 @@ pub fn stage_baseline(candidate: &str, output: &str) -> Result<(), String> {
         let bytes = read_repository_file(candidate, &format!("blobs/{name}"))?;
         fs::write(output.join("blobs").join(name), bytes).map_err(|e| e.to_string())?;
     }
-    validate_baseline(output, &inventory, &baseline, false)?;
+    validate_baseline(output, &inventory, &baseline)?;
     write(output, &baseline)?;
     println!(
         "staged {} native expectations; review the output diff",
@@ -226,15 +224,15 @@ pub fn stage_baseline(candidate: &str, output: &str) -> Result<(), String> {
 pub fn baseline_subject() -> Result<String, String> {
     let root = repo_root().join(BASELINE);
     let baseline = load(&root)?;
-    validate_baseline(&root, &load_inventory()?, &baseline, false)?;
+    validate_baseline(&root, &load_inventory()?, &baseline)?;
     subject(&baseline)
 }
 
 pub fn verify_baseline() -> Result<(), String> {
     let root = repo_root().join(BASELINE);
     let baseline = load(&root)?;
-    validate_baseline(&root, &load_inventory()?, &baseline, true)?;
-    println!("verified approved native snapshot baseline; all {} actual reports equal their expected reports (PDF from pdf-judgments.json); global closure, WASM and traces remain separate", baseline.expectations.len());
+    validate_baseline(&root, &load_inventory()?, &baseline)?;
+    println!("verified native snapshot baseline; all {} actual reports equal their expected reports (PDF from pdf-judgments.json); global closure, WASM and traces remain separate", baseline.expectations.len());
     Ok(())
 }
 
@@ -270,7 +268,7 @@ pub fn replay_snapshots(candidate: &str) -> Result<(), String> {
     )?)?;
     compare(&load(&repo_root().join(BASELINE))?, &bundle)?;
     println!(
-        "native replay matches all {} approved artifact/report expectations",
+        "native replay matches all {} checked-in artifact/report expectations",
         bundle.runs[0].results.len()
     );
     Ok(())
@@ -330,7 +328,7 @@ mod tests {
             source.sha256 = "0".repeat(64);
             source.byte_length = 1;
             approve_in_memory(&mut historical);
-            validate_baseline(&root, &inventory, &historical, true).unwrap();
+            validate_baseline(&root, &inventory, &historical).unwrap();
         }
     }
 
@@ -347,7 +345,7 @@ mod tests {
             };
             source.sha256 = "0".repeat(64);
             changed.approval = Value::Null;
-            validate_baseline(&root, &inventory, &changed, true).unwrap();
+            validate_baseline(&root, &inventory, &changed).unwrap();
         }
     }
 
@@ -373,7 +371,7 @@ mod tests {
                 };
                 mutate(source);
                 approve_in_memory(&mut changed);
-                assert!(validate_baseline(&root, &inventory, &changed, true)
+                assert!(validate_baseline(&root, &inventory, &changed)
                     .unwrap_err()
                     .contains("invalid baseline provenance descriptor"));
             }
@@ -388,14 +386,14 @@ mod tests {
         inventory.requirements[0]
             .remaining
             .push_str(" (bookkeeping-only test)");
-        validate_baseline(&root, &inventory, &baseline, true).unwrap();
+        validate_baseline(&root, &inventory, &baseline).unwrap();
         inventory.executions[0].key.inputs_sha256 = "0".repeat(64);
-        assert!(validate_baseline(&root, &inventory, &baseline, true)
+        assert!(validate_baseline(&root, &inventory, &baseline)
             .unwrap_err()
             .contains("execution keys"));
         let mut changed_record = baseline.clone();
         changed_record.inventory.sha256 = "0".repeat(64);
-        validate_baseline(&root, &load_inventory().unwrap(), &changed_record, true).unwrap();
+        validate_baseline(&root, &load_inventory().unwrap(), &changed_record).unwrap();
     }
     fn baseline() -> Baseline {
         let file = FileRecord {

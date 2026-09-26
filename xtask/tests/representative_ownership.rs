@@ -16,7 +16,7 @@ fn run(args: &[&str]) -> std::process::Output {
         .unwrap()
 }
 #[test]
-fn representative_owner_cli_refuses_unknown_unapproved_and_broadened_assignments() {
+fn representative_owner_cli_refuses_unknown_and_broadened_assignments() {
     let ledger = root().join("tests/conformance/coverage/ownership.json");
     let before = fs::read(&ledger).unwrap();
     let registry: serde_json::Value = serde_json::from_slice(

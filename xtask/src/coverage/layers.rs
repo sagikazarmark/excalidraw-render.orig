@@ -90,8 +90,8 @@ fn current_record(repo: &Repo) -> Result<Value, String> {
     Ok(record)
 }
 
-/// Every check: structure, completeness against `view`, then the approval.
-fn verify_record(repo: &Repo, view: &LedgerView, _require_approval: bool) -> Result<Value, String> {
+/// Verify record structure and completeness against `view`.
+fn verify_record(repo: &Repo, view: &LedgerView) -> Result<Value, String> {
     let record = current_record(repo)?;
     let problems = completeness(&record, repo, view);
     if !problems.is_empty() {
@@ -138,10 +138,9 @@ fn summary(record: &Value) -> String {
     )
 }
 
-/// The compiled-in `layers` record-owner verifier (ADR-0015): exactly
-/// `verify-layers --require-approval`, run in-process.
-pub(super) fn verify_approved_record() -> Result<(), String> {
-    verify_record(&Repo::real(), &LedgerView::load()?, true).map(|_| ())
+/// The compiled-in record-owner verifier: `verify-layers --strict` in-process.
+pub(super) fn verify_owned_record() -> Result<(), String> {
+    verify_record(&Repo::real(), &LedgerView::load()?).map(|_| ())
 }
 
 /// The record's own approval subject computation, without the `sha256:` prefix.
@@ -150,16 +149,11 @@ pub(super) fn record_subject(record: &Value) -> Result<String, String> {
     subject_of(record)
 }
 
-pub fn verify_layers(require_approval: bool) -> Result<(), String> {
-    let record = verify_record(&Repo::real(), &LedgerView::load()?, require_approval)?;
+pub fn verify_layers() -> Result<(), String> {
+    let record = verify_record(&Repo::real(), &LedgerView::load()?)?;
     println!(
-        "verified layers.json: {}; every item maps to owned ledger rows; approval {}",
+        "verified layers.json: {}; every item maps to owned ledger rows",
         summary(&record),
-        if record["approval"].is_null() {
-            "pending (#85)"
-        } else {
-            "verified"
-        }
     );
     Ok(())
 }

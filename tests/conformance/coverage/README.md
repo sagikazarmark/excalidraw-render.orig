@@ -193,7 +193,8 @@ orders and all repeats agree. The ICO accounting fix resolves the three resource
 failures; four PNG differences remain under #178. The automatic gate stays red
 until those discrepancies are fixed. See [the findings](../../../docs/research/wasm-snapshot-mismatches.md).
 
-### Canonical baseline approval and replay
+<a id="canonical-baseline-approval-and-replay"></a>
+### Canonical baseline review and replay
 
 `native-baseline/revision-1.json` contains the approved clean recollection
 after PNG began resampling raster images as the pinned software canvas does
@@ -274,11 +275,8 @@ draft inventory's floating-point canonicalization limitation.
 ```sh
 cargo run --locked -p xtask -- conformance stage-native-baseline \
   target/native-snapshots-clean target/new-native-baseline
-cargo run --locked -p xtask -- conformance native-baseline-approval-subject
-cargo run --locked -p xtask -- conformance record-native-baseline-approval \
-  <login> <UTC-date> <issue-85-comment-URL> <exact-subject>
 cargo run --locked -p xtask -- conformance verify-native-baseline
-dagger check excalidraw-render:packaging:snapshot-replay
+dagger check packaging:snapshot-replay
 ```
 
 Staging refuses existing output directories and modified-source candidates. It
@@ -288,12 +286,12 @@ Cargo-generated normalized manifests/lockfiles are retained by archive digest
 rather than expected to be identical to workspace files. The original archives
 remain in `target/native-snapshots-clean/packages`; the baseline keeps their
 digests, not duplicate archive copies. Source provenance checks run at staging;
-approval recording rechecks the subject and Git ancestry.
+review the staged expectations through Git before adopting them.
 
 The accepted baseline's generator and collector descriptors are historical
 provenance. Verification checks their relative paths, digest syntax and lengths,
 but does not require those historical files to exist or match today's source
-tree. Their recorded identities remain inside the acceptance subject. A
+tree. Their recorded identities describe the original capture. A
 collector or generator refactor therefore needs no baseline refresh when the
 render inputs and expected results are unchanged.
 
@@ -304,12 +302,12 @@ the current execution set and complete artifact/report bytes must match the
 accepted baseline. Source hashes alone do not establish that a changed request
 mapping is correct.
 
-Replay requires explicit approval on #85, validates a newly collected candidate,
+Replay validates a newly collected candidate
 and compares every key's complete outcome/artifact/report descriptors with the
 approved baseline. Missing cases, byte changes, artifact-to-failure changes and
 report drift fail. New process IDs, candidate commit, and package archive metadata
-are provenance, not output drift. The automatic Dagger check rejects an unapproved
-baseline. After recording the original approval through Dagger, the complete native replay
+are provenance, not output drift. Acceptance is normal Git review. In the original
+qualification run, the complete native replay
 passed in 5m32s: all 168 keys match the approved artifact/report expectations
 across two sessions in each of two fresh process orders.
 The working-tree replay verification is recorded in
@@ -357,22 +355,19 @@ binds. It carries:
 
 ```sh
 cargo run --locked -p xtask -- conformance pdf-judgments-generate
-cargo run --locked -p xtask -- conformance pdf-judgments-approval-subject
-cargo run --locked -p xtask -- conformance record-pdf-judgments-approval \
-  <login> <UTC-date> <issue-85-comment-URL> <exact-subject>
-cargo run --locked -p xtask -- conformance verify-pdf-judgments [--require-approval]
+cargo run --locked -p xtask -- conformance verify-pdf-judgments
 ```
 
 The approved record owns `closure:pdf-judgments` through a `record` owner
 ([ADR-0015](../../../docs/adr/0015-own-closure-obligations-with-approved-judgment-records.md)):
 `record-closure-owner closure:pdf-judgments pdf-judgments RATIONALE` binds its
-digest and approval subject after running this verification in-process, and
+digest after running this verification in-process, and
 `verify-ownership` repeats it. See [OWNERSHIP.md](OWNERSHIP.md).
 
 Generation keeps the authored declarations and rewrites everything else with a
 null approval. Verification checks exact PDF execution coverage, report and
 judgment digests, spec anchors, completeness, that derivation reproduces the
-record, the #85 approval subject when present, and cross-checks all 56 derived
+record, and cross-checks all 56 derived
 reports byte for byte against the approved native baseline (all equal).
 The `implementation` descriptor records the derivation source used to generate
 the record. Its path and hash are historical provenance, not a requirement that
@@ -380,11 +375,10 @@ today's source file have identical bytes or still occupy that path. Verification
 rebuilds the record using today's derivation code, carrying forward only that
 historical descriptor (and the accepted inventory provenance). The full
 derivation rules, format rules, declarations, reports, file classifications and
-judgment bindings must still match. Editing the historical descriptor itself
-changes the acceptance subject.
+judgment bindings must still match.
 
 A source-only derivation refactor needs no record regeneration. Run
-`conformance verify-pdf-judgments --require-approval` to check the retained record
+`conformance verify-pdf-judgments` to check the retained record
 and baseline agreement. Explicit generation still records today's source hash
 and produces an unapproved record for review.
 
@@ -417,7 +411,7 @@ null`, rather than being presented as complete coverage. A zero exit status
 means the report was produced, not that coverage or renderer correctness passed.
 
 `verify-layers` without flags is a compatibility alias for this report.
-`verify-layers --require-approval` and explicit global closure audits retain
+`verify-layers --strict` and explicit global closure audits retain
 strict historical verification for inspection only; a stale historical record
 can fail those opt-in audits. The generation/approval commands
 `layers-generate`, `layers-approval-subject`, `record-layers-approval`, and
@@ -475,7 +469,7 @@ unreferenced. Every problem is listed.
 
 The retired writer/approval commands are not an update procedure. Historically,
 the closure owner bound this record through the compiled-in `layers` verifier
-(`verify-layers --require-approval` in-process). See
+(`verify-layers --strict` in-process today). See
 [the five-layer note](../../../docs/research/five-layer-integration.md).
 
 ### Native snapshot candidates
@@ -530,7 +524,7 @@ of blobs and package archives; generated candidate files are not committed.
 1. Expand the authority into complete atomic risks and approve ownership and
    exclusions; connect exact vectors and specialized PDF/frame/regression owners.
 2. Maintain the approved canonical artifact/report expectations and native replay
-   gate as the inventory grows; changed expectations require explicit reapproval.
+    gate as the inventory grows; changed expectations require review and tests.
 3. Resolve the exposed WASM byte and cross-target trace differences; both collectors
    and their combined gate now execute the current inventory in both orders.
 4. Promote representative cases and expand codec/renderer fuzz reach, then make

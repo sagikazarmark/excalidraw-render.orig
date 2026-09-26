@@ -23,8 +23,8 @@ const REFERENCE_RASTER_DIGEST: &str =
 const VISUAL_FAIL_RASTER_DIGEST: &str =
     "67aee623b8731045330343370de0dfd30fdbb7a343bf2043d1f36473e4b9b88f";
 
-// These producer identities describe the approved Python-era capture. Keep
-// them in the approval subject while Rust replay checks the same frozen bytes.
+// These producer identities describe the historical Python-era capture.
+// Rust replay checks the same retained bytes with the current adapter.
 // Viewer adapters, parser locks, schemas, comparator and evidence stay live.
 const HISTORICAL_QUALIFICATION_SOURCES: &[&str] = &[
     "tools/pdf-viewer-qualification.sh",

@@ -825,9 +825,7 @@ fn verify_case_metadata(manifest: &Value, entry: &CaseEntry) -> Result<(), Strin
 
 /// A tolerance exception names one variant, format, viewer, and region, sets
 /// exact ceilings, and names the issue that carries the decision (spec 14.4).
-/// The immutable approval is the case approval itself: the record is part of
-/// the manifest, so the approval subject binds it and any change to a ceiling
-/// or cause invalidates the approval. The registered entry is the authority on
+/// Changes to a ceiling or cause are reviewed in Git. The registered entry is the authority on
 /// which exceptions a case carries, as it is for coverage and semantic
 /// expectations, so the manifest must reproduce it exactly. Only the scope the
 /// direct-PNG harness judges today is admitted: whole-artifact PNG with no
@@ -1782,8 +1780,7 @@ fn descriptor_path(root: &Path, value: &Value) -> Result<PathBuf, String> {
     Ok(joined)
 }
 
-/// Canonical JSON for approval subjects and digest sidecars, shared by every
-/// evidence family that is not pinned by an approval record. Object keys must
+/// Canonical JSON for evidence descriptors and digest sidecars. Object keys must
 /// be ASCII so byte-order key sorting is a total canonical ordering.
 pub(crate) fn canonical_bytes(value: &Value) -> Result<Vec<u8>, String> {
     let mut output = String::new();

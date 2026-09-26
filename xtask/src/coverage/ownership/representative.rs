@@ -1,4 +1,4 @@
-//! The only supplemental executable owner admitted here is the approved
+//! The only supplemental executable owner admitted here is the registered
 //! frames/text/assets representative case. Recorded commands are never executed
 //! as arbitrary shell input: dispatch is to the checked candidate consumer.
 use super::*;
@@ -104,7 +104,7 @@ fn entry(bytes: &[u8], case: &str) -> Result<Entry, String> {
         || row.consumer != command(&dir)
         || row.status.as_ref().is_some_and(|s| s.trim().is_empty())
     {
-        return Err("representative registry must select its exact release approval-aware consumer and three execution keys".into());
+        return Err("representative registry must select its exact release consumer and three execution keys".into());
     }
     Ok(row)
 }
@@ -122,9 +122,7 @@ fn check_binding(
         return Err("stale or redirected representative registry/manifest binding".into());
     }
     if binding.command != command(&dir) {
-        return Err(
-            "representative owner command is not the exact release approval-aware consumer".into(),
-        );
+        return Err("representative owner command is not the exact release consumer".into());
     }
     let row = entry(registry_bytes, &binding.case)?;
     let manifest: Value = parse(manifest_bytes)?;
@@ -147,7 +145,7 @@ fn receipts(binding: &Binding, result: &Value) -> Result<(), String> {
     if result["schema"] != "excalidraw-render/representative-executions/v1"
         || result["case_id"] != binding.case
     {
-        return Err("representative consumer did not return bound approved executions".into());
+        return Err("representative consumer did not return bound executions".into());
     }
     let rows = result["executions"]
         .as_array()
@@ -187,7 +185,7 @@ pub(super) fn verify(obligation: &str, binding: &Binding) -> Result<(), String> 
         &read(&binding.manifest.path)?,
         |dir, manifest| {
             check_adapter_sources(manifest)?;
-            // This consumer verifies frozen evidence, approval, semantic and visual
+            // This consumer verifies retained evidence, semantic and visual
             // judgments, and fresh release native artifacts/reports for all formats.
             crate::conformance_candidate_gate::execute(dir)
         },
@@ -207,7 +205,7 @@ fn check_adapter_sources(manifest: &Value) -> Result<(), String> {
     }
     Ok(())
 }
-pub(super) fn approved_owner(case: &str) -> Result<Owner, String> {
+pub(super) fn verified_owner(case: &str) -> Result<Owner, String> {
     let registry_bytes = read(REGISTRY_PATH)?;
     let row = entry(&registry_bytes, case)?;
     let path = format!("{}/manifest.json", row.directory);

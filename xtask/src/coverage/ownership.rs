@@ -834,8 +834,8 @@ pub fn verify_ownership() -> Result<(), String> {
                 .any(|row| row.id == a.id && advisory_layer(row))
         })
         .count();
-    println!("verified {} non-layer ownership assignments: {} assigned/excluded, {gaps} explicit gaps; {advisory} five-layer mappings advisory; ledger approval {}",
-        ledger.assignments.len()-advisory,ledger.assignments.len()-advisory-gaps,if ledger.approval.is_null(){"pending"}else{"recorded"});
+    println!("verified {} non-layer ownership assignments: {} assigned/excluded, {gaps} explicit gaps; {advisory} five-layer mappings advisory",
+        ledger.assignments.len()-advisory,ledger.assignments.len()-advisory-gaps);
     Ok(())
 }
 
@@ -911,15 +911,15 @@ fn owner_source(binary: &str, module: &str) -> String {
     }
 }
 pub fn verify_representative_owner(case: &str) -> Result<(), String> {
-    representative::approved_owner(case).map(|_| ())
+    representative::verified_owner(case).map(|_| ())
 }
 pub fn record_representative_owner(case: &str, rationale: &str) -> Result<(), String> {
     if !nonempty(rationale) {
         return Err("ownership rationale is empty".into());
     }
-    // Refuse an unknown, dead, stale or unapproved candidate before any ledger
+    // Refuse an unknown, dead, stale or failing candidate before any ledger
     // mutation, including when unrelated catalog bindings are currently stale.
-    let owner = representative::approved_owner(case)?;
+    let owner = representative::verified_owner(case)?;
     let (catalog, mut ledger) = load()?;
     validate(&catalog, &ledger, false)?;
     let assignment = ledger
@@ -987,7 +987,7 @@ fn assign_gaps(
     Ok(())
 }
 
-/// Explicitly record newer test-source provenance in an unapproved ledger.
+/// Explicitly record newer test-source provenance in the ledger.
 /// Ordinary source edits do not require this legacy maintenance operation.
 /// The selected executable and reviewed rationale are preserved and revalidated.
 pub fn refresh_test_owner_source(module: &str) -> Result<(), String> {
@@ -1047,7 +1047,7 @@ fn write_ledger(ledger: &Ledger) -> Result<(), String> {
 }
 
 /// ADR-0015: assign `owner` (a verified record owner) to its closure row. The
-/// row must be a gap or an existing record owner, and the ledger unapproved.
+/// row must be a gap or an existing record owner.
 fn assign_record_owner(
     catalog: &Catalog,
     ledger: &mut Ledger,
@@ -1087,7 +1087,7 @@ fn assign_record_owner(
     validate(catalog, ledger, false).map(|_| ())
 }
 
-/// `record-closure-owner`: verify the registered verifier's approved record
+/// `record-closure-owner`: verify the registered verifier's record
 /// completely, then record it as the owner of `obligation`.
 pub fn record_closure_owner(
     obligation: &str,
@@ -1107,7 +1107,7 @@ pub fn record_closure_owner(
     if !nonempty(rationale) {
         return Err("ownership rationale is empty".into());
     }
-    // Refuse an unknown verifier or unbound/unapproved record before any
+    // Refuse an unknown verifier or unbound/invalid record before any
     // ledger mutation.
     let owner = record::current_owner(obligation, verifier)?;
     let (catalog, mut ledger) = load()?;
@@ -1545,7 +1545,7 @@ mod tests {
     }
 
     #[test]
-    fn closure_rows_are_owned_only_by_verified_approved_records() {
+    fn closure_rows_are_owned_only_by_verified_records() {
         let owner = record::current_owner("closure:pdf-judgments", "pdf-judgments").unwrap();
         let (catalog, mut ledger) = closure_fixture();
         assign_record_owner(

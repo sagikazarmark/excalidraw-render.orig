@@ -294,9 +294,8 @@ fn valid_provenance_url(url: &str) -> bool {
     false
 }
 
-/// The release evidence bundle together with every committed file whose
-/// content the manifest binds: the viewer qualification (approval subject), the
-/// font subset profile (semantic digest), the committed cross-target
+/// The release evidence bundle together with the font subset profile
+/// (semantic digest), the committed cross-target
 /// measurement, and the recorded supported-target aggregate once one has been
 /// produced. Digests of pinned files are the I/O layer's business
 /// (`verify_descriptors`); this type owns every content rule.
@@ -335,7 +334,7 @@ impl ReleaseEvidence {
     /// Verifies every content rule and returns the target-evidence state:
     /// pending until a supported-target aggregate exists, or aggregated once
     /// the aggregate is recorded and still bound to the current corpus,
-    /// profile, viewer approval, and committed measurement.
+    /// profile and committed measurement.
     fn verify(&self) -> Result<TargetEvidenceState, String> {
         let manifest = &self.manifest;
         if required_string(manifest, "id")? != RELEASE_ID

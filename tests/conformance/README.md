@@ -7,7 +7,7 @@ sections below are historical; approval commands now report their retirement.
 Input/output and tool-integrity digests, tolerance scopes and completeness checks
 remain enforced. Producer-source identities are historical observations.
 
-This directory contains immutable, approved scene documents and reference
+This directory contains versioned scene documents and reference
 evidence used to judge format-specific parity. Ordinary verification is offline:
 
 ```sh
@@ -92,8 +92,7 @@ observed difference from the official evidence has a non-defect cause. It names
 the variant, format, viewer, and region it governs, sets its ceilings to the
 exact observed changed-pixel count and binary64 SSIM score with no margin,
 documents the cause, and links the issue that carries the decision. The
-generator carries registered exceptions into the manifest, so the case approval
-subject binds them and any change to a record invalidates that approval;
+generator carries registered exceptions into the manifest for Git review;
 `parity_registered_case_png` then holds an excepted variant to those ceilings
 and fails if the variant starts passing the canonical budget, so a record cannot
 outlive the difference it describes. Today only whole-artifact direct-PNG
@@ -109,7 +108,7 @@ the manifest record a whole direct-PNG tolerance exception for the same
 variant, so the pin stands for an approved judgment rather than suppressing an
 unrecorded difference. Admitting `format: svg` exceptions in the manifest
 would move the scene case schema every scene manifest pins by digest, so that
-is a batch re-approval round of its own. The official evidence for both cases
+requires a coordinated schema and evidence update. The official evidence for both cases
 is what the pinned reference profile's container draws for a scalar the
 official package has no glyph for — its fontconfig fallback — since the
 profile's environment-dependent inputs are part of its identity; the case
@@ -205,9 +204,9 @@ registry entry plus a case directory rather than a new generator script or a new
 constant. `conformance-case.mjs` reads the same file and refuses any entry whose
 kind is not `scene`; the frame and typography cases keep their own standalone
 generators, which carry their manifest inputs themselves. Neither imports
-anything `conformance-case.mjs` owns: every scene provenance pins that
-generator's bytes, so a change made for one of them must not invalidate the
-scene approvals. The one module all three share, `canonical-json.mjs`, is bound
+anything `conformance-case.mjs` owns. Generator hashes describe the capture run
+and do not gate source-only maintenance. The one module all three share,
+`canonical-json.mjs`, is bound
 by the reference profile whose digest every provenance pins.
 
 Verify every registered case at once with:
@@ -218,7 +217,7 @@ cargo run --locked -p xtask -- conformance verify-all
 
 The first typography case uses a separate pinned runner and generator,
 `typography-conformance-case.mjs`, so changes needed for font-bearing evidence
-cannot invalidate the approved scene generator. The generator resolves the case
+are isolated from scene generation. The generator resolves the case
 directory and runner through the registry, derives the bound `assets` record
 from the official font the reference renderer fetched while producing the
 evidence, and writes the single `expected-report.json` the typography schema
@@ -227,45 +226,25 @@ pins:
 ```sh
 cargo run --locked -p xtask -- conformance generate focused.excalifont-text.v1
 cargo run --locked -p xtask -- conformance reproduce focused.excalifont-text.v1
-cargo run --locked -p xtask -- conformance approval-subject focused.excalifont-text.v1
 ```
 
 `focused.excalifont-text.v1` binds the official basic-Latin Excalifont WOFF2
-identity and is approved on issue #58 for its printed subject digest; any change
-to its generator bytes moves the provenance and needs a fresh approval there.
-Policy approval for deterministic predecoding does not constitute approval of
-either the generated SFNT bytes or this evidence case.
+identity. Changes to the generated SFNT bytes or evidence need review and fresh
+qualification; source-only generator edits do not require a metadata refresh.
 
 The checked manifest is canonical JSON followed by one LF. Its adjacent digest
-hashes the canonical bytes without that LF. The approval subject excludes only
-the four-field approval object and binds the remaining manifest plus every
-referenced scene, report, provenance, artifact, and raw-raster byte string.
+hashes the canonical bytes without that LF. File descriptors bind referenced
+inputs, reports, artifacts and raw rasters. Historical approval objects are read
+as metadata rather than revalidated as acceptance decisions.
 
-An approval subject pins the code that *produces* its evidence — the harness
-scripts, fixture generators, materializers and comparator invocations that
-wrote the bytes under approval, and the module that re-derives and records the
-manifest — and never the code that only *consumes* it: not the tests that check
-the evidence against the manifest, and not the CLI wiring that dispatches to a
-verifier. A consumer can change without a byte of evidence changing, so pinning
-it spends a human re-approval round on nothing, and it also keeps the pinned
-file out of the ordinary formatting and lint gates (#141). Under this rule the
-PDF viewer qualification pins `tools/pdf-viewer-qualification.sh`,
-`tools/pdf-harness/generate-fixtures.py`, the comparator's `compare_pdf_rgba`
-example and `xtask/src/pdf_viewers.rs`, and no longer `xtask/src/main.rs`,
-`xtask/tests/pdf_viewer_verify.rs` or the comparator crate's
-`pdf_viewer_qualification` test. A manifest whose `implementation` list still
-names a consumer drops it in the next round that re-approves that manifest
-anyway (the ride-along rule in `docs/cleanup-plan.md`), never in a round of its
-own.
-
-The Rust structural/fixture migration preserves these approved PDF records
-without refreshing their evidence. For the migrated producer descriptors only,
-`pdf_viewers.rs` checks historical descriptor shape and required membership;
-their original hashes remain inside the approval subject rather than having to
-match today's source bytes. Viewer adapters, parser locks, schemas, comparator
-and all expected evidence retain live byte checks. Current structural and fixture
-callers use `xtask pdf-harness`; see `tools/pdf-harness/README.md` for the prebuilt
-override, Cargo-lock-safe fallback and exact retained Python dependencies.
+Producer descriptors record which harnesses and generators produced a capture.
+Their shapes and required membership are checked where applicable, while source
+edits are qualified by fresh reproduction rather than hash-refresh ceremonies.
+Parser locks, schemas, comparator and expected evidence retain live byte checks.
+Current structural and fixture callers use `xtask pdf-harness`; the PDFium worker
+uses Rust and a separately pinned native engine. See
+[`tools/pdf-harness/README.md`](../../tools/pdf-harness/README.md) for installation
+and reproduction.
 
 ## Visual comparator
 
@@ -294,7 +273,7 @@ cargo test --locked -p excalidraw-render-compare --test profile -- --ignored mat
 
 then repin `closure.sha256` in the profile, the profile's adjacent digest, and
 the three artifacts that bind it (the SVG and PDF viewer qualifications and the
-rectangle PDF renderer expectations), which start a fresh approval round.
+rectangle PDF renderer expectations), then review the diff and rerun qualification.
 
 ## Canonical SVG viewers
 
@@ -369,8 +348,7 @@ cargo test --locked --release -p excalidraw-render --features release-qualificat
 
 Regenerating the corpus stages it under `target/tmp` and prints the `cp`
 commands that refresh the committed copies; the dual-viewer run then writes
-the viewer inputs, both reports and the manifest, which waits for its
-approval on #99:
+the viewer inputs, both reports and the manifest for review:
 
 ```sh
 cargo test --locked --release -p excalidraw-render --lib \
@@ -383,11 +361,10 @@ bash tools/svg-font-subset-qualification.sh reproduce
 The manifest's `implementation` list records historical producer provenance:
 the subsetter, the qualification module that produced the corpus and viewer
 inputs, the two viewer drivers, the report runner, the materializer and the
-harness script. Its paths and digests remain inside the accepted subject, but
+harness script. Its paths and digests describe the capture, but
 verification does not require those source files to exist or match today's
 checkout. A source-only refactor therefore needs no manifest refresh. Generation
-still records the source identities actually used; changing a recorded identity
-itself changes the acceptance subject.
+still records the source identities actually used.
 
 After subsetter changes, run the corpus test above. After changing viewer adapters
 or input generation, use `bash tools/svg-font-subset-qualification.sh reproduce`
@@ -451,7 +428,7 @@ cargo test --locked --release -p excalidraw-render \
   --ignored --exact --nocapture
 ```
 
-The candidate expectation manifest approval-binds the two viewer profiles, the
+The candidate expectation manifest binds the two viewer profiles, the
 comparator and structure profiles, the direct 31-operation structure, and the
 narrow PDFium antialiasing exception approved on issue #44. The exception keeps
 the global comparator unchanged and requires zero Pixelmatch changed pixels;
@@ -477,8 +454,8 @@ adapters' own behavior: a page is admitted when each of its 96 DPI dimensions
 is within one pixel of the supplied canvas and is then placed at exact scale
 from the canvas origin, never stretched to fit (#119).
 
-A PDF viewer gate's tolerance exceptions live beside the case, outside the case
-approval subject: the consuming test pins the file's sha256 and the record
+A PDF viewer gate's tolerance exceptions live beside the case:
+the consuming test pins the file's sha256 and the record
 names the issue that carries the decision. Each record is one
 `excalidraw-render/pdf-compatibility-exception/v1` judgment for one viewer
 profile, with `max_changed_pixels` and `minimum_ssim_bits` set to that viewer's

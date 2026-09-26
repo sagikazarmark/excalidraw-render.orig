@@ -170,11 +170,7 @@ fn spec_anchors(repo: &Repo, record: &Value) -> Result<(), String> {
 }
 
 /// Every consistency check except the baseline cross-check. Returns the record.
-fn verify_record(
-    repo: &Repo,
-    inventory: &Inventory,
-    _require_approval: bool,
-) -> Result<Value, String> {
+fn verify_record(repo: &Repo, inventory: &Inventory) -> Result<Value, String> {
     let bytes = repo.read(RECORD)?;
     let record: Value = parse(&bytes)?;
     if bytes != record_bytes(&record)? {
@@ -357,7 +353,7 @@ pub(super) fn check_actual_reports(
 ) -> Result<(usize, usize), String> {
     let repo = Repo::real();
     let inventory = load_inventory()?;
-    let record = verify_record(&repo, &inventory, false)?;
+    let record = verify_record(&repo, &inventory)?;
     let pdf = expected_pdf_reports(&record)?;
     let registry: Value = parse(&repo.read(REGISTRY)?)?;
     let mut pdf_count = 0;
@@ -431,11 +427,10 @@ pub fn generate_pdf_judgments() -> Result<(), String> {
     Ok(())
 }
 
-/// The compiled-in `pdf-judgments` record-owner verifier (ADR-0015): exactly
-/// `verify-pdf-judgments --require-approval`, run in-process.
-pub(super) fn verify_approved_record() -> Result<(), String> {
+/// The compiled-in record-owner verifier: `verify-pdf-judgments` in-process.
+pub(super) fn verify_owned_record() -> Result<(), String> {
     let repo = Repo::real();
-    let record = verify_record(&repo, &load_inventory()?, true)?;
+    let record = verify_record(&repo, &load_inventory()?)?;
     cross_check_baseline(&repo, &record).map(|_| ())
 }
 
@@ -445,9 +440,9 @@ pub(super) fn record_subject(record: &Value) -> Result<String, String> {
     subject_of(record)
 }
 
-pub fn verify_pdf_judgments(require_approval: bool) -> Result<(), String> {
+pub fn verify_pdf_judgments() -> Result<(), String> {
     let repo = Repo::real();
-    let record = verify_record(&repo, &load_inventory()?, require_approval)?;
+    let record = verify_record(&repo, &load_inventory()?)?;
     let equal = cross_check_baseline(&repo, &record)?;
     println!(
         "verified pdf-judgments.json: {} expected PDF reports ({} equal the native baseline byte for byte), {} bound judgment files, {} classified non-judgment files",
@@ -487,8 +482,8 @@ mod tests {
                 .overrides
                 .insert(RECORD.into(), Some(record_bytes(record).unwrap()));
         }
-        fn verify(&self, require: bool) -> Result<Value, String> {
-            verify_record(&self.repo, &self.inventory, require)
+        fn verify(&self) -> Result<Value, String> {
+            verify_record(&self.repo, &self.inventory)
         }
     }
 
@@ -509,7 +504,7 @@ mod tests {
         for source in [Some(edited), None] {
             let mut repo = Repo::real();
             repo.overrides.insert(derive::IMPLEMENTATION.into(), source);
-            let verified = verify_record(&repo, &inventory, true).unwrap();
+            let verified = verify_record(&repo, &inventory).unwrap();
             assert_eq!(verified, accepted);
             assert_eq!(cross_check_baseline(&repo, &verified).unwrap(), 56);
         }
@@ -525,7 +520,7 @@ mod tests {
             .overrides
             .insert(derive::IMPLEMENTATION.into(), Some(edited.clone()));
         // Verification returns the original record even after the source edit.
-        assert_eq!(fixture.verify(false).unwrap(), fixture.record);
+        assert_eq!(fixture.verify().unwrap(), fixture.record);
         let generated = generate_in(&fixture.repo, &fixture.inventory).unwrap();
         assert_eq!(generated["implementation"]["sha256"], sha256(&edited));
         assert_ne!(
@@ -537,7 +532,7 @@ mod tests {
     }
 
     #[test]
-    fn historical_implementation_is_well_formed_and_remains_acceptance_bound() {
+    fn historical_implementation_requires_well_formed_provenance_only() {
         let mut fixture = Fixture::new();
         let original = fixture.record.clone();
         for implementation in [
@@ -551,7 +546,7 @@ mod tests {
             malformed["implementation"] = implementation;
             fixture.with_record(&malformed);
             assert!(fixture
-                .verify(false)
+                .verify()
                 .unwrap_err()
                 .contains("implementation descriptor"));
         }
@@ -559,7 +554,7 @@ mod tests {
         let mut changed: Value = parse(&Repo::real().read(RECORD).unwrap()).unwrap();
         changed["implementation"]["sha256"] = json!("0".repeat(64));
         fixture.with_record(&changed);
-        fixture.verify(true).unwrap();
+        fixture.verify().unwrap();
     }
 
     #[test]
@@ -574,7 +569,7 @@ mod tests {
             let mut changed = fixture.record.clone();
             *changed.pointer_mut(pointer).unwrap() = json!("changed");
             fixture.with_record(&changed);
-            assert!(fixture.verify(false).is_err(), "accepted changed {pointer}");
+            assert!(fixture.verify().is_err(), "accepted changed {pointer}");
         }
     }
 
@@ -585,7 +580,7 @@ mod tests {
             generate_in(&fixture.repo, &fixture.inventory).unwrap(),
             fixture.record
         );
-        let record = fixture.verify(false).unwrap();
+        let record = fixture.verify().unwrap();
         let pdf = fixture
             .inventory
             .executions
@@ -594,7 +589,7 @@ mod tests {
             .count();
         assert_eq!(record["executions"].as_array().unwrap().len(), pdf);
         assert_eq!(cross_check_baseline(&fixture.repo, &record).unwrap(), pdf);
-        fixture.verify(true).unwrap();
+        fixture.verify().unwrap();
     }
 
     #[test]
@@ -622,7 +617,7 @@ mod tests {
         missing["executions"].as_array_mut().unwrap().pop();
         fixture.with_record(&missing);
         assert!(fixture
-            .verify(false)
+            .verify()
             .unwrap_err()
             .contains("has no expected report"));
 
@@ -630,13 +625,13 @@ mod tests {
         let first = duplicate["executions"][0].clone();
         duplicate["executions"].as_array_mut().unwrap().push(first);
         fixture.with_record(&duplicate);
-        assert!(fixture.verify(false).unwrap_err().contains("more than one"));
+        assert!(fixture.verify().unwrap_err().contains("more than one"));
 
         let mut stale = fixture.record.clone();
         stale["executions"][0]["expected_report"]["sha256"] = json!("0".repeat(64));
         fixture.with_record(&stale);
         assert!(fixture
-            .verify(false)
+            .verify()
             .unwrap_err()
             .contains("stale expected report digest"));
 
@@ -648,10 +643,7 @@ mod tests {
         altered["executions"][0]["expected_report"] = json!({"byte_length":bytes.len(),
             "sha256":sha256(&bytes),"diagnostics":[diagnostic]});
         fixture.with_record(&altered);
-        assert!(fixture
-            .verify(false)
-            .unwrap_err()
-            .contains("does not reproduce"));
+        assert!(fixture.verify().unwrap_err().contains("does not reproduce"));
     }
 
     #[test]
@@ -666,7 +658,7 @@ mod tests {
             .overrides
             .insert(path, Some(b"changed".to_vec()));
         assert!(fixture
-            .verify(false)
+            .verify()
             .unwrap_err()
             .contains("stale digest for PDF judgment"));
 
@@ -676,7 +668,7 @@ mod tests {
             .repo
             .overrides
             .insert(new.into(), Some(b"{}".to_vec()));
-        let error = fixture.verify(false).unwrap_err();
+        let error = fixture.verify().unwrap_err();
         assert!(
             error.contains("unbound PDF judgment file") && error.contains(new),
             "{error}"
@@ -688,14 +680,14 @@ mod tests {
             .repo
             .overrides
             .insert(odd.into(), Some(b"{}".to_vec()));
-        assert!(fixture.verify(false).unwrap_err().contains(odd));
+        assert!(fixture.verify().unwrap_err().contains(odd));
 
         let mut fixture = Fixture::new();
         let mut dropped = fixture.record.clone();
         dropped["judgments"].as_array_mut().unwrap().remove(0);
         fixture.with_record(&dropped);
         assert!(fixture
-            .verify(false)
+            .verify()
             .unwrap_err()
             .contains("unbound PDF judgment file"));
     }
@@ -709,18 +701,12 @@ mod tests {
             .unwrap()
             .remove(0);
         fixture.with_record(&undeclared);
-        assert!(fixture
-            .verify(false)
-            .unwrap_err()
-            .contains("pdf_declarations"));
+        assert!(fixture.verify().unwrap_err().contains("pdf_declarations"));
 
         let mut bad_anchor = fixture.record.clone();
         bad_anchor["pdf_declarations"][0]["spec_anchor"] = json!("not in the spec");
         fixture.with_record(&bad_anchor);
-        assert!(fixture
-            .verify(false)
-            .unwrap_err()
-            .contains("stale spec anchor"));
+        assert!(fixture.verify().unwrap_err().contains("stale spec anchor"));
 
         // A registry whose PNG declaration drops a format-neutral diagnostic.
         let fixture = Fixture::new();
@@ -752,22 +738,22 @@ mod tests {
         let mut fixture = Fixture::new();
         let subject = subject_of(&fixture.record).unwrap();
         let mut record = fixture.record.clone();
-        fixture.verify(true).unwrap();
+        fixture.verify().unwrap();
         let wrong = URL.replace("/issues/85#", "/issues/44#");
         record["approval"] = approval(&subject, URL);
         assert_eq!(subject_of(&record).unwrap(), subject);
         fixture.with_record(&record);
-        fixture.verify(true).unwrap();
+        fixture.verify().unwrap();
 
         let mut wrong_issue = record.clone();
         wrong_issue["approval"] = approval(&subject, &wrong);
         fixture.with_record(&wrong_issue);
-        fixture.verify(true).unwrap();
+        fixture.verify().unwrap();
 
         let mut changed = record;
         changed["approval"] = approval(&"f".repeat(64), URL);
         fixture.with_record(&changed);
-        fixture.verify(false).unwrap();
+        fixture.verify().unwrap();
     }
 
     #[test]

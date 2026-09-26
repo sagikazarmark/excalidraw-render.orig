@@ -671,7 +671,7 @@ fn bound_manifest(directory: &str) -> Result<Value> {
         return Err("manifest profiles are detached from captures".into());
     }
     if manifest["exception_proposal"] != crate::conformance_candidate_exceptions::proposed(&root)? {
-        return Err("exception proposal is detached from the approval-bearing manifest".into());
+        return Err("exception proposal is detached from the case manifest".into());
     }
     repo_chain(&manifest["profiles"], &mut BTreeSet::new())?;
     Ok(manifest)
@@ -710,9 +710,9 @@ fn verify_and_replay(directory: &str) -> Result<Value> {
         json!({"schema":"excalidraw-render/representative-executions/v1","case_id":manifest["case_id"],"executions":rows}),
     )
 }
-/// Diagnostic inspection is deliberately not an execution/approval consumer.
+/// Diagnostic inspection does not register successful corpus executions.
 /// Invalid or stale evidence is an error; valid but out-of-budget observations
-/// are returned as pending judgments, with no approval subject or eligible keys.
+/// are returned as pending judgments, with no eligible execution keys.
 pub fn inspect(directory: &str) -> Result<Value> {
     let root = candidate_root(directory)?;
     if root.join("manifest.json").exists() {
@@ -747,7 +747,7 @@ fn inspection(judgments: Value, semantics: Value, native: Value) -> Result<Value
         .map(|r| r["id"].clone())
         .collect();
     Ok(
-        json!({"schema":"excalidraw-render/representative-inspection/v1","status":if failed.is_empty(){"ready_for_approval_check"}else{"pending_judgment"},"inspection_only":true,"approval_status":"not_evaluated","approval_subject_sha256":null,"eligible_executions":[],"failed_comparisons":failed,"native_replay":native,"judgments":judgments,"semantics":semantics}),
+        json!({"schema":"excalidraw-render/representative-inspection/v1","status":if failed.is_empty(){"checks_passed"}else{"pending_judgment"},"inspection_only":true,"eligible_executions":[],"failed_comparisons":failed,"native_replay":native,"judgments":judgments,"semantics":semantics}),
     )
 }
 pub fn verify_registry() -> Result<()> {
@@ -978,7 +978,7 @@ mod tests {
         }
     }
     #[test]
-    fn provenance_inspection_never_promotes_measurements_to_approval() {
+    fn inspection_reports_measurements_without_registering_executions() {
         let judgments = value(
             &repo_root(),
             "tests/conformance/candidates/stage4-frames-text-assets-v4/judgments.json",
@@ -996,22 +996,22 @@ mod tests {
             json!(["pdf-pdfium", "pdf-pdfjs", "png-canvas"])
         );
         assert_eq!(result["eligible_executions"], json!([]));
-        assert!(result["approval_subject_sha256"].is_null());
+        assert!(result.get("approval_subject_sha256").is_none());
         let mut passing = judgments.clone();
         for row in passing["rows"].as_array_mut().unwrap() {
             row["passed"] = json!(true);
         }
         let ready = inspection(passing, json!({}), json!({})).unwrap();
-        assert_eq!(ready["status"], "ready_for_approval_check");
-        assert_eq!(ready["approval_status"], "not_evaluated");
+        assert_eq!(ready["status"], "checks_passed");
+        assert!(ready.get("approval_status").is_none());
         assert_eq!(ready["eligible_executions"], json!([]));
-        assert!(ready["approval_subject_sha256"].is_null());
+        assert!(ready.get("approval_subject_sha256").is_none());
         let mut incomplete = judgments;
         incomplete["rows"].as_array_mut().unwrap().pop();
         assert!(inspection(incomplete, json!({}), json!({})).is_err());
     }
     #[test]
-    fn withdrawn_v1_subject_is_never_approval_ready() {
+    fn withdrawn_v1_candidate_has_no_execution_adapter() {
         {
             assert!(
                 execute("tests/conformance/candidates/stage4-frames-text-assets")

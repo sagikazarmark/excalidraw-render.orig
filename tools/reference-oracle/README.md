@@ -75,11 +75,11 @@ cargo run --locked -p xtask -- conformance generate focused.rectangle-outline.v1
 cargo run --locked -p xtask -- conformance reproduce focused.rectangle-outline.v1
 cargo run --locked -p xtask -- conformance verify focused.rectangle-outline.v1
 cargo run --locked -p xtask -- conformance reproduce focused.frame-export.v1
-cargo run --locked -p xtask -- conformance approval-subject focused.frame-export.v1
+cargo run --locked -p xtask -- conformance verify focused.frame-export.v1
 ```
 
 Generation and reproduction use the same pinned container and frozen wrapper as
-the reference profile. Generation refuses to replace approved evidence.
+the reference profile. Explicit generation writes an expectation diff for review.
 Reproduction writes no corpus files. Verification requires no Node, browser,
 container, network, or system fonts.
 

@@ -385,10 +385,10 @@ pub fn verify_inventory() -> Result<(), String> {
 
 pub fn verify_closure() -> Result<(), String> {
     ownership::verify_closed()
-        .map_err(|error| format!("release coverage is draft and unapproved: {error}"))?;
+        .map_err(|error| format!("release coverage is incomplete: {error}"))?;
     let inventory = load_inventory()?;
     Err(format!(
-        "release coverage is draft and unapproved; unresolved: {}",
+        "release coverage is incomplete; unresolved: {}",
         inventory
             .requirements
             .iter()
@@ -544,7 +544,7 @@ pub fn verify_results(path: &str) -> Result<(), String> {
         return Err("result tooling differs from the current pinned tools".into());
     }
     validate_results(&inventory, &bundle)?;
-    println!("verified result equality for the draft inventory; canonical snapshot approval and release closure remain pending");
+    println!("verified result equality for the draft inventory; native baseline replay and release closure remain separate checks");
     Ok(())
 }
 

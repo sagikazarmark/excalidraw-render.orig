@@ -187,7 +187,7 @@ single primary home for each scoped label. Other candidates stay secondary evide
 | transform.rotation | transform-opacity-groups | General transform coverage; rotated bounds/rough paths remain distinct regressions |
 
 All selections must name a currently registered candidate and bind its exact
-manifest bytes; the consistency command additionally verifies case approvals.
+manifest bytes; the consistency command verifies case evidence and expectations.
 These are label-level ownership decisions only, not proof that a chosen scene
 covers every diagnostic/format/profile obligation introduced by this ledger.
 
@@ -207,14 +207,14 @@ pinned by exact values. A `layer` row may name registered candidate cases;
 ## Commands and checks
 
 ```sh
-dagger check excalidraw-render:conformance:coverage-ownership
+dagger check conformance:coverage-ownership
 dagger api call evidence ownership-catalog --output target/ownership-catalog.json
 cargo run --locked -p xtask -- conformance verify-ownership
-# Record explicit reviewed gap selections; this does not grant approval:
+# Record explicit reviewed gap selections:
 cargo run --locked -p xtask -- conformance record-test-owner MODULE FUNCTION RATIONALE ID...
 # Explicit root library tests using private test-only operation seams:
 cargo run --locked -p xtask -- conformance record-library-test-owner MODULE FUNCTION RATIONALE ID...
-# Own a closure row with its approved judgment record (ADR-0015):
+# Own a closure row with its verified judgment record (ADR-0015/0019):
 cargo run --locked -p xtask -- conformance record-closure-owner closure:pdf-judgments pdf-judgments RATIONALE
 # Inspect optional five-layer coverage without changing the ledger:
 cargo run --locked -p xtask -- conformance layers-report
@@ -225,10 +225,7 @@ cargo run --locked -p xtask -- conformance record-case-owner CASE RATIONALE ID..
 cargo run --locked -p xtask -- conformance extend-ownership target/old-catalog.json ISSUE REASON
 # Machine-readable all-gap template, for explicit reviewed migrations only:
 cargo run --locked -p xtask -- conformance seed-ownership > target/ownership-template.json
-# Both fail until the ledger is complete (closure also requires approval):
-cargo run --locked -p xtask -- conformance ownership-approval-subject
-cargo run --locked -p xtask -- conformance record-ownership-approval \
-  <login> <UTC-date> <issue-85-comment-URL> <exact-subject>
+# Fails while substantive coverage or execution obligations remain incomplete:
 cargo run --locked -p xtask -- conformance verify-closure
 ```
 
@@ -247,9 +244,9 @@ requirements. See [the inventory assessment](../../../docs/research/png-profile-
 
 `extend-ownership` authenticates a captured prior catalog against the existing
 ledger, refuses changes/removals to any prior obligation, preserves all prior
-dispositions, and adds new rows only as issue-linked gaps. It refuses an approved
-global ledger. This is an append-only reviewed inventory migration, not a stale
-digest override, automatic owner selection, or approval refresh.
+dispositions, and adds new rows only as issue-linked gaps. This is an append-only
+reviewed inventory migration, not a stale digest override or automatic owner
+selection. Historical approval metadata does not block maintenance.
 
 Dispositions are strict tagged objects:
 
@@ -276,24 +273,19 @@ Dispositions are strict tagged objects:
   `kind: record`, a `record` path + sha256, `approval_subject_sha256` and a
   `verifier` name. Closure rows (`closure:*`) accept only record owners, and
   record owners own only closure rows. The record's bytes match the digest, it
-  names the row as its `obligation`, its `approving_issue` is 85, and its #85
-  approval binds exactly the recorded subject, which its own subject computation
-  reproduces. `verifier` selects a verifier compiled into xtask for the record's
-  schema, never a shell command; it runs in-process with approval required
-  (`pdf-judgments` runs `verify-pdf-judgments --require-approval`, `layers`
-  runs `verify-layers --require-approval`). Any failure
+  names the row as its `obligation`, and has the expected schema/revision.
+  `approval_subject_sha256` is retained only for legacy record compatibility.
+  `verifier` selects a verifier compiled into xtask for the record's
+  schema, never a shell command (`pdf-judgments` runs `verify-pdf-judgments`,
+  `layers` runs `verify-layers --strict`). Any failure
   is stale or unbound ownership. `record-closure-owner` checks all of this before
-  writing a gap or existing record row of an unapproved ledger; a changed record
-  needs a fresh approval before it can be rebound.
+  writing a gap or existing record row; review changed records and ownership in Git.
 - `gap`: positive issue number and a concrete reason. Always blocks closure.
-- `excluded`: reason, digest-bound proof source/anchor and an existing explicit
-  #85 approval binding the canonical exclusion subject (obligation + reason +
-  proof). The three generic-fallback exclusions have the scoped approval linked
-  above. Difficulty or missing evidence is a gap, not an exclusion.
+- `excluded`: reason and digest-bound proof source/anchor, reviewed in Git.
+  Historical decision metadata may be retained. Difficulty or missing evidence
+  is a gap, not an exclusion.
 
-Approval verification is offline: it checks the exact subject and scoped GitHub
-comment URL syntax, not remote comment existence or authorship. The maintainer's
-recorded decision remains the authority, as in the existing case approval system.
+Acceptance is normal Git/PR review; verifiers check the evidence itself.
 The test adapter parses Rust syntax and requires exactly one top-level external
 module and one top-level `#[test]` function for the selected owner. Comments,
 strings, nested scopes, conditional/ignored tests, module path redirection and
@@ -303,20 +295,13 @@ resolve imports or expand macros: imports named `test`, glob imports, item macro
 invocations and macro-use imports in the checked scopes require an explicit
 adapter rather than guessing whether `#[test]` is built-in. The test marker must
 be an outer attribute. These checks do not replace compiled test execution.
-Historical source hashes are excluded from the final ownership decision subject
-for test owners. Verification checks their digest syntax and resolves the selected
+For test owners, verification checks historical digest syntax and resolves the selected
 test in the current tree, without requiring its source bytes to match the recorded
 digest.
 
-A completed-ledger subject binds the whole catalog and every disposition,
-excluding only the ledger's approval object. It contains strings/integers, not
-floating-point request JSON. Record owners keep their record digest in the
-subject. Subject generation refuses remaining gaps; release closure additionally
-requires its scoped four-field approval. `record-ownership-approval` verifies the
-ledger, refuses while any gap remains, requires the exact computed subject and
-a #85 comment URL, writes the four-field approval and re-verifies. Once approved
-the ledger is frozen; this incomplete proposal cannot be marked complete by a
-metadata flag.
+Closure checks the catalog, dispositions, executable owners and remaining gaps.
+It cannot be made complete by changing an approval or status flag. The old
+approval-subject and approval-recording commands are retired (ADR-0019).
 
 ## Remaining mapping work
 
@@ -327,8 +312,8 @@ assigning a broad obligation. Connect specialized PDF structural/visual exceptio
 to their consuming comparators and stale-exception tests with a dedicated adapter.
 Expand codec facets into explicit accepted profile/color/orientation/alpha/animation
 subrows; add representative interactions. The five corpus layers are registered
-in `layers.json`; apply the layer owner tranche and approve that record.
-Only then request final ledger approval and attempt #85 release closure.
+in the optional `layers-report`. Review owners and expectations with their tests;
+attempt release closure only when the substantive obligations are complete.
 ## Executable test groups (ADR-0018)
 
 An owner may select a digest-bound `test_group` manifest under `test-groups/`.

@@ -1,4 +1,4 @@
-//! Record owners (ADR-0015): a closure obligation is owned by an approved
+//! Record owners (ADR-0015/0019): a closure obligation is owned by a verified
 //! judgment record, checked by a verifier compiled into xtask. A record owner
 //! is exactly as strong as its verifier; nothing here runs a shell command.
 use super::*;
@@ -11,8 +11,7 @@ pub(super) struct Verifier {
     /// The record's own approval subject computation (no `sha256:` prefix).
     #[cfg(test)]
     subject: fn(&Value) -> Result<String, String>,
-    /// Full in-process verification of the repository's record with its
-    /// approval required.
+    /// Full in-process verification of the repository's record.
     verify: fn() -> Result<(), String>,
 }
 
@@ -23,7 +22,7 @@ const VERIFIERS: &[Verifier] = &[
         record: pdf_judgments::RECORD,
         #[cfg(test)]
         subject: pdf_judgments::record_subject,
-        verify: pdf_judgments::verify_approved_record,
+        verify: pdf_judgments::verify_owned_record,
     },
     Verifier {
         name: "layers",
@@ -31,7 +30,7 @@ const VERIFIERS: &[Verifier] = &[
         record: layers::RECORD,
         #[cfg(test)]
         subject: layers::record_subject,
-        verify: layers::verify_approved_record,
+        verify: layers::verify_owned_record,
     },
 ];
 
@@ -264,7 +263,7 @@ mod tests {
     }
 
     #[test]
-    fn the_approved_pdf_judgments_record_owns_its_closure_row() {
+    fn the_verified_pdf_judgments_record_owns_its_closure_row() {
         let Owner::Record {
             record,
             approval_subject_sha256,
