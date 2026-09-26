@@ -13,6 +13,7 @@ use excalidraw_render::{
     Renderer, ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
     DEFAULT_COMPATIBILITY_REVISION,
 };
+use serde::{Serialize, Serializer};
 use sha2::{Digest, Sha256};
 use tempfile::TempPath;
 
@@ -119,12 +120,15 @@ struct Cli {
     licenses: bool,
 }
 
+#[derive(Serialize)]
 struct ArtifactDescriptor {
     media_type: &'static str,
     byte_length: usize,
     sha256: String,
 }
 
+#[derive(Serialize)]
+#[serde(untagged)]
 enum ReportError {
     Library(ErrorDescriptor),
     Cli(CliError),
@@ -143,6 +147,7 @@ impl ReportError {
     }
 }
 
+#[derive(Serialize)]
 struct CliError {
     family: &'static str,
     category: Option<&'static str>,
@@ -154,6 +159,8 @@ struct CliError {
     details: Option<CliDetails>,
 }
 
+#[derive(Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 enum CliDetails {
     ParseLimit {
         field: &'static str,
@@ -189,6 +196,8 @@ enum CliDetails {
     },
 }
 
+#[derive(Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 enum CliMeasurement {
     AtLeast { value: u64 },
 }
@@ -263,12 +272,14 @@ impl DeliveryState {
     }
 }
 
+#[derive(Serialize)]
 struct CliPathEntry {
     role: &'static str,
     asset_id: Option<String>,
     path: String,
 }
 
+#[derive(Serialize)]
 struct RenderReport<'a> {
     schema_version: u32,
     status: &'static str,
@@ -282,18 +293,34 @@ struct RenderReport<'a> {
     diagnostics: &'a [CompatibilityDiagnostic],
 }
 
+#[derive(Serialize)]
 struct RevisionReport {
     schema_version: u32,
     renderer_version: &'static str,
     revisions: Vec<RevisionEntry>,
 }
 
+#[derive(Serialize)]
 struct RevisionEntry {
     compatibility_revision: CompatibilityRevision,
     excalidraw_release: &'static str,
     reference_profile_digest: &'static str,
     default: bool,
 }
+
+/// Serializes each unit enum as its `as_str` spelling, so reports and human
+/// messages share one spelling.
+macro_rules! serialize_as_str {
+    ($($name:ty),*) => {$(
+        impl Serialize for $name {
+            fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                serializer.serialize_str(self.as_str())
+            }
+        }
+    )*};
+}
+
+serialize_as_str!(IoRole, DeliveryRole, CliOperation, DeliveryState);
 
 struct SelectedIdentity {
     revision: CompatibilityRevision,
@@ -523,7 +550,7 @@ fn run_standalone(cli: &Cli) -> u8 {
             })
             .collect::<String>()
             .into_bytes(),
-        ReportFormat::Json => revision_json_line(&RevisionReport {
+        ReportFormat::Json => json_line(&RevisionReport {
             schema_version: 1,
             renderer_version: env!("CARGO_PKG_VERSION"),
             revisions,
@@ -1216,27 +1243,6 @@ fn deliver_success(
     0
 }
 
-fn push_artifact_descriptor(bytes: &mut Vec<u8>, artifact: &ArtifactDescriptor) {
-    bytes.extend_from_slice(b"{\"media_type\":");
-    push_json_string(bytes, artifact.media_type);
-    bytes.extend_from_slice(b",\"byte_length\":");
-    bytes.extend_from_slice(artifact.byte_length.to_string().as_bytes());
-    bytes.extend_from_slice(b",\"sha256\":");
-    push_json_string(bytes, &artifact.sha256);
-    bytes.push(b'}');
-}
-
-fn push_diagnostics(bytes: &mut Vec<u8>, diagnostics: &[CompatibilityDiagnostic]) {
-    for (index, diagnostic) in diagnostics.iter().enumerate() {
-        if index != 0 {
-            bytes.push(b',');
-        }
-        bytes.extend_from_slice(
-            &serde_json::to_vec(diagnostic).expect("compatibility diagnostic serializes"),
-        );
-    }
-}
-
 fn stage_report_file(cli: &Cli, bytes: &[u8]) -> Result<Option<StagedFile>, CliOperation> {
     let report = report_output(cli);
     if report == "stderr" {
@@ -1252,7 +1258,7 @@ fn success_report_bytes(
     diagnostics: &[CompatibilityDiagnostic],
 ) -> Vec<u8> {
     match mode {
-        ReportFormat::Json => render_json_line(report),
+        ReportFormat::Json => json_line(report),
         ReportFormat::Human => diagnostics
             .iter()
             .map(|diagnostic| format!("{}: {}\n", diagnostic.code(), diagnostic.message()))
@@ -1358,7 +1364,7 @@ fn failure_report_bytes(
         text.push_str(&format!("{} {}: {}\n", family, code, message));
         return text.into_bytes();
     }
-    render_json_line(&RenderReport {
+    json_line(&RenderReport {
         schema_version: 1,
         status: "failure",
         renderer_version: env!("CARGO_PKG_VERSION"),
@@ -1596,233 +1602,11 @@ fn preparse_json_mode(args: &[OsString]) -> bool {
     report_options == 1 && valid_json == 1
 }
 
-fn revision_json_line(report: &RevisionReport) -> Vec<u8> {
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(b"{\"schema_version\":");
-    bytes.extend_from_slice(report.schema_version.to_string().as_bytes());
-    bytes.extend_from_slice(b",\"renderer_version\":");
-    push_json_string(&mut bytes, report.renderer_version);
-    bytes.extend_from_slice(b",\"revisions\":[");
-    for (index, revision) in report.revisions.iter().enumerate() {
-        if index != 0 {
-            bytes.push(b',');
-        }
-        bytes.extend_from_slice(b"{\"compatibility_revision\":");
-        bytes.extend_from_slice(revision.compatibility_revision.get().to_string().as_bytes());
-        bytes.extend_from_slice(b",\"excalidraw_release\":");
-        push_json_string(&mut bytes, revision.excalidraw_release);
-        bytes.extend_from_slice(b",\"reference_profile_digest\":");
-        push_json_string(&mut bytes, revision.reference_profile_digest);
-        bytes.extend_from_slice(b",\"default\":");
-        bytes.extend_from_slice(if revision.default { b"true" } else { b"false" });
-        bytes.push(b'}');
-    }
-    bytes.extend_from_slice(b"]}\n");
+/// `report` as one line of JSON.
+fn json_line(report: &impl Serialize) -> Vec<u8> {
+    let mut bytes = serde_json::to_vec(report).expect("reports serialize");
+    bytes.push(b'\n');
     bytes
-}
-
-fn render_json_line(report: &RenderReport<'_>) -> Vec<u8> {
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(b"{\"schema_version\":");
-    bytes.extend_from_slice(report.schema_version.to_string().as_bytes());
-    bytes.extend_from_slice(b",\"status\":");
-    push_json_string(&mut bytes, report.status);
-    bytes.extend_from_slice(b",\"renderer_version\":");
-    push_json_string(&mut bytes, report.renderer_version);
-    bytes.extend_from_slice(b",\"compatibility_revision\":");
-    if let Some(revision) = report.compatibility_revision {
-        bytes.extend_from_slice(revision.get().to_string().as_bytes());
-    } else {
-        bytes.extend_from_slice(b"null");
-    }
-    bytes.extend_from_slice(b",\"excalidraw_release\":");
-    push_optional_json_string(&mut bytes, report.excalidraw_release);
-    bytes.extend_from_slice(b",\"reference_profile_digest\":");
-    push_optional_json_string(&mut bytes, report.reference_profile_digest);
-    bytes.extend_from_slice(b",\"format\":");
-    if let Some(format) = report.format {
-        push_json_string(&mut bytes, format.as_str());
-    } else {
-        bytes.extend_from_slice(b"null");
-    }
-    bytes.extend_from_slice(b",\"artifact\":");
-    if let Some(artifact) = &report.artifact {
-        bytes.extend_from_slice(b"{\"media_type\":");
-        push_json_string(&mut bytes, artifact.media_type);
-        bytes.extend_from_slice(b",\"byte_length\":");
-        bytes.extend_from_slice(artifact.byte_length.to_string().as_bytes());
-        bytes.extend_from_slice(b",\"sha256\":");
-        push_json_string(&mut bytes, &artifact.sha256);
-        bytes.push(b'}');
-    } else {
-        bytes.extend_from_slice(b"null");
-    }
-    bytes.extend_from_slice(b",\"error\":");
-    if let Some(error) = &report.error {
-        push_report_error(&mut bytes, error);
-    } else {
-        bytes.extend_from_slice(b"null");
-    }
-    bytes.extend_from_slice(b",\"diagnostics\":[");
-    for (index, diagnostic) in report.diagnostics.iter().enumerate() {
-        if index != 0 {
-            bytes.push(b',');
-        }
-        bytes.extend_from_slice(
-            &serde_json::to_vec(diagnostic).expect("compatibility diagnostic serializes"),
-        );
-    }
-    bytes.extend_from_slice(b"]}\n");
-    bytes
-}
-
-fn push_report_error(bytes: &mut Vec<u8>, error: &ReportError) {
-    match error {
-        ReportError::Library(error) => bytes.extend_from_slice(
-            &serde_json::to_vec(error).expect("library error descriptor serializes"),
-        ),
-        ReportError::Cli(error) => {
-            bytes.extend_from_slice(b"{\"family\":");
-            push_json_string(bytes, error.family);
-            bytes.extend_from_slice(b",\"category\":");
-            push_optional_json_string(bytes, error.category);
-            bytes.extend_from_slice(b",\"code\":");
-            push_json_string(bytes, error.code);
-            bytes.extend_from_slice(b",\"message\":");
-            push_json_string(bytes, &error.message);
-            bytes.extend_from_slice(b",\"format\":");
-            if let Some(format) = error.format {
-                push_json_string(bytes, format.as_str());
-            } else {
-                bytes.extend_from_slice(b"null");
-            }
-            bytes.extend_from_slice(b",\"element_id\":");
-            push_optional_json_string(bytes, error.element_id.as_deref());
-            bytes.extend_from_slice(b",\"json_pointer\":");
-            push_optional_json_string(bytes, error.json_pointer.as_deref());
-            bytes.extend_from_slice(b",\"details\":");
-            if let Some(details) = &error.details {
-                push_cli_details(bytes, details);
-            } else {
-                bytes.extend_from_slice(b"null");
-            }
-            bytes.push(b'}');
-        }
-    }
-}
-
-fn push_cli_details(bytes: &mut Vec<u8>, details: &CliDetails) {
-    bytes.push(b'{');
-    match details {
-        CliDetails::ParseLimit {
-            field,
-            configured,
-            value_kind,
-            measurement,
-        } => {
-            bytes.extend_from_slice(b"\"kind\":\"parse_limit\",\"field\":");
-            push_json_string(bytes, field);
-            push_limit_details(bytes, *configured, value_kind, measurement);
-        }
-        CliDetails::ResourceLimit {
-            field,
-            configured,
-            value_kind,
-            measurement,
-            recovery,
-        } => {
-            bytes.extend_from_slice(b"\"kind\":\"resource_limit\",\"field\":");
-            push_json_string(bytes, field);
-            push_limit_details(bytes, *configured, value_kind, measurement);
-            bytes.extend_from_slice(b",\"recovery\":");
-            push_optional_json_string(bytes, *recovery);
-        }
-        CliDetails::CliArgument { argument, value } => {
-            bytes.extend_from_slice(b"\"kind\":\"cli_argument\",\"argument\":");
-            push_json_string(bytes, argument);
-            bytes.extend_from_slice(b",\"value\":");
-            push_optional_json_string(bytes, value.as_deref());
-        }
-        CliDetails::CliPath { entries } => {
-            bytes.extend_from_slice(b"\"kind\":\"cli_path\",\"entries\":[");
-            for (index, entry) in entries.iter().enumerate() {
-                if index != 0 {
-                    bytes.push(b',');
-                }
-                bytes.extend_from_slice(b"{\"role\":");
-                push_json_string(bytes, entry.role);
-                bytes.extend_from_slice(b",\"asset_id\":");
-                push_optional_json_string(bytes, entry.asset_id.as_deref());
-                bytes.extend_from_slice(b",\"path\":");
-                push_json_string(bytes, &entry.path);
-                bytes.push(b'}');
-            }
-            bytes.push(b']');
-        }
-        CliDetails::CliIo {
-            role,
-            asset_id,
-            operation,
-            path,
-        } => {
-            bytes.extend_from_slice(b"\"kind\":\"cli_io\",\"role\":");
-            push_json_string(bytes, role.as_str());
-            bytes.extend_from_slice(b",\"asset_id\":");
-            push_optional_json_string(bytes, asset_id.as_deref());
-            bytes.extend_from_slice(b",\"operation\":");
-            push_json_string(bytes, operation.as_str());
-            bytes.extend_from_slice(b",\"path\":");
-            push_json_string(bytes, path);
-        }
-        CliDetails::Delivery {
-            role,
-            operation,
-            path,
-            artifact_state,
-        } => {
-            bytes.extend_from_slice(b"\"kind\":\"delivery\",\"role\":");
-            push_json_string(bytes, role.as_str());
-            bytes.extend_from_slice(b",\"operation\":");
-            push_json_string(bytes, operation.as_str());
-            bytes.extend_from_slice(b",\"path\":");
-            push_json_string(bytes, path);
-            bytes.extend_from_slice(b",\"artifact_state\":");
-            push_json_string(bytes, artifact_state.as_str());
-        }
-    }
-    bytes.push(b'}');
-}
-
-fn push_limit_details(
-    bytes: &mut Vec<u8>,
-    configured: u64,
-    value_kind: &str,
-    measurement: &CliMeasurement,
-) {
-    bytes.extend_from_slice(b",\"configured\":");
-    bytes.extend_from_slice(configured.to_string().as_bytes());
-    bytes.extend_from_slice(b",\"value_kind\":");
-    push_json_string(bytes, value_kind);
-    bytes.extend_from_slice(b",\"measurement\":");
-    match measurement {
-        CliMeasurement::AtLeast { value } => {
-            bytes.extend_from_slice(b"{\"kind\":\"at_least\",\"value\":");
-            bytes.extend_from_slice(value.to_string().as_bytes());
-            bytes.push(b'}');
-        }
-    }
-}
-
-fn push_optional_json_string(bytes: &mut Vec<u8>, value: Option<&str>) {
-    if let Some(value) = value {
-        push_json_string(bytes, value);
-    } else {
-        bytes.extend_from_slice(b"null");
-    }
-}
-
-fn push_json_string(bytes: &mut Vec<u8>, value: &str) {
-    bytes.extend_from_slice(&serde_json::to_vec(value).expect("CLI string serializes"));
 }
 
 /// The `sha256:`-prefixed lowercase hex digest artifact descriptors carry.
@@ -1836,12 +1620,16 @@ mod tests {
     use std::fs;
     use std::path::{Path, PathBuf};
 
-    use excalidraw_render::{CompatibilityRevision, OutputFormat};
+    use excalidraw_render::{
+        CompatibilityDiagnostic, CompatibilityRevision, ErrorDescriptor, OutputFormat,
+        RenderRequest, Renderer, SceneDocument,
+    };
 
     use super::{
-        lexical_absolute, parse_asset_declarations, preparse_json_mode, render_json_line,
-        same_path, select_format, sha256, split_asset_option, ArtifactDescriptor, CliDetails,
-        CliError, CliOperation, Failure, FormatArg, RenderReport, ReportError, StagedFile,
+        json_line, lexical_absolute, parse_asset_declarations, preparse_json_mode, same_path,
+        select_format, sha256, split_asset_option, ArtifactDescriptor, CliDetails, CliError,
+        CliMeasurement, CliOperation, CliPathEntry, DeliveryRole, DeliveryState, Failure,
+        FormatArg, IoRole, RenderReport, ReportError, RevisionEntry, RevisionReport, StagedFile,
         EXIT_USAGE,
     };
 
@@ -2246,11 +2034,74 @@ mod tests {
         )]));
     }
 
+    /// A string exercising JSON escaping: quotes, backslashes, C0 controls,
+    /// DEL, multi-byte text and a line separator.
+    pub(crate) const TRICKY: &str = "q\"b\\ t\t n\n nul\u{0} del\u{7f} é 日本 \u{2028} 🎨";
+    /// `TRICKY` as a JSON string literal.
+    pub(crate) const TRICKY_JSON: &str = concat!(
+        r#""q\"b\\ t\t n\n nul\u0000 "#,
+        "del\u{7f} é 日本 \u{2028} 🎨",
+        r#"""#
+    );
+
+    /// The diagnostics of rendering an image that references no file payload,
+    /// under an element id holding a control character and non-ASCII text.
+    pub(crate) fn missing_image_diagnostics() -> Vec<CompatibilityDiagnostic> {
+        let scene = SceneDocument::parse(
+            concat!(
+                r#"{"type":"excalidraw","version":2,"elements":[{"id":"ié\n","type":"image","#,
+                r#""x":0,"y":0,"width":10,"height":10,"fileId":"missing","updated":1}],"#,
+                r#""appState":{},"files":{}}"#
+            )
+            .as_bytes(),
+        )
+        .expect("the image scene is admitted");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("the SVG request is valid");
+        Renderer::new()
+            .render(&scene, &request)
+            .expect("the image scene renders")
+            .report()
+            .diagnostics()
+            .to_vec()
+    }
+
+    /// `missing_image_diagnostics` as it appears in a report.
+    pub(crate) const MISSING_IMAGE_DIAGNOSTIC_JSON: &str = concat!(
+        r#"{"code":"image.missing-file","severity":"warning","format":"svg","#,
+        r#""effects":["visual"],"element_id":"i"#,
+        "é",
+        r#"\n","json_pointer":"/elements/0/fileId","#,
+        r#""message":"image reference had no authoritative file payload","#,
+        r#""details":{"kind":"asset","asset_id":"missing","claimed_media_type":null,"#,
+        r#""validated_media_type":null,"recovery":"omitted","recipe_id":null}}"#
+    );
+
+    /// The library error of parsing a truncated scene document.
+    pub(crate) fn invalid_json_error() -> ErrorDescriptor {
+        SceneDocument::parse(b"{")
+            .expect_err("a truncated document is rejected")
+            .descriptor()
+    }
+
+    /// `invalid_json_error` as it appears in a report.
+    pub(crate) const INVALID_JSON_ERROR_JSON: &str = concat!(
+        r#"{"family":"scene_parse","category":null,"code":"scene.invalid-json","#,
+        r#""message":"scene document is not valid JSON","format":null,"element_id":null,"#,
+        r#""json_pointer":"","details":null}"#
+    );
+
+    fn utf8(bytes: Vec<u8>) -> String {
+        String::from_utf8(bytes).expect("the report is UTF-8")
+    }
+
     #[test]
     fn a_render_report_line_is_one_json_object_with_every_field_present() {
+        let diagnostics = missing_image_diagnostics();
         let report = RenderReport {
             schema_version: 1,
-            status: "ok",
+            status: "success",
             renderer_version: "0.1.0",
             compatibility_revision: Some(CompatibilityRevision::REVISION_1),
             excalidraw_release: Some("v0.18.1"),
@@ -2262,23 +2113,102 @@ mod tests {
                 sha256: "sha256:def".to_owned(),
             }),
             error: None,
-            diagnostics: &[],
+            diagnostics: &[&diagnostics[..], &diagnostics[..]].concat(),
         };
         assert_eq!(
-            String::from_utf8(render_json_line(&report)).expect("the report line is UTF-8"),
-            concat!(
-                r#"{"schema_version":1,"status":"ok","renderer_version":"0.1.0","#,
+            utf8(json_line(&report)),
+            [
+                r#"{"schema_version":1,"status":"success","renderer_version":"0.1.0","#,
                 r#""compatibility_revision":1,"excalidraw_release":"v0.18.1","#,
                 r#""reference_profile_digest":"sha256:abc","format":"svg","#,
                 r#""artifact":{"media_type":"image/svg+xml","byte_length":42,"sha256":"sha256:def"},"#,
-                r#""error":null,"diagnostics":[]}"#,
-                "\n"
-            )
+                r#""error":null,"diagnostics":["#,
+                MISSING_IMAGE_DIAGNOSTIC_JSON,
+                ",",
+                MISSING_IMAGE_DIAGNOSTIC_JSON,
+                "]}\n",
+            ]
+            .concat()
         );
     }
 
     #[test]
-    fn a_failed_render_report_line_carries_the_cli_error_and_nulls_the_rest() {
+    fn a_failed_render_report_line_carries_the_library_error_and_nulls_the_rest() {
+        let diagnostics = missing_image_diagnostics();
+        let report = RenderReport {
+            schema_version: 1,
+            status: "error",
+            renderer_version: "0.1.0",
+            compatibility_revision: None,
+            excalidraw_release: None,
+            reference_profile_digest: None,
+            format: None,
+            artifact: None,
+            error: Some(Box::new(ReportError::Library(invalid_json_error()))),
+            diagnostics: &diagnostics,
+        };
+        assert_eq!(
+            utf8(json_line(&report)),
+            [
+                r#"{"schema_version":1,"status":"error","renderer_version":"0.1.0","#,
+                r#""compatibility_revision":null,"excalidraw_release":null,"#,
+                r#""reference_profile_digest":null,"format":null,"artifact":null,"error":"#,
+                INVALID_JSON_ERROR_JSON,
+                r#","diagnostics":["#,
+                MISSING_IMAGE_DIAGNOSTIC_JSON,
+                "]}\n",
+            ]
+            .concat()
+        );
+    }
+
+    /// The report line of a failed PNG render whose CLI error carries
+    /// `details`, with every optional error field present.
+    fn cli_error_line(details: Option<CliDetails>) -> String {
+        let report = RenderReport {
+            schema_version: 1,
+            status: "error",
+            renderer_version: "0.1.0",
+            compatibility_revision: Some(CompatibilityRevision::REVISION_1),
+            excalidraw_release: Some("v0.18.1"),
+            reference_profile_digest: Some("sha256:abc"),
+            format: Some(OutputFormat::Png),
+            artifact: None,
+            error: Some(Box::new(ReportError::Cli(CliError {
+                family: "cli",
+                category: Some("usage"),
+                code: "cli.example",
+                message: TRICKY.to_owned(),
+                format: Some(OutputFormat::Pdf),
+                element_id: Some(TRICKY.to_owned()),
+                json_pointer: Some("/elements/0".to_owned()),
+                details,
+            }))),
+            diagnostics: &[],
+        };
+        utf8(json_line(&report))
+    }
+
+    /// The report line `cli_error_line` renders around `details_json`.
+    fn expected_cli_error_line(details_json: &str) -> String {
+        [
+            r#"{"schema_version":1,"status":"error","renderer_version":"0.1.0","#,
+            r#""compatibility_revision":1,"excalidraw_release":"v0.18.1","#,
+            r#""reference_profile_digest":"sha256:abc","format":"png","artifact":null,"#,
+            r#""error":{"family":"cli","category":"usage","code":"cli.example","message":"#,
+            TRICKY_JSON,
+            r#","format":"pdf","element_id":"#,
+            TRICKY_JSON,
+            r#","json_pointer":"/elements/0","details":"#,
+            details_json,
+            r#"},"diagnostics":[]}"#,
+            "\n",
+        ]
+        .concat()
+    }
+
+    #[test]
+    fn cli_error_fields_serialize_as_explicit_nulls_when_absent() {
         let report = RenderReport {
             schema_version: 1,
             status: "error",
@@ -2292,37 +2222,262 @@ mod tests {
                 family: "cli",
                 category: None,
                 code: "cli.format-required",
-                message: "quote \" and backslash \\ survive".to_owned(),
+                message: "m".to_owned(),
                 format: None,
                 element_id: None,
                 json_pointer: None,
-                details: Some(CliDetails::CliArgument {
-                    argument: "--format".to_owned(),
-                    value: None,
-                }),
+                details: None,
             }))),
             diagnostics: &[],
         };
-        let line = render_json_line(&report);
-        assert_eq!(line.last(), Some(&b'\n'));
-        let value: serde_json::Value =
-            serde_json::from_slice(&line).expect("the report line is JSON");
-        assert_eq!(value["status"], "error");
-        assert_eq!(value["compatibility_revision"], serde_json::Value::Null);
-        assert_eq!(value["format"], serde_json::Value::Null);
-        assert_eq!(value["artifact"], serde_json::Value::Null);
         assert_eq!(
-            value["error"],
-            serde_json::json!({
-                "family": "cli",
-                "category": null,
-                "code": "cli.format-required",
-                "message": "quote \" and backslash \\ survive",
-                "format": null,
-                "element_id": null,
-                "json_pointer": null,
-                "details": {"kind": "cli_argument", "argument": "--format", "value": null},
-            })
+            utf8(json_line(&report)),
+            concat!(
+                r#"{"schema_version":1,"status":"error","renderer_version":"0.1.0","#,
+                r#""compatibility_revision":null,"excalidraw_release":null,"#,
+                r#""reference_profile_digest":null,"format":null,"artifact":null,"#,
+                r#""error":{"family":"cli","category":null,"code":"cli.format-required","#,
+                r#""message":"m","format":null,"element_id":null,"json_pointer":null,"#,
+                r#""details":null},"diagnostics":[]}"#,
+                "\n"
+            )
+        );
+        assert_eq!(cli_error_line(None), expected_cli_error_line("null"));
+    }
+
+    #[test]
+    fn every_cli_details_variant_serializes_byte_exactly() {
+        let cases = [
+            (
+                CliDetails::ParseLimit {
+                    field: "max_scene_bytes",
+                    configured: 67_108_864,
+                    value_kind: "bytes",
+                    measurement: CliMeasurement::AtLeast { value: u64::MAX },
+                },
+                concat!(
+                    r#"{"kind":"parse_limit","field":"max_scene_bytes","configured":67108864,"#,
+                    r#""value_kind":"bytes","measurement":{"kind":"at_least","value":18446744073709551615}}"#
+                )
+                .to_owned(),
+            ),
+            (
+                CliDetails::ResourceLimit {
+                    field: "max_asset_bytes",
+                    configured: 0,
+                    value_kind: "bytes",
+                    measurement: CliMeasurement::AtLeast { value: 1 },
+                    recovery: Some("omitted"),
+                },
+                concat!(
+                    r#"{"kind":"resource_limit","field":"max_asset_bytes","configured":0,"#,
+                    r#""value_kind":"bytes","measurement":{"kind":"at_least","value":1},"#,
+                    r#""recovery":"omitted"}"#
+                )
+                .to_owned(),
+            ),
+            (
+                CliDetails::ResourceLimit {
+                    field: "max_frames",
+                    configured: 16_384,
+                    value_kind: "count",
+                    measurement: CliMeasurement::AtLeast { value: 16_385 },
+                    recovery: None,
+                },
+                concat!(
+                    r#"{"kind":"resource_limit","field":"max_frames","configured":16384,"#,
+                    r#""value_kind":"count","measurement":{"kind":"at_least","value":16385},"#,
+                    r#""recovery":null}"#
+                )
+                .to_owned(),
+            ),
+            (
+                CliDetails::CliArgument {
+                    argument: TRICKY.to_owned(),
+                    value: Some(TRICKY.to_owned()),
+                },
+                [
+                    r#"{"kind":"cli_argument","argument":"#,
+                    TRICKY_JSON,
+                    r#","value":"#,
+                    TRICKY_JSON,
+                    "}",
+                ]
+                .concat(),
+            ),
+            (
+                CliDetails::CliArgument {
+                    argument: "--format".to_owned(),
+                    value: None,
+                },
+                r#"{"kind":"cli_argument","argument":"--format","value":null}"#.to_owned(),
+            ),
+            (
+                CliDetails::CliPath {
+                    entries: Vec::new(),
+                },
+                r#"{"kind":"cli_path","entries":[]}"#.to_owned(),
+            ),
+            (
+                CliDetails::CliPath {
+                    entries: vec![
+                        CliPathEntry {
+                            role: "input",
+                            asset_id: None,
+                            path: "scene.excalidraw".to_owned(),
+                        },
+                        CliPathEntry {
+                            role: "asset",
+                            asset_id: Some(TRICKY.to_owned()),
+                            path: TRICKY.to_owned(),
+                        },
+                    ],
+                },
+                [
+                    r#"{"kind":"cli_path","entries":[{"role":"input","asset_id":null,"#,
+                    r#""path":"scene.excalidraw"},{"role":"asset","asset_id":"#,
+                    TRICKY_JSON,
+                    r#","path":"#,
+                    TRICKY_JSON,
+                    "}]}",
+                ]
+                .concat(),
+            ),
+            (
+                CliDetails::CliIo {
+                    role: IoRole::Input,
+                    asset_id: None,
+                    operation: CliOperation::Open,
+                    path: TRICKY.to_owned(),
+                },
+                [
+                    r#"{"kind":"cli_io","role":"input","asset_id":null,"operation":"open","path":"#,
+                    TRICKY_JSON,
+                    "}",
+                ]
+                .concat(),
+            ),
+            (
+                CliDetails::CliIo {
+                    role: IoRole::Asset,
+                    asset_id: Some("a1".to_owned()),
+                    operation: CliOperation::Read,
+                    path: "a.png".to_owned(),
+                },
+                concat!(
+                    r#"{"kind":"cli_io","role":"asset","asset_id":"a1","operation":"read","#,
+                    r#""path":"a.png"}"#
+                )
+                .to_owned(),
+            ),
+            (
+                CliDetails::Delivery {
+                    role: DeliveryRole::Output,
+                    operation: CliOperation::Replace,
+                    path: TRICKY.to_owned(),
+                    artifact_state: DeliveryState::PossiblyPartial,
+                },
+                [
+                    r#"{"kind":"delivery","role":"output","operation":"replace","path":"#,
+                    TRICKY_JSON,
+                    r#","artifact_state":"possibly_partial"}"#,
+                ]
+                .concat(),
+            ),
+            (
+                CliDetails::Delivery {
+                    role: DeliveryRole::Report,
+                    operation: CliOperation::Create,
+                    path: "r.json".to_owned(),
+                    artifact_state: DeliveryState::Complete,
+                },
+                concat!(
+                    r#"{"kind":"delivery","role":"report","operation":"create","#,
+                    r#""path":"r.json","artifact_state":"complete"}"#
+                )
+                .to_owned(),
+            ),
+        ];
+        for (details, details_json) in cases {
+            assert_eq!(
+                cli_error_line(Some(details)),
+                expected_cli_error_line(&details_json)
+            );
+        }
+    }
+
+    #[test]
+    fn every_operation_and_delivery_state_keeps_its_spelling() {
+        for (operation, spelling) in [
+            (CliOperation::Open, "open"),
+            (CliOperation::Read, "read"),
+            (CliOperation::Create, "create"),
+            (CliOperation::Write, "write"),
+            (CliOperation::Flush, "flush"),
+            (CliOperation::Replace, "replace"),
+        ] {
+            for (state, state_spelling) in [
+                (DeliveryState::None, "none"),
+                (DeliveryState::Complete, "complete"),
+                (DeliveryState::PossiblyPartial, "possibly_partial"),
+            ] {
+                let details = CliDetails::Delivery {
+                    role: DeliveryRole::Output,
+                    operation,
+                    path: "o".to_owned(),
+                    artifact_state: state,
+                };
+                assert_eq!(
+                    cli_error_line(Some(details)),
+                    expected_cli_error_line(&format!(
+                        r#"{{"kind":"delivery","role":"output","operation":"{spelling}","path":"o","artifact_state":"{state_spelling}"}}"#
+                    ))
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_revision_report_lists_every_revision_in_order() {
+        let report = RevisionReport {
+            schema_version: 1,
+            renderer_version: "0.1.0",
+            revisions: vec![
+                RevisionEntry {
+                    compatibility_revision: CompatibilityRevision::REVISION_1,
+                    excalidraw_release: "v0.18.1",
+                    reference_profile_digest: "sha256:abc",
+                    default: true,
+                },
+                RevisionEntry {
+                    compatibility_revision: CompatibilityRevision::REVISION_1,
+                    excalidraw_release: TRICKY,
+                    reference_profile_digest: "sha256:def",
+                    default: false,
+                },
+            ],
+        };
+        assert_eq!(
+            utf8(json_line(&report)),
+            [
+                r#"{"schema_version":1,"renderer_version":"0.1.0","revisions":["#,
+                r#"{"compatibility_revision":1,"excalidraw_release":"v0.18.1","#,
+                r#""reference_profile_digest":"sha256:abc","default":true},"#,
+                r#"{"compatibility_revision":1,"excalidraw_release":"#,
+                TRICKY_JSON,
+                r#","reference_profile_digest":"sha256:def","default":false}]}"#,
+                "\n",
+            ]
+            .concat()
+        );
+        let empty = RevisionReport {
+            schema_version: 1,
+            renderer_version: "0.1.0",
+            revisions: Vec::new(),
+        };
+        assert_eq!(
+            utf8(json_line(&empty)),
+            "{\"schema_version\":1,\"renderer_version\":\"0.1.0\",\"revisions\":[]}\n"
         );
     }
 }

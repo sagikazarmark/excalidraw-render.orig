@@ -10,16 +10,16 @@ use excalidraw_render::{
     ResourceLimits, SceneDocument, Sizing, SupplementalAssets, DEFAULT_COMPATIBILITY_REVISION,
 };
 use regex::Regex;
+use serde::{Serialize, Serializer};
 use unicode_normalization::UnicodeNormalization as _;
 
 use crate::{
-    deliver_report_bytes, emergency_report_failure, emit_failure, parse_asset_declarations,
-    path_conflict, path_entry_exists, push_artifact_descriptor, push_diagnostics, push_json_string,
-    push_optional_json_string, push_report_error, read_bounded_asset, read_scene_bounded,
-    report_output, same_path, sha256, stage_report_file, validate_paths, validate_report_options,
-    write_stream, ArtifactDescriptor, Cli, CliDetails, CliError, CliOperation, DeliveryRole,
-    DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError, ReportFormat, SelectedIdentity,
-    StagedFile, EXIT_OPERATIONAL, EXIT_USAGE, MAX_SCENE_BYTES,
+    deliver_report_bytes, emergency_report_failure, emit_failure, json_line,
+    parse_asset_declarations, path_conflict, path_entry_exists, read_bounded_asset,
+    read_scene_bounded, report_output, same_path, sha256, stage_report_file, validate_paths,
+    validate_report_options, write_stream, ArtifactDescriptor, Cli, CliDetails, CliError,
+    CliOperation, DeliveryRole, DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError,
+    ReportFormat, SelectedIdentity, StagedFile, EXIT_OPERATIONAL, EXIT_USAGE, MAX_SCENE_BYTES,
 };
 
 #[derive(Parser)]
@@ -126,6 +126,7 @@ impl FramesCli {
     }
 }
 
+#[derive(Serialize)]
 struct FrameCliEntry {
     ordinal: u32,
     kind: &'static str,
@@ -143,11 +144,49 @@ struct PreparedFrameBatch {
     had_failure: bool,
 }
 
+#[derive(Serialize)]
 struct FrameListEntry {
     ordinal: u32,
     kind: &'static str,
     name: Option<String>,
+    #[serde(rename = "output_basename")]
     basename: String,
+}
+
+#[derive(Serialize)]
+struct FrameListReport<'a> {
+    schema_version: u32,
+    status: &'static str,
+    renderer_version: &'static str,
+    compatibility_revision: Option<CompatibilityRevision>,
+    excalidraw_release: Option<&'static str>,
+    reference_profile_digest: Option<&'static str>,
+    mode: &'static str,
+    frames: &'a [FrameListEntry],
+}
+
+#[derive(Serialize)]
+struct FrameBatchReport<'a> {
+    schema_version: u32,
+    status: &'a str,
+    renderer_version: &'static str,
+    compatibility_revision: CompatibilityRevision,
+    excalidraw_release: &'static str,
+    reference_profile_digest: &'static str,
+    format: OutputFormat,
+    delivery_state: DeliveryState,
+    diagnostics: &'a [CompatibilityDiagnostic],
+    #[serde(serialize_with = "serialize_frame_entries")]
+    frames: &'a [(FrameCliEntry, Option<StagedFile>)],
+}
+
+/// Serializes the report entries of a frame batch, leaving out their staged
+/// files.
+fn serialize_frame_entries<S: Serializer>(
+    entries: &&[(FrameCliEntry, Option<StagedFile>)],
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    serializer.collect_seq(entries.iter().map(|(entry, _)| entry))
 }
 
 pub(crate) fn run_frames(frames: FramesCli) -> u8 {
@@ -269,41 +308,16 @@ fn frame_list_json_line(
     identity: Option<&SelectedIdentity>,
     entries: &[FrameListEntry],
 ) -> Vec<u8> {
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(b"{\"schema_version\":1,\"status\":\"success\",\"renderer_version\":");
-    push_json_string(&mut bytes, env!("CARGO_PKG_VERSION"));
-    bytes.extend_from_slice(b",\"compatibility_revision\":");
-    match identity {
-        Some(identity) => {
-            bytes.extend_from_slice(identity.revision.get().to_string().as_bytes());
-            bytes.extend_from_slice(b",\"excalidraw_release\":");
-            push_json_string(&mut bytes, identity.release);
-            bytes.extend_from_slice(b",\"reference_profile_digest\":");
-            push_json_string(&mut bytes, identity.digest);
-        }
-        None => {
-            bytes.extend_from_slice(
-                b"null,\"excalidraw_release\":null,\"reference_profile_digest\":null",
-            );
-        }
-    }
-    bytes.extend_from_slice(b",\"mode\":\"list\",\"frames\":[");
-    for (index, entry) in entries.iter().enumerate() {
-        if index != 0 {
-            bytes.push(b',');
-        }
-        bytes.extend_from_slice(b"{\"ordinal\":");
-        bytes.extend_from_slice(entry.ordinal.to_string().as_bytes());
-        bytes.extend_from_slice(b",\"kind\":");
-        push_json_string(&mut bytes, entry.kind);
-        bytes.extend_from_slice(b",\"name\":");
-        push_optional_json_string(&mut bytes, entry.name.as_deref());
-        bytes.extend_from_slice(b",\"output_basename\":");
-        push_json_string(&mut bytes, &entry.basename);
-        bytes.push(b'}');
-    }
-    bytes.extend_from_slice(b"]}\n");
-    bytes
+    json_line(&FrameListReport {
+        schema_version: 1,
+        status: "success",
+        renderer_version: env!("CARGO_PKG_VERSION"),
+        compatibility_revision: identity.map(|identity| identity.revision),
+        excalidraw_release: identity.map(|identity| identity.release),
+        reference_profile_digest: identity.map(|identity| identity.digest),
+        mode: "list",
+        frames: entries,
+    })
 }
 
 fn validate_frame_limit(frames: &FramesCli) -> Result<(), Failure> {
@@ -1118,56 +1132,18 @@ fn frame_batch_report_bytes(
         }
         ReportFormat::Json => {
             let artifact_state = frame_batch_delivery(entries, status != "success").1;
-            let mut bytes = Vec::new();
-            bytes.extend_from_slice(b"{\"schema_version\":1,\"status\":");
-            push_json_string(&mut bytes, status);
-            bytes.extend_from_slice(b",\"renderer_version\":");
-            push_json_string(&mut bytes, env!("CARGO_PKG_VERSION"));
-            bytes.extend_from_slice(b",\"compatibility_revision\":");
-            bytes.extend_from_slice(identity.revision.get().to_string().as_bytes());
-            bytes.extend_from_slice(b",\"excalidraw_release\":");
-            push_json_string(&mut bytes, identity.release);
-            bytes.extend_from_slice(b",\"reference_profile_digest\":");
-            push_json_string(&mut bytes, identity.digest);
-            bytes.extend_from_slice(b",\"format\":");
-            push_json_string(&mut bytes, format.as_str());
-            bytes.extend_from_slice(b",\"delivery_state\":");
-            push_json_string(&mut bytes, artifact_state.as_str());
-            bytes.extend_from_slice(b",\"diagnostics\":[");
-            push_diagnostics(&mut bytes, global_diagnostics);
-            bytes.extend_from_slice(b"],\"frames\":[");
-            for (index, (entry, _)) in entries.iter().enumerate() {
-                if index != 0 {
-                    bytes.push(b',');
-                }
-                bytes.extend_from_slice(b"{\"ordinal\":");
-                bytes.extend_from_slice(entry.ordinal.to_string().as_bytes());
-                bytes.extend_from_slice(b",\"kind\":");
-                push_json_string(&mut bytes, entry.kind);
-                bytes.extend_from_slice(b",\"name\":");
-                push_optional_json_string(&mut bytes, entry.name.as_deref());
-                bytes.extend_from_slice(b",\"output_path\":");
-                push_json_string(&mut bytes, &entry.output_path);
-                bytes.extend_from_slice(b",\"artifact\":");
-                if let Some(artifact) = &entry.artifact {
-                    push_artifact_descriptor(&mut bytes, artifact);
-                } else {
-                    bytes.extend_from_slice(b"null");
-                }
-                bytes.extend_from_slice(b",\"error\":");
-                if let Some(error) = &entry.error {
-                    push_report_error(&mut bytes, error);
-                } else {
-                    bytes.extend_from_slice(b"null");
-                }
-                bytes.extend_from_slice(b",\"diagnostics\":[");
-                push_diagnostics(&mut bytes, &entry.diagnostics);
-                bytes.extend_from_slice(b"],\"delivery_state\":");
-                push_json_string(&mut bytes, entry.delivery_state.as_str());
-                bytes.push(b'}');
-            }
-            bytes.extend_from_slice(b"]}\n");
-            bytes
+            json_line(&FrameBatchReport {
+                schema_version: 1,
+                status,
+                renderer_version: env!("CARGO_PKG_VERSION"),
+                compatibility_revision: identity.revision,
+                excalidraw_release: identity.release,
+                reference_profile_digest: identity.digest,
+                format,
+                delivery_state: artifact_state,
+                diagnostics: global_diagnostics,
+                frames: entries,
+            })
         }
     }
 }
@@ -1222,9 +1198,137 @@ fn deliver_frame_report(
 #[cfg(test)]
 mod tests {
     use super::{
-        frame_output_basenames, is_reserved_device_name, portable_frame_slug, truncate_basename,
+        frame_batch_report_bytes, frame_list_json_line, frame_output_basenames,
+        is_reserved_device_name, portable_frame_slug, truncate_basename, FrameCliEntry,
+        FrameListEntry,
     };
-    use excalidraw_render::{OutputFormat, SceneDocument};
+    use crate::tests::{
+        invalid_json_error, missing_image_diagnostics, INVALID_JSON_ERROR_JSON,
+        MISSING_IMAGE_DIAGNOSTIC_JSON, TRICKY, TRICKY_JSON,
+    };
+    use crate::{ArtifactDescriptor, DeliveryState, ReportError, ReportFormat, SelectedIdentity};
+    use excalidraw_render::{CompatibilityRevision, OutputFormat, SceneDocument};
+
+    fn identity() -> SelectedIdentity {
+        SelectedIdentity {
+            revision: CompatibilityRevision::REVISION_1,
+            release: "v0.18.1",
+            digest: "sha256:abc",
+        }
+    }
+
+    fn utf8(bytes: Vec<u8>) -> String {
+        String::from_utf8(bytes).expect("the report is UTF-8")
+    }
+
+    #[test]
+    fn a_frame_list_report_carries_the_identity_and_every_entry() {
+        let entries = [
+            FrameListEntry {
+                ordinal: 1,
+                kind: "frame",
+                name: None,
+                basename: "frame-1".to_owned(),
+            },
+            FrameListEntry {
+                ordinal: 2,
+                kind: "magicframe",
+                name: Some(TRICKY.to_owned()),
+                basename: "b".to_owned(),
+            },
+        ];
+        let frames_json = [
+            r#""mode":"list","frames":[{"ordinal":1,"kind":"frame","name":null,"#,
+            r#""output_basename":"frame-1"},{"ordinal":2,"kind":"magicframe","name":"#,
+            TRICKY_JSON,
+            r#","output_basename":"b"}]}"#,
+            "\n",
+        ]
+        .concat();
+        let version = env!("CARGO_PKG_VERSION");
+        assert_eq!(
+            utf8(frame_list_json_line(Some(&identity()), &entries)),
+            format!(
+                r#"{{"schema_version":1,"status":"success","renderer_version":"{version}","compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":"sha256:abc",{frames_json}"#
+            )
+        );
+        assert_eq!(
+            utf8(frame_list_json_line(None, &[])),
+            format!(
+                r#"{{"schema_version":1,"status":"success","renderer_version":"{version}","compatibility_revision":null,"excalidraw_release":null,"reference_profile_digest":null,"mode":"list","frames":[]}}"#
+            ) + "\n"
+        );
+    }
+
+    #[test]
+    fn a_frame_batch_report_carries_per_frame_artifacts_errors_and_diagnostics() {
+        let diagnostics = missing_image_diagnostics();
+        let entries = vec![
+            (
+                FrameCliEntry {
+                    ordinal: 1,
+                    kind: "frame",
+                    name: Some(TRICKY.to_owned()),
+                    output_path: "out/a.svg".to_owned(),
+                    artifact: Some(ArtifactDescriptor {
+                        media_type: "image/svg+xml",
+                        byte_length: 7,
+                        sha256: "sha256:def".to_owned(),
+                    }),
+                    error: None,
+                    diagnostics: diagnostics.clone(),
+                    delivery_state: DeliveryState::Complete,
+                },
+                None,
+            ),
+            (
+                FrameCliEntry {
+                    ordinal: 2,
+                    kind: "magicframe",
+                    name: None,
+                    output_path: TRICKY.to_owned(),
+                    artifact: None,
+                    error: Some(ReportError::Library(invalid_json_error())),
+                    diagnostics: Vec::new(),
+                    delivery_state: DeliveryState::None,
+                },
+                None,
+            ),
+        ];
+        let version = env!("CARGO_PKG_VERSION");
+        assert_eq!(
+            utf8(frame_batch_report_bytes(
+                ReportFormat::Json,
+                &identity(),
+                OutputFormat::Svg,
+                "partial",
+                &diagnostics,
+                &entries,
+            )),
+            [
+                r#"{"schema_version":1,"status":"partial","renderer_version":""#,
+                version,
+                r#"","compatibility_revision":1,"excalidraw_release":"v0.18.1","#,
+                r#""reference_profile_digest":"sha256:abc","format":"svg","#,
+                r#""delivery_state":"possibly_partial","diagnostics":["#,
+                MISSING_IMAGE_DIAGNOSTIC_JSON,
+                r#"],"frames":[{"ordinal":1,"kind":"frame","name":"#,
+                TRICKY_JSON,
+                r#","output_path":"out/a.svg","#,
+                r#""artifact":{"media_type":"image/svg+xml","byte_length":7,"sha256":"sha256:def"},"#,
+                r#""error":null,"diagnostics":["#,
+                MISSING_IMAGE_DIAGNOSTIC_JSON,
+                r#"],"delivery_state":"complete"},"#,
+                r#"{"ordinal":2,"kind":"magicframe","name":null,"output_path":"#,
+                TRICKY_JSON,
+                r#","artifact":null,"error":"#,
+                INVALID_JSON_ERROR_JSON,
+                r#","diagnostics":[],"delivery_state":"none"}]}"#,
+                "\n",
+            ]
+            .concat()
+        );
+    }
 
     /// A scene whose live frames carry `names` in order, a `null` name where
     /// the entry is `None`, parsed so its frame references can be listed.
