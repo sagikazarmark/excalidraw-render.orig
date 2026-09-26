@@ -15,6 +15,7 @@ use std::path::Path;
 use serde_json::{json, Value};
 
 use self::json::{decode, encode};
+use crate::cli::RepresentativeCommand;
 use crate::conformance::sha256;
 
 type Result<T> = std::result::Result<T, String>;
@@ -27,30 +28,28 @@ const FILES: [&str; 4] = [
 ];
 type Files = BTreeMap<String, Vec<u8>>;
 
-pub fn run(args: impl Iterator<Item = String>) -> Result<()> {
-    let args: Vec<_> = args.collect();
-    if args.first().is_some_and(|a| a == "case") {
-        return case::run(&args[1..]);
-    }
-    if args.first().is_some_and(|a| a == "controls") {
-        return comparison::controls(&args[1..]);
-    }
-    if args.first().is_some_and(|a| a == "evidence") {
-        return evidence::run(&args[1..]);
-    }
-    if args.first().is_some_and(|a| a == "viewer-assets") {
-        return viewer_assets::run(&args[1..]);
-    }
-    if args.first().is_some_and(|a| a == "compact") {
-        return compact::run(&args[1..]);
-    }
-    let record = match args.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
-        ["prepare", source, plan, output] => prepare(Path::new(source), Path::new(plan), Path::new(output))?,
-        ["verify", bundle] => verify(Path::new(bundle))?,
-        ["capture", bundle, renderer, output] => capture::capture(Path::new(bundle), Path::new(renderer), Path::new(output), 180.0)?,
-        ["capture", bundle, renderer, output, "--timeout", timeout] => capture::capture(Path::new(bundle), Path::new(renderer), Path::new(output), timeout.parse().map_err(|_| "invalid process timeout")?)?,
-        ["verify-capture", bundle, output] => capture::verify_capture(Path::new(bundle), Path::new(output))?,
-        _ => return Err("usage: representative prepare <source> <plan> <output> | verify <bundle> | capture <bundle> <renderer> <output> [--timeout <seconds>] | verify-capture <bundle> <output>".into()),
+pub fn run(command: RepresentativeCommand) -> Result<()> {
+    let record = match command {
+        RepresentativeCommand::Case(command) => return case::run(command),
+        RepresentativeCommand::Controls(args) => return comparison::controls(args),
+        RepresentativeCommand::Evidence(command) => return evidence::run(command),
+        RepresentativeCommand::ViewerAssets(command) => return viewer_assets::run(command),
+        RepresentativeCommand::Compact(command) => return compact::run(command),
+        RepresentativeCommand::Prepare {
+            source,
+            plan,
+            output,
+        } => prepare(&source, &plan, &output)?,
+        RepresentativeCommand::Verify { bundle } => verify(&bundle)?,
+        RepresentativeCommand::Capture {
+            bundle,
+            renderer,
+            output,
+            timeout,
+        } => capture::capture(&bundle, &renderer, &output, timeout)?,
+        RepresentativeCommand::VerifyCapture { bundle, output } => {
+            capture::verify_capture(&bundle, &output)?
+        }
     };
     print!("{}", String::from_utf8(encode(&json!({"case_id": record["case_id"], "status": record["status"], "eligible_executions": []}))?).map_err(|e| e.to_string())?);
     Ok(())

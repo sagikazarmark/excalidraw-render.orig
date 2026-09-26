@@ -1,6 +1,7 @@
 //! Viewer observations: collection is create-only; verification reconstructs
 //! crops, assets and comparisons rather than trusting stored pass flags.
 use super::*;
+use crate::cli::EvidenceCommand;
 use std::path::{Component, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
@@ -60,28 +61,14 @@ const PROFILES: &[&str] = &[
     "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
 ];
 
-pub(super) fn run(args: &[String]) -> Result<()> {
-    let [mode, bundle, reference, native, output] = args else {
-        return Err("usage: representative evidence <collect|verify> <bundle> <reference> <native-capture> <output>".into());
-    };
-    match mode.as_str() {
-        "collect" => {
-            collect(
-                Path::new(bundle),
-                Path::new(reference),
-                Path::new(native),
-                Path::new(output),
-            )?;
+pub(super) fn run(command: EvidenceCommand) -> Result<()> {
+    match command {
+        EvidenceCommand::Collect(args) => {
+            collect(&args.bundle, &args.reference, &args.native, &args.output)?;
         }
-        "verify" => {
-            verify_evidence(
-                Path::new(bundle),
-                Path::new(reference),
-                Path::new(native),
-                Path::new(output),
-            )?;
+        EvidenceCommand::Verify(args) => {
+            verify_evidence(&args.bundle, &args.reference, &args.native, &args.output)?;
         }
-        _ => return Err("expected evidence collect or verify".into()),
     }
     println!(
         "{}",

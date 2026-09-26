@@ -1,6 +1,7 @@
 //! JSON-only retention. Offline verification checks retained integrity, not
 //! absent pixels; `check` validates a full v2 collection at the recorded roots.
 use super::*;
+use crate::cli::CompactCommand;
 use std::path::{Component, PathBuf};
 
 const SCHEMA: &str = "excalidraw-render/representative-compact-evidence/v2";
@@ -11,13 +12,20 @@ const ROOTS: [(&str, &str); 3] = [
     ("viewers", "viewers.json"),
 ];
 
-pub(super) fn run(args: &[String]) -> Result<()> {
-    let strings = args.iter().map(String::as_str).collect::<Vec<_>>();
-    let result=match strings.as_slice() {
-        ["retain",bundle,reference,native,viewers,output]=>retain(Path::new(bundle),[Path::new(reference),Path::new(native),Path::new(viewers)],Path::new(output))?,
-        ["verify",output]=>{verify(Path::new(output))?;json!({"status":"verified-compact-observations","approval":null})},
-        ["check",output]=>check(Path::new(output))?,
-        _=>return Err("usage: representative compact retain <bundle> <reference> <native> <viewers> <new-output> | verify <output> | check <output>".into()),
+pub(super) fn run(command: CompactCommand) -> Result<()> {
+    let result = match command {
+        CompactCommand::Retain {
+            bundle,
+            reference,
+            native,
+            viewers,
+            output,
+        } => retain(&bundle, [&reference, &native, &viewers], &output)?,
+        CompactCommand::Verify { output } => {
+            verify(&output)?;
+            json!({"status":"verified-compact-observations","approval":null})
+        }
+        CompactCommand::Check { output } => check(&output)?,
     };
     println!(
         "{}",

@@ -1,6 +1,7 @@
 //! SVG viewer resource derivation. Font codec operations use the existing Rust
 //! helper; browser font resolution remains in the pinned JavaScript harness.
 use super::*;
+use crate::cli::ViewerAssetsCommand;
 use base64::Engine;
 use regex::Regex;
 use std::path::PathBuf;
@@ -525,14 +526,10 @@ pub(super) fn chromium_input(directory: &Path, kind: &str) -> PathBuf {
     }
 }
 
-pub(super) fn run(args: &[String]) -> Result<()> {
-    let [mode, directory] = args else {
-        return Err("usage: representative viewer-assets <collect|verify> <directory>".into());
-    };
-    match mode.as_str() {
-        "collect" => collect(Path::new(directory))?,
-        "verify" => verify_assets(Path::new(directory))?,
-        _ => return Err("expected viewer-assets collect or verify".into()),
+pub(super) fn run(command: ViewerAssetsCommand) -> Result<()> {
+    match command {
+        ViewerAssetsCommand::Collect { directory } => collect(&directory)?,
+        ViewerAssetsCommand::Verify { directory } => verify_assets(&directory)?,
     }
     println!(
         "{}",

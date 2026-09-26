@@ -91,6 +91,13 @@ upstream binary and build its Rust worker. This needs no Python or Docker.
 The complete PDFium/PDF.js/qpdf setup is documented in
 [`tools/pdf-harness/README.md`](../tools/pdf-harness/README.md).
 
+## Maintenance commands
+
+The `xtask` command grammar lives in `xtask/src/cli.rs`. Run
+`cargo run --locked -p xtask -- <catalog|conformance|representative|pdf-harness> --help`
+for the commands and arguments of each family. Help exits 0; malformed
+invocations and failed commands exit 1.
+
 ## Revision catalog
 
 Compatibility revision 1 incorporates its approved manifests, license bundle,

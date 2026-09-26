@@ -1,5 +1,6 @@
 //! Read-only registered case verification and judgment of retained rasters.
 use super::*;
+use crate::cli::CaseCommand;
 use std::path::{Component, PathBuf};
 use std::time::Duration;
 
@@ -11,72 +12,39 @@ const REGISTRY: &str = "tests/conformance/cases/representative/registry.json";
 use super::comparison::COMPARISONS;
 const JUDGMENT_RULE: &str = "canonical-budget-or-identical-input-controls-or-exception/v1";
 
-pub(super) fn run(args: &[String]) -> Result<()> {
-    if args.first().is_some_and(|a| a == "materialize") {
-        return materialize::run(&args[1..]);
-    }
-    if let [mode, directory] = args {
-        if mode == "subject" {
-            let case = decode(&read(Path::new(directory), "case.json")?)?;
-            validate(
-                &crate::conformance::repo_root(),
-                Path::new(directory),
-                &case,
-            )?;
+pub(super) fn run(command: CaseCommand) -> Result<()> {
+    let root = crate::conformance::repo_root();
+    let summaries = match command {
+        CaseCommand::Materialize(args) => return materialize::run(args),
+        CaseCommand::Subject { directory } => {
+            let case = decode(&read(&directory, "case.json")?)?;
+            validate(&root, &directory, &case)?;
             println!("sha256:{}", subject(&case)?);
             return Ok(());
         }
-    }
-    if let [mode, directory, collection] = args {
-        if mode == "judge" {
-            let case = decode(&read(Path::new(directory), "case.json")?)?;
-            validate(
-                &crate::conformance::repo_root(),
-                Path::new(directory),
-                &case,
-            )?;
-            let summary = judge::judge(&case, Path::new(collection))?;
+        CaseCommand::Judge {
+            directory,
+            collection,
+        } => {
+            let case = decode(&read(&directory, "case.json")?)?;
+            validate(&root, &directory, &case)?;
+            let summary = judge::judge(&case, &collection)?;
             println!(
                 "{}",
                 String::from_utf8(json::compact(&summary)?).map_err(|e| e.to_string())?
             );
             return Ok(());
         }
-    }
-    let (mode, rest) = args.split_first().ok_or("missing case command")?;
-    let (directory, rest) = match mode.as_str() {
-        "verify" => {
-            let (path, rest) = rest.split_first().ok_or("missing case directory")?;
-            (Some(Path::new(path)), rest)
-        }
-        "verify-registry" => (None, rest),
-        _ => return Err("usage: representative case verify <directory> [--renderer <cli>] | verify-registry [--renderer <cli>] | judge <case-directory> <viewer-collection>".into()),
-    };
-    let (renderer, viewers) = match rest
-        .iter()
-        .map(String::as_str)
-        .collect::<Vec<_>>()
-        .as_slice()
-    {
-        [] => (None, false),
-        ["--renderer", path] => (Some(PathBuf::from(path)), false),
-        ["--renderer", path, "--viewers"] | ["--viewers", "--renderer", path] => {
-            (Some(PathBuf::from(path)), true)
-        }
-        ["--viewers"] => return Err("--viewers requires --renderer".into()),
-        _ => return Err("unexpected case option; expected --renderer <cli>".into()),
-    };
-    let root = crate::conformance::repo_root();
-    let summaries = if let Some(directory) = directory {
-        vec![verify_case(
+        CaseCommand::Verify { directory, replay } => vec![verify_case(
             &root,
-            directory,
-            renderer.as_deref(),
+            &directory,
+            replay.renderer.as_deref(),
             None,
-            viewers,
-        )?]
-    } else {
-        verify_registry(&root, renderer.as_deref(), viewers)?
+            replay.viewers,
+        )?],
+        CaseCommand::VerifyRegistry { replay } => {
+            verify_registry(&root, replay.renderer.as_deref(), replay.viewers)?
+        }
     };
     for summary in summaries {
         println!(

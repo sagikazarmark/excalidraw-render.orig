@@ -1,6 +1,7 @@
 //! Recompute representative comparisons from retained RGBA/PNG observations.
 //! Stored pass/fail booleans are never used as a substitute for pixel comparison.
 use super::*;
+use crate::cli::ControlsArgs;
 use excalidraw_render_compare::{
     compare, CanonicalRgba8, ComparisonMode, Crop, RegionReport, SsimOutcome, VisualClass,
 };
@@ -381,36 +382,26 @@ impl Variant {
     }
 }
 
-pub(super) fn controls(args: &[String]) -> Result<()> {
-    let (directory, mut args) = args
-        .split_first()
-        .ok_or("missing viewer variant directory")?;
+pub(super) fn controls(args: ControlsArgs) -> Result<()> {
+    let ControlsArgs {
+        directory,
+        comparisons: ids,
+        tiles,
+        output,
+    } = args;
     let mut comparisons = Vec::new();
-    let mut tiles = None;
-    let mut output = None;
-    while let Some((option, rest)) = args.split_first() {
-        let (value, rest) = rest.split_first().ok_or("missing controls option value")?;
-        match option.as_str() {
-            "--comparison" => {
-                let spec = specification(value)?;
-                require(
-                    !comparisons.iter().any(|c: &Comparison| c.id == spec.id),
-                    "duplicate comparison",
-                )?;
-                comparisons.push(spec);
-            }
-            "--tiles" if tiles.is_none() => {
-                tiles = Some(value.parse::<u32>().map_err(|_| "invalid tile size")?)
-            }
-            "--output" if output.is_none() => output = Some(value),
-            _ => return Err(format!("unknown or duplicate controls option {option}")),
-        }
-        args = rest;
+    for id in &ids {
+        let spec = specification(id)?;
+        require(
+            !comparisons.iter().any(|c: &Comparison| c.id == spec.id),
+            "duplicate comparison",
+        )?;
+        comparisons.push(spec);
     }
     if comparisons.is_empty() {
         comparisons.extend(COMPARISONS);
     }
-    let mut variant = Variant::load(Path::new(directory), tiles)?;
+    let mut variant = Variant::load(Path::new(&directory), tiles)?;
     let mut rows = Vec::new();
     for spec in comparisons {
         for region in variant.classify(spec)? {

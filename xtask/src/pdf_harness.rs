@@ -4,6 +4,7 @@ mod content;
 mod fixtures;
 mod inventory;
 
+use crate::cli::{Outcome, PdfHarnessCommand};
 use crate::conformance::sha256;
 use base64::Engine;
 use serde_json::{json, Value};
@@ -13,19 +14,32 @@ use std::path::Path;
 use std::process::Command;
 type Result<T> = std::result::Result<T, String>;
 
-pub fn run(args: impl Iterator<Item = String>) -> Result<()> {
-    let args = args.collect::<Vec<_>>();
-    match args.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
-        ["generate-fixtures",output]=>fixtures::generate(Path::new(output)),
-        ["inspect",input,expectation,expected,output]=>{
-            let expected=match *expected {"pass"=>true,"fail"=>false,_=>return Err("expected pass or fail".into())};
-            let qpdf=std::env::var_os("QPDF").map(std::path::PathBuf::from).unwrap_or_else(||crate::conformance::repo_root().join("target/pdf-harness/qpdf/bin/qpdf"));
-            let expectation=checks::Expectation::load(&fs::read(expectation).map_err(|e|e.to_string())?)?;
-            let report=inspect(&qpdf,Path::new(input),&expectation,expected)?;
-            fs::write(output,[canonical(&report)?,b"\n".to_vec()].concat()).map_err(|e|e.to_string())?;
-            if report["passed"]==expected {Ok(())}else{Err("PDF structural outcome differs from expectation".into())}
+pub fn run(command: PdfHarnessCommand) -> Result<()> {
+    match command {
+        PdfHarnessCommand::GenerateFixtures { output } => fixtures::generate(&output),
+        PdfHarnessCommand::Inspect {
+            input,
+            expectation,
+            expected,
+            output,
+        } => {
+            let expected = matches!(expected, Outcome::Pass);
+            let qpdf = std::env::var_os("QPDF")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|| {
+                    crate::conformance::repo_root().join("target/pdf-harness/qpdf/bin/qpdf")
+                });
+            let expectation =
+                checks::Expectation::load(&fs::read(expectation).map_err(|e| e.to_string())?)?;
+            let report = inspect(&qpdf, &input, &expectation, expected)?;
+            fs::write(output, [canonical(&report)?, b"\n".to_vec()].concat())
+                .map_err(|e| e.to_string())?;
+            if report["passed"] == expected {
+                Ok(())
+            } else {
+                Err("PDF structural outcome differs from expectation".into())
+            }
         }
-        _=>Err("usage: pdf-harness generate-fixtures <output> | inspect <input.pdf> <expectation.json> <pass|fail> <output.json>".into()),
     }
 }
 

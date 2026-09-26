@@ -140,7 +140,7 @@ fn invalid_resource_declarations_and_viewers_without_renderer_are_rejected() {
     assert!(case.run(&[], false).contains("resource outcome identity"));
     assert!(case
         .run(&["--viewers"], false)
-        .contains("requires --renderer"));
+        .contains("--renderer <RENDERER>"));
 }
 
 #[test]

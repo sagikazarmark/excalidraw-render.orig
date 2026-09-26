@@ -140,7 +140,8 @@ fn fallback_uses_locked_absolute_manifest_and_isolated_target_even_with_parent_o
         .output()
         .unwrap();
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("usage: pdf-harness"));
+    assert!(String::from_utf8_lossy(&output.stderr)
+        .contains("unrecognized subcommand 'invalid-command'"));
 }
 
 #[test]

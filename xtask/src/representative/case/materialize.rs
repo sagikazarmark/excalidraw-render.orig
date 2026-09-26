@@ -1,32 +1,17 @@
 //! Create an unapproved case from explicit expectations and retained reference
 //! bytes. Materialization never selects native observations as expectations.
 use super::*;
+use crate::cli::MaterializeArgs;
 
-pub(super) fn run(args: &[String]) -> Result<()> {
-    let (output, rest) = args.split_first().ok_or("missing case output directory")?;
-    let mut options = BTreeMap::new();
-    for pair in rest.chunks(2) {
-        require(pair.len() == 2, "missing materialize option value")?;
-        require(
-            ["--intake", "--reference", "--evidence-record", "--spec"].contains(&pair[0].as_str()),
-            "unknown materialize option",
-        )?;
-        require(
-            options.insert(pair[0].as_str(), pair[1].as_str()).is_none(),
-            "duplicate materialize option",
-        )?;
-    }
-    let option = |key| {
-        options
-            .get(key)
-            .copied()
-            .ok_or_else(|| format!("missing {key}"))
-    };
-    let bundle = Path::new(option("--intake")?);
-    let reference = Path::new(option("--reference")?);
-    let evidence_record = Path::new(option("--evidence-record")?);
-    let spec = decode(&fs::read(option("--spec")?).map_err(|e| e.to_string())?)?;
-    let summary = materialize(Path::new(output), bundle, reference, evidence_record, &spec)?;
+pub(super) fn run(args: MaterializeArgs) -> Result<()> {
+    let spec = decode(&fs::read(&args.spec).map_err(|e| e.to_string())?)?;
+    let summary = materialize(
+        &args.output,
+        &args.intake,
+        &args.reference,
+        &args.evidence_record,
+        &spec,
+    )?;
     println!(
         "{}",
         String::from_utf8(json::compact(&summary)?).map_err(|e| e.to_string())?

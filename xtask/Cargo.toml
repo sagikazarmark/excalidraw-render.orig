@@ -15,6 +15,7 @@ excalidraw-render-compare = { path = "../crates/excalidraw-render-compare" }
 jsonschema.workspace = true
 libm.workspace = true
 base64.workspace = true
+clap.workspace = true
 miniz_oxide.workspace = true
 png.workspace = true
 roxmltree.workspace = true

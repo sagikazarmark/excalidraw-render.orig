@@ -2282,6 +2282,7 @@ name = "xtask"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "clap",
  "excalidraw-fonts",
  "excalidraw-render-compare",
  "jsonschema",
