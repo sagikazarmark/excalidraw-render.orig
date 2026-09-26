@@ -1660,6 +1660,36 @@ fn generate_rust(
     }
     output.push_str("];\n\n");
 
+    // Join storage records to declarations once, at generation time. Runtime
+    // consumers enumerate these immutable slices without scanning or sorting.
+    for family in &families {
+        let mut ordered = assets
+            .iter()
+            .enumerate()
+            .filter(|(_, asset)| asset["family"].as_str() == Some(*family))
+            .map(|(index, asset)| {
+                let path = string(asset, "upstreamPath", "catalog asset")?;
+                let order = excalidraw_fonts::font_face_order(family, path)
+                    .ok_or_else(|| format!("missing font declaration for {path}"))?;
+                Ok((order, index))
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        ordered.sort_unstable();
+        output.push_str(&format!(
+            "#[rustfmt::skip]\npub(crate) static {}_FONT_FACES: &[fonts::Face] = &[\n",
+            family.to_uppercase()
+        ));
+        for (order, index) in ordered {
+            let ranges = match *family {
+                "Cascadia" | "Liberation" | "Virgil" => "ALL_UNICODE".to_owned(),
+                "ComicShanns" => format!("COMIC_SHANNS_FACES[{order}].unicode_ranges"),
+                family => format!("{}_FACES[{order}].unicode_ranges", family.to_uppercase()),
+            };
+            output.push_str(&format!("    fonts::Face::chunk(fonts::FamilyId::{family}, {order}, &ASSETS[{index}], {ranges}),\n"));
+        }
+        output.push_str("];\n\n");
+    }
+
     let fallback_ids = ids(scene_surface, "fallbackRecipes", "recipeId")?;
     let notice_ids = ids(scene_surface, "noticeCatalog", "id")?;
     let provenance_ids = catalog["provenanceIdentities"]

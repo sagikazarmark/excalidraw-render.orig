@@ -56,7 +56,7 @@ struct QualificationSource {
 }
 
 impl QualificationSource {
-    const fn chunk(record: &'static excalidraw_fonts::AssetRecord) -> Self {
+    fn chunk(record: &'static excalidraw_fonts::AssetRecord) -> Self {
         Self {
             source: svg_fonts::SubsetSource::chunk(record),
             upstream_path: record.upstream_path,
@@ -69,7 +69,7 @@ impl QualificationSource {
     /// The Noto Emoji fallback: an sfnt rather than a WOFF2 chunk, its own
     /// one-face family declaring all of Unicode, OFL without a Reserved Font
     /// Name, so its alias is its canonical name.
-    const fn noto_emoji() -> Self {
+    fn noto_emoji() -> Self {
         Self {
             source: svg_fonts::SubsetSource::noto_emoji(),
             upstream_path: "scripts/woff2/assets/NotoEmoji-Regular.ttf",

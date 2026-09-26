@@ -139,9 +139,11 @@ pub(super) fn resolve_embeddable_label(
     label: &str,
     context: &ResolveContext<'_>,
     official_fonts: &mut Vec<OfficialFont>,
+    loader: &mut crate::fonts::FontLoader,
 ) -> Result<(ResolvedText, CanonicalColor, f64), ResolveSceneError> {
     let font_size = embeddable_font_size(source.width, label);
-    let font_index = official_font_index(official_fonts, EMBEDDABLE_LABEL_FONT_FAMILY, label)?;
+    let font_index =
+        official_font_index(official_fonts, EMBEDDABLE_LABEL_FONT_FAMILY, label, loader)?;
     let wrapped_label = official_fonts[font_index]
         .wrap_embeddable_label(label, font_size, source.width - 20.0)
         .map_err(label_error)?;
@@ -157,6 +159,7 @@ pub(super) fn resolve_embeddable_label(
             font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
         },
         context.cjk_subset_trigger,
+        loader,
     )?;
     let line_count = laid_out.lines.len() as f64;
     let offset_y = (source.height - line_count * font_size * EMBEDDABLE_LABEL_LINE_HEIGHT) / 2.0;

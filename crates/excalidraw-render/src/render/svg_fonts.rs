@@ -2,6 +2,7 @@ use super::font_subset;
 use crate::resource_accounting::{
     ResourceAccount, ResourceContext, ResourceDelta, ResourcePhase, ResourceRecordKind,
 };
+use excalidraw_fonts::fonts::{Container, Face, FamilyId};
 use excalidraw_fonts::FontNotice;
 use sha2::{Digest, Sha256};
 use std::collections::{hash_map::DefaultHasher, HashSet, TryReserveError};
@@ -64,77 +65,55 @@ impl FamilyDemand {
 /// only in arriving as an sfnt rather than a WOFF2 container.
 #[derive(Clone, Copy, Debug)]
 pub(super) struct SubsetSource {
-    kind: SubsetSourceKind,
+    face: &'static Face,
 }
-
-#[derive(Clone, Copy, Debug)]
-enum SubsetSourceKind {
-    Chunk(&'static excalidraw_fonts::AssetRecord),
-    NotoEmoji,
-}
-
-/// The one declared range of the Noto Emoji fallback: like the single-face
-/// families' declaration, it covers all of Unicode, so the face is consulted
-/// for every scalar an emoji run demanded and never left out for one.
-const NOTO_EMOJI_RANGES: &[(u32, u32)] = &[(0, 0x10ffff)];
 
 /// The most sources one family can have: Xiaolai's chunk count bounds it, and
 /// the catalog holds no more chunks than this in total.
 const MAX_FAMILY_SOURCES: usize = 230;
 
 impl SubsetSource {
-    pub(super) const fn chunk(record: &'static excalidraw_fonts::AssetRecord) -> Self {
+    #[cfg(test)]
+    pub(super) fn chunk(record: &'static excalidraw_fonts::AssetRecord) -> Self {
         Self {
-            kind: SubsetSourceKind::Chunk(record),
+            face: excalidraw_fonts::fonts::find_face(record.upstream_path)
+                .expect("catalog chunk has a face"),
         }
     }
 
-    pub(super) const fn noto_emoji() -> Self {
+    #[cfg(test)]
+    pub(super) fn noto_emoji() -> Self {
         Self {
-            kind: SubsetSourceKind::NotoEmoji,
+            face: &FamilyId::NotoEmoji.faces()[0],
         }
     }
 
     /// The catalog identity the subset notice, the semantic identity and the
     /// resource trace name the source by.
     pub(super) const fn identity(self) -> &'static str {
-        match self.kind {
-            SubsetSourceKind::Chunk(record) => record.identity,
-            SubsetSourceKind::NotoEmoji => excalidraw_fonts::NOTO_EMOJI_IDENTITY,
-        }
+        self.face.identity()
     }
 
     pub(super) const fn complete_sha256(self) -> &'static str {
-        match self.kind {
-            SubsetSourceKind::Chunk(record) => record.complete_sha256,
-            SubsetSourceKind::NotoEmoji => excalidraw_fonts::NOTO_EMOJI_SHA256,
-        }
+        self.face.source_sha256()
     }
 
     /// The manifested source length: the WOFF2 container of a chunk, the
     /// sfnt itself for the fallback.
     const fn complete_length(self) -> usize {
-        match self.kind {
-            SubsetSourceKind::Chunk(record) => record.complete_length,
-            SubsetSourceKind::NotoEmoji => excalidraw_fonts::NOTO_EMOJI_LENGTH,
-        }
+        self.face.source_length()
     }
 
     /// The decoded sfnt length the dependency envelope is sized from: a
     /// chunk's reviewed decode, the fallback's own length.
     fn decoded_length(self) -> Option<usize> {
-        match self.kind {
-            SubsetSourceKind::Chunk(record) => {
-                excalidraw_fonts::font_face_decoded_length(record.upstream_path)
-            }
-            SubsetSourceKind::NotoEmoji => Some(excalidraw_fonts::NOTO_EMOJI_LENGTH),
-        }
+        Some(self.face.decoded_length())
     }
 
     pub(super) const fn container(self) -> font_subset::SourceContainer {
-        match self.kind {
-            SubsetSourceKind::Chunk(_) => font_subset::SourceContainer::Woff2,
-            SubsetSourceKind::NotoEmoji => font_subset::SourceContainer::Sfnt,
+        match self.face.container() {
+            Container::Woff2 => font_subset::SourceContainer::Woff2,
+            Container::Sfnt => font_subset::SourceContainer::Sfnt,
         }
     }
 
@@ -142,40 +121,16 @@ impl SubsetSource {
     /// complete in place of a subset.
     #[cfg(test)]
     const fn complete_mime(self) -> &'static str {
-        match self.kind {
-            SubsetSourceKind::Chunk(_) => "font/woff2",
-            SubsetSourceKind::NotoEmoji => "font/ttf",
-        }
-    }
-
-    /// The catalog family whose notice covers the source.
-    pub(super) const fn catalog_family(self) -> &'static str {
-        match self.kind {
-            SubsetSourceKind::Chunk(record) => record.family,
-            SubsetSourceKind::NotoEmoji => excalidraw_fonts::NOTO_EMOJI_FAMILY,
+        match self.face.container() {
+            Container::Woff2 => "font/woff2",
+            Container::Sfnt => "font/ttf",
         }
     }
 
     /// The declared Unicode ranges selection intersects the family scalar set
     /// with; `None` only when the catalog lacks a chunk's declaration.
     pub(super) fn unicode_ranges(self) -> Option<&'static [(u32, u32)]> {
-        match self.kind {
-            SubsetSourceKind::Chunk(record) => {
-                excalidraw_fonts::font_face_unicode_ranges(record.family, record.upstream_path)
-            }
-            SubsetSourceKind::NotoEmoji => Some(NOTO_EMOJI_RANGES),
-        }
-    }
-
-    /// The source's position in pinned face order within its family.
-    fn face_order(self) -> usize {
-        match self.kind {
-            SubsetSourceKind::Chunk(record) => {
-                excalidraw_fonts::font_face_order(record.family, record.upstream_path)
-                    .unwrap_or(usize::MAX)
-            }
-            SubsetSourceKind::NotoEmoji => 0,
-        }
+        Some(self.face.declared_ranges())
     }
 
     /// Whether the family scalar set intersects the declared ranges, which is
@@ -190,14 +145,12 @@ impl SubsetSource {
     }
 
     /// Loads the source on demand, preserving unavailable and corrupt asset errors.
+    #[cfg(test)]
     pub(super) fn load(
         self,
     ) -> Result<Option<excalidraw_fonts::VerifiedAsset>, excalidraw_fonts::AssetIntegrityError>
     {
-        match self.kind {
-            SubsetSourceKind::Chunk(record) => excalidraw_fonts::load_asset(record.upstream_path),
-            SubsetSourceKind::NotoEmoji => excalidraw_fonts::load_noto_emoji_sfnt().map(Some),
-        }
+        crate::fonts::load_source(self.face.id()).map(Some)
     }
 }
 
@@ -205,23 +158,11 @@ impl SubsetSource {
 /// order, and returns how many there are; `None` when the family has more
 /// sources than the slots hold, which the catalog bound above rules out.
 fn family_sources(family: &'static str, slots: &mut [Option<SubsetSource>]) -> Option<usize> {
-    let catalog_family = catalog_family(family);
-    let mut count = 0_usize;
-    if catalog_family == excalidraw_fonts::NOTO_EMOJI_FAMILY {
-        *slots.first_mut()? = Some(SubsetSource::noto_emoji());
-        return Some(1);
+    let family = FamilyId::from_name(family)?;
+    for (index, face) in family.faces().iter().enumerate() {
+        *slots.get_mut(index)? = Some(SubsetSource { face });
     }
-    for record in excalidraw_fonts::revision_1()
-        .assets
-        .iter()
-        .filter(|record| record.family == catalog_family)
-    {
-        *slots.get_mut(count)? = Some(SubsetSource::chunk(record));
-        count += 1;
-    }
-    slots[..count]
-        .sort_unstable_by_key(|source| source.map_or(usize::MAX, SubsetSource::face_order));
-    Some(count)
+    Some(family.faces().len())
 }
 
 #[derive(Clone, Copy)]
@@ -233,12 +174,14 @@ pub(super) enum Payload {
 
 pub(super) struct Session {
     subset: font_subset::Session,
+    fonts: crate::fonts::FontLoader,
 }
 
 impl Session {
     pub(super) fn new() -> Self {
         Self {
             subset: font_subset::Session::new(),
+            fonts: crate::fonts::FontLoader::default(),
         }
     }
 
@@ -875,19 +818,21 @@ pub(super) fn build(
                 family: family.family,
                 asset_identity: source.identity(),
             };
-            let asset = source
-                .load()
+            let asset = session.fonts
+                .load_source(source.face.id())
                 .map_err(|error| {
-                    if error.is_unavailable() {
-                        if let SubsetSourceKind::Chunk(record) = source.kind {
-                            return super::FormatEncodeError::FontUnavailable(
-                                super::FontUnavailable::chunk(record),
-                            );
-                        }
+                    if matches!(&error, crate::fonts::FontError::Integrity(error) if error.is_unavailable()) {
+                        return super::FormatEncodeError::FontUnavailable(
+                            super::FontUnavailable::face(source.face),
+                        );
+                    }
+                    if matches!(error, crate::fonts::FontError::Memory) {
+                        return super::FormatEncodeError::MemoryUnavailable {
+                            subject_kind: "svg_font_demand", subject: "font_source_cache",
+                        };
                     }
                     super::FormatEncodeError::from(decode_error())
-                })?
-                .ok_or_else(decode_error)?;
+                })?;
             let effective_alias = Bundle::effective_family(family.family);
             match payload {
                 Payload::Subset => {
@@ -901,7 +846,7 @@ pub(super) fn build(
                         .subset
                         .derive(
                             source.identity(),
-                            asset.bytes(),
+                            &asset,
                             source.container(),
                             &family.scalars,
                             effective_alias,
@@ -949,13 +894,13 @@ pub(super) fn build(
                         })?;
                     let mut bytes = Vec::new();
                     bytes
-                        .try_reserve_exact(asset.bytes().len())
+                        .try_reserve_exact(asset.len())
                         .map_err(|_| BuildError {
                             stage: crate::SvgFontSubsetStage::Encode,
                             family: family.family,
                             asset_identity: source.identity(),
                         })?;
-                    bytes.extend_from_slice(asset.bytes());
+                    bytes.extend_from_slice(&asset);
                     resources.push(Resource {
                         family: effective_alias,
                         mime: source.complete_mime(),
@@ -1015,14 +960,11 @@ fn family_notice(
     source: SubsetSource,
     family: &'static str,
 ) -> Result<&'static FontNotice, BuildError> {
-    crate::catalog::REVISION_1
-        .asset_catalog()
-        .font_notice(source.catalog_family())
-        .ok_or(BuildError {
-            stage: crate::SvgFontSubsetStage::Validate,
-            family,
-            asset_identity: source.identity(),
-        })
+    source.face.family().notice().ok_or(BuildError {
+        stage: crate::SvgFontSubsetStage::Validate,
+        family,
+        asset_identity: source.identity(),
+    })
 }
 
 /// The semantic subset identity of one official chunk's subset (spec 8.3.2),
@@ -1077,17 +1019,6 @@ fn encode_hex_32(value: &[u8; 32]) -> String {
         output.push(char::from(HEX[usize::from(byte & 0x0f)]));
     }
     output
-}
-
-pub(super) fn catalog_family(family: &str) -> &str {
-    match family {
-        "Cascadia Code" => "Cascadia",
-        "Comic Shanns" => "ComicShanns",
-        "Liberation Sans" => "Liberation",
-        "Lilita One" => "Lilita",
-        "Noto Emoji" => excalidraw_fonts::NOTO_EMOJI_FAMILY,
-        family => family,
-    }
 }
 
 #[cfg(all(test, not(feature = "cjk")))]

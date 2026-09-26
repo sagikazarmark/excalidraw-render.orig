@@ -17,6 +17,7 @@ mod compatibility;
 mod css_syntax;
 mod diagnostic_registry;
 mod font_metadata;
+mod fonts;
 mod frame;
 #[cfg(test)]
 mod metadata_failure_contract;

@@ -485,10 +485,11 @@ impl ResolvedScene {
                 NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
             )
         });
+        let mut font_loader = crate::fonts::FontLoader::default();
         let fallback_font = if (shows_frame_names && has_frames)
             || fallbacks.iter().any(|fallback| fallback.paint)
         {
-            Some(FallbackFont::load().map_err(label_error)?)
+            Some(FallbackFont::load_with_loader(&mut font_loader).map_err(label_error)?)
         } else {
             None
         };
@@ -523,9 +524,13 @@ impl ResolvedScene {
         for (source, geometry) in &outlines {
             if matches!(source.kind, NormalizedElementKind::Text(_)) {
                 let membership = source_context.frame_membership(source.source.source_index())?;
-                if let Some(text) =
-                    resolve_text(source, &source_context, &mut official_fonts, membership)?
-                {
+                if let Some(text) = resolve_text(
+                    source,
+                    &source_context,
+                    &mut official_fonts,
+                    membership,
+                    &mut font_loader,
+                )? {
                     texts.push(text);
                 }
             }
@@ -541,6 +546,7 @@ impl ResolvedScene {
                             label,
                             &source_context,
                             &mut official_fonts,
+                            &mut font_loader,
                         )?,
                     ));
                 }

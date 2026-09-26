@@ -102,10 +102,10 @@ pub(super) struct FontUnavailable {
 }
 
 impl FontUnavailable {
-    fn chunk(record: &'static excalidraw_fonts::AssetRecord) -> Self {
+    fn face(face: &excalidraw_fonts::fonts::Face) -> Self {
         Self {
-            resolved_family: record.family,
-            asset_identity: record.identity,
+            resolved_family: face.family().catalog_name(),
+            asset_identity: face.identity(),
         }
     }
 }

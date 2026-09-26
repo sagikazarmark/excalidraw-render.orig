@@ -11,7 +11,7 @@ use super::{svg_fonts, text, FormatEncodeError, RenderResourceAccount, RenderSes
 pub(super) struct ResolvedFont {
     pub(super) pdf_name: &'static str,
     pub(super) identity: &'static str,
-    pub(super) sfnt: Vec<u8>,
+    pub(super) sfnt: std::sync::Arc<[u8]>,
 }
 
 pub(super) fn svg_font_text_order(

@@ -2274,18 +2274,21 @@ fn escape_attribute(output: &mut String, value: &str) {
 }
 
 pub(super) fn viewer_options() -> Result<usvg::Options<'static>, ResolveError> {
-    let excalifont = excalidraw_fonts::load_excalifont_basic_latin_sfnt()
+    use excalidraw_fonts::fonts::{find_face, FamilyId};
+    let latin =
+        find_face(excalidraw_fonts::excalifont_basic_latin_sfnt_transformation().source_path)
+            .ok_or(ResolveError::SvgDecodeFailed)?;
+    let excalifont =
+        crate::fonts::load_sfnt(latin.id()).map_err(|_| ResolveError::SvgDecodeFailed)?;
+    let liberation_sans = crate::fonts::load_sfnt(FamilyId::Liberation.faces()[0].id())
         .map_err(|_| ResolveError::SvgDecodeFailed)?;
-    let (_, liberation_sans) = crate::render::text::FallbackFont::load()
-        .map_err(|_| ResolveError::SvgDecodeFailed)?
-        .into_parts();
     let mut options = usvg::Options {
         resources_dir: None,
         font_family: "Liberation Sans".to_owned(),
         ..usvg::Options::default()
     };
     let mut fontdb = usvg::fontdb::Database::new();
-    fontdb.load_font_data(excalifont.bytes().to_vec());
+    fontdb.load_font_data(excalifont);
     fontdb.load_font_data(liberation_sans);
     fontdb.set_serif_family("Liberation Sans");
     fontdb.set_sans_serif_family("Liberation Sans");

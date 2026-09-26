@@ -10,7 +10,7 @@ use crate::relationships::{RelationshipKind, ResolvedRelationshipGraph};
 use super::super::bound_text::has_reciprocal_bound_text;
 use super::super::font_demand::ResolvedFont;
 use super::super::text::{
-    layout_with_fallbacks, needs_bidi_layout, CjkSubsetTrigger, OfficialFont, ResolvedText,
+    layout_with_loader, needs_bidi_layout, CjkSubsetTrigger, OfficialFont, ResolvedText,
     TextLayout, EXCALIFONT_FONT_FAMILY,
 };
 use super::super::try_owned;
@@ -66,6 +66,7 @@ pub(super) fn official_font_index(
     official_fonts: &mut Vec<OfficialFont>,
     font_family: i32,
     text: &str,
+    loader: &mut crate::fonts::FontLoader,
 ) -> Result<usize, ResolveSceneError> {
     if let Some(index) = official_fonts
         .iter()
@@ -74,7 +75,8 @@ pub(super) fn official_font_index(
         return Ok(index);
     }
     official_fonts.try_reserve(1)?;
-    official_fonts.push(OfficialFont::load(font_family, text).map_err(label_error)?);
+    official_fonts
+        .push(OfficialFont::load_with_loader(font_family, text, loader).map_err(label_error)?);
     Ok(official_fonts.len() - 1)
 }
 
@@ -88,6 +90,7 @@ pub(super) fn layout_official_text(
     text: &str,
     layout: TextLayout<'_>,
     cjk_subset_trigger: CjkSubsetTrigger,
+    loader: &mut crate::fonts::FontLoader,
 ) -> Result<ResolvedText, ResolveSceneError> {
     let fallback_layout = TextLayout {
         width: layout.width,
@@ -101,12 +104,13 @@ pub(super) fn layout_official_text(
         .map_err(label_error)?;
     laid_out.font_index = font_index;
     if !laid_out.missing_codepoints.is_empty() || needs_bidi_layout(text) {
-        laid_out = layout_with_fallbacks(
+        laid_out = layout_with_loader(
             font_index,
             official_fonts,
             text,
             fallback_layout,
             cjk_subset_trigger,
+            loader,
         )
         .map_err(label_error)?
         .0;
@@ -123,6 +127,7 @@ pub(super) fn resolve_text(
     context: &ResolveContext<'_>,
     official_fonts: &mut Vec<OfficialFont>,
     membership: FrameMembership,
+    loader: &mut crate::fonts::FontLoader,
 ) -> Result<Option<ResolvedTextElement>, ResolveSceneError> {
     let NormalizedElementKind::Text(text_source) = &source.kind else {
         unreachable!("only text elements reach text resolution");
@@ -142,8 +147,12 @@ pub(super) fn resolve_text(
             .find(|node| node.source_index == container)
             .map(|node| node.source_order)
     });
-    let font_index =
-        official_font_index(official_fonts, text_source.font_family, &text_source.text)?;
+    let font_index = official_font_index(
+        official_fonts,
+        text_source.font_family,
+        &text_source.text,
+        loader,
+    )?;
     let laid_out = layout_official_text(
         official_fonts,
         font_index,
@@ -156,6 +165,7 @@ pub(super) fn resolve_text(
             font_family: text_source.font_family,
         },
         context.cjk_subset_trigger,
+        loader,
     )?;
     let transform = context.box_transform(source);
     Ok(Some(ResolvedTextElement {

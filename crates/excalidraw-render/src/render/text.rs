@@ -1,12 +1,12 @@
 use std::collections::TryReserveError;
+use std::sync::Arc;
 
+use excalidraw_fonts::fonts::{Face, FaceId, FamilyId};
 use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder, Tag};
 
 use crate::font_metadata::FamilyMetrics;
+use crate::fonts::{FontError, FontLoader};
 
-const LIBERATION_SANS_PATH: &str = "fonts/Liberation/LiberationSans-Regular.woff2";
-const EXCALIFONT_LATIN_PATH: &str =
-    "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2";
 pub(super) const LIBERATION_SANS_IDENTITY: &str = concat!(
     "fonts/Liberation/LiberationSans-Regular.woff2@sha256:",
     "006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8"
@@ -47,11 +47,9 @@ pub(super) struct FallbackFont {
 /// sealed source bytes (`svg_fonts`), so no format needs the container here.
 pub(super) struct OfficialFont {
     source_family: i32,
-    catalog_family: &'static str,
-    family: &'static str,
-    pdf_name: &'static str,
+    family: FamilyId,
     identity: &'static str,
-    sfnt: Vec<u8>,
+    sfnt: Arc<[u8]>,
 }
 
 #[derive(Debug)]
@@ -231,19 +229,36 @@ impl From<TryReserveError> for LabelError {
     }
 }
 
+fn font_error(id: FaceId, error: FontError) -> LabelError {
+    match error {
+        FontError::Memory => LabelError::Memory,
+        FontError::Integrity(error) if error.is_unavailable() => {
+            LabelError::FontUnavailable(super::FontUnavailable::face(id.face()))
+        }
+        _ => LabelError::InvalidFont,
+    }
+}
+
 impl FallbackFont {
+    #[cfg(test)]
     pub(super) fn load() -> Result<Self, LabelError> {
-        let record =
-            excalidraw_fonts::find_asset(LIBERATION_SANS_PATH).ok_or(LabelError::InvalidFont)?;
-        let asset = excalidraw_fonts::load_asset(LIBERATION_SANS_PATH)
-            .map_err(|_| LabelError::InvalidFont)?
-            .ok_or(LabelError::InvalidFont)?;
+        Self::load_with_loader(&mut FontLoader::default())
+    }
+
+    pub(super) fn load_with_loader(loader: &mut FontLoader) -> Result<Self, LabelError> {
+        let id = FamilyId::Liberation.faces()[0].id();
+        let source = loader
+            .load_source(id)
+            .map_err(|error| font_error(id, error))?;
         let mut woff2 = Vec::new();
-        woff2.try_reserve_exact(asset.bytes().len())?;
-        woff2.extend_from_slice(asset.bytes());
-        let sfnt = wuff::decompress_woff2(&woff2).map_err(|_| LabelError::InvalidFont)?;
-        let sfnt = reviewed_decode(record, sfnt)?;
-        rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        woff2.try_reserve_exact(source.len())?;
+        woff2.extend_from_slice(&source);
+        let decoded = loader
+            .load_sfnt(id)
+            .map_err(|error| font_error(id, error))?;
+        let mut sfnt = Vec::new();
+        sfnt.try_reserve_exact(decoded.len())?;
+        sfnt.extend_from_slice(&decoded);
         Ok(Self { woff2, sfnt })
     }
 
@@ -589,18 +604,27 @@ fn build_label(
 }
 
 impl OfficialFont {
+    #[cfg(test)]
     pub(super) fn load(font_family: i32, text: &str) -> Result<Self, LabelError> {
-        let (catalog_family, family, pdf_name) = match font_family {
-            1 => ("Virgil", "Virgil", "Virgil"),
-            2 | 9 => ("Liberation", "Liberation Sans", "LiberationSans"),
-            3 => ("Cascadia", "Cascadia Code", "CascadiaCode"),
-            EXCALIFONT_FONT_FAMILY => ("Excalifont", "Excalifont", "Excalifont"),
-            6 => ("Nunito", "Nunito", "Nunito"),
-            7 => ("Lilita", "Lilita One", "LilitaOne"),
-            8 => ("ComicShanns", "Comic Shanns", "ComicShanns"),
+        Self::load_with_loader(font_family, text, &mut FontLoader::default())
+    }
+
+    pub(super) fn load_with_loader(
+        font_family: i32,
+        text: &str,
+        loader: &mut FontLoader,
+    ) -> Result<Self, LabelError> {
+        let family_id = match font_family {
+            1 => FamilyId::Virgil,
+            2 | 9 => FamilyId::Liberation,
+            3 => FamilyId::Cascadia,
+            EXCALIFONT_FONT_FAMILY => FamilyId::Excalifont,
+            6 => FamilyId::Nunito,
+            7 => FamilyId::Lilita,
+            8 => FamilyId::ComicShanns,
             _ => return Err(LabelError::InvalidFont),
         };
-        let mut chunks = OfficialFontChunks::load(catalog_family)?;
+        let mut chunks = OfficialFontChunks::load(family_id, loader);
         // The shaped scalars: every scalar but the line terminators and the
         // default-ignorable code points, which no face needs to declare or
         // map since the shaper hides them in whichever run they fall (#167).
@@ -618,26 +642,17 @@ impl OfficialFont {
         if selected.is_none() {
             selected = chunks.first_declaring(|| ['?', 'A'].into_iter())?;
         }
-        let (record, sfnt) = chunks.take(selected.ok_or(LabelError::InvalidFont)?)?;
-        Self::from_chunk(font_family, catalog_family, family, pdf_name, record, sfnt)
+        let (face, sfnt) = chunks.take(selected.ok_or(LabelError::InvalidFont)?)?;
+        Ok(Self::from_face(font_family, face, sfnt))
     }
 
-    fn from_chunk(
-        source_family: i32,
-        catalog_family: &'static str,
-        family: &'static str,
-        pdf_name: &'static str,
-        record: &'static excalidraw_fonts::AssetRecord,
-        sfnt: Vec<u8>,
-    ) -> Result<Self, LabelError> {
-        Ok(Self {
+    fn from_face(source_family: i32, face: &'static Face, sfnt: Arc<[u8]>) -> Self {
+        Self {
             source_family,
-            catalog_family,
-            family,
-            pdf_name,
-            identity: record.identity,
+            family: face.family(),
+            identity: face.identity(),
             sfnt,
-        })
+        }
     }
 
     pub(super) fn layout(
@@ -679,7 +694,7 @@ impl OfficialFont {
         }
         Ok(ResolvedText {
             font_index: 0,
-            font_family: self.family,
+            font_family: self.family.display_name(),
             font_size: layout.font_size,
             text_align,
             lines,
@@ -741,8 +756,8 @@ impl OfficialFont {
         Ok(wrapped)
     }
 
-    pub(super) fn into_parts(self) -> (&'static str, &'static str, Vec<u8>) {
-        (self.pdf_name, self.identity, self.sfnt)
+    pub(super) fn into_parts(self) -> (&'static str, &'static str, Arc<[u8]>) {
+        (self.family.pdf_name(), self.identity, self.sfnt)
     }
 
     fn supports(&self, character: char) -> bool {
@@ -767,21 +782,19 @@ impl OfficialFont {
         Ok(units as f64 * font_size / f64::from(face.units_per_em()))
     }
 
-    fn load_noto_emoji(character: char) -> Result<Option<Self>, LabelError> {
-        let asset =
-            excalidraw_fonts::load_noto_emoji_sfnt().map_err(|_| LabelError::InvalidFont)?;
-        let face = rustybuzz::Face::from_slice(asset.bytes(), 0).ok_or(LabelError::InvalidFont)?;
+    fn load_noto_emoji(
+        character: char,
+        loader: &mut FontLoader,
+    ) -> Result<Option<Self>, LabelError> {
+        let id = FamilyId::NotoEmoji.faces()[0].id();
+        let sfnt = loader
+            .load_sfnt(id)
+            .map_err(|error| font_error(id, error))?;
+        let face = rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
         if face.glyph_index(character).is_none() {
             return Ok(None);
         }
-        Ok(Some(Self {
-            source_family: 1_000,
-            catalog_family: excalidraw_fonts::NOTO_EMOJI_FAMILY,
-            family: "Noto Emoji",
-            pdf_name: "NotoEmoji",
-            identity: excalidraw_fonts::NOTO_EMOJI_IDENTITY,
-            sfnt: asset.into_bytes(),
-        }))
+        Ok(Some(Self::from_face(1_000, id.face(), sfnt)))
     }
 
     pub(super) fn matches_family(&self, font_family: i32) -> bool {
@@ -790,12 +803,31 @@ impl OfficialFont {
     }
 }
 
+#[cfg(test)]
 pub(super) fn layout_with_fallbacks(
     primary_index: usize,
     fonts: &mut Vec<OfficialFont>,
     text: &str,
     layout: TextLayout<'_>,
     trigger: CjkSubsetTrigger,
+) -> Result<(ResolvedText, bool), LabelError> {
+    layout_with_loader(
+        primary_index,
+        fonts,
+        text,
+        layout,
+        trigger,
+        &mut FontLoader::default(),
+    )
+}
+
+pub(super) fn layout_with_loader(
+    primary_index: usize,
+    fonts: &mut Vec<OfficialFont>,
+    text: &str,
+    layout: TextLayout<'_>,
+    trigger: CjkSubsetTrigger,
+    loader: &mut FontLoader,
 ) -> Result<(ResolvedText, bool), LabelError> {
     let text_align = ResolvedTextAlign::from_normalized(layout.text_align);
     let line_step = layout.font_size * layout.line_height;
@@ -854,6 +886,7 @@ pub(super) fn layout_with_fallbacks(
                         trigger,
                         &mut resolved_characters,
                         &mut fallback_probes,
+                        loader,
                     )?;
                     selections.push((bidi_run, rtl, font_index, display));
                     used_noto |= noto;
@@ -958,7 +991,7 @@ pub(super) fn layout_with_fallbacks(
             runs.try_reserve(1)?;
             runs.push(ResolvedTextRun {
                 font_index,
-                font_family: font.family,
+                font_family: font.family.display_name(),
                 display_text: run_text.clone(),
                 glyph_start,
                 glyph_end,
@@ -992,7 +1025,8 @@ pub(super) fn layout_with_fallbacks(
             font_family: fonts
                 .get(primary_index)
                 .ok_or(LabelError::InvalidFont)?
-                .family,
+                .family
+                .display_name(),
             font_size: layout.font_size,
             text_align,
             lines,
@@ -1098,23 +1132,21 @@ fn resolve_character_font(
     character: char,
     trigger: CjkSubsetTrigger,
     fallback_probes: &mut u64,
+    loader: &mut FontLoader,
 ) -> Result<(usize, char, bool, bool), LabelError> {
     let primary = fonts.get(primary_index).ok_or(LabelError::InvalidFont)?;
     if primary.supports(character) {
         return Ok((primary_index, character, false, false));
     }
     let source_family = primary.source_family;
-    let catalog_family = primary.catalog_family;
     let family = primary.family;
-    let pdf_name = primary.pdf_name;
     if let Some(index) = select_catalog_font(
         fonts,
         source_family,
-        catalog_family,
         family,
-        pdf_name,
         character,
         fallback_probes,
+        loader,
     )? {
         return Ok((index, character, false, false));
     }
@@ -1122,11 +1154,10 @@ fn resolve_character_font(
         if let Some(index) = select_catalog_font(
             fonts,
             100,
-            "Xiaolai",
-            "Xiaolai",
-            "Xiaolai",
+            FamilyId::Xiaolai,
             character,
             fallback_probes,
+            loader,
         )? {
             return Ok((index, character, false, false));
         }
@@ -1139,7 +1170,7 @@ fn resolve_character_font(
     *fallback_probes = fallback_probes.saturating_add(1);
     if let Some(index) = fonts
         .iter()
-        .position(|font| font.catalog_family == "NotoEmoji")
+        .position(|font| font.family == FamilyId::NotoEmoji)
     {
         if fonts
             .get(index)
@@ -1147,21 +1178,14 @@ fn resolve_character_font(
         {
             return Ok((index, character, true, false));
         }
-    } else if let Some(font) = OfficialFont::load_noto_emoji(character)? {
+    } else if let Some(font) = OfficialFont::load_noto_emoji(character, loader)? {
         fonts.try_reserve(1)?;
         fonts.push(font);
         return Ok((fonts.len() - 1, character, true, false));
     }
-    let replacement = select_catalog_font(
-        fonts,
-        9,
-        "Liberation",
-        "Liberation Sans",
-        "LiberationSans",
-        '?',
-        fallback_probes,
-    )?
-    .ok_or(LabelError::InvalidFont)?;
+    let replacement =
+        select_catalog_font(fonts, 9, FamilyId::Liberation, '?', fallback_probes, loader)?
+            .ok_or(LabelError::InvalidFont)?;
     Ok((replacement, '?', false, true))
 }
 
@@ -1172,6 +1196,7 @@ fn resolve_character_cached(
     trigger: CjkSubsetTrigger,
     cache: &mut Vec<(char, usize, char, bool, bool, u64)>,
     fallback_probes: &mut u64,
+    loader: &mut FontLoader,
 ) -> Result<(usize, char, bool, bool), LabelError> {
     if let Some((_, font_index, display, noto, missing, probes)) =
         cache.iter().find(|(cached, ..)| *cached == character)
@@ -1180,8 +1205,14 @@ fn resolve_character_cached(
         return Ok((*font_index, *display, *noto, *missing));
     }
     let probes_before = *fallback_probes;
-    let resolved =
-        resolve_character_font(primary_index, fonts, character, trigger, fallback_probes)?;
+    let resolved = resolve_character_font(
+        primary_index,
+        fonts,
+        character,
+        trigger,
+        fallback_probes,
+        loader,
+    )?;
     let probes = fallback_probes.saturating_sub(probes_before);
     cache.try_reserve(1)?;
     cache.push((
@@ -1193,13 +1224,12 @@ fn resolve_character_cached(
 fn select_catalog_font(
     fonts: &mut Vec<OfficialFont>,
     source_family: i32,
-    catalog_family: &'static str,
-    family: &'static str,
-    pdf_name: &'static str,
+    family: FamilyId,
     character: char,
     fallback_probes: &mut u64,
+    loader: &mut FontLoader,
 ) -> Result<Option<usize>, LabelError> {
-    let mut chunks = OfficialFontChunks::load(catalog_family)?;
+    let mut chunks = OfficialFontChunks::load(family, loader);
     // Only the official font chunks whose declared Unicode range covers the
     // scalar are probed, in pinned face order; a chunk's cmap never selects it
     // for a scalar outside its declared ranges. A chunk already loaded for the
@@ -1209,7 +1239,7 @@ fn select_catalog_font(
             continue;
         }
         *fallback_probes = fallback_probes.saturating_add(1);
-        let identity = chunks.record(index)?.identity;
+        let identity = chunks.face(index)?.identity();
         if let Some(loaded) = fonts.iter().position(|font| font.identity == identity) {
             if fonts
                 .get(loaded)
@@ -1219,19 +1249,12 @@ fn select_catalog_font(
             }
             continue;
         }
-        if !sfnt_maps(chunks.decode(index)?, character) {
+        if !sfnt_maps(&chunks.decode(index)?, character) {
             continue;
         }
-        let (record, sfnt) = chunks.take(index)?;
+        let (face, sfnt) = chunks.take(index)?;
         fonts.try_reserve(1)?;
-        fonts.push(OfficialFont::from_chunk(
-            source_family,
-            catalog_family,
-            family,
-            pdf_name,
-            record,
-            sfnt,
-        )?);
+        fonts.push(OfficialFont::from_face(source_family, face, sfnt));
         return Ok(Some(fonts.len() - 1));
     }
     Ok(None)
@@ -1244,65 +1267,19 @@ fn sfnt_maps(sfnt: &[u8], character: char) -> bool {
         .is_some()
 }
 
-/// Admits decoded bytes as one official font chunk's reviewed decode (spec
-/// 8.6): only the sfnt whose length and digest the catalog records for the
-/// chunk may shape text or be embedded. Anything else is a sealed-asset
-/// failure, never a font.
-fn reviewed_decode(
-    record: &'static excalidraw_fonts::AssetRecord,
-    decoded: Vec<u8>,
-) -> Result<Vec<u8>, LabelError> {
-    excalidraw_fonts::verify_reviewed_decode(record, decoded)
-        .map(excalidraw_fonts::VerifiedAsset::into_bytes)
-        .map_err(|_| LabelError::InvalidFont)
+/// Selection over one family's immutable declarations. Loading is delegated
+/// to the target's physical cache, independent of semantic fallback probes.
+struct OfficialFontChunks<'a> {
+    chunks: &'static [Face],
+    loader: &'a mut FontLoader,
 }
 
-/// One resolved font family's official font chunks in pinned face order, each
-/// with its declared Unicode ranges and its sfnt decoded at most once, on
-/// demand. Only chunks whose declared range is consulted ever decode.
-struct OfficialFontChunks {
-    chunks: Vec<OfficialFontChunk>,
-}
-
-struct OfficialFontChunk {
-    order: usize,
-    record: &'static excalidraw_fonts::AssetRecord,
-    declared: &'static [(u32, u32)],
-    sfnt: Option<Vec<u8>>,
-}
-
-impl OfficialFontChunk {
-    fn declares(&self, character: char) -> bool {
-        let scalar = u32::from(character);
-        self.declared
-            .iter()
-            .any(|(start, end)| (*start..=*end).contains(&scalar))
-    }
-}
-
-impl OfficialFontChunks {
-    fn load(catalog_family: &'static str) -> Result<Self, LabelError> {
-        let mut chunks = Vec::new();
-        for record in excalidraw_fonts::revision_1()
-            .assets
-            .iter()
-            .filter(|record| record.family == catalog_family)
-        {
-            let order = excalidraw_fonts::font_face_order(catalog_family, record.upstream_path)
-                .ok_or(LabelError::InvalidFont)?;
-            let declared =
-                excalidraw_fonts::font_face_unicode_ranges(catalog_family, record.upstream_path)
-                    .ok_or(LabelError::InvalidFont)?;
-            chunks.try_reserve(1)?;
-            chunks.push(OfficialFontChunk {
-                order,
-                record,
-                declared,
-                sfnt: None,
-            });
+impl<'a> OfficialFontChunks<'a> {
+    fn load(family: FamilyId, loader: &'a mut FontLoader) -> Self {
+        Self {
+            chunks: family.faces(),
+            loader,
         }
-        chunks.sort_unstable_by_key(|chunk| chunk.order);
-        Ok(Self { chunks })
     }
 
     /// Whether the chunk at `index` declares a scalar in its Unicode ranges.
@@ -1328,58 +1305,28 @@ impl OfficialFontChunks {
                 continue;
             }
             let sfnt = self.decode(index)?;
-            if scalars().all(|character| sfnt_maps(sfnt, character)) {
+            if scalars().all(|character| sfnt_maps(&sfnt, character)) {
                 return Ok(Some(index));
             }
         }
         Ok(None)
     }
 
-    fn record(&self, index: usize) -> Result<&'static excalidraw_fonts::AssetRecord, LabelError> {
-        self.chunks
-            .get(index)
-            .map(|chunk| chunk.record)
-            .ok_or(LabelError::InvalidFont)
+    fn face(&self, index: usize) -> Result<&'static Face, LabelError> {
+        self.chunks.get(index).ok_or(LabelError::InvalidFont)
     }
 
-    fn decode(&mut self, index: usize) -> Result<&[u8], LabelError> {
-        let chunk = self.chunks.get_mut(index).ok_or(LabelError::InvalidFont)?;
-        if chunk.sfnt.is_none() {
-            let sfnt = if chunk.record.upstream_path == EXCALIFONT_LATIN_PATH {
-                let predecoded = excalidraw_fonts::load_excalifont_basic_latin_sfnt()
-                    .map_err(|_| LabelError::InvalidFont)?;
-                let mut sfnt = Vec::new();
-                sfnt.try_reserve_exact(predecoded.bytes().len())?;
-                sfnt.extend_from_slice(predecoded.bytes());
-                sfnt
-            } else {
-                let asset = excalidraw_fonts::load_asset(chunk.record.upstream_path)
-                    .map_err(|error| {
-                        if error.is_unavailable() {
-                            LabelError::FontUnavailable(super::FontUnavailable::chunk(chunk.record))
-                        } else {
-                            LabelError::InvalidFont
-                        }
-                    })?
-                    .ok_or(LabelError::InvalidFont)?;
-                wuff::decompress_woff2(asset.bytes()).map_err(|_| LabelError::InvalidFont)?
-            };
-            let sfnt = reviewed_decode(chunk.record, sfnt)?;
-            rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
-            chunk.sfnt = Some(sfnt);
-        }
-        chunk.sfnt.as_deref().ok_or(LabelError::InvalidFont)
+    fn decode(&mut self, index: usize) -> Result<Arc<[u8]>, LabelError> {
+        let id = self.chunks.get(index).ok_or(LabelError::InvalidFont)?.id();
+        self.loader
+            .load_sfnt(id)
+            .map_err(|error| font_error(id, error))
     }
 
     /// The record and decoded bytes of one chunk, decoding it if needed.
-    fn take(
-        &mut self,
-        index: usize,
-    ) -> Result<(&'static excalidraw_fonts::AssetRecord, Vec<u8>), LabelError> {
-        self.decode(index)?;
-        let chunk = self.chunks.get_mut(index).ok_or(LabelError::InvalidFont)?;
-        let sfnt = chunk.sfnt.take().ok_or(LabelError::InvalidFont)?;
-        Ok((chunk.record, sfnt))
+    fn take(&mut self, index: usize) -> Result<(&'static Face, Arc<[u8]>), LabelError> {
+        let sfnt = self.decode(index)?;
+        Ok((self.face(index)?, sfnt))
     }
 }
 
@@ -1832,7 +1779,8 @@ mod optional_font_tests {
 
     #[test]
     fn unavailable_chunks_fail_only_when_declared_coverage_is_demanded() {
-        let mut chunks = OfficialFontChunks::load("Xiaolai").expect("metadata remains available");
+        let mut loader = FontLoader::default();
+        let mut chunks = OfficialFontChunks::load(FamilyId::Xiaolai, &mut loader);
         assert!(chunks.len() > 0);
         assert!(chunks
             .first_declaring(|| "\u{10ffff}".chars())

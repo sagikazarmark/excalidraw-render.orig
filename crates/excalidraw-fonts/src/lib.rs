@@ -11,6 +11,8 @@ use std::fmt;
 
 use sha2::{Digest, Sha256};
 
+pub mod fonts;
+
 /// Maximum raw byte length targeted by one generated data shard.
 pub const RAW_SHARD_LIMIT: usize = 8 * 1024 * 1024;
 
