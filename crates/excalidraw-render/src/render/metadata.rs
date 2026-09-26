@@ -101,7 +101,7 @@ impl ArtifactMetadata {
         let scene = self
             .scene
             .as_ref()
-            .map(|scene| {
+            .map(|scene| -> Result<_, FormatEncodeError> {
                 Ok(EmbeddedScene {
                     canonical: try_bytes(&scene.canonical, "canonical_scene_clone")?,
                     wrapper: try_bytes(&scene.wrapper, "scene_wrapper_clone")?,
@@ -132,7 +132,7 @@ impl ArtifactMetadata {
             .transpose()?;
         let scene_digest = canonical.as_deref().map(sha256_string).transpose()?;
         let scene = canonical
-            .map(|canonical| {
+            .map(|canonical| -> Result<_, FormatEncodeError> {
                 let compressed = operation(Stage::SceneCompression, || stored_zlib(&canonical))?;
                 let wrapper = operation(Stage::SceneWrapper, || scene_wrapper(&compressed))?;
                 Ok(EmbeddedScene {
@@ -727,6 +727,7 @@ pub(super) fn metadata_failure(
 ) -> FormatEncodeError {
     match error {
         FormatEncodeError::MemoryUnavailable { .. }
+        | FormatEncodeError::FontUnavailable(_)
         | FormatEncodeError::SvgFontSubset { .. }
         | FormatEncodeError::Metadata(_) => error,
         FormatEncodeError::Encoding(_) => FormatEncodeError::Metadata(failure),

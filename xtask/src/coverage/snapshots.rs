@@ -252,6 +252,23 @@ fn expected_reports<'a>(
 pub fn verify_snapshots(directory: &str) -> Result<(), String> {
     let inventory = load_inventory()?;
     let root = Path::new(directory);
+    let bundle = verified_bundle(root, &inventory)?;
+    let (reports, pdf) = expected_reports(
+        root,
+        bundle.runs[0]
+            .results
+            .iter()
+            .map(|r| (&r.key, &r.samples[0].report)),
+    )?;
+    println!("verified {} native snapshot candidates (two sessions, forward/reverse processes); {reports} actual reports equal their expected reports ({pdf} PDF from pdf-judgments.json); source {}; approval, WASM and traces pending",
+        inventory.executions.len(),if bundle.source_status.is_empty(){"clean"}else{"modified"});
+    Ok(())
+}
+
+// Shared with the storage-only migration, which checks accepted reports under
+// their old keys before publishing the new PDF judgment keys. All candidate
+// source/package/blob/order/session checks stay identical to ordinary replay.
+fn verified_bundle(root: &Path, inventory: &Inventory) -> Result<Snapshots, String> {
     let bundle: Snapshots =
         parse(&fs::read(root.join("snapshots.json")).map_err(|e| e.to_string())?)?;
     current_file(&bundle.inventory, INVENTORY)?;
@@ -299,35 +316,27 @@ pub fn verify_snapshots(directory: &str) -> Result<(), String> {
     }
     let expected: [&str; 4] = [
         "target/package/excalidraw-render-0.1.0.crate",
-        "target/package/excalidraw-render-assets-base-0.1.0.crate",
-        "target/package/excalidraw-render-assets-data-000-0.1.0.crate",
-        "target/package/excalidraw-render-assets-data-001-0.1.0.crate",
+        "target/package/excalidraw-fonts-0.1.0.crate",
+        "target/package/excalidraw-fonts-cjk-000-0.1.0.crate",
+        "target/package/excalidraw-fonts-cjk-001-0.1.0.crate",
     ];
     if packages != expected.into_iter().collect() {
         return Err("incomplete snapshot package inventory".into());
     }
-    validate(root, &inventory, &bundle)?;
-    let (reports, pdf) = expected_reports(
-        root,
-        bundle.runs[0]
-            .results
-            .iter()
-            .map(|r| (&r.key, &r.samples[0].report)),
-    )?;
+    validate(root, inventory, &bundle)?;
     for (run, name) in bundle.runs.iter().zip(["forward.json", "reverse.json"]) {
         let recorded: SnapshotRun = parse(&read_repository_file(root, name)?)?;
         if recorded != *run {
             return Err(format!("snapshot worker file disagrees: {name}"));
         }
     }
-    println!("verified {} native snapshot candidates (two sessions, forward/reverse processes); {reports} actual reports equal their expected reports ({pdf} PDF from pdf-judgments.json); source {}; approval, WASM and traces pending",
-        inventory.executions.len(),if bundle.source_status.is_empty(){"clean"}else{"modified"});
-    Ok(())
+    Ok(bundle)
 }
 
 mod baseline;
 mod provenance;
 pub(super) mod wasm;
+pub(super) use baseline::storage_rebind;
 pub use baseline::{replay_snapshots, stage_baseline, verify_baseline};
 pub use wasm::{report_wasm_snapshots, stage_wasm_snapshots, verify_wasm_snapshots};
 

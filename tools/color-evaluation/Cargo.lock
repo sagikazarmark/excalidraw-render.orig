@@ -357,7 +357,7 @@ dependencies = [
  "csscolorparser",
  "cssparser",
  "cssparser-color",
- "excalidraw-render-assets-base",
+ "excalidraw-fonts",
  "gif 0.14.2",
  "image-webp",
  "libm",
@@ -387,20 +387,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "excalidraw-render-assets-base"
+name = "excalidraw-fonts"
 version = "0.1.0"
 dependencies = [
- "excalidraw-render-assets-data-000",
- "excalidraw-render-assets-data-001",
+ "excalidraw-fonts-cjk-000",
+ "excalidraw-fonts-cjk-001",
  "sha2",
 ]
 
 [[package]]
-name = "excalidraw-render-assets-data-000"
+name = "excalidraw-fonts-cjk-000"
 version = "0.1.0"
 
 [[package]]
-name = "excalidraw-render-assets-data-001"
+name = "excalidraw-fonts-cjk-001"
 version = "0.1.0"
 
 [[package]]

@@ -16,6 +16,8 @@ categories = ["graphics", "rendering"]
 workspace = true
 
 [features]
+default = ["cjk"]
+cjk = ["excalidraw-fonts/cjk"]
 # Runs the release-mode qualification set under `cargo test`: the corpus-driven
 # and generated-property tests that take minutes even when optimized, so the
 # push gate leaves them `#[ignore]`d and the release-mode workflows enable the
@@ -24,7 +26,7 @@ workspace = true
 release-qualification = []
 
 [dependencies]
-excalidraw-render-assets-base.workspace = true
+excalidraw-fonts.workspace = true
 base64.workspace = true
 csscolorparser.workspace = true
 cssparser.workspace = true

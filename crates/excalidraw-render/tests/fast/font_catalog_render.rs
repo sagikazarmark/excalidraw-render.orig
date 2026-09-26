@@ -384,7 +384,7 @@ fn pdf_embeds_each_selected_chunks_reviewed_decode_byte_for_byte() {
     );
     assert_eq!(
         excalifont_latin.decoded_sha256,
-        excalidraw_render_assets_base::excalifont_basic_latin_sfnt_transformation().output_sha256
+        excalidraw_fonts::excalifont_basic_latin_sfnt_transformation().output_sha256
     );
 
     // Multi-range: Nunito's Latin and Cyrillic chunks, each its own decode.
@@ -397,11 +397,9 @@ fn pdf_embeds_each_selected_chunks_reviewed_decode_byte_for_byte() {
     assert!(nunito.iter().all(|chunk| chunk.family == "Nunito"));
     assert_ne!(nunito[0].identity, nunito[1].identity);
     for (chunk, scalar) in nunito.iter().zip(['A', '\u{416}']) {
-        let declared = excalidraw_render_assets_base::font_face_unicode_ranges(
-            chunk.family,
-            chunk.upstream_path,
-        )
-        .expect("Nunito chunk declares ranges");
+        let declared =
+            excalidraw_fonts::font_face_unicode_ranges(chunk.family, chunk.upstream_path)
+                .expect("Nunito chunk declares ranges");
         assert!(
             declared
                 .iter()
@@ -417,9 +415,8 @@ fn pdf_embeds_each_selected_chunks_reviewed_decode_byte_for_byte() {
     assert_eq!(cjk.len(), 2, "Excalifont Latin and one Xiaolai chunk");
     assert_eq!(cjk[0].identity, excalifont_latin.identity);
     assert_eq!(cjk[1].family, "Xiaolai");
-    let declared =
-        excalidraw_render_assets_base::font_face_unicode_ranges("Xiaolai", cjk[1].upstream_path)
-            .expect("Xiaolai chunk declares ranges");
+    let declared = excalidraw_fonts::font_face_unicode_ranges("Xiaolai", cjk[1].upstream_path)
+        .expect("Xiaolai chunk declares ranges");
     assert!(declared
         .iter()
         .any(|(start, end)| (*start..=*end).contains(&0x4e2d)));
@@ -812,10 +809,10 @@ fn embedded_woff2(svg: &str) -> Vec<Vec<u8>> {
 /// The official font chunk whose reviewed decode the embedded bytes are, by the
 /// length and digest the revision catalog records; `None` when they are no
 /// chunk's.
-fn reviewed_decode_of(font: &[u8]) -> Option<&'static excalidraw_render_assets_base::AssetRecord> {
+fn reviewed_decode_of(font: &[u8]) -> Option<&'static excalidraw_fonts::AssetRecord> {
     use sha2::{Digest as _, Sha256};
     let digest = format!("{:x}", Sha256::digest(font));
-    excalidraw_render_assets_base::revision_1()
+    excalidraw_fonts::revision_1()
         .assets
         .iter()
         .find(|asset| asset.decoded_length == font.len() && asset.decoded_sha256 == digest)

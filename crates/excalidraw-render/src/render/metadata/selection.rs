@@ -309,7 +309,8 @@ impl RenderSession {
                 Err(error @ FormatEncodeError::MemoryUnavailable { .. }) => {
                     return Err(self.format_failure(request, error_code, error));
                 }
-                Err(error @ FormatEncodeError::SvgFontSubset { .. }) => {
+                Err(error @ FormatEncodeError::SvgFontSubset { .. })
+                | Err(error @ FormatEncodeError::FontUnavailable(_)) => {
                     return Err(self.format_failure(request, error_code, error));
                 }
                 Err(FormatEncodeError::Metadata(failure)) => {
@@ -374,7 +375,8 @@ impl RenderSession {
                 Err(error @ FormatEncodeError::MemoryUnavailable { .. }) => {
                     return Err(self.format_failure(request, error_code, error));
                 }
-                Err(error @ FormatEncodeError::SvgFontSubset { .. }) => {
+                Err(error @ FormatEncodeError::SvgFontSubset { .. })
+                | Err(error @ FormatEncodeError::FontUnavailable(_)) => {
                     return Err(self.format_failure(request, error_code, error));
                 }
                 Err(FormatEncodeError::Metadata(failure)) => {

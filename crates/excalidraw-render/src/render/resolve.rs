@@ -242,6 +242,7 @@ pub(super) fn relationship_element_target(
 #[derive(Debug)]
 pub(super) enum ResolveSceneError {
     Memory,
+    FontUnavailable(super::FontUnavailable),
     InvalidFallbackFont,
     InvalidMandatoryNotice,
     InvalidColor,
@@ -266,10 +267,11 @@ impl From<std::collections::TryReserveError> for ResolveSceneError {
 /// error becomes. `mandatory_notices_json` is the one caller that maps
 /// `InvalidFont` elsewhere, to `InvalidMandatoryNotice`, so this stays a named
 /// function rather than a `From` impl `?` would apply there too.
-fn label_error(error: LabelError) -> ResolveSceneError {
+pub(super) fn label_error(error: LabelError) -> ResolveSceneError {
     match error {
         LabelError::Memory => ResolveSceneError::Memory,
         LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+        LabelError::FontUnavailable(font) => ResolveSceneError::FontUnavailable(font),
     }
 }
 
@@ -732,6 +734,7 @@ impl ResolvedScene {
                 |error| match error {
                     LabelError::Memory => ResolveSceneError::Memory,
                     LabelError::InvalidFont => ResolveSceneError::InvalidMandatoryNotice,
+                    LabelError::FontUnavailable(font) => ResolveSceneError::FontUnavailable(font),
                 },
             )?)
         } else {

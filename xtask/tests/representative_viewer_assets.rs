@@ -153,7 +153,7 @@ fn complementary_same_family_faces_are_rejected_in_either_order() {
         "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2",
     ]
     .map(|path| {
-        excalidraw_render_assets_base::load_asset(path)
+        excalidraw_fonts::load_asset(path)
             .unwrap()
             .unwrap()
             .into_bytes()
@@ -215,7 +215,7 @@ fn complementary_same_family_faces_are_rejected_in_either_order() {
 
 #[test]
 fn ranges_restrict_coverage_and_same_family_styles_fail_explicitly() {
-    let font = excalidraw_render_assets_base::load_asset(
+    let font = excalidraw_fonts::load_asset(
         "fonts/ComicShanns/ComicShanns-Regular-279a7b317d12eb88de06167bd672b4b4.woff2",
     )
     .unwrap()
@@ -253,7 +253,7 @@ fn ranges_restrict_coverage_and_same_family_styles_fail_explicitly() {
 
 #[test]
 fn text_entities_are_decoded_once_for_coverage_without_rewriting_svg() {
-    let font = excalidraw_render_assets_base::load_asset(
+    let font = excalidraw_fonts::load_asset(
         "fonts/ComicShanns/ComicShanns-Regular-279a7b317d12eb88de06167bd672b4b4.woff2",
     )
     .unwrap()

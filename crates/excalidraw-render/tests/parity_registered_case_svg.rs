@@ -571,7 +571,7 @@ fn rasterize(svg: &str, context: &str) -> CanonicalRgba8 {
             .iter()
             .find(|(system, _)| *system == family)
         {
-            let woff2 = excalidraw_render_assets_base::load_asset(asset)
+            let woff2 = excalidraw_fonts::load_asset(asset)
                 .expect("substitute asset verifies")
                 .expect("substitute asset is manifested");
             let sfnt = wuff::decompress_woff2(woff2.bytes()).expect("substitute WOFF2 decodes");

@@ -108,9 +108,9 @@ fn collect(root: &Path, output: &Path) -> Result<(), String> {
     .map_err(|e| e.to_string())?;
     for package in [
         "excalidraw-render",
-        "excalidraw-render-assets-base",
-        "excalidraw-render-assets-data-000",
-        "excalidraw-render-assets-data-001",
+        "excalidraw-fonts",
+        "excalidraw-fonts-cjk-000",
+        "excalidraw-fonts-cjk-001",
     ] {
         let matches: Vec<_> = metadata["packages"]
             .as_array()
@@ -136,9 +136,9 @@ fn collect(root: &Path, output: &Path) -> Result<(), String> {
     let mut packages = Vec::new();
     for package in [
         "excalidraw-render",
-        "excalidraw-render-assets-base",
-        "excalidraw-render-assets-data-000",
-        "excalidraw-render-assets-data-001",
+        "excalidraw-fonts",
+        "excalidraw-fonts-cjk-000",
+        "excalidraw-fonts-cjk-001",
     ] {
         packages.push(describe_file(
             &root,

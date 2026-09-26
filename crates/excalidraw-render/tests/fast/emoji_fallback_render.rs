@@ -56,7 +56,7 @@ fn checked_report(format: &str) -> Value {
 /// (spec 8.6, #120 forecloses subsetting a reviewed program) and the source
 /// the SVG's subset derives from (spec 8.3.1).
 fn manifested_noto_emoji() -> Vec<u8> {
-    excalidraw_render_assets_base::load_noto_emoji_sfnt()
+    excalidraw_fonts::load_noto_emoji_sfnt()
         .expect("the Noto Emoji asset verifies")
         .bytes()
         .to_vec()

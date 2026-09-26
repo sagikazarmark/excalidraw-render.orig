@@ -10,7 +10,7 @@ publish = false
 workspace = true
 
 [dependencies]
-excalidraw-render-assets-base = { path = "../crates/excalidraw-render-assets-base" }
+excalidraw-fonts = { workspace = true, features = ["cjk"] }
 excalidraw-render-compare = { path = "../crates/excalidraw-render-compare" }
 jsonschema.workspace = true
 libm.workspace = true

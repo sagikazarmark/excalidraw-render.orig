@@ -681,6 +681,8 @@ impl RenderOutcome {
 pub enum RenderErrorCategory {
     /// Admitted scene input could not produce bounded global semantics.
     Input,
+    /// A capability required by the render is unavailable in this build.
+    Capability,
     /// A configured semantic resource ceiling was crossed.
     ResourceLimit,
     /// Rendering could not retain a meaningful complete artifact.
@@ -696,6 +698,7 @@ impl RenderErrorCategory {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Input => "input",
+            Self::Capability => "capability",
             Self::ResourceLimit => "resource_limit",
             Self::NoMeaningfulArtifact => "no_meaningful_artifact",
             Self::Encoding => "encoding",

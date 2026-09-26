@@ -217,6 +217,18 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             coverage::verify_inventory()?;
         }
+        Some("rebind-font-packaging") => {
+            let base = required_arg(&mut args, "previous commit")?;
+            let candidate = required_arg(&mut args, "current snapshot directory")?;
+            no_more_args(args)?;
+            coverage::rebind_font_packaging(&base, &candidate)?;
+        }
+        Some("rebind-font-packaging-ownership") => {
+            let base = required_arg(&mut args, "previous commit")?;
+            let spec = required_arg(&mut args, "final spec SHA-256")?;
+            no_more_args(args)?;
+            coverage::rebind_font_packaging_ownership(&base, &spec)?;
+        }
         Some("verify-results") => {
             let report = required_arg(&mut args, "result bundle path")?;
             no_more_args(args)?;

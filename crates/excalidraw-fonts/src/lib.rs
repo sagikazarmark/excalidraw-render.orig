@@ -1,4 +1,7 @@
-//! Sealed implementation-detail catalogs for `excalidraw-render`.
+//! Pinned Excalidraw fonts and complete selection metadata.
+//!
+//! The default `cjk` feature bundles Xiaolai. Disabling it retains every catalog
+//! record and declaration; loading an unavailable chunk returns an explicit error.
 
 #![doc(hidden)]
 
@@ -244,14 +247,15 @@ pub struct IncorporatedArtifact {
 pub struct AssetSegment {
     pub identity: &'static str,
     pub shard: &'static str,
-    pub bytes: &'static [u8],
+    /// The physical payload, or `None` when its bundling feature is disabled.
+    pub bytes: Option<&'static [u8]>,
     pub offset: usize,
     pub length: usize,
     pub sha256: &'static str,
     pub order: usize,
 }
 
-/// One byte-bearing entry in the sealed built-in asset catalog.
+/// One entry in the complete built-in asset catalog, including unbundled assets.
 ///
 /// `decoded_length` and `decoded_sha256` identify the chunk's reviewed decode:
 /// the sfnt the pinned `wuff 0.2.8` decode of the exact stored bytes produces,
@@ -276,6 +280,13 @@ pub struct AssetRecord {
     pub role: &'static str,
     pub output_formats: &'static [&'static str],
     pub segments: &'static [AssetSegment],
+}
+
+impl AssetRecord {
+    /// Whether all payload segments are bundled. This does not verify integrity.
+    pub fn is_available(&self) -> bool {
+        self.segments.iter().all(|segment| segment.bytes.is_some())
+    }
 }
 
 /// The license an official rendering font family is offered under.
@@ -420,7 +431,7 @@ impl VerifiedAsset {
     }
 }
 
-/// Indicates that checked-in asset bytes no longer match their sealed identity.
+/// Indicates unavailable payload bytes or bytes that fail their sealed identity.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AssetIntegrityError {
     asset_identity: &'static str,
@@ -431,23 +442,31 @@ pub struct AssetIntegrityError {
 /// reassembled complete bytes, or the decode measured against the reviewed one.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum IntegrityStage {
+    Unavailable,
     Segment(&'static str),
     Complete,
     ReviewedDecode,
 }
 
 impl AssetIntegrityError {
+    /// Whether the asset is known but its payload is not bundled in this build.
+    pub const fn is_unavailable(&self) -> bool {
+        matches!(self.stage, IntegrityStage::Unavailable)
+    }
+
     /// Returns the affected complete asset identity.
     pub const fn asset_identity(&self) -> &'static str {
         self.asset_identity
     }
 
-    /// Returns the affected segment identity, or `None` when the complete
-    /// digest or the reviewed decode failed instead.
+    /// Returns the affected segment identity, or `None` for unavailable bytes,
+    /// a complete-digest failure, or a reviewed-decode failure.
     pub const fn segment_identity(&self) -> Option<&'static str> {
         match self.stage {
             IntegrityStage::Segment(segment) => Some(segment),
-            IntegrityStage::Complete | IntegrityStage::ReviewedDecode => None,
+            IntegrityStage::Unavailable
+            | IntegrityStage::Complete
+            | IntegrityStage::ReviewedDecode => None,
         }
     }
 }
@@ -455,6 +474,11 @@ impl AssetIntegrityError {
 impl fmt::Display for AssetIntegrityError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.stage {
+            IntegrityStage::Unavailable => write!(
+                formatter,
+                "asset {} is unavailable in this build",
+                self.asset_identity
+            ),
             IntegrityStage::Segment(segment) => write!(
                 formatter,
                 "asset {} has invalid segment {segment}",
@@ -816,19 +840,10 @@ pub fn font_face_unicode_ranges(
     Some(font_face(family, upstream_path)?.1.unicode_ranges)
 }
 
-/// Returns the source-declared uncompressed sfnt length from a sealed WOFF2 header.
+/// Returns the reviewed sfnt length without accessing payload bytes.
+/// Catalog verification holds this equal to the source WOFF2 header's length.
 pub fn font_face_decoded_length(upstream_path: &str) -> Option<usize> {
-    let asset = ASSETS
-        .binary_search_by_key(&upstream_path, |asset| asset.upstream_path)
-        .ok()
-        .and_then(|index| ASSETS.get(index))?;
-    let first = asset.segments.first()?;
-    let start = first.offset;
-    let header = first.bytes.get(start..start.checked_add(20)?)?;
-    if header.get(0..4)? != b"wOF2" {
-        return None;
-    }
-    usize::try_from(u32::from_be_bytes(header.get(16..20)?.try_into().ok()?)).ok()
+    Some(find_asset(upstream_path)?.decoded_length)
 }
 
 /// Returns the checked-in transformation record for the predecoded sfnt bytes.
@@ -856,6 +871,12 @@ pub const fn license_bundle() -> &'static str {
 }
 
 fn verify_asset(asset: &'static AssetRecord) -> Result<VerifiedAsset, AssetIntegrityError> {
+    if !asset.is_available() {
+        return Err(AssetIntegrityError {
+            asset_identity: asset.identity,
+            stage: IntegrityStage::Unavailable,
+        });
+    }
     let mut complete = Vec::with_capacity(asset.complete_length);
     for (expected_order, segment) in asset.segments.iter().enumerate() {
         let end = segment
@@ -867,6 +888,10 @@ fn verify_asset(asset: &'static AssetRecord) -> Result<VerifiedAsset, AssetInteg
             })?;
         let bytes = segment
             .bytes
+            .ok_or(AssetIntegrityError {
+                asset_identity: asset.identity,
+                stage: IntegrityStage::Unavailable,
+            })?
             .get(segment.offset..end)
             .ok_or(AssetIntegrityError {
                 asset_identity: asset.identity,

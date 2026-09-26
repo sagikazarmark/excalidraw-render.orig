@@ -898,7 +898,7 @@ mod tests {
         let official = manifest_strings(&manifest, "fallbackRecipes", "recipeId");
         assert_eq!(
             official,
-            excalidraw_render_assets_base::revision_1()
+            excalidraw_fonts::revision_1()
                 .fallback_recipe_identities
                 .iter()
                 .copied()

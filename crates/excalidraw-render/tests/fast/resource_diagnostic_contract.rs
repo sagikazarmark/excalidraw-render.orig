@@ -1453,7 +1453,7 @@ fn official_a_geometry() -> (u64, u64) {
             self.commands += 1;
         }
     }
-    let asset = excalidraw_render_assets_base::load_asset(
+    let asset = excalidraw_fonts::load_asset(
         "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
     )
     .unwrap()

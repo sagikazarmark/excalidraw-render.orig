@@ -1,5 +1,5 @@
 use crate::resource_accounting::{ResourceAccount, ResourceContext, ResourceDelta, ResourcePhase};
-use excalidraw_render_assets_base::{FontSubsetTableAction, FONT_SUBSET_TABLE_RULES_V1};
+use excalidraw_fonts::{FontSubsetTableAction, FONT_SUBSET_TABLE_RULES_V1};
 use skera::{subset_font, Plan, SubsetFlags};
 use std::collections::VecDeque;
 use std::num::NonZeroUsize;
@@ -1021,7 +1021,7 @@ fn validate_table_policy(source: &FontRef<'_>, subset: &FontRef<'_>) -> Result<(
     Ok(())
 }
 
-fn table_rule(tag: Tag) -> Option<&'static excalidraw_render_assets_base::FontSubsetTableRule> {
+fn table_rule(tag: Tag) -> Option<&'static excalidraw_fonts::FontSubsetTableRule> {
     FONT_SUBSET_TABLE_RULES_V1
         .iter()
         .find(|rule| Tag::new(&rule.tag) == tag)
@@ -1437,11 +1437,9 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn derived_names_preserve_raw_legal_records_and_selected_ids() {
-        let asset = excalidraw_render_assets_base::load_asset(
-            "fonts/Liberation/LiberationSans-Regular.woff2",
-        )
-        .unwrap()
-        .unwrap();
+        let asset = excalidraw_fonts::load_asset("fonts/Liberation/LiberationSans-Regular.woff2")
+            .unwrap()
+            .unwrap();
         let sfnt = wuff::decompress_woff2(asset.bytes()).unwrap();
         let mut builder = FontBuilder::new();
         builder.add_raw(
@@ -1505,11 +1503,9 @@ mod tests {
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
     fn derived_names_reject_unrepresentable_lengths_and_offsets_at_sfnt_stage() {
-        let asset = excalidraw_render_assets_base::load_asset(
-            "fonts/Liberation/LiberationSans-Regular.woff2",
-        )
-        .unwrap()
-        .unwrap();
+        let asset = excalidraw_fonts::load_asset("fonts/Liberation/LiberationSans-Regular.woff2")
+            .unwrap()
+            .unwrap();
         // Individual UTF-16 byte length, supplementary-plane length, then
         // cumulative storage offset overflow while individual strings fit u16.
         for alias in [
@@ -1579,11 +1575,9 @@ mod tests {
 
     #[test]
     fn default_ignorables_keep_the_space_dependency_and_hidden_clusters() {
-        let asset = excalidraw_render_assets_base::load_asset(
-            "fonts/Liberation/LiberationSans-Regular.woff2",
-        )
-        .unwrap()
-        .unwrap();
+        let asset = excalidraw_fonts::load_asset("fonts/Liberation/LiberationSans-Regular.woff2")
+            .unwrap()
+            .unwrap();
         let source_sfnt = wuff::decompress_woff2(asset.bytes()).unwrap();
         let source = rustybuzz::Face::from_slice(&source_sfnt, 0).unwrap();
         for text in ["\u{ad}", "A\u{ad}B", "A\u{200d}B", "AB"] {
@@ -1630,12 +1624,12 @@ mod tests {
 
     #[test]
     fn whitespace_only_subsets_keep_a_browser_admissible_glyf_table() {
-        let record = excalidraw_render_assets_base::revision_1()
+        let record = excalidraw_fonts::revision_1()
             .assets
             .iter()
             .find(|record| record.family == "Liberation")
             .expect("Liberation source is manifested");
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+        let asset = excalidraw_fonts::load_asset(record.upstream_path)
             .expect("Liberation source verifies")
             .expect("Liberation source exists");
         let derived = derive(
@@ -1658,8 +1652,8 @@ mod tests {
 
     #[test]
     fn malformed_woff2_sources_return_typed_failures_without_panicking() {
-        let record = &excalidraw_render_assets_base::revision_1().assets[0];
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+        let record = &excalidraw_fonts::revision_1().assets[0];
+        let asset = excalidraw_fonts::load_asset(record.upstream_path)
             .expect("qualified source verifies")
             .expect("qualified source exists");
         let mut bad_signature = asset.bytes().to_vec();
@@ -1695,8 +1689,7 @@ mod tests {
     /// family name, since Noto Emoji reserves no font name.
     #[test]
     fn noto_emoji_sfnt_source_derives_a_validated_woff2_subset() {
-        let asset = excalidraw_render_assets_base::load_noto_emoji_sfnt()
-            .expect("Noto Emoji fallback verifies");
+        let asset = excalidraw_fonts::load_noto_emoji_sfnt().expect("Noto Emoji fallback verifies");
         let scalars = [0x1f600, 0x1f389];
         let identity = "1".repeat(64);
         let derived = derive(
@@ -1745,8 +1738,7 @@ mod tests {
     /// a malformed WOFF2 chunk does, without panicking.
     #[test]
     fn malformed_sfnt_sources_return_typed_decode_failures() {
-        let asset = excalidraw_render_assets_base::load_noto_emoji_sfnt()
-            .expect("Noto Emoji fallback verifies");
+        let asset = excalidraw_fonts::load_noto_emoji_sfnt().expect("Noto Emoji fallback verifies");
         for malformed in [&[][..], &asset.bytes()[..4], &asset.bytes()[..4096]] {
             let error = derive(
                 malformed,
@@ -1774,12 +1766,12 @@ mod tests {
 
     #[test]
     fn malformed_layout_closure_returns_a_typed_validate_failure() {
-        let record = excalidraw_render_assets_base::revision_1()
+        let record = excalidraw_fonts::revision_1()
             .assets
             .iter()
             .find(|record| record.family == "Liberation")
             .expect("Liberation source is manifested");
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+        let asset = excalidraw_fonts::load_asset(record.upstream_path)
             .expect("Liberation source verifies")
             .expect("Liberation source exists");
         let derived = derive(

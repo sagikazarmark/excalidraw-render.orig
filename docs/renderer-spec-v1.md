@@ -1980,7 +1980,7 @@ completes or owns one rather than using a platform decoder or weakening
 compatibility. `usvg`/`resvg` can process only sanitized bounded nested SVG
 under deny-all resource access.
 
-Compatibility revision 1 ships all 230 byte-identical official rendering WOFF2
+The default compatibility revision 1 build ships all 230 byte-identical official rendering WOFF2
 source files across eight families, exact Liberation Sans and Noto Emoji
 fallback inputs, qualified decoder inputs, retained deprecated families, and
 exact Font Awesome fallback paths. The asset manifest's source lengths and
@@ -2027,15 +2027,27 @@ archives below 9.5 MB. Reassembly verifies the complete digest before parsing.
 
 The published virtual workspace exposes only `excalidraw-render` as supported
 Rust API and `excalidraw-render-cli` as the native CLI. Doc-hidden unsupported
-`excalidraw-render-assets-base` and numbered
-`excalidraw-render-assets-data-*` packages carry asset shards. All packages use
+`excalidraw-fonts` carries the complete catalog and non-Xiaolai font payloads;
+`excalidraw-fonts-cjk-000` and `excalidraw-fonts-cjk-001` carry Xiaolai chunks
+0–105 and 106–208 respectively, in pinned declaration order. The numbered
+packages are balanced storage shards, not language subsets. All packages use
 one lockstep semver and exact internal versions.
 Owned ports/assets publish first, then library, then CLI; partial publication
 requires a new version. Production git dependencies are forbidden.
 
 The library always includes SVG, PNG, PDF, every retained compatibility
-revision, and the complete built-in catalog. Public features cannot remove them
-or alter behavior.
+revision, and the complete built-in catalog metadata. The default-enabled `cjk`
+feature includes both Xiaolai payload crates. Disabling it retains all other
+font payloads, including Noto Emoji and predecoded Excalifont, and preserves
+font selection, declared ranges, ordering, and fallback rules. When glyph
+selection needs to consult an unavailable Xiaolai chunk, or direct SVG needs
+to embed one, rendering fails with `render.font-unavailable`, category
+`capability`, and `FontUnavailable` details containing `resolved_family` and
+`asset_identity`. Absence is distinct from corrupt bytes or a loaded font
+lacking a glyph. The CJK trigger alone is not a failure. No replacement font,
+external URL, or partial artifact is emitted to compensate for disabled CJK.
+The CLI includes the default CJK feature. Other public features cannot remove
+required formats or catalog metadata or alter rendering behavior.
 
 Every distributing crate carries applicable notices. The library exposes
 `license_bundle() -> &'static str`; CLI `--licenses` writes exactly those UTF-8

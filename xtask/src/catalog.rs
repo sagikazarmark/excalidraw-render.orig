@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::conformance::sha256;
-use excalidraw_render_assets_base::FontLicense;
+use excalidraw_fonts::FontLicense;
 use serde_json::{json, Value};
 
 const REVISION: u64 = 1;
@@ -23,13 +23,14 @@ const SCENE_SURFACE_SCHEMA_DIGEST: &str =
 const SCENE_SURFACE_EVIDENCE_DIGEST: &str =
     "29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb";
 const RAW_SHARD_LIMIT: usize = 8 * 1024 * 1024;
-/// Data crates that carry raw asset shards, in shard order. The shard count is
-/// derived from `RAW_SHARD_LIMIT` and the asset inventory; this list only bounds
-/// it, because a shard without a data crate has nowhere to live.
-const SHARD_CRATES: [&str; 2] = [
-    "excalidraw_render_assets_data_000",
-    "excalidraw_render_assets_data_001",
+/// Three physical payloads: small official fonts, then whole Xiaolai chunks
+/// 0–105 and 106–208 in upstream declaration order.
+const SHARD_PATHS: [&str; 3] = [
+    "crates/excalidraw-fonts/data/revision-1-000.bin",
+    "crates/excalidraw-fonts-cjk-000/data/revision-1-000.bin",
+    "crates/excalidraw-fonts-cjk-001/data/revision-1-001.bin",
 ];
+const SHARD_LENGTHS: [usize; 3] = [358_432, 6_338_736, 6_328_756];
 const CATALOG_SCHEMA: &str = "excalidraw-render/revision-catalog/v1";
 const CATALOG_SCHEMA_DIGEST: &str =
     "eabf5de65012d514ef7b21e340eb80d39943f7c666f496ae6ceeb32d57e7ce5b";
@@ -42,7 +43,7 @@ const EXCALIFONT_BASIC_LATIN_SFNT_SHA256: &str =
     "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb";
 const EXCALIFONT_BASIC_LATIN_SFNT_LENGTH: usize = 61_948;
 /// The one reviewed decode that is additionally checked in byte for byte,
-/// relative to the assets-base crate root as the record cites it.
+/// relative to the excalidraw-fonts crate root as the record cites it.
 const EXCALIFONT_BASIC_LATIN_SFNT_PATH: &str =
     "catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt";
 /// The pinned decoder whose output over the exact manifested bytes is every
@@ -52,9 +53,9 @@ const DECODER_NAME: &str = "wuff";
 const DECODER_VERSION: &str = "0.2.8";
 const DECODER_INVOCATION: &str = "wuff::decompress_woff2(source_bytes)";
 const REVIEWED_DECODES_PATH: &str =
-    "crates/excalidraw-render-assets-base/catalog/reviewed-decodes/revision-1.json";
+    "crates/excalidraw-fonts/catalog/reviewed-decodes/revision-1.json";
 const REVIEWED_DECODES_DIGEST_PATH: &str =
-    "crates/excalidraw-render-assets-base/catalog/reviewed-decodes/revision-1.sha256";
+    "crates/excalidraw-fonts/catalog/reviewed-decodes/revision-1.sha256";
 const REVIEWED_DECODES_SCHEMA: &str = "excalidraw-render/reviewed-decodes/v1";
 const REVIEWED_DECODES_APPROVAL_SUBJECT_SCHEMA: &str =
     "excalidraw-render/reviewed-decodes-approval-subject/v1";
@@ -481,7 +482,7 @@ pub fn import_license_sources(source_root: &str) -> Result<(), String> {
             source_root.display()
         ));
     }
-    let base = root.join("crates/excalidraw-render-assets-base");
+    let base = root.join("crates/excalidraw-fonts");
     for (source_name, expected_digest, destination) in EXACT_LICENSE_SOURCES {
         let bytes = read_verified(&source_root.join(source_name), expected_digest, source_name)?;
         write_if_changed(&base.join(destination), &bytes)?;
@@ -554,15 +555,12 @@ pub fn import(source_root: &str) -> Result<(), String> {
     materialize_predecoded_excalifont(&root, &assets)?;
 
     let shards = partition(&mut assets)?;
-    require_shard_crates(shards.len())?;
 
-    let base = root.join("crates/excalidraw-render-assets-base");
+    let base = root.join("crates/excalidraw-fonts");
     materialize_incorporated_artifacts(&root, &base)?;
 
     for (index, bytes) in shards.iter().enumerate() {
-        let data_path = root.join(format!(
-            "crates/excalidraw-render-assets-data-{index:03}/data/revision-1-{index:03}.bin"
-        ));
+        let data_path = root.join(SHARD_PATHS[index]);
         if let Some(parent) = data_path.parent() {
             fs::create_dir_all(parent)
                 .map_err(|error| format!("failed to create {}: {error}", parent.display()))?;
@@ -613,7 +611,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
 
 pub fn materialize() -> Result<(), String> {
     let root = crate::conformance::repo_root();
-    let base = root.join("crates/excalidraw-render-assets-base");
+    let base = root.join("crates/excalidraw-fonts");
     materialize_svg_font_subset_qualification_schema(&root)?;
     materialize_svg_font_subset_profile(&root)?;
     materialize_incorporated_artifacts(&root, &base)?;
@@ -705,7 +703,7 @@ fn materialize_svg_font_subset_qualification_schema(root: &Path) -> Result<(), S
 }
 
 fn materialize_svg_font_subset_profile(root: &Path) -> Result<(), String> {
-    use excalidraw_render_assets_base::{
+    use excalidraw_fonts::{
         FontSubsetTableAction, FONT_SUBSET_PROFILE_SETTINGS_V1, FONT_SUBSET_TABLE_RULES_V1,
     };
 
@@ -727,7 +725,7 @@ fn materialize_svg_font_subset_profile(root: &Path) -> Result<(), String> {
             }))
         })
         .collect::<Result<Vec<_>, String>>()?;
-    let semantic_digest = excalidraw_render_assets_base::font_subset_profile_digest_v1()
+    let semantic_digest = excalidraw_fonts::font_subset_profile_digest_v1()
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect::<String>();
@@ -821,7 +819,7 @@ fn verify_incorporated_inventory(incorporated: &Path) -> Result<(), String> {
 /// Verifies the sealed catalog and reproduces its reviewed decode bytes offline.
 pub fn verify() -> Result<(), String> {
     let root = crate::conformance::repo_root();
-    let base = root.join("crates/excalidraw-render-assets-base");
+    let base = root.join("crates/excalidraw-fonts");
     verify_incorporated_inventory(&base.join("catalog/incorporated"))?;
 
     for artifact in ARTIFACTS {
@@ -942,14 +940,14 @@ fn materialize_predecoded_excalifont(root: &Path, assets: &[ImportedAsset]) -> R
     rustybuzz::Face::from_slice(&sfnt, 0)
         .ok_or_else(|| "predecoded Excalifont basic Latin is not a valid sfnt".to_owned())?;
     let destination = root
-        .join("crates/excalidraw-render-assets-base")
+        .join("crates/excalidraw-fonts")
         .join(EXCALIFONT_BASIC_LATIN_SFNT_PATH);
     write_if_changed(&destination, &sfnt)
 }
 
 fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String> {
     let path = root
-        .join("crates/excalidraw-render-assets-base")
+        .join("crates/excalidraw-fonts")
         .join(EXCALIFONT_BASIC_LATIN_SFNT_PATH);
     let sfnt =
         fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?;
@@ -1219,7 +1217,7 @@ fn verify_reviewed_decodes(
                 .to_owned(),
         );
     }
-    let base = root.join("crates/excalidraw-render-assets-base");
+    let base = root.join("crates/excalidraw-fonts");
     for checked_in in array_at(record, &["checkedInDecodes"], "checked-in decodes")? {
         let identity = string(checked_in, "identity", "checked-in decode")?;
         let relative = string(checked_in, "path", "checked-in decode")?;
@@ -1244,8 +1242,7 @@ fn verify_reviewed_decodes(
 }
 
 fn verify_noto_emoji(root: &Path) -> Result<(), String> {
-    let path =
-        root.join("crates/excalidraw-render-assets-base/catalog/fallback/NotoEmoji-Regular.ttf");
+    let path = root.join("crates/excalidraw-fonts/catalog/fallback/NotoEmoji-Regular.ttf");
     let sfnt =
         fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?;
     if sfnt.len() != NOTO_EMOJI_LENGTH || sha256(&sfnt) != NOTO_EMOJI_SHA256 {
@@ -1279,9 +1276,9 @@ fn verify_noto_emoji(root: &Path) -> Result<(), String> {
 
 fn bundle_paths(root: &Path) -> [PathBuf; 5] {
     [
-        root.join("crates/excalidraw-render-assets-base/LICENSE-BUNDLE.txt"),
-        root.join("crates/excalidraw-render-assets-data-000/LICENSE-BUNDLE.txt"),
-        root.join("crates/excalidraw-render-assets-data-001/LICENSE-BUNDLE.txt"),
+        root.join("crates/excalidraw-fonts/LICENSE-BUNDLE.txt"),
+        root.join("crates/excalidraw-fonts-cjk-000/LICENSE-BUNDLE.txt"),
+        root.join("crates/excalidraw-fonts-cjk-001/LICENSE-BUNDLE.txt"),
         root.join("crates/excalidraw-render/LICENSE-BUNDLE.txt"),
         root.join("crates/excalidraw-render-cli/LICENSE-BUNDLE.txt"),
     ]
@@ -1418,34 +1415,26 @@ fn expected_assets(reference_assets: &Value) -> Result<Vec<ImportedAsset>, Strin
         .collect::<Result<Vec<_>, String>>()?;
     assets.sort_by(|left, right| left.path.cmp(&right.path));
 
-    let mut shard = 0;
-    let mut offset = 0;
-    for asset in &mut assets {
-        if offset != 0 && offset + asset.length > RAW_SHARD_LIMIT {
-            shard += 1;
-            offset = 0;
-        }
-        asset.shard = shard;
-        asset.offset = offset;
-        offset += asset.length;
-    }
-    require_shard_crates(shard + 1)?;
+    assign_layout(&mut assets)?;
     Ok(assets)
 }
 
 /// Reads one checked-in raw asset shard by its identity (`revision-1-NNN`),
 /// refusing a shard above the raw limit before anything is sliced out of it.
 fn read_shard(root: &Path, shard: &str) -> Result<Vec<u8>, String> {
-    let suffix = shard
+    let ordinal = shard
         .strip_prefix("revision-1-")
+        .and_then(|suffix| suffix.parse::<usize>().ok())
         .ok_or_else(|| format!("unknown shard identity {shard}"))?;
-    let shard_path = root.join(format!(
-        "crates/excalidraw-render-assets-data-{suffix}/data/{shard}.bin"
-    ));
+    let shard_path = root.join(
+        SHARD_PATHS
+            .get(ordinal)
+            .ok_or_else(|| format!("unknown shard identity {shard}"))?,
+    );
     let bytes = fs::read(&shard_path)
         .map_err(|error| format!("failed to read {}: {error}", shard_path.display()))?;
-    if bytes.len() > RAW_SHARD_LIMIT {
-        return Err(format!("asset shard {shard} exceeds 8 MiB"));
+    if bytes.len() > RAW_SHARD_LIMIT || bytes.len() != SHARD_LENGTHS[ordinal] {
+        return Err(format!("asset shard {shard} has an invalid payload length"));
     }
     Ok(bytes)
 }
@@ -1490,37 +1479,59 @@ fn expected_catalog(
     )
 }
 
-/// Every data crate must receive exactly one shard. Too many shards leaves a
-/// shard with nowhere to live; too few leaves a data crate holding stale bytes
-/// that nothing rewrites.
-fn require_shard_crates(shards: usize) -> Result<(), String> {
-    if shards != SHARD_CRATES.len() {
+fn partition(assets: &mut [ImportedAsset]) -> Result<Vec<Vec<u8>>, String> {
+    assign_layout(assets)?;
+    let mut shards = SHARD_LENGTHS.map(|length| vec![0; length]).to_vec();
+    for asset in assets {
+        if asset.bytes.len() != asset.length {
+            return Err(format!("asset {} has incorrect source length", asset.path));
+        }
+        shards[asset.shard][asset.offset..asset.offset + asset.length]
+            .copy_from_slice(&asset.bytes);
+    }
+    Ok(shards)
+}
+
+fn assign_layout(assets: &mut [ImportedAsset]) -> Result<(), String> {
+    let mut ordered = assets
+        .iter_mut()
+        .map(|asset| {
+            let order = if asset.family == "Xiaolai" {
+                Some(
+                    excalidraw_fonts::font_face_order("Xiaolai", &asset.path)
+                        .ok_or_else(|| format!("unknown Xiaolai chunk {}", asset.path))?,
+                )
+            } else {
+                None
+            };
+            Ok((order, asset))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    ordered.sort_by(|(left_order, left), (right_order, right)| {
+        left_order
+            .cmp(right_order)
+            .then_with(|| left.path.cmp(&right.path))
+    });
+    let mut lengths = [0_usize; 3];
+    for (order, asset) in ordered {
+        let shard = match order {
+            None => 0,
+            Some(0..=105) => 1,
+            Some(106..=208) => 2,
+            Some(_) => return Err("Xiaolai declaration order exceeds 208".to_owned()),
+        };
+        asset.shard = shard;
+        asset.offset = lengths[shard];
+        lengths[shard] = lengths[shard]
+            .checked_add(asset.length)
+            .ok_or_else(|| "payload length overflow".to_owned())?;
+    }
+    if lengths != SHARD_LENGTHS {
         return Err(format!(
-            "revision 1 official assets materialize as {shards} shards, but {} data crates exist",
-            SHARD_CRATES.len()
+            "font payload layout has unexpected lengths: {lengths:?}"
         ));
     }
     Ok(())
-}
-
-fn partition(assets: &mut [ImportedAsset]) -> Result<Vec<Vec<u8>>, String> {
-    let mut shards = vec![Vec::new()];
-    for asset in assets {
-        if asset.length > RAW_SHARD_LIMIT {
-            return Err(format!("asset {} exceeds the raw shard limit", asset.path));
-        }
-        if !shards.last().unwrap().is_empty()
-            && shards.last().unwrap().len() + asset.length > RAW_SHARD_LIMIT
-        {
-            shards.push(Vec::new());
-        }
-        let shard = shards.len() - 1;
-        let bytes = shards.last_mut().unwrap();
-        asset.shard = shard;
-        asset.offset = bytes.len();
-        bytes.extend_from_slice(&asset.bytes);
-    }
-    Ok(shards)
 }
 
 fn generate_rust(
@@ -1532,6 +1543,14 @@ fn generate_rust(
     let mut output = String::from(
         "// Generated by `cargo run --locked -p xtask -- catalog import` or `catalog materialize`; do not edit.\n\n",
     );
+    output.push_str("const PAYLOAD_0: Option<&[u8]> = Some(include_bytes!(\"../../data/revision-1-000.bin\"));\n");
+    for (ordinal, package) in [
+        (1, "excalidraw_fonts_cjk_000"),
+        (2, "excalidraw_fonts_cjk_001"),
+    ] {
+        output.push_str(&format!("#[cfg(feature = \"cjk\")]\nconst PAYLOAD_{ordinal}: Option<&[u8]> = Some({package}::BYTES);\n#[cfg(not(feature = \"cjk\"))]\nconst PAYLOAD_{ordinal}: Option<&[u8]> = None;\n"));
+    }
+    output.push('\n');
     output.push_str("#[rustfmt::skip]\npub static ASSETS: [AssetRecord; 230] = [\n");
     let assets = catalog["assets"]
         .as_array()
@@ -1608,12 +1627,12 @@ fn generate_rust(
             .ok_or_else(|| "catalog asset segments must be an array".to_owned())?
         {
             let shard = string(segment, "shard", "catalog segment")?;
-            let shard_crate = shard
+            let ordinal = shard
                 .strip_prefix("revision-1-")
                 .and_then(|ordinal| ordinal.parse::<usize>().ok())
-                .and_then(|ordinal| SHARD_CRATES.get(ordinal))
+                .filter(|ordinal| *ordinal < SHARD_PATHS.len())
                 .ok_or_else(|| format!("no data crate exists for shard {shard}"))?;
-            let shard_expr = format!("{shard_crate}::BYTES");
+            let shard_expr = format!("PAYLOAD_{ordinal}");
             output.push_str("            AssetSegment {\n");
             rust_field_indented(
                 &mut output,
@@ -1873,13 +1892,12 @@ fn parse_xiaolai_index(source: &str) -> Result<Vec<XiaolaiIndexFace>, String> {
     Ok(faces)
 }
 
-const XIAOLAI_INDEX_PATH: &str =
-    "crates/excalidraw-render-assets-base/catalog/order/Xiaolai-index.ts";
+const XIAOLAI_INDEX_PATH: &str = "crates/excalidraw-fonts/catalog/order/Xiaolai-index.ts";
 const XIAOLAI_FACES_GENERATED_PATH: &str =
-    "crates/excalidraw-render-assets-base/src/generated/xiaolai_faces_1.rs";
+    "crates/excalidraw-fonts/src/generated/xiaolai_faces_1.rs";
 
 /// Reads the pinned Xiaolai index, checks its digest, and renders the Rust face
-/// table `assets-base` includes, so `verify` can compare it against the checked-in
+/// table `excalidraw-fonts` includes, so `verify` can compare it against the checked-in
 /// generated file and `import`/`materialize` can write it.
 fn generate_xiaolai_faces_rust(root: &Path) -> Result<String, String> {
     let path = root.join(XIAOLAI_INDEX_PATH);
@@ -1920,7 +1938,7 @@ fn generate_xiaolai_faces_rust(root: &Path) -> Result<String, String> {
 }
 
 /// Parses one CSS `unicode-range` value into ascending inclusive scalar ranges,
-/// with the grammar `excalidraw_render_assets_base` applies at compile time to
+/// with the grammar `excalidraw_fonts` applies at compile time to
 /// its hand-pinned faces; `unicode_range_parsers_agree` keeps them aligned.
 fn parse_unicode_ranges(declared: &str) -> Result<Vec<(u32, u32)>, String> {
     declared
@@ -2428,7 +2446,7 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<BTreeMap<String, Vec<u8
         .collect::<BTreeSet<_>>();
     let mut paths = BTreeSet::new();
     let mut shard_cache = BTreeMap::<String, Vec<u8>>::new();
-    let mut covered_ends = BTreeMap::<String, usize>::new();
+    let mut extents = BTreeMap::<String, Vec<(usize, usize)>>::new();
     let mut sources = BTreeMap::new();
     for asset in assets {
         let path = string(asset, "upstreamPath", "catalog asset")?;
@@ -2467,13 +2485,10 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<BTreeMap<String, Vec<u8
             let end = offset
                 .checked_add(length)
                 .ok_or_else(|| format!("asset segment overflows for {path}"))?;
-            let covered_end = covered_ends.entry(shard.to_owned()).or_default();
-            if offset != *covered_end {
-                return Err(format!(
-                    "asset shard {shard} has a gap, overlap, or reordered segment at {path}"
-                ));
-            }
-            *covered_end = end;
+            extents
+                .entry(shard.to_owned())
+                .or_default()
+                .push((offset, end));
             let segment_bytes = bytes
                 .get(offset..end)
                 .ok_or_else(|| format!("asset segment is outside shard for {path}"))?;
@@ -2491,7 +2506,16 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<BTreeMap<String, Vec<u8
         return Err("revision catalog asset inventory is incomplete".to_owned());
     }
     for (shard, bytes) in &shard_cache {
-        if covered_ends.get(shard).copied() != Some(bytes.len()) {
+        let ranges = extents.get_mut(shard).unwrap();
+        ranges.sort_unstable();
+        let mut covered_end = 0;
+        for &(offset, end) in ranges.iter() {
+            if offset != covered_end {
+                return Err(format!("asset shard {shard} has a gap or overlap"));
+            }
+            covered_end = end;
+        }
+        if covered_end != bytes.len() {
             return Err(format!(
                 "asset shard {shard} contains unmanifested or uncovered bytes"
             ));
@@ -3166,7 +3190,7 @@ fn build_license_bundle(base: &Path, scene_surface: &Value) -> Result<String, St
 }
 
 /// One license text as the bundle prints it: the file under `license-parts`
-/// (or, for `../`-prefixed files, under the assets-base crate) without its
+/// (or, for `../`-prefixed files, under the excalidraw-fonts crate) without its
 /// trailing line terminators.
 fn read_license_part(base: &Path, file: &str) -> Result<String, String> {
     let path = if file.starts_with("../") {
@@ -3496,12 +3520,33 @@ mod tests {
         XiaolaiIndexFace, EXCALIFONT_BASIC_LATIN_PATH, EXCALIFONT_BASIC_LATIN_SHA256, FONT_NOTICES,
     };
 
+    #[test]
+    fn importer_reproduces_all_three_checked_in_payloads_byte_for_byte() {
+        let root = crate::conformance::repo_root();
+        let reference = super::read_canonical_json(
+            &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
+            "reference assets",
+        )
+        .unwrap();
+        let mut assets = super::expected_assets(&reference).unwrap();
+        super::load_shard_bytes(&root, &mut assets).unwrap();
+        let shards = super::partition(&mut assets).unwrap();
+        assert_eq!(shards.len(), 3);
+        for (ordinal, bytes) in shards.iter().enumerate() {
+            assert_eq!(bytes.len(), super::SHARD_LENGTHS[ordinal]);
+            assert_eq!(
+                *bytes,
+                super::read_shard(&root, &format!("revision-1-{ordinal:03}")).unwrap()
+            );
+        }
+    }
+
     /// The bundle prints each family's attribution, license sentence and
     /// postscript as one line; artifacts carry the same line without the
     /// license sentence, wherever in the line it sits.
     #[test]
     fn font_notices_project_one_line_for_the_bundle_and_one_attribution_for_artifacts() {
-        let bundle = include_str!("../../crates/excalidraw-render-assets-base/LICENSE-BUNDLE.txt");
+        let bundle = include_str!("../../crates/excalidraw-fonts/LICENSE-BUNDLE.txt");
         for notice in FONT_NOTICES {
             let expected_line = bundle
                 .split_once(&format!("\n{}\n", notice.heading))
@@ -3687,7 +3732,7 @@ export const XiaolaiFontFaces: ExcalidrawFontFaceDescriptor[] = [
     }
 
     /// The generator's runtime grammar and the compile-time grammar
-    /// `excalidraw_render_assets_base` applies to its hand-pinned faces must
+    /// `excalidraw_fonts` applies to its hand-pinned faces must
     /// agree, or a re-pinned Xiaolai index could parse differently from the CSS
     /// the other families carry. Nunito's five faces exercise the upper-case
     /// Google Fonts subsets; Excalifont's Latin face the lower-case upstream form.
@@ -3702,26 +3747,23 @@ export const XiaolaiFontFaces: ExcalidrawFontFaceDescriptor[] = [
         ];
         const EXCALIFONT_LATIN_CSS: &str = "U+20-7e,U+a0-a3,U+a5-a6,U+a8-ab,U+ad-b1,U+b4,U+b6-b8,U+ba-ff,U+131,U+152-153,U+2bc,U+2c6,U+2da,U+2dc,U+304,U+308,U+2013-2014,U+2018-201a,U+201c-201e,U+2020,U+2022,U+2024-2026,U+2030,U+2039-203a,U+20ac,U+2122,U+2212";
 
-        let catalog = excalidraw_render_assets_base::revision_1();
+        let catalog = excalidraw_fonts::revision_1();
         let mut nunito = catalog
             .assets
             .iter()
             .filter(|asset| asset.family == "Nunito")
             .collect::<Vec<_>>();
-        nunito.sort_by_key(|asset| {
-            excalidraw_render_assets_base::font_face_order("Nunito", asset.upstream_path)
-        });
+        nunito
+            .sort_by_key(|asset| excalidraw_fonts::font_face_order("Nunito", asset.upstream_path));
         assert_eq!(nunito.len(), NUNITO_CSS.len());
         for (asset, css) in nunito.iter().zip(NUNITO_CSS) {
-            let compile_time = excalidraw_render_assets_base::font_face_unicode_ranges(
-                "Nunito",
-                asset.upstream_path,
-            )
-            .expect("Nunito face declares ranges");
+            let compile_time =
+                excalidraw_fonts::font_face_unicode_ranges("Nunito", asset.upstream_path)
+                    .expect("Nunito face declares ranges");
             assert_eq!(parse_unicode_ranges(css).expect("CSS parses"), compile_time);
         }
 
-        let excalifont_latin = excalidraw_render_assets_base::font_face_unicode_ranges(
+        let excalifont_latin = excalidraw_fonts::font_face_unicode_ranges(
             "Excalifont",
             "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
         )
@@ -3788,7 +3830,7 @@ export const XiaolaiFontFaces: ExcalidrawFontFaceDescriptor[] = [
     }
 
     fn excalifont_basic_latin_source() -> Vec<u8> {
-        excalidraw_render_assets_base::load_asset(EXCALIFONT_BASIC_LATIN_PATH)
+        excalidraw_fonts::load_asset(EXCALIFONT_BASIC_LATIN_PATH)
             .expect("checked-in shards retain their digests")
             .expect("the Excalifont basic-Latin chunk is manifested")
             .bytes()

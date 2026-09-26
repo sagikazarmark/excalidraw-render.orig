@@ -1644,7 +1644,7 @@ mod tests {
     #[test]
     fn generated_notice_tables_close_over_the_manifest() {
         let policy = &SCENE_SURFACE_POLICY;
-        let assets = excalidraw_render_assets_base::revision_1();
+        let assets = excalidraw_fonts::revision_1();
         assert_eq!(
             policy.fallback_recipes.len(),
             assets.fallback_recipe_identities.len()

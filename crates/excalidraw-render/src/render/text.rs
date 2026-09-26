@@ -134,7 +134,7 @@ impl CjkSubsetTrigger {
             xiaolai_selected: excalifont_texts
                 .into_iter()
                 .flat_map(str::chars)
-                .any(|scalar| excalidraw_render_assets_base::is_cjk_scalar_v1(u32::from(scalar))),
+                .any(|scalar| excalidraw_fonts::is_cjk_scalar_v1(u32::from(scalar))),
         }
     }
 
@@ -222,6 +222,7 @@ pub(super) enum LabelPathOperation {
 pub(super) enum LabelError {
     Memory,
     InvalidFont,
+    FontUnavailable(super::FontUnavailable),
 }
 
 impl From<TryReserveError> for LabelError {
@@ -232,9 +233,9 @@ impl From<TryReserveError> for LabelError {
 
 impl FallbackFont {
     pub(super) fn load() -> Result<Self, LabelError> {
-        let record = excalidraw_render_assets_base::find_asset(LIBERATION_SANS_PATH)
-            .ok_or(LabelError::InvalidFont)?;
-        let asset = excalidraw_render_assets_base::load_asset(LIBERATION_SANS_PATH)
+        let record =
+            excalidraw_fonts::find_asset(LIBERATION_SANS_PATH).ok_or(LabelError::InvalidFont)?;
+        let asset = excalidraw_fonts::load_asset(LIBERATION_SANS_PATH)
             .map_err(|_| LabelError::InvalidFont)?
             .ok_or(LabelError::InvalidFont)?;
         let mut woff2 = Vec::new();
@@ -626,7 +627,7 @@ impl OfficialFont {
         catalog_family: &'static str,
         family: &'static str,
         pdf_name: &'static str,
-        record: &'static excalidraw_render_assets_base::AssetRecord,
+        record: &'static excalidraw_fonts::AssetRecord,
         sfnt: Vec<u8>,
     ) -> Result<Self, LabelError> {
         Ok(Self {
@@ -767,18 +768,18 @@ impl OfficialFont {
     }
 
     fn load_noto_emoji(character: char) -> Result<Option<Self>, LabelError> {
-        let asset = excalidraw_render_assets_base::load_noto_emoji_sfnt()
-            .map_err(|_| LabelError::InvalidFont)?;
+        let asset =
+            excalidraw_fonts::load_noto_emoji_sfnt().map_err(|_| LabelError::InvalidFont)?;
         let face = rustybuzz::Face::from_slice(asset.bytes(), 0).ok_or(LabelError::InvalidFont)?;
         if face.glyph_index(character).is_none() {
             return Ok(None);
         }
         Ok(Some(Self {
             source_family: 1_000,
-            catalog_family: excalidraw_render_assets_base::NOTO_EMOJI_FAMILY,
+            catalog_family: excalidraw_fonts::NOTO_EMOJI_FAMILY,
             family: "Noto Emoji",
             pdf_name: "NotoEmoji",
-            identity: excalidraw_render_assets_base::NOTO_EMOJI_IDENTITY,
+            identity: excalidraw_fonts::NOTO_EMOJI_IDENTITY,
             sfnt: asset.into_bytes(),
         }))
     }
@@ -1248,11 +1249,11 @@ fn sfnt_maps(sfnt: &[u8], character: char) -> bool {
 /// chunk may shape text or be embedded. Anything else is a sealed-asset
 /// failure, never a font.
 fn reviewed_decode(
-    record: &'static excalidraw_render_assets_base::AssetRecord,
+    record: &'static excalidraw_fonts::AssetRecord,
     decoded: Vec<u8>,
 ) -> Result<Vec<u8>, LabelError> {
-    excalidraw_render_assets_base::verify_reviewed_decode(record, decoded)
-        .map(excalidraw_render_assets_base::VerifiedAsset::into_bytes)
+    excalidraw_fonts::verify_reviewed_decode(record, decoded)
+        .map(excalidraw_fonts::VerifiedAsset::into_bytes)
         .map_err(|_| LabelError::InvalidFont)
 }
 
@@ -1265,7 +1266,7 @@ struct OfficialFontChunks {
 
 struct OfficialFontChunk {
     order: usize,
-    record: &'static excalidraw_render_assets_base::AssetRecord,
+    record: &'static excalidraw_fonts::AssetRecord,
     declared: &'static [(u32, u32)],
     sfnt: Option<Vec<u8>>,
 }
@@ -1282,21 +1283,16 @@ impl OfficialFontChunk {
 impl OfficialFontChunks {
     fn load(catalog_family: &'static str) -> Result<Self, LabelError> {
         let mut chunks = Vec::new();
-        for record in excalidraw_render_assets_base::revision_1()
+        for record in excalidraw_fonts::revision_1()
             .assets
             .iter()
             .filter(|record| record.family == catalog_family)
         {
-            let order = excalidraw_render_assets_base::font_face_order(
-                catalog_family,
-                record.upstream_path,
-            )
-            .ok_or(LabelError::InvalidFont)?;
-            let declared = excalidraw_render_assets_base::font_face_unicode_ranges(
-                catalog_family,
-                record.upstream_path,
-            )
-            .ok_or(LabelError::InvalidFont)?;
+            let order = excalidraw_fonts::font_face_order(catalog_family, record.upstream_path)
+                .ok_or(LabelError::InvalidFont)?;
+            let declared =
+                excalidraw_fonts::font_face_unicode_ranges(catalog_family, record.upstream_path)
+                    .ok_or(LabelError::InvalidFont)?;
             chunks.try_reserve(1)?;
             chunks.push(OfficialFontChunk {
                 order,
@@ -1339,10 +1335,7 @@ impl OfficialFontChunks {
         Ok(None)
     }
 
-    fn record(
-        &self,
-        index: usize,
-    ) -> Result<&'static excalidraw_render_assets_base::AssetRecord, LabelError> {
+    fn record(&self, index: usize) -> Result<&'static excalidraw_fonts::AssetRecord, LabelError> {
         self.chunks
             .get(index)
             .map(|chunk| chunk.record)
@@ -1353,15 +1346,21 @@ impl OfficialFontChunks {
         let chunk = self.chunks.get_mut(index).ok_or(LabelError::InvalidFont)?;
         if chunk.sfnt.is_none() {
             let sfnt = if chunk.record.upstream_path == EXCALIFONT_LATIN_PATH {
-                let predecoded = excalidraw_render_assets_base::load_excalifont_basic_latin_sfnt()
+                let predecoded = excalidraw_fonts::load_excalifont_basic_latin_sfnt()
                     .map_err(|_| LabelError::InvalidFont)?;
                 let mut sfnt = Vec::new();
                 sfnt.try_reserve_exact(predecoded.bytes().len())?;
                 sfnt.extend_from_slice(predecoded.bytes());
                 sfnt
             } else {
-                let asset = excalidraw_render_assets_base::load_asset(chunk.record.upstream_path)
-                    .map_err(|_| LabelError::InvalidFont)?
+                let asset = excalidraw_fonts::load_asset(chunk.record.upstream_path)
+                    .map_err(|error| {
+                        if error.is_unavailable() {
+                            LabelError::FontUnavailable(super::FontUnavailable::chunk(chunk.record))
+                        } else {
+                            LabelError::InvalidFont
+                        }
+                    })?
                     .ok_or(LabelError::InvalidFont)?;
                 wuff::decompress_woff2(asset.bytes()).map_err(|_| LabelError::InvalidFont)?
             };
@@ -1376,7 +1375,7 @@ impl OfficialFontChunks {
     fn take(
         &mut self,
         index: usize,
-    ) -> Result<(&'static excalidraw_render_assets_base::AssetRecord, Vec<u8>), LabelError> {
+    ) -> Result<(&'static excalidraw_fonts::AssetRecord, Vec<u8>), LabelError> {
         self.decode(index)?;
         let chunk = self.chunks.get_mut(index).ok_or(LabelError::InvalidFont)?;
         let sfnt = chunk.sfnt.take().ok_or(LabelError::InvalidFont)?;
@@ -1825,6 +1824,32 @@ pub(super) fn mandatory_notices_json(
         notices.add_family(notice).map_err(notice_error)?;
     }
     notices.into_manifest().map_err(notice_error)
+}
+
+#[cfg(all(test, not(feature = "cjk")))]
+mod optional_font_tests {
+    use super::*;
+
+    #[test]
+    fn unavailable_chunks_fail_only_when_declared_coverage_is_demanded() {
+        let mut chunks = OfficialFontChunks::load("Xiaolai").expect("metadata remains available");
+        assert!(chunks.len() > 0);
+        assert!(chunks
+            .first_declaring(|| "\u{10ffff}".chars())
+            .expect("uncovered scalars do not load a chunk")
+            .is_none());
+        let error = chunks.first_declaring(|| "中".chars()).unwrap_err();
+        let LabelError::FontUnavailable(font) = error else {
+            panic!("expected unavailable font, got {error:?}");
+        };
+        assert_eq!(font.resolved_family, "Xiaolai");
+        let record = excalidraw_fonts::revision_1()
+            .assets
+            .iter()
+            .find(|record| record.identity == font.asset_identity)
+            .expect("error names the catalog chunk");
+        assert!(!record.is_available());
+    }
 }
 
 struct GlyphOutlineBuilder<'a> {

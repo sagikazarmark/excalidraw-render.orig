@@ -18,6 +18,104 @@ use std::path::Path;
 const EMPTY_SCENE: &[u8] =
     br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}}"#;
 
+mod optional_font_tests {
+    use super::*;
+
+    fn scene(text: &str, original_text: &str) -> SceneDocument {
+        let source = json!({
+            "type": "excalidraw", "version": 2,
+            "elements": [{
+                "id": "text", "type": "text", "width": 60, "height": 30,
+                "fontSize": 20, "fontFamily": 5, "text": text,
+                "originalText": original_text, "updated": 1
+            }],
+            "appState": {}, "files": {}
+        });
+        SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap()
+    }
+
+    fn assert_unavailable(error: RenderError, format: OutputFormat) {
+        assert_eq!(error.code(), ErrorCode::RENDER_FONT_UNAVAILABLE);
+        assert_eq!(error.category(), RenderErrorCategory::Capability);
+        assert_eq!(error.category().as_str(), "capability");
+        assert_eq!(error.format(), format);
+        let Some(ErrorDetails::FontUnavailable {
+            resolved_family,
+            asset_identity,
+        }) = error.details()
+        else {
+            panic!("expected unavailable font details: {error:?}");
+        };
+        assert_eq!(resolved_family, "Xiaolai");
+        let record = excalidraw_fonts::revision_1()
+            .assets
+            .iter()
+            .find(|record| record.identity == asset_identity)
+            .expect("the error identifies an official chunk");
+        assert!(!record.is_available());
+    }
+
+    #[test]
+    fn glyph_demand_propagates_capability_failure_in_every_format() {
+        let scene = scene("中", "中");
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format).build().unwrap();
+            let result = Renderer::new().render(&scene, &request);
+            if cfg!(feature = "cjk") {
+                result.expect("default CJK payload renders the demanded glyph");
+            } else {
+                assert_unavailable(result.expect_err("glyph demand needs Xiaolai"), format);
+            }
+        }
+    }
+
+    #[test]
+    fn cjk_trigger_without_declared_chunk_demand_keeps_missing_glyph_recovery() {
+        // This Extension-B ideograph fires the frozen trigger but no Xiaolai
+        // face declares it. The trigger alone must not cause a capability failure.
+        let text = "\u{20000}";
+        assert!(text::CjkSubsetTrigger::evaluate([text]).selects_xiaolai());
+        assert!(excalidraw_fonts::revision_1()
+            .assets
+            .iter()
+            .filter(|record| record.family == "Xiaolai")
+            .all(|record| {
+                excalidraw_fonts::font_face_unicode_ranges("Xiaolai", record.upstream_path)
+                    .unwrap()
+                    .iter()
+                    .all(|(start, end)| !(*start..=*end).contains(&0x20000))
+            }));
+        let scene = scene(text, text);
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format).build().unwrap();
+            let outcome = Renderer::new()
+                .render(&scene, &request)
+                .expect("an uncovered scalar keeps the ordinary replacement recovery");
+            assert!(outcome
+                .report()
+                .diagnostics()
+                .iter()
+                .any(|diagnostic| diagnostic.code() == DiagnosticCode::FONT_MISSING_GLYPH));
+        }
+    }
+
+    #[test]
+    fn svg_semantic_demand_propagates_capability_failure_without_glyph_demand() {
+        // Layout only sees the uncovered trigger scalar. SVG alone selects a
+        // Xiaolai chunk from originalText, independently of shaped glyphs.
+        let scene = scene("\u{20000}", "中");
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format).build().unwrap();
+            let result = Renderer::new().render(&scene, &request);
+            if format == OutputFormat::Svg && !cfg!(feature = "cjk") {
+                assert_unavailable(result.expect_err("semantic demand needs Xiaolai"), format);
+            } else {
+                result.expect("available semantic sources or glyph-only output renders");
+            }
+        }
+    }
+}
+
 #[test]
 fn focused_latin_svg_font_subset_beats_same_revision_complete_chunk_control() {
     let scene = SceneDocument::parse(
@@ -149,19 +247,19 @@ fn full_intersection_svg_font_subset_does_not_grow_against_complete_chunk_contro
     assert!(!control_svg.contains("svg-font-subset@sha256:"));
     assert!(candidate.artifact().bytes().len() <= control.artifact().bytes().len());
 
-    let mut expected_records = excalidraw_render_assets_base::revision_1()
+    let mut expected_records = excalidraw_fonts::revision_1()
         .assets
         .iter()
         .filter(|record| record.family == "Excalifont")
         .collect::<Vec<_>>();
     expected_records.sort_unstable_by_key(|record| {
-        excalidraw_render_assets_base::font_face_order("Excalifont", record.upstream_path)
+        excalidraw_fonts::font_face_order("Excalifont", record.upstream_path)
             .expect("Excalifont chunk has a pinned order")
     });
     let expected = expected_records
         .into_iter()
         .map(|record| {
-            excalidraw_render_assets_base::load_asset(record.upstream_path)
+            excalidraw_fonts::load_asset(record.upstream_path)
                 .expect("official Excalifont chunk is readable")
                 .expect("official Excalifont chunk is present")
                 .bytes()
@@ -2536,12 +2634,12 @@ fn bundled_faces_carry_their_families_metadata_metrics_and_only_helvetica_differ
         other => panic!("unexpected bundled font family {other}"),
     };
     let mut checked = 0_usize;
-    for record in excalidraw_render_assets_base::revision_1()
+    for record in excalidraw_fonts::revision_1()
         .assets
         .iter()
         .filter(|record| record.role == "official-rendering-font")
     {
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+        let asset = excalidraw_fonts::load_asset(record.upstream_path)
             .expect("bundled font is intact")
             .expect("bundled font is present");
         let sfnt = wuff::decompress_woff2(asset.bytes()).expect("bundled font decodes");

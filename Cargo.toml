@@ -1,9 +1,9 @@
 [workspace]
 members = [
     "crates/excalidraw-render",
-    "crates/excalidraw-render-assets-base",
-    "crates/excalidraw-render-assets-data-000",
-    "crates/excalidraw-render-assets-data-001",
+    "crates/excalidraw-fonts",
+    "crates/excalidraw-fonts-cjk-000",
+    "crates/excalidraw-fonts-cjk-001",
     "crates/excalidraw-render-cli",
     "crates/excalidraw-render-compare",
     "xtask",
@@ -24,9 +24,9 @@ rust-version = "1.97"
 base64 = { version = "=0.22.1", default-features = false, features = ["alloc"] }
 clap = { version = "=4.5.41", features = ["derive"] }
 excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
-excalidraw-render-assets-base = { path = "crates/excalidraw-render-assets-base", version = "=0.1.0" }
-excalidraw-render-assets-data-000 = { path = "crates/excalidraw-render-assets-data-000", version = "=0.1.0" }
-excalidraw-render-assets-data-001 = { path = "crates/excalidraw-render-assets-data-001", version = "=0.1.0" }
+excalidraw-fonts = { path = "crates/excalidraw-fonts", version = "=0.1.0", default-features = false }
+excalidraw-fonts-cjk-000 = { path = "crates/excalidraw-fonts-cjk-000", version = "=0.1.0" }
+excalidraw-fonts-cjk-001 = { path = "crates/excalidraw-fonts-cjk-001", version = "=0.1.0" }
 csscolorparser = "=0.8.3"
 cssparser = "=0.37.0"
 cssparser-color = "=0.5.0"
@@ -69,7 +69,7 @@ tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-fo
 # `default-features = false` drops upstream's `cli` feature (and `clap`);
 # `portable-float` passes through to `brotli/portable-float`, which is what keeps
 # quality-11 WOFF2 bytes identical between native and wasm32 (ADR-0003). The
-# identity token in `excalidraw-render-assets-base` still names the retired
+# identity token in `excalidraw-fonts` still names the retired
 # fork until the single evidence refresh ADR-0003 schedules.
 ttf2woff2 = { version = "=0.13.3", default-features = false, features = ["portable-float"] }
 usvg = { version = "=0.45.1", default-features = false, features = ["text"] }

@@ -243,13 +243,7 @@ pub(super) fn build_svg_font_bundle(
     payload: svg_fonts::Payload,
     subset_session: &mut svg_fonts::Session,
 ) -> Result<svg_fonts::Bundle, FormatEncodeError> {
-    svg_fonts::build(demand, payload, subset_session).map_err(|error| {
-        FormatEncodeError::SvgFontSubset {
-            stage: error.stage,
-            resolved_family: error.family,
-            asset_identity: error.asset_identity,
-        }
-    })
+    svg_fonts::build(demand, payload, subset_session)
 }
 
 pub(super) fn release_svg_font_encoding_records(
@@ -345,10 +339,7 @@ pub(super) fn prune_unused_official_fonts(
         };
         if let Some(text) = text {
             text.remap_font_indices(&mapping)
-                .map_err(|error| match error {
-                    text::LabelError::Memory => ResolveSceneError::Memory,
-                    text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
-                })?;
+                .map_err(super::resolve::label_error)?;
         }
     }
     Ok(())

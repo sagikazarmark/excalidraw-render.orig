@@ -403,6 +403,9 @@ impl RenderSession {
             Some(
                 text::mandatory_notices_json(has_fallback_label, &resolved.official_fonts)
                     .map_err(|error| match error {
+                        text::LabelError::FontUnavailable(font) => {
+                            self.font_unavailable_failure(request.format(), font)
+                        }
                         text::LabelError::Memory => self.memory_failure(
                             request,
                             "artifact_manifest",

@@ -17,6 +17,11 @@ provides the development tools and selects Dagger `v1.0.0-beta.14`.
 
 `cargo test --locked --workspace` also works without nextest. Neither ordinary
 Rust command runs the ignored viewer harnesses or release-only qualification.
+Optional CJK coverage uses an isolated packaged consumer so workspace feature
+unification cannot accidentally restore the payloads. After packaging and
+unpacking the crates with `tests/package-consumer/check-packaged-cli.sh`, run
+`bash tests/package-consumer/check-no-cjk.sh x86_64-unknown-linux-gnu`.
+Dagger runs this check on native and experimental browser WASM.
 The full workspace includes `xtask` evidence tests that invoke Node and qpdf
 12.3.2 from `target/pdf-harness/qpdf/bin/qpdf`; Dagger installs these automatically.
 Use Dagger for the full workspace if those tools are not installed locally.

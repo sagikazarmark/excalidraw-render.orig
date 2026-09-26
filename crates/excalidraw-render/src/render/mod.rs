@@ -95,9 +95,25 @@ use crate::{
 use self::frame_target::FrameTarget;
 use self::resolve::{logical_aligned_bytes, ResolvedScene, SemanticWorkingRecord};
 
+#[derive(Clone, Copy, Debug)]
+pub(super) struct FontUnavailable {
+    resolved_family: &'static str,
+    asset_identity: &'static str,
+}
+
+impl FontUnavailable {
+    fn chunk(record: &'static excalidraw_fonts::AssetRecord) -> Self {
+        Self {
+            resolved_family: record.family,
+            asset_identity: record.identity,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub(super) enum FormatEncodeError {
     Encoding(String),
+    FontUnavailable(FontUnavailable),
     SvgFontSubset {
         stage: crate::SvgFontSubsetStage,
         resolved_family: &'static str,
@@ -1047,6 +1063,9 @@ impl RenderSession {
         error: FormatEncodeError,
     ) -> RenderError {
         match error {
+            FormatEncodeError::FontUnavailable(font) => {
+                self.font_unavailable_failure(request.format(), font)
+            }
             FormatEncodeError::Encoding(message) => {
                 self.encoding_failure(request.format(), code, message)
             }
@@ -1126,6 +1145,26 @@ impl RenderSession {
             element_id: None,
             json_pointer: Box::from(""),
             details: None,
+            report: self.take_report(),
+        }
+    }
+
+    fn font_unavailable_failure(
+        &mut self,
+        format: OutputFormat,
+        font: FontUnavailable,
+    ) -> RenderError {
+        RenderError {
+            category: RenderErrorCategory::Capability,
+            code: ErrorCode::RENDER_FONT_UNAVAILABLE,
+            message: Box::from("a required bundled font is unavailable in this build"),
+            format,
+            element_id: None,
+            json_pointer: Box::from(""),
+            details: Some(Box::new(ErrorDetails::FontUnavailable {
+                resolved_family: font.resolved_family.to_owned(),
+                asset_identity: font.asset_identity.to_owned(),
+            })),
             report: self.take_report(),
         }
     }

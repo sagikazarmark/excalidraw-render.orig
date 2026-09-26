@@ -30,12 +30,14 @@ pub use ownership::{
     refresh_test_owner_source, refresh_test_owner_sources, seed_ownership, test_group_filter,
     verify_ownership, verify_representative_owner,
 };
+mod storage_migration;
 mod traces;
 pub use pdf_judgments::{generate_pdf_judgments, verify_pdf_judgments};
 pub use snapshots::{
     replay_snapshots, report_wasm_snapshots, stage_baseline, stage_wasm_snapshots, verify_baseline,
     verify_snapshots, verify_wasm_snapshots,
 };
+pub use storage_migration::{rebind_font_packaging, rebind_font_packaging_ownership};
 pub use traces::{aggregate_traces, join_trace_results, stage_traces, verify_joined_results};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -172,6 +174,18 @@ fn derive_inventory_with_requirements(
     requirements: Requirements,
     requirements_descriptor: Descriptor,
 ) -> Result<Inventory, String> {
+    derive_inventory_with_catalog(
+        requirements,
+        requirements_descriptor,
+        descriptor("crates/excalidraw-fonts/catalog/revision-1.json")?,
+    )
+}
+
+fn derive_inventory_with_catalog(
+    requirements: Requirements,
+    requirements_descriptor: Descriptor,
+    catalog: Descriptor,
+) -> Result<Inventory, String> {
     if requirements.schema != "excalidraw-render/coverage-requirements/v1" {
         return Err("unexpected coverage requirements schema".into());
     }
@@ -215,7 +229,6 @@ fn derive_inventory_with_requirements(
     }
     let registry: Value = parse(&read(REGISTRY)?)?;
     let surface: Value = parse(&read(SURFACE)?)?;
-    let catalog = descriptor("crates/excalidraw-render-assets-base/catalog/revision-1.json")?;
     let mut sources = vec![
         descriptor(REGISTRY)?,
         descriptor(SURFACE)?,

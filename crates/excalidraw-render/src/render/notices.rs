@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use excalidraw_render_assets_base::FontNotice;
+use excalidraw_fonts::FontNotice;
 
 #[derive(Debug)]
 pub(super) struct MandatoryNotices(String);

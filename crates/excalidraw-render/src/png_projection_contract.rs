@@ -72,7 +72,7 @@ pub(crate) fn profile_limits(selected_mask: Option<usize>) {
         ),
         (
             include_bytes!("render/test_support.rs").as_slice(),
-            "9159c74ba2d51cc8e1b3e5a50e28cd572b3b12bcb8acee45431c235130822a18",
+            "5cb3a3f790adf08c7b7cc0b6e6ebdba7a9a8784e8dd0b4b64e27654e3ed18447",
         ),
     ] {
         assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected);

@@ -9,7 +9,7 @@
 
 use std::fmt::Write as _;
 
-use excalidraw_render_assets_base::AssetRecord;
+use excalidraw_fonts::AssetRecord;
 
 use super::super::text::{ResolvedGlyph, ResolvedLabel};
 use super::super::FormatEncodeError;
@@ -69,8 +69,7 @@ pub(super) fn embedded_font_name(
 /// catalog does not list as a chunk.
 fn official_chunk_record(identity: &str) -> Option<&'static AssetRecord> {
     let (upstream_path, _) = identity.split_once("@sha256:")?;
-    excalidraw_render_assets_base::find_asset(upstream_path)
-        .filter(|record| record.identity == identity)
+    excalidraw_fonts::find_asset(upstream_path).filter(|record| record.identity == identity)
 }
 
 impl PdfPlan {
@@ -404,7 +403,7 @@ mod tests {
             .expect("tag derives"),
             "AAGKCL+LiberationSans"
         );
-        let excalifont = excalidraw_render_assets_base::find_asset(
+        let excalifont = excalidraw_fonts::find_asset(
             "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
         )
         .expect("the Excalifont basic-Latin chunk is catalogued");

@@ -1,4 +1,4 @@
-//! Implementation-detail asset bytes for `excalidraw-render`.
+//! Pinned, byte-exact Xiaolai chunks 106–208 for `excalidraw-fonts`.
 
 #![doc(hidden)]
 

@@ -1,6 +1,6 @@
 use std::collections::TryReserveError;
 
-use excalidraw_render_assets_base::FontNotice;
+use excalidraw_fonts::FontNotice;
 
 use crate::compatibility::{CompatibilityRevision, ReferenceProfileIdentity};
 use crate::scene_surface::SceneNoticePolicy;
@@ -10,7 +10,7 @@ use crate::OutputFormat;
 pub(crate) struct RevisionCatalog {
     profile: ReferenceProfileIdentity,
     frame_profile: ReferenceProfileIdentity,
-    assets: &'static excalidraw_render_assets_base::RevisionCatalog,
+    assets: &'static excalidraw_fonts::RevisionCatalog,
     scene_surface: &'static crate::scene_surface::SceneSurfacePolicy,
 }
 
@@ -23,9 +23,7 @@ impl RevisionCatalog {
         &self.frame_profile
     }
 
-    pub(crate) const fn asset_catalog(
-        &'static self,
-    ) -> &'static excalidraw_render_assets_base::RevisionCatalog {
+    pub(crate) const fn asset_catalog(&'static self) -> &'static excalidraw_fonts::RevisionCatalog {
         self.assets
     }
 
@@ -39,15 +37,15 @@ impl RevisionCatalog {
 pub(crate) static REVISION_1: RevisionCatalog = RevisionCatalog {
     profile: ReferenceProfileIdentity::new(
         CompatibilityRevision::REVISION_1,
-        excalidraw_render_assets_base::revision_1().excalidraw_release,
-        excalidraw_render_assets_base::revision_1().reference_profile_digest,
+        excalidraw_fonts::revision_1().excalidraw_release,
+        excalidraw_fonts::revision_1().reference_profile_digest,
     ),
     frame_profile: ReferenceProfileIdentity::new(
         CompatibilityRevision::REVISION_1,
-        excalidraw_render_assets_base::revision_1().excalidraw_release,
+        excalidraw_fonts::revision_1().excalidraw_release,
         "sha256:63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e",
     ),
-    assets: excalidraw_render_assets_base::revision_1(),
+    assets: excalidraw_fonts::revision_1(),
     scene_surface: &crate::scene_surface::SCENE_SURFACE_POLICY,
 };
 
@@ -89,8 +87,8 @@ pub(crate) fn fallback_notices(
 /// manifested identity, which is no catalog asset.
 pub(crate) fn font_notice(asset_identity: &str) -> Option<&'static FontNotice> {
     let assets = REVISION_1.asset_catalog();
-    if asset_identity == excalidraw_render_assets_base::NOTO_EMOJI_IDENTITY {
-        return assets.font_notice(excalidraw_render_assets_base::NOTO_EMOJI_FAMILY);
+    if asset_identity == excalidraw_fonts::NOTO_EMOJI_IDENTITY {
+        return assets.font_notice(excalidraw_fonts::NOTO_EMOJI_FAMILY);
     }
     let record = assets.asset(asset_identity)?;
     assets.font_notice(record.family)
@@ -98,7 +96,7 @@ pub(crate) fn font_notice(asset_identity: &str) -> Option<&'static FontNotice> {
 
 #[cfg(test)]
 mod tests {
-    use excalidraw_render_assets_base::FontLicense;
+    use excalidraw_fonts::FontLicense;
 
     use super::{fallback_notices, font_notice};
     use crate::OutputFormat;
@@ -161,12 +159,9 @@ mod tests {
             .terms
             .starts_with("SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007"));
         assert!(font_notice("fonts/Cascadia/CascadiaCode-Regular.woff2").is_none());
-        let noto_emoji = font_notice(excalidraw_render_assets_base::NOTO_EMOJI_IDENTITY)
+        let noto_emoji = font_notice(excalidraw_fonts::NOTO_EMOJI_IDENTITY)
             .expect("the Noto Emoji fallback resolves to its notice");
-        assert_eq!(
-            noto_emoji.family,
-            excalidraw_render_assets_base::NOTO_EMOJI_FAMILY
-        );
+        assert_eq!(noto_emoji.family, excalidraw_fonts::NOTO_EMOJI_FAMILY);
         assert_eq!(noto_emoji.license_identity, "font.noto-emoji.ofl-1.1");
         assert!(std::ptr::eq(noto_emoji.terms, cascadia.terms));
     }

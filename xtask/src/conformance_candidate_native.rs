@@ -67,9 +67,9 @@ pub fn producers() -> Result<Value> {
     for name in [
         "excalidraw-render",
         "excalidraw-render-cli",
-        "excalidraw-render-assets-base",
-        "excalidraw-render-assets-data-000",
-        "excalidraw-render-assets-data-001",
+        "excalidraw-fonts",
+        "excalidraw-fonts-cjk-000",
+        "excalidraw-fonts-cjk-001",
     ] {
         tree(&repo_root().join("crates").join(name), &mut paths)?;
     }
@@ -95,6 +95,25 @@ pub fn check_producers(record: &Value) -> Result<()> {
     Ok(())
 }
 pub(crate) fn historical_producers(record: &Value) -> Result<()> {
+    // A producer record names the package layout used by that historical run.
+    // Require one complete layout, never a mixture or today's filesystem paths.
+    let old_layout = record.as_array().is_some_and(|rows| {
+        rows.iter()
+            .any(|r| r["path"] == "crates/excalidraw-render-assets-base/Cargo.toml")
+    });
+    let fonts = if old_layout {
+        [
+            "excalidraw-render-assets-base",
+            "excalidraw-render-assets-data-000",
+            "excalidraw-render-assets-data-001",
+        ]
+    } else {
+        [
+            "excalidraw-fonts",
+            "excalidraw-fonts-cjk-000",
+            "excalidraw-fonts-cjk-001",
+        ]
+    };
     crate::conformance_candidate_gate::require_historical_sources(
         record,
         &[
@@ -105,13 +124,20 @@ pub(crate) fn historical_producers(record: &Value) -> Result<()> {
             "crates/excalidraw-render/src/lib.rs",
             "crates/excalidraw-render-cli/Cargo.toml",
             "crates/excalidraw-render-cli/src/main.rs",
-            "crates/excalidraw-render-assets-base/Cargo.toml",
-            "crates/excalidraw-render-assets-base/src/lib.rs",
-            "crates/excalidraw-render-assets-data-000/Cargo.toml",
-            "crates/excalidraw-render-assets-data-000/src/lib.rs",
-            "crates/excalidraw-render-assets-data-001/Cargo.toml",
-            "crates/excalidraw-render-assets-data-001/src/lib.rs",
         ],
+    )?;
+    let paths: Vec<_> = fonts
+        .iter()
+        .flat_map(|name| {
+            [
+                format!("crates/{name}/Cargo.toml"),
+                format!("crates/{name}/src/lib.rs"),
+            ]
+        })
+        .collect();
+    crate::conformance_candidate_gate::require_historical_sources(
+        record,
+        &paths.iter().map(String::as_str).collect::<Vec<_>>(),
     )
 }
 fn tool(program: &str, args: &[&str]) -> Result<String> {
@@ -476,6 +502,48 @@ pub fn qualify_text_canary(directory: &str) -> Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn historical_font_layouts_remain_complete_without_current_files() {
+        let mut old = producers().unwrap();
+        for row in old.as_array_mut().unwrap() {
+            let path = row["path"].as_str().unwrap().to_owned();
+            row["path"] = json!(path
+                .replace(
+                    "excalidraw-fonts-cjk-000",
+                    "excalidraw-render-assets-data-000"
+                )
+                .replace(
+                    "excalidraw-fonts-cjk-001",
+                    "excalidraw-render-assets-data-001"
+                )
+                .replace("excalidraw-fonts", "excalidraw-render-assets-base"));
+        }
+        historical_producers(&old).unwrap();
+        let mut new = old.clone();
+        for row in new.as_array_mut().unwrap() {
+            let path = row["path"].as_str().unwrap().to_owned();
+            row["path"] = json!(path
+                .replace("excalidraw-render-assets-base", "excalidraw-fonts")
+                .replace(
+                    "excalidraw-render-assets-data-000",
+                    "excalidraw-fonts-cjk-000"
+                )
+                .replace(
+                    "excalidraw-render-assets-data-001",
+                    "excalidraw-fonts-cjk-001"
+                ));
+        }
+        historical_producers(&new).unwrap();
+        for mut record in [old, new] {
+            record
+                .as_array_mut()
+                .unwrap()
+                .retain(|r| !r["path"].as_str().unwrap().contains("001/src/lib.rs"));
+            assert!(historical_producers(&record)
+                .unwrap_err()
+                .contains("missing historical"));
+        }
+    }
     #[test]
     fn release_qualification_binds_actual_command_and_profile() {
         let command = release_command();

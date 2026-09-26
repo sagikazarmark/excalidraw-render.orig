@@ -481,6 +481,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "excalidraw-fonts"
+version = "0.1.0"
+dependencies = [
+ "excalidraw-fonts-cjk-000",
+ "excalidraw-fonts-cjk-001",
+ "rustybuzz",
+ "serde_json",
+ "sha2",
+ "wuff",
+]
+
+[[package]]
+name = "excalidraw-fonts-cjk-000"
+version = "0.1.0"
+
+[[package]]
+name = "excalidraw-fonts-cjk-001"
+version = "0.1.0"
+
+[[package]]
 name = "excalidraw-render"
 version = "0.1.0"
 dependencies = [
@@ -489,7 +509,7 @@ dependencies = [
  "csscolorparser",
  "cssparser",
  "cssparser-color",
- "excalidraw-render-assets-base",
+ "excalidraw-fonts",
  "excalidraw-render-compare",
  "gif 0.14.2",
  "image-webp",
@@ -521,26 +541,6 @@ dependencies = [
  "wuff",
  "zune-jpeg 0.5.15",
 ]
-
-[[package]]
-name = "excalidraw-render-assets-base"
-version = "0.1.0"
-dependencies = [
- "excalidraw-render-assets-data-000",
- "excalidraw-render-assets-data-001",
- "rustybuzz",
- "serde_json",
- "sha2",
- "wuff",
-]
-
-[[package]]
-name = "excalidraw-render-assets-data-000"
-version = "0.1.0"
-
-[[package]]
-name = "excalidraw-render-assets-data-001"
-version = "0.1.0"
 
 [[package]]
 name = "excalidraw-render-cli"
@@ -2282,7 +2282,7 @@ name = "xtask"
 version = "0.1.0"
 dependencies = [
  "base64",
- "excalidraw-render-assets-base",
+ "excalidraw-fonts",
  "excalidraw-render-compare",
  "jsonschema",
  "libm",

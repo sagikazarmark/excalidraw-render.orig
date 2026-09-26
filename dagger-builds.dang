@@ -54,7 +54,9 @@ type Builds {
     }
     if (!self.source.exists(".git")
       or !self.source.exists("tests/conformance/coverage/ownership.json")
-      or !self.compileSource.exists("crates/excalidraw-render-assets-data-000/data/revision-1-000.bin")
+      or !self.compileSource.exists("crates/excalidraw-fonts/data/revision-1-000.bin")
+      or !self.compileSource.exists("crates/excalidraw-fonts-cjk-000/data/revision-1-000.bin")
+      or !self.compileSource.exists("crates/excalidraw-fonts-cjk-001/data/revision-1-001.bin")
       or !self.formatSource.exists("xtask/src/main.rs")) {
       raise "required source input is missing"
     }
@@ -234,12 +236,12 @@ type Builds {
       .withWorkdir("/work/src/tests/package-consumer")
     let compiled = if (target == hostTarget) {
       slim.withExec(["cargo", "test", "--locked", "--release", "--target", target,
-        "--no-run", "--test", "public_facade", "--example", "native_snapshots"])
+        "--no-run", "--test", "public_facade", "--test", "optional_cjk", "--example", "native_snapshots"])
         .withExec(["cargo", "build", "--locked", "--release", "--target", target,
           "--example", "native_snapshots"])
     } else {
       slim.withExec(["cargo", "test", "--locked", "--release", "--target", target,
-        "--no-run", "--test", "public_facade", "--test", "generated_snapshots"])
+        "--no-run", "--test", "public_facade", "--test", "optional_cjk", "--test", "generated_snapshots"])
     }
     compiled.withDirectory("/work/src", source).withWorkdir("/work/src")
   }

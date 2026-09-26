@@ -1404,6 +1404,7 @@ impl RenderSession {
                 )),
                 Err(
                     ResolveSceneError::Memory
+                    | ResolveSceneError::FontUnavailable(_)
                     | ResolveSceneError::InvalidFallbackFont
                     | ResolveSceneError::InvalidMandatoryNotice,
                 ) => Err(self.internal_failure(
@@ -1438,6 +1439,9 @@ impl RenderSession {
                 )),
                 Err(ResolveSceneError::Memory) => {
                     Err(self.memory_failure(request, "semantic_geometry", "outline"))
+                }
+                Err(ResolveSceneError::FontUnavailable(font)) => {
+                    Err(self.font_unavailable_failure(request.format(), font))
                 }
                 Err(ResolveSceneError::InvalidFallbackFont) => Err(self.internal_failure(
                     request.format(),

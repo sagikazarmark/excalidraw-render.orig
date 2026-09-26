@@ -109,15 +109,7 @@ pub(super) fn render_font_subset_qualification_trace(
         let mut subset_session = svg_fonts::Session::new();
         let bundle = svg_fonts::build(demand, svg_fonts::Payload::Subset, &mut subset_session)
             .map_err(|error| {
-                session.format_failure(
-                    &request,
-                    ErrorCode::ENCODE_SVG_FAILED,
-                    FormatEncodeError::SvgFontSubset {
-                        stage: error.stage,
-                        resolved_family: error.family,
-                        asset_identity: error.asset_identity,
-                    },
-                )
+                session.format_failure(&request, ErrorCode::ENCODE_SVG_FAILED, error)
             })?;
         bundle
             .account_resource_transcript(&mut RenderResourceAccount::new(&mut session, &request))?;

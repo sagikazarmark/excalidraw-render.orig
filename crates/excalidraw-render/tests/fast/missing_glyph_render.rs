@@ -164,7 +164,7 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
     let fonts = embedded_pdf_fonts(bytes);
     assert_eq!(fonts.len(), 2, "one FontFile2 per family");
     let liberation_asset =
-        excalidraw_render_assets_base::load_asset("fonts/Liberation/LiberationSans-Regular.woff2")
+        excalidraw_fonts::load_asset("fonts/Liberation/LiberationSans-Regular.woff2")
             .expect("the Liberation Sans asset verifies")
             .expect("the Liberation Sans asset is manifested");
     let liberation_program =

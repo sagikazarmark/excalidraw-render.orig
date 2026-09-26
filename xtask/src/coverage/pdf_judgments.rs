@@ -170,7 +170,7 @@ fn spec_anchors(repo: &Repo, record: &Value) -> Result<(), String> {
 }
 
 /// Every consistency check except the baseline cross-check. Returns the record.
-fn verify_record(repo: &Repo, inventory: &Inventory) -> Result<Value, String> {
+pub(super) fn verify_record(repo: &Repo, inventory: &Inventory) -> Result<Value, String> {
     let bytes = repo.read(RECORD)?;
     let record: Value = parse(&bytes)?;
     if bytes != record_bytes(&record)? {

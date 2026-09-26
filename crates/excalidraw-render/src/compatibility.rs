@@ -299,6 +299,8 @@ impl ErrorCode {
     pub const PDF_RASTER_FALLBACK_UNISOLATABLE: Self = Self("pdf.raster-fallback-unisolatable");
     /// No meaningful complete artifact could be produced.
     pub const RENDER_NO_MEANINGFUL_ARTIFACT: Self = Self("render.no-meaningful-artifact");
+    /// A demanded bundled font is unavailable in this build.
+    pub const RENDER_FONT_UNAVAILABLE: Self = Self("render.font-unavailable");
     /// SVG encoding failed.
     pub const ENCODE_SVG_FAILED: Self = Self("encode.svg-failed");
     /// A required direct-SVG font subset could not be produced or validated.
@@ -486,6 +488,13 @@ pub enum ErrorDetails {
         /// Required substitution recovery.
         recovery: Recovery,
     },
+    /// Identifies a demanded bundled font unavailable in this build.
+    FontUnavailable {
+        /// Resolved bundled family required by the render.
+        resolved_family: String,
+        /// Official source chunk identity.
+        asset_identity: String,
+    },
     /// Identifies a fatal direct-SVG font subset operation.
     SvgFontSubsetFailure {
         /// First failed subset pipeline stage.
@@ -581,6 +590,7 @@ impl ErrorDetails {
             | Self::Revision { .. }
             | Self::RequestValue { .. }
             | Self::MemoryUnavailable { .. }
+            | Self::FontUnavailable { .. }
             | Self::SvgFontSubsetFailure { .. } => None,
         }
     }
@@ -598,6 +608,7 @@ impl ErrorDetails {
             | Self::ResourceLimit { .. }
             | Self::MemoryUnavailable { .. }
             | Self::MissingGlyph { .. }
+            | Self::FontUnavailable { .. }
             | Self::SvgFontSubsetFailure { .. }
             | Self::Metadata { .. }
             | Self::NestedSource { .. }
@@ -1113,6 +1124,16 @@ mod tests {
                     "{\"kind\":\"svg_font_subset_failure\",\"stage\":\"validate\",",
                     "\"resolved_family\":\"Excalifont\",",
                     "\"asset_identity\":\"fonts/Excalifont/chunk.woff2@sha256:abc\"}"
+                ),
+            ),
+            (
+                ErrorDetails::FontUnavailable {
+                    resolved_family: "Xiaolai".to_owned(),
+                    asset_identity: "fonts/Xiaolai/chunk.woff2@sha256:abc".to_owned(),
+                },
+                concat!(
+                    "{\"kind\":\"font_unavailable\",\"resolved_family\":\"Xiaolai\",",
+                    "\"asset_identity\":\"fonts/Xiaolai/chunk.woff2@sha256:abc\"}"
                 ),
             ),
             (

@@ -2274,7 +2274,7 @@ fn escape_attribute(output: &mut String, value: &str) {
 }
 
 pub(super) fn viewer_options() -> Result<usvg::Options<'static>, ResolveError> {
-    let excalifont = excalidraw_render_assets_base::load_excalifont_basic_latin_sfnt()
+    let excalifont = excalidraw_fonts::load_excalifont_basic_latin_sfnt()
         .map_err(|_| ResolveError::SvgDecodeFailed)?;
     let (_, liberation_sans) = crate::render::text::FallbackFont::load()
         .map_err(|_| ResolveError::SvgDecodeFailed)?

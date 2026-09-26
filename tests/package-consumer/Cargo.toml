@@ -4,8 +4,12 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 
+[features]
+default = ["cjk"]
+cjk = ["excalidraw-render/cjk"]
+
 [dependencies]
-excalidraw-render = { path = "../../target/package/excalidraw-render-0.1.0", version = "=0.1.0" }
+excalidraw-render = { path = "../../target/package/excalidraw-render-0.1.0", version = "=0.1.0", default-features = false }
 
 [dev-dependencies]
 base64 = "=0.22.1"
@@ -16,8 +20,8 @@ sha2 = "=0.10.9"
 wasm-bindgen-test = "=0.3.76"
 
 [patch.crates-io]
-excalidraw-render-assets-base = { path = "../../target/package/excalidraw-render-assets-base-0.1.0" }
-excalidraw-render-assets-data-000 = { path = "../../target/package/excalidraw-render-assets-data-000-0.1.0" }
-excalidraw-render-assets-data-001 = { path = "../../target/package/excalidraw-render-assets-data-001-0.1.0" }
+excalidraw-fonts = { path = "../../target/package/excalidraw-fonts-0.1.0" }
+excalidraw-fonts-cjk-000 = { path = "../../target/package/excalidraw-fonts-cjk-000-0.1.0" }
+excalidraw-fonts-cjk-001 = { path = "../../target/package/excalidraw-fonts-cjk-001-0.1.0" }
 
 [workspace]

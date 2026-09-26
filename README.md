@@ -2,7 +2,7 @@
 
 A pure-Rust library and command-line tool for rendering Excalidraw scene
 documents to **SVG, PNG, and vector-first PDF**. Export a whole scene or each
-frame separately. Fonts and other required rendering assets are bundled;
+frame separately. Fonts and other required rendering assets are bundled by default;
 rendering needs no browser, Node.js, network access, or installed fonts.
 
 **Status:** preparing the first `0.1.0` release. The intended public home is
@@ -64,6 +64,30 @@ reproducible output matters; later 0.x releases may intentionally change
 rendering and diagnostics. Revision `1` identifies the current rendering
 profile, not a promise to preserve every historical output in future releases.
 
+### Optional CJK fonts
+
+The default `cjk` feature bundles Xiaolai, Excalifont's Chinese/Japanese/Korean
+fallback. Applications that do not need it can omit its roughly 12 MiB payload:
+
+```toml
+[dependencies]
+excalidraw-render = { version = "=0.1.0", default-features = false }
+```
+
+Every other supported font, including Noto Emoji, remains bundled. A render that
+needs to consult or embed a Xiaolai chunk returns `render.font-unavailable`, with
+category `capability` and `ErrorDetails::FontUnavailable` identifying the family
+and asset. It does not silently substitute another font. This follows actual
+font demand, including SVG font embedding; it does not reject every scene that
+contains CJK characters. The CLI retains the complete default bundle.
+
+`excalidraw-fonts` holds the catalog and non-Xiaolai fonts. Its default-enabled
+`cjk` feature includes `excalidraw-fonts-cjk-000` and `excalidraw-fonts-cjk-001`,
+two balanced storage shards of the original Xiaolai chunks. These are packaging
+boundaries, not language subsets. Cargo features are additive: another dependency
+can enable CJK again. Disabling it removes the shards from the active build graph,
+not necessarily from the lockfile or a `cargo fetch` download.
+
 ## Testing and contributing
 
 ```sh
@@ -94,5 +118,5 @@ and the [release policy](docs/release-0.1.0.md) for the 0.1.0 scope.
 
 Project code is dual-licensed under [MIT](LICENSE-MIT) or
 [Apache-2.0](LICENSE-APACHE). Bundled assets have their own licenses, collected
-in the [asset license bundle](crates/excalidraw-render-assets-base/LICENSE-BUNDLE.txt).
+in the [asset license bundle](crates/excalidraw-fonts/LICENSE-BUNDLE.txt).
 Exports carry the attribution required by the bundled resources they use.

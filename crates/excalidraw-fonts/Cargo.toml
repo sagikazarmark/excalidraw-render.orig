@@ -1,15 +1,16 @@
 [package]
-name = "excalidraw-render-assets-base"
+name = "excalidraw-fonts"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "Implementation-detail catalog for excalidraw-render"
+description = "Pinned Excalidraw fonts and complete font catalog with optional CJK payloads"
 license.workspace = true
 repository.workspace = true
 include = [
     "/src/",
     "/tests/",
     "/catalog/",
+    "/data/",
     "/license-parts/",
     "/LICENSE-BUNDLE.txt",
     "/LICENSE-BUNDLE.sha256",
@@ -18,9 +19,13 @@ include = [
 [lints]
 workspace = true
 
+[features]
+default = ["cjk"]
+cjk = ["dep:excalidraw-fonts-cjk-000", "dep:excalidraw-fonts-cjk-001"]
+
 [dependencies]
-excalidraw-render-assets-data-000.workspace = true
-excalidraw-render-assets-data-001.workspace = true
+excalidraw-fonts-cjk-000 = { workspace = true, optional = true }
+excalidraw-fonts-cjk-001 = { workspace = true, optional = true }
 sha2.workspace = true
 
 [dev-dependencies]

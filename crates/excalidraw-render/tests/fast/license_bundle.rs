@@ -21,7 +21,7 @@ fn public_license_bundle_returns_the_complete_static_utf8_bundle() {
     assert!(bundle.contains("Excalifont and Virgil provenance is retained together"));
     assert!(bundle.contains("Copyright (c) 2020 LXGW"));
     assert!(bundle.contains(include_str!(
-        "../../../excalidraw-render-assets-base/license-parts/skia-BSD-3-Clause.txt"
+        "../../../excalidraw-fonts/license-parts/skia-BSD-3-Clause.txt"
     )));
     assert!(bundle.ends_with('\n'));
     assert_eq!(

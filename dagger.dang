@@ -199,9 +199,9 @@ type Lint {
       "--package", "excalidraw-render",
       "--package", "excalidraw-render-cli",
       "--package", "excalidraw-render-compare",
-      "--package", "excalidraw-render-assets-base",
-      "--package", "excalidraw-render-assets-data-000",
-      "--package", "excalidraw-render-assets-data-001",
+      "--package", "excalidraw-fonts",
+      "--package", "excalidraw-fonts-cjk-000",
+      "--package", "excalidraw-fonts-cjk-001",
       "--package", "xtask",
     ]).combinedOutput
   }
@@ -504,6 +504,16 @@ type Packaging {
   }
 
   """
+  Prove that an isolated packaged dependency can omit CJK payloads while keeping
+  ASCII/emoji rendering and the structured unavailable-font error contract.
+  """
+  noCjk: String! @check {
+    self.packaged
+      .withExec(["bash", "tests/package-consumer/check-no-cjk.sh", self.target])
+      .combinedOutput
+  }
+
+  """
   Collect native public-facade snapshot candidates in two fresh process orders.
   Artifacts and full reports are exported; human approval and WASM/traces follow.
   """
@@ -604,7 +614,7 @@ type Packaging {
     self.consumerBuilt.withWorkdir("tests/package-consumer")
       .withExec([
         "cargo", "test", "--locked", "--release",
-        "--target", self.target, "--test", "public_facade",
+        "--target", self.target, "--test", "public_facade", "--test", "optional_cjk",
       ])
   }
 
