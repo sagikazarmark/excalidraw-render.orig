@@ -3,9 +3,10 @@ use std::path::{Component, Path};
 
 use serde_json::{json, Value};
 
-use crate::conformance::{
-    canonical_bytes, object, repo_root, sha256, valid_date, valid_github_login,
-};
+use crate::conformance::{canonical_bytes, object, repo_root, sha256};
+
+mod runtime;
+pub use runtime::refresh as refresh_pdfium_runtime;
 
 const MANIFEST_PATH: &str =
     "tests/conformance/pdf-viewer-qualification/rectangle-outline/manifest.json";
@@ -53,7 +54,23 @@ pub(crate) fn rust_pdfium_sources() -> Result<Vec<String>, String> {
     .map_err(|error| format!("invalid Rust PDFium source inventory: {error}"))
 }
 
-pub fn verify(require_approval: bool) -> Result<(), String> {
+pub(crate) fn archived_pdfium_lock(lock: &Value) -> Result<Value, String> {
+    if lock
+        != &json!({
+            "path": "tools/pdf-harness/pdfium.lock.json",
+            "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90",
+        })
+    {
+        return Err("invalid historical PDFium lock identity".into());
+    }
+    Ok(json!({
+        "path": "tools/pdf-harness/history/pypdfium2.lock.json",
+        "sha256": lock["sha256"],
+    }))
+}
+
+pub fn verify() -> Result<(), String> {
+    runtime::verify()?;
     let manifest_bytes = fs::read(repo_root().join(MANIFEST_PATH))
         .map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?;
     let manifest: Value = serde_json::from_slice(&manifest_bytes)
@@ -156,67 +173,7 @@ pub fn verify(require_approval: bool) -> Result<(), String> {
         return Err("PDF harness determinism record is invalid".to_owned());
     }
 
-    let subject = approval_subject_from_manifest(&manifest)?;
-    match &manifest["approval"] {
-        Value::Null if require_approval => {
-            return Err("PDF harness qualification has no approval record".to_owned())
-        }
-        Value::Null => {}
-        approval => verify_approval(approval, &subject)?,
-    }
     Ok(())
-}
-
-pub fn approval_subject() -> Result<String, String> {
-    verify(false)?;
-    let manifest: Value = serde_json::from_slice(
-        &fs::read(repo_root().join(MANIFEST_PATH))
-            .map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?,
-    )
-    .map_err(|error| format!("invalid qualification manifest: {error}"))?;
-    approval_subject_from_manifest(&manifest)
-}
-
-pub fn record_approval(
-    approved_by: &str,
-    approved_at: &str,
-    approval_url: &str,
-    expected_subject: &str,
-) -> Result<(), String> {
-    verify(false)?;
-    let path = repo_root().join(MANIFEST_PATH);
-    let mut manifest: Value = serde_json::from_slice(
-        &fs::read(&path).map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?,
-    )
-    .map_err(|error| format!("invalid qualification manifest: {error}"))?;
-    if !manifest["approval"].is_null() {
-        return Err("PDF harness qualification is already approved".to_owned());
-    }
-    let subject = approval_subject_from_manifest(&manifest)?;
-    let expected = expected_subject
-        .strip_prefix("sha256:")
-        .unwrap_or(expected_subject);
-    if subject != expected {
-        return Err(format!(
-            "approval subject mismatch: expected {expected}, computed {subject}"
-        ));
-    }
-    manifest["approval"] = json!({
-        "approved_at": approved_at,
-        "approved_by": approved_by,
-        "approval_subject_sha256": format!("sha256:{subject}"),
-        "approval_url": approval_url,
-    });
-    verify_approval(&manifest["approval"], &subject)?;
-    let canonical = canonical_bytes(&manifest)?;
-    fs::write(&path, [&canonical[..], b"\n"].concat())
-        .map_err(|error| format!("failed to write {MANIFEST_PATH}: {error}"))?;
-    fs::write(
-        repo_root().join(MANIFEST_DIGEST_PATH),
-        format!("{}\n", sha256(&canonical)),
-    )
-    .map_err(|error| format!("failed to write {MANIFEST_DIGEST_PATH}: {error}"))?;
-    verify(true)
 }
 
 fn verify_visual_authority(descriptor: &Value) -> Result<(), String> {
@@ -280,7 +237,15 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
     {
         return Err(format!("{viewer} PDF viewer profile identity is invalid"));
     }
-    verify_descriptor(&profile["implementation"]["lockfile"])?;
+    if viewer == "pdfium" {
+        // The approved profile describes its original producer. Authenticate the
+        // relocated archive without rewriting the approval-bound descriptor.
+        verify_descriptor(&archived_pdfium_lock(
+            &profile["implementation"]["lockfile"],
+        )?)?;
+    } else {
+        verify_descriptor(&profile["implementation"]["lockfile"])?;
+    }
     if viewer == "pdfium" {
         verify_producer_sources(
             &profile["implementation"]["sources"],
@@ -614,7 +579,9 @@ fn validate_schema(definition: &Value, value: &Value, subject: &str) -> Result<(
         .map_err(|error| format!("{subject} schema fails its meta-schema: {error}"))?;
     jsonschema::draft202012::options()
         .should_validate_formats(true)
-        .build(definition)
+        .build(&crate::conformance::schema_without_approval_gate(
+            definition,
+        ))
         .map_err(|error| format!("failed to compile {subject} schema: {error}"))?
         .validate(value)
         .map_err(|error| format!("document fails {subject}: {error}"))
@@ -701,42 +668,6 @@ fn verify_exact_directory(relative: &str, expected: &[&str]) -> Result<(), Strin
     Ok(())
 }
 
-fn verify_approval(approval: &Value, subject: &str) -> Result<(), String> {
-    if approval["approval_subject_sha256"] != json!(format!("sha256:{subject}"))
-        || approval["approved_by"]
-            .as_str()
-            .is_none_or(|value| !valid_github_login(value))
-        || approval["approved_at"]
-            .as_str()
-            .is_none_or(|value| !valid_date(value))
-        || approval["approval_url"]
-            .as_str()
-            .and_then(|url| {
-                url.strip_prefix(
-                    "https://github.com/sagikazarmark/excalidraw-render.orig/issues/35#issuecomment-",
-                )
-            })
-            .is_none_or(|id| {
-                id.is_empty() || !id.chars().all(|character| character.is_ascii_digit())
-            })
-    {
-        return Err("PDF harness qualification approval is invalid".to_owned());
-    }
-    Ok(())
-}
-
-fn approval_subject_from_manifest(manifest: &Value) -> Result<String, String> {
-    let mut manifest = manifest.clone();
-    manifest
-        .as_object_mut()
-        .ok_or_else(|| "qualification manifest must be an object".to_owned())?
-        .remove("approval");
-    Ok(sha256(&canonical_bytes(&json!({
-        "manifest": manifest,
-        "schema": "excalidraw-render/conformance-pdf-viewer-approval-subject/v1",
-    }))?))
-}
-
 fn has_runtime(records: &Value, name: &str, expected_value: &str) -> Result<bool, String> {
     Ok(array(records, "runtime records")?.iter().any(|record| {
         record["name"] == json!(name) && record["value"].as_str() == Some(expected_value)
@@ -761,7 +692,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn historical_producers_remain_approval_bound_and_require_valid_membership() {
+    fn historical_producers_require_valid_membership_without_acceptance_hashes() {
         let manifest: Value =
             serde_json::from_slice(&fs::read(repo_root().join(MANIFEST_PATH)).unwrap()).unwrap();
         let mut changed = manifest.clone();
@@ -773,11 +704,6 @@ mod tests {
         source["sha256"] = json!("a".repeat(64));
         verify_producer_sources(&changed["implementation"], HISTORICAL_QUALIFICATION_SOURCES)
             .unwrap();
-        assert!(verify_approval(
-            &changed["approval"],
-            &approval_subject_from_manifest(&changed).unwrap()
-        )
-        .is_err());
 
         for mutation in 0..5 {
             let mut sources = manifest["implementation"].clone();

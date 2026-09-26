@@ -23,21 +23,18 @@ mod pdf_judgments;
 pub use layers::{report_layers, verify_layers};
 mod snapshots;
 pub use ownership::{
-    extend_ownership, ownership_authority_migration, ownership_catalog, ownership_subject,
-    reconcile_stage4_bindings, record_case_owner, record_closure_owner,
-    record_exception_test_owner, record_library_test_owner, record_ownership_approval,
-    record_representative_owner, record_test_owner, refresh_exception_test_owner_source,
-    refresh_library_test_owner_source, refresh_test_owner_source, refresh_test_owner_sources,
-    seed_ownership, test_group_filter, verify_ownership, verify_representative_owner,
+    extend_ownership, ownership_authority_migration, ownership_catalog, reconcile_stage4_bindings,
+    record_case_owner, record_closure_owner, record_exception_test_owner,
+    record_library_test_owner, record_representative_owner, record_test_owner,
+    refresh_exception_test_owner_source, refresh_library_test_owner_source,
+    refresh_test_owner_source, refresh_test_owner_sources, seed_ownership, test_group_filter,
+    verify_ownership, verify_representative_owner,
 };
 mod traces;
-pub use pdf_judgments::{
-    generate_pdf_judgments, pdf_judgments_subject, record_pdf_judgments_approval,
-    verify_pdf_judgments,
-};
+pub use pdf_judgments::{generate_pdf_judgments, verify_pdf_judgments};
 pub use snapshots::{
-    baseline_subject, record_baseline_approval, replay_snapshots, report_wasm_snapshots,
-    stage_baseline, stage_wasm_snapshots, verify_baseline, verify_snapshots, verify_wasm_snapshots,
+    replay_snapshots, report_wasm_snapshots, stage_baseline, stage_wasm_snapshots, verify_baseline,
+    verify_snapshots, verify_wasm_snapshots,
 };
 pub use traces::{aggregate_traces, join_trace_results, stage_traces, verify_joined_results};
 
@@ -379,7 +376,7 @@ fn load_inventory() -> Result<Inventory, String> {
 pub fn verify_inventory() -> Result<(), String> {
     let inventory = load_inventory()?;
     for id in crate::conformance::case_ids()? {
-        crate::conformance::verify(&id, true)?;
+        crate::conformance::verify(&id)?;
     }
     println!("verified draft inventory: {} coverage rows, {} executions, {} unresolved milestones; release closure is pending",
         inventory.coverage.len(), inventory.executions.len(), inventory.requirements.len());

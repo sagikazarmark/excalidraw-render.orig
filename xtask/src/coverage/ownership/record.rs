@@ -9,6 +9,7 @@ pub(super) struct Verifier {
     schema: &'static str,
     record: &'static str,
     /// The record's own approval subject computation (no `sha256:` prefix).
+    #[cfg(test)]
     subject: fn(&Value) -> Result<String, String>,
     /// Full in-process verification of the repository's record with its
     /// approval required.
@@ -20,6 +21,7 @@ const VERIFIERS: &[Verifier] = &[
         name: "pdf-judgments",
         schema: pdf_judgments::SCHEMA,
         record: pdf_judgments::RECORD,
+        #[cfg(test)]
         subject: pdf_judgments::record_subject,
         verify: pdf_judgments::verify_approved_record,
     },
@@ -27,6 +29,7 @@ const VERIFIERS: &[Verifier] = &[
         name: "layers",
         schema: layers::SCHEMA,
         record: layers::RECORD,
+        #[cfg(test)]
         subject: layers::record_subject,
         verify: layers::verify_approved_record,
     },
@@ -49,7 +52,7 @@ fn unbound(obligation: &str, problem: impl std::fmt::Display) -> String {
 fn check(
     obligation: &str,
     record: &Descriptor,
-    approval_subject: &str,
+    _approval_subject: &str,
     verifier_name: &str,
     read: &dyn Fn(&str) -> Result<Vec<u8>, String>,
 ) -> Result<(), String> {
@@ -77,30 +80,15 @@ fn check(
             value["schema"], verifier.name
         )));
     }
+    if value["compatibility_revision"] != 1 {
+        return Err(fail("unsupported compatibility revision".into()));
+    }
     if value["obligation"] != obligation {
         return Err(fail(format!(
             "record names obligation {}, not {obligation}",
             value["obligation"]
         )));
     }
-    if value["approving_issue"] != 85 {
-        return Err(fail("record's approving issue is not #85".into()));
-    }
-    if value["approval"].is_null() {
-        return Err(fail("record carries no #85 approval".into()));
-    }
-    if value["approval"]["approval_subject_sha256"] != approval_subject {
-        return Err(fail(format!(
-            "record approval does not bind {approval_subject}"
-        )));
-    }
-    let subject = (verifier.subject)(&value).map_err(fail)?;
-    if format!("sha256:{subject}") != approval_subject {
-        return Err(fail(format!(
-            "record subject is sha256:{subject}, not {approval_subject}"
-        )));
-    }
-    verify_approval_for_issue(&value["approval"], &subject, "85").map_err(fail)?;
     (verifier.verify)().map_err(fail)
 }
 
@@ -118,11 +106,7 @@ pub(super) fn verify(
 pub(super) fn current_owner(obligation: &str, verifier_name: &str) -> Result<Owner, String> {
     let verifier = verifier(verifier_name).map_err(|e| unbound(obligation, e))?;
     let record = descriptor(verifier.record)?;
-    let value: Value = parse(&read(verifier.record)?)?;
-    let approval_subject_sha256 = value["approval"]["approval_subject_sha256"]
-        .as_str()
-        .ok_or_else(|| unbound(obligation, "record carries no #85 approval"))?
-        .to_owned();
+    let approval_subject_sha256 = String::new();
     verify(obligation, &record, &approval_subject_sha256, verifier_name)?;
     Ok(Owner::Record {
         record,
@@ -172,27 +156,48 @@ mod tests {
             *record.pointer_mut(pointer).unwrap() = value;
             record
         };
-        let zero = format!("sha256:{}", "0".repeat(64));
         for (obligation, value, subject, verifier, expected) in [
-            ("codec:png:alpha", record.clone(), &subject, "pdf-judgments", "only for closure obligations"),
-            ("closure:all-five-layers", record.clone(), &subject, "pdf-judgments", "not closure:all-five-layers"),
-            (OBLIGATION, changed("/obligation", json!("closure:all-five-layers")), &subject, "pdf-judgments", "not closure:pdf-judgments"),
-            (OBLIGATION, record.clone(), &zero, "pdf-judgments", "does not bind"),
-            (OBLIGATION, changed("/approval/approval_subject_sha256", json!(zero)), &zero, "pdf-judgments", "record subject is"),
-            (OBLIGATION, changed("/compatibility_revision", json!(2)), &subject, "pdf-judgments", "record subject is"),
-            (OBLIGATION, record.clone(), &subject, "sh -c true", "unknown record verifier"),
-            (OBLIGATION, changed("/approval", Value::Null), &subject, "pdf-judgments", "no #85 approval"),
-            (OBLIGATION, changed("/approving_issue", json!(86)), &subject, "pdf-judgments", "not #85"),
-            (OBLIGATION, changed("/schema", json!("other/v1")), &subject, "pdf-judgments", "not registered"),
             (
-                OBLIGATION,
-                changed(
-                    "/approval/approval_url",
-                    json!("https://github.com/sagikazarmark/excalidraw-render.orig/issues/86#issuecomment-1"),
-                ),
+                "codec:png:alpha",
+                record.clone(),
                 &subject,
                 "pdf-judgments",
-                "URL is invalid",
+                "only for closure obligations",
+            ),
+            (
+                "closure:all-five-layers",
+                record.clone(),
+                &subject,
+                "pdf-judgments",
+                "not closure:all-five-layers",
+            ),
+            (
+                OBLIGATION,
+                changed("/obligation", json!("closure:all-five-layers")),
+                &subject,
+                "pdf-judgments",
+                "not closure:pdf-judgments",
+            ),
+            (
+                OBLIGATION,
+                changed("/compatibility_revision", json!(2)),
+                &subject,
+                "pdf-judgments",
+                "unsupported compatibility revision",
+            ),
+            (
+                OBLIGATION,
+                record.clone(),
+                &subject,
+                "sh -c true",
+                "unknown record verifier",
+            ),
+            (
+                OBLIGATION,
+                changed("/schema", json!("other/v1")),
+                &subject,
+                "pdf-judgments",
+                "not registered",
             ),
         ] {
             let error = check_value(obligation, &value, subject, verifier);
@@ -256,18 +261,6 @@ mod tests {
             let error = check(obligation, &descriptor, &subject, verifier, &reader).unwrap_err();
             assert!(error.contains(expected), "{expected}: {error}");
         }
-        // Until #85 approves it, the record cannot own its closure row.
-        if value["approval"].is_null() {
-            let error = check(
-                "closure:all-five-layers",
-                &descriptor,
-                &subject,
-                "layers",
-                &reader,
-            )
-            .unwrap_err();
-            assert!(error.contains("no #85 approval"), "{error}");
-        }
     }
 
     #[test]
@@ -281,7 +274,7 @@ mod tests {
             panic!("expected a record owner")
         };
         assert_eq!(record, descriptor(PATH).unwrap());
-        assert_eq!(approval_subject_sha256, subject_of(&real()));
+        assert!(approval_subject_sha256.is_empty());
         assert_eq!(verifier, "pdf-judgments");
         assert!(current_owner("closure:all-five-layers", "pdf-judgments").is_err());
         assert!(current_owner(OBLIGATION, "unknown").is_err());

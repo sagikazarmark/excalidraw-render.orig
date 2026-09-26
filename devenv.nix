@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, config, ... }:
 
 {
   dotenv.enable = true;
@@ -20,11 +20,22 @@
       cargo-release
       cargo-watch
       wasm-pack
+      curl
+      unzip
+      gnutar
+      gzip
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
       pkgs.chromium
       pkgs.chromedriver
     ];
+
+  scripts.pdfium-install = {
+    description = "Install the exact-pinned native PDFium library and Rust harness worker (Linux x86_64)";
+    exec = ''
+      exec bash ${lib.escapeShellArg "${config.devenv.root}/tools/pdf-harness/install.sh"} --pdfium-only
+    '';
+  };
 
   languages = {
     rust = {

@@ -307,7 +307,7 @@ fn compact_rejects_changed_extra_missing_and_detached_records() {
             _ => {
                 let mut record = read(output.join("compact.json"));
                 match mutation {
-                    3 => record["approval"] = json!({"approved_by":"forged"}),
+                    3 => record["eligible_executions"] = json!(["invented"]),
                     4 => record["retained"]["viewers"] = json!([]),
                     _ => {
                         record["inventory"]["viewers"]["../escape"] =

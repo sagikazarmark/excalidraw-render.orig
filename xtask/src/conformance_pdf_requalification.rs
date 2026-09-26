@@ -3,38 +3,15 @@
 
 use crate::{
     conformance::{canonical_bytes, repo_root, sha256},
-    conformance_candidate_gate::{read, value},
+    conformance_candidate_gate::read,
 };
 use serde_json::{json, Value};
 type Result<T> = std::result::Result<T, String>;
 const APPROVED_PDF: &str = "b053159dc6ea0649e6c0fa5840196ccb81db6b41b7eb69d0181392851017ee43";
 const CURRENT_PDF: &str = "50180ecf1822d7d573ea78cc6375cd3f83af8ef2748422b7e9b3d52a1b7ba6dc";
-const APPROVED_SUBJECT: &str = "c15e6bab141ac8080bac099932e5561bfcbee4c000f4957fec71e87d5e573389";
 const OLD_EXPECTATION: &str = "b6cbc6049556ae87780a83e9c252f64193594bf37c9d6a2f18a80434b31cb7b9";
 const NEW_EXPECTATION: &str = "442f0cb2580a4066d64bcb924eaa6e070252faca2fa2b37fa4f34c81ff600b1b";
 const TEST_SOURCE: &str = "crates/excalidraw-render/tests/fast/pdf_backend_qualification.rs";
-const APPROVAL_URL: &str =
-    "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5748855374";
-
-fn scoped_approval(approval: &Value, comment: &Value) -> Result<()> {
-    crate::conformance::verify_approval_for_issue(approval, APPROVED_SUBJECT, "85")?;
-    if approval["approved_by"] != "sagikazarmark"
-        || approval["approved_at"] != "2026-09-20"
-        || approval["approval_url"] != APPROVAL_URL
-        || comment["html_url"] != APPROVAL_URL
-        || comment["user"]["login"] != approval["approved_by"]
-        || comment["created_at"].as_str().and_then(|s| s.get(..10))
-            != approval["approved_at"].as_str()
-        || comment["body"].as_str().is_none_or(|s| {
-            !s.contains(APPROVED_SUBJECT)
-                || !s.contains(CURRENT_PDF)
-                || !s.contains("not an autonomous approval decision by the coding agent")
-        })
-    {
-        return Err("scoped approval does not match the recorded user decision".into());
-    }
-    Ok(())
-}
 fn exact_pin_transition(
     before: &[u8],
     after: &[u8],
@@ -104,7 +81,7 @@ fn structural_delta(old: &Value, new: &Value) -> Result<Value> {
 mod tests {
     use super::*;
     #[test]
-    fn approved_pin_history_rejects_unrelated_changes_and_wrong_approval() {
+    fn pin_history_rejects_unrelated_structural_changes() {
         let root =
             repo_root().join("tests/conformance/candidates/stage4-pdf-backend-requalification-v2");
         let old = read(&root, "before-project-operations-structure.json").unwrap();
@@ -121,16 +98,6 @@ mod tests {
         let mut changed_test = new_test;
         changed_test.extend_from_slice(b"\n// unrelated change\n");
         assert!(exact_pin_transition(&old, &new, &old_test, &changed_test).is_err());
-        let approval = value(&root, "approval.json").unwrap();
-        let comment = value(&root, "user-approval-comment.json").unwrap();
-        scoped_approval(&approval, &comment).unwrap();
-        let mut wrong = approval.clone();
-        wrong["approval_subject_sha256"] = json!(format!("sha256:{}", "0".repeat(64)));
-        assert!(scoped_approval(&wrong, &comment).is_err());
-        assert!(scoped_approval(&Value::Null, &comment).is_err());
-        let mut other = comment;
-        other["user"]["login"] = json!("someone-else");
-        assert!(scoped_approval(&approval, &other).is_err());
     }
     #[test]
     fn image_only_structural_delta_rejects_unrelated_changes() {

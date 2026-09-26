@@ -3,9 +3,7 @@ use std::path::{Component, Path};
 
 use serde_json::{json, Value};
 
-use crate::conformance::{
-    canonical_bytes, object, repo_root, sha256, valid_date, valid_github_login,
-};
+use crate::conformance::{canonical_bytes, object, repo_root, sha256};
 
 const MANIFEST_PATH: &str =
     "tests/conformance/svg-viewer-qualification/rectangle-outline/manifest.json";
@@ -16,7 +14,7 @@ const QUALIFICATION_SCHEMA_ID: &str = "excalidraw-render/conformance-svg-viewer-
 const REFERENCE_PROFILE_DIGEST: &str =
     "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 
-pub fn verify(require_approval: bool) -> Result<(), String> {
+pub fn verify() -> Result<(), String> {
     let manifest_bytes = fs::read(repo_root().join(MANIFEST_PATH))
         .map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?;
     let manifest: Value = serde_json::from_slice(&manifest_bytes)
@@ -46,9 +44,7 @@ pub fn verify(require_approval: bool) -> Result<(), String> {
         &manifest["case"]["asset_declaration"],
     )?;
     verify_descriptor(&manifest["comparator"])?;
-    for source in array(&manifest["implementation"], "qualification implementation")? {
-        verify_descriptor(source)?;
-    }
+    crate::conformance_candidate_gate::historical_sources(&manifest["implementation"])?;
     verify_profile(&manifest["profiles"]["chromium"], "chromium")?;
     verify_profile(&manifest["profiles"]["pure_rust"], "pure-rust")?;
     verify_viewer_output(&manifest["outputs"]["chromium"], "chromium")?;
@@ -79,68 +75,7 @@ pub fn verify(require_approval: bool) -> Result<(), String> {
         return Err("viewer determinism record is invalid".to_owned());
     }
 
-    let subject = approval_subject_from_manifest(&manifest)?;
-    match &manifest["approval"] {
-        Value::Null if require_approval => {
-            return Err("SVG viewer qualification has no approval record".to_owned())
-        }
-        Value::Null => {}
-        approval => verify_approval(approval, &subject)?,
-    }
     Ok(())
-}
-
-pub fn approval_subject() -> Result<String, String> {
-    verify(false)?;
-    let manifest: Value = serde_json::from_slice(
-        &fs::read(repo_root().join(MANIFEST_PATH))
-            .map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?,
-    )
-    .map_err(|error| format!("invalid qualification manifest: {error}"))?;
-    approval_subject_from_manifest(&manifest)
-}
-
-pub fn record_approval(
-    approved_by: &str,
-    approved_at: &str,
-    approval_url: &str,
-    expected_subject: &str,
-) -> Result<(), String> {
-    verify(false)?;
-    let path = repo_root().join(MANIFEST_PATH);
-    let mut manifest: Value = serde_json::from_slice(
-        &fs::read(&path).map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?,
-    )
-    .map_err(|error| format!("invalid qualification manifest: {error}"))?;
-    if !manifest["approval"].is_null() {
-        return Err("SVG viewer qualification is already approved".to_owned());
-    }
-    let subject = approval_subject_from_manifest(&manifest)?;
-    let expected = expected_subject
-        .strip_prefix("sha256:")
-        .unwrap_or(expected_subject);
-    if subject != expected {
-        return Err(format!(
-            "approval subject mismatch: expected {expected}, computed {subject}"
-        ));
-    }
-    manifest["approval"] = json!({
-        "approved_at": approved_at,
-        "approved_by": approved_by,
-        "approval_subject_sha256": format!("sha256:{subject}"),
-        "approval_url": approval_url,
-    });
-    verify_approval(&manifest["approval"], &subject)?;
-    let canonical = canonical_bytes(&manifest)?;
-    let bytes = [&canonical[..], b"\n"].concat();
-    fs::write(&path, &bytes)
-        .map_err(|error| format!("failed to write {MANIFEST_PATH}: {error}"))?;
-    fs::write(
-        repo_root().join(MANIFEST_DIGEST_PATH),
-        format!("{}\n", sha256(&canonical)),
-    )
-    .map_err(|error| format!("failed to write {MANIFEST_DIGEST_PATH}: {error}"))?;
-    verify(true)
 }
 
 fn verify_profile(descriptor: &Value, viewer: &str) -> Result<(), String> {
@@ -160,9 +95,7 @@ fn verify_profile(descriptor: &Value, viewer: &str) -> Result<(), String> {
         return Err(format!("{viewer} viewer profile identity is invalid"));
     }
     verify_descriptor(&profile["implementation"]["lockfile"])?;
-    for source in array(&profile["implementation"]["sources"], "profile sources")? {
-        verify_descriptor(source)?;
-    }
+    crate::conformance_candidate_gate::historical_sources(&profile["implementation"]["sources"])?;
     match viewer {
         "chromium" => verify_chromium_profile(&profile),
         "pure-rust" => verify_rust_profile(&profile),
@@ -326,7 +259,9 @@ fn verify_schema(value: &Value, expected_id: &str) -> Result<(), String> {
         .map_err(|error| format!("{expected_id} schema fails its meta-schema: {error}"))?;
     jsonschema::draft202012::options()
         .should_validate_formats(true)
-        .build(&definition)
+        .build(&crate::conformance::schema_without_approval_gate(
+            &definition,
+        ))
         .map_err(|error| format!("failed to compile {expected_id} schema: {error}"))?
         .validate(value)
         .map_err(|error| format!("document fails {expected_id}: {error}"))?;
@@ -370,42 +305,6 @@ fn verify_sidecar(relative: &str, bytes: &[u8]) -> Result<(), String> {
         return Err(format!("stale digest sidecar {relative}"));
     }
     Ok(())
-}
-
-fn verify_approval(approval: &Value, subject: &str) -> Result<(), String> {
-    if approval["approval_subject_sha256"] != json!(format!("sha256:{subject}"))
-        || approval["approved_by"]
-            .as_str()
-            .is_none_or(|value| !valid_github_login(value))
-        || approval["approved_at"]
-            .as_str()
-            .is_none_or(|value| !valid_date(value))
-        || approval["approval_url"]
-            .as_str()
-            .and_then(|url| {
-                url.strip_prefix(
-                "https://github.com/sagikazarmark/excalidraw-render.orig/issues/34#issuecomment-",
-            )
-            })
-            .is_none_or(|id| {
-                id.is_empty() || !id.chars().all(|character| character.is_ascii_digit())
-            })
-    {
-        return Err("SVG viewer qualification approval is invalid".to_owned());
-    }
-    Ok(())
-}
-
-fn approval_subject_from_manifest(manifest: &Value) -> Result<String, String> {
-    let mut manifest = manifest.clone();
-    manifest
-        .as_object_mut()
-        .ok_or_else(|| "qualification manifest must be an object".to_owned())?
-        .remove("approval");
-    Ok(sha256(&canonical_bytes(&json!({
-        "manifest": manifest,
-        "schema": "excalidraw-render/conformance-svg-viewer-approval-subject/v1",
-    }))?))
 }
 
 fn has_runtime(records: &[Value], name: &str, value: &str) -> bool {

@@ -72,7 +72,7 @@ type Evidence {
   }
 
   """
-  Execute the ignored PDF harness gates with exact-pinned Python, PDFium, PDF.js and qpdf.
+   Execute the ignored PDF harness gates with exact-pinned Rust PDFium, PDF.js and qpdf.
   """
   pdf: String! {
     self.run([

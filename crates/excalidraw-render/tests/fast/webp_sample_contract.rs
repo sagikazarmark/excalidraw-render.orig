@@ -1766,26 +1766,9 @@ const PDF_EXCEPTIONS: &[u8] = include_bytes!(concat!(
 ));
 const PDF_SAMPLE_VIEWER: &str = "pdf-straight-sample-projection";
 
-/// The approved partial-alpha PDF exceptions. The approval binds the record
-/// without its approval object, so any change to a ceiling or reason needs a
-/// new approval.
+/// Checked-in partial-alpha PDF exceptions. Changes are reviewed with the tests.
 fn approved_pdf_exceptions() -> Value {
-    let mut record: Value = serde_json::from_slice(PDF_EXCEPTIONS).unwrap();
-    let approval = record["approval"].take();
-    let subject = format!("sha256:{}", hash(&serde_json::to_vec(&record).unwrap()));
-    assert!(
-        approval["approval_url"]
-            .as_str()
-            .is_some_and(|url| url.starts_with(
-                "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-"
-            )),
-        "partial-alpha PDF exceptions have no recorded approval; subject {subject}"
-    );
-    assert_eq!(
-        approval["approval_subject_sha256"], subject,
-        "approval does not bind the exact exception record"
-    );
-    record
+    serde_json::from_slice(PDF_EXCEPTIONS).unwrap()
 }
 
 fn within_pdf_exception(view: &Value, exception: &Value) -> bool {

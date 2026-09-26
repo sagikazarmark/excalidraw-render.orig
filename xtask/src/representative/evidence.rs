@@ -42,12 +42,14 @@ const SOURCE_PATHS: &[&str] = &[
     "tools/svg-viewer-rust/Cargo.toml",
     "tools/svg-viewer-rust/Cargo.lock",
     "tools/pdf-harness/run-pdfium.sh",
-    "tools/pdf-harness/pdfium.lock.json",
     "tools/pdf-harness/run-pdfjs.sh",
     "tools/pdf-harness/pdfjs/render.mjs",
     "tools/pdf-harness/pdfjs/package-lock.json",
 ];
-const PDFIUM_PYTHON_SOURCE_PATHS: &[&str] = &["tools/pdf-harness/pdfium/render.py"];
+const PDFIUM_PYTHON_SOURCE_PATHS: &[&str] = &[
+    "tools/pdf-harness/pdfium.lock.json",
+    "tools/pdf-harness/pdfium/render.py",
+];
 const PROFILES: &[&str] = &[
     "tests/oracle/reference-profiles/revision-1.json",
     "tests/oracle/reference-profiles/revision-1-assets.json",
@@ -336,7 +338,8 @@ fn verify_sources(reference: &Value, record: &Value) -> Result<()> {
             adapter = Some(kind);
         }
     }
-    let required = source_paths(reference, adapter.ok_or("missing PDFium adapter identity")?)?;
+    let adapter = adapter.ok_or("missing PDFium adapter identity")?;
+    let required = source_paths(reference, adapter)?;
     // Sources are retained provenance. Validate complete membership and shape,
     // rather than invalidating measured observations on source-only refactors.
     let mut seen = BTreeSet::new();
@@ -358,7 +361,12 @@ fn verify_sources(reference: &Value, record: &Value) -> Result<()> {
             "invalid or duplicate source descriptor",
         )?;
     }
-    require(seen == required, "incomplete producer inventory")
+    let mut legacy_rust = required.clone();
+    legacy_rust.insert("tools/pdf-harness/pdfium.lock.json".into());
+    require(
+        seen == required || (adapter == receipts::PdfiumAdapter::Rust && seen == legacy_rust),
+        "incomplete producer inventory",
+    )
 }
 
 pub(super) fn validate_reference(
@@ -388,7 +396,6 @@ pub(super) fn validate_reference(
     )?;
     require(
         reference["status"] == "observed-unapproved"
-            && reference.get("approval") == Some(&Value::Null)
             && reference["eligible_executions"] == json!([]),
         "invalid reference observation state",
     )?;
@@ -618,9 +625,7 @@ pub(super) fn verify_evidence(
         "unsupported viewer collection; Rust evidence verification requires v2",
     )?;
     require(
-        record["status"] == "observed-unapproved"
-            && record.get("approval") == Some(&Value::Null)
-            && record["eligible_executions"] == json!([]),
+        record["status"] == "observed-unapproved" && record["eligible_executions"] == json!([]),
         "evidence cannot grant approval",
     )?;
     require(
@@ -737,7 +742,7 @@ mod tests {
         let old_paths = source_paths(&reference, receipts::PdfiumAdapter::Python).unwrap();
         let new_paths = source_paths(&reference, receipts::PdfiumAdapter::Rust).unwrap();
         assert_eq!(old_paths.len(), 22);
-        assert_eq!(new_paths.len(), 26);
+        assert_eq!(new_paths.len(), 25);
         assert_eq!(
             old_paths
                 .difference(&new_paths)
@@ -764,6 +769,13 @@ mod tests {
                 {"variant":"dark","viewer":"native-pdfium","runs":[receipt,receipt]}
             ]});
             verify_sources(&reference, &original).unwrap();
+            if receipt == &current {
+                let mut earlier_rust = original.clone();
+                earlier_rust["sources"].as_array_mut().unwrap().push(json!({
+                    "path":"tools/pdf-harness/pdfium.lock.json", "bytes":1, "sha256":"0".repeat(64)
+                }));
+                verify_sources(&reference, &earlier_rust).unwrap();
+            }
             let mut changed = original.clone();
             changed["sources"] = wrong_sources.clone();
             assert!(verify_sources(&reference, &changed).is_err());

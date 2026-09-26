@@ -158,7 +158,7 @@ fn metrics(root: &Path, viewer: &str) -> Result<Value> {
     )
 }
 pub fn collect() -> Result<Value> {
-    crate::pdf_viewers::verify(true)?;
+    crate::pdf_viewers::verify()?;
     let root = repo_root().join(DIRECTORY);
     fs::create_dir(&root).map_err(|e| e.to_string())?;
     let before = native::producers()?;

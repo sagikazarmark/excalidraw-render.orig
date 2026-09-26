@@ -1,5 +1,11 @@
 # Shared coverage and execution contract (#85 / #86)
 
+**Current acceptance policy:** [ADR-0019](../../../docs/adr/0019-review-expectations-in-git-without-approval-hashes.md)
+retires approval-subject gates and recording commands in favor of Git/PR review
+and reproducible tests. Historical approval workflows below are transcripts.
+Baseline bytes, diagnostic derivation, exact input keys, completeness and owner
+selection still verify; approval metadata does not grant or block ownership.
+
 This is a **draft inventory**, not a release approval or a claim of complete
 revision-1 coverage. It gives corpus closure and target collectors one checked
 input set and one result key. The current inventory has:

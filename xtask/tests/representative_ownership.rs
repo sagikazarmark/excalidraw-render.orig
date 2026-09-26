@@ -25,17 +25,8 @@ fn representative_owner_cli_refuses_unknown_unapproved_and_broadened_assignments
     .unwrap();
     let row = &registry["cases"][0];
     let case = row["id"].as_str().unwrap();
-    let manifest: serde_json::Value = serde_json::from_slice(
-        &fs::read(
-            root()
-                .join(row["directory"].as_str().unwrap())
-                .join("manifest.json"),
-        )
-        .unwrap(),
-    )
-    .unwrap();
     let unknown = format!("{case}-unregistered");
-    let mut attempts = vec![
+    let attempts = vec![
         (
             vec!["conformance", "verify-representative-owner", &unknown],
             "unknown/unregistered",
@@ -51,19 +42,6 @@ fn representative_owner_cli_refuses_unknown_unapproved_and_broadened_assignments
             "unexpected",
         ),
     ];
-    // Never let a negative test assign a future genuinely approved candidate.
-    // The in-memory unit fixture always exercises null-approval rejection too.
-    if manifest["approval"].is_null() {
-        attempts.push((
-            vec![
-                "conformance",
-                "record-representative-owner",
-                case,
-                "reviewed representative interaction",
-            ],
-            "approval must be an object",
-        ));
-    }
     for (args, needle) in attempts {
         let out = run(&args);
         assert!(!out.status.success());

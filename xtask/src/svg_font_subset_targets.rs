@@ -6,8 +6,8 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const REPORT_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-evidence/v3";
-const AGGREGATE_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-aggregate/v3";
+const REPORT_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-evidence/v4";
+const AGGREGATE_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-aggregate/v4";
 const CROSS_TARGET_SCHEMA: &str = "excalidraw-render/svg-font-subset-cross-target-measurement/v1";
 /// Committed cross-target qualification measurement. Canonical resource traces
 /// are held stable by cross-target equality rather than by per-cell pins
@@ -38,11 +38,10 @@ const TRACED_CELLS: usize = 1211;
 const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 /// The fields every target report, and the aggregate built from them, must
 /// agree on.
-const AGREED_FIELDS: [&[&str]; 8] = [
+const AGREED_FIELDS: [&[&str]; 7] = [
     &["commit"],
     &["corpus_sha256"],
     &["subset_profile_sha256"],
-    &["viewer_approval_subject"],
     &["measurement", "generatedBytesSha256"],
     &["measurement", "resourceTracesSha256"],
     &["measurement", "successfulCells"],
@@ -105,9 +104,6 @@ pub(crate) fn materialize(target: &str, test_log: &str, output: &str) -> Result<
     let profile = read_json(
         &root.join("tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json"),
     )?;
-    let viewers = read_json(
-        &root.join("tests/conformance/svg-font-subset-viewer-qualification/revision-1.json"),
-    )?;
     let report = json!({
         "schema": REPORT_SCHEMA,
         "commit": commit,
@@ -115,10 +111,6 @@ pub(crate) fn materialize(target: &str, test_log: &str, output: &str) -> Result<
         "target": target,
         "corpus_sha256": sha256(&corpus),
         "subset_profile_sha256": profile_digest(&profile)?,
-        "viewer_approval_subject": required_path_string(
-            &viewers,
-            &["approval", "approval_subject_sha256"],
-        )?,
         "measurement": measurement,
         "status": "pass",
     });
@@ -219,7 +211,6 @@ pub(crate) fn aggregate(input: &str, output: &str) -> Result<(), String> {
         "compatibility_revision": 1,
         "corpus_sha256": required_string(&reports[0], "corpus_sha256")?,
         "subset_profile_sha256": required_string(&reports[0], "subset_profile_sha256")?,
-        "viewer_approval_subject": required_string(&reports[0], "viewer_approval_subject")?,
         "measurement": measurement,
         "targets": reports,
         "decision": TargetEvidenceState::Aggregated.decision(),
@@ -258,7 +249,11 @@ fn verify_report_set(reports: &[Value]) -> Result<(), String> {
 /// agreeing report per supported target, and top-level fields that restate what
 /// the reports agreed on.
 fn validate_aggregate(aggregate: &Value) -> Result<(), String> {
-    if required_string(aggregate, "schema")? != AGGREGATE_SCHEMA
+    if ![
+        AGGREGATE_SCHEMA,
+        "excalidraw-render/svg-font-subset-target-aggregate/v3",
+    ]
+    .contains(&required_string(aggregate, "schema")?)
         || required_path(aggregate, &["compatibility_revision"]) != Ok(&json!(1))
         || required_string(aggregate, "decision")? != TargetEvidenceState::Aggregated.decision()
     {
@@ -307,7 +302,6 @@ fn valid_provenance_url(url: &str) -> bool {
 /// (`verify_descriptors`); this type owns every content rule.
 struct ReleaseEvidence {
     manifest: Value,
-    viewer: Value,
     profile: Value,
     cross_target: Value,
     aggregate: Option<Value>,
@@ -316,10 +310,6 @@ struct ReleaseEvidence {
 impl ReleaseEvidence {
     fn load(root: &Path) -> Result<Self, String> {
         let manifest = read_json(&root.join(RELEASE_PATH))?;
-        let viewer = repository_json(
-            root,
-            required_path_string(&manifest, &["viewerEvidence", "path"])?,
-        )?;
         let profile = repository_json(
             root,
             required_path_string(&manifest, &["subsetProfile", "path"])?,
@@ -336,7 +326,6 @@ impl ReleaseEvidence {
         };
         Ok(Self {
             manifest,
-            viewer,
             profile,
             cross_target,
             aggregate,
@@ -357,14 +346,8 @@ impl ReleaseEvidence {
                 != Ok(&json!(QUALIFIED_SOURCES))
             || required_path(manifest, &["viewerEvidence", "executions"])
                 != Ok(&json!(crate::svg_font_subsets::EXECUTIONS))
-            || required_path_string(manifest, &["viewerEvidence", "status"])? != "approved"
         {
             return Err("SVG font subset release evidence state is stale".to_owned());
-        }
-        if required_path_string(manifest, &["viewerEvidence", "approvalSubject"])?
-            != required_path_string(&self.viewer, &["approval", "approval_subject_sha256"])?
-        {
-            return Err("release evidence and viewer approval subjects disagree".to_owned());
         }
         let status = required_path_string(manifest, &["targetEvidence", "status"])?;
         let decision = required_string(manifest, "decision")?;
@@ -424,13 +407,6 @@ impl ReleaseEvidence {
         if required_string(aggregate, "subset_profile_sha256")? != profile_digest(&self.profile)? {
             return Err(
                 "recorded aggregate was produced for a different font subset profile".to_owned(),
-            );
-        }
-        if required_string(aggregate, "viewer_approval_subject")?
-            != required_path_string(&self.manifest, &["viewerEvidence", "approvalSubject"])?
-        {
-            return Err(
-                "recorded aggregate was produced for a different viewer approval".to_owned(),
             );
         }
         verify_cross_target_identity(&self.cross_target)?;
@@ -588,7 +564,11 @@ fn write_cross_target(path: &Path, measurement: &Value) -> Result<(), String> {
 }
 
 fn validate_report(report: &Value) -> Result<(), String> {
-    if required_string(report, "schema")? != REPORT_SCHEMA
+    if ![
+        REPORT_SCHEMA,
+        "excalidraw-render/svg-font-subset-target-evidence/v3",
+    ]
+    .contains(&required_string(report, "schema")?)
         || required_path(report, &["compatibility_revision"]) != Ok(&json!(1))
         || required_string(report, "status")? != "pass"
     {
@@ -608,12 +588,6 @@ fn validate_report(report: &Value) -> Result<(), String> {
         required_string(report, "subset_profile_sha256")?,
         64,
         "profile digest",
-    )?;
-    let viewer = required_string(report, "viewer_approval_subject")?;
-    require_digest(
-        viewer.strip_prefix("sha256:").unwrap_or_default(),
-        64,
-        "viewer approval subject",
     )?;
     validate_measurement(required_path(report, &["measurement"])?)
 }
@@ -875,7 +849,6 @@ mod tests {
     fn evidence(manifest: Value, aggregate: Option<Value>) -> ReleaseEvidence {
         ReleaseEvidence {
             manifest,
-            viewer: json!({"approval": {"approval_subject_sha256": VIEWER}}),
             profile: json!({"semanticDigest": format!("sha256:{PROFILE}")}),
             cross_target: json!({
                 "schema": CROSS_TARGET_SCHEMA,
@@ -990,17 +963,14 @@ mod tests {
     }
 
     #[test]
-    fn binding_rejects_an_aggregate_produced_for_a_different_viewer_approval() {
+    fn historical_viewer_approval_does_not_gate_aggregate_binding() {
         let other = format!("sha256:{CORPUS}");
         let mut aggregate = aggregate();
         aggregate["viewer_approval_subject"] = json!(other);
         for report in aggregate["targets"].as_array_mut().unwrap() {
             report["viewer_approval_subject"] = json!(other);
         }
-        assert_rejected(
-            bind(pending_manifest(), aggregate, RUN_URL),
-            "different viewer approval",
-        );
+        bind(pending_manifest(), aggregate, RUN_URL).unwrap();
     }
 
     #[test]

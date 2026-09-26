@@ -190,9 +190,7 @@ fn verify(output: &Path) -> Result<Value> {
         "unsupported compact schema",
     )?;
     require(
-        record["status"] == "pending-review"
-            && record.get("approval") == Some(&Value::Null)
-            && record["eligible_executions"] == json!([]),
+        record["status"] == "pending-review" && record["eligible_executions"] == json!([]),
         "compact evidence cannot grant approval",
     )?;
     let bundle = local(text(&record, "bundle")?)?;
@@ -261,8 +259,7 @@ fn verify(output: &Path) -> Result<Value> {
             "unsupported retained receipt schema",
         )?;
         require(
-            value.get("approval") == Some(&Value::Null)
-                && value["eligible_executions"] == json!([]),
+            value["eligible_executions"] == json!([]),
             "retained receipts cannot grant approval",
         )?;
         require(

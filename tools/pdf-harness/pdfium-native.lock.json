@@ -1,11 +1,11 @@
 {
   "schema": "excalidraw-render/pdfium-native-lock/v1",
   "archive": {
-    "url": "https://files.pythonhosted.org/packages/23/16/21420a6f2bc5f981299c336817dd5d72709dad5fda30ac38cbd5f0f7b372/pypdfium2-5.12.1-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
-    "sha256": "e10cbf41b21233ec5e20adfc170cf60edd77abead86a97dc708fff55a8a886c7"
+    "url": "https://github.com/bblanchon/pdfium-binaries/releases/download/chromium/7947/pdfium-linux-x64.tgz",
+    "sha256": "f73d69d309fe1f33cc7269dcc99be31ec44e1cf608e31d7e2fcc6545fc2f9323"
   },
   "library": {
-    "member": "pypdfium2_raw/libpdfium.so",
+    "member": "lib/libpdfium.so",
     "sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
     "version": "152.0.7947.0",
     "build": 7947

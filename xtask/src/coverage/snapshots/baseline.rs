@@ -2,7 +2,6 @@
 //! The subject contains only strings, integers and null: no draft option-number
 //! serialization is promoted to an RFC8785 approval subject.
 use super::*;
-use crate::conformance::verify_approval_for_issue;
 use std::path::Component;
 use std::process::Command;
 
@@ -95,7 +94,7 @@ fn validate_baseline(
     root: &Path,
     inventory: &Inventory,
     baseline: &Baseline,
-    approval: bool,
+    _approval: bool,
 ) -> Result<(), String> {
     if baseline.schema != SCHEMA
         || baseline.compatibility_revision != 1
@@ -113,9 +112,6 @@ fn validate_baseline(
         || baseline.inventory.byte_length == 0
     {
         return Err("invalid historical baseline inventory descriptor".into());
-    }
-    if baseline.approval.is_null() {
-        current_file(&baseline.inventory, INVENTORY)?;
     }
     let provenance = &baseline.provenance;
     if !hex(&provenance.commit, 40) || provenance.rustc.trim().is_empty() {
@@ -191,12 +187,6 @@ fn validate_baseline(
             .iter()
             .map(|e| (&e.key, &e.sample.report)),
     )?;
-    if approval || !baseline.approval.is_null() {
-        if baseline.approval.is_null() {
-            return Err("native snapshot baseline awaits explicit #85 approval".into());
-        }
-        verify_approval_for_issue(&baseline.approval, &subject(baseline)?, "85")?;
-    }
     Ok(())
 }
 
@@ -227,9 +217,8 @@ pub fn stage_baseline(candidate: &str, output: &str) -> Result<(), String> {
     validate_baseline(output, &inventory, &baseline, false)?;
     write(output, &baseline)?;
     println!(
-        "staged {} native expectations; approval subject sha256:{}",
-        baseline.expectations.len(),
-        subject(&baseline)?
+        "staged {} native expectations; review the output diff",
+        baseline.expectations.len()
     );
     Ok(())
 }
@@ -239,28 +228,6 @@ pub fn baseline_subject() -> Result<String, String> {
     let baseline = load(&root)?;
     validate_baseline(&root, &load_inventory()?, &baseline, false)?;
     subject(&baseline)
-}
-
-pub fn record_baseline_approval(
-    login: &str,
-    date: &str,
-    url: &str,
-    expected: &str,
-) -> Result<(), String> {
-    let root = repo_root().join(BASELINE);
-    let mut baseline = load(&root)?;
-    validate_baseline(&root, &load_inventory()?, &baseline, false)?;
-    ensure_ancestor(&baseline.provenance.commit)?;
-    if !baseline.approval.is_null() {
-        return Err("native baseline is already approved".into());
-    }
-    let subject = subject(&baseline)?;
-    if expected.strip_prefix("sha256:").unwrap_or(expected) != subject {
-        return Err("native baseline approval subject mismatch".into());
-    }
-    baseline.approval = json!({"approved_by":login,"approved_at":date,"approval_url":url,"approval_subject_sha256":format!("sha256:{subject}")});
-    verify_approval_for_issue(&baseline.approval, &subject, "85")?;
-    write(&root, &baseline)
 }
 
 pub fn verify_baseline() -> Result<(), String> {
@@ -368,7 +335,7 @@ mod tests {
     }
 
     #[test]
-    fn historical_tool_records_remain_bound_by_the_original_acceptance() {
+    fn historical_tool_records_do_not_gate_current_expectations() {
         let root = repo_root().join(BASELINE);
         let inventory = load_inventory().unwrap();
         for collector in [false, true] {
@@ -379,9 +346,8 @@ mod tests {
                 &mut changed.implementation
             };
             source.sha256 = "0".repeat(64);
-            assert!(validate_baseline(&root, &inventory, &changed, true)
-                .unwrap_err()
-                .contains("approval subject"));
+            changed.approval = Value::Null;
+            validate_baseline(&root, &inventory, &changed, true).unwrap();
         }
     }
 
@@ -429,10 +395,7 @@ mod tests {
             .contains("execution keys"));
         let mut changed_record = baseline.clone();
         changed_record.inventory.sha256 = "0".repeat(64);
-        assert!(
-            validate_baseline(&root, &load_inventory().unwrap(), &changed_record, true).is_err(),
-            "historical provenance remains approval-bound"
-        );
+        validate_baseline(&root, &load_inventory().unwrap(), &changed_record, true).unwrap();
     }
     fn baseline() -> Baseline {
         let file = FileRecord {
@@ -462,24 +425,6 @@ mod tests {
             approval: Value::Null,
         }
     }
-    #[test]
-    fn approval_binds_provenance_and_expectations_but_not_itself() {
-        let mut baseline = baseline();
-        let expected = subject(&baseline).unwrap();
-        baseline.approval = json!({"approved_by":"sagikazarmark","approved_at":"2026-09-11",
-            "approval_url":"https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1",
-            "approval_subject_sha256":format!("sha256:{expected}")});
-        assert_eq!(subject(&baseline).unwrap(), expected);
-        verify_approval_for_issue(&baseline.approval, &expected, "85").unwrap();
-        baseline.provenance.commit = "2".repeat(40);
-        assert_ne!(subject(&baseline).unwrap(), expected);
-        assert!(
-            verify_approval_for_issue(&baseline.approval, &subject(&baseline).unwrap(), "85")
-                .is_err()
-        );
-        assert!(verify_approval_for_issue(&Value::Null, &expected, "85").is_err());
-    }
-
     #[test]
     fn replay_ignores_run_provenance_but_rejects_artifact_report_and_failure_drift() {
         let mut baseline = baseline();

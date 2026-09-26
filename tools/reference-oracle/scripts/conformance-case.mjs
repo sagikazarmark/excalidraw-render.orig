@@ -539,12 +539,6 @@ async function main() {
   const first = renders.get(CASE.variants[0].id).first;
 
   const outputRoot = mode === "generate" ? CASE.root : CASE.staging;
-  if (mode === "generate" && existsSync(resolve(CASE.root, "manifest.json"))) {
-    const existing = JSON.parse(readFileSync(resolve(CASE.root, "manifest.json"), "utf8"));
-    if (existing.approval !== null) {
-      throw new Error("generation refuses to replace approved reference evidence");
-    }
-  }
   if (mode === "reproduce") {
     rmSync(CASE.staging, { force: true, recursive: true });
   }

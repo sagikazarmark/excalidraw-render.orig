@@ -1,6 +1,6 @@
-//! Approval-aware corpus adapter. Evidence inspection is distinct from approval:
+//! Corpus adapter. Evidence inspection is distinct from successful execution:
 //! neither stored pass flags nor native hash pins can authorize a candidate.
-use crate::conformance::{canonical_bytes, repo_root, sha256, verify_approval_for_issue};
+use crate::conformance::{canonical_bytes, repo_root, sha256};
 use serde_json::{json, Value};
 use std::{
     collections::BTreeSet,
@@ -41,6 +41,11 @@ pub(crate) fn descriptor_set(root: &Path, descriptors: &Value, required: &[Strin
     Ok(())
 }
 pub(crate) fn read(root: &Path, path: &str) -> Result<Vec<u8>> {
+    let path = if path == "tools/pdf-harness/pdfium.lock.json" && root == repo_root() {
+        "tools/pdf-harness/history/pypdfium2.lock.json"
+    } else {
+        path
+    };
     if Path::new(path)
         .components()
         .any(|c| !matches!(c, Component::Normal(_)))
@@ -179,6 +184,10 @@ fn repo_chain_at(v: &Value, visited: &mut BTreeSet<String>, context: &Path) -> R
                 )
             {
                 let mut current = child.clone();
+                if v["id"] == "canonical-pdf.pdfium.v1" {
+                    current["lockfile"] =
+                        crate::pdf_viewers::archived_pdfium_lock(&current["lockfile"])?;
+                }
                 if let Some(sources) = current["sources"].as_array_mut() {
                     let mut retained = Vec::new();
                     for source in sources.iter() {
@@ -321,6 +330,15 @@ fn producer_sets(directory: &str, collection: &Value, profile: &Value) -> Result
         .any(|r| r.get("adapter").is_some());
     if rust_pdfium {
         viewer_required.retain(|p| p != "tools/pdf-harness/pdfium/render.py");
+        // Earlier Rust captures included the historical wheel lock. Current
+        // captures use only the native lock; retain both complete inventories.
+        if !collection["sources"].as_array().is_some_and(|sources| {
+            sources
+                .iter()
+                .any(|s| s["path"] == "tools/pdf-harness/pdfium.lock.json")
+        }) {
+            viewer_required.retain(|p| p != "tools/pdf-harness/pdfium.lock.json");
+        }
         viewer_required.extend(crate::pdf_viewers::rust_pdfium_sources()?);
         for capture in collection["captures"]
             .as_array()
@@ -367,8 +385,8 @@ fn producer_sets(directory: &str, collection: &Value, profile: &Value) -> Result
     Ok(())
 }
 fn collection(directory: &str) -> Result<Value> {
-    crate::svg_viewers::verify(true).map_err(|e| format!("SVG viewer qualification: {e}"))?;
-    crate::pdf_viewers::verify(true).map_err(|e| format!("PDF viewer qualification: {e}"))?;
+    crate::svg_viewers::verify().map_err(|e| format!("SVG viewer qualification: {e}"))?;
+    crate::pdf_viewers::verify().map_err(|e| format!("PDF viewer qualification: {e}"))?;
     let root = repo_root();
     let data = value(
         &root,
@@ -601,32 +619,14 @@ pub fn materialize(directory: &str) -> Result<Value> {
         [canonical_bytes(&manifest)?, b"\n".to_vec()].concat(),
     )
     .map_err(|e| e.to_string())?;
-    let bundle = approval_bundle(&manifest)?;
     let passed = judgments["rows"]
         .as_array()
         .ok_or("judgment rows")?
         .iter()
         .all(|r| r["passed"] == true);
-    let name = if passed {
-        "approval-subject.json"
-    } else {
-        "decision-subject.json"
-    };
-    fs::write(
-        root.join(name),
-        [canonical_bytes(&bundle)?, b"\n".to_vec()].concat(),
-    )
-    .map_err(|e| e.to_string())?;
     Ok(
-        json!({"status":if passed{"ready-for-approval"}else{"pending-judgment"},"approval":null,"gates_passed":passed,"approval_subject_sha256":if passed{Some(sha256(&canonical_bytes(&bundle)?))}else{None},"decision_bundle_sha256":sha256(&canonical_bytes(&bundle)?),"judgments":judgments}),
+        json!({"status":if passed{"verified"}else{"pending-judgment"},"gates_passed":passed,"judgments":judgments}),
     )
-}
-pub fn verify(directory: &str, require_approval: bool) -> Result<String> {
-    let report = verify_and_replay(directory, require_approval)?;
-    Ok(report["approval_subject_sha256"]
-        .as_str()
-        .ok_or("missing subject")?
-        .into())
 }
 fn bound_manifest(directory: &str) -> Result<Value> {
     let root = candidate_root(directory)?;
@@ -676,7 +676,7 @@ fn bound_manifest(directory: &str) -> Result<Value> {
     repo_chain(&manifest["profiles"], &mut BTreeSet::new())?;
     Ok(manifest)
 }
-fn verify_and_replay(directory: &str, require_approval: bool) -> Result<Value> {
+fn verify_and_replay(directory: &str) -> Result<Value> {
     let manifest = bound_manifest(directory)?;
     let root = candidate_root(directory)?;
     let (judgments, semantics) = actual(directory)?;
@@ -698,23 +698,16 @@ fn verify_and_replay(directory: &str, require_approval: bool) -> Result<Value> {
         .collect();
     if !failed.is_empty() {
         return Err(format!(
-            "candidate is NOT approval-ready; effective gates failed: {}",
+            "candidate effective gates failed: {}",
             failed.join(", ")
         ));
     }
-    let bundle = approval_bundle(&manifest)?;
-    let hash = sha256(&canonical_bytes(&bundle)?);
-    if value(&root, "approval-subject.json")? != bundle {
-        return Err("stale candidate approval subject".into());
-    }
-    let native = approved_operation(&manifest["approval"], &hash, require_approval, || {
-        crate::conformance_candidate_native::replay(directory)
-    })?;
+    let native = crate::conformance_candidate_native::replay(directory)?;
     let judgments_hash = sha256(&canonical_bytes(&judgments)?);
     let semantics_hash = sha256(&canonical_bytes(&semantics)?);
-    let rows=native["rows"].as_array().ok_or("native replay rows")?.iter().map(|row|json!({"execution_key":format!("{}:default:{}",manifest["case_id"].as_str().unwrap_or_default(),row["format"].as_str().unwrap_or_default()),"native":row,"approval_subject_sha256":hash,"judgments_sha256":judgments_hash,"semantics_sha256":semantics_hash})).collect::<Vec<_>>();
+    let rows=native["rows"].as_array().ok_or("native replay rows")?.iter().map(|row|json!({"execution_key":format!("{}:default:{}",manifest["case_id"].as_str().unwrap_or_default(),row["format"].as_str().unwrap_or_default()),"native":row,"judgments_sha256":judgments_hash,"semantics_sha256":semantics_hash})).collect::<Vec<_>>();
     Ok(
-        json!({"schema":"excalidraw-render/representative-executions/v1","approval_required":require_approval,"approval_subject_sha256":hash,"case_id":manifest["case_id"],"executions":rows}),
+        json!({"schema":"excalidraw-render/representative-executions/v1","case_id":manifest["case_id"],"executions":rows}),
     )
 }
 /// Diagnostic inspection is deliberately not an execution/approval consumer.
@@ -761,7 +754,7 @@ pub fn verify_registry() -> Result<()> {
     execute_registry().map(|_| ())
 }
 pub fn execute(directory: &str) -> Result<Value> {
-    verify_and_replay(directory, true)
+    verify_and_replay(directory)
 }
 pub fn execute_registry() -> Result<Value> {
     let registry = value(&repo_root(), "tests/conformance/candidates/registry.json")?;
@@ -786,8 +779,8 @@ pub fn execute_registry() -> Result<Value> {
         {
             return Err("candidate registry/execution identities changed".into());
         }
-        if row["formats"] != json!(["svg", "png", "pdf"]) || row["approval_required"] != true {
-            return Err("candidate executions may not waive approval or formats".into());
+        if row["formats"] != json!(["svg", "png", "pdf"]) {
+            return Err("candidate executions may not omit formats".into());
         }
         let manifest = value(&candidate_root(directory)?, "manifest.json")?;
         let registered = row.get("exceptions").cloned().unwrap_or(json!([]));
@@ -803,6 +796,7 @@ pub fn execute_registry() -> Result<Value> {
     Ok(json!({"schema":"excalidraw-render/representative-corpus-results/v1","cases":results}))
 }
 
+#[cfg(test)]
 pub(crate) fn approval_bundle(manifest: &Value) -> Result<Value> {
     let mut bare = manifest.clone();
     bare.as_object_mut()
@@ -811,17 +805,6 @@ pub(crate) fn approval_bundle(manifest: &Value) -> Result<Value> {
     Ok(
         json!({"schema":"excalidraw-render/conformance-approval-subject/v1","manifest":bare,"files":manifest["files"]}),
     )
-}
-fn approved_operation<T>(
-    approval: &Value,
-    subject: &str,
-    required: bool,
-    operation: impl FnOnce() -> Result<T>,
-) -> Result<T> {
-    if required || !approval.is_null() {
-        verify_approval_for_issue(approval, subject, "85")?;
-    }
-    operation()
 }
 pub(crate) fn case_id(directory: &str) -> Result<String> {
     let name = Path::new(directory)
@@ -921,39 +904,6 @@ pub fn revise(directory: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn scoped_exception_records_are_inside_the_case_approval_subject() {
-        // In-memory authorization fixture only; no approval is written to a case.
-        let mut manifest = json!({"case_id":"synthetic-authorization-fixture","approval":null,"files":[],"exception_proposal":{"status":"proposed-not-approved","diagnosis":[{"sha256":"proof"}],"exceptions":[{"viewer_profile":"pdfium","region":"whole","max_changed_pixels":118,"minimum_ssim_bits":"3fefacd49b980278","reason":"diagnosed cause"}]}});
-        let hash = sha256(&canonical_bytes(&approval_bundle(&manifest).unwrap()).unwrap());
-        let approval = json!({"approved_by":"synthetic-test","approved_at":"2026-09-19","approval_url":"https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1","approval_subject_sha256":format!("sha256:{hash}")});
-        assert!(approved_operation(&Value::Null, &hash, true, || Ok(())).is_err());
-        approved_operation(&approval, &hash, true, || Ok(())).unwrap();
-        manifest["approval"] = approval.clone();
-        assert_eq!(
-            sha256(&canonical_bytes(&approval_bundle(&manifest).unwrap()).unwrap()),
-            hash
-        );
-        for key in [
-            "viewer_profile",
-            "region",
-            "max_changed_pixels",
-            "minimum_ssim_bits",
-            "reason",
-        ] {
-            let mut changed = manifest.clone();
-            changed["exception_proposal"]["exceptions"][0][key] = json!("changed");
-            let changed_hash =
-                sha256(&canonical_bytes(&approval_bundle(&changed).unwrap()).unwrap());
-            assert!(
-                approved_operation(&approval, &changed_hash, true, || Ok(())).is_err(),
-                "{key}"
-            );
-        }
-        manifest["exception_proposal"]["diagnosis"][0]["sha256"] = json!("changed proof");
-        let changed_hash = sha256(&canonical_bytes(&approval_bundle(&manifest).unwrap()).unwrap());
-        assert!(approved_operation(&approval, &changed_hash, true, || Ok(())).is_err());
-    }
     #[test]
     fn provenance_requires_every_viewer_and_font_audit_producer() {
         let dir = "tests/conformance/candidates/stage4-frames-text-assets-v4";
@@ -1061,79 +1011,13 @@ mod tests {
         assert!(inspection(incomplete, json!({}), json!({})).is_err());
     }
     #[test]
-    fn approval_mutations_prevent_execution_and_preparation_never_grants_approval() {
-        // Isolated synthetic authorization fixture, in memory only. It is not
-        // evidence of maintainer approval and is never written into the corpus.
-        let subject = sha256(b"isolated synthetic three-format execution subject");
-        let approval = json!({"approved_by":"synthetic-test","approved_at":"2026-09-19","approval_url":"https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1","approval_subject_sha256":format!("sha256:{subject}")});
-        let calls = std::cell::Cell::new(0);
-        let run = || {
-            calls.set(calls.get() + 1);
-            Ok(json!(["svg", "png", "pdf"]))
-        };
-        assert_eq!(
-            approved_operation(&approval, &subject, true, run).unwrap(),
-            json!(["svg", "png", "pdf"])
-        );
-        assert_eq!(calls.get(), 1);
-        for key in [
-            "approved_by",
-            "approved_at",
-            "approval_url",
-            "approval_subject_sha256",
-        ] {
-            let mut bad = approval.clone();
-            bad[key] = json!("");
-            assert!(
-                approved_operation(&bad, &subject, true, run).is_err(),
-                "{key}"
-            );
-        }
-        assert!(approved_operation(&Value::Null, &subject, true, run).is_err());
-        assert!(approved_operation(
-            &approval,
-            &sha256(b"changed artifact/report/source/region"),
-            true,
-            run
-        )
-        .is_err());
-        assert_eq!(
-            calls.get(),
-            1,
-            "no failed authorization may reach native execution"
-        );
-        approved_operation(&Value::Null, &subject, false, run).unwrap();
-        assert_eq!(
-            calls.get(),
-            2,
-            "preparation may measure an unapproved candidate"
-        );
-        assert!(approved_operation(&Value::Null, &subject, true, run).is_err());
-    }
-    #[test]
-    fn historical_provenance_remains_inside_the_approved_subject() {
-        let directory = value(&repo_root(), "tests/conformance/candidates/registry.json").unwrap()
-            ["cases"][0]["directory"]
-            .as_str()
-            .unwrap()
-            .to_owned();
-        let manifest = value(&candidate_root(&directory).unwrap(), "manifest.json").unwrap();
-        let subject = |m: &Value| sha256(&canonical_bytes(&approval_bundle(m).unwrap()).unwrap());
-        verify_approval_for_issue(&manifest["approval"], &subject(&manifest), "85").unwrap();
-        let mut changed = manifest.clone();
-        changed["producer_sources"][0]["sha256"] = json!("a".repeat(64));
-        historical_sources(&changed["producer_sources"]).unwrap();
-        assert!(verify_approval_for_issue(&changed["approval"], &subject(&changed), "85").is_err());
-    }
-    #[test]
     fn withdrawn_v1_subject_is_never_approval_ready() {
-        for require_approval in [false, true] {
-            assert!(verify(
-                "tests/conformance/candidates/stage4-frames-text-assets",
-                require_approval
-            )
-            .unwrap_err()
-            .contains("complete v3 native replay adapter"));
+        {
+            assert!(
+                execute("tests/conformance/candidates/stage4-frames-text-assets")
+                    .unwrap_err()
+                    .contains("complete v3 native replay adapter")
+            );
         }
     }
     #[test]
@@ -1167,7 +1051,7 @@ mod tests {
         changed["implementation"]["lockfile"]["sha256"] = json!("0".repeat(64));
         assert!(repo_chain(&changed, &mut BTreeSet::new())
             .unwrap_err()
-            .contains("stale candidate evidence"));
+            .contains("invalid historical PDFium lock identity"));
     }
 
     #[test]

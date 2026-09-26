@@ -59,7 +59,7 @@ esac
 
 mkdir -p "${OUTPUT_ROOT}/evidence"
 OUTPUT_RELATIVE="${OUTPUT_ROOT#"${REPO_ROOT}/"}"
-cargo run --quiet --locked -p xtask -- conformance svg-viewer-approval-subject > /dev/null
+cargo run --quiet --locked -p xtask -- conformance verify-svg-viewers > /dev/null
 
 render_chromium() {
   local name="$1"

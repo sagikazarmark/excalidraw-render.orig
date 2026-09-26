@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/blob/main/tests/conformance/svg-font-subset-target-evidence-v4.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "commit", "compatibility_revision", "target", "corpus_sha256", "subset_profile_sha256", "measurement", "status"],
+  "properties": {
+    "schema": {"const": "excalidraw-render/svg-font-subset-target-evidence/v4"},
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "compatibility_revision": {"const": 1},
+    "target": {"enum": ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]},
+    "corpus_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "subset_profile_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generatedBytesSha256", "resourceTracesSha256", "successfulCells", "tracedCells"],
+      "properties": {
+        "generatedBytesSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "resourceTracesSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "successfulCells": {"const": 984},
+        "tracedCells": {"const": 1211}
+      }
+    },
+    "status": {"const": "pass"}
+  }
+}

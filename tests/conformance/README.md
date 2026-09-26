@@ -1,10 +1,11 @@
 # Conformance corpus
 
-For 0.1.0, [ADR-0017](../../docs/adr/0017-separate-representative-expectations-from-producer-provenance.md)
-separates representative-case producer provenance from accepted expectations:
-current code is freshly replayed against approved bytes. Source-only changes
-no longer require representative successors. Other evidence families retain
-their documented binding rules.
+**Current acceptance policy:** [ADR-0019](../../docs/adr/0019-review-expectations-in-git-without-approval-hashes.md)
+uses Git/PR review and reproducible tests for every evidence family. Approval
+hashes, reviewer metadata and issue-comment recording commands described in older
+sections below are historical; approval commands now report their retirement.
+Input/output and tool-integrity digests, tolerance scopes and completeness checks
+remain enforced. Producer-source identities are historical observations.
 
 This directory contains immutable, approved scene documents and reference
 evidence used to judge format-specific parity. Ordinary verification is offline:
@@ -14,7 +15,7 @@ cargo run --locked -p xtask -- conformance verify focused.rectangle-outline.v1
 ```
 
 Reference evidence is generated only in the pinned development reference
-profile. Generation refuses to replace an approved case; reproduction writes no
+profile. Explicit generation produces a diff for review; reproduction writes no
 corpus files:
 
 ```sh

@@ -4,7 +4,6 @@ import {readFileSync,writeFileSync} from "node:fs";
 import {dirname,resolve,sep} from "node:path";
 import {fileURLToPath} from "node:url";
 import {deflateSync} from "node:zlib";
-import {canonicalize} from "./canonical-json.mjs";
 const ORACLE=resolve(dirname(fileURLToPath(import.meta.url)),".."),ROOT=resolve(ORACLE,"../..");
 const DIR="tests/conformance/candidates/stage4-frames-text-assets",OUT=resolve(ROOT,DIR),mode=process.argv[2];
 const sha=b=>createHash("sha256").update(b).digest("hex"),json=v=>Buffer.from(JSON.stringify(v,null,2)+"\n");
@@ -13,8 +12,7 @@ if(mode==="seal"){
  const paths=["scene.json","raster.png","nested.svg","official.svg","official.png","official-png.rgba","provenance.json","expected-report-svg.json","expected-report-png.json","expected-report-pdf.json","native.svg","native.png","native.pdf"];
  const manifest={schema:"excalidraw-render/representative-candidate/v1",case_id:"representative.stage4-frames-text-assets.v1",layer:"representative",compatibility_revision:1,approval:null,originating_issue:"https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",coverage:["interaction:frames-text-assets"],license:{expression:"MIT OR Apache-2.0",copyright:"Copyright 2026 excalidraw-render contributors"},purpose:"Frames/clips, selectable text, raster/nested SVG, safe links and embedded metadata in every output format",reference_profile_sha256:sha(readFileSync(resolve(ROOT,"tests/oracle/reference-profiles/revision-1.json"))),comparison:{visual_class:"geometry-image",changed_pixel_fraction:[1,400],minimum_ssim:0.999,exceptions:[]},request:{padding:0,include_background:false,frame_options:{enabled:true,clip:true,name:false,outline:false},metadata:{embedded_scene:true,provenance:true,diagnostic_summary:true}},semantic_expectations:{frame_clip:true,selectable_text:"Stage four",raster_sources_preserved_in_svg:true,nested_svg_vector_in_pdf:true,links:["https://example.com/text","https://example.com/raster"],embedded_scene:true,complete_reports:[]},files:paths.map(descriptor)};
  writeFileSync(resolve(OUT,"manifest.json"),json(manifest));
- const subject={schema:"excalidraw-render/conformance-approval-subject/v1",manifest:{...manifest},files:manifest.files.toSorted((a,b)=>a.path<b.path?-1:a.path>b.path?1:0)};delete subject.manifest.approval;
- const bytes=Buffer.from(canonicalize(subject));writeFileSync(resolve(OUT,"approval-subject.json"),Buffer.concat([bytes,Buffer.from("\n")]));console.log(`candidate approval subject sha256:${sha(bytes)}`);
+  console.log("candidate manifest written; review its expectations in Git");
 }else{
  assert.ok(["generate","verify"].includes(mode));assert.equal(process.env.REFERENCE_ORACLE_CANONICAL,"1");assert.equal(process.version,"v24.16.0");
  const {chromium}=await import("playwright");const profile=JSON.parse(readFileSync(resolve(ROOT,"tests/oracle/reference-profiles/revision-1.json")));

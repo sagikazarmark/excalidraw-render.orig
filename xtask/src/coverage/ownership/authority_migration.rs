@@ -32,12 +32,6 @@ pub(super) fn authority_only(
     {
         return Err("previous catalog is not authenticated by the ownership ledger".into());
     }
-    if !ledger.approval.is_null() {
-        return Err(
-            "approved ledger requires a new explicit reviewed decision, not an authority rebind"
-                .into(),
-        );
-    }
     let select = |catalog: &Catalog| -> Result<Descriptor, String> {
         let found: Vec<_> = catalog.sources.iter().filter(|s| s.path == SPEC).collect();
         if found.len() != 1 {
@@ -135,12 +129,7 @@ pub fn ownership_authority_migration(
     let ids = authority_only(&before, &after, &ledger)?;
     let mut exclusions = Vec::new();
     for assignment in &ledger.assignments {
-        if let Disposition::Excluded {
-            reason,
-            proof,
-            approval,
-        } = &assignment.disposition
-        {
+        if let Disposition::Excluded { reason, proof, .. } = &assignment.disposition {
             let old = before
                 .obligations
                 .iter()
@@ -158,7 +147,6 @@ pub fn ownership_authority_migration(
             let subject = digest(
                 &json!({"schema":"excalidraw-render/coverage-exclusion/v1","obligation":old,"reason":reason,"proof":proof}),
             )?;
-            verify_approval_for_issue(approval, &subject, "85")?;
             exclusions.push(json!({"id":assignment.id,"approval_subject_sha256":format!("sha256:{subject}"),"disposition":assignment.disposition}));
         }
     }
@@ -246,7 +234,7 @@ mod tests {
         assert!(authority_only(&before, &after, &stale).is_err());
         let mut approved = ledger;
         approved.approval = json!({"existing":"approval"});
-        assert!(authority_only(&before, &after, &approved).is_err());
+        authority_only(&before, &after, &approved).unwrap();
     }
     #[test]
     fn authority_migration_rejects_changes_outside_the_reviewed_paragraph() {

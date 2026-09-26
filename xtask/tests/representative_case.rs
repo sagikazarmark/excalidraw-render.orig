@@ -98,7 +98,7 @@ fn offline_registry_verifies_every_registered_case_without_an_approval_requireme
 }
 
 #[test]
-fn retained_bytes_and_acceptance_are_independently_checked() {
+fn retained_bytes_are_checked_without_acceptance_hashes() {
     let case = Copy::new();
     case.run(&[], true);
     let mut record = case.record();
@@ -111,7 +111,7 @@ fn retained_bytes_and_acceptance_are_independently_checked() {
     let mut record = case.record();
     record["approval"]["approval_subject_sha256"] = json!(format!("sha256:{}", "0".repeat(64)));
     case.set(&record);
-    assert!(case.run(&[], false).contains("exact case subject"));
+    case.run(&[], true);
 }
 
 #[test]

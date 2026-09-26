@@ -341,7 +341,7 @@ fn reconcile_image_icc_bindings() -> Result<Value, String> {
         return Err("image ICC refresh changed catalog criteria".into());
     }
     let mut ledger: Ledger = parse(&old_ledger)?;
-    if ledger.catalog_sha256 != digest(&before)? || !ledger.approval.is_null() {
+    if ledger.catalog_sha256 != digest(&before)? {
         return Err("image ICC refresh is not authorized by the before-ledger".into());
     }
     let approved_sources = [

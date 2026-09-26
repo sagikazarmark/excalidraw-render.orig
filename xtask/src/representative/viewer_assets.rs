@@ -79,8 +79,7 @@ fn missing(svg: &str) -> Result<BTreeSet<String>> {
 
 fn substitutions(resolution: &Value, svg: &str) -> Result<Vec<Value>> {
     require(
-        resolution["schema"] == "excalidraw-render/representative-font-resolution/v1"
-            && resolution.get("approval") == Some(&Value::Null),
+        resolution["schema"] == "excalidraw-render/representative-font-resolution/v1",
         "invalid font resolution record",
     )?;
     require(

@@ -1,5 +1,19 @@
 # Historical tooling retirement audit
 
+## Approval-gate retirement (2026-09-26)
+
+ADR-0019 replaces hash-bound issue-comment approval with ordinary Git/PR review
+and reproducible tests across evidence families. Approval-writing CLI commands
+and approval-only tests are retired. Old metadata remains historical and cannot
+grant or block execution. Input/output descriptors, scope and tolerance checks,
+native replay, completeness and downloaded-tool integrity remain active.
+
+The standalone `verify-png-stage4.mjs` and `verify-six-case-application.mjs`
+auditors are retired with their completed approval transactions. No current
+Rust/CI runner calls them; their transition artifacts remain in the corpus and
+their source is in Git history. Current ownership, candidate, snapshot and PDF
+judgment verifiers exercise the corresponding substantive evidence.
+
 **Final integration status (2026-09-25): resolved.** No proposal `.py` files
 remain, including the last frozen PDFium adapter. Current first-party Python is
 **two files**, both CI/release-owned, inventoried

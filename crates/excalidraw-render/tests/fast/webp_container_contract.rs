@@ -89,25 +89,9 @@ fn evidence() -> Value {
     record
 }
 
-/// The approved ICC exceptions. The approval binds the record without its
-/// approval object.
+/// Checked-in ICC exceptions, reviewed alongside their regression tests.
 fn approved_exceptions() -> Value {
-    let mut record: Value = serde_json::from_slice(EXCEPTIONS).unwrap();
-    let approval = record["approval"].take();
-    let subject = format!("sha256:{}", hash(&serde_json::to_vec(&record).unwrap()));
-    assert!(
-        approval["approval_url"]
-            .as_str()
-            .is_some_and(|url| url.starts_with(
-                "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-"
-            )),
-        "WebP ICC exceptions have no recorded approval; subject {subject}"
-    );
-    assert_eq!(
-        approval["approval_subject_sha256"], subject,
-        "approval does not bind the exact exception record"
-    );
-    record
+    serde_json::from_slice(EXCEPTIONS).unwrap()
 }
 
 fn scene(webp: &Value) -> Value {

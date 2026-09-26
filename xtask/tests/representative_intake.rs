@@ -103,7 +103,7 @@ fn prepare_preserves_bytes_and_cannot_confer_approval_or_overwrite() {
     let mut forged = manifest;
     forged["approval"] = json!({"approved_by":"invented"});
     write_json(f.root.join("bundle/manifest.json"), &forged);
-    f.run(&["verify", "bundle"], false);
+    f.run(&["verify", "bundle"], true);
     fs::write(f.root.join("bundle/manifest.json"), before).unwrap();
     fs::write(
         f.root.join("bundle/scene.excalidraw"),

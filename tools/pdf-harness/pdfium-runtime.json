@@ -1,0 +1,158 @@
+{
+  "adapter": "pdfium-render/0.9.4",
+  "captures": [
+    {
+      "input": {
+        "path": "tests/conformance/pdf-viewer-qualification/rectangle-outline/candidate-control.pdf",
+        "sha256": "b2dc27d5e311d65c1d53a13a35d0b26d2ce14f8e5fee1f864f887f7bf2af6b40"
+      },
+      "raster": {
+        "path": "tests/conformance/pdf-viewer-qualification/rectangle-outline/evidence/pdfium-valid.rgba",
+        "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a"
+      },
+      "role": "valid",
+      "runs": [
+        {
+          "adapter": "pdfium-render/0.9.4",
+          "byte_length": 96000,
+          "height": 120,
+          "layout": "top-left-row-major",
+          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a",
+          "width": 200
+        },
+        {
+          "adapter": "pdfium-render/0.9.4",
+          "byte_length": 96000,
+          "height": 120,
+          "layout": "top-left-row-major",
+          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a",
+          "width": 200
+        }
+      ]
+    },
+    {
+      "input": {
+        "path": "tests/conformance/pdf-viewer-qualification/rectangle-outline/visual-fail-structure-pass.pdf",
+        "sha256": "6825b965ce5fe245cb37b980289e8c9da29ddec640acdc11400a30cc1feac8d1"
+      },
+      "raster": {
+        "path": "tests/conformance/pdf-viewer-qualification/rectangle-outline/evidence/pdfium-visual-fail.rgba",
+        "sha256": "67aee623b8731045330343370de0dfd30fdbb7a343bf2043d1f36473e4b9b88f"
+      },
+      "role": "visual-fail",
+      "runs": [
+        {
+          "adapter": "pdfium-render/0.9.4",
+          "byte_length": 96000,
+          "height": 120,
+          "layout": "top-left-row-major",
+          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "sha256": "67aee623b8731045330343370de0dfd30fdbb7a343bf2043d1f36473e4b9b88f",
+          "width": 200
+        },
+        {
+          "adapter": "pdfium-render/0.9.4",
+          "byte_length": 96000,
+          "height": 120,
+          "layout": "top-left-row-major",
+          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "sha256": "67aee623b8731045330343370de0dfd30fdbb7a343bf2043d1f36473e4b9b88f",
+          "width": 200
+        }
+      ]
+    },
+    {
+      "input": {
+        "path": "tests/conformance/pdf-viewer-qualification/rectangle-outline/visual-pass-structure-fail.pdf",
+        "sha256": "49c110adbda395bfff8ecd31876dc08a1e9cea5847ffecf41bcc236d16f182c0"
+      },
+      "raster": {
+        "path": "tests/conformance/pdf-viewer-qualification/rectangle-outline/evidence/pdfium-structure-fail.rgba",
+        "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a"
+      },
+      "role": "structure-fail",
+      "runs": [
+        {
+          "adapter": "pdfium-render/0.9.4",
+          "byte_length": 96000,
+          "height": 120,
+          "layout": "top-left-row-major",
+          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a",
+          "width": 200
+        },
+        {
+          "adapter": "pdfium-render/0.9.4",
+          "byte_length": 96000,
+          "height": 120,
+          "layout": "top-left-row-major",
+          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "pdfium": "152.0.7947.0",
+          "pixel_format": "straight-alpha-srgb-rgba8",
+          "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a",
+          "width": 200
+        }
+      ]
+    }
+  ],
+  "font_backend": "FreeType",
+  "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+  "native_lock": {
+    "path": "tools/pdf-harness/pdfium-native.lock.json",
+    "sha256": "a25ae4e900421f1c8c79ca620d7d6914cbddf391c2f2056f255c4b84b400214a"
+  },
+  "pdfium": "152.0.7947.0",
+  "platform": "linux-x86_64",
+  "renderer": "AGG",
+  "schema": "excalidraw-render/pdfium-runtime/v1",
+  "sources": [
+    {
+      "path": "tools/pdf-harness/pdfium-rust/Cargo.toml",
+      "sha256": "a47f4f0674efa09816e21485a5b428ea72d2b5f85a045742866ccdd28b159837"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium-rust/Cargo.lock",
+      "sha256": "5ef67e4e80b1efe9307f5c401adcdc8fda847d78fa5301a552b93cabc3723b46"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium-rust/src/main.rs",
+      "sha256": "0ceafbc3f85a83c09ab04bb32d6beefcd046c59c15f1b8e70776e2f38b6c7d9e"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium-rust/src/lib.rs",
+      "sha256": "d8ac29a186ade08011b201943c5609b2e5023da33d2dbc50f6c842fbe2c8f460"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium-native.lock.json",
+      "sha256": "a25ae4e900421f1c8c79ca620d7d6914cbddf391c2f2056f255c4b84b400214a"
+    },
+    {
+      "path": "tools/pdf-harness/install.sh",
+      "sha256": "c82a64b60b35677c55151da98c2e84c119f80e2f5e229fb22067a50cd38db53d"
+    },
+    {
+      "path": "tools/pdf-harness/run-pdfium.sh",
+      "sha256": "fc6e7e373a4c27e853f44e06e47808203cb00a8bab2e4f08e9a412889d588cd0"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium-rust/tests/controls.rs",
+      "sha256": "5ffbcdd9fe81a98beaa61449b7c995596315c209686ae539491a44a2deffc1c3"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium/empty-fonts/.keep",
+      "sha256": "214f294fd6c8df5b4b53d84fd437aee8c30edbee74b929863e40ec2e6b3cf621"
+    }
+  ]
+}

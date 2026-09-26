@@ -1,5 +1,9 @@
 # Development and evidence operations
 
+Expectation updates use Git/PR review and reproducible tests (ADR-0019).
+Approval-subject and approval-recording commands in older workflow examples are
+retired. Tool/download checksums and actual input/output comparisons still apply.
+
 This repository contains a pure-Rust rendering library and native CLI targeting
 compatibility revision 1 of the static-renderer design. The
 [0.1.0 release policy](release-0.1.0.md) defines the initial public scope.
@@ -79,6 +83,13 @@ access. The full workspace's `xtask` evidence tests additionally invoke Node
 and pinned qpdf; Dagger installs these automatically. See
 [`tools/reference-oracle/README.md`](../tools/reference-oracle/README.md) for the
 opt-in profile verification workflow.
+
+The PDF harness uses a separately installed native PDFium library with Rust
+bindings. On Linux x86_64, run `devenv shell pdfium-install` (or
+`bash tools/pdf-harness/install.sh --pdfium-only`) to install the checksum-pinned
+upstream binary and build its Rust worker. This needs no Python or Docker.
+The complete PDFium/PDF.js/qpdf setup is documented in
+[`tools/pdf-harness/README.md`](../tools/pdf-harness/README.md).
 
 ## Revision catalog
 

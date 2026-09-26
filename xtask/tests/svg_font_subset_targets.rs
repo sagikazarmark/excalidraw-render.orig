@@ -100,12 +100,9 @@ fn materializes_a_target_report_from_one_qualification_measurement_line() {
     let root = repo_root();
     let release =
         read_json(&root.join("tests/conformance/svg-font-subset-release-evidence/revision-1.json"));
-    let viewers = read_json(
-        &root.join("tests/conformance/svg-font-subset-viewer-qualification/revision-1.json"),
-    );
     assert_eq!(
         report["schema"],
-        json!("excalidraw-render/svg-font-subset-target-evidence/v3")
+        json!("excalidraw-render/svg-font-subset-target-evidence/v4")
     );
     assert_eq!(report["target"], json!("x86_64-unknown-linux-gnu"));
     assert_eq!(report["commit"], json!(TESTED_COMMIT));
@@ -113,13 +110,10 @@ fn materializes_a_target_report_from_one_qualification_measurement_line() {
     assert_eq!(report["status"], json!("pass"));
     assert_eq!(report["measurement"], measurement);
     assert_eq!(report["corpus_sha256"], release["corpus"]["sha256"]);
-    assert_eq!(
-        report["viewer_approval_subject"],
-        viewers["approval"]["approval_subject_sha256"]
-    );
+    assert!(report.get("viewer_approval_subject").is_none());
 
     let schema =
-        read_json(&root.join("tests/conformance/svg-font-subset-target-evidence-v3.schema.json"));
+        read_json(&root.join("tests/conformance/svg-font-subset-target-evidence-v4.schema.json"));
     let validator = jsonschema::validator_for(&schema).expect("target report schema compiles");
     let violations = validator
         .iter_errors(&report)
@@ -173,7 +167,7 @@ fn aggregates_every_supported_target_report_into_a_passing_aggregate() {
     let aggregate = read_json(&aggregate);
     assert_eq!(
         aggregate["schema"],
-        json!("excalidraw-render/svg-font-subset-target-aggregate/v3")
+        json!("excalidraw-render/svg-font-subset-target-aggregate/v4")
     );
     assert_eq!(aggregate["decision"], json!("pass"));
     assert_eq!(aggregate["commit"], json!(TESTED_COMMIT));

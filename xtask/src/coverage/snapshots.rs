@@ -46,7 +46,8 @@ struct Snapshots {
     schema: String,
     compatibility_revision: u64,
     target: String,
-    approval: Value,
+    #[serde(default, rename = "approval")]
+    _approval: Value,
     commit: String,
     source_status: String,
     rustc: String,
@@ -89,12 +90,9 @@ fn validate(root: &Path, inventory: &Inventory, bundle: &Snapshots) -> Result<()
     if bundle.schema != "excalidraw-render/native-snapshots/v1"
         || bundle.compatibility_revision != 1
         || bundle.target != "x86_64-unknown-linux-gnu"
-        || !bundle.approval.is_null()
         || !hex(&bundle.commit, 40)
     {
-        return Err(
-            "invalid native snapshot identity (only unapproved candidates accepted)".into(),
-        );
+        return Err("invalid native snapshot identity".into());
     }
     let expected: Vec<_> = inventory.executions.iter().map(|e| &e.key).collect();
     if expected.is_empty() {
@@ -330,9 +328,7 @@ pub fn verify_snapshots(directory: &str) -> Result<(), String> {
 mod baseline;
 mod provenance;
 pub(super) mod wasm;
-pub use baseline::{
-    baseline_subject, record_baseline_approval, replay_snapshots, stage_baseline, verify_baseline,
-};
+pub use baseline::{replay_snapshots, stage_baseline, verify_baseline};
 pub use wasm::{report_wasm_snapshots, stage_wasm_snapshots, verify_wasm_snapshots};
 
 /// Compare test-build outcomes with packaged public measurements before attaching traces.

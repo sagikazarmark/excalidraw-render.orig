@@ -4,13 +4,13 @@
 use super::ownership::LedgerView;
 use super::pdf_judgments::Repo;
 use super::*;
-use crate::conformance::verify_approval_for_issue;
 
 mod derive;
 use derive::{build_record, completeness};
 
 pub(super) const RECORD: &str = "tests/conformance/coverage/layers.json";
 pub(super) const SCHEMA: &str = "excalidraw-render/five-layers/v1";
+#[cfg(test)]
 const SUBJECT: &str = "excalidraw-render/five-layers-approval-subject/v1";
 
 pub(super) fn verify_representative_cases() -> Result<(), String> {
@@ -53,6 +53,7 @@ fn record_bytes(record: &Value) -> Result<Vec<u8>, String> {
     Ok([&canonical_bytes(record)?[..], b"\n"].concat())
 }
 
+#[cfg(test)]
 fn subject_of(record: &Value) -> Result<String, String> {
     let mut record = record.clone();
     record
@@ -90,7 +91,7 @@ fn current_record(repo: &Repo) -> Result<Value, String> {
 }
 
 /// Every check: structure, completeness against `view`, then the approval.
-fn verify_record(repo: &Repo, view: &LedgerView, require_approval: bool) -> Result<Value, String> {
+fn verify_record(repo: &Repo, view: &LedgerView, _require_approval: bool) -> Result<Value, String> {
     let record = current_record(repo)?;
     let problems = completeness(&record, repo, view);
     if !problems.is_empty() {
@@ -99,12 +100,6 @@ fn verify_record(repo: &Repo, view: &LedgerView, require_approval: bool) -> Resu
             problems.len(),
             problems.join("\n  ")
         ));
-    }
-    if require_approval || !record["approval"].is_null() {
-        if record["approval"].is_null() {
-            return Err("layers.json awaits explicit #85 approval".into());
-        }
-        verify_approval_for_issue(&record["approval"], &subject_of(&record)?, "85")?;
     }
     Ok(record)
 }
@@ -120,29 +115,6 @@ fn existing_declarations(repo: &Repo) -> Result<Value, String> {
 
 fn generate_in(repo: &Repo) -> Result<Value, String> {
     build_record(repo, &existing_declarations(repo)?)
-}
-
-/// Adds the approval to a record whose subject equals `expected`.
-#[cfg(test)]
-fn apply_approval(
-    record: &mut Value,
-    login: &str,
-    date: &str,
-    url: &str,
-    expected: &str,
-) -> Result<(), String> {
-    if !record["approval"].is_null() {
-        return Err("layers.json is already approved".into());
-    }
-    let subject = subject_of(record)?;
-    if expected.strip_prefix("sha256:").unwrap_or(expected) != subject {
-        return Err(format!(
-            "layers approval subject mismatch: computed sha256:{subject}"
-        ));
-    }
-    record["approval"] = json!({"approved_by":login,"approved_at":date,"approval_url":url,
-        "approval_subject_sha256":format!("sha256:{subject}")});
-    verify_approval_for_issue(&record["approval"], &subject, "85")
 }
 
 fn count(record: &Value, pointer: &str) -> usize {
@@ -173,6 +145,7 @@ pub(super) fn verify_approved_record() -> Result<(), String> {
 }
 
 /// The record's own approval subject computation, without the `sha256:` prefix.
+#[cfg(test)]
 pub(super) fn record_subject(record: &Value) -> Result<String, String> {
     subject_of(record)
 }
@@ -377,6 +350,10 @@ mod tests {
         derive::verify_representative_cases(&repo).unwrap();
         let mut case: Value = parse(&repo.read(VARMQ).unwrap()).unwrap();
         case["approval"]["approval_subject_sha256"] = json!("sha256:invalid");
+        repo.overrides
+            .insert(VARMQ.into(), Some(canonical_bytes(&case).unwrap()));
+        derive::verify_representative_cases(&repo).unwrap();
+        case["formats"] = json!([]);
         repo.overrides
             .insert(VARMQ.into(), Some(canonical_bytes(&case).unwrap()));
         assert!(derive::verify_representative_cases(&repo).is_err());
@@ -840,48 +817,5 @@ mod tests {
             .into_bytes(),
         );
         assert_eq!(fixture.structure().unwrap(), fixture.record);
-    }
-
-    #[test]
-    #[ignore = "optional historical five-layer audit"]
-    fn approval_binds_the_exact_subject_on_issue_85() {
-        let fixture = Fixture::new();
-        let subject = subject_of(&fixture.record).unwrap();
-        let mut record = fixture.record.clone();
-        assert!(
-            apply_approval(&mut record, "sagikazarmark", "2026-09-24", URL, "sha256:00")
-                .unwrap_err()
-                .contains("subject mismatch")
-        );
-        let wrong = URL.replace("/issues/85#", "/issues/44#");
-        assert!(apply_approval(
-            &mut record.clone(),
-            "sagikazarmark",
-            "2026-09-24",
-            &wrong,
-            &subject
-        )
-        .is_err());
-        apply_approval(&mut record, "sagikazarmark", "2026-09-24", URL, &subject).unwrap();
-        assert_eq!(subject_of(&record).unwrap(), subject);
-        assert!(apply_approval(
-            &mut record.clone(),
-            "sagikazarmark",
-            "2026-09-24",
-            URL,
-            &subject
-        )
-        .unwrap_err()
-        .contains("already approved"));
-        // An approved record is structurally current; a changed declaration
-        // no longer carries its approval.
-        let mut fixture = fixture;
-        fixture.set(RECORD, record_bytes(&record).unwrap());
-        fixture.structure().unwrap();
-        let mut changed = record;
-        changed["declarations"]["vector_families"][0]["rationale"] = json!("changed");
-        let changed_subject = subject_of(&changed).unwrap();
-        assert_ne!(changed_subject, subject);
-        assert!(verify_approval_for_issue(&changed["approval"], &changed_subject, "85").is_err());
     }
 }

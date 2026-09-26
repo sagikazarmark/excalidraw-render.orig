@@ -457,8 +457,10 @@ fn verify(root: &Path) -> Result<Value> {
         "intake file inventory changed",
     )?;
     let manifest = materialize(&bundle_files(root)?)?;
+    let mut retained = decode(&read(root, "manifest.json")?)?;
+    retained["approval"] = Value::Null;
     require(
-        read(root, "manifest.json")? == encode(&manifest)?,
+        retained == manifest,
         "intake manifest or file binding changed",
     )?;
     Ok(manifest)

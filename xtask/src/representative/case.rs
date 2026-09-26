@@ -301,24 +301,6 @@ fn validate(root: &Path, directory: &Path, case: &Value) -> Result<PathBuf> {
             "invalid expected resource error",
         )?;
     }
-    let approval = case.get("approval").ok_or("missing case approval field")?;
-    if !approval.is_null() {
-        fields(
-            approval,
-            &[
-                "approved_by",
-                "approved_at",
-                "approval_url",
-                "approval_subject_sha256",
-            ],
-            "invalid approval fields",
-        )?;
-        require(
-            approval["approval_subject_sha256"] == format!("sha256:{}", subject(case)?),
-            "approval does not bind the exact case subject",
-        )?;
-        crate::conformance::verify_approval_for_issue(approval, &subject(case)?, "85")?;
-    }
     Ok(bundle)
 }
 

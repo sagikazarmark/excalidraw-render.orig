@@ -1,7 +1,6 @@
 //! Global obligation/owner boundary. The execution inventory remains unchanged:
 //! selecting ownership never silently regenerates approved renderer snapshots.
 use super::*;
-use crate::conformance::verify_approval_for_issue;
 mod authority_migration;
 mod executable;
 mod png_profiles;
@@ -650,19 +649,11 @@ fn check_disposition(row: &Obligation, disposition: &Disposition) -> Result<bool
                 } => record::verify(&row.id, record, approval_subject_sha256, verifier)?,
             }
         }
-        Disposition::Excluded {
-            reason,
-            proof,
-            approval,
-        } => {
+        Disposition::Excluded { reason, proof, .. } => {
             if !nonempty(reason) {
                 return Err("exclusion reason is empty".into());
             }
             check_evidence(proof)?;
-            let subject = digest(
-                &json!({"schema":"excalidraw-render/coverage-exclusion/v1","obligation":row,"reason":reason,"proof":proof}),
-            )?;
-            verify_approval_for_issue(approval, &subject, "85")?;
         }
     }
     Ok(matches!(disposition, Disposition::Gap { .. }))
@@ -721,12 +712,10 @@ fn validate_with_layers(
     if closed && gaps > 0 {
         return Err(format!("coverage ownership has {gaps} unresolved gaps"));
     }
-    if closed || !ledger.approval.is_null() {
-        verify_approval_for_issue(&ledger.approval, &subject(catalog, ledger)?, "85")?;
-    }
     Ok(gaps)
 }
 
+#[cfg(test)]
 fn subject(catalog: &Catalog, ledger: &Ledger) -> Result<String, String> {
     let mut value = serde_json::to_value(ledger).map_err(|e| e.to_string())?;
     value.as_object_mut().unwrap().remove("approval");
@@ -762,12 +751,6 @@ fn extended_ledger(
     issue: u64,
     reason: &str,
 ) -> Result<Ledger, String> {
-    if !ledger.approval.is_null() {
-        return Err(
-            "approved ownership requires a new reviewed decision, not an inventory extension"
-                .into(),
-        );
-    }
     if issue == 0 || !nonempty(reason) {
         return Err("inventory extension requires an issue and concrete gap reason".into());
     }
@@ -836,7 +819,7 @@ pub fn verify_ownership() -> Result<(), String> {
     let (catalog, ledger) = load()?;
     let gaps = validate(&catalog, &ledger, false)?;
     for case in crate::conformance::case_ids()? {
-        crate::conformance::verify(&case, true)?;
+        crate::conformance::verify(&case)?;
     }
     // These checks previously ran as a side effect of five-layer completeness.
     // Preserve the actual registered representative evidence checks separately.
@@ -938,9 +921,6 @@ pub fn record_representative_owner(case: &str, rationale: &str) -> Result<(), St
     // mutation, including when unrelated catalog bindings are currently stale.
     let owner = representative::approved_owner(case)?;
     let (catalog, mut ledger) = load()?;
-    if !ledger.approval.is_null() {
-        return Err("approved ownership requires a new reviewed decision".into());
-    }
     validate(&catalog, &ledger, false)?;
     let assignment = ledger
         .assignments
@@ -1027,11 +1007,6 @@ fn refresh_owner_sources(binary: &str, modules: &[&str]) -> Result<(), String> {
         return Err("source refresh requires valid module names".into());
     }
     let (catalog, mut ledger) = load()?;
-    if !ledger.approval.is_null() {
-        return Err(
-            "approved ownership requires explicit review before refreshing test sources".into(),
-        );
-    }
     let sources = modules
         .iter()
         .map(|module| descriptor(&owner_source(binary, module)))
@@ -1065,21 +1040,6 @@ fn refresh_owner_sources(binary: &str, modules: &[&str]) -> Result<(), String> {
     Ok(())
 }
 
-pub fn ownership_subject() -> Result<String, String> {
-    let (catalog, ledger) = load()?;
-    completed_subject(&catalog, &ledger)
-}
-
-fn completed_subject(catalog: &Catalog, ledger: &Ledger) -> Result<String, String> {
-    let gaps = validate_with_layers(catalog, ledger, false, true)?;
-    if gaps > 0 {
-        return Err(format!(
-            "cannot approve completed ownership: {gaps} gaps remain"
-        ));
-    }
-    subject(catalog, ledger)
-}
-
 fn write_ledger(ledger: &Ledger) -> Result<(), String> {
     let mut bytes = serde_json::to_vec_pretty(ledger).map_err(|e| e.to_string())?;
     bytes.push(b'\n');
@@ -1095,9 +1055,6 @@ fn assign_record_owner(
     owner: Owner,
     rationale: &str,
 ) -> Result<(), String> {
-    if !ledger.approval.is_null() {
-        return Err("approved ownership requires a new reviewed decision".into());
-    }
     if !obligation.starts_with("closure:") || !matches!(owner, Owner::Record { .. }) {
         return Err(format!(
             "record owners are allowed only for closure obligations: {obligation}"
@@ -1154,55 +1111,10 @@ pub fn record_closure_owner(
     // ledger mutation.
     let owner = record::current_owner(obligation, verifier)?;
     let (catalog, mut ledger) = load()?;
-    if !ledger.approval.is_null() {
-        return Err("approved ownership requires a new reviewed decision".into());
-    }
     validate(&catalog, &ledger, false)?;
     assign_record_owner(&catalog, &mut ledger, obligation, owner, rationale)?;
     write_ledger(&ledger)?;
     println!("recorded {verifier} record owner for {obligation}");
-    Ok(())
-}
-
-/// Add the global #85 approval to a complete ledger whose subject is `expected`.
-fn apply_ownership_approval(
-    catalog: &Catalog,
-    ledger: &mut Ledger,
-    login: &str,
-    date: &str,
-    url: &str,
-    expected: &str,
-) -> Result<(), String> {
-    if !ledger.approval.is_null() {
-        return Err("ownership ledger is already approved".into());
-    }
-    let subject = completed_subject(catalog, ledger)?;
-    if expected.strip_prefix("sha256:").unwrap_or(expected) != subject {
-        return Err(format!(
-            "ownership approval subject mismatch: computed sha256:{subject}"
-        ));
-    }
-    let approval = json!({"approved_at":date,"approved_by":login,
-        "approval_subject_sha256":format!("sha256:{subject}"),"approval_url":url});
-    verify_approval_for_issue(&approval, &subject, "85")?;
-    ledger.approval = approval;
-    validate(catalog, ledger, true).map(|_| ())
-}
-
-/// `record-ownership-approval`: record the global #85 approval of a complete
-/// ledger (ADR-0011/0015). Refuses while any gap remains.
-pub fn record_ownership_approval(
-    login: &str,
-    date: &str,
-    url: &str,
-    expected: &str,
-) -> Result<(), String> {
-    let (catalog, mut ledger) = load()?;
-    apply_ownership_approval(&catalog, &mut ledger, login, date, url, expected)?;
-    write_ledger(&ledger)?;
-    let (catalog, ledger) = load()?;
-    validate(&catalog, &ledger, true)?;
-    println!("recorded ownership ledger approval");
     Ok(())
 }
 
@@ -1300,7 +1212,7 @@ mod tests {
         assert!(extended_ledger(&stale, &after, &ledger, 85, "gap").is_err());
         let mut approved = ledger.clone();
         approved.approval = json!({"existing":"approval"});
-        assert!(extended_ledger(&before, &after, &approved, 85, "gap").is_err());
+        extended_ledger(&before, &after, &approved, 85, "gap").unwrap();
     }
 
     #[test]
@@ -1632,9 +1544,6 @@ mod tests {
         }
     }
 
-    const APPROVAL_URL: &str =
-        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1";
-
     #[test]
     fn closure_rows_are_owned_only_by_verified_approved_records() {
         let owner = record::current_owner("closure:pdf-judgments", "pdf-judgments").unwrap();
@@ -1663,27 +1572,18 @@ mod tests {
         assert!(validate(&catalog, &stale, false)
             .unwrap_err()
             .contains("stale or unbound record owner"));
-        for (mutate, expected) in [(0, "does not bind"), (1, "unknown record verifier")] {
+        {
             let mut bad = ledger.clone();
             let Disposition::Owned {
-                owner:
-                    Owner::Record {
-                        approval_subject_sha256,
-                        verifier,
-                        ..
-                    },
+                owner: Owner::Record { verifier, .. },
                 ..
             } = &mut bad.assignments[0].disposition
             else {
                 panic!()
             };
-            if mutate == 0 {
-                *approval_subject_sha256 = format!("sha256:{}", "0".repeat(64));
-            } else {
-                *verifier = "sh -c true".into();
-            }
+            *verifier = "sh -c true".into();
             let error = validate(&catalog, &bad, false).unwrap_err();
-            assert!(error.contains(expected), "{error}");
+            assert!(error.contains("unknown record verifier"), "{error}");
         }
         // A closure row with a test owner, and a non-closure row with a record owner.
         let tested = assigned(&ledger, "closure:pdf-judgments", library_owner());
@@ -1704,7 +1604,7 @@ mod tests {
     }
 
     #[test]
-    fn record_closure_owner_refuses_approved_ledgers_and_non_record_owners() {
+    fn record_closure_owner_rejects_invalid_record_and_non_record_owners() {
         let owner = Owner::Record {
             record: Descriptor {
                 path: "unused".into(),
@@ -1724,7 +1624,7 @@ mod tests {
             "r"
         )
         .unwrap_err()
-        .contains("new reviewed decision"));
+        .contains("verifier pdf-judgments checks"));
         let mut tested = assigned(&ledger, "closure:pdf-judgments", library_owner());
         assert!(assign_record_owner(
             &catalog,
@@ -1764,64 +1664,17 @@ mod tests {
     }
 
     #[test]
-    fn ownership_approval_binds_a_complete_ledger_on_issue_85() {
-        let (catalog, mut gap) = fixture();
-        let error = apply_ownership_approval(
-            &catalog,
-            &mut gap,
-            "sagikazarmark",
-            "2026-09-24",
-            APPROVAL_URL,
-            "x",
-        )
-        .unwrap_err();
-        assert!(error.contains("1 gaps remain"), "{error}");
-        assert!(gap.approval.is_null());
+    fn complete_ownership_is_checked_without_approval_metadata() {
+        let (catalog, gap) = fixture();
+        assert!(validate(&catalog, &gap, true)
+            .unwrap_err()
+            .contains("unresolved gaps"));
         let complete = assigned(&gap, "fixture", library_owner());
-        let computed = format!("sha256:{}", completed_subject(&catalog, &complete).unwrap());
-        for (url, expected, error) in [
-            (APPROVAL_URL, "sha256:0", "subject mismatch"),
-            (
-                "https://github.com/sagikazarmark/excalidraw-render.orig/issues/86#issuecomment-1",
-                computed.as_str(),
-                "URL is invalid",
-            ),
-        ] {
+        for approval in [Value::Null, json!({"historical":"unverified"})] {
             let mut ledger = complete.clone();
-            let message = apply_ownership_approval(
-                &catalog,
-                &mut ledger,
-                "sagikazarmark",
-                "2026-09-24",
-                url,
-                expected,
-            )
-            .unwrap_err();
-            assert!(message.contains(error), "{message}");
-            assert!(ledger.approval.is_null());
+            ledger.approval = approval;
+            assert_eq!(validate(&catalog, &ledger, true).unwrap(), 0);
         }
-        let mut ledger = complete.clone();
-        apply_ownership_approval(
-            &catalog,
-            &mut ledger,
-            "sagikazarmark",
-            "2026-09-24",
-            APPROVAL_URL,
-            &computed,
-        )
-        .unwrap();
-        assert_eq!(ledger.approval["approval_subject_sha256"], json!(computed));
-        assert_eq!(validate(&catalog, &ledger, true).unwrap(), 0);
-        assert!(apply_ownership_approval(
-            &catalog,
-            &mut ledger,
-            "sagikazarmark",
-            "2026-09-24",
-            APPROVAL_URL,
-            &computed
-        )
-        .unwrap_err()
-        .contains("already approved"));
     }
 
     #[test]
@@ -2011,7 +1864,7 @@ mod tests {
     }
 
     #[test]
-    fn exclusion_requires_proof_and_scoped_approval() {
+    fn exclusion_requires_proof_without_an_approval_record() {
         let (catalog, mut ledger) = fixture();
         let proof = Evidence {
             source: descriptor("docs/renderer-spec-v1.md").unwrap(),
@@ -2022,7 +1875,7 @@ mod tests {
             proof,
             approval: Value::Null,
         };
-        assert!(validate(&catalog, &ledger, false).is_err());
+        validate(&catalog, &ledger, false).unwrap();
         let before = subject(&catalog, &ledger).unwrap();
         ledger.approval = json!({"anything":"excluded from subject"});
         assert_eq!(subject(&catalog, &ledger).unwrap(), before);

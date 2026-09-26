@@ -10,14 +10,31 @@ Install exact-pinned tools and package locks from the network:
 bash tools/pdf-harness/install.sh
 ```
 
-The installer verifies the PDFium distribution wheel and relocatable qpdf archive
-by SHA-256, extracts them with `unzip`, checks the extracted PDFium library hash,
-builds the isolated Rust PDFium worker, and installs the exact PDF.js npm lock in
-the canonical Linux/amd64 Node container. It does not execute Python. The wheel
-is retained as the distribution of the already-qualified native engine, not a
-runtime dependency on its Python bindings. Installed bytes live under ignored
-`target/` or `node_modules/` paths.
+The installer verifies the standalone `bblanchon/pdfium-binaries` build 7947
+archive and relocatable qpdf archive by SHA-256, extracts them with `tar` and
+`unzip`, checks the extracted PDFium library hash, builds the isolated Rust
+PDFium worker, and installs the exact PDF.js npm lock in the canonical
+Linux/amd64 Node container. The PDFium archive contains byte-identical
+`libpdfium.so` to the previously used wheel; it installs native libraries,
+headers, build metadata and licenses without Python packages. Installed bytes
+live under ignored `target/` or `node_modules/` paths.
 Viewer and parser execution is offline after installation.
+
+For just PDFium and its Rust worker (Linux x86_64, no Docker required):
+
+```sh
+bash tools/pdf-harness/install.sh --pdfium-only
+# Or from devenv, using the same pinned installer:
+devenv shell pdfium-install
+```
+
+`pdfium-render` supplies Rust bindings, not a bundled native engine. The devenv
+command deliberately uses the same upstream archive as CI rather than a Nixpkgs
+PDFium build. A different engine build would need rendering qualification; merely
+sharing the version number does not establish identical output. Re-running the
+installer replaces the old wheel extraction with `pdfium/lib/libpdfium.so` and
+the native distribution's licenses. An old wheel in `target/pdf-harness/downloads/`
+is an unused download cache and can be removed.
 
 The narrow process interfaces are:
 
@@ -84,11 +101,12 @@ Python-era producer identities. Verification treats the explicitly enumerated
 retired or migrated producer sources as historical provenance, including the
 Python inspector, fixture generator and PDFium adapter/alpha tests, migrated
 wrappers, installer and `xtask/src/pdf_viewers.rs`. Their descriptor shape and
-required membership are checked and their original hashes remain approval-bound.
+required membership are checked; approval metadata is historical (ADR-0019).
 Parser/viewer locks, schemas, comparator, fixtures, expectations, reports and
 other live bindings are still verified against current bytes. The historical
-`pdfium.lock.json` remains intact; the Rust worker's native library identity is
-recorded separately in `pdfium-native.lock.json`.
+wheel lock is archived at `history/pypdfium2.lock.json`; its original descriptor
+is resolved there without altering approved captures. The Rust worker's native
+library identity is recorded in `pdfium-native.lock.json`.
 
 The Rust inspector also validates the expectation object before invoking qpdf;
 missing or malformed fields are configuration errors, even when the requested
@@ -137,7 +155,7 @@ verification; meaningful historical pin-transition assertions remain Rust tests.
 with an isolated target directory so it can be called from workspace tests.
 It verifies the exact library SHA-256, selects AGG/FreeType explicitly, and uses
 the controlled empty font directory. `pdfium-native.lock.json` records native
-archive/library identity separately from the historical `pdfium.lock.json`.
+archive/library identity separately from `history/pypdfium2.lock.json`.
 `pdfium-rust/sources.json` is the shared producer-file inventory consumed by the
 Rust and Node collection paths.
 
@@ -147,6 +165,21 @@ receipt/source set or the current Rust set; mixed identities are rejected.
 The approved profile's original Python runtime record is preserved as provenance,
 and all retained raster bytes remain unchanged. The installer/launcher descriptors
 are historical; the library is checked by the worker on every render.
+
+`pdfium-runtime.json` records the current Rust producer and six fresh-process
+receipts (two renders of each retained calibration PDF), verified byte-for-byte
+against the retained rasters. Refresh it to record a new calibration run:
+
+```sh
+cargo run --locked -p xtask -- conformance refresh-pdfium-runtime
+cargo run --locked -p xtask -- conformance verify-pdf-viewers
+```
+
+Refresh executes the real viewer and rejects changed pixels or receipts before
+writing the record. Verification checks native-lock identity and receipt bindings
+offline; source hashes are historical and do not require refresh after edits.
+New collections no longer include the wheel lock;
+historical Python and early Rust inventories remain readable.
 
 ```sh
 cargo test --locked --release --manifest-path tools/pdf-harness/pdfium-rust/Cargo.toml \

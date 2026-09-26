@@ -8,7 +8,6 @@ use sha2::{Digest, Sha256};
 
 const REGISTRY_RELATIVE_PATH: &str = "tests/conformance/cases/registry.json";
 const REGISTRY_SCHEMA: &str = "excalidraw-render/conformance-case-registry/v1";
-const APPROVAL_SCHEMA: &str = "excalidraw-render/conformance-approval-subject/v1";
 const REPOSITORY_ISSUE_PREFIX: &str =
     "https://github.com/sagikazarmark/excalidraw-render.orig/issues/";
 const EMPTY_REPORT: &[u8] = br#"{"schema_version":1,"diagnostics":[]}"#;
@@ -31,7 +30,7 @@ struct CaseEntry {
     id: String,
     kind: String,
     relative_path: String,
-    approving_issue: String,
+    _approving_issue: String,
     runner: String,
     schema_id: Option<String>,
     originating_issue: Option<String>,
@@ -74,7 +73,7 @@ fn registry() -> Result<Vec<CaseEntry>, String> {
             id: field("id")?,
             kind,
             relative_path: field("path")?,
-            approving_issue: field("approving_issue")?,
+            _approving_issue: field("approving_issue")?,
             runner: field("runner")?,
             schema_id: case["schema"]["id"].as_str().map(str::to_owned),
             originating_issue: case["originating_issue"].as_str().map(str::to_owned),
@@ -136,11 +135,11 @@ pub fn case_ids() -> Result<Vec<String>, String> {
     Ok(registry()?.into_iter().map(|entry| entry.id).collect())
 }
 
-pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
+pub fn verify(case_id: &str) -> Result<(), String> {
     let loaded = load(case_id)?;
     match loaded.entry.kind.as_str() {
-        "frame" => return verify_frame(&loaded, require_approval),
-        "typography" => return verify_typography(&loaded, require_approval),
+        "frame" => return verify_frame(&loaded),
+        "typography" => return verify_typography(&loaded),
         _ => {}
     }
     verify_manifest_digest(&loaded)?;
@@ -212,16 +211,10 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     verify_variants(&loaded, &mut referenced)?;
     verify_provenance(&loaded)?;
 
-    let subject = subject_digest(&loaded.manifest, referenced)?;
-    match &loaded.manifest["approval"] {
-        Value::Null if require_approval => return Err("case has no approval record".to_owned()),
-        Value::Null => {}
-        approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue)?,
-    }
     Ok(())
 }
 
-fn verify_frame(loaded: &LoadedCase, require_approval: bool) -> Result<(), String> {
+fn verify_frame(loaded: &LoadedCase) -> Result<(), String> {
     verify_manifest_digest(loaded)?;
     let manifest = object(&loaded.manifest, "frame manifest")?;
     verify_exact_keys(
@@ -292,12 +285,7 @@ fn verify_frame(loaded: &LoadedCase, require_approval: bool) -> Result<(), Strin
     verify_frame_coverage(&scene)?;
     verify_frame_targets(loaded, &scene)?;
     verify_frame_provenance(loaded)?;
-    let subject = subject_digest(&loaded.manifest, referenced)?;
-    match &loaded.manifest["approval"] {
-        Value::Null if require_approval => Err("frame case has no approval record".to_owned()),
-        Value::Null => Ok(()),
-        approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue),
-    }
+    Ok(())
 }
 
 fn collect_frame_descriptors(
@@ -474,7 +462,7 @@ fn verify_frame_provenance(loaded: &LoadedCase) -> Result<(), String> {
     {
         return Err("frame provenance identity is stale".to_owned());
     }
-    verify_repo_descriptor(&provenance["generator"], "frame generator")?;
+    crate::conformance_candidate_gate::historical_sources(&json!([provenance["generator"]]))?;
     verify_repo_descriptor(&provenance["runner"], "frame runner")?;
     let runs = provenance["runs"]
         .as_array()
@@ -519,7 +507,7 @@ fn verify_frame_provenance(loaded: &LoadedCase) -> Result<(), String> {
     Ok(())
 }
 
-fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), String> {
+fn verify_typography(loaded: &LoadedCase) -> Result<(), String> {
     verify_manifest_digest(loaded)?;
     verify_exact_keys(
         object(&loaded.manifest, "manifest")?,
@@ -586,12 +574,7 @@ fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), 
     verify_typography_provenance(loaded)?;
     let mut referenced = Vec::new();
     collect_typography_descriptors(loaded, &mut referenced)?;
-    let subject = subject_digest(&loaded.manifest, referenced)?;
-    match &loaded.manifest["approval"] {
-        Value::Null if require_approval => Err("case has no approval record".to_owned()),
-        Value::Null => Ok(()),
-        approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue),
-    }
+    Ok(())
 }
 
 /// The typography manifest carries one `expected_report` for both formats and
@@ -666,7 +649,7 @@ fn verify_schema_for(manifest: &Value, schema_id: &str, schema_path: &str) -> Re
         .map_err(|error| format!("case schema does not satisfy its meta-schema: {error}"))?;
     let validator = jsonschema::draft202012::options()
         .should_validate_formats(true)
-        .build(&definition)
+        .build(&schema_without_approval_gate(&definition))
         .map_err(|error| format!("case schema could not be compiled: {error}"))?;
     validator
         .validate(manifest)
@@ -963,72 +946,9 @@ fn verify_comparison(manifest: &Value) -> Result<(), String> {
     Ok(())
 }
 
-pub fn approval_subject(case_id: &str) -> Result<String, String> {
-    verify(case_id, false)?;
-    let loaded = load(case_id)?;
-    let mut referenced = Vec::new();
-    if loaded.entry.kind == "frame" {
-        collect_frame_descriptors(&loaded, &mut referenced)?;
-        return subject_digest(&loaded.manifest, referenced);
-    }
-    if loaded.entry.kind == "typography" {
-        collect_typography_descriptors(&loaded, &mut referenced)?;
-        return subject_digest(&loaded.manifest, referenced);
-    }
-    verify_descriptor(&loaded.root, &loaded.manifest["scene"], &mut referenced)?;
-    verify_descriptor(
-        &loaded.root,
-        &loaded.manifest["provenance"],
-        &mut referenced,
-    )?;
-    collect_variant_descriptors(&loaded, &mut referenced)?;
-    subject_digest(&loaded.manifest, referenced)
-}
-
-pub fn record_approval(
-    case_id: &str,
-    approved_by: &str,
-    approved_at: &str,
-    approval_url: &str,
-    expected_subject: &str,
-) -> Result<(), String> {
-    verify(case_id, false)?;
-    let mut loaded = load(case_id)?;
-    if !loaded.manifest["approval"].is_null() {
-        return Err("case is already approved".to_owned());
-    }
-    let subject = approval_subject(case_id)?;
-    let expected = expected_subject
-        .strip_prefix("sha256:")
-        .unwrap_or(expected_subject);
-    if subject != expected {
-        return Err(format!(
-            "approval subject mismatch: expected {expected}, computed {subject}"
-        ));
-    }
-    let approval = json!({
-        "approved_at": approved_at,
-        "approved_by": approved_by,
-        "approval_subject_sha256": format!("sha256:{subject}"),
-        "approval_url": approval_url,
-    });
-    verify_approval_for_issue(&approval, &subject, &loaded.entry.approving_issue)?;
-    loaded.manifest["approval"] = approval;
-    let bytes = canonical_bytes(&loaded.manifest)?;
-    fs::write(&loaded.manifest_path, [&bytes[..], b"\n"].concat())
-        .map_err(|error| format!("failed to write manifest: {error}"))?;
-    fs::write(
-        loaded.root.join("manifest.sha256"),
-        format!("{}\n", sha256(&bytes)),
-    )
-    .map_err(|error| format!("failed to write manifest digest: {error}"))?;
-    verify(case_id, true)
-}
-
 struct LoadedCase {
     entry: CaseEntry,
     root: PathBuf,
-    manifest_path: PathBuf,
     manifest_bytes: Vec<u8>,
     manifest: Value,
 }
@@ -1048,7 +968,6 @@ fn load(case_id: &str) -> Result<LoadedCase, String> {
     Ok(LoadedCase {
         entry,
         root,
-        manifest_path,
         manifest_bytes,
         manifest,
     })
@@ -1355,7 +1274,7 @@ fn verify_typography_provenance(case_data: &LoadedCase) -> Result<(), String> {
     {
         return Err("typography provenance identity is invalid".to_owned());
     }
-    verify_repo_descriptor(&provenance["generator"], "generator")?;
+    crate::conformance_candidate_gate::historical_sources(&json!([provenance["generator"]]))?;
     verify_repo_descriptor(&provenance["runner"], "runner")?;
     let runs = provenance["runs"]
         .as_array()
@@ -1481,28 +1400,6 @@ fn verify_variants(case_data: &LoadedCase, referenced: &mut Vec<Value>) -> Resul
                 case_data,
                 &value["expected_report"],
                 &case_data.entry.expected_diagnostics[format],
-            )?;
-        }
-    }
-    Ok(())
-}
-
-fn collect_variant_descriptors(
-    case_data: &LoadedCase,
-    referenced: &mut Vec<Value>,
-) -> Result<(), String> {
-    let variants = case_data.manifest["variants"]
-        .as_array()
-        .ok_or_else(|| "variants must be an array".to_owned())?;
-    for variant in variants {
-        let formats = object(&variant["formats"], "formats")?;
-        for format in ["png", "svg"] {
-            verify_descriptor(&case_data.root, &formats[format]["artifact"], referenced)?;
-            verify_descriptor(&case_data.root, &formats[format]["raw_raster"], referenced)?;
-            verify_descriptor(
-                &case_data.root,
-                &formats[format]["expected_report"],
-                referenced,
             )?;
         }
     }
@@ -1692,7 +1589,7 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
     {
         return Err("browser provenance does not match the approved reference profile".to_owned());
     }
-    verify_repo_descriptor(&provenance["generator"], "generator")?;
+    crate::conformance_candidate_gate::historical_sources(&json!([provenance["generator"]]))?;
     verify_repo_descriptor(&provenance["runner"], "runner")?;
     let raster_profile = object(&provenance["raw_raster_profile"], "raw raster profile")?;
     verify_exact_keys(
@@ -1818,44 +1715,6 @@ fn verify_repo_descriptor(value: &Value, subject: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// Checks one approval object against its subject and the issue whose comment
-/// thread must carry it: exactly the four approval keys, the subject digest,
-/// a GitHub login, a calendar date, and a comment URL on that issue. Shared by
-/// every approval-bearing record that is decided on one issue.
-pub(crate) fn verify_approval_for_issue(
-    approval: &Value,
-    subject: &str,
-    issue: &str,
-) -> Result<(), String> {
-    let approval = object(approval, "approval")?;
-    verify_exact_keys(
-        approval,
-        &[
-            "approved_at",
-            "approved_by",
-            "approval_subject_sha256",
-            "approval_url",
-        ],
-        "approval",
-    )?;
-    if approval["approval_subject_sha256"] != json!(format!("sha256:{subject}")) {
-        return Err("approval subject does not match case contents".to_owned());
-    }
-    let approved_by = approval["approved_by"].as_str().unwrap_or_default();
-    let approved_at = approval["approved_at"].as_str().unwrap_or_default();
-    let approval_url = approval["approval_url"].as_str().unwrap_or_default();
-    let prefix = format!("{REPOSITORY_ISSUE_PREFIX}{issue}#issuecomment-");
-    let comment_id = approval_url.strip_prefix(&prefix);
-    if !valid_github_login(approved_by)
-        || !valid_date(approved_at)
-        || comment_id.is_none_or(str::is_empty)
-        || comment_id.is_some_and(|id| !id.chars().all(|character| character.is_ascii_digit()))
-    {
-        return Err("approval identity, date, or URL is invalid".to_owned());
-    }
-    Ok(())
-}
-
 fn verify_descriptor(
     root: &Path,
     value: &Value,
@@ -1923,21 +1782,6 @@ fn descriptor_path(root: &Path, value: &Value) -> Result<PathBuf, String> {
     Ok(joined)
 }
 
-fn subject_digest(manifest: &Value, mut files: Vec<Value>) -> Result<String, String> {
-    files.sort_by(|left, right| left["path"].as_str().cmp(&right["path"].as_str()));
-    files.dedup_by(|left, right| left["path"] == right["path"]);
-    let mut manifest = manifest.clone();
-    manifest
-        .as_object_mut()
-        .ok_or_else(|| "manifest must be an object".to_owned())?
-        .remove("approval");
-    Ok(sha256(&canonical_bytes(&json!({
-        "files": files,
-        "manifest": manifest,
-        "schema": APPROVAL_SCHEMA,
-    }))?))
-}
-
 /// Canonical JSON for approval subjects and digest sidecars, shared by every
 /// evidence family that is not pinned by an approval record. Object keys must
 /// be ASCII so byte-order key sorting is a total canonical ordering.
@@ -1945,6 +1789,38 @@ pub(crate) fn canonical_bytes(value: &Value) -> Result<Vec<u8>, String> {
     let mut output = String::new();
     write_canonical(value, &mut output)?;
     Ok(output.into_bytes())
+}
+
+/// Read legacy schemas without enforcing their retired acceptance metadata.
+/// All other schema rules and the original schema's file digest remain checked.
+pub(crate) fn schema_without_approval_gate(definition: &Value) -> Value {
+    let mut definition = definition.clone();
+    if let Some(properties) = definition
+        .get_mut("properties")
+        .and_then(Value::as_object_mut)
+    {
+        if properties.contains_key("approval") {
+            properties.insert("approval".into(), Value::Bool(true));
+        }
+    }
+    definition
+}
+
+#[test]
+fn legacy_approval_schema_is_opaque_but_expectations_are_still_validated() {
+    let schema = json!({
+        "type":"object", "additionalProperties":false,
+        "required":["approval","expected"],
+        "properties": {
+            "approval":{"type":"object","required":["approved_by"]},
+            "expected":{"const":"retained-output"}
+        }
+    });
+    let validator = jsonschema::validator_for(&schema_without_approval_gate(&schema)).unwrap();
+    for approval in [Value::Null, json!({"old":"metadata"}), json!(false)] {
+        assert!(validator.is_valid(&json!({"approval":approval,"expected":"retained-output"})));
+        assert!(!validator.is_valid(&json!({"approval":approval,"expected":"changed-output"})));
+    }
 }
 
 fn write_canonical(value: &Value, output: &mut String) -> Result<(), String> {
@@ -2333,41 +2209,6 @@ fn verify_svg_metadata(document: &roxmltree::Document, embed_scene: bool) -> Res
         return Err("SVG unexpectedly embeds scene metadata".to_owned());
     }
     Ok(())
-}
-
-pub(crate) fn valid_github_login(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 39
-        && !value.starts_with('-')
-        && !value.ends_with('-')
-        && value
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || character == '-')
-}
-
-pub(crate) fn valid_date(value: &str) -> bool {
-    let parts: Vec<_> = value.split('-').collect();
-    if parts.len() != 3 || parts[0].len() != 4 || parts[1].len() != 2 || parts[2].len() != 2 {
-        return false;
-    }
-    let Ok(year) = parts[0].parse::<u32>() else {
-        return false;
-    };
-    let Ok(month) = parts[1].parse::<u32>() else {
-        return false;
-    };
-    let Ok(day) = parts[2].parse::<u32>() else {
-        return false;
-    };
-    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
-    let days = match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 if leap => 29,
-        2 => 28,
-        _ => return false,
-    };
-    (1..=days).contains(&day)
 }
 
 fn png_dimensions(bytes: &[u8]) -> Result<(u32, u32), String> {

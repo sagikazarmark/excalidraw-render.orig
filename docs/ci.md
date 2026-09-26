@@ -1,5 +1,10 @@
 # CI and evidence operations
 
+Acceptance uses Git/PR review and reproducible tests for all evidence families
+(ADR-0019). Older approval-subject and approval-recording examples are historical;
+those commands are retired. CI retains input/output and downloaded-tool integrity
+checks, exact tolerances, target completeness and fresh replay.
+
 ## 0.1.0 preparation
 
 Use Dagger `v1.0.0-beta.14`, with `dagger --engine cloud check` as the CI

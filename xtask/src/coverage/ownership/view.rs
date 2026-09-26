@@ -114,7 +114,7 @@ impl LedgerView {
         };
         Ok(Some(match owner {
             Owner::Case { case, .. } => {
-                crate::conformance::verify(case, true)?;
+                crate::conformance::verify(case)?;
                 PrimaryOwner::Case(case.clone())
             }
             Owner::Test {

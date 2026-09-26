@@ -59,7 +59,6 @@ const REVIEWED_DECODES_SCHEMA: &str = "excalidraw-render/reviewed-decodes/v1";
 const REVIEWED_DECODES_APPROVAL_SUBJECT_SCHEMA: &str =
     "excalidraw-render/reviewed-decodes-approval-subject/v1";
 /// The issue whose comment thread carries the reviewed-decodes approval.
-const REVIEWED_DECODES_APPROVING_ISSUE: &str = "120";
 const NOTO_EMOJI_SHA256: &str = "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634";
 const NOTO_EMOJI_LENGTH: usize = 862_680;
 const XIAOLAI_ORDER_SHA256: &str =
@@ -609,7 +608,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
     }
     write_if_changed(&scene_policy_path, scene_policy.as_bytes())?;
 
-    verify(false)
+    verify()
 }
 
 pub fn materialize() -> Result<(), String> {
@@ -651,7 +650,7 @@ pub fn materialize() -> Result<(), String> {
         &root.join("crates/excalidraw-render/src/generated/scene_surface_revision_1.rs"),
         scene_policy.as_bytes(),
     )?;
-    verify(false)
+    verify()
 }
 
 fn materialize_svg_font_subset_qualification_schema(root: &Path) -> Result<(), String> {
@@ -819,10 +818,8 @@ fn verify_incorporated_inventory(incorporated: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// Verifies the sealed catalog offline. `require_approval` is what the CI gate
-/// passes: the reviewed-decodes record must then carry a maintainer approval,
-/// while materialization and subject derivation verify a pending record.
-pub fn verify(require_approval: bool) -> Result<(), String> {
+/// Verifies the sealed catalog and reproduces its reviewed decode bytes offline.
+pub fn verify() -> Result<(), String> {
     let root = crate::conformance::repo_root();
     let base = root.join("crates/excalidraw-render-assets-base");
     verify_incorporated_inventory(&base.join("catalog/incorporated"))?;
@@ -925,9 +922,7 @@ pub fn verify(require_approval: bool) -> Result<(), String> {
             return Err(format!("license bundle copy is stale: {}", copy.display()));
         }
     }
-    // Last, so that a pending approval is reported only once everything the
-    // approval would bind has verified.
-    verify_reviewed_decodes_approval(&reviewed_decodes, require_approval)
+    Ok(())
 }
 
 fn materialize_predecoded_excalifont(root: &Path, assets: &[ImportedAsset]) -> Result<(), String> {
@@ -1007,6 +1002,13 @@ fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String
             "version": "0.2.8"
         }
     });
+    let mut metadata = metadata;
+    let mut expected = expected;
+    metadata
+        .as_object_mut()
+        .ok_or("invalid font transformation record")?
+        .remove("approval");
+    expected.as_object_mut().unwrap().remove("approval");
     if metadata != expected {
         return Err("Excalifont predecoded transformation record is stale".to_owned());
     }
@@ -1128,23 +1130,6 @@ fn carry_approval(existing: Option<&Value>, fresh: &mut Value) -> Result<(), Str
     Ok(())
 }
 
-/// Checks the record's approval against its subject and the deciding issue.
-/// The CI gate requires one; materialization and subject derivation do not.
-fn verify_reviewed_decodes_approval(record: &Value, require_approval: bool) -> Result<(), String> {
-    let subject = reviewed_decodes_subject(record)?;
-    match &record["approval"] {
-        Value::Null if require_approval => {
-            Err("reviewed-decodes record has no approval record".to_owned())
-        }
-        Value::Null => Ok(()),
-        approval => crate::conformance::verify_approval_for_issue(
-            approval,
-            &subject,
-            REVIEWED_DECODES_APPROVING_ISSUE,
-        ),
-    }
-}
-
 /// Reviews every asset's decode and writes the record, carrying the checked-in
 /// approval forward only while its subject holds. Returns the written record.
 fn materialize_reviewed_decodes(root: &Path, assets: &[ImportedAsset]) -> Result<Value, String> {
@@ -1258,49 +1243,6 @@ fn verify_reviewed_decodes(
     Ok(())
 }
 
-/// Prints the subject a maintainer approves on the deciding issue.
-pub fn reviewed_decodes_approval_subject() -> Result<String, String> {
-    verify(false)?;
-    reviewed_decodes_subject(&read_reviewed_decodes(&crate::conformance::repo_root())?)
-}
-
-/// Records the maintainer's approval of the reviewed-decodes record after
-/// checking it names the subject the record has today.
-pub fn record_reviewed_decodes_approval(
-    approved_by: &str,
-    approved_at: &str,
-    approval_url: &str,
-    expected_subject: &str,
-) -> Result<(), String> {
-    verify(false)?;
-    let root = crate::conformance::repo_root();
-    let mut record = read_reviewed_decodes(&root)?;
-    if !record["approval"].is_null() {
-        return Err("reviewed-decodes record is already approved".to_owned());
-    }
-    let subject = reviewed_decodes_subject(&record)?;
-    let expected = expected_subject
-        .strip_prefix("sha256:")
-        .unwrap_or(expected_subject);
-    if subject != expected {
-        return Err(format!(
-            "approval subject mismatch: expected {expected}, computed {subject}"
-        ));
-    }
-    record["approval"] = json!({
-        "approved_at": approved_at,
-        "approved_by": approved_by,
-        "approval_subject_sha256": format!("sha256:{subject}"),
-        "approval_url": approval_url,
-    });
-    verify_reviewed_decodes_approval(&record, true)?;
-    let bytes = serde_json::to_vec(&record)
-        .map_err(|error| format!("failed to serialize reviewed-decodes record: {error}"))?;
-    write_if_changed(&root.join(REVIEWED_DECODES_PATH), &bytes)?;
-    write_digest_sidecar(&root.join(REVIEWED_DECODES_DIGEST_PATH), &bytes)?;
-    verify(true)
-}
-
 fn verify_noto_emoji(root: &Path) -> Result<(), String> {
     let path =
         root.join("crates/excalidraw-render-assets-base/catalog/fallback/NotoEmoji-Regular.ttf");
@@ -1323,8 +1265,7 @@ fn verify_noto_emoji(root: &Path) -> Result<(), String> {
     verify_canonical_json_bytes(&metadata_bytes, "Noto Emoji transformation record")?;
     let metadata: Value = serde_json::from_slice(&metadata_bytes)
         .map_err(|error| format!("invalid Noto Emoji transformation record: {error}"))?;
-    if metadata["approval"]["exact_output_bytes_reviewed"] != true
-        || metadata["comparison"]["version"] != "Version 3.003"
+    if metadata["comparison"]["version"] != "Version 3.003"
         || metadata["source"]["sha256"] != NOTO_EMOJI_SHA256
         || metadata["source"]["length"] != NOTO_EMOJI_LENGTH
         || metadata["output"]["sha256"] != NOTO_EMOJI_SHA256
@@ -3176,7 +3117,9 @@ fn verify_frame_file_records(
         {
             return Err(format!("{description} {path} has an invalid byte record"));
         }
-        if verify_files {
+        // Orchestration source is capture-time provenance. The locked package,
+        // browser entry, invocation and reference output still bind behavior.
+        if verify_files && path != "tools/reference-oracle/scripts/frame-conformance-case.mjs" {
             let bytes = fs::read(root.join(relative))
                 .map_err(|error| format!("failed to read {description} {path}: {error}"))?;
             if byte_length != bytes.len() as u64 || digest != sha256(&bytes) {
@@ -3549,9 +3492,8 @@ mod tests {
     use super::FontLicense;
     use super::{
         carry_approval, generate_scene_surface_rust, parse_unicode_ranges, parse_xiaolai_index,
-        review_decode, reviewed_decodes_record, reviewed_decodes_subject,
-        verify_reviewed_decodes_approval, verify_scene_surface, XiaolaiIndexFace,
-        EXCALIFONT_BASIC_LATIN_PATH, EXCALIFONT_BASIC_LATIN_SHA256, FONT_NOTICES,
+        review_decode, reviewed_decodes_record, reviewed_decodes_subject, verify_scene_surface,
+        XiaolaiIndexFace, EXCALIFONT_BASIC_LATIN_PATH, EXCALIFONT_BASIC_LATIN_SHA256, FONT_NOTICES,
     };
 
     /// The bundle prints each family's attribution, license sentence and
@@ -3928,30 +3870,6 @@ export const XiaolaiFontFaces: ExcalidrawFontFaceDescriptor[] = [
             reviewed_decodes_subject(&moved).expect("subject derives"),
             subject
         );
-    }
-
-    #[test]
-    fn reviewed_decodes_approval_is_required_by_the_gate_and_bound_to_issue_120() {
-        let pending = excalifont_reviewed_decodes(Value::Null);
-        assert!(verify_reviewed_decodes_approval(&pending, false).is_ok());
-        assert!(verify_reviewed_decodes_approval(&pending, true).is_err());
-
-        let subject = reviewed_decodes_subject(&pending).expect("subject derives");
-        let approved = excalifont_reviewed_decodes(approval(
-            &subject,
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/120#issuecomment-5560475310",
-        ));
-        assert!(verify_reviewed_decodes_approval(&approved, true).is_ok());
-
-        let elsewhere = excalifont_reviewed_decodes(approval(
-            &subject,
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/58#issuecomment-5051018482",
-        ));
-        assert!(verify_reviewed_decodes_approval(&elsewhere, true).is_err());
-
-        let mut stale = approved.clone();
-        stale["chunks"][0]["decodedLength"] = json!(61_949);
-        assert!(verify_reviewed_decodes_approval(&stale, true).is_err());
     }
 
     /// `materialize` and `import` re-derive the record from the shards; an

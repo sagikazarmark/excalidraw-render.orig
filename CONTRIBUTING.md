@@ -73,10 +73,9 @@ render inputs or expected output still use the workflow below.
    [CI operations](docs/ci.md). Keep generation separate from verification.
 3. Review the changed outputs, diagnostics, and visual/structural measurements.
    Do not broaden tolerances just to make a failure pass.
-4. Obtain maintainer acceptance for changed expectations or comparison rules.
-   Representative cases use normal PR review as described below. Other evidence
-   families' existing hash-bound approval records remain in use for 0.1.0; their
-   recording commands are documented with each evidence family.
+4. Review changed expectations and comparison rules through normal Git/PR review.
+   No separate approval hash, issue-comment acceptance or approval-writing command
+   is required for any evidence family.
 5. Run the affected checks, then the full Dagger checks before release.
 
 Running tests needs no fresh approval. An unchanged accepted baseline remains
@@ -87,11 +86,12 @@ review is the acceptance step: no separate issue-comment approval or
 `record-approval` command is required. `representative case materialize` writes
 `approval: null`; review the case and add it to the registry through a PR.
 Registry verification and coverage's independent-case validation accept null
-approval. Retained non-null historical approvals still undergo metadata and
-exact subject-hash validation; `case subject` remains diagnostic. See the
+approval. Retained approval fields are historical metadata, not acceptance gates;
+`case subject` remains diagnostic. See the
 [representative intake workflow](tools/representative-intake/README.md#registered-cases).
-Other evidence families, including the separate Stage-4 candidate approval flow,
-retain their documented approval requirements.
+The same policy applies to catalogs, viewer qualification, Stage-4 candidates,
+native baselines, PDF judgments, exceptions and coverage records. See
+[ADR-0019](docs/adr/0019-review-expectations-in-git-without-approval-hashes.md).
 
 Representative cases treat source/build identities as historical provenance:
 code-only changes are checked by fresh replay against the accepted outputs,
@@ -132,16 +132,15 @@ whole `Cargo.lock` and test/helper source bytes are not expectation inputs.
 
 Completed evaluations and proposal migrations are historical research. Their
 command transcripts are not additional contribution steps; see
-[retired tooling](tools/historical-tooling.md). The remaining snapshot/catalog/
-viewer approval records bind accepted data or cross-target judgments, rather
-than merely implementation source. They still have live consumers and remain
-in the documented expectation-update flow; retiring them requires coordinating
-those consumers and their data formats.
+[retired tooling](tools/historical-tooling.md). Older approval records and command
+transcripts remain historical. Current verification checks outputs, input/profile
+bindings, explicit tolerances and complete execution results directly. Tool
+download checksums and binary-identity hashes are still enforced.
 
 ## Release scope
 
 0.1.0 prioritizes useful, tested scene/frame rendering with documented
 limitations. Exhaustive coverage-ledger closure, additional formats, historical
-revision retention, and approval-workflow redesign are follow-up work. See
+revision retention are follow-up work. See
 [the release policy](docs/release-0.1.0.md) and
 [known limitations](docs/known-limitations.md).

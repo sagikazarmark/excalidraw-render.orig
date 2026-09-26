@@ -446,9 +446,7 @@ pub(super) fn verify_capture(bundle: &Path, output: &Path) -> Result<Value> {
         "capture identity changed",
     )?;
     require(
-        record["status"] == "observed-unapproved"
-            && record["approval"].is_null()
-            && record["eligible_executions"] == json!([]),
+        record["status"] == "observed-unapproved" && record["eligible_executions"] == json!([]),
         "capture cannot grant approval",
     )?;
     require(

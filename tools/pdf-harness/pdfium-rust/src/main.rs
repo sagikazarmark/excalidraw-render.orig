@@ -57,7 +57,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../..")
         .canonicalize()?;
-    let library = root.join("target/pdf-harness/pdfium/pypdfium2_raw/libpdfium.so");
+    let library = root.join("target/pdf-harness/pdfium/lib/libpdfium.so");
     if hash(&fs::read(&library)?) != LIBRARY_SHA256 {
         return Err("PDFium library hash mismatch".into());
     }

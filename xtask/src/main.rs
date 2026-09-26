@@ -42,29 +42,16 @@ fn run() -> Result<(), String> {
 }
 
 fn run_catalog(mut args: impl Iterator<Item = String>) -> Result<(), String> {
+    let args = args.by_ref().collect::<Vec<_>>();
+    if args.first().is_some_and(|s| s.contains("approval")) {
+        return Err("approval commands are retired; review expectation changes in Git and run catalog verify".into());
+    }
+    let mut args = args.into_iter();
     match args.next().as_deref() {
         Some("verify") => {
             no_more_args(args)?;
-            catalog::verify(true)?;
+            catalog::verify()?;
             println!("verified compatibility revision 1 catalog");
-        }
-        Some("reviewed-decodes-approval-subject") => {
-            no_more_args(args)?;
-            println!("sha256:{}", catalog::reviewed_decodes_approval_subject()?);
-        }
-        Some("record-reviewed-decodes-approval") => {
-            let approved_by = required_arg(&mut args, "GitHub identity")?;
-            let approved_at = required_arg(&mut args, "approval date")?;
-            let approval_url = required_arg(&mut args, "approval URL")?;
-            let expected_subject = required_arg(&mut args, "approval subject")?;
-            no_more_args(args)?;
-            catalog::record_reviewed_decodes_approval(
-                &approved_by,
-                &approved_at,
-                &approval_url,
-                &expected_subject,
-            )?;
-            println!("recorded compatibility revision 1 reviewed-decodes approval");
         }
         Some("import") => {
             let source_root = required_arg(&mut args, "local Excalidraw dist/prod path")?;
@@ -89,6 +76,11 @@ fn run_catalog(mut args: impl Iterator<Item = String>) -> Result<(), String> {
 }
 
 fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String> {
+    let args = args.by_ref().collect::<Vec<_>>();
+    if args.first().is_some_and(|s| s.contains("approval")) {
+        return Err("approval commands are retired; review expectation changes in Git and run the corresponding verifier".into());
+    }
+    let mut args = args.into_iter();
     match args.next().as_deref() {
         Some("inventory") => {
             no_more_args(args)?;
@@ -217,18 +209,6 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             coverage::record_closure_owner(&obligation, &verifier, &rationale)?;
         }
-        Some("record-ownership-approval") => {
-            let login = required_arg(&mut args, "GitHub identity")?;
-            let date = required_arg(&mut args, "approval date")?;
-            let url = required_arg(&mut args, "approval comment URL")?;
-            let subject = required_arg(&mut args, "approval subject")?;
-            no_more_args(args)?;
-            coverage::record_ownership_approval(&login, &date, &url, &subject)?;
-        }
-        Some("ownership-approval-subject") => {
-            no_more_args(args)?;
-            println!("sha256:{}", coverage::ownership_subject()?);
-        }
         Some("inventory-digest") => {
             no_more_args(args)?;
             println!("{}", coverage::inventory_digest()?);
@@ -299,18 +279,6 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             coverage::stage_baseline(&candidate, &output)?;
         }
-        Some("native-baseline-approval-subject") => {
-            no_more_args(args)?;
-            println!("sha256:{}", coverage::baseline_subject()?);
-        }
-        Some("record-native-baseline-approval") => {
-            let login = required_arg(&mut args, "GitHub identity")?;
-            let date = required_arg(&mut args, "approval date")?;
-            let url = required_arg(&mut args, "approval comment URL")?;
-            let subject = required_arg(&mut args, "approval subject")?;
-            no_more_args(args)?;
-            coverage::record_baseline_approval(&login, &date, &url, &subject)?;
-        }
         Some("verify-native-baseline") => {
             no_more_args(args)?;
             coverage::verify_baseline()?;
@@ -323,18 +291,6 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
         Some("pdf-judgments-generate") => {
             no_more_args(args)?;
             coverage::generate_pdf_judgments()?;
-        }
-        Some("pdf-judgments-approval-subject") => {
-            no_more_args(args)?;
-            println!("sha256:{}", coverage::pdf_judgments_subject()?);
-        }
-        Some("record-pdf-judgments-approval") => {
-            let login = required_arg(&mut args, "GitHub identity")?;
-            let date = required_arg(&mut args, "approval date")?;
-            let url = required_arg(&mut args, "approval comment URL")?;
-            let subject = required_arg(&mut args, "approval subject")?;
-            no_more_args(args)?;
-            coverage::record_pdf_judgments_approval(&login, &date, &url, &subject)?;
         }
         Some("verify-pdf-judgments") => {
             let require_approval = match args.next().as_deref() {
@@ -372,31 +328,18 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
         Some("verify") => {
             let case_id = required_arg(&mut args, "case ID")?;
             no_more_args(args)?;
-            conformance::verify(&case_id, true)?;
+            conformance::verify(&case_id)?;
             println!("verified {case_id}");
         }
         Some("verify-all") => {
             no_more_args(args)?;
             let case_ids = conformance::case_ids()?;
             for case_id in &case_ids {
-                conformance::verify(case_id, true)?;
+                conformance::verify(case_id)?;
                 println!("verified {case_id}");
             }
             println!("verified {} registered cases", case_ids.len());
             conformance_candidate_gate::verify_registry()?;
-        }
-        Some("approval-subject") => {
-            let case_id = required_arg(&mut args, "case ID")?;
-            no_more_args(args)?;
-            println!("sha256:{}", conformance::approval_subject(&case_id)?);
-        }
-        Some("candidate-approval-subject") => {
-            let directory = required_arg(&mut args, "candidate directory")?;
-            no_more_args(args)?;
-            println!(
-                "sha256:{}",
-                conformance_candidate_gate::verify(&directory, false)?
-            );
         }
         Some("candidate-prepare-assets") => {
             let directory = required_arg(&mut args, "candidate directory")?;
@@ -515,25 +458,9 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
                     .map_err(|e| e.to_string())?
             );
         }
-        Some("record-approval") => {
-            let case_id = required_arg(&mut args, "case ID")?;
-            let approved_by = required_arg(&mut args, "GitHub identity")?;
-            let approved_at = required_arg(&mut args, "approval date")?;
-            let approval_url = required_arg(&mut args, "approval URL")?;
-            let expected_subject = required_arg(&mut args, "approval subject")?;
-            no_more_args(args)?;
-            conformance::record_approval(
-                &case_id,
-                &approved_by,
-                &approved_at,
-                &approval_url,
-                &expected_subject,
-            )?;
-            println!("recorded approval for {case_id}");
-        }
         Some("verify-svg-viewers") => {
             no_more_args(args)?;
-            svg_viewers::verify(true)?;
+            svg_viewers::verify()?;
             println!("verified canonical SVG viewer qualification");
         }
         Some("verify-svg-font-subsets") => {
@@ -574,24 +501,6 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             svg_font_subset_targets::record_aggregate(&aggregate, &run_url)?;
             println!("recorded SVG font subset target aggregate into the release evidence");
         }
-        Some("svg-font-subset-approval-subject") => {
-            no_more_args(args)?;
-            println!("sha256:{}", svg_font_subsets::approval_subject()?);
-        }
-        Some("record-svg-font-subset-approval") => {
-            let approved_by = required_arg(&mut args, "GitHub identity")?;
-            let approved_at = required_arg(&mut args, "approval date")?;
-            let approval_url = required_arg(&mut args, "approval URL")?;
-            let expected_subject = required_arg(&mut args, "approval subject")?;
-            no_more_args(args)?;
-            svg_font_subsets::record_approval(
-                &approved_by,
-                &approved_at,
-                &approval_url,
-                &expected_subject,
-            )?;
-            println!("recorded SVG font subset viewer evidence approval");
-        }
         Some("generate-svg-font-subset-rust-report") => {
             let inputs = required_arg(&mut args, "viewer input manifest")?;
             let viewer = required_arg(&mut args, "canonical pure-Rust viewer executable")?;
@@ -608,55 +517,24 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             svg_font_subsets::materialize(&inputs, &chromium, &pure_rust)?;
             println!("materialized SVG font subset viewer evidence");
         }
-        Some("svg-viewer-approval-subject") => {
-            no_more_args(args)?;
-            println!("sha256:{}", svg_viewers::approval_subject()?);
-        }
-        Some("record-svg-viewer-approval") => {
-            let approved_by = required_arg(&mut args, "GitHub identity")?;
-            let approved_at = required_arg(&mut args, "approval date")?;
-            let approval_url = required_arg(&mut args, "approval URL")?;
-            let expected_subject = required_arg(&mut args, "approval subject")?;
-            no_more_args(args)?;
-            svg_viewers::record_approval(
-                &approved_by,
-                &approved_at,
-                &approval_url,
-                &expected_subject,
-            )?;
-            println!("recorded canonical SVG viewer qualification approval");
-        }
         Some("verify-pdf-viewers") => {
             no_more_args(args)?;
-            pdf_viewers::verify(true)?;
+            pdf_viewers::verify()?;
             println!("verified canonical PDF viewer and structural qualification");
         }
         Some("refresh-pdf-viewer-dependencies") => {
             return Err("historical PDF viewer dependency refresh retired; use conformance verify-pdf-viewers to check retained qualification evidence".into());
         }
-        Some("pdf-viewer-approval-subject") => {
+        Some("refresh-pdfium-runtime") => {
             no_more_args(args)?;
-            println!("sha256:{}", pdf_viewers::approval_subject()?);
-        }
-        Some("record-pdf-viewer-approval") => {
-            let approved_by = required_arg(&mut args, "GitHub identity")?;
-            let approved_at = required_arg(&mut args, "approval date")?;
-            let approval_url = required_arg(&mut args, "approval URL")?;
-            let expected_subject = required_arg(&mut args, "approval subject")?;
-            no_more_args(args)?;
-            pdf_viewers::record_approval(
-                &approved_by,
-                &approved_at,
-                &approval_url,
-                &expected_subject,
-            )?;
-            println!("recorded canonical PDF harness qualification approval");
+            pdf_viewers::refresh_pdfium_runtime()?;
+            println!("refreshed Rust PDFium runtime record against retained calibration rasters");
         }
         Some(mode @ ("generate" | "reproduce")) => {
             let case_id = required_arg(&mut args, "case ID")?;
             no_more_args(args)?;
             run_reference_oracle(mode, &case_id)?;
-            conformance::verify(&case_id, false)?;
+            conformance::verify(&case_id)?;
         }
         _ => return Err(usage()),
     }
@@ -694,13 +572,12 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "representative <prepare|verify|capture|verify-capture|case|controls|viewer-assets|evidence|compact> | ",
         "pdf-harness <generate-fixtures|inspect> | ",
-        "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
-        "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
+        "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify> | ",
         "conformance layers-report | conformance test-group-filter <manifest> | conformance refresh-test-owner-sources <module>... | conformance build-native-cli | ",
-        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|record-case-owner|record-exception-test-owner|refresh-exception-test-owner-source|refresh-test-owner-source|refresh-library-test-owner-source|record-closure-owner|ownership-approval-subject|record-ownership-approval|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|pdf-judgments-generate|pdf-judgments-approval-subject|record-pdf-judgments-approval|verify-pdf-judgments|verify-layers|verify-closure|generate|reproduce|verify|verify-all|approval-subject|candidate-approval-subject|record-approval|",
-        "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
-        "verify-pdf-viewers|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
-        "[case-id] [approval fields]\nSee CONTRIBUTING.md for tests and expectation updates."
+        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|record-case-owner|record-exception-test-owner|refresh-exception-test-owner-source|refresh-test-owner-source|refresh-library-test-owner-source|record-closure-owner|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|verify-native-baseline|replay-native-snapshots|pdf-judgments-generate|verify-pdf-judgments|verify-layers|verify-closure|generate|reproduce|verify|verify-all|",
+        "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|",
+        "verify-pdf-viewers|refresh-pdfium-runtime> ",
+        "[arguments]\nSee CONTRIBUTING.md for tests and expectation updates."
     )
     .to_owned()
 }

@@ -6,7 +6,6 @@ use serde_json::{json, Value};
 
 use crate::conformance::{
     canonical_bytes, object, read_repository_file as read_repository_file_in, repo_root, sha256,
-    valid_date, valid_github_login,
 };
 
 const MANIFEST_PATH: &str =
@@ -195,10 +194,10 @@ fn read_repository_file(relative: &str) -> Result<Vec<u8>, String> {
 }
 
 pub fn verify() -> Result<(), String> {
-    verify_internal(true)
+    verify_internal()
 }
 
-fn verify_internal(require_approval: bool) -> Result<(), String> {
+fn verify_internal() -> Result<(), String> {
     let bytes = fs::read(repo_root().join(MANIFEST_PATH))
         .map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?;
     let manifest: Value = serde_json::from_slice(&bytes)
@@ -208,10 +207,10 @@ fn verify_internal(require_approval: bool) -> Result<(), String> {
         return Err("SVG font subset viewer manifest is not canonical JSON plus LF".to_owned());
     }
     verify_sidecar(MANIFEST_DIGEST_PATH, &canonical)?;
-    verify_manifest(&manifest, require_approval)
+    verify_manifest(&manifest)
 }
 
-fn verify_manifest(manifest: &Value, require_approval: bool) -> Result<(), String> {
+fn verify_manifest(manifest: &Value) -> Result<(), String> {
     verify_schema(manifest)?;
     verify_identity_and_inputs(manifest)?;
 
@@ -257,67 +256,7 @@ fn verify_manifest(manifest: &Value, require_approval: bool) -> Result<(), Strin
     if manifest["decision"] != json!("pass") {
         return Err("SVG font subset viewer qualification is not passing".to_owned());
     }
-    let subject = approval_subject_from_manifest(manifest)?;
-    match &manifest["approval"] {
-        Value::Null if require_approval => {
-            return Err("SVG font subset viewer qualification has no approval record".to_owned())
-        }
-        Value::Null => {}
-        approval => verify_approval(approval, &subject)?,
-    }
     Ok(())
-}
-
-pub fn approval_subject() -> Result<String, String> {
-    verify_internal(false)?;
-    let manifest: Value = serde_json::from_slice(
-        &fs::read(repo_root().join(MANIFEST_PATH))
-            .map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?,
-    )
-    .map_err(|error| format!("invalid qualification manifest: {error}"))?;
-    approval_subject_from_manifest(&manifest)
-}
-
-pub fn record_approval(
-    approved_by: &str,
-    approved_at: &str,
-    approval_url: &str,
-    expected_subject: &str,
-) -> Result<(), String> {
-    verify_internal(false)?;
-    let path = repo_root().join(MANIFEST_PATH);
-    let mut manifest: Value = serde_json::from_slice(
-        &fs::read(&path).map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?,
-    )
-    .map_err(|error| format!("invalid qualification manifest: {error}"))?;
-    if !manifest["approval"].is_null() {
-        return Err("SVG font subset viewer qualification is already approved".to_owned());
-    }
-    let subject = approval_subject_from_manifest(&manifest)?;
-    let expected = expected_subject
-        .strip_prefix("sha256:")
-        .unwrap_or(expected_subject);
-    if subject != expected {
-        return Err(format!(
-            "approval subject mismatch: expected {expected}, computed {subject}"
-        ));
-    }
-    manifest["approval"] = json!({
-        "approved_at": approved_at,
-        "approved_by": approved_by,
-        "approval_subject_sha256": format!("sha256:{subject}"),
-        "approval_url": approval_url,
-    });
-    verify_approval(&manifest["approval"], &subject)?;
-    let canonical = canonical_bytes(&manifest)?;
-    fs::write(&path, [&canonical[..], b"\n"].concat())
-        .map_err(|error| format!("failed to write {MANIFEST_PATH}: {error}"))?;
-    fs::write(
-        repo_root().join(MANIFEST_DIGEST_PATH),
-        format!("{}\n", sha256(&canonical)),
-    )
-    .map_err(|error| format!("failed to write {MANIFEST_DIGEST_PATH}: {error}"))?;
-    verify()
 }
 
 fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
@@ -691,42 +630,6 @@ fn verify_compatibility_record(result: &Value, viewer: &str, id: &str) -> Result
     Ok(())
 }
 
-fn approval_subject_from_manifest(manifest: &Value) -> Result<String, String> {
-    let mut manifest = manifest.clone();
-    manifest
-        .as_object_mut()
-        .ok_or_else(|| "qualification manifest must be an object".to_owned())?
-        .remove("approval");
-    Ok(sha256(&canonical_bytes(&json!({
-        "manifest": manifest,
-        "schema": "excalidraw-render/svg-font-subset-viewer-approval-subject/v1",
-    }))?))
-}
-
-fn verify_approval(approval: &Value, subject: &str) -> Result<(), String> {
-    if approval["approval_subject_sha256"] != json!(format!("sha256:{subject}"))
-        || approval["approved_by"]
-            .as_str()
-            .is_none_or(|value| !valid_github_login(value))
-        || approval["approved_at"]
-            .as_str()
-            .is_none_or(|value| !valid_date(value))
-        || approval["approval_url"]
-            .as_str()
-            .and_then(|url| {
-                url.strip_prefix(
-                    "https://github.com/sagikazarmark/excalidraw-render.orig/issues/99#issuecomment-",
-                )
-            })
-            .is_none_or(|id| {
-                id.is_empty() || !id.chars().all(|character| character.is_ascii_digit())
-            })
-    {
-        return Err("SVG font subset viewer qualification approval is invalid".to_owned());
-    }
-    Ok(())
-}
-
 fn result_passed(result: &Value) -> bool {
     result["decision"] == json!("pass")
         && REQUIRED_CHECKS
@@ -754,7 +657,7 @@ fn verify_schema(value: &Value) -> Result<(), String> {
         .map_err(|error| format!("SVG font subset viewer schema fails its meta-schema: {error}"))?;
     jsonschema::draft202012::options()
         .should_validate_formats(true)
-        .build(&schema)
+        .build(&crate::conformance::schema_without_approval_gate(&schema))
         .map_err(|error| format!("failed to compile SVG font subset viewer schema: {error}"))?
         .validate(value)
         .map_err(|error| format!("SVG font subset viewer manifest fails its schema: {error}"))
@@ -864,11 +767,11 @@ mod tests {
             "path": "retired/font-subsetter.rs",
             "sha256": "0".repeat(64),
         });
-        verify_manifest(&manifest, false).unwrap();
+        verify_manifest(&manifest).unwrap();
     }
 
     #[test]
-    fn historical_implementation_remains_inside_the_accepted_subject() {
+    fn historical_implementation_changes_do_not_require_acceptance_hashes() {
         for field in ["path", "sha256"] {
             let mut manifest = accepted_manifest();
             manifest["implementation"][0][field] = json!(if field == "path" {
@@ -876,15 +779,11 @@ mod tests {
             } else {
                 "0".repeat(64)
             });
-            assert!(verify_manifest(&manifest, true)
-                .unwrap_err()
-                .contains("approval is invalid"));
+            verify_manifest(&manifest).unwrap();
         }
         let mut manifest = accepted_manifest();
         manifest["implementation"].as_array_mut().unwrap().remove(0);
-        assert!(verify_manifest(&manifest, true)
-            .unwrap_err()
-            .contains("approval is invalid"));
+        verify_manifest(&manifest).unwrap();
     }
 
     #[test]
@@ -902,7 +801,7 @@ mod tests {
             let mut manifest = original.clone();
             manifest["approval"] = Value::Null;
             manifest["implementation"] = implementation;
-            assert!(verify_manifest(&manifest, false).is_err());
+            assert!(verify_manifest(&manifest).is_err());
         }
     }
 
@@ -910,7 +809,7 @@ mod tests {
     fn corpus_profiles_and_viewer_reports_still_bind_current_bytes() {
         let mut original = accepted_manifest();
         original["approval"] = Value::Null;
-        verify_manifest(&original, false).unwrap();
+        verify_manifest(&original).unwrap();
         for pointer in [
             "/corpus/sha256",
             "/subset_profile/sha256",
@@ -922,7 +821,7 @@ mod tests {
             let mut changed = original.clone();
             *changed.pointer_mut(pointer).unwrap() = json!("0".repeat(64));
             assert!(
-                verify_manifest(&changed, false)
+                verify_manifest(&changed)
                     .unwrap_err()
                     .contains("stale digest"),
                 "accepted changed {pointer}"
@@ -937,12 +836,12 @@ mod tests {
         for field in ["source_woff2_sha256", "subset_woff2_sha256"] {
             let mut changed = original.clone();
             changed["executions"][0][field] = json!("0".repeat(64));
-            assert!(verify_manifest(&changed, false)
+            assert!(verify_manifest(&changed)
                 .unwrap_err()
                 .contains("stale or duplicate coverage"));
         }
         let mut changed = original;
         changed["executions"].as_array_mut().unwrap().pop();
-        assert!(verify_manifest(&changed, false).is_err());
+        assert!(verify_manifest(&changed).is_err());
     }
 }

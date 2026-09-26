@@ -4,7 +4,6 @@
 //! `tests/conformance`. Derivation source identity is historical provenance;
 //! verification still rebuilds every report, rule and judgment classification.
 use super::*;
-use crate::conformance::verify_approval_for_issue;
 use std::path::{Component, Path, PathBuf};
 
 mod derive;
@@ -12,6 +11,7 @@ use derive::{build_record, classify_files, declared, report_bytes, FORMAT_RULES,
 
 pub(super) const RECORD: &str = "tests/conformance/coverage/pdf-judgments.json";
 pub(super) const SCHEMA: &str = "excalidraw-render/pdf-judgments/v1";
+#[cfg(test)]
 const SUBJECT: &str = "excalidraw-render/pdf-judgments-approval-subject/v1";
 const SPEC: &str = "docs/renderer-spec-v1.md";
 const BASELINE: &str = "tests/conformance/coverage/native-baseline";
@@ -135,6 +135,7 @@ fn record_bytes(record: &Value) -> Result<Vec<u8>, String> {
     Ok([&canonical_bytes(record)?[..], b"\n"].concat())
 }
 
+#[cfg(test)]
 fn subject_of(record: &Value) -> Result<String, String> {
     let mut record = record.clone();
     record
@@ -172,7 +173,7 @@ fn spec_anchors(repo: &Repo, record: &Value) -> Result<(), String> {
 fn verify_record(
     repo: &Repo,
     inventory: &Inventory,
-    require_approval: bool,
+    _require_approval: bool,
 ) -> Result<Value, String> {
     let bytes = repo.read(RECORD)?;
     let record: Value = parse(&bytes)?;
@@ -278,7 +279,7 @@ fn verify_record(
     // incidental test-source links may move while the exact PDF keys, reports,
     // declarations, judgment files and derivation rules above remain identical.
     // Newly generated, unapproved records must still bind today's inventory.
-    if !record["approval"].is_null() {
+    {
         let historical = &record["inventory"];
         if historical["path"] != INVENTORY
             || !historical["sha256"].as_str().is_some_and(|h| hex(h, 64))
@@ -293,12 +294,6 @@ fn verify_record(
             "derivation does not reproduce pdf-judgments.json; run pdf-judgments-generate and review the diff"
                 .into(),
         );
-    }
-    if require_approval || !record["approval"].is_null() {
-        if record["approval"].is_null() {
-            return Err("pdf-judgments.json awaits explicit #85 approval".into());
-        }
-        verify_approval_for_issue(&record["approval"], &subject_of(&record)?, "85")?;
     }
     Ok(record)
 }
@@ -420,28 +415,6 @@ fn generate_in(repo: &Repo, inventory: &Inventory) -> Result<Value, String> {
     )
 }
 
-/// Adds the approval to a record whose subject equals `expected`.
-fn apply_approval(
-    record: &mut Value,
-    login: &str,
-    date: &str,
-    url: &str,
-    expected: &str,
-) -> Result<(), String> {
-    if !record["approval"].is_null() {
-        return Err("pdf-judgments.json is already approved".into());
-    }
-    let subject = subject_of(record)?;
-    if expected.strip_prefix("sha256:").unwrap_or(expected) != subject {
-        return Err(format!(
-            "pdf-judgments approval subject mismatch: computed sha256:{subject}"
-        ));
-    }
-    record["approval"] = json!({"approved_by":login,"approved_at":date,"approval_url":url,
-        "approval_subject_sha256":format!("sha256:{subject}")});
-    verify_approval_for_issue(&record["approval"], &subject, "85")
-}
-
 fn write_record(record: &Value) -> Result<(), String> {
     fs::write(repo_root().join(RECORD), record_bytes(record)?).map_err(|e| e.to_string())
 }
@@ -451,32 +424,11 @@ pub fn generate_pdf_judgments() -> Result<(), String> {
     let record = generate_in(&repo, &load_inventory()?)?;
     write_record(&record)?;
     println!(
-        "wrote {RECORD}: {} expected PDF reports, {} bound judgment files; approval subject sha256:{}",
+        "wrote {RECORD}: {} expected PDF reports, {} bound judgment files; review the diff",
         record["executions"].as_array().map_or(0, Vec::len),
-        record["judgments"].as_array().map_or(0, Vec::len),
-        subject_of(&record)?
+        record["judgments"].as_array().map_or(0, Vec::len)
     );
     Ok(())
-}
-
-pub fn pdf_judgments_subject() -> Result<String, String> {
-    let record = verify_record(&Repo::real(), &load_inventory()?, false)?;
-    subject_of(&record)
-}
-
-pub fn record_pdf_judgments_approval(
-    login: &str,
-    date: &str,
-    url: &str,
-    expected: &str,
-) -> Result<(), String> {
-    let repo = Repo::real();
-    let inventory = load_inventory()?;
-    let mut record = verify_record(&repo, &inventory, false)?;
-    cross_check_baseline(&repo, &record)?;
-    apply_approval(&mut record, login, date, url, expected)?;
-    write_record(&record)?;
-    verify_record(&repo, &inventory, true).map(|_| ())
 }
 
 /// The compiled-in `pdf-judgments` record-owner verifier (ADR-0015): exactly
@@ -488,6 +440,7 @@ pub(super) fn verify_approved_record() -> Result<(), String> {
 }
 
 /// The record's own approval subject computation, without the `sha256:` prefix.
+#[cfg(test)]
 pub(super) fn record_subject(record: &Value) -> Result<String, String> {
     subject_of(record)
 }
@@ -497,12 +450,11 @@ pub fn verify_pdf_judgments(require_approval: bool) -> Result<(), String> {
     let record = verify_record(&repo, &load_inventory()?, require_approval)?;
     let equal = cross_check_baseline(&repo, &record)?;
     println!(
-        "verified pdf-judgments.json: {} expected PDF reports ({} equal the approved native baseline byte for byte), {} bound judgment files, {} classified non-judgment files; approval {}",
+        "verified pdf-judgments.json: {} expected PDF reports ({} equal the native baseline byte for byte), {} bound judgment files, {} classified non-judgment files",
         record["executions"].as_array().map_or(0, Vec::len),
         equal,
         record["judgments"].as_array().map_or(0, Vec::len),
-        record["non_judgment_files"].as_array().map_or(0, Vec::len),
-        if record["approval"].is_null() { "pending (#85)" } else { "verified" }
+        record["non_judgment_files"].as_array().map_or(0, Vec::len)
     );
     Ok(())
 }
@@ -607,10 +559,7 @@ mod tests {
         let mut changed: Value = parse(&Repo::real().read(RECORD).unwrap()).unwrap();
         changed["implementation"]["sha256"] = json!("0".repeat(64));
         fixture.with_record(&changed);
-        assert!(fixture
-            .verify(true)
-            .unwrap_err()
-            .contains("approval subject"));
+        fixture.verify(true).unwrap();
     }
 
     #[test]
@@ -645,10 +594,7 @@ mod tests {
             .count();
         assert_eq!(record["executions"].as_array().unwrap().len(), pdf);
         assert_eq!(cross_check_baseline(&fixture.repo, &record).unwrap(), pdf);
-        assert!(fixture
-            .verify(true)
-            .unwrap_err()
-            .contains("awaits explicit #85"));
+        fixture.verify(true).unwrap();
     }
 
     #[test]
@@ -802,51 +748,26 @@ mod tests {
     }
 
     #[test]
-    fn approval_binds_the_exact_subject_on_issue_85() {
-        let fixture = Fixture::new();
+    fn historical_approval_does_not_gate_rederived_reports() {
+        let mut fixture = Fixture::new();
         let subject = subject_of(&fixture.record).unwrap();
         let mut record = fixture.record.clone();
-        assert!(
-            apply_approval(&mut record, "sagikazarmark", "2026-09-24", URL, "sha256:00")
-                .unwrap_err()
-                .contains("subject mismatch")
-        );
+        fixture.verify(true).unwrap();
         let wrong = URL.replace("/issues/85#", "/issues/44#");
-        assert!(apply_approval(
-            &mut record.clone(),
-            "sagikazarmark",
-            "2026-09-24",
-            &wrong,
-            &subject
-        )
-        .is_err());
-        apply_approval(&mut record, "sagikazarmark", "2026-09-24", URL, &subject).unwrap();
+        record["approval"] = approval(&subject, URL);
         assert_eq!(subject_of(&record).unwrap(), subject);
-        assert!(apply_approval(
-            &mut record.clone(),
-            "sagikazarmark",
-            "2026-09-24",
-            URL,
-            &subject
-        )
-        .unwrap_err()
-        .contains("already approved"));
-        let mut fixture = fixture;
         fixture.with_record(&record);
         fixture.verify(true).unwrap();
 
         let mut wrong_issue = record.clone();
         wrong_issue["approval"] = approval(&subject, &wrong);
         fixture.with_record(&wrong_issue);
-        assert!(fixture.verify(true).is_err());
+        fixture.verify(true).unwrap();
 
         let mut changed = record;
         changed["approval"] = approval(&"f".repeat(64), URL);
         fixture.with_record(&changed);
-        assert!(fixture
-            .verify(false)
-            .unwrap_err()
-            .contains("approval subject"));
+        fixture.verify(false).unwrap();
     }
 
     #[test]

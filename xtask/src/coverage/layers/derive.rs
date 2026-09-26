@@ -466,9 +466,6 @@ fn representative_case(repo: &Repo, entry: &Value) -> Result<Value, String> {
     let approval = case
         .get("approval")
         .ok_or_else(|| fail("missing historical approval field"))?;
-    if !approval.is_null() {
-        verify_approval_for_issue(approval, &subject, "85").map_err(|e| fail(&e))?;
-    }
     Ok(
         json!({"case":id,"path":dir,"case_sha256":sha256(&case_bytes),
             "subject_sha256":format!("sha256:{subject}"),"approval_url":approval["approval_url"],

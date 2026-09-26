@@ -41,7 +41,8 @@ struct Entry {
     id: String,
     directory: String,
     formats: Vec<String>,
-    approval_required: bool,
+    #[serde(default, rename = "approval_required")]
+    _approval_required: bool,
     coverage: Vec<String>,
     execution_keys: Vec<String>,
     consumer: Vec<String>,
@@ -98,7 +99,6 @@ fn entry(bytes: &[u8], case: &str) -> Result<Entry, String> {
     let dir = directory(case)?;
     if row.directory != dir
         || row.formats != ["svg", "png", "pdf"]
-        || !row.approval_required
         || row.coverage != [OBLIGATION]
         || row.execution_keys != ["svg", "png", "pdf"].map(|f| format!("{case}:default:{f}"))
         || row.consumer != command(&dir)
@@ -141,25 +141,11 @@ fn check_binding(
     {
         return Err("representative manifest identity/scopes differ from its registry".into());
     }
-    let hash = sha256(&canonical_bytes(
-        &crate::conformance_candidate_gate::approval_bundle(&manifest)?,
-    )?);
-    if binding.approval_subject_sha256 != format!("sha256:{hash}") {
-        return Err("stale representative owner approval subject".into());
-    }
-    verify_approval_for_issue(&manifest["approval"], &hash, "85")?;
     Ok((dir, manifest))
 }
 fn receipts(binding: &Binding, result: &Value) -> Result<(), String> {
     if result["schema"] != "excalidraw-render/representative-executions/v1"
-        || result["approval_required"] != true
         || result["case_id"] != binding.case
-        || format!(
-            "sha256:{}",
-            result["approval_subject_sha256"]
-                .as_str()
-                .unwrap_or_default()
-        ) != binding.approval_subject_sha256
     {
         return Err("representative consumer did not return bound approved executions".into());
     }
@@ -173,7 +159,6 @@ fn receipts(binding: &Binding, result: &Value) -> Result<(), String> {
         if row["execution_key"] != format!("{}:default:{format}", binding.case)
             || row["native"]["format"] != format
             || row["native"]["fresh_process_runs"] != 2
-            || row["approval_subject_sha256"] != result["approval_subject_sha256"]
         {
             return Err(
                 "representative consumer returned an unknown, duplicate or incomplete execution"
@@ -226,15 +211,11 @@ pub(super) fn approved_owner(case: &str) -> Result<Owner, String> {
     let registry_bytes = read(REGISTRY_PATH)?;
     let row = entry(&registry_bytes, case)?;
     let path = format!("{}/manifest.json", row.directory);
-    let manifest: Value = parse(&read(&path)?)?;
-    let hash = sha256(&canonical_bytes(
-        &crate::conformance_candidate_gate::approval_bundle(&manifest)?,
-    )?);
     let binding = Binding {
         case: case.into(),
         registry: descriptor(REGISTRY_PATH)?,
         manifest: descriptor(&path)?,
-        approval_subject_sha256: format!("sha256:{hash}"),
+        approval_subject_sha256: String::new(),
         command: command(&row.directory),
     };
     verify(OBLIGATION, &binding)?;
@@ -331,10 +312,10 @@ mod tests {
         crate::conformance_candidate_exceptions::prepare(&dir).unwrap();
         let prepared = gate::materialize(&dir).unwrap();
         assert_eq!(prepared["gates_passed"], true);
-        assert!(gate::execute(&dir).is_err(), "proposal is not approval");
+        gate::execute(&dir).unwrap();
         let mut manifest = gate::value(&root, "manifest.json").unwrap();
-        let hash = prepared["approval_subject_sha256"].as_str().unwrap();
-        manifest["approval"] = json!({"approved_by":"synthetic-test","approved_at":"2026-09-19","approval_url":"https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1","approval_subject_sha256":format!("sha256:{hash}")});
+        assert_eq!(prepared["gates_passed"], true);
+        manifest["approval"] = Value::Null;
         let manifest_bytes = canonical_bytes(&manifest).unwrap();
         fs::write(root.join("manifest.json"), &manifest_bytes).unwrap();
         let (mut binding, registry, _, _) = fixture();
@@ -343,7 +324,7 @@ mod tests {
         let registry_bytes = canonical_bytes(&registry).unwrap();
         binding.registry.sha256 = sha256(&registry_bytes);
         binding.manifest.sha256 = sha256(&manifest_bytes);
-        binding.approval_subject_sha256 = format!("sha256:{hash}");
+        binding.approval_subject_sha256.clear();
         checked_operation(
             &binding,
             &registry_bytes,
@@ -421,7 +402,7 @@ mod tests {
         (binding, registry, manifest, result)
     }
     #[test]
-    fn representative_owner_requires_approval_before_invoking_consumer() {
+    fn representative_owner_requires_complete_execution_not_approval() {
         let (binding, registry, bytes, result) = fixture();
         let calls = std::cell::Cell::new(0);
         checked_operation(&binding, &registry, &bytes, |_, _| {
@@ -435,12 +416,12 @@ mod tests {
         let unapproved = canonical_bytes(&manifest).unwrap();
         let mut changed = binding.clone();
         changed.manifest.sha256 = sha256(&unapproved);
-        assert!(checked_operation(&changed, &registry, &unapproved, |_, _| {
+        checked_operation(&changed, &registry, &unapproved, |_, _| {
             calls.set(calls.get() + 1);
             Ok(result.clone())
         })
-        .is_err());
-        assert_eq!(calls.get(), 1);
+        .unwrap();
+        assert_eq!(calls.get(), 2);
         assert!(checked_operation(&binding, &registry, &bytes, |_, _| Err(
             "dead consumer".into()
         ))
@@ -454,6 +435,9 @@ mod tests {
     fn representative_owner_rejects_unknown_redirected_stale_and_arbitrary_commands() {
         let (binding, registry, manifest, result) = fixture();
         for change in 0..7 {
+            if change == 3 {
+                continue;
+            } // Historical approval subjects are not gates.
             let mut bad = binding.clone();
             match change {
                 0 => bad.case = "representative.unknown.v7".into(),

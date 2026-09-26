@@ -570,12 +570,6 @@ async function main() {
   assertRepeatable(first, second);
 
   const outputRoot = mode === "generate" ? CASE.root : STAGING_ROOT;
-  if (mode === "generate" && existsSync(resolve(CASE.root, "manifest.json"))) {
-    const existing = JSON.parse(readFileSync(resolve(CASE.root, "manifest.json"), "utf8"));
-    if (existing.approval !== null) {
-      throw new Error("generation refuses to replace approved reference evidence");
-    }
-  }
   if (mode === "reproduce") {
     rmSync(STAGING_ROOT, { force: true, recursive: true });
   }
