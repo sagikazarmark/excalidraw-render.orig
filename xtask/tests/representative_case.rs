@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::atomic::{AtomicU64, Ordering};
+use tempfile::TempDir;
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -13,7 +13,11 @@ fn root() -> PathBuf {
 }
 const CASE: &str = "tests/conformance/cases/representative/excali-local-slides";
 
-struct Copy(PathBuf);
+/// A scratch copy of the case, removed with its scratch directory.
+struct Copy {
+    path: PathBuf,
+    _scratch: TempDir,
+}
 impl Copy {
     fn new() -> Self {
         fn copy(from: &Path, to: &Path) {
@@ -27,24 +31,32 @@ impl Copy {
                 }
             }
         }
-        static NEXT: AtomicU64 = AtomicU64::new(0);
-        let path = std::env::temp_dir().join(format!(
-            "representative-case-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::Relaxed)
-        ));
+        let scratch = tempfile::tempdir().unwrap();
+        let path = scratch.path().join("case");
         copy(&root().join(CASE), &path);
-        Self(path)
+        Self {
+            path,
+            _scratch: scratch,
+        }
     }
     fn record(&self) -> Value {
-        serde_json::from_slice(&fs::read(self.0.join("case.json")).unwrap()).unwrap()
+        serde_json::from_slice(&fs::read(self.path.join("case.json")).unwrap()).unwrap()
     }
     fn set(&self, value: &Value) {
-        fs::write(self.0.join("case.json"), serde_json::to_vec(value).unwrap()).unwrap();
+        fs::write(
+            self.path.join("case.json"),
+            serde_json::to_vec(value).unwrap(),
+        )
+        .unwrap();
     }
     fn run(&self, options: &[&str], success: bool) -> String {
         let output = Command::new(env!("CARGO_BIN_EXE_xtask"))
-            .args(["representative", "case", "verify", self.0.to_str().unwrap()])
+            .args([
+                "representative",
+                "case",
+                "verify",
+                self.path.to_str().unwrap(),
+            ])
             .args(options)
             .output()
             .unwrap();
@@ -63,12 +75,6 @@ impl Copy {
         .unwrap()
     }
 }
-impl Drop for Copy {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
-    }
-}
-
 #[test]
 fn offline_registry_verifies_every_registered_case_without_an_approval_requirement() {
     let output = Command::new(env!("CARGO_BIN_EXE_xtask"))
@@ -105,7 +111,7 @@ fn retained_bytes_are_checked_without_acceptance_hashes() {
     record["approval"] = Value::Null;
     case.set(&record);
     case.run(&[], true);
-    fs::write(case.0.join("expected-report-svg.json"), b"{}").unwrap();
+    fs::write(case.path.join("expected-report-svg.json"), b"{}").unwrap();
     assert!(case.run(&[], false).contains("retained case files changed"));
     let case = Copy::new();
     let mut record = case.record();
@@ -119,8 +125,8 @@ fn retained_bytes_are_checked_without_acceptance_hashes() {
 fn retained_file_inventory_rejects_backslash_aliases() {
     let case = Copy::new();
     fs::copy(
-        case.0.join("reference/light/official.svg"),
-        case.0.join("reference\\light\\official.svg"),
+        case.path.join("reference/light/official.svg"),
+        case.path.join("reference\\light\\official.svg"),
     )
     .unwrap();
     assert!(case.run(&[], false).contains("backslash"));
@@ -158,9 +164,9 @@ fn invalid_case_inventory_options_and_duplicate_members_fail_offline() {
         case.run(&[], false);
     }
     let case = Copy::new();
-    let raw = fs::read_to_string(case.0.join("case.json")).unwrap();
+    let raw = fs::read_to_string(case.path.join("case.json")).unwrap();
     fs::write(
-        case.0.join("case.json"),
+        case.path.join("case.json"),
         raw.replacen('{', "{\"schema\":\"duplicate\",", 1),
     )
     .unwrap();
@@ -393,8 +399,8 @@ fn reject_resource_output_fault(fault: &str, error: &str, failures: usize) {
     let case = resource_failure_case();
     // Keep the wrapper and its observations outside the verified case inventory.
     let wrapper_files = Copy::new();
-    let wrapper = wrapper_files.0.join("renderer");
-    let calls = wrapper_files.0.join("failures");
+    let wrapper = wrapper_files.path.join("renderer");
+    let calls = wrapper_files.path.join("failures");
     let quote = |s: &str| format!("'{}'", s.replace('\'', "'\\''"));
     let script = format!(
         "#!/bin/sh\nprevious=''\nfor arg do\n if [ \"$previous\" = '--output' ]; then artifact=$arg; fi\n if [ \"$previous\" = '--report-output' ]; then report=$arg; fi\n previous=$arg\ndone\n{} \"$@\"\nstatus=$?\nif [ \"$status\" -ne 0 ]; then\n calls={}\n {fault}\n printf '%s\\n' \"$status\" >> \"$calls\"\nfi\nexit \"$status\"\n",

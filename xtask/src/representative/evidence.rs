@@ -111,17 +111,17 @@ pub(super) fn write_new(path: &Path, bytes: &[u8]) -> Result<()> {
 /// Capture subprocess output without pipe deadlocks; the same deadline and
 /// Unix process-group cleanup as native capture applies to harness commands.
 pub(super) fn command(program: &str, args: &[String], timeout: u64) -> Result<Vec<u8>> {
-    let scratch = capture::Scratch::new()?;
+    let scratch = capture::scratch()?;
     let mut args = args.to_vec();
-    let cid = scratch.0.join("container-id");
+    let cid = scratch.path().join("container-id");
     if program == "docker" && args.first().is_some_and(|a| a == "run") {
         args.splice(
             1..1,
             ["--cidfile".into(), cid.to_string_lossy().into_owned()],
         );
     }
-    let stdout = fs::File::create(scratch.0.join("stdout")).map_err(|e| e.to_string())?;
-    let stderr = fs::File::create(scratch.0.join("stderr")).map_err(|e| e.to_string())?;
+    let stdout = fs::File::create(scratch.path().join("stdout")).map_err(|e| e.to_string())?;
+    let stderr = fs::File::create(scratch.path().join("stderr")).map_err(|e| e.to_string())?;
     let mut command = Command::new(program);
     command
         .args(&args)
@@ -148,11 +148,11 @@ pub(super) fn command(program: &str, args: &[String], timeout: u64) -> Result<Ve
                     &format!(
                         "{program} failed: {}",
                         String::from_utf8_lossy(
-                            &fs::read(scratch.0.join("stderr")).unwrap_or_default()
+                            &fs::read(scratch.path().join("stderr")).unwrap_or_default()
                         )
                     ),
                 )?;
-                return read(&scratch.0, "stdout");
+                return read(scratch.path(), "stdout");
             }
             Ok(None) if started.elapsed() < Duration::from_secs(timeout) => {
                 std::thread::sleep(Duration::from_millis(20))
@@ -791,13 +791,13 @@ mod tests {
         let reference = root.join("tests/conformance/cases/representative/velox-design/reference");
         let original = decode(&read(&reference, "reference.json").unwrap()).unwrap();
         validate_reference(&bundle, &reference).unwrap();
-        let scratch = capture::Scratch::new().unwrap();
+        let scratch = capture::scratch().unwrap();
         for name in ["light", "dark"] {
-            fs::create_dir(scratch.0.join(name)).unwrap();
+            fs::create_dir(scratch.path().join(name)).unwrap();
             for file in REFERENCE_FILES {
                 fs::copy(
                     reference.join(name).join(file),
-                    scratch.0.join(name).join(file),
+                    scratch.path().join(name).join(file),
                 )
                 .unwrap();
             }
@@ -813,9 +813,13 @@ mod tests {
                 3 => changed["rows"][0]["options"]["exportPadding"] = json!(11),
                 _ => changed["eligible_executions"] = json!(["forged"]),
             }
-            fs::write(scratch.0.join("reference.json"), encode(&changed).unwrap()).unwrap();
+            fs::write(
+                scratch.path().join("reference.json"),
+                encode(&changed).unwrap(),
+            )
+            .unwrap();
             assert!(
-                validate_reference(&bundle, &scratch.0).is_err(),
+                validate_reference(&bundle, scratch.path()).is_err(),
                 "mutation {mutation}"
             );
         }
@@ -824,7 +828,7 @@ mod tests {
     #[test]
     #[ignore = "requires Docker and pinned Playwright image"]
     fn timed_out_docker_command_removes_the_container() {
-        let scratch = capture::Scratch::new().unwrap();
+        let scratch = capture::scratch().unwrap();
         let name = format!("representative-timeout-{}", std::process::id());
         let args = ["run", "--rm", "--name", &name, IMAGE, "sleep", "60"].map(str::to_owned);
         assert!(command("docker", &args, 1).unwrap_err().contains("timeout"));

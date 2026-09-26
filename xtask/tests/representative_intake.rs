@@ -5,13 +5,14 @@ use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
-use std::sync::atomic::{AtomicU64, Ordering};
+use tempfile::TempDir;
 
 struct Fixture {
     root: PathBuf,
     scene: Vec<u8>,
     plan: Value,
     provenance: Value,
+    _scratch: TempDir,
 }
 fn hash(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
@@ -21,13 +22,8 @@ fn write_json(path: impl AsRef<Path>, value: &Value) {
 }
 impl Fixture {
     fn new() -> Self {
-        static NEXT: AtomicU64 = AtomicU64::new(0);
-        let root = std::env::temp_dir().join(format!(
-            "rust-intake-test-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::create_dir(&root).unwrap();
+        let scratch = tempfile::tempdir().unwrap();
+        let root = scratch.path().to_path_buf();
         fs::create_dir(root.join("source")).unwrap();
         let scene = b"{\"type\":\"excalidraw\",\"version\":2,\"elements\":[],\"appState\":{},\"files\":{}}\n".to_vec();
         let provenance = json!({"identity":"fixture", "upstream":{"repository":"https://github.com/example/board","commit":"a".repeat(40),"path":"scene.excalidraw","permalink":format!("https://github.com/example/board/blob/{}/scene.excalidraw","a".repeat(40))},"license":{"spdx":"MIT","text":"LICENSE"},"scene":{"file":"scene.excalidraw","bytes":scene.len(),"sha256":hash(&scene)}});
@@ -37,6 +33,7 @@ impl Fixture {
             scene,
             plan,
             provenance,
+            _scratch: scratch,
         };
         fixture.save();
         fixture
@@ -72,11 +69,6 @@ impl Fixture {
     }
     fn json(&self, file: &str) -> Value {
         serde_json::from_slice(&fs::read(self.root.join(file)).unwrap()).unwrap()
-    }
-}
-impl Drop for Fixture {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.root);
     }
 }
 

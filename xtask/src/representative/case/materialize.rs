@@ -121,9 +121,9 @@ fn materialize(
     let mut case = case;
     case["intake"]["path"] = json!(evidence::relative(bundle)?);
     // Validate in a private staging tree before publishing the destination.
-    let staging = capture::Scratch::new()?;
-    write_files(&staging.0, &files)?;
-    validate(&crate::conformance::repo_root(), &staging.0, &case)?;
+    let staging = capture::scratch()?;
+    write_files(staging.path(), &files)?;
+    validate(&crate::conformance::repo_root(), staging.path(), &case)?;
     fs::create_dir(output).map_err(|e| format!("cannot create case output: {e}"))?;
     let result = (|| {
         write_files(output, &files)?;

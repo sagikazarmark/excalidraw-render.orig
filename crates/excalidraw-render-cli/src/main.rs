@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
@@ -14,6 +14,7 @@ use excalidraw_render::{
     DEFAULT_COMPATIBILITY_REVISION,
 };
 use sha2::{Digest, Sha256};
+use tempfile::TempPath;
 
 mod frames;
 
@@ -1510,8 +1511,10 @@ fn write_stream_tracked(
     }
 }
 
+/// A fully written, synced temporary sibling of one destination. Only its path
+/// is held, so staging many frames never holds one descriptor per frame.
 struct StagedFile {
-    temporary: PathBuf,
+    temporary: TempPath,
     destination: PathBuf,
     replace: bool,
 }
@@ -1535,56 +1538,37 @@ impl StagedFile {
             .file_name()
             .and_then(|name| name.to_str())
             .unwrap_or("output");
-        for attempt in 0..100_u32 {
-            let temporary =
-                staging_parent.join(format!(".{name}.{}.{}.tmp", std::process::id(), attempt));
-            match OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .open(&temporary)
-            {
-                Ok(mut file) => {
-                    if file.write_all(bytes).is_err() {
-                        let _ = fs::remove_file(&temporary);
-                        return Err(CliOperation::Write);
-                    }
-                    if file.flush().is_err() || file.sync_all().is_err() {
-                        let _ = fs::remove_file(&temporary);
-                        return Err(CliOperation::Flush);
-                    }
-                    return Ok(Self {
-                        temporary,
-                        destination: destination.to_path_buf(),
-                        replace,
-                    });
-                }
-                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
-                Err(_) => return Err(CliOperation::Create),
-            }
-        }
-        Err(CliOperation::Create)
+        let prefix = format!(".{name}.");
+        let mut builder = tempfile::Builder::new();
+        builder.prefix(&prefix).suffix(".tmp");
+        // Published files keep the mode an ordinary create gives: 0666 less the umask.
+        #[cfg(unix)]
+        builder.permissions(std::os::unix::fs::PermissionsExt::from_mode(0o666));
+        let mut file = builder
+            .tempfile_in(staging_parent)
+            .map_err(|_| CliOperation::Create)?;
+        file.write_all(bytes).map_err(|_| CliOperation::Write)?;
+        file.flush()
+            .and_then(|()| file.as_file().sync_all())
+            .map_err(|_| CliOperation::Flush)?;
+        Ok(Self {
+            temporary: file.into_temp_path(),
+            destination: destination.to_path_buf(),
+            replace,
+        })
     }
 
-    fn deliver(mut self) -> Result<(), CliOperation> {
+    /// Atomically publishes the staged file; without `replace` an existing
+    /// destination, even one created after staging, is never overwritten.
+    fn deliver(self) -> Result<(), CliOperation> {
         if self.replace {
-            fs::rename(&self.temporary, &self.destination).map_err(|_| CliOperation::Replace)?;
+            self.temporary
+                .persist(&self.destination)
+                .map_err(|_| CliOperation::Replace)
         } else {
-            fs::hard_link(&self.temporary, &self.destination).map_err(|_| CliOperation::Create)?;
-            if fs::remove_file(&self.temporary).is_ok() {
-                self.temporary.clear();
-            }
-        }
-        if self.replace {
-            self.temporary.clear();
-        }
-        Ok(())
-    }
-}
-
-impl Drop for StagedFile {
-    fn drop(&mut self) {
-        if !self.temporary.as_os_str().is_empty() {
-            let _ = fs::remove_file(&self.temporary);
+            self.temporary
+                .persist_noclobber(&self.destination)
+                .map_err(|_| CliOperation::Create)
         }
     }
 }
@@ -1857,7 +1841,8 @@ mod tests {
     use super::{
         lexical_absolute, parse_asset_declarations, preparse_json_mode, render_json_line,
         same_path, select_format, sha256, split_asset_option, ArtifactDescriptor, CliDetails,
-        CliError, Failure, FormatArg, RenderReport, ReportError, EXIT_USAGE,
+        CliError, CliOperation, Failure, FormatArg, RenderReport, ReportError, StagedFile,
+        EXIT_USAGE,
     };
 
     /// Artifact digests are the `sha256:`-prefixed lowercase hex of the FIPS
@@ -2072,11 +2057,8 @@ mod tests {
 
     #[test]
     fn same_path_follows_the_filesystem_identity_of_existing_paths() {
-        let dir = std::env::temp_dir().join(format!(
-            "excalidraw-render-cli-same-path-{}",
-            std::process::id()
-        ));
-        fs::create_dir_all(&dir).expect("the scratch directory is created");
+        let scratch = tempfile::tempdir().expect("the scratch directory is created");
+        let dir = scratch.path();
         let file = dir.join("scene.excalidraw");
         fs::write(&file, b"{}").expect("the scene file is written");
         let other = dir.join("other.excalidraw");
@@ -2102,7 +2084,119 @@ mod tests {
                 "a symlink aliases its target"
             );
         }
-        fs::remove_dir_all(&dir).expect("the scratch directory is removed");
+    }
+
+    /// The entry names in `directory`, sorted.
+    fn entries(directory: &Path) -> Vec<String> {
+        let mut names = fs::read_dir(directory)
+            .expect("the scratch directory is listed")
+            .map(|entry| {
+                entry
+                    .expect("the entry is read")
+                    .file_name()
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect::<Vec<_>>();
+        names.sort();
+        names
+    }
+
+    #[test]
+    fn staging_writes_a_hidden_sibling_that_delivery_publishes_with_the_create_mode() {
+        let scratch = tempfile::tempdir().expect("the scratch directory is created");
+        let destination = scratch.path().join("result.svg");
+        let staged = StagedFile::new(&destination, b"artifact", false)
+            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+        let [temporary] = entries(scratch.path()).try_into().expect("one staged file");
+        assert!(
+            temporary.starts_with(".result.svg.") && temporary.ends_with(".tmp"),
+            "{temporary} is a hidden staging name"
+        );
+        assert!(!destination.exists(), "staging never publishes");
+
+        assert!(staged.deliver().is_ok());
+        assert_eq!(entries(scratch.path()), ["result.svg"]);
+        assert_eq!(fs::read(&destination).expect("published"), b"artifact");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let ordinary = scratch.path().join("ordinary");
+            fs::File::create(&ordinary).expect("an ordinary file is created");
+            let mode = |path: &Path| fs::metadata(path).expect("stat").permissions().mode();
+            assert_eq!(mode(&destination), mode(&ordinary), "0666 less the umask");
+        }
+    }
+
+    #[test]
+    fn delivery_without_force_never_replaces_a_destination_created_after_staging() {
+        let scratch = tempfile::tempdir().expect("the scratch directory is created");
+        let destination = scratch.path().join("result.svg");
+        let staged = StagedFile::new(&destination, b"artifact", false)
+            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+        fs::write(&destination, b"late").expect("a racing writer creates the destination");
+
+        assert!(matches!(staged.deliver(), Err(CliOperation::Create)));
+        assert_eq!(fs::read(&destination).expect("kept"), b"late");
+        assert_eq!(
+            entries(scratch.path()),
+            ["result.svg"],
+            "no staging leftovers"
+        );
+    }
+
+    #[test]
+    fn forced_delivery_replaces_a_destination_created_after_staging() {
+        let scratch = tempfile::tempdir().expect("the scratch directory is created");
+        let destination = scratch.path().join("result.svg");
+        let staged = StagedFile::new(&destination, b"artifact", true)
+            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+        fs::write(&destination, b"late").expect("a racing writer creates the destination");
+
+        assert!(staged.deliver().is_ok());
+        assert_eq!(fs::read(&destination).expect("replaced"), b"artifact");
+        assert_eq!(entries(scratch.path()), ["result.svg"]);
+    }
+
+    #[test]
+    fn staging_failures_are_create_failures_and_undelivered_files_are_removed() {
+        let scratch = tempfile::tempdir().expect("the scratch directory is created");
+        let missing = scratch.path().join("missing").join("result.svg");
+        assert!(matches!(
+            StagedFile::new(&missing, b"artifact", false),
+            Err(CliOperation::Create)
+        ));
+
+        let staged = StagedFile::new(&scratch.path().join("result.svg"), b"artifact", false)
+            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+        drop(staged);
+        assert!(
+            entries(scratch.path()).is_empty(),
+            "an abandoned stage is removed"
+        );
+    }
+
+    /// Frame batches stage every artifact before publishing any, so a staged
+    /// file must not keep its descriptor open.
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn staged_files_hold_no_open_descriptors() {
+        let open_descriptors = || {
+            fs::read_dir("/proc/self/fd")
+                .expect("descriptors are listed")
+                .count()
+        };
+        let scratch = tempfile::tempdir().expect("the scratch directory is created");
+        let before = open_descriptors();
+        let staged = (0..256)
+            .map(|index| {
+                StagedFile::new(&scratch.path().join(format!("{index}.svg")), b"a", false)
+                    .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()))
+            })
+            .collect::<Vec<_>>();
+        // Other test threads may open a few descriptors meanwhile.
+        assert!(open_descriptors() < before + 64);
+        drop(staged);
     }
 
     /// The process arguments for `values`, with the program name in front as

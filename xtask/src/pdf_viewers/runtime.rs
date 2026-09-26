@@ -107,19 +107,13 @@ pub(super) fn verify() -> Result<(), String> {
     validate(&serde_json::from_slice(&bytes).map_err(|e| e.to_string())?)
 }
 
-struct Scratch(std::path::PathBuf);
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
-    }
-}
-
 /// Refresh only after real fresh-process renders match the retained raster bytes.
 pub fn refresh() -> Result<(), String> {
     let mut record = identity()?;
-    let scratch = repo_root().join(format!("target/pdfium-runtime-{}", std::process::id()));
-    fs::create_dir(&scratch).map_err(|e| e.to_string())?;
-    let scratch = Scratch(scratch);
+    let scratch = tempfile::Builder::new()
+        .prefix("pdfium-runtime-")
+        .tempdir_in(repo_root().join("target"))
+        .map_err(|e| e.to_string())?;
     let mut captures = Vec::new();
     for (role, fixture) in ROLES {
         let input = descriptor(&format!("{CASE}/{fixture}"))?;
@@ -128,7 +122,7 @@ pub fn refresh() -> Result<(), String> {
             .map_err(|e| e.to_string())?;
         let mut runs = Vec::new();
         for run in 0..2 {
-            let output_path = scratch.0.join(format!("{role}-{run}.rgba"));
+            let output_path = scratch.path().join(format!("{role}-{run}.rgba"));
             let output = Command::new("bash")
                 .current_dir(repo_root())
                 .arg("tools/pdf-harness/run-pdfium.sh")

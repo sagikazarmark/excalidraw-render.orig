@@ -319,7 +319,7 @@ fn derive(directory: &Path) -> Result<Files> {
     let name = evidence::relative(directory)?;
     let mut outputs = Files::new();
     let mut plans = Vec::new();
-    let scratch = capture::Scratch::new()?;
+    let scratch = capture::scratch()?;
     let face_pattern = regex(r"@font-face\s*\{([^}]*)\}")?;
     let url_pattern = regex(r"url\(([^)]+)\)")?;
     let hint = regex(
@@ -370,14 +370,14 @@ fn derive(directory: &Path) -> Result<Files> {
                         == json!({"bytes":e["system_font"]["bytes"],"sha256":e["system_font"]["sha256"]}),
                     "retained substitute changed",
                 )?;
-                let woff2 = scratch.0.join(format!("substitute-{i}.woff2"));
+                let woff2 = scratch.path().join(format!("substitute-{i}.woff2"));
                 font_tool(&[
                     "encode".into(),
                     directory.join(&retained).to_string_lossy().into_owned(),
                     woff2.to_string_lossy().into_owned(),
                 ])?;
                 let data = fs::read(&woff2).map_err(|e| e.to_string())?;
-                let sfnt = scratch.0.join(format!("substitute-{i}.sfnt"));
+                let sfnt = scratch.path().join(format!("substitute-{i}.sfnt"));
                 let face = font_tool(&[
                     "decode".into(),
                     woff2.to_string_lossy().into_owned(),
@@ -432,8 +432,8 @@ fn derive(directory: &Path) -> Result<Files> {
         let mut declared = Vec::new();
         for (i, font) in fonts.iter().enumerate() {
             let file = format!("assets/{kind}-font-{i}.woff2");
-            let input = scratch.0.join(format!("{kind}-{i}.woff2"));
-            let output = scratch.0.join(format!("{kind}-{i}.sfnt"));
+            let input = scratch.path().join(format!("{kind}-{i}.woff2"));
+            let output = scratch.path().join(format!("{kind}-{i}.sfnt"));
             evidence::write_new(&input, outputs.get(&file).ok_or("missing derived WOFF2")?)?;
             let mut face = font_tool(&[
                 "decode".into(),

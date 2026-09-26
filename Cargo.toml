@@ -65,6 +65,9 @@ unicode-normalization = "=0.1.24"
 unicase = "=2.9.0"
 svg2pdf = { version = "=0.13.0", default-features = false, features = ["filters", "image", "text"] }
 svgtypes = "=0.15.3"
+# Host-only: CLI delivery staging and xtask scratch directories. Never a
+# renderer dependency, so random temporary names cannot reach output bytes.
+tempfile = "=3.27.0"
 tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-format", "std"] }
 # `default-features = false` drops upstream's `cli` feature (and `clap`);
 # `portable-float` passes through to `brotli/portable-float`, which is what keeps

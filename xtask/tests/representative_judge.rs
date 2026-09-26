@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
-use std::sync::atomic::{AtomicU64, Ordering};
+use tempfile::TempDir;
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -28,16 +28,12 @@ fn copy(from: &Path, to: &Path) {
 struct Fixture {
     root: PathBuf,
     case: Value,
+    _scratch: TempDir,
 }
 impl Fixture {
     fn new(control_noise: bool, candidate_noise: bool) -> Self {
-        static NEXT: AtomicU64 = AtomicU64::new(0);
-        let directory = std::env::temp_dir().join(format!(
-            "representative-judge-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::create_dir(&directory).unwrap();
+        let scratch = tempfile::tempdir().unwrap();
+        let directory = scratch.path().to_path_buf();
         copy(
             &root().join("tests/conformance/cases/representative/excali-local-slides"),
             &directory.join("case"),
@@ -51,6 +47,7 @@ impl Fixture {
         let f = Self {
             root: directory,
             case,
+            _scratch: scratch,
         };
         let mut judgments = Vec::new();
         for variant in ["light", "dark"] {
@@ -184,11 +181,6 @@ impl Fixture {
     }
     fn save(&self) {
         write_json(&self.root.join("case/case.json"), &self.case);
-    }
-}
-impl Drop for Fixture {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.root);
     }
 }
 

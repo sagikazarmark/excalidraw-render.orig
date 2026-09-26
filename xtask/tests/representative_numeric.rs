@@ -7,19 +7,18 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Output};
-use std::sync::atomic::{AtomicU64, Ordering};
+use tempfile::TempDir;
 
-struct Fixture(PathBuf);
+/// A prepared intake root, removed with its scratch directory.
+struct Fixture {
+    path: PathBuf,
+    _scratch: TempDir,
+}
 
 impl Fixture {
     fn new(fonts: &str, metadata: &str) -> Self {
-        static NEXT: AtomicU64 = AtomicU64::new(0);
-        let root = std::env::temp_dir().join(format!(
-            "representative-numeric-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::create_dir(&root).unwrap();
+        let scratch = tempfile::tempdir().unwrap();
+        let root = scratch.path().to_path_buf();
         fs::create_dir(root.join("source")).unwrap();
         let elements = fonts
             .split(',')
@@ -59,14 +58,17 @@ impl Fixture {
             "regions": [{"id": "whole", "class": "typography", "element_ids": []}],
         });
         fs::write(root.join("plan.json"), serde_json::to_vec(&plan).unwrap()).unwrap();
-        Self(root)
+        Self {
+            path: root,
+            _scratch: scratch,
+        }
     }
 
     fn run(&self, args: &[&str]) -> Output {
         Command::new(env!("CARGO_BIN_EXE_xtask"))
             .arg("representative")
             .args(args)
-            .current_dir(&self.0)
+            .current_dir(&self.path)
             .output()
             .unwrap()
     }
@@ -85,18 +87,18 @@ impl Fixture {
             "plan.json",
         ] {
             let source = if name == "plan.json" {
-                self.0.clone()
+                self.path.clone()
             } else {
-                self.0.join("source")
+                self.path.join("source")
             };
             assert_eq!(
-                fs::read(self.0.join("bundle").join(name)).unwrap(),
+                fs::read(self.path.join("bundle").join(name)).unwrap(),
                 fs::read(source.join(name)).unwrap(),
                 "retained {name} bytes"
             );
         }
         assert_success(&self.run(&["verify", "bundle"]));
-        fs::read_to_string(self.0.join("bundle/manifest.json")).unwrap()
+        fs::read_to_string(self.path.join("bundle/manifest.json")).unwrap()
     }
 
     fn reject(&self, diagnostic: &str) {
@@ -107,13 +109,7 @@ impl Fixture {
             "{:?}",
             output.stderr
         );
-        assert!(!self.0.join("bundle").exists());
-    }
-}
-
-impl Drop for Fixture {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
+        assert!(!self.path.join("bundle").exists());
     }
 }
 
@@ -224,13 +220,13 @@ fn non_finite_numeric_metadata_is_rejected_without_publication() {
 #[test]
 fn huge_integer_truthiness_excludes_deleted_elements_from_census() {
     let f = Fixture::new("1", "null");
-    let scene_path = f.0.join("source/scene.excalidraw");
+    let scene_path = f.path.join("source/scene.excalidraw");
     let scene = fs::read_to_string(&scene_path).unwrap().replace(
         "\"type\":\"text\"",
         &format!("\"type\":\"text\",\"isDeleted\":{}", "9".repeat(400)),
     );
     fs::write(scene_path, &scene).unwrap();
-    let provenance_path = f.0.join("source/PROVENANCE.json");
+    let provenance_path = f.path.join("source/PROVENANCE.json");
     let mut provenance: Value =
         serde_json::from_slice(&fs::read(&provenance_path).unwrap()).unwrap();
     provenance["scene"]["bytes"] = json!(scene.len());
@@ -242,11 +238,11 @@ fn huge_integer_truthiness_excludes_deleted_elements_from_census() {
 #[test]
 fn missing_provenance_identity_cannot_match_null_source_identity() {
     let f = Fixture::new("", "null");
-    let path = f.0.join("source/PROVENANCE.json");
+    let path = f.path.join("source/PROVENANCE.json");
     let mut provenance: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
     provenance.as_object_mut().unwrap().remove("identity");
     fs::write(path, serde_json::to_vec(&provenance).unwrap()).unwrap();
-    let path = f.0.join("plan.json");
+    let path = f.path.join("plan.json");
     let mut plan: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
     plan["source_identity"] = Value::Null;
     fs::write(path, serde_json::to_vec(&plan).unwrap()).unwrap();

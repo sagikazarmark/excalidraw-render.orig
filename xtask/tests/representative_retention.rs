@@ -3,31 +3,12 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::atomic::{AtomicU64, Ordering};
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap()
         .to_owned()
-}
-struct Scratch(PathBuf);
-impl Scratch {
-    fn new() -> Self {
-        static NEXT: AtomicU64 = AtomicU64::new(0);
-        let p = std::env::temp_dir().join(format!(
-            "representative-retain-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::create_dir(&p).unwrap();
-        Self(p)
-    }
-}
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
-    }
 }
 fn run(args: &[&str], success: bool) -> String {
     let out = Command::new(env!("CARGO_BIN_EXE_xtask"))
@@ -90,10 +71,10 @@ fn materialize(output: &Path, spec: &Path, success: bool) -> String {
 
 #[test]
 fn case_materialization_is_create_only_unapproved_and_preserves_reference_bytes() {
-    let scratch = Scratch::new();
-    let spec_path = scratch.0.join("spec.json");
+    let scratch = tempfile::tempdir().unwrap();
+    let spec_path = scratch.path().join("spec.json");
     write(&spec_path, &spec());
-    let output = scratch.0.join("case");
+    let output = scratch.path().join("case");
     let summary: Value = serde_json::from_str(&materialize(&output, &spec_path, true)).unwrap();
     let case = read(output.join("case.json"));
     assert!(case["approval"].is_null());
@@ -118,9 +99,9 @@ fn case_materialization_is_create_only_unapproved_and_preserves_reference_bytes(
 #[test]
 fn invalid_materialization_never_publishes_a_case() {
     for mutation in 0..5 {
-        let scratch = Scratch::new();
-        let path = scratch.0.join("spec.json");
-        let output = scratch.0.join("case");
+        let scratch = tempfile::tempdir().unwrap();
+        let path = scratch.path().join("spec.json");
+        let output = scratch.path().join("case");
         let mut value = spec();
         match mutation {
             0 => value["case_id"] = json!("representative.other.v1"),
@@ -214,9 +195,9 @@ fn materialization_rejects_invalid_semantics_without_changing_sources() {
         }
     }
     for expected in invalid {
-        let scratch = Scratch::new();
-        let path = scratch.0.join("spec.json");
-        let output = scratch.0.join("case");
+        let scratch = tempfile::tempdir().unwrap();
+        let path = scratch.path().join("spec.json");
+        let output = scratch.path().join("case");
         let mut value = spec();
         value["semantic_expectations"]["light"] = expected.clone();
         write(&path, &value);
@@ -247,9 +228,9 @@ fn materialization_requires_only_selected_format_semantics_and_preserves_authore
             json!({"pdf_media_box":["1e2","2.5"],"notices":["font.test"],"svg_size":null}),
         ),
     ] {
-        let scratch = Scratch::new();
-        let path = scratch.0.join("spec.json");
-        let output = scratch.0.join("case");
+        let scratch = tempfile::tempdir().unwrap();
+        let path = scratch.path().join("spec.json");
+        let output = scratch.path().join("case");
         let mut value = spec();
         value["formats"] = json!([format]);
         value["expected_reports"] = json!({format: value["expected_reports"][format]});
@@ -297,8 +278,8 @@ fn all_legacy_compact_records_verify_without_full_rasters() {
 fn compact_rejects_changed_extra_missing_and_detached_records() {
     let source = root().join("tests/conformance/proposals/varmq84-evidence-v1");
     for mutation in 0..6 {
-        let scratch = Scratch::new();
-        let output = scratch.0.join("compact");
+        let scratch = tempfile::tempdir().unwrap();
+        let output = scratch.path().join("compact");
         copy(&source, &output);
         match mutation {
             0 => fs::write(output.join("viewers/light/regions.json"), b"{}").unwrap(),
@@ -323,8 +304,8 @@ fn compact_rejects_changed_extra_missing_and_detached_records() {
 
 #[test]
 fn compact_reference_artifact_descriptors_must_match_retained_receipt() {
-    let scratch = Scratch::new();
-    let output = scratch.0.join("compact");
+    let scratch = tempfile::tempdir().unwrap();
+    let output = scratch.path().join("compact");
     copy(
         &root().join("tests/conformance/proposals/varmq84-evidence-v1"),
         &output,

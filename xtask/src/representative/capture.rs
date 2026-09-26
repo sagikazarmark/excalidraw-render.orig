@@ -1,44 +1,28 @@
 use super::*;
-use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
+use tempfile::TempDir;
 
 const SCHEMA: &str = "excalidraw-render/representative-intake-capture/v2";
 
-pub(super) struct Scratch(pub(super) PathBuf);
-impl Scratch {
-    pub(super) fn new() -> Result<Self> {
-        Self::in_directory(&std::env::temp_dir())
-    }
-
-    pub(super) fn in_repository() -> Result<Self> {
-        let parent = crate::conformance::repo_root().join("target");
-        fs::create_dir_all(&parent).map_err(|e| e.to_string())?;
-        Self::in_directory(&parent)
-    }
-
-    fn in_directory(parent: &Path) -> Result<Self> {
-        static NEXT: AtomicU64 = AtomicU64::new(0);
-        for _ in 0..100 {
-            let path = parent.join(format!(
-                "representative-capture-{}-{}",
-                std::process::id(),
-                NEXT.fetch_add(1, Ordering::Relaxed)
-            ));
-            match fs::create_dir(&path) {
-                Ok(()) => return Ok(Self(path)),
-                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
-                Err(e) => return Err(e.to_string()),
-            }
-        }
-        Err("cannot allocate capture scratch directory".into())
-    }
+/// A private capture directory, removed with its contents when dropped.
+pub(super) fn scratch() -> Result<TempDir> {
+    scratch_in(&std::env::temp_dir())
 }
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
-    }
+
+pub(super) fn scratch_in_repository() -> Result<TempDir> {
+    let parent = crate::conformance::repo_root().join("target");
+    fs::create_dir_all(&parent).map_err(|e| e.to_string())?;
+    scratch_in(&parent)
+}
+
+fn scratch_in(parent: &Path) -> Result<TempDir> {
+    let mut builder = tempfile::Builder::new();
+    builder.prefix("representative-capture-");
+    // Viewer containers read captures, so keep the ordinary 0777-less-umask mode.
+    #[cfg(unix)]
+    builder.permissions(std::os::unix::fs::PermissionsExt::from_mode(0o777));
+    builder.tempdir_in(parent).map_err(|e| e.to_string())
 }
 
 pub(super) fn request_args(variant: &Value, format: &str) -> Result<Vec<String>> {
@@ -327,8 +311,8 @@ pub(super) fn capture(
         }
     }
     let mut first = BTreeMap::new();
-    let scratch = Scratch::new()?;
-    let scene = scratch.0.join("scene.excalidraw");
+    let scratch = scratch()?;
+    let scene = scratch.path().join("scene.excalidraw");
     fs::write(&scene, &inputs["scene.excalidraw"]).map_err(|e| e.to_string())?;
     for pass in 0..2 {
         let entries: Vec<_> = if pass == 0 {
@@ -338,25 +322,25 @@ pub(super) fn capture(
         };
         for (variant, format) in entries {
             let key = format!("{}-{format}", text(variant, "id")?);
-            let artifact = scratch.0.join(format!("{pass}-{key}.{format}"));
-            let report = scratch.0.join(format!("{pass}-{key}-report.json"));
+            let artifact = scratch.path().join(format!("{pass}-{key}.{format}"));
+            let report = scratch.path().join(format!("{pass}-{key}-report.json"));
             let args = render_args(&scene, &artifact, &report, variant, format)?;
             render(
                 &renderer,
                 &args,
-                &scratch.0,
+                scratch.path(),
                 Duration::from_secs_f64(timeout),
             )?;
             let observed = (
                 read(
-                    &scratch.0,
+                    scratch.path(),
                     artifact
                         .file_name()
                         .and_then(|s| s.to_str())
                         .ok_or("artifact name")?,
                 )?,
                 read(
-                    &scratch.0,
+                    scratch.path(),
                     report
                         .file_name()
                         .and_then(|s| s.to_str())

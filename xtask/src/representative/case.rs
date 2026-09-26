@@ -379,11 +379,11 @@ fn verify_case(
         let renderer = renderer.canonicalize().map_err(|e| e.to_string())?;
         let binary = descriptor(&fs::read(&renderer).map_err(|e| e.to_string())?);
         let scratch = if viewers {
-            capture::Scratch::in_repository()?
+            capture::scratch_in_repository()?
         } else {
-            capture::Scratch::new()?
+            capture::scratch()?
         };
-        let native = scratch.0.join("native");
+        let native = scratch.path().join("native");
         capture::capture(&bundle, &renderer, &native, 900.0)?;
         capture::verify_capture(&bundle, &native)?;
         for variant in strings(&case, "variants")? {
@@ -401,12 +401,12 @@ fn verify_case(
                     .map_err(|e| format!("{variant}-{format}: {e}"))?;
             }
         }
-        let outcomes = resource_outcomes(&case, &bundle, &renderer, &scratch.0)?;
+        let outcomes = resource_outcomes(&case, &bundle, &renderer, scratch.path())?;
         if outcomes > 0 {
             summary["resource_outcomes"] = json!(outcomes);
         }
         if viewers {
-            let collection = scratch.0.join("viewers");
+            let collection = scratch.path().join("viewers");
             evidence::collect(&bundle, &directory.join("reference"), &native, &collection)?;
             let judgment = judge::judge(&case, &collection)?;
             summary["within_controls"] = judgment["within_controls"].clone();
@@ -471,27 +471,30 @@ mod tests {
                 }
             }
         }
-        let scratch = capture::Scratch::new().unwrap();
+        let scratch = capture::scratch().unwrap();
         let actual = crate::conformance::repo_root();
         let case_path = "tests/conformance/cases/representative/excali-local-slides";
         let bundle_path = "tests/conformance/intake/excali-local-slides-v1";
-        copy(&actual.join(case_path), &scratch.0.join(case_path));
-        copy(&actual.join(bundle_path), &scratch.0.join(bundle_path));
-        let path = scratch.0.join(case_path).join("case.json");
+        copy(&actual.join(case_path), &scratch.path().join(case_path));
+        copy(&actual.join(bundle_path), &scratch.path().join(bundle_path));
+        let path = scratch.path().join(case_path).join("case.json");
         let mut case = decode(&fs::read(&path).unwrap()).unwrap();
         case["approval"] = Value::Null;
         fs::write(&path, encode(&case).unwrap()).unwrap();
         let registry = json!({"schema":"excalidraw-render/representative-case-registry/v1","cases":[{"case_id":case["case_id"],"path":case_path}]});
-        fs::write(scratch.0.join(REGISTRY), encode(&registry).unwrap()).unwrap();
-        let summaries = verify_registry(&scratch.0, None, false).unwrap();
+        fs::write(scratch.path().join(REGISTRY), encode(&registry).unwrap()).unwrap();
+        let summaries = verify_registry(scratch.path(), None, false).unwrap();
         assert_eq!(summaries.len(), 1);
         assert_eq!(summaries[0]["approved"], false);
         fs::write(
-            scratch.0.join(case_path).join("expected-report-svg.json"),
+            scratch
+                .path()
+                .join(case_path)
+                .join("expected-report-svg.json"),
             b"{}",
         )
         .unwrap();
-        assert!(verify_registry(&scratch.0, None, false)
+        assert!(verify_registry(scratch.path(), None, false)
             .unwrap_err()
             .contains("retained case files changed"));
     }
