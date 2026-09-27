@@ -121,9 +121,60 @@ fn check_descriptor(root: &Path, d: &Value) -> Result<Vec<u8>> {
     if d["sha256"] != json!(sha256(&b))
         || d.get("byte_length").is_some_and(|n| n != &json!(b.len()))
     {
+        if p == COMPARATOR_PROFILE || p == COMPARATOR_CLOSURE {
+            return comparator_closure_successor(d);
+        }
         return Err(format!("stale candidate evidence {p}"));
     }
     Ok(b)
+}
+pub(crate) const COMPARATOR_PROFILE: &str =
+    "tests/conformance/comparator-profiles/canonical-visual-v1.json";
+const COMPARATOR_CLOSURE: &str =
+    "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json";
+/// Preimages of the comparator files the #206 lock refresh superseded.
+pub(crate) const SUPERSEDED_COMPARATOR: &str =
+    "tests/conformance/proposals/comparator-closure-refresh-v1/before";
+/// Evidence measured under the comparator profile (or its closure) that the
+/// #206 lock refresh superseded. That refresh moved only the comparator's
+/// dependency closure, so its sources, protocol and fixtures are unchanged and
+/// those measurements stand; any later profile move needs its own review.
+/// Returns the archived file the evidence was measured under.
+pub(crate) fn comparator_closure_successor(historical: &Value) -> Result<Vec<u8>> {
+    let path = historical["path"].as_str().ok_or("descriptor lacks path")?;
+    if path != COMPARATOR_PROFILE && path != COMPARATOR_CLOSURE {
+        return Err(format!("stale candidate evidence {path}"));
+    }
+    let archived = read(&repo_root(), &format!("{SUPERSEDED_COMPARATOR}/{path}"))?;
+    if historical["sha256"] != sha256(&archived)
+        || historical
+            .get("byte_length")
+            .is_some_and(|n| n != &json!(archived.len()))
+    {
+        return Err(format!("stale candidate evidence {path}"));
+    }
+    let before = read(
+        &repo_root(),
+        &format!("{SUPERSEDED_COMPARATOR}/{COMPARATOR_PROFILE}"),
+    )?;
+    let after = read(&repo_root(), COMPARATOR_PROFILE)?;
+    let parse = |bytes: &[u8]| serde_json::from_slice::<Value>(bytes).map_err(|e| e.to_string());
+    if sha256(&after) != crate::pdf_viewers::COMPARATOR_DIGEST
+        || !differs_only_in_closure(&parse(&before)?, &parse(&after)?)
+    {
+        return Err("unreviewed comparator profile transition".into());
+    }
+    Ok(archived)
+}
+fn differs_only_in_closure(before: &Value, after: &Value) -> bool {
+    let without_closure = |profile: &Value| {
+        let mut profile = profile.clone();
+        if let Some(implementation) = profile["implementation"].as_object_mut() {
+            implementation.remove("closure");
+        }
+        profile
+    };
+    without_closure(before) == without_closure(after)
 }
 fn repo_chain(v: &Value, visited: &mut BTreeSet<String>) -> Result<()> {
     repo_chain_at(v, visited, &repo_root())
@@ -1069,6 +1120,54 @@ mod tests {
         ] {
             assert!(descriptor_set(&root, &bad, &required).is_err());
         }
+    }
+    #[test]
+    fn comparator_successor_admits_no_change_outside_the_closure() {
+        let before = json!({
+            "id": "canonical-visual-comparator.v1",
+            "implementation": {"sources": ["a"], "closure": {"sha256": "old"}}
+        });
+        let mut closure_only = before.clone();
+        closure_only["implementation"]["closure"]["sha256"] = json!("new");
+        assert!(differs_only_in_closure(&before, &closure_only));
+        let mut sources = closure_only.clone();
+        sources["implementation"]["sources"] = json!(["b"]);
+        assert!(!differs_only_in_closure(&before, &sources));
+        let mut protocol = closure_only;
+        protocol["id"] = json!("canonical-visual-comparator.v2");
+        assert!(!differs_only_in_closure(&before, &protocol));
+    }
+    #[test]
+    fn stale_comparator_bindings_pass_only_through_the_reviewed_closure_successor() {
+        let root = repo_root();
+        let archived = read(
+            &root,
+            &format!("{SUPERSEDED_COMPARATOR}/{COMPARATOR_PROFILE}"),
+        )
+        .unwrap();
+        let historical = json!({"path":COMPARATOR_PROFILE,"byte_length":archived.len(),"sha256":sha256(&archived)});
+        assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
+        let required = vec![COMPARATOR_PROFILE.into()];
+        descriptor_set(&root, &json!([historical]), &required).unwrap();
+        for (key, bad) in [("sha256", json!("00")), ("byte_length", json!(1))] {
+            let mut stale = historical.clone();
+            stale[key] = bad;
+            assert!(check_descriptor(&root, &stale).is_err());
+        }
+    }
+    #[test]
+    fn stale_comparator_closure_bindings_follow_the_same_successor() {
+        let root = repo_root();
+        let archived = read(
+            &root,
+            &format!("{SUPERSEDED_COMPARATOR}/{COMPARATOR_CLOSURE}"),
+        )
+        .unwrap();
+        let historical = json!({"path":COMPARATOR_CLOSURE,"sha256":sha256(&archived)});
+        assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
+        let mut stale = historical;
+        stale["sha256"] = json!("00");
+        assert!(check_descriptor(&root, &stale).is_err());
     }
     #[test]
     fn candidate_paths_cannot_escape_the_repository() {

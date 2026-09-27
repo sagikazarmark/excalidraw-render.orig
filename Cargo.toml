@@ -22,7 +22,7 @@ rust-version = "1.97"
 
 [workspace.dependencies]
 base64 = { version = "=0.22.1", default-features = false, features = ["alloc"] }
-clap = { version = "=4.5.41", features = ["derive"] }
+clap = { version = "=4.6.7", features = ["derive"] }
 excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
 excalidraw-fonts = { path = "crates/excalidraw-fonts", version = "=0.1.0", default-features = false }
 excalidraw-fonts-xiaolai = { path = "crates/excalidraw-fonts-xiaolai", version = "=0.1.0" }
@@ -30,7 +30,7 @@ excalidraw-fonts-xiaolai-extended = { path = "crates/excalidraw-fonts-xiaolai-ex
 csscolorparser = "=0.8.3"
 cssparser = "=0.37.0"
 cssparser-color = "=0.5.0"
-crc32fast = "=1.4.2"
+crc32fast = "=1.5.2"
 gif = { version = "=0.14.2", default-features = false, features = ["std"] }
 image-webp = "=0.2.4"
 jsonschema = { version = "=0.33.0", default-features = false }
@@ -47,10 +47,14 @@ jpeg-encoder = "=0.6.1"
 resvg = { version = "=0.45.1", default-features = false, features = ["raster-images"] }
 roxmltree = "=0.20.0"
 regex = "=1.13.1"
-serde = { version = "=1.0.219", features = ["derive"] }
+serde = { version = "=1.0.229", features = ["derive"] }
+# Held at 1.0.141 (#206): 1.0.142+ formats floats through zmij, which writes
+# positive exponents as `1e+20` where 1.0.141 wrote `1e20`. Report values such
+# as an over-limit coordinate's attempted magnitude reach that range, so the
+# bump changes report bytes (spec 11.1) and belongs with #207.
 serde_json = "=1.0.141"
 simplecss = "=0.2.2"
-sha1 = "=0.10.6"
+sha1 = "=0.10.7"
 sha2 = "=0.10.9"
 # The upstream malformed-name fix replaces the safety adapter. The frozen
 # profile token stays at 0.5.1 until ADR-0003's single evidence refresh.

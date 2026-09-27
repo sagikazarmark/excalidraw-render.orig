@@ -43,7 +43,7 @@ fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/jpeg-icc/reference.json");
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
-        "7ffd57eaa8ddfe4a7d311c5a55c57b84a001463864ce6bd235613faab85e76d5"
+        "a7bd4129344285966ba78c9418f234da0d1c39c685ef7e002ac1798fa6cafa78"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/jpeg-icc-reference/v1");
@@ -860,7 +860,7 @@ fn untagged_evidence() -> Value {
     let old = include_bytes!("../../../../tests/oracle/jpeg-color/reference.json");
     assert_eq!(
         format!("{:x}", Sha256::digest(old)),
-        "9b5ab60a18e83b52c582ccb38728b71633b11b592ffe540bab2c796857694638"
+        "e1b0005465245eddca9ec625976302b07d480ae8f7f226afb6771a55d4859cf7"
     );
     let old: Value = serde_json::from_slice(old).unwrap();
     assert_eq!(old["schema"], "excalidraw-render/jpeg-color-reference/v1");

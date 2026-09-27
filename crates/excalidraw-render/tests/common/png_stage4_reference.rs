@@ -4,7 +4,7 @@ pub fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/png-color/stage4-reference.json");
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
-        "42111900327cd1e0d70cac36763dc7296e14b94c716458f5e54cdd3f68310fd1"
+        "a784e8ac7a6e97517d407154c92eb104c6174b04e9d3d71b5abfe7b8a3098ddf"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["cases"].as_array().unwrap().len(), 186);

@@ -1,7 +1,10 @@
 //! Exact case-specific proposals, not approvals. Canonical measurements remain
 //! visible; scoped limits are evaluated anew from the captured image bytes.
 use crate::conformance::{canonical_bytes, repo_root, sha256};
-use crate::conformance_candidate_gate::{candidate_root, case_id, descriptor, read, value};
+use crate::conformance_candidate_gate::{
+    candidate_root, case_id, comparator_closure_successor, descriptor, read, value,
+    COMPARATOR_PROFILE,
+};
 use serde_json::{json, Value};
 use std::path::Path;
 type Result<T> = std::result::Result<T, String>;
@@ -44,7 +47,11 @@ fn proof() -> Result<Value> {
             continue;
         }
         if d != &descriptor(&root, path)? {
-            validate_pdfium_alpha_successor(d)?;
+            if path == COMPARATOR_PROFILE {
+                comparator_closure_successor(d)?;
+            } else {
+                validate_pdfium_alpha_successor(d)?;
+            }
         }
     }
     Ok(evidence)
@@ -139,7 +146,7 @@ fn expected(directory: &str) -> Result<Value> {
         scopes.push(json!({"case_id":case_id(directory)?,"variant":"default","format":"pdf","comparison_id":format!("pdf-{viewer}"),"viewer_profile":{"id":value(&repo_root(),&profile)?["id"],"descriptor":descriptor(&repo_root(),&profile)?},"region":region,"bounds":if region=="whole"{json!([0,0,200,120])}else{json!([10,12,124,41])},"max_changed_pixels":pixels,"minimum_ssim_bits":bits,"reason":reason,"approving_issue":"https://github.com/sagikazarmark/excalidraw-render.orig/issues/85"}));
     }
     Ok(
-        json!({"schema":"excalidraw-render/representative-exception-proposal/v1","status":"proposed-not-approved","case_id":case_id(directory)?,"diagnosis":[descriptor(&repo_root(),REPORT)?,descriptor(&repo_root(),EVIDENCE)?],"diagnosis_producer_chain":evidence["repository_bindings"],"diagnosis_upstream_sources":evidence["upstream_sources"],"colour_binding_bridge":colour_binding_bridge,"comparator":descriptor(&repo_root(),"tests/conformance/comparator-profiles/canonical-visual-v1.json")?,"inputs":inputs,"exceptions":scopes}),
+        json!({"schema":"excalidraw-render/representative-exception-proposal/v1","status":"proposed-not-approved","case_id":case_id(directory)?,"diagnosis":[descriptor(&repo_root(),REPORT)?,descriptor(&repo_root(),EVIDENCE)?],"diagnosis_producer_chain":evidence["repository_bindings"],"diagnosis_upstream_sources":evidence["upstream_sources"],"colour_binding_bridge":colour_binding_bridge,"comparator":descriptor(&repo_root(),COMPARATOR_PROFILE)?,"inputs":inputs,"exceptions":scopes}),
     )
 }
 fn validate(proposal: &Value, wanted: &Value) -> Result<()> {
@@ -149,6 +156,14 @@ fn validate(proposal: &Value, wanted: &Value) -> Result<()> {
         return Err("exception proposal differs from the reviewed scopes, exact limits, cause or proof bindings".into());
     }
     Ok(())
+}
+/// A proposal measured under the comparator profile the #206 lock refresh
+/// superseded keeps that comparator; any other difference still fails.
+fn with_measured_comparator(mut wanted: Value, proposal: &Value) -> Value {
+    if comparator_closure_successor(&proposal["comparator"]).is_ok() {
+        wanted["comparator"] = proposal["comparator"].clone();
+    }
+    wanted
 }
 fn observations(canonical: &Value, proposal: &Value) -> Result<()> {
     for scope in proposal["exceptions"]
@@ -221,7 +236,10 @@ pub fn evaluate(directory: &str) -> Result<Value> {
     let effective = if proposal.is_null() {
         canonical.clone()
     } else {
-        validate(&proposal, &expected(directory)?)?;
+        validate(
+            &proposal,
+            &with_measured_comparator(expected(directory)?, &proposal),
+        )?;
         observations(&canonical, &proposal)?;
         crate::conformance_candidate::comparisons_with_scopes(
             &collection,
@@ -236,6 +254,47 @@ pub fn evaluate(directory: &str) -> Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn proposals_keep_the_comparator_they_were_measured_under_only_through_the_successor() {
+        let archived = read(
+            &repo_root(),
+            &format!(
+                "{}/{COMPARATOR_PROFILE}",
+                crate::conformance_candidate_gate::SUPERSEDED_COMPARATOR
+            ),
+        )
+        .unwrap();
+        let live = descriptor(&repo_root(), COMPARATOR_PROFILE).unwrap();
+        let measured = json!({"path":COMPARATOR_PROFILE,"byte_length":archived.len(),"sha256":sha256(&archived)});
+        let wanted = json!({"comparator": live, "exceptions": []});
+        let proposal = json!({"comparator": measured, "exceptions": []});
+        validate(
+            &proposal,
+            &with_measured_comparator(wanted.clone(), &proposal),
+        )
+        .unwrap();
+        validate(&wanted, &with_measured_comparator(wanted.clone(), &wanted)).unwrap();
+        let mut forged = proposal;
+        forged["comparator"]["sha256"] = json!("00");
+        assert!(validate(&forged, &with_measured_comparator(wanted, &forged)).is_err());
+    }
+    #[test]
+    fn comparator_successor_accepts_only_the_reviewed_closure_refresh() {
+        let bytes = read(&repo_root(), EVIDENCE).unwrap();
+        let evidence: Value = serde_json::from_slice(&bytes).unwrap();
+        let historical = evidence["repository_bindings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|d| d["path"] == COMPARATOR_PROFILE)
+            .unwrap();
+        comparator_closure_successor(historical).unwrap();
+        for key in ["path", "sha256", "byte_length"] {
+            let mut bad = historical.clone();
+            bad[key] = json!("unreviewed");
+            assert!(comparator_closure_successor(&bad).is_err());
+        }
+    }
     #[test]
     fn scoped_fixed_pdf_requires_the_exact_validated_colourspec_bridge() {
         use std::fs;

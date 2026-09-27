@@ -48,7 +48,7 @@ fn inputs() -> Value {
 fn base_evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-color/reference.json"),
-        "9b5ab60a18e83b52c582ccb38728b71633b11b592ffe540bab2c796857694638",
+        "e1b0005465245eddca9ec625976302b07d480ae8f7f226afb6771a55d4859cf7",
     );
     assert_eq!(
         record["schema"],
@@ -69,7 +69,7 @@ fn by_id<'a>(record: &'a Value, id: &Value) -> &'a Value {
 fn evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-gain-map/reference.json"),
-        "af3c97e389ef230c57bbe9a4b3406dc1ef1d6a2ad37b0e8ad2e1f4fbe6568ce4",
+        "85a2e60b9b8cbe48096c19338fc0052930aea51bc264f6cb8cdfbd0ce246524c",
     );
     assert_eq!(
         record["schema"],

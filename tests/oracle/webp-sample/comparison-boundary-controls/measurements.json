@@ -2559,7 +2559,7 @@
     },
     {
       "path": "tests/conformance/pdf-viewer-qualification/rectangle-outline/manifest.json",
-      "sha256": "e2ff529519fe14feb72c53eda4097ce20da2ea8c3358ab5787e75bb5afdd96ba"
+      "sha256": "93bf7704f2e11830e9be4a019b153e24f0a82bb25a5a19ae640f5fb7c7a1a753"
     },
     {
       "path": "tests/oracle/webp-sample/approved-profile-viewer-diagnosis/measurements.json",

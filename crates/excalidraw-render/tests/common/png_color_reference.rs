@@ -11,7 +11,7 @@ pub const REFERENCE: &[u8] = include_bytes!(concat!(
 pub fn evidence() -> Value {
     assert_eq!(
         format!("{:x}", Sha256::digest(REFERENCE)),
-        "2aae93308b4289d3374ec92e960e756106af621f9bfc64e4b29314f5162857d0"
+        "f15dd9acb05de8e646563af7e7f96aca7d009a712711b225b5275fd6dfa4c86e"
     );
     let record: Value = serde_json::from_slice(REFERENCE).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
@@ -156,7 +156,7 @@ pub fn gain_map_evidence() -> Value {
     ));
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
-        "dee2a45432ce2a4e211d1e51e8e80f571bfd8f90221c7bf85153b57df88714ad"
+        "c08f20247ff996e089a62881022818b09ca57eaab8a6f8e9f96e5e92e6e05373"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
@@ -285,7 +285,7 @@ pub fn hdr_metadata_evidence() -> Value {
     ));
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
-        "c46e2a12fba6f2e2ea9d8d0723bd1b1af1b9b0cdadf42e24b1f49db981e89101"
+        "cfeea5a884edea3501a4cf39f851a3aa9fec5a3cc5d0d5f1e1f19d92c17c01e9"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");

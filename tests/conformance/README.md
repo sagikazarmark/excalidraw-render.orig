@@ -271,9 +271,23 @@ comparator dependency legitimately moves, refresh the committed closure with:
 cargo test --locked -p excalidraw-render-compare --test profile -- --ignored materialize
 ```
 
-then repin `closure.sha256` in the profile, the profile's adjacent digest, and
-the three artifacts that bind it (the SVG and PDF viewer qualifications and the
-rectangle PDF renderer expectations), then review the diff and rerun qualification.
+then repin `closure.sha256` in the profile and the profile's adjacent digest.
+The profile digest is bound by live evidence, and each rebinding moves that
+evidence's own digest in turn: the SVG and PDF viewer qualifications (and their
+sidecars, digests of the manifest without its trailing LF), the rectangle PDF
+renderer expectations, the oracle references under `tests/oracle/` and the test
+sources that pin them, `coverage/pdf-judgments.json`, and the `pdf-judgments`
+record digest in `coverage/ownership.json`. Follow each moved digest until
+nothing live changes. Historical records stay as they were: `proposals/`,
+`candidates/`, `coverage/*-application-v*/`, `docs/research/`,
+`coverage/font-packaging-reconciliation-2.json`, and the `source` digests of
+test-owned rows in `coverage/ownership.json`. Evidence measured under the
+superseded profile — the stage4 typography diagnosis and the current
+candidate — stays valid only through the explicit
+successor in `xtask/src/conformance_candidate_gate.rs`, which requires an
+archived preimage and a profile that differs only in `implementation.closure`
+(`proposals/comparator-closure-refresh-v1/`, #206). A later refresh adds its own
+reviewed successor. Review the diff and rerun qualification.
 
 ## Canonical SVG viewers
 
