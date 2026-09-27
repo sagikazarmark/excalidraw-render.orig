@@ -27,7 +27,7 @@ use write_fonts::read::tables::layout::{
 };
 use write_fonts::read::tables::variations::ItemVariationStore;
 use write_fonts::read::types::{BigEndian, GlyphId16, Tag};
-use write_fonts::read::{FontRead, FontRef, MinByteRange, ReadError, TableProvider};
+use write_fonts::read::{FontRead, FontRef, MinByteRange, ReadError, ResolveOffset, TableProvider};
 
 /// The most records and array elements one font's layout walk may visit.
 /// Offsets may be shared, so a small table can direct the walk over the same
@@ -400,6 +400,7 @@ impl Walker {
 
     fn feature_variations(
         &mut self,
+        features: &FeatureList<'_>,
         variations: Option<Result<FeatureVariations<'_>, ReadError>>,
     ) -> Walk {
         let Some(variations) = self.nullable_table(variations)? else {
@@ -424,8 +425,17 @@ impl Walker {
                 self.work(1 + substitutions.substitutions().len())?;
                 for substitution in substitutions.substitutions() {
                     self.feature_index(substitution.feature_index())?;
-                    let feature =
-                        self.table(substitution.alternate_feature(substitutions.offset_data()))?;
+                    // read-fonts' `alternate_feature` reads FeatureParams as
+                    // tag `NULL`, which rejects any parameters. An alternate
+                    // feature's parameters take the form of the feature it
+                    // replaces.
+                    let tag = features.feature_records()[usize::from(substitution.feature_index())]
+                        .feature_tag();
+                    let feature = self.table(
+                        substitution
+                            .alternate_feature_offset()
+                            .resolve_with_args(substitutions.offset_data(), tag),
+                    )?;
                     self.feature(&feature)?;
                 }
             }
@@ -625,7 +635,7 @@ impl Walker {
         self.feature_count = features.feature_count();
         self.script_list(gsub.script_list())?;
         self.feature_list(&features)?;
-        self.feature_variations(gsub.feature_variations())?;
+        self.feature_variations(&features, gsub.feature_variations())?;
         self.work(1 + lookups.lookups().len())?;
         for lookup in lookups.lookups().iter() {
             match self.read(lookup)? {
@@ -839,7 +849,7 @@ impl Walker {
         self.feature_count = features.feature_count();
         self.script_list(gpos.script_list())?;
         self.feature_list(&features)?;
-        self.feature_variations(gpos.feature_variations())?;
+        self.feature_variations(&features, gpos.feature_variations())?;
         self.work(1 + lookups.lookups().len())?;
         for lookup in lookups.lookups().iter() {
             match self.read(lookup)? {

@@ -109,10 +109,7 @@ pub(super) fn layout_fixtures() -> Vec<LayoutFixture> {
                     Tag::new(b"size"),
                     FeatureParams::Size(SizeParams::new(100, 1, 256, 80, 120)),
                 ),
-                (
-                    Tag::new(b"ss01"),
-                    FeatureParams::StylisticSet(StylisticSetParams::new(NameId::new(256))),
-                ),
+                (Tag::new(b"ss01"), stylistic_set()),
                 (
                     Tag::new(b"cv01"),
                     FeatureParams::CharacterVariant(CharacterVariantParams::new(
@@ -134,7 +131,7 @@ pub(super) fn layout_fixtures() -> Vec<LayoutFixture> {
         gsub: Some(dump(&gsub_table(
             vec![single_lookup(), single_lookup()],
             Some(feature_variations()),
-            Vec::new(),
+            vec![(Tag::new(b"ss01"), stylistic_set())],
         ))),
         gpos: None,
         gdef: None,
@@ -563,12 +560,18 @@ fn mark_to_base() -> MarkBasePosFormat1 {
     )
 }
 
+fn stylistic_set() -> FeatureParams {
+    FeatureParams::StylisticSet(StylisticSetParams::new(NameId::new(256)))
+}
+
 fn feature_variations() -> FeatureVariations {
     let axis = |min: f32, max: f32| {
         Condition::format_1_axis_range(0, F2Dot14::from_f32(min), F2Dot14::from_f32(max))
     };
-    let mut alternate = Feature::new(None, vec![1]);
-    alternate.feature_params = None.into();
+    // An alternate feature reads its FeatureParams as the feature it
+    // substitutes, so the ss01 substitute carries stylistic-set parameters.
+    let alternate = Feature::new(None, vec![1]);
+    let alternate_stylistic_set = Feature::new(Some(stylistic_set()), vec![1]);
     FeatureVariations::new(vec![
         FeatureVariationRecord::new(
             Some(ConditionSet::new(vec![
@@ -580,6 +583,7 @@ fn feature_variations() -> FeatureVariations {
             ])),
             Some(FeatureTableSubstitution::new(vec![
                 FeatureTableSubstitutionRecord::new(0, alternate),
+                FeatureTableSubstitutionRecord::new(1, alternate_stylistic_set),
             ])),
         ),
         FeatureVariationRecord::new(None, None),
