@@ -1,10 +1,10 @@
 {
   "compatibilityRevision": 1,
   "measurement": {
-    "generatedBytesSha256": "0a8b686fc3c4a8740b0cd0ce985df9e61f206809da27d4248d44f1192ac35d8d",
-    "resourceTracesSha256": "cb3e7b25f127a6cb10b09fa5a8efcb3ee281ab662ccc616aefdec4cf87636dde",
-    "successfulCells": 984,
-    "tracedCells": 1211
+    "generatedBytesSha256": "8d01f4270931ed27e2a43b1fea89997220015e17c70f7876a3d24ef2d015c870",
+    "resourceTracesSha256": "87f274e716285071e134075381fae9ced32f01792740a1074aa99af3d62fcf10",
+    "successfulCells": 780,
+    "tracedCells": 1007
   },
   "schema": "excalidraw-render/svg-font-subset-cross-target-measurement/v1"
 }

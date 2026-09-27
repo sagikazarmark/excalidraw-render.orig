@@ -33,7 +33,7 @@ const MEASUREMENT_PREFIX: &str = "SVG_FONT_SUBSET_TARGET_MEASUREMENT=";
 const QUALIFIED_SOURCES: usize = 231;
 /// The cells that replay a canonical trace: every successful cell and every
 /// not-selected cell of the corpus.
-const TRACED_CELLS: usize = 1211;
+const TRACED_CELLS: usize = 1007;
 /// The supported targets (spec §10, ADR-0006), in canonical order.
 const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 /// The fields every target report, and the aggregate built from them, must

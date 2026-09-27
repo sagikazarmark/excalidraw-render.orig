@@ -11,9 +11,9 @@ const REPO_ROOT = resolve(ORACLE_ROOT, "../..");
 const INPUT_URL = "http://reference.invalid/input.svg";
 const BROWSER_VERSION = "149.0.7827.55";
 // The semantic subset executions the corpus deduplicates its successful cells
-// into: the 230 official chunks' 851 and the Noto Emoji fallback's 6 (#150),
+// into: the 230 official chunks' 655 and the Noto Emoji fallback's 7 (#150),
 // the count `xtask/src/svg_font_subsets.rs` holds the corpus to.
-const EXECUTIONS = 864;
+const EXECUTIONS = 662;
 const BROWSER_ARGUMENTS = [
   "--disable-gpu",
   "--font-render-hinting=none",

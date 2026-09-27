@@ -22,12 +22,12 @@ const CORPUS_PATH: &str = concat!(
 /// the not-selected and not-applicable cells, deduplicated by semantic subset
 /// identity into executions. `verify` holds the corpus and the manifest to
 /// these counts; the schema states the execution count as well.
-pub(crate) const SUCCESSFUL_CELLS: usize = 984;
-pub(crate) const EXECUTIONS: usize = 864;
+pub(crate) const SUCCESSFUL_CELLS: usize = 780;
+pub(crate) const EXECUTIONS: usize = 662;
 /// The committed qualification corpus every piece of SVG font subset evidence
 /// binds.
 pub(crate) const CORPUS_SHA256: &str =
-    "254d75ecf95dafb9cdf796d36993daac6587b5e4d589ed052fd01889d7ac9157";
+    "e1526c3a4a4896baadbdfedc623555149146696b845ca64f16cb43733ba7b61b";
 const REQUIRED_CHECKS: [&str; 7] = [
     "shaping",
     "glyph_choice",

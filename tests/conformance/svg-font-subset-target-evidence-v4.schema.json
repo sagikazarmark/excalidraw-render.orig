@@ -18,8 +18,8 @@
       "properties": {
         "generatedBytesSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "resourceTracesSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-        "successfulCells": {"const": 984},
-        "tracedCells": {"const": 1211}
+        "successfulCells": {"const": 780},
+        "tracedCells": {"const": 1007}
       }
     },
     "status": {"const": "pass"}

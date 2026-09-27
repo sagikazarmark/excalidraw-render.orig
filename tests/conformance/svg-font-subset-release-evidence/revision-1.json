@@ -3,10 +3,10 @@
   "compatibilityRevision": 1,
   "corpus": {
     "path": "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json",
-    "sha256": "254d75ecf95dafb9cdf796d36993daac6587b5e4d589ed052fd01889d7ac9157",
-    "successfulCells": 984
+    "sha256": "e1526c3a4a4896baadbdfedc623555149146696b845ca64f16cb43733ba7b61b",
+    "successfulCells": 780
   },
-  "decision": "pass",
+  "decision": "pending_target_aggregation",
   "fuzzRegressions": {
     "path": "crates/excalidraw-render/tests/qualification/font-subset-fuzz-regressions.json",
     "sha256": "36e32471e2d5e651382327e670e3e0dd7e38a7f774822a339441073074b4b776"
@@ -15,7 +15,7 @@
   "licensing": {
     "evidenceOwner": "corpus.sources[].licenseIdentity/reservedFontNames and cells[].transformationNoticeSha256",
     "qualifiedSources": 231,
-    "qualifiedTransformationNotices": 984
+    "qualifiedTransformationNotices": 780
   },
   "originatingIssue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/101",
   "reproductionCommands": [
@@ -32,24 +32,18 @@
     "sha256": "083073315198f4cc4d67cd2f3a3fa7b65c6ce651dfb52fed61f5090c932b92c7"
   },
   "targetEvidence": {
-    "aggregate": {
-      "commit": "777c33a10d14f3a5f9e3b97e7e3cca8b216bee46",
-      "path": "tests/conformance/svg-font-subset-target-aggregate/revision-1.json",
-      "provenanceUrl": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/101#issuecomment-5732400822",
-      "sha256": "cc1bc9dfe1fc01672e4bcf248d05d85ccca4a0ecd418a384b5acf38ebf181d9f"
-    },
     "aggregateArtifact": "svg-font-subset-target-aggregate",
     "crossTargetMeasurement": {
       "path": "tests/conformance/svg-font-subset-cross-target-measurement/revision-1.json",
-      "sha256": "1fc51a602ffd8eb0cd91cc11b735ba5997e22e08691e8bb01f203131119f5c1f"
+      "sha256": "826b5a09fed4221f5fda5c86a64f13a4e250b8db5ba1451e3bf2a227b71c2ebb"
     },
     "generatorAndAggregator": {
       "path": "xtask/src/svg_font_subset_targets.rs",
       "sha256": "4769a20f676e35e94ccd2d4ecf4204432e611ab135b9182512799e41250e3eab"
     },
     "reportSchema": {
-      "path": "tests/conformance/svg-font-subset-target-evidence-v3.schema.json",
-      "sha256": "abff454338378d7653a3bbb3aeb62f678a062680aaded07e68ae6b9f89ca6130"
+      "path": "tests/conformance/svg-font-subset-target-evidence-v4.schema.json",
+      "sha256": "25d6c0cd08257bde20fa20eede5b3f932045377485b0488bfd19ccdd1a364c40"
     },
     "runnerInputs": [
       {
@@ -85,7 +79,7 @@
         "sha256": "5bc4bdad2c80db109256ea3b09c005d888f7ab1789dd5ac8e5ccbedb75a79424"
       }
     ],
-    "status": "aggregated",
+    "status": "pending_ci",
     "workflow": {
       "path": "dagger.dang",
       "sha256": "38f47d2e8a644b8594f08f0f7f5d034de9175f4ac9c2c26084e1a9ac8de4daee"
@@ -93,9 +87,9 @@
   },
   "viewerEvidence": {
     "approvalSubject": "sha256:15ef4a33035bd4083d9c18704e39045b2b8bef3662c80f8d8480181eabf41d27",
-    "executions": 864,
+    "executions": 662,
     "path": "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json",
-    "sha256": "faa4c27572031f02687ccb3bf2686cffbc6e38fa34512acf58dfbd2d51fdc5ce",
+    "sha256": "af9f516a081b0aee54ce09a7dcaab9ba36eb396cde671ff0b6d92c6791cccfd5",
     "status": "approved"
   }
 }

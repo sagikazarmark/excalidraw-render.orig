@@ -21,10 +21,6 @@ use write_fonts::FontBuilder;
 const SUBSET_FLAGS: SubsetFlags = SubsetFlags::SUBSET_FLAGS_DEFAULT;
 const ENCODER_THREADS: Option<NonZeroUsize> = NonZeroUsize::new(1);
 const MAX_CACHE_ENTRIES: usize = 230;
-#[cfg(test)]
-const MAX_LAYOUT_TRAVERSAL_DEPTH: usize = 64;
-#[cfg(test)]
-const MAX_LAYOUT_TRAVERSAL_NODES: usize = 1_000_000;
 
 #[derive(Debug)]
 pub(super) struct Error {
@@ -674,125 +670,313 @@ fn fallible_probe(characters: &[char]) -> Result<String, Error> {
     Ok(probe)
 }
 
+/// The glyphs the qualification corpus treats as layout-referenced
+/// (ADR-0020): those in a Coverage table of a GSUB or GPOS lookup subtable,
+/// whole ranges included. GDEF and class definitions do not count. `None`
+/// when a layout table does not parse or covers a glyph past `numGlyphs`.
 #[cfg(test)]
 pub(super) fn layout_glyph_ids(font: &FontRef<'_>) -> Option<Vec<bool>> {
-    use read_fonts::TableProvider;
-    let font = read_fonts::FontRef::new(font.data().as_bytes()).ok()?;
-    let glyph_count = u32::from(font.maxp().ok()?.num_glyphs());
-    let mut glyphs = vec![false; usize::try_from(glyph_count).ok()?];
-    let mut budget = MAX_LAYOUT_TRAVERSAL_NODES;
+    use write_fonts::read::tables::{gpos::PositionLookup, gsub::SubstitutionLookup};
+    let mut glyphs = vec![false; usize::from(font.maxp().ok()?.num_glyphs())];
+    let mut coverages = Vec::new();
     if font.data_for_tag(Tag::new(b"GSUB")).is_some() {
-        validate_layout_table(&font.gsub().ok()?, glyph_count, &mut glyphs, &mut budget, 0).ok()?;
+        for lookup in font.gsub().ok()?.lookup_list().ok()?.lookups().iter() {
+            match lookup.ok()? {
+                SubstitutionLookup::Extension(lookup) => {
+                    for extension in lookup.subtables().iter() {
+                        gsub_extension_coverages(&extension.ok()?, &mut coverages)?;
+                    }
+                }
+                lookup => gsub_lookup_coverages(&lookup, &mut coverages)?,
+            }
+        }
     }
     if font.data_for_tag(Tag::new(b"GPOS")).is_some() {
-        validate_layout_table(&font.gpos().ok()?, glyph_count, &mut glyphs, &mut budget, 0).ok()?;
+        for lookup in font.gpos().ok()?.lookup_list().ok()?.lookups().iter() {
+            match lookup.ok()? {
+                PositionLookup::Extension(lookup) => {
+                    for extension in lookup.subtables().iter() {
+                        gpos_extension_coverages(&extension.ok()?, &mut coverages)?;
+                    }
+                }
+                lookup => gpos_lookup_coverages(&lookup, &mut coverages)?,
+            }
+        }
     }
-    if font.data_for_tag(Tag::new(b"GDEF")).is_some() {
-        validate_layout_table(&font.gdef().ok()?, glyph_count, &mut glyphs, &mut budget, 0).ok()?;
+    for coverage in coverages {
+        for glyph in coverage.iter() {
+            *glyphs.get_mut(usize::from(glyph.to_u16()))? = true;
+        }
     }
     Some(glyphs)
 }
 
 #[cfg(test)]
-fn validate_layout_table<'a>(
-    table: &(dyn read_fonts::traversal::SomeTable<'a> + 'a),
-    glyph_count: u32,
-    glyphs: &mut [bool],
-    budget: &mut usize,
-    depth: usize,
-) -> Result<(), Error> {
-    if depth > MAX_LAYOUT_TRAVERSAL_DEPTH {
-        return Err(validate_error());
-    }
-    let validates_class_range = table.type_name() == "ClassDefFormat1";
-    let mut class_start = None;
-    let mut class_count = None;
-    for field in table.iter() {
-        if validates_class_range {
-            match (&field.name, &field.value) {
-                (&"start_glyph_id", read_fonts::traversal::FieldType::GlyphId16(glyph)) => {
-                    class_start = Some(glyph.to_u32());
-                }
-                (&"class_value_array", read_fonts::traversal::FieldType::Array(array)) => {
-                    class_count = Some(array.len());
-                }
-                _ => {}
+type Coverages<'a> = Vec<write_fonts::read::tables::layout::CoverageTable<'a>>;
+
+#[cfg(test)]
+fn gsub_lookup_coverages<'a>(
+    lookup: &write_fonts::read::tables::gsub::SubstitutionLookup<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gsub::{SingleSubst, SubstitutionLookup};
+    match lookup {
+        SubstitutionLookup::Single(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                coverages.push(match subtable.ok()? {
+                    SingleSubst::Format1(table) => table.coverage().ok()?,
+                    SingleSubst::Format2(table) => table.coverage().ok()?,
+                });
             }
         }
-        validate_layout_field(field.value, glyph_count, glyphs, budget, depth)?;
-    }
-    if let (Some(start), Some(count)) = (class_start, class_count) {
-        let end = start
-            .checked_add(u32::try_from(count).map_err(|_| validate_error())?)
-            .ok_or_else(validate_error)?;
-        if end > glyph_count {
-            return Err(validate_error());
+        SubstitutionLookup::Multiple(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                coverages.push(subtable.ok()?.coverage().ok()?);
+            }
         }
+        SubstitutionLookup::Alternate(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                coverages.push(subtable.ok()?.coverage().ok()?);
+            }
+        }
+        SubstitutionLookup::Ligature(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                coverages.push(subtable.ok()?.coverage().ok()?);
+            }
+        }
+        SubstitutionLookup::Contextual(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                sequence_context_coverages(&subtable.ok()?, coverages)?;
+            }
+        }
+        SubstitutionLookup::ChainContextual(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                chained_context_coverages(&subtable.ok()?, coverages)?;
+            }
+        }
+        SubstitutionLookup::Reverse(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                let table = subtable.ok()?;
+                coverages.push(table.coverage().ok()?);
+                for coverage in table
+                    .backtrack_coverages()
+                    .iter()
+                    .chain(table.lookahead_coverages().iter())
+                {
+                    coverages.push(coverage.ok()?);
+                }
+            }
+        }
+        SubstitutionLookup::Extension(_) => return None,
     }
-    Ok(())
+    Some(())
 }
 
 #[cfg(test)]
-fn validate_layout_field<'a>(
-    field: read_fonts::traversal::FieldType<'a>,
-    glyph_count: u32,
-    glyphs: &mut [bool],
-    budget: &mut usize,
-    depth: usize,
-) -> Result<(), Error> {
-    *budget = budget.checked_sub(1).ok_or_else(validate_error)?;
-    use read_fonts::traversal::FieldType;
-    match field {
-        FieldType::GlyphId16(glyph) => {
-            if glyph.to_u32() >= glyph_count {
-                return Err(validate_error());
+fn gsub_extension_coverages<'a>(
+    extension: &write_fonts::read::tables::gsub::ExtensionSubtable<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gsub::{ExtensionSubtable, SingleSubst};
+    match extension {
+        ExtensionSubtable::Single(table) => coverages.push(match table.extension().ok()? {
+            SingleSubst::Format1(table) => table.coverage().ok()?,
+            SingleSubst::Format2(table) => table.coverage().ok()?,
+        }),
+        ExtensionSubtable::Multiple(table) => {
+            coverages.push(table.extension().ok()?.coverage().ok()?);
+        }
+        ExtensionSubtable::Alternate(table) => {
+            coverages.push(table.extension().ok()?.coverage().ok()?);
+        }
+        ExtensionSubtable::Ligature(table) => {
+            coverages.push(table.extension().ok()?.coverage().ok()?);
+        }
+        ExtensionSubtable::Contextual(table) => {
+            sequence_context_coverages(&table.extension().ok()?, coverages)?;
+        }
+        ExtensionSubtable::ChainContextual(table) => {
+            chained_context_coverages(&table.extension().ok()?, coverages)?;
+        }
+        ExtensionSubtable::Reverse(table) => {
+            let table = table.extension().ok()?;
+            coverages.push(table.coverage().ok()?);
+            for coverage in table
+                .backtrack_coverages()
+                .iter()
+                .chain(table.lookahead_coverages().iter())
+            {
+                coverages.push(coverage.ok()?);
             }
-            *glyphs
-                .get_mut(usize::from(glyph.to_u16()))
-                .ok_or_else(validate_error)? = true;
         }
-        FieldType::GlyphId24(glyph) if glyph.to_u32() >= glyph_count => {
-            return Err(validate_error());
-        }
-        FieldType::GlyphId24(_) => {}
-        FieldType::ResolvedOffset(offset) => {
-            let target = offset.target.map_err(|_| validate_error())?;
-            validate_layout_table(target.as_ref(), glyph_count, glyphs, budget, depth + 1)?;
-        }
-        FieldType::ArrayOffset(offset) => {
-            let target = offset.target.map_err(|_| validate_error())?;
-            validate_layout_array(target.as_ref(), glyph_count, glyphs, budget, depth + 1)?;
-        }
-        FieldType::Record(record) => {
-            validate_layout_table(&record, glyph_count, glyphs, budget, depth + 1)?;
-        }
-        FieldType::Array(array) => {
-            validate_layout_array(array.as_ref(), glyph_count, glyphs, budget, depth + 1)?;
-        }
-        FieldType::BareOffset(offset) if offset.to_u32() != 0 => {
-            return Err(validate_error());
-        }
-        _ => {}
     }
-    Ok(())
+    Some(())
 }
 
 #[cfg(test)]
-fn validate_layout_array<'a>(
-    array: &(dyn read_fonts::traversal::SomeArray<'a> + 'a),
-    glyph_count: u32,
-    glyphs: &mut [bool],
-    budget: &mut usize,
-    depth: usize,
-) -> Result<(), Error> {
-    if depth > MAX_LAYOUT_TRAVERSAL_DEPTH || array.len() > *budget {
-        return Err(validate_error());
+fn gpos_lookup_coverages<'a>(
+    lookup: &write_fonts::read::tables::gpos::PositionLookup<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gpos::PositionLookup;
+    match lookup {
+        PositionLookup::Single(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                single_pos_coverages(&subtable.ok()?, coverages)?;
+            }
+        }
+        PositionLookup::Pair(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                pair_pos_coverages(&subtable.ok()?, coverages)?;
+            }
+        }
+        PositionLookup::Cursive(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                coverages.push(subtable.ok()?.coverage().ok()?);
+            }
+        }
+        PositionLookup::MarkToBase(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                let table = subtable.ok()?;
+                coverages.push(table.mark_coverage().ok()?);
+                coverages.push(table.base_coverage().ok()?);
+            }
+        }
+        PositionLookup::MarkToLig(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                let table = subtable.ok()?;
+                coverages.push(table.mark_coverage().ok()?);
+                coverages.push(table.ligature_coverage().ok()?);
+            }
+        }
+        PositionLookup::MarkToMark(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                let table = subtable.ok()?;
+                coverages.push(table.mark1_coverage().ok()?);
+                coverages.push(table.mark2_coverage().ok()?);
+            }
+        }
+        PositionLookup::Contextual(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                sequence_context_coverages(&subtable.ok()?, coverages)?;
+            }
+        }
+        PositionLookup::ChainContextual(lookup) => {
+            for subtable in lookup.subtables().iter() {
+                chained_context_coverages(&subtable.ok()?, coverages)?;
+            }
+        }
+        PositionLookup::Extension(_) => return None,
     }
-    for index in 0..array.len() {
-        let field = array.get(index).ok_or_else(validate_error)?;
-        validate_layout_field(field, glyph_count, glyphs, budget, depth)?;
+    Some(())
+}
+
+#[cfg(test)]
+fn gpos_extension_coverages<'a>(
+    extension: &write_fonts::read::tables::gpos::ExtensionSubtable<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gpos::ExtensionSubtable;
+    match extension {
+        ExtensionSubtable::Single(table) => {
+            single_pos_coverages(&table.extension().ok()?, coverages)?;
+        }
+        ExtensionSubtable::Pair(table) => {
+            pair_pos_coverages(&table.extension().ok()?, coverages)?;
+        }
+        ExtensionSubtable::Cursive(table) => {
+            coverages.push(table.extension().ok()?.coverage().ok()?);
+        }
+        ExtensionSubtable::MarkToBase(table) => {
+            let table = table.extension().ok()?;
+            coverages.push(table.mark_coverage().ok()?);
+            coverages.push(table.base_coverage().ok()?);
+        }
+        ExtensionSubtable::MarkToLig(table) => {
+            let table = table.extension().ok()?;
+            coverages.push(table.mark_coverage().ok()?);
+            coverages.push(table.ligature_coverage().ok()?);
+        }
+        ExtensionSubtable::MarkToMark(table) => {
+            let table = table.extension().ok()?;
+            coverages.push(table.mark1_coverage().ok()?);
+            coverages.push(table.mark2_coverage().ok()?);
+        }
+        ExtensionSubtable::Contextual(table) => {
+            sequence_context_coverages(&table.extension().ok()?, coverages)?;
+        }
+        ExtensionSubtable::ChainContextual(table) => {
+            chained_context_coverages(&table.extension().ok()?, coverages)?;
+        }
     }
-    Ok(())
+    Some(())
+}
+
+#[cfg(test)]
+fn single_pos_coverages<'a>(
+    subtable: &write_fonts::read::tables::gpos::SinglePos<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gpos::SinglePos;
+    coverages.push(match subtable {
+        SinglePos::Format1(table) => table.coverage().ok()?,
+        SinglePos::Format2(table) => table.coverage().ok()?,
+    });
+    Some(())
+}
+
+#[cfg(test)]
+fn pair_pos_coverages<'a>(
+    subtable: &write_fonts::read::tables::gpos::PairPos<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gpos::PairPos;
+    coverages.push(match subtable {
+        PairPos::Format1(table) => table.coverage().ok()?,
+        PairPos::Format2(table) => table.coverage().ok()?,
+    });
+    Some(())
+}
+
+#[cfg(test)]
+fn sequence_context_coverages<'a>(
+    context: &write_fonts::read::tables::layout::SequenceContext<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::layout::SequenceContext;
+    match context {
+        SequenceContext::Format1(table) => coverages.push(table.coverage().ok()?),
+        SequenceContext::Format2(table) => coverages.push(table.coverage().ok()?),
+        SequenceContext::Format3(table) => {
+            for coverage in table.coverages().iter() {
+                coverages.push(coverage.ok()?);
+            }
+        }
+    }
+    Some(())
+}
+
+#[cfg(test)]
+fn chained_context_coverages<'a>(
+    context: &write_fonts::read::tables::layout::ChainedSequenceContext<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::layout::ChainedSequenceContext;
+    match context {
+        ChainedSequenceContext::Format1(table) => coverages.push(table.coverage().ok()?),
+        ChainedSequenceContext::Format2(table) => coverages.push(table.coverage().ok()?),
+        ChainedSequenceContext::Format3(table) => {
+            for coverage in table
+                .backtrack_coverages()
+                .iter()
+                .chain(table.input_coverages().iter())
+                .chain(table.lookahead_coverages().iter())
+            {
+                coverages.push(coverage.ok()?);
+            }
+        }
+    }
+    Some(())
 }
 
 const fn validate_error() -> Error {
