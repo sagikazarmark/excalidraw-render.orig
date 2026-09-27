@@ -21,7 +21,9 @@ use write_fonts::FontBuilder;
 const SUBSET_FLAGS: SubsetFlags = SubsetFlags::SUBSET_FLAGS_DEFAULT;
 const ENCODER_THREADS: Option<NonZeroUsize> = NonZeroUsize::new(1);
 const MAX_CACHE_ENTRIES: usize = 230;
+#[cfg(test)]
 const MAX_LAYOUT_TRAVERSAL_DEPTH: usize = 64;
+#[cfg(test)]
 const MAX_LAYOUT_TRAVERSAL_NODES: usize = 1_000_000;
 
 #[derive(Debug)]
@@ -652,35 +654,9 @@ fn validate_mappings_and_metrics(
 }
 
 fn validate_layout_closure(font: &FontRef<'_>) -> Result<(), Error> {
-    // read-fonts 0.44 removed traversal. Keep the bounded validator on its
-    // qualified parser, crossing parser versions only through the sfnt bytes.
-    use read_fonts::TableProvider;
-    let font = read_fonts::FontRef::new(font.data().as_bytes()).map_err(|_| validate_error())?;
-    let glyph_count = u32::from(font.maxp().map_err(|_| validate_error())?.num_glyphs());
-    let mut glyphs = Vec::new();
-    glyphs
-        .try_reserve_exact(usize::try_from(glyph_count).map_err(|_| validate_error())?)
-        .map_err(|_| validate_error())?;
-    glyphs.resize(
-        usize::try_from(glyph_count).map_err(|_| validate_error())?,
-        false,
-    );
-    let mut budget = MAX_LAYOUT_TRAVERSAL_NODES;
-
-    if font.data_for_tag(Tag::new(b"GSUB")).is_some() {
-        let table = font.gsub().map_err(|_| validate_error())?;
-        validate_layout_table(&table, glyph_count, &mut glyphs, &mut budget, 0)?;
-        validate_single_substitution_deltas(&table, glyph_count)?;
-    }
-    if font.data_for_tag(Tag::new(b"GPOS")).is_some() {
-        let table = font.gpos().map_err(|_| validate_error())?;
-        validate_layout_table(&table, glyph_count, &mut glyphs, &mut budget, 0)?;
-    }
-    if font.data_for_tag(Tag::new(b"GDEF")).is_some() {
-        let table = font.gdef().map_err(|_| validate_error())?;
-        validate_layout_table(&table, glyph_count, &mut glyphs, &mut budget, 0)?;
-    }
-    Ok(())
+    super::font_subset_layout::validate(font)
+        .map(drop)
+        .map_err(|_| validate_error())
 }
 
 fn fallible_probe(characters: &[char]) -> Result<String, Error> {
@@ -717,6 +693,7 @@ pub(super) fn layout_glyph_ids(font: &FontRef<'_>) -> Option<Vec<bool>> {
     Some(glyphs)
 }
 
+#[cfg(test)]
 fn validate_layout_table<'a>(
     table: &(dyn read_fonts::traversal::SomeTable<'a> + 'a),
     glyph_count: u32,
@@ -755,6 +732,7 @@ fn validate_layout_table<'a>(
     Ok(())
 }
 
+#[cfg(test)]
 fn validate_layout_field<'a>(
     field: read_fonts::traversal::FieldType<'a>,
     glyph_count: u32,
@@ -799,6 +777,7 @@ fn validate_layout_field<'a>(
     Ok(())
 }
 
+#[cfg(test)]
 fn validate_layout_array<'a>(
     array: &(dyn read_fonts::traversal::SomeArray<'a> + 'a),
     glyph_count: u32,
@@ -812,38 +791,6 @@ fn validate_layout_array<'a>(
     for index in 0..array.len() {
         let field = array.get(index).ok_or_else(validate_error)?;
         validate_layout_field(field, glyph_count, glyphs, budget, depth)?;
-    }
-    Ok(())
-}
-
-fn validate_single_substitution_deltas(
-    gsub: &read_fonts::tables::gsub::Gsub<'_>,
-    glyph_count: u32,
-) -> Result<(), Error> {
-    use read_fonts::tables::gsub::{SingleSubst, SubstitutionSubtables};
-    for lookup in gsub
-        .lookup_list()
-        .map_err(|_| validate_error())?
-        .lookups()
-        .iter()
-    {
-        let lookup = lookup.map_err(|_| validate_error())?;
-        let SubstitutionSubtables::Single(subtables) =
-            lookup.subtables().map_err(|_| validate_error())?
-        else {
-            continue;
-        };
-        for subtable in subtables.iter() {
-            if let SingleSubst::Format1(single) = subtable.map_err(|_| validate_error())? {
-                let delta = i32::from(single.delta_glyph_id());
-                for glyph in single.coverage().map_err(|_| validate_error())?.iter() {
-                    let substitute = (i32::from(glyph.to_u16()) + delta) & 0xffff;
-                    if u32::try_from(substitute).map_err(|_| validate_error())? >= glyph_count {
-                        return Err(validate_error());
-                    }
-                }
-            }
-        }
     }
     Ok(())
 }
