@@ -64,6 +64,7 @@ zune-jpeg.workspace = true
 [dev-dependencies]
 excalidraw-render-compare = { path = "../excalidraw-render-compare" }
 jpeg-encoder.workspace = true
+read-fonts-traversal.workspace = true
 unicode-normalization.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]

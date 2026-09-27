@@ -530,6 +530,7 @@ dependencies = [
  "pdf-writer",
  "png 0.17.16",
  "read-fonts 0.42.1",
+ "read-fonts 0.43.3",
  "resvg",
  "roxmltree",
  "rustybuzz",
@@ -1425,6 +1426,17 @@ name = "read-fonts"
 version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c69341f5f744623061a258e9d06a0213783a89ec23b6efb88a1c0c4ed285559"
+dependencies = [
+ "bytemuck",
+ "font-types 0.12.5",
+ "once_cell",
+]
+
+[[package]]
+name = "read-fonts"
+version = "0.43.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "005c8acf251756c478b0bf402885bfd88a1476020c4c7e6060edc1aa68da38ea"
 dependencies = [
  "bytemuck",
  "font-types 0.12.5",

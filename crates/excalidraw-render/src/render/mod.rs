@@ -20,6 +20,10 @@ mod font_demand;
 mod font_subset;
 #[cfg(test)]
 mod font_subset_fuzz;
+#[cfg(test)]
+mod font_subset_layout_fixtures;
+#[cfg(test)]
+mod font_subset_layout_oracle;
 // The SVG font subset viewer qualification manifest pins this module's digest
 // (`tests/conformance/svg-font-subset-viewer-qualification/revision-1.json`),
 // so it only changes with a re-qualification.

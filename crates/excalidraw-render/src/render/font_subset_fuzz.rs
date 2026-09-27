@@ -682,3 +682,135 @@ fn encode_hex(bytes: &[u8]) -> String {
     }
     output
 }
+
+const LAYOUT_TAGS: [Tag; 3] = [Tag::new(b"GSUB"), Tag::new(b"GPOS"), Tag::new(b"GDEF")];
+const MAX_LAYOUT_MUTATION_BYTES: usize = 4;
+
+/// The tables the layout validator reads: `maxp` for the glyph count and
+/// whichever of GSUB, GPOS and GDEF `sfnt` has, rebuilt as their own sfnt.
+/// `None` when `sfnt` has no layout table.
+pub(super) fn layout_sfnt(sfnt: &[u8]) -> Option<Vec<u8>> {
+    let font = FontRef::new(sfnt).ok()?;
+    let mut builder = FontBuilder::new();
+    let mut layout = false;
+    for tag in LAYOUT_TAGS {
+        if let Some(table) = font.data_for_tag(tag) {
+            builder.add_raw(tag, table.as_bytes().to_vec());
+            layout = true;
+        }
+    }
+    builder.add_raw(
+        Tag::new(b"maxp"),
+        font.data_for_tag(Tag::new(b"maxp"))?.as_bytes().to_vec(),
+    );
+    layout.then(|| builder.build())
+}
+
+/// The seeded GSUB/GPOS/GDEF byte-mutation hook (#210): `count` copies of
+/// `sfnt`, each with up to four bytes of one of its layout tables XORed with a
+/// nonzero value, the table and offsets drawn from `seed`. Every other table
+/// is carried over unchanged, so a mutation can only move the layout verdict.
+/// Empty when `sfnt` has no nonempty layout table.
+pub(super) fn layout_mutations(sfnt: &[u8], seed: u64, count: usize) -> Vec<Vec<u8>> {
+    let font = FontRef::new(sfnt).expect("a mutated font is an sfnt");
+    let tables = LAYOUT_TAGS
+        .into_iter()
+        .filter_map(|tag| {
+            let data = font.data_for_tag(tag)?;
+            (!data.is_empty()).then(|| (tag, data.as_bytes()))
+        })
+        .collect::<Vec<_>>();
+    if tables.is_empty() {
+        return Vec::new();
+    }
+    let mut generator = Generator(seed | 1);
+    (0..count)
+        .map(|_| {
+            let (tag, table) = tables[usize::from(generator.next_u8()) % tables.len()];
+            let mut mutated = table.to_vec();
+            let flips = 1 + usize::from(generator.next_u8()) % MAX_LAYOUT_MUTATION_BYTES;
+            for _ in 0..flips {
+                let offset = generator.next_u32() as usize % mutated.len();
+                mutated[offset] ^= generator.next_u8().max(1);
+            }
+            let mut builder = FontBuilder::new();
+            builder.add_raw(tag, mutated);
+            builder.copy_missing_tables(font.clone());
+            builder.build()
+        })
+        .collect()
+}
+
+impl Generator {
+    fn next_u32(&mut self) -> u32 {
+        u32::from_le_bytes([
+            self.next_u8(),
+            self.next_u8(),
+            self.next_u8(),
+            self.next_u8(),
+        ])
+    }
+}
+
+#[test]
+fn layout_fixtures_install_every_format_and_the_oracle_accepts_them() {
+    let context = Context::new();
+    let base = FontRef::new(&context.baseline_sfnt).expect("the fuzz baseline is an sfnt");
+    assert!(
+        base.maxp()
+            .expect("the fuzz baseline has maxp")
+            .num_glyphs()
+            >= super::font_subset_layout_fixtures::MIN_GLYPHS
+    );
+    let fixtures = super::font_subset_layout_fixtures::layout_fixtures();
+    let mut names = BTreeSet::new();
+    for fixture in &fixtures {
+        assert!(
+            names.insert(fixture.name),
+            "duplicate fixture {}",
+            fixture.name
+        );
+        let sfnt = fixture.install(&context.baseline_sfnt);
+        assert!(
+            super::font_subset_layout_oracle::accepts(&sfnt),
+            "the traversal oracle rejects fixture {}",
+            fixture.name
+        );
+    }
+    assert_eq!(fixtures.len(), 32);
+}
+
+#[test]
+fn layout_mutations_are_seeded_and_touch_only_layout_tables() {
+    let context = Context::new();
+    let first = layout_mutations(&context.baseline_sfnt, FIXED_SEED, 32);
+    assert_eq!(
+        first,
+        layout_mutations(&context.baseline_sfnt, FIXED_SEED, 32)
+    );
+    assert_eq!(first.len(), 32);
+    let base = FontRef::new(&context.baseline_sfnt).expect("the fuzz baseline is an sfnt");
+    for mutated in &first {
+        let mutated = FontRef::new(mutated).expect("a mutation is an sfnt");
+        let changed = base
+            .table_directory()
+            .table_records()
+            .iter()
+            // FontBuilder recomputes `head.checksumAdjustment`.
+            .filter(|record| record.tag() != Tag::new(b"head"))
+            .filter(|record| {
+                mutated
+                    .data_for_tag(record.tag())
+                    .map(|data| data.as_bytes())
+                    != base.data_for_tag(record.tag()).map(|data| data.as_bytes())
+            })
+            .map(|record| record.tag())
+            .collect::<Vec<_>>();
+        assert!(changed.len() <= 1 && changed.iter().all(|tag| LAYOUT_TAGS.contains(tag)));
+    }
+    let layout = layout_sfnt(&context.baseline_sfnt).expect("the fuzz baseline has layout");
+    assert_eq!(
+        super::font_subset_layout_oracle::accepts(&layout),
+        super::font_subset_layout_oracle::accepts(&context.baseline_sfnt)
+    );
+}
