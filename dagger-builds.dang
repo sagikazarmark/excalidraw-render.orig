@@ -285,4 +285,5 @@ let compileFixtures: [String!]! = [
   "tests/conformance/pdf-backend-qualification/*.json",
   "tests/conformance/pdf-backend-qualification/*.excalidraw",
   "tests/conformance/cases/focused/bound-text-containers/scene.excalidraw",
+  "tools/pdf-harness/pdfium-rust/sources.json",
 ]
