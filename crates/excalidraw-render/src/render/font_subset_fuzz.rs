@@ -56,6 +56,29 @@ struct RegressionCorpus {
     bounds: Bounds,
     public_facade_cases: Vec<PublicFacadeCase>,
     cases: Vec<RegressionCase>,
+    layout_cases: Vec<LayoutCase>,
+}
+
+/// A GSUB/GPOS/GDEF byte mutation that exposed a disagreement between the
+/// typed layout walker and the retired traversal validator (#210): the named
+/// layout table of a bundled source or a layout fixture with `xors` applied.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct LayoutCase {
+    id: String,
+    #[serde(flatten)]
+    base: LayoutBase,
+    table: String,
+    xors: Vec<(usize, u8)>,
+    minimized: bool,
+    expected: super::font_subset_layout::LayoutFailure,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum LayoutBase {
+    Source(String),
+    Fixture(String),
 }
 
 #[derive(Deserialize)]
@@ -563,6 +586,7 @@ pub(crate) fn assert_font_subset_fuzz_regression_corpus() {
     assert_eq!(corpus.source_identity, context.record.identity);
     assert_eq!(corpus.source_sha256, context.record.complete_sha256);
     assert_public_facade_cases(&corpus.public_facade_cases);
+    assert_layout_cases(&corpus.layout_cases);
     let mut ids = BTreeSet::new();
     let mut risks = BTreeSet::new();
     for case in corpus.cases {
@@ -612,6 +636,81 @@ pub(crate) fn assert_font_subset_fuzz_regression_corpus() {
         REQUIRED_RISKS.into_iter().collect(),
         "the regression corpus does not cover every required risk"
     );
+}
+
+/// Replays each layout mutation against the typed layout walker, which must
+/// reject it for the recorded table and check.
+fn assert_layout_cases(cases: &[LayoutCase]) {
+    assert!(!cases.is_empty());
+    let fixtures = super::font_subset_layout_fixtures::layout_fixtures();
+    let mut layouts = std::collections::BTreeMap::new();
+    let mut ids = BTreeSet::new();
+    for case in cases {
+        assert!(ids.insert(case.id.as_str()), "duplicate layout case");
+        assert!(
+            case.minimized && !case.xors.is_empty(),
+            "{} is not minimized",
+            case.id
+        );
+        let base = match &case.base {
+            LayoutBase::Source(identity) => layouts
+                .entry(identity.as_str())
+                .or_insert_with(|| bundled_layout(identity))
+                .clone(),
+            LayoutBase::Fixture(name) => fixtures
+                .iter()
+                .find(|fixture| fixture.name == name)
+                .unwrap_or_else(|| panic!("{} names no layout fixture", case.id))
+                .install(&super::font_subset_layout_fixtures::maxp_base()),
+        };
+        let tag = LAYOUT_TAGS
+            .into_iter()
+            .find(|tag| tag.to_string() == case.table)
+            .unwrap_or_else(|| panic!("{} names no layout table", case.id));
+        let base = FontRef::new(&base).expect("a layout base is an sfnt");
+        let mut table = base
+            .data_for_tag(tag)
+            .unwrap_or_else(|| panic!("{} base has no {tag}", case.id))
+            .as_bytes()
+            .to_vec();
+        for &(offset, xor) in &case.xors {
+            *table
+                .get_mut(offset)
+                .unwrap_or_else(|| panic!("{} mutates past its table", case.id)) ^= xor;
+        }
+        let mut builder = FontBuilder::new();
+        builder.add_raw(tag, table);
+        builder.copy_missing_tables(base);
+        let mutated = builder.build();
+        assert_eq!(
+            super::font_subset_layout::validate(&FontRef::new(&mutated).expect("sfnt")),
+            Err(case.expected),
+            "{}",
+            case.id
+        );
+    }
+}
+
+/// The layout tables of the bundled source with `identity`.
+fn bundled_layout(identity: &str) -> Vec<u8> {
+    let source = crate::fonts::revision_1()
+        .assets
+        .iter()
+        .map(svg_fonts::SubsetSource::chunk)
+        .chain([svg_fonts::SubsetSource::noto_emoji()])
+        .find(|source| source.identity() == identity)
+        .unwrap_or_else(|| panic!("{identity} is not a bundled source"));
+    let bytes = source
+        .load()
+        .expect("bundled source verifies")
+        .expect("bundled source exists");
+    let sfnt = match source.container() {
+        font_subset::SourceContainer::Woff2 => {
+            wuff::decompress_woff2(bytes.bytes()).expect("bundled source decodes")
+        }
+        font_subset::SourceContainer::Sfnt => bytes.bytes().to_vec(),
+    };
+    layout_sfnt(&sfnt).expect("a layout case's source has layout tables")
 }
 
 fn assert_public_facade_cases(cases: &[PublicFacadeCase]) {
@@ -753,7 +852,7 @@ impl Generator {
 }
 
 #[test]
-fn layout_fixtures_install_every_format_and_the_oracle_accepts_them() {
+fn layout_fixtures_install_into_a_real_subset_and_pass_the_layout_walker() {
     let context = Context::new();
     let base = FontRef::new(&context.baseline_sfnt).expect("the fuzz baseline is an sfnt");
     assert!(
@@ -771,9 +870,10 @@ fn layout_fixtures_install_every_format_and_the_oracle_accepts_them() {
             fixture.name
         );
         let sfnt = fixture.install(&context.baseline_sfnt);
+        let font = FontRef::new(&sfnt).expect("an installed fixture is an sfnt");
         assert!(
-            super::font_subset_layout_oracle::accepts(&sfnt),
-            "the traversal oracle rejects fixture {}",
+            super::font_subset_layout::validate(&font).is_ok(),
+            "the layout walker rejects fixture {}",
             fixture.name
         );
     }
@@ -808,9 +908,11 @@ fn layout_mutations_are_seeded_and_touch_only_layout_tables() {
             .collect::<Vec<_>>();
         assert!(changed.len() <= 1 && changed.iter().all(|tag| LAYOUT_TAGS.contains(tag)));
     }
+    let validate =
+        |sfnt: &[u8]| super::font_subset_layout::validate(&FontRef::new(sfnt).expect("an sfnt"));
     let layout = layout_sfnt(&context.baseline_sfnt).expect("the fuzz baseline has layout");
-    assert_eq!(
-        super::font_subset_layout_oracle::accepts(&layout),
-        super::font_subset_layout_oracle::accepts(&context.baseline_sfnt)
-    );
+    assert_eq!(validate(&layout), validate(&context.baseline_sfnt));
+    for mutated in &first {
+        assert_eq!(validate(mutated), validate(mutated));
+    }
 }

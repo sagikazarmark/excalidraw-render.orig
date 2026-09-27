@@ -43,6 +43,16 @@ use write_fonts::FontBuilder;
 /// The fewest glyphs a base font needs for every fixture to be in range.
 pub(super) const MIN_GLYPHS: u16 = 4;
 
+/// A font holding only `maxp` with [`MIN_GLYPHS`] glyphs: all the layout
+/// walker reads besides the tables a fixture installs.
+pub(super) fn maxp_base() -> Vec<u8> {
+    let mut builder = FontBuilder::new();
+    builder
+        .add_table(&write_fonts::tables::maxp::Maxp::new(MIN_GLYPHS))
+        .expect("maxp fixture compiles");
+    builder.build()
+}
+
 /// One fixture: the layout tables it installs, each replacing the base font's
 /// table of the same tag.
 pub(super) struct LayoutFixture {

@@ -37,6 +37,7 @@ pub(super) const MAX_LAYOUT_WORK: usize = 1_000_000;
 
 /// The table a layout failure was found in.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(test, derive(serde::Deserialize), serde(rename_all = "kebab-case"))]
 pub(super) enum LayoutTable {
     Maxp,
     Gsub,
@@ -47,6 +48,7 @@ pub(super) enum LayoutTable {
 /// The check a layout failure broke. This is internal to the renderer: the
 /// public failure is always the `Validate` stage.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(test, derive(serde::Deserialize), serde(rename_all = "kebab-case"))]
 pub(super) enum LayoutCheck {
     /// A table or the target of a non-null offset does not parse.
     Parse,
@@ -76,6 +78,7 @@ pub(super) enum LayoutCheck {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(test, derive(serde::Deserialize), serde(deny_unknown_fields))]
 pub(super) struct LayoutFailure {
     pub(super) table: LayoutTable,
     pub(super) check: LayoutCheck,

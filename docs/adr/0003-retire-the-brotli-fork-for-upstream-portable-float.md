@@ -182,8 +182,11 @@ the malformed-name-record panic fix first released in 0.6.0. The renderer pins
 `skera = "=0.7.0"` with default features disabled and `write-fonts = "=0.53.0"`;
 the adapter crate and its packaging patches are removed. The subsetter's parser
 is now read-fonts 0.44.0. Since that release removed traversal, the bounded
-layout validator retains read-fonts 0.42.1 and reparses the same standalone
-sfnt bytes at its boundary. Its traversal checks and budgets are unchanged.
+layout validator retained read-fonts 0.42.1 and reparsed the same standalone
+sfnt bytes at its boundary, with its traversal checks and budgets unchanged.
+ADR-0020 has since replaced that validator with a typed walk over
+`write_fonts::read` (#210), so the renderer no longer carries its own parser
+version and the workspace has no direct read-fonts dependency.
 Upstream can omit a malformed name table instead of failing immediately, but
 the renderer's name rewrite requires that table and preserves the typed `Sfnt`
 failure; the existing malformed-name regression passes on both targets.

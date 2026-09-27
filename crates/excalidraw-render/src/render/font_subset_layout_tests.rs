@@ -3,9 +3,9 @@
 use super::font_subset_layout::{
     validate, validate_branches, LayoutCheck, LayoutFailure, LayoutTable, MAX_LAYOUT_WORK,
 };
-use super::font_subset_layout_fixtures::{layout_fixtures, LayoutFixture, MIN_GLYPHS};
-use super::{font_subset, font_subset_fuzz, font_subset_layout_oracle, svg_fonts};
-use std::collections::{BTreeMap, BTreeSet};
+use super::font_subset_layout_fixtures::{layout_fixtures, maxp_base, LayoutFixture};
+use super::{font_subset, svg_fonts};
+use std::collections::BTreeSet;
 use write_fonts::read::{types::Tag, FontRef};
 use write_fonts::tables::gpos::{
     Class1Record, Class2Record, Gpos, PairPos, PositionLookup, ValueRecord,
@@ -16,9 +16,7 @@ use write_fonts::tables::layout::{
     LookupList, RangeRecord, Script, ScriptList, ScriptRecord, SequenceContext,
     SequenceLookupRecord, SequenceRule, SequenceRuleSet,
 };
-use write_fonts::tables::maxp::Maxp;
 use write_fonts::types::GlyphId16;
-use write_fonts::FontBuilder;
 
 /// Every branch the walker records: each lookup type and subtable format of
 /// the OpenType layout specification.
@@ -81,30 +79,8 @@ const BRANCHES: [&str; 56] = [
     "variation-index",
 ];
 
-/// The checks ADR-0020 adds to the retired walker's: a rejection for one of
-/// them is the only verdict on which the typed walker may differ from the
-/// traversal oracle.
-const NEW_CHECKS: [LayoutCheck; 6] = [
-    LayoutCheck::LookupIndex,
-    LayoutCheck::FeatureIndex,
-    LayoutCheck::RangeOrder,
-    LayoutCheck::ClassValue,
-    LayoutCheck::Count,
-    LayoutCheck::SequenceIndex,
-];
-
-/// A font holding only `maxp` with `glyphs` glyphs: all the walker reads
-/// besides the layout tables a fixture installs.
-fn maxp_font(glyphs: u16) -> Vec<u8> {
-    let mut builder = FontBuilder::new();
-    builder
-        .add_table(&Maxp::new(glyphs))
-        .expect("maxp fixture compiles");
-    builder.build()
-}
-
 fn fixture_font(fixture: &LayoutFixture) -> Vec<u8> {
-    fixture.install(&maxp_font(MIN_GLYPHS))
+    fixture.install(&maxp_base())
 }
 
 fn raw_font(tag: &[u8; 4], table: Vec<u8>) -> Vec<u8> {
@@ -114,7 +90,7 @@ fn raw_font(tag: &[u8; 4], table: Vec<u8>) -> Vec<u8> {
         gpos: (tag == b"GPOS").then(|| table.clone()),
         gdef: (tag == b"GDEF").then_some(table),
     }
-    .install(&maxp_font(MIN_GLYPHS))
+    .install(&maxp_base())
 }
 
 fn check(sfnt: &[u8]) -> Result<usize, LayoutFailure> {
@@ -158,11 +134,6 @@ fn layout_fixtures_pass_and_cover_every_walker_branch() {
         let sfnt = fixture_font(&fixture);
         let taken = validate_branches(&FontRef::new(&sfnt).expect("fixture is an sfnt"))
             .unwrap_or_else(|failure| panic!("fixture {} fails: {failure:?}", fixture.name));
-        assert!(
-            font_subset_layout_oracle::accepts(&sfnt),
-            "the oracle rejects fixture {}",
-            fixture.name
-        );
         branches.extend(taken);
     }
     assert_eq!(branches, BRANCHES.into_iter().collect());
@@ -336,15 +307,11 @@ fn layout_failures_carry_the_table_and_check() {
     );
     // A GDEF 1.0 whose glyph ClassDef format 1 counts two class values but
     // ends after the count. read-fonts reads the truncated array as empty,
-    // which the traversal oracle accepted.
+    // which the retired traversal validator accepted (#210).
     let truncated = vec![
         0x00, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
         0x01, 0x00, 0x02,
     ];
-    assert!(font_subset_layout_oracle::accepts(&raw_font(
-        b"GDEF",
-        truncated.clone()
-    )));
     assert_eq!(
         check(&raw_font(b"GDEF", truncated)),
         failure(LayoutTable::Gdef, LayoutCheck::Count)
@@ -384,12 +351,11 @@ fn shared_offsets_exhaust_the_layout_work_budget() {
             check: LayoutCheck::Budget,
         })
     );
-    assert!(!font_subset_layout_oracle::accepts(&sfnt));
 }
 
 /// Every bundled source: the 230 official chunks, then the Noto Emoji
 /// fallback, each as the sfnt the subsetter plans over.
-fn bundled_sources() -> Vec<(svg_fonts::SubsetSource, Vec<u8>, Vec<u8>)> {
+fn bundled_sources() -> Vec<(svg_fonts::SubsetSource, Vec<u8>)> {
     crate::fonts::revision_1()
         .assets
         .iter()
@@ -406,9 +372,9 @@ fn bundled_sources() -> Vec<(svg_fonts::SubsetSource, Vec<u8>, Vec<u8>)> {
                 font_subset::SourceContainer::Woff2 => {
                     wuff::decompress_woff2(&bytes).expect("bundled source decodes")
                 }
-                font_subset::SourceContainer::Sfnt => bytes.clone(),
+                font_subset::SourceContainer::Sfnt => bytes,
             };
-            (source, bytes, sfnt)
+            (source, sfnt)
         })
         .collect()
 }
@@ -417,7 +383,7 @@ fn bundled_sources() -> Vec<(svg_fonts::SubsetSource, Vec<u8>, Vec<u8>)> {
 fn the_largest_bundled_layout_stays_under_the_work_budget() {
     let (identity, work) = bundled_sources()
         .into_iter()
-        .map(|(source, _, sfnt)| {
+        .map(|(source, sfnt)| {
             let work = check(&sfnt)
                 .unwrap_or_else(|failure| panic!("{} fails: {failure:?}", source.identity()));
             (source.identity(), work)
@@ -428,162 +394,5 @@ fn the_largest_bundled_layout_stays_under_the_work_budget() {
     assert!(
         work > 0 && work <= MAX_LAYOUT_WORK / 4,
         "{identity} uses {work}"
-    );
-}
-
-/// How one input's typed verdict compared with the oracle's.
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-enum Comparison {
-    BothAccept,
-    BothReject,
-    /// Rejected only by one of ADR-0020's new checks.
-    NewCheck(&'static str),
-    /// Any other disagreement, a bug in one walker: the typed walker's failure,
-    /// or `None` when only the oracle rejects.
-    Disagreement(Option<LayoutFailure>),
-}
-
-fn compare(sfnt: &[u8]) -> Comparison {
-    let typed = FontRef::new(sfnt).map_or(Err(None), |font| validate(&font).map_err(Some));
-    let oracle = font_subset_layout_oracle::accepts(sfnt);
-    match (typed, oracle) {
-        (Ok(_), true) => Comparison::BothAccept,
-        (Err(_), false) => Comparison::BothReject,
-        (Err(Some(failure)), true) if NEW_CHECKS.contains(&failure.check) => {
-            Comparison::NewCheck(check_name(failure.check))
-        }
-        (Err(failure), true) => Comparison::Disagreement(failure),
-        (Ok(_), false) => Comparison::Disagreement(None),
-    }
-}
-
-const fn check_name(check: LayoutCheck) -> &'static str {
-    match check {
-        LayoutCheck::LookupIndex => "lookup-index",
-        LayoutCheck::FeatureIndex => "feature-index",
-        LayoutCheck::RangeOrder => "range-order",
-        LayoutCheck::ClassValue => "class-value",
-        LayoutCheck::Count => "count",
-        LayoutCheck::SequenceIndex => "sequence-index",
-        _ => "other",
-    }
-}
-
-/// The comparison #210 requires before the typed walker replaces the
-/// traversal one: identical verdicts over every bundled source, every corpus
-/// subset, every fixture and seeded mutations of each, except rejections by
-/// the new checks, which no bundled source or corpus subset may hit.
-///
-/// `EXCALIDRAW_LAYOUT_ORACLE_MUTATIONS` sets the mutations per font (default
-/// 10,000). A disagreement is reported by its seed and case, which replay it.
-#[cfg(not(target_arch = "wasm32"))]
-#[test]
-#[ignore = "on-demand oracle comparison for #210"]
-fn typed_layout_walker_matches_the_traversal_oracle() {
-    let mutations = std::env::var("EXCALIDRAW_LAYOUT_ORACLE_MUTATIONS")
-        .ok()
-        .and_then(|value| value.parse::<usize>().ok())
-        .unwrap_or(10_000);
-    let mut totals = BTreeMap::<(&str, Comparison), usize>::new();
-    let mut disagreements = Vec::new();
-    let mut record = |group: &'static str, label: &str, sfnt: &[u8]| {
-        let comparison = compare(sfnt);
-        *totals.entry((group, comparison)).or_default() += 1;
-        if let Comparison::Disagreement(failure) = comparison {
-            disagreements.push(format!("{group} {label}: {failure:?}"));
-        }
-        comparison
-    };
-
-    let sources = bundled_sources();
-    for (index, (source, _, sfnt)) in sources.iter().enumerate() {
-        let comparison = record("source", source.identity(), sfnt);
-        assert_eq!(comparison, Comparison::BothAccept, "{}", source.identity());
-        let Some(layout) = font_subset_fuzz::layout_sfnt(sfnt) else {
-            continue;
-        };
-        let seed = 0x9e37_79b9_7f4a_7c15 ^ u64::try_from(index).expect("index fits");
-        for (case, mutated) in font_subset_fuzz::layout_mutations(&layout, seed, mutations)
-            .iter()
-            .enumerate()
-        {
-            let label = format!("{} seed {seed:016x} case {case}", source.identity());
-            record("source-mutation", &label, mutated);
-        }
-    }
-
-    let corpus: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/qualification/font-subset-corpus.json"
-    )))
-    .expect("the qualification corpus is JSON");
-    let corpus_sources = corpus["sources"]
-        .as_array()
-        .expect("the corpus lists sources");
-    assert_eq!(corpus_sources.len(), sources.len());
-    for ((source, bytes, _), qualified) in sources.iter().zip(corpus_sources) {
-        assert_eq!(qualified["sourceIdentity"], source.identity());
-        for cell in qualified["cells"].as_array().expect("sources have cells") {
-            if cell["status"] != "success" {
-                continue;
-            }
-            let scalars = cell["orderedScalars"]
-                .as_array()
-                .expect("success cells have scalars")
-                .iter()
-                .map(|scalar| {
-                    u32::try_from(scalar.as_u64().expect("scalars are integers"))
-                        .expect("scalars fit")
-                })
-                .collect::<Vec<_>>();
-            let identity = svg_fonts::source_semantic_identity(*source, &scalars)
-                .expect("corpus identity is representable");
-            let label = format!("{} {}", source.identity(), cell["class"]);
-            let derived = font_subset::derive(
-                bytes,
-                source.container(),
-                &scalars,
-                "ExcalidrawRender-9",
-                &identity,
-            )
-            .unwrap_or_else(|error| panic!("{label} is newly rejected at {:?}", error.stage));
-            let subset = wuff::decompress_woff2(&derived.woff2).expect("subset decodes");
-            assert_eq!(
-                record("corpus-subset", &label, &subset),
-                Comparison::BothAccept,
-                "{label}"
-            );
-        }
-    }
-
-    let base = maxp_font(MIN_GLYPHS);
-    for (index, fixture) in layout_fixtures().iter().enumerate() {
-        let sfnt = fixture.install(&base);
-        assert_eq!(
-            record("fixture", fixture.name, &sfnt),
-            Comparison::BothAccept,
-            "{}",
-            fixture.name
-        );
-        let seed = 0x3c6e_f372_fe94_f82b ^ u64::try_from(index).expect("index fits");
-        for (case, mutated) in font_subset_fuzz::layout_mutations(&sfnt, seed, mutations)
-            .iter()
-            .enumerate()
-        {
-            let label = format!("{} seed {seed:016x} case {case}", fixture.name);
-            record("fixture-mutation", &label, mutated);
-        }
-    }
-
-    for ((group, comparison), count) in &totals {
-        println!("{group:>16} {comparison:?}: {count}");
-    }
-    for disagreement in &disagreements {
-        println!("disagreement {disagreement}");
-    }
-    assert!(
-        disagreements.is_empty(),
-        "{} disagreements",
-        disagreements.len()
     );
 }

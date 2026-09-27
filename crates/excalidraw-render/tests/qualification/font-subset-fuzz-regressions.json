@@ -140,5 +140,415 @@
         "woff2_sha256": "a1b6c42971b2798c89267066b5942d43342ef057f1eda5bedf36bce917c8c864"
       }
     }
+  ],
+  "layoutCases": [
+    {
+      "id": "layout-comicshanns-7c17-6",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[16, 40]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-36",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[16, 104]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-39",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[16, 149]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-92",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[17, 17]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-115",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[17, 171]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-121",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[16, 20]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-131",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[16, 204]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-148",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[16, 97]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-185",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[17, 222]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-193",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[17, 94]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-227",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[16, 107]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-337",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[17, 66]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-359",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[0, 158], [17, 110]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-380",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[1, 235], [17, 99]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-470",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[17, 106]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-comicshanns-7c17-471",
+      "source": "fonts/ComicShanns/ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2@sha256:782f24081b810b8de9f04da055007ce4f1445c18abbf096c831f8888d65935c1",
+      "table": "GDEF",
+      "xors": [[17, 14]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-excalifont-7c10-20",
+      "source": "fonts/Excalifont/Excalifont-Regular-349fac6ca4700ffec595a7150a0d1e1d.woff2@sha256:a0637cff365c7344d2f7a15905a1f74dceaf56b5ac2ff913d150358bed6921f0",
+      "table": "GPOS",
+      "xors": [[222, 250]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-excalifont-7c10-450",
+      "source": "fonts/Excalifont/Excalifont-Regular-349fac6ca4700ffec595a7150a0d1e1d.woff2@sha256:a0637cff365c7344d2f7a15905a1f74dceaf56b5ac2ff913d150358bed6921f0",
+      "table": "GPOS",
+      "xors": [[222, 2]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-excalifont-7c12-261",
+      "source": "fonts/Excalifont/Excalifont-Regular-41b173a47b57366892116a575a43e2b6.woff2@sha256:c96649a5f96e2faa9143ee94e5b590b5afb08092f8d67c67f09cef332d66e4a7",
+      "table": "GPOS",
+      "xors": [[781, 202]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-excalifont-7c1d-91",
+      "source": "fonts/Excalifont/Excalifont-Regular-623ccf21b21ef6b3a0d87738f77eb071.woff2@sha256:b004007be100261e58188cf8a0f7e850e997702f35d57110915995cd880e49f1",
+      "table": "GDEF",
+      "xors": [[1, 225], [5, 42]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-nunito-7c1a-95",
+      "source": "fonts/Nunito/Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTA3j6zbXWjgevT5.woff2@sha256:e512f2d7c9fe062b1acf8f6ea64d4bfd89a77d26728150977627e445c7b6e937",
+      "table": "GSUB",
+      "xors": [[208, 44]],
+      "minimized": true,
+      "expected": { "table": "gsub", "check": "count" }
+    },
+    {
+      "id": "layout-nunito-7c04-32",
+      "source": "fonts/Nunito/Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTk3j6zbXWjgevT5.woff2@sha256:3e7f76fcc8798b8bba4d6bcc06bdb0d788f6e89706c1d6e64ac81d65ca683c14",
+      "table": "GPOS",
+      "xors": [[2103, 90]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-nunito-7c04-327",
+      "source": "fonts/Nunito/Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTk3j6zbXWjgevT5.woff2@sha256:3e7f76fcc8798b8bba4d6bcc06bdb0d788f6e89706c1d6e64ac81d65ca683c14",
+      "table": "GPOS",
+      "xors": [[2102, 162]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-43",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 248]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-104",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 235]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-144",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 67]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-145",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 148]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-150",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 135]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-196",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 9]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-207",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 9]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-317",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 182]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-329",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 236]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-374",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 131]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-383",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 37]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-virgil-7c01-482",
+      "source": "fonts/Virgil/Virgil-Regular.woff2@sha256:2279cf7daf1c42a3a53b2c1437ad72f0050efb67ac263e0245f67612fd766714",
+      "table": "GDEF",
+      "xors": [[28, 234]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-woff2-7cf3-125",
+      "source": "scripts/woff2/assets/NotoEmoji-Regular.ttf@sha256:0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634",
+      "table": "GDEF",
+      "xors": [[28, 113]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-gsub-chain-format-2-f827-64",
+      "fixture": "gsub-chain-format-2",
+      "table": "GSUB",
+      "xors": [[96, 204]],
+      "minimized": true,
+      "expected": { "table": "gsub", "check": "count" }
+    },
+    {
+      "id": "layout-gsub-chain-format-2-f827-123",
+      "fixture": "gsub-chain-format-2",
+      "table": "GSUB",
+      "xors": [[96, 188]],
+      "minimized": true,
+      "expected": { "table": "gsub", "check": "count" }
+    },
+    {
+      "id": "layout-gsub-chain-format-2-f827-151",
+      "fixture": "gsub-chain-format-2",
+      "table": "GSUB",
+      "xors": [[104, 243]],
+      "minimized": true,
+      "expected": { "table": "gsub", "check": "count" }
+    },
+    {
+      "id": "layout-gsub-chain-format-2-f827-158",
+      "fixture": "gsub-chain-format-2",
+      "table": "GSUB",
+      "xors": [[97, 100]],
+      "minimized": true,
+      "expected": { "table": "gsub", "check": "count" }
+    },
+    {
+      "id": "layout-gsub-chain-format-2-f827-271",
+      "fixture": "gsub-chain-format-2",
+      "table": "GSUB",
+      "xors": [[105, 136]],
+      "minimized": true,
+      "expected": { "table": "gsub", "check": "count" }
+    },
+    {
+      "id": "layout-gsub-chain-format-2-f827-478",
+      "fixture": "gsub-chain-format-2",
+      "table": "GSUB",
+      "xors": [[96, 12]],
+      "minimized": true,
+      "expected": { "table": "gsub", "check": "count" }
+    },
+    {
+      "id": "layout-gpos-pair-format-2-f83a-71",
+      "fixture": "gpos-pair-format-2",
+      "table": "GPOS",
+      "xors": [[117, 146]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-gpos-pair-format-2-f83a-286",
+      "fixture": "gpos-pair-format-2",
+      "table": "GPOS",
+      "xors": [[116, 194]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-gpos-pair-format-2-f83a-310",
+      "fixture": "gpos-pair-format-2",
+      "table": "GPOS",
+      "xors": [[117, 156]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-gpos-chain-format-2-f830-144",
+      "fixture": "gpos-chain-format-2",
+      "table": "GPOS",
+      "xors": [[97, 248]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-gpos-chain-format-2-f830-497",
+      "fixture": "gpos-chain-format-2",
+      "table": "GPOS",
+      "xors": [[97, 139]],
+      "minimized": true,
+      "expected": { "table": "gpos", "check": "count" }
+    },
+    {
+      "id": "layout-gdef-complete-f834-19",
+      "fixture": "gdef-complete",
+      "table": "GDEF",
+      "xors": [[120, 139]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-gdef-complete-f834-180",
+      "fixture": "gdef-complete",
+      "table": "GDEF",
+      "xors": [[160, 213]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-gdef-complete-f834-295",
+      "fixture": "gdef-complete",
+      "table": "GDEF",
+      "xors": [[121, 121]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    },
+    {
+      "id": "layout-gdef-complete-f834-369",
+      "fixture": "gdef-complete",
+      "table": "GDEF",
+      "xors": [[121, 103]],
+      "minimized": true,
+      "expected": { "table": "gdef", "check": "count" }
+    }
   ]
 }

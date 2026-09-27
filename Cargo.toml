@@ -61,13 +61,6 @@ sha2 = "=0.10.9"
 skera = { version = "=0.7.0", default-features = false }
 rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
 ryu-js = { version = "=1.0.3", default-features = false }
-# The bounded layout validator uses traversal, removed in read-fonts 0.44.
-# Keep its parser separate from skera/write-fonts and cross via sfnt bytes.
-read-fonts = { version = "=0.42.1", features = ["experimental_traverse"] }
-# Test-only oracle for the typed layout validator rewrite (#210, ADR-0020):
-# 0.43.3 is the last read-fonts release with traversal and builds the retired
-# walker unchanged. It leaves with the oracle once the typed walker is qualified.
-read-fonts-traversal = { package = "read-fonts", version = "=0.43.3", features = ["experimental_traverse"] }
 unicode-bidi = "=0.3.18"
 unicode-normalization = "=0.1.24"
 unicase = "=2.9.0"
@@ -85,6 +78,10 @@ tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-fo
 ttf2woff2 = { version = "=0.13.3", default-features = false, features = ["portable-float"] }
 usvg = { version = "=0.45.1", default-features = false, features = ["text"] }
 wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
+# `write_fonts::read` is the renderer's only font parser: read-fonts 0.44,
+# the version skera plans over. Name handling and the typed layout validator
+# (ADR-0020) read subsets through it, so the workspace has no direct read-fonts
+# dependency. svg2pdf's subsetter carries its own older copy.
 write-fonts = { version = "=0.53.0", default-features = false, features = ["read", "tables"] }
 zune-jpeg = { version = "=0.5.15", default-features = false, features = ["std"] }
 
