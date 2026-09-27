@@ -1,8 +1,8 @@
 # Layout probe split qualification refresh
 
-Issue: #210, stage 3 (ADR-0020). Status: **corpus, viewers and cross-target
-measurement refreshed**; release evidence is `pending_ci` until a clean-commit
-target aggregate is recorded.
+Issue: #210, stage 3 (ADR-0020). Status: **complete**. The corpus, viewers and
+cross-target measurement are refreshed, and the clean-commit target aggregate
+is recorded.
 
 ## Change
 
@@ -61,6 +61,16 @@ elsewhere in validation and predates this work.
   target report schema (v4) now requires 780 / 1007, and the release evidence
   points its report schema at v4, which is what the target jobs emit.
 
-The next step is `dagger api call target-evidence` on a clean commit,
-followed by `conformance record-svg-font-subset-target-aggregate` with the
-run's provenance URL.
+## Completion
+
+`dagger --engine cloud api call target-evidence` passed on clean commit
+`cc2c8f4720e482cd54464001363bcd0adfb95207` in 21m7s: native 485 passed, browser
+WASM 19 passed. Both targets report the committed measurement. A local attempt
+had failed on 4 cores / 7 GB, when ChromeDriver timed out in an unrelated PNG
+WASM test; a retry hung.
+
+- Aggregate SHA-256: `8c40ffe08e0278f2a5cf9da04f5707feb54dba705c35dbc340ba3b826d1d4bf8`.
+- [Run provenance](https://github.com/sagikazarmark/excalidraw-render.orig/issues/101#issuecomment-5858201411).
+- The aggregate is recorded at
+  `tests/conformance/svg-font-subset-target-aggregate/revision-1.json`, and the
+  release evidence is `aggregated` / `pass`.
