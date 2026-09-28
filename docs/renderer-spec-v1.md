@@ -3177,6 +3177,18 @@ unchecked indexing, user-dependent recursion, unchecked conversion, and
 failure is fatal `resource.memory-unavailable`; trusted-catalog corruption is
 internal failure.
 
+One stage is scoped out of the fallible-allocation rule (ADR-0021): PDF
+serialization, from the first call into the PDF writer through its `finish`.
+The writer allocates infallibly, so a physical allocation refusal inside that
+stage aborts the process instead of returning `resource.memory-unavailable`.
+Every limit, aggregate and ledger record is still admitted and charged before
+the stage begins, and every renderer-owned allocation, inside the stage or not,
+is still fallible; only the writer's own allocations are scoped out. The
+stage copies and compresses only content admitted that way. Its peak memory is
+therefore bounded by the admitted content, though the ledger records an
+estimate for it, not an exact charge. Hosts that must survive physical refusal
+isolate the call in a terminable process or worker, as they do for deadlines.
+
 Relationships, clipping/masking, nested assets, XML, CSS, and backend trees use
 checked explicit stacks where practical. Cycles are detected in source order.
 Recoverable cycles remove the closing edge; excess relationship depth is fatal.
@@ -3211,7 +3223,8 @@ eager/streamed records, fused/split passes, deterministic internal traversal,
 codecs, backends, and allocator growth while preserving artifact/report,
 canonical trace, first crossing, measurement form, fallback, and stable code.
 Only injected physical allocation refusal may diverge to
-`resource.memory-unavailable` after the same committed trace prefix.
+`resource.memory-unavailable` after the same committed trace prefix. Refusal
+is injected only outside the PDF serialization stage scoped above.
 
 ## 14. Conformance
 

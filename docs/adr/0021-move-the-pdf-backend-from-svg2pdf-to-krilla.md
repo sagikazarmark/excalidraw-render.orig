@@ -74,7 +74,30 @@ upstream request:
   is drawn in Krilla's ICC-based sRGB (`no_device_cs`), so every colour stays
   characterized. Claiming PDF/A remains a separate decision.
 
-## Consequences
+## Allocation inside the writer
+
+Krilla, pdf-writer 0.15, subsetter and Krilla's flate2 calls allocate
+infallibly (Stage 1 gate 1 of #201, `docs/research/krilla-pdf-feasibility.md`).
+If the allocator refuses during serialization, the process aborts. It does not
+return `resource.memory-unavailable`. svg2pdf already had this property for
+nested-SVG content; with Krilla it covers the whole PDF serialization stage.
+Upstream fallible allocation is not in prospect.
+
+Spec §13.3 is scoped rather than broken silently. The renderer still does its
+semantic preflight before the writer runs: every limit and aggregate is
+admitted, and every ledger record, including the PDF image planes, font
+resources and stream workspace, is charged. Every renderer-owned buffer, before
+or during the stage, is still reserved fallibly. Only the writer's own physical
+allocations, from the first Krilla call to `finish()`, fall outside §13.3's
+fallible-allocation rule. Their size is bounded
+by the admitted content, since every input they copy or compress was admitted
+first, but the ledger charges an estimate for them, not their exact size. A
+host that must survive physical refusal there isolates the call in a terminable
+process or worker, as it already does for deadlines. Injected allocator refusal
+is exercised up to the writer; the conformance suite does not inject refusal
+inside it.
+
+
 
 - Line-level `/ActualText` (spec §8.6) needs Krilla's tagging on, which gives
   each span an MCID. The port therefore writes a real tag tree, and every PDF
