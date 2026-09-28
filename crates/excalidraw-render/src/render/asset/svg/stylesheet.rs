@@ -4,7 +4,7 @@
 //! recovery and opaque strings/functions differ from our historical admission
 //! policy, which even admits some malformed values for usvg to ignore. Only
 //! those cases use the compatibility fallback below; see docs/css-tokenization.md.
-use cssparser::{Delimiter, ParseError, Parser, ParserInput, Token};
+use cssparser::{Delimiter, ParseError, Parser, Token};
 
 pub(super) struct Rule<'a> {
     pub source: &'a str,
@@ -54,8 +54,7 @@ impl<'a> Iterator for Rules<'a> {
 }
 
 fn tokenized_rule(source: &str) -> Result<Rule<'_>, ()> {
-    let mut input = ParserInput::new(source);
-    let parser = &mut Parser::new(&mut input);
+    let parser = &mut Parser::new(source);
     let start = parser.position();
     let selector = parser
         .parse_until_before(Delimiter::CurlyBracketBlock, |p| component_slice(p, 0))
@@ -63,7 +62,7 @@ fn tokenized_rule(source: &str) -> Result<Rule<'_>, ()> {
     parser.expect_curly_bracket_block().map_err(|_| ())?;
     let (declarations, end) = parser
         .parse_nested_block(|p| Ok((component_slice(p, 0)?, p.position())))
-        .map_err(|_: ParseError<'_, ()>| ())?;
+        .map_err(|_: ParseError<()>| ())?;
     // No EOF-closed rule, and no token may hide a historical brace boundary.
     if parser.slice(end..parser.position()) != "}"
         || selector.contains(['{', '}'])
@@ -97,8 +96,7 @@ impl Rule<'_> {
 }
 
 fn tokenized_declarations(source: &str) -> Result<bool, ()> {
-    let mut input = ParserInput::new(source);
-    let parser = &mut Parser::new(&mut input);
+    let parser = &mut Parser::new(source);
     while !parser.is_exhausted() {
         let admitted = parser
             .parse_until_before(Delimiter::Semicolon, |declaration| {
@@ -111,11 +109,11 @@ fn tokenized_declarations(source: &str) -> Result<bool, ()> {
                 declaration.expect_colon()?;
                 let value = component_slice(declaration, 0)?;
                 if declaration.slice_from(start).contains(';') || property.contains(':') {
-                    return Err(declaration.new_custom_error(()));
+                    return Err(ParseError::custom(()));
                 }
                 Ok(admitted_declaration(property, value))
             })
-            .map_err(|_: ParseError<'_, ()>| ())?;
+            .map_err(|_: ParseError<()>| ())?;
         if !admitted {
             return Ok(false);
         }
@@ -141,12 +139,9 @@ fn admitted_declaration(property: &str, value: &str) -> bool {
 /// not admission: deeper uninterpreted values take the flat compatibility path.
 /// The whole-sheet inline-stack guard runs before any nested parser can enter
 /// cssparser's automatic error cleanup.
-fn component_slice<'i>(
-    parser: &mut Parser<'i, '_>,
-    depth: u32,
-) -> Result<&'i str, ParseError<'i, ()>> {
+fn component_slice<'i>(parser: &mut Parser<'i>, depth: u32) -> Result<&'i str, ParseError<()>> {
     if depth == 128 {
-        return Err(parser.new_custom_error(()));
+        return Err(ParseError::custom(()));
     }
     let start = parser.position();
     while let Ok(token) = parser.next_including_whitespace_and_comments() {
@@ -154,7 +149,7 @@ fn component_slice<'i>(
             Token::Function(_) | Token::ParenthesisBlock => ")",
             Token::SquareBracketBlock => "]",
             Token::CurlyBracketBlock => "}",
-            token if token.is_parse_error() => return Err(parser.new_custom_error(())),
+            token if token.is_parse_error() => return Err(ParseError::custom(())),
             _ => continue,
         };
         let end = parser.parse_nested_block(|p| {
@@ -162,7 +157,7 @@ fn component_slice<'i>(
             Ok(p.position())
         })?;
         if parser.slice(end..parser.position()) != close {
-            return Err(parser.new_custom_error(()));
+            return Err(ParseError::custom(()));
         }
     }
     Ok(parser.slice_from(start))
@@ -201,8 +196,7 @@ pub(super) fn without_at_rules(source: &str) -> Option<(std::borrow::Cow<'_, str
     if !crate::css_syntax::fits_inline_block_stack(source) {
         return None;
     }
-    let mut input = ParserInput::new(source);
-    let parser = &mut Parser::new(&mut input);
+    let parser = &mut Parser::new(source);
     let mut removed = Vec::new();
     let mut boundary = true;
     loop {
@@ -220,7 +214,7 @@ pub(super) fn without_at_rules(source: &str) -> Option<(std::borrow::Cow<'_, str
                             parser
                                 .parse_nested_block(|block| {
                                     while block.next_including_whitespace_and_comments().is_ok() {}
-                                    Ok::<(), ParseError<'_, ()>>(())
+                                    Ok::<(), ParseError<()>>(())
                                 })
                                 .ok()?;
                             break;
