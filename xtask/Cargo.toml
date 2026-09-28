@@ -26,5 +26,5 @@ serde_json = { workspace = true, features = ["raw_value", "arbitrary_precision"]
 sha2.workspace = true
 tempfile.workspace = true
 syn = { version = "=2.0.119", features = ["full"] }
-toml = "=0.8.23"
+toml = "=1.1.6"
 wuff.workspace = true
