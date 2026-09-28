@@ -614,7 +614,7 @@ fn exact_transfer_and_metadata_anchors() {
         lower_hex(&Sha256::digest(include_bytes!(
             "../common/png_color_reference.rs"
         ))),
-        "6d2cba3ddfa2fcf017ea9972715aee3b0a6f002cb2afce950274059a1b64b83f"
+        "21740e122b5185b8b8dcc233ce503a2c5b4c830149cc162b885537f1df433144"
     );
     let evidence = reference::evidence();
     let icc = evidence["cases"]

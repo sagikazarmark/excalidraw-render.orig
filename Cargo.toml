@@ -65,11 +65,9 @@ resvg = { version = "=0.47.0", default-features = false, features = ["raster-ima
 roxmltree = "=0.21.1"
 regex = "=1.13.1"
 serde = { version = "=1.0.229", features = ["derive"] }
-# Held at 1.0.141 (#206): 1.0.142+ formats floats through zmij, which writes
-# positive exponents as `1e+20` where 1.0.141 wrote `1e20`. Report values such
-# as an over-limit coordinate's attempted magnitude reach that range, so the
-# bump changes report bytes (spec 11.1) and belongs with #207.
-serde_json = "=1.0.141"
+# Formats floats through zmij: positive exponents are signed (`1e+20`), the
+# spelling spec 11.1 requires (#211).
+serde_json = "=1.0.151"
 simplecss = "=0.2.2"
 sha1 = "=0.11.0"
 sha2 = "=0.11.0"

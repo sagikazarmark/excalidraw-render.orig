@@ -2129,8 +2129,9 @@ CLI JSON transport appends exactly one LF.
 
 Public report and artifact-manifest JSON is minified UTF-8 without BOM, uses
 direct non-ASCII scalars, only required escapes, lowercase `\u00xx` for other
-controls, shortest round-trip finite decimals, lowercase exponent when needed,
-no redundant zeros, canonical `0` for negative zero, integer counters, and the
+controls, shortest round-trip finite decimals, lowercase exponent when needed
+with an explicit sign (`1e+20`, `1e-7`, as ECMAScript `JSON.stringify` spells
+them), no redundant zeros, canonical `0` for negative zero, integer counters, and the
 declared member order.
 
 Schema-1 errors have this exact member order and explicit nulls:

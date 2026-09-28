@@ -4348,3 +4348,30 @@ fn nested_node_count_includes_text_and_stops_descendant_discovery() {
         }
     }
 }
+
+/// Spec 11.1: a report number that needs an exponent spells it lowercase with
+/// an explicit sign, as ECMAScript `JSON.stringify` does (#211).
+#[test]
+fn report_exponents_are_lowercase_and_signed() {
+    let scene = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"elements":[{"id":"far","type":"rectangle","x":1e21,"width":1,"height":1,"roughness":0,"seed":1,"updated":1}],"appState":{},"files":{}}"#,
+    )
+    .unwrap();
+    for format in FORMATS {
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_coordinate_magnitude(1e-7)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let outcome = Renderer::new().render(&scene, &request).unwrap();
+        let report = String::from_utf8(serde_json::to_vec(outcome.report()).unwrap()).unwrap();
+        assert!(
+            report.contains(r#""configured":1e-7,"value_kind":"coordinate","measurement":{"kind":"attempted","value":1e+21}"#),
+            "{format:?}: {report}"
+        );
+    }
+}

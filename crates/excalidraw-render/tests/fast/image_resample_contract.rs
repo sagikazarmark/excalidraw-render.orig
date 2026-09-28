@@ -24,7 +24,7 @@ fn hash(bytes: &[u8]) -> String {
 fn evidence() -> Value {
     assert_eq!(
         hash(RECORD),
-        "3e503d04f46f2ae74a28787697078b712fe46261894c4373fd79ba2282968ac5"
+        "08fd511a9017a1cada61f59ac25e99e1346c404873d370f1e27225888cbcea75"
     );
     let record: Value = serde_json::from_slice(RECORD).unwrap();
     assert_eq!(

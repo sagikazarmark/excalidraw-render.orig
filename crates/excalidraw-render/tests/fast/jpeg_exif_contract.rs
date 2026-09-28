@@ -72,7 +72,7 @@ fn pinned_json(bytes: &[u8], expected: &str) -> Value {
 fn evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-exif/reference.json"),
-        "f585f4fa3eaf0773c3441a4ebc999d119609cf9bcd27bfbbb4ac92bbcd531b88",
+        "93e6b045db52db0d48649b88ffbb0c33b8d5b5c8f2c6ebce15fa9f1010ab0cdf",
     );
     assert_eq!(record["schema"], "excalidraw-render/jpeg-exif-reference/v1");
     for source in record["sources"].as_array().unwrap() {
@@ -110,7 +110,7 @@ fn inputs() -> Value {
 fn untagged_evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-color/reference.json"),
-        "41fa9995a4d4df36c791f207ce9b38e9a111d6abc3706f4254d5caa99f03e056",
+        "3994872b3b14c89c1b64b0829629be8e496b8f9883d16f16e0ea8c02ff6b4846",
     );
     assert_eq!(
         record["schema"],
