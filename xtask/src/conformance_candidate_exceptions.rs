@@ -14,6 +14,14 @@ const REPORT_HASH: &str = "8bba3edd8b7b3928aed1794e53bda1b2f21b42b449e01c87d1087
 const EVIDENCE_HASH: &str = "5efa8854d7cecd731427b3a18ce69d728e791e2d420ba8d5d06640a7357ace72";
 const DIAGNOSED: &str = "tests/conformance/candidates/stage4-frames-text-assets-v4";
 const PROPOSAL: &str = "exception-proposal.json";
+/// The Krilla render of the diagnosed scene (ADR-0021). Every PDF byte moved
+/// with the backend, but both pinned viewers rasterize it byte for byte as
+/// they rasterized the diagnosed PDF, so the diagnosis covers the same pixels.
+/// A changed Krilla render requires renewed review here.
+const KRILLA_SUCCESSOR_PDF: (usize, &str) = (
+    11023,
+    "abbc64e2f341569d67d306eaaeea6f810ded8e8356c4f83841608c2b17fc5642",
+);
 const SCOPES: [(&str, &str, u64, &str); 3] = [
     ("pdfium", "whole", 118, "3fefacd49b980278"),
     ("pdfium", "typography", 118, "3fee1f978eeaac28"),
@@ -96,6 +104,20 @@ fn validate_pdfium_alpha_successor(historical: &Value) -> Result<()> {
     crate::pdf_viewers::verify()?;
     Ok(())
 }
+/// The backend successor record for `pdf`, the reviewed Krilla render of the
+/// diagnosed scene. It covers only the PDF bytes: `expected` still requires
+/// every diagnosed viewer raster to be byte-identical.
+pub(crate) fn backend_successor(pdf: &[u8]) -> Result<Value> {
+    if pdf.len() != KRILLA_SUCCESSOR_PDF.0 || sha256(pdf) != KRILLA_SUCCESSOR_PDF.1 {
+        return Err("stale or unrelated Krilla backend successor PDF".into());
+    }
+    Ok(json!({
+        "decision": "docs/adr/0021-move-the-pdf-backend-from-svg2pdf-to-krilla.md",
+        "diagnosed_pdf": format!("{DIAGNOSED}/native.pdf"),
+        "successor_pdf": {"byte_length": pdf.len(), "sha256": sha256(pdf)},
+        "rule": "diagnosed viewer rasters byte-identical",
+    }))
+}
 fn expected(directory: &str) -> Result<Value> {
     let root = candidate_root(directory)?;
     let evidence = proof()?;
@@ -103,6 +125,7 @@ fn expected(directory: &str) -> Result<Value> {
     // decision. Equal summary metrics on different inputs are not sufficient.
     let mut inputs = Vec::new();
     let mut colour_binding_bridge = Value::Null;
+    let mut successor = Value::Null;
     for name in [
         "scene.json",
         "native.pdf",
@@ -122,10 +145,14 @@ fn expected(directory: &str) -> Result<Value> {
         let current = descriptor(&root, name)?;
         if current["sha256"] != bound["sha256"] || current["byte_length"] != bound["byte_length"] {
             if name == "native.pdf" {
-                colour_binding_bridge =
-                    crate::conformance_pdf_bridge::validate(&read(&root, name)?)?;
-                if colour_binding_bridge["diagnosed_pdf"]["sha256"] != bound["sha256"] {
-                    return Err("colourspec bridge names a different diagnosis PDF".into());
+                let pdf = read(&root, name)?;
+                if let Ok(record) = backend_successor(&pdf) {
+                    successor = record;
+                } else {
+                    colour_binding_bridge = crate::conformance_pdf_bridge::validate(&pdf)?;
+                    if colour_binding_bridge["diagnosed_pdf"]["sha256"] != bound["sha256"] {
+                        return Err("colourspec bridge names a different diagnosis PDF".into());
+                    }
                 }
             } else {
                 return Err(format!(
@@ -145,9 +172,13 @@ fn expected(directory: &str) -> Result<Value> {
         };
         scopes.push(json!({"case_id":case_id(directory)?,"variant":"default","format":"pdf","comparison_id":format!("pdf-{viewer}"),"viewer_profile":{"id":value(&repo_root(),&profile)?["id"],"descriptor":descriptor(&repo_root(),&profile)?},"region":region,"bounds":if region=="whole"{json!([0,0,200,120])}else{json!([10,12,124,41])},"max_changed_pixels":pixels,"minimum_ssim_bits":bits,"reason":reason,"approving_issue":"https://github.com/sagikazarmark/excalidraw-render.orig/issues/85"}));
     }
-    Ok(
-        json!({"schema":"excalidraw-render/representative-exception-proposal/v1","status":"proposed-not-approved","case_id":case_id(directory)?,"diagnosis":[descriptor(&repo_root(),REPORT)?,descriptor(&repo_root(),EVIDENCE)?],"diagnosis_producer_chain":evidence["repository_bindings"],"diagnosis_upstream_sources":evidence["upstream_sources"],"colour_binding_bridge":colour_binding_bridge,"comparator":descriptor(&repo_root(),COMPARATOR_PROFILE)?,"inputs":inputs,"exceptions":scopes}),
-    )
+    let mut proposal = json!({"schema":"excalidraw-render/representative-exception-proposal/v1","status":"proposed-not-approved","case_id":case_id(directory)?,"diagnosis":[descriptor(&repo_root(),REPORT)?,descriptor(&repo_root(),EVIDENCE)?],"diagnosis_producer_chain":evidence["repository_bindings"],"diagnosis_upstream_sources":evidence["upstream_sources"],"colour_binding_bridge":colour_binding_bridge,"comparator":descriptor(&repo_root(),COMPARATOR_PROFILE)?,"inputs":inputs,"exceptions":scopes});
+    // Only a Krilla-era proposal carries the key, so earlier proposals keep
+    // their exact shape.
+    if !successor.is_null() {
+        proposal["backend_successor"] = successor;
+    }
+    Ok(proposal)
 }
 fn validate(proposal: &Value, wanted: &Value) -> Result<()> {
     // Exact agreement rejects unknown/unused scopes, duplicate records, omitted
@@ -376,6 +407,55 @@ mod tests {
         assert!(expected(&dir)
             .unwrap_err()
             .contains("unrelated PDF colourspec bridge"));
+    }
+    #[test]
+    fn krilla_successor_covers_only_the_reviewed_pdf_with_identical_rasters() {
+        use std::fs;
+        const V27: &str = "tests/conformance/candidates/stage4-frames-text-assets-v27";
+        let pdf = read(&repo_root(), &format!("{V27}/native.pdf")).unwrap();
+        let record = backend_successor(&pdf).unwrap();
+        assert_eq!(record["successor_pdf"]["sha256"], KRILLA_SUCCESSOR_PDF.1);
+        let mut changed = pdf.clone();
+        changed[100] ^= 1;
+        assert!(backend_successor(&changed).is_err());
+        let live = expected(V27).unwrap();
+        assert_eq!(live["backend_successor"], record);
+        assert!(live["colour_binding_bridge"].is_null());
+        // The successor covers the PDF bytes only: a moved viewer raster is
+        // still an uncovered input.
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = format!(
+            "target/krilla-successor-{}-{nonce}/stage4-frames-text-assets-v27",
+            std::process::id()
+        );
+        let root = repo_root().join(&dir);
+        fs::create_dir_all(root.join("viewer-evidence")).unwrap();
+        for name in [
+            "scene.json",
+            "native.pdf",
+            "official.svg",
+            "judgment-plan.json",
+            "viewer-evidence/official-chromium.rgba",
+            "viewer-evidence/native-pdfium.rgba",
+            "viewer-evidence/native-pdfjs.rgba",
+        ] {
+            fs::write(
+                root.join(name),
+                read(&repo_root(), &format!("{V27}/{name}")).unwrap(),
+            )
+            .unwrap();
+        }
+        assert_eq!(expected(&dir).unwrap()["backend_successor"], record);
+        let raster = root.join("viewer-evidence/native-pdfium.rgba");
+        let mut moved = fs::read(&raster).unwrap();
+        moved[0] ^= 1;
+        fs::write(&raster, moved).unwrap();
+        assert!(expected(&dir)
+            .unwrap_err()
+            .contains("does not cover changed input"));
     }
     #[test]
     fn scoped_evaluation_ignores_forged_stored_judgment_booleans() {
