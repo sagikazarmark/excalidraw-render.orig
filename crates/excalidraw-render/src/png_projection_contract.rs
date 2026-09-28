@@ -57,11 +57,11 @@ pub(crate) fn profile_limits(selected_mask: Option<usize>) {
         ),
         (
             include_bytes!("../tests/common/png_stage4_reference.rs").as_slice(),
-            "929ac9c9fb62edbf4d0958988ad85167a74340b7228f7fa071e6d7369e6ed5b8",
+            "6dc9761ca7fa6858dc083a7078788230dc3e4a0d384fab4a92ee89760e7cb49f",
         ),
         (
             include_bytes!("../tests/common/png_color_reference.rs").as_slice(),
-            "18603743899f0fe432c34bb932188271e650bf16e10062de07e0d25edb277bde",
+            "fb862de3a2c5ceffcba94d85ca9939be3e2d3fdb88c17a11acf8786d650c6186",
         ),
         (
             include_bytes!("../tests/common/codec_fixtures.rs").as_slice(),
@@ -81,7 +81,7 @@ pub(crate) fn profile_limits(selected_mask: Option<usize>) {
     let bytes = include_bytes!("../../../tests/oracle/png-color/stage4-oracle-reference.json");
     assert_eq!(
         lower_hex(&Sha256::digest(bytes)),
-        "775525fd6b1b1d7e21f5f1de3c826eff6d656c0ac2d936e27049e13296a51bc3"
+        "ef41ba3388ba0f850203703ab0274c961399ba6d329263904f01ad30b14c9c28"
     );
     let mut evidence: Value = serde_json::from_slice(bytes).unwrap();
     let mut gray = crate::png_stage4_review::gray_lut_equivalence();

@@ -159,6 +159,11 @@ pub(crate) const COMPARATOR_REFRESHES: &[ComparatorRefresh] = &[
             "76dfd706a784ceb19ee304f15994afbd5130ad20df4fee55948ff8a6dd25855c",
         )],
     },
+    // #208: sha1 0.11 moved only the closure.
+    ComparatorRefresh {
+        before: "tests/conformance/proposals/comparator-closure-refresh-v3/before",
+        vectors: &[],
+    },
 ];
 /// Evidence measured under a comparator profile (or its closure) that a
 /// reviewed refresh superseded. Those refreshes moved the comparator's
