@@ -78,7 +78,7 @@ skera = { version = "=0.7.0", default-features = false }
 rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
 ryu-js = { version = "=1.0.3", default-features = false }
 unicode-bidi = "=0.3.18"
-unicode-normalization = "=0.1.24"
+unicode-normalization = "=0.1.25"
 unicase = "=2.9.0"
 svgtypes = "=0.16.1"
 # Host-only: CLI delivery staging and xtask scratch directories. Never a

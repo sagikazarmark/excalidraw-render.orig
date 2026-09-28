@@ -1409,6 +1409,15 @@ mod tests {
         let distinct = svg_basenames(&[Some(&spaced), Some(&dashed)]);
         assert_ne!(distinct[0], distinct[1]);
         assert!(!distinct[1].ends_with("-2.svg"), "{}", distinct[1]);
+
+        // Canonical ordering follows Unicode 17: U+1AE0 is a class-230 mark
+        // there, so it reorders after the class-220 U+0316 and both spellings
+        // hash, and collide, as one name.
+        let above_first = format!("{}\u{1ae0}\u{316}", "A".repeat(140));
+        let below_first = format!("{}\u{316}\u{1ae0}", "A".repeat(140));
+        let equivalent = svg_basenames(&[Some(&above_first), Some(&below_first)]);
+        let hash = &equivalent[0][111..120];
+        assert_eq!(equivalent[1], format!("{}{hash}-2.svg", "A".repeat(109)));
     }
 
     #[test]
