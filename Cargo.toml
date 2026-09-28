@@ -51,7 +51,7 @@ libm = "=0.2.16"
 miniz_oxide = "=0.8.9"
 moxcms = { version = "=0.9.0", default-features = false }
 png = "=0.18.1"
-jpeg-encoder = "=0.6.1"
+jpeg-encoder = "=0.7.1"
 resvg = { version = "=0.47.0", default-features = false, features = ["raster-images"] }
 roxmltree = "=0.21.1"
 regex = "=1.13.1"
