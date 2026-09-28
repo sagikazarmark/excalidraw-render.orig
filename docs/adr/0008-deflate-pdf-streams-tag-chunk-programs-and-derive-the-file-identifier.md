@@ -187,3 +187,9 @@ absence of `/Info` and the `/ID` derivation.
 - A PDF/A claim remains a separate decision that needs a validator; nothing
   here moves the file further from or closer to it except keeping the
   metadata stream stored.
+
+Amended 2026-09-27: ADR-0021 moves the PDF backend to Krilla. When that port
+lands, it replaces this decision's embedded-program rule and subset tag, its
+file identifier and absent `/Info`, and its output intent. The Flate level
+stays at 6, but the compressor becomes Krilla's. Until then this decision
+describes the shipped backend.

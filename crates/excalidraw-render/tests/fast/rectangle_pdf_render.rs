@@ -1,12 +1,14 @@
 use crate::common::approved_scenes::{rectangle_outline_scene, render_rectangle_outline_pdf};
-use crate::common::pdf_inspect::{pdf_text, stream_data, stream_text, trailer_file_identifiers};
+use crate::common::pdf_inspect::{
+    object_stream, page_content, pdf_attachment, pdf_object, pdf_text, reference,
+    trailer_file_identifiers,
+};
 use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
 use excalidraw_render::{
     ErrorCode, OutputFormat, RenderErrorCategory, RenderOutcome, RenderRequest, Renderer,
     ResourceLimits, Sizing,
 };
-use sha2::{Digest, Sha256};
 
 const EXPECTED_ROUGH_PATH: &str = concat!(
     "0 0 m\n60.36 0.51 117.93 -1.29 180 0 c\n",
@@ -38,31 +40,35 @@ fn approved_rectangle_renders_as_a_vector_first_pdf() {
     assert_eq!(pdf.matches("/Type /Page\n").count(), 1);
     assert!(pdf.contains("/MediaBox [0 0 150 90]"));
     assert!(pdf.contains("/CropBox [0 0 150 90]"));
-    assert!(pdf.contains("/OutputIntents [6 0 R]"));
-    assert!(pdf.contains("/ColorSpace << /CS1 [/ICCBased 5 0 R] >>"));
-    assert!(pdf.contains(concat!(
-        "/Type /OutputIntent\n/S /GTS_PDFA1\n",
-        "/OutputConditionIdentifier (sRGB)\n",
-        "/Info (excalidraw-render project sRGB)\n",
-        "/DestOutputProfile 5 0 R\n"
-    )));
+    // No output intent is claimed; every color is in the ICC-based sRGB
+    // space Krilla binds for vector content (ADR-0021).
+    assert!(!pdf.contains("/OutputIntents"));
+    let resources = pdf
+        .split("/ColorSpace << /c0 ")
+        .nth(1)
+        .expect("the page binds its color space");
+    let space = resources.split(' ').next().unwrap().parse().unwrap();
+    assert!(pdf_object(&pdf, space).starts_with("[/ICCBased "));
 
-    let content = stream_data(bytes, b"4 0 obj");
-    let content = std::str::from_utf8(&content).expect("content stream is canonical ASCII");
+    // The background and the outline, each an artifact under its own
+    // page-space matrix: the logical-pixel mapping, then the element's 10 px
+    // offset. Colors are Krilla's single-precision spelling of 30/255.
+    let content = page_content(bytes);
     assert!(
         content.starts_with(concat!(
-            "q\n0.75 0 0 -0.75 0 90 cm\n",
-            "/CS1 cs\n1 1 1 scn\n0 0 200 120 re\nf\n",
-            "q\n1 0 0 1 10 10 cm\n2 w\n1 J\n",
-            "/CS1 CS\n0.11764705882352941 0.11764705882352941 0.11764705882352941 SCN\n"
+            "/Artifact BMC\nq\n0.75 0 0 -0.75 0 90 cm\n",
+            "/c0 cs\n1 1 1 scn\n0 0 m\n200 0 l\n200 120 l\n0 120 l\nh\nf\nQ\nEMC\n",
+            "/Artifact BMC\nq\n0.75 0 0 -0.75 7.5 82.5 cm\n",
+            "/c0 CS\n0.11764706 0.11764706 0.11764706 SCN\n2 w\n1 J\n"
         )),
         "unexpected content stream: {content:?}"
     );
     assert!(content.contains(EXPECTED_ROUGH_PATH));
-    assert!(content.ends_with("S\nQ\nQ"));
+    assert!(content.ends_with("S\nQ\nEMC\n"));
+    // Eight Rough subpaths and the background rectangle.
     assert_eq!(
         content.lines().filter(|line| line.ends_with(" m")).count(),
-        8
+        9
     );
     assert_eq!(
         content.lines().filter(|line| line.ends_with(" c")).count(),
@@ -70,20 +76,24 @@ fn approved_rectangle_renders_as_a_vector_first_pdf() {
     );
     assert_eq!(content.lines().filter(|line| *line == "S").count(), 1);
 
-    let profile = stream_data(bytes, b"5 0 obj");
+    let profile = object_stream(
+        bytes,
+        reference(pdf_object(&pdf, space), "/ICCBased ").expect("the space names its profile"),
+    );
     // An ICC profile opens with its own byte length, so the embedded stream is
-    // held to that field rather than to a literal length.
+    // held to that field rather than to a literal length. Krilla's profile is
+    // version 4.2 and carries the seven matrix/TRC tags.
     assert_eq!(
         u32::from_be_bytes(profile[..4].try_into().expect("ICC header has a size")),
         u32::try_from(profile.len()).expect("ICC profile length fits u32")
     );
-    assert_eq!(&profile[8..12], b"\x02\x10\0\0");
+    assert_eq!(&profile[8..10], b"\x04\x20");
     assert_eq!(&profile[12..24], b"mntrRGB XYZ ");
     assert_eq!(&profile[36..40], b"acsp");
-    assert_eq!(
-        &["rXYZ", "gXYZ", "bXYZ", "wtpt", "rTRC", "gTRC", "bTRC"],
-        icc_tags(&profile).as_slice()
-    );
+    let tags = icc_tags(&profile);
+    for required in ["rXYZ", "gXYZ", "bXYZ", "wtpt", "rTRC", "gTRC", "bTRC"] {
+        assert!(tags.contains(&required), "ICC tag {required}");
+    }
 
     for forbidden in [
         "/Subtype /Image",
@@ -102,35 +112,30 @@ fn approved_rectangle_renders_as_a_vector_first_pdf() {
     }
     assert!(!bytes.windows(4).any(|window| window == b"<svg"));
 
-    // Every stream the renderer writes is one Flate stream (ADR-0008): the
-    // content stream and the ICC profile here, and nothing else is filtered.
+    // Every stream is one Flate stream: the content stream and the ICC
+    // profile here, and nothing else.
     let raw = String::from_utf8_lossy(bytes);
-    assert_eq!(raw.matches("/Filter /FlateDecode\n").count(), 2);
+    assert_eq!(raw.matches("/Filter/FlateDecode").count(), 2);
     assert_eq!(raw.matches("\nstream\n").count(), 2);
+    assert!(pdf_attachment(bytes, "scene.excalidraw").is_none());
     assert!(
         !pdf.contains("/Filter"),
         "inflating drops every filter entry"
     );
 
-    // The trailer identifier is the first 16 bytes of the SHA-256 over every
-    // byte before `trailer`, repeated, so it is a pure function of the
-    // artifact (ADR-0008).
-    let trailer_at = bytes
-        .windows(b"\ntrailer\n".len())
-        .rposition(|window| window == b"\ntrailer\n")
-        .expect("the PDF has one trailer")
-        + 1;
+    // The trailer identifiers are Krilla's stable hash of the file, equal
+    // and a pure function of the artifact, and no document information
+    // dictionary is written (ADR-0021).
+    let trailer = pdf.rsplit("\ntrailer\n").next().unwrap();
     assert!(
-        !String::from_utf8_lossy(&bytes[trailer_at..]).contains("/Info"),
+        !trailer.contains("/Info"),
         "the trailer carries no document information dictionary"
     );
-    let expected_identifier = Sha256::digest(&bytes[..trailer_at])[..16]
-        .iter()
-        .map(|byte| format!("{byte:02X}"))
-        .collect::<String>();
+    let (first_id, second_id) = trailer_file_identifiers(bytes);
+    assert_eq!(first_id, second_id);
     assert_eq!(
-        trailer_file_identifiers(bytes),
-        (expected_identifier.clone(), expected_identifier)
+        trailer_file_identifiers(render_rectangle_outline_pdf().artifact().bytes()),
+        (first_id.clone(), first_id)
     );
 }
 
@@ -217,9 +222,9 @@ fn pdf_sizing_and_background_follow_the_logical_pixel_mapping() {
     let scaled_pdf = pdf_text(scaled.artifact().bytes());
     assert!(scaled_pdf.contains("/MediaBox [0 0 300 180]"));
     assert!(scaled_pdf.contains("/CropBox [0 0 300 180]"));
-    let scaled_content = stream_text(scaled.artifact().bytes(), b"4 0 obj");
-    assert!(scaled_content.starts_with("q\n1.5 0 0 -1.5 0 180 cm\n"));
-    assert!(scaled_content.contains("0 0 200 120 re\nf\n"));
+    let scaled_content = page_content(scaled.artifact().bytes());
+    assert!(scaled_content.starts_with("/Artifact BMC\nq\n1.5 0 0 -1.5 0 180 cm\n"));
+    assert!(scaled_content.contains("0 0 m\n200 0 l\n200 120 l\n0 120 l\nh\nf\n"));
 
     let downscaled = render_pdf(
         RenderRequest::builder(OutputFormat::Pdf)
@@ -230,8 +235,8 @@ fn pdf_sizing_and_background_follow_the_logical_pixel_mapping() {
     let downscaled_pdf = pdf_text(downscaled.artifact().bytes());
     assert!(downscaled_pdf.contains("/MediaBox [0 0 75 45]"));
     assert!(downscaled_pdf.contains("/CropBox [0 0 75 45]"));
-    let downscaled_content = stream_text(downscaled.artifact().bytes(), b"4 0 obj");
-    assert!(downscaled_content.starts_with("q\n0.375 0 0 -0.375 0 45 cm\n"));
+    let downscaled_content = page_content(downscaled.artifact().bytes());
+    assert!(downscaled_content.starts_with("/Artifact BMC\nq\n0.375 0 0 -0.375 0 45 cm\n"));
 
     let transparent = render_pdf(
         RenderRequest::builder(OutputFormat::Pdf)
@@ -239,8 +244,8 @@ fn pdf_sizing_and_background_follow_the_logical_pixel_mapping() {
             .build()
             .expect("transparent PDF request is valid"),
     );
-    let transparent_content = stream_text(transparent.artifact().bytes(), b"4 0 obj");
-    assert!(!transparent_content.contains(" re\nf\n"));
+    let transparent_content = page_content(transparent.artifact().bytes());
+    assert!(!transparent_content.contains("200 120 l\n"));
     assert_eq!(
         transparent_content
             .lines()
@@ -258,8 +263,8 @@ fn pdf_numbers_are_non_exponential_round_trip_decimals_with_canonical_zero() {
             .build()
             .expect("small finite PDF scale is valid"),
     );
-    let content = stream_text(outcome.artifact().bytes(), b"4 0 obj");
-    assert!(content.starts_with("q\n0.000000075 0 0 -0.000000075 0 0.000009 cm\n"));
+    let content = page_content(outcome.artifact().bytes());
+    assert!(content.starts_with("/Artifact BMC\nq\n0.000000075 0 0 -0.000000075 0 0.000009 cm\n"));
     for token in content.split_ascii_whitespace() {
         if token.parse::<f64>().is_ok() {
             assert!(
@@ -283,8 +288,8 @@ fn pdf_rectangle_resource_crossings_are_atomic_and_locally_recoverable() {
             .build()
             .expect("resource-limited PDF request is valid"),
     );
-    let content = stream_text(outcome.artifact().bytes(), b"4 0 obj");
-    assert!(content.contains("0 0 200 120 re\nf\n"));
+    let content = page_content(outcome.artifact().bytes());
+    assert!(content.contains("0 0 m\n200 0 l\n200 120 l\n0 120 l\nh\nf\n"));
     assert!(content.contains("[6 4] 0 d"));
     let diagnostic = outcome
         .report()

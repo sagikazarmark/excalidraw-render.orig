@@ -5,7 +5,7 @@ use excalidraw_render::{
 };
 use sha2::{Digest, Sha256};
 
-use crate::common::pdf_inspect::{inflate_streams, pdf_text};
+use crate::common::pdf_inspect::pdf_text;
 
 const SOURCE: &[u8] = br#"{
   "type": "excalidraw",
@@ -66,9 +66,16 @@ fn every_format_round_trips_one_canonical_artifact_manifest() {
             OutputFormat::Png => assert_png_metadata_tail(outcome.artifact().bytes()),
             OutputFormat::Pdf => {
                 let pdf = pdf_text(outcome.artifact().bytes());
-                assert!(pdf.contains("/Names << /EmbeddedFiles << /Names [(scene.excalidraw)"));
-                assert!(pdf.contains("/AFRelationship /Data"));
-                assert!(pdf.contains("/EF << /F "));
+                assert!(
+                    pdf.contains("/Names << /EmbeddedFiles << /Names [(artifact-manifest.json) ")
+                );
+                assert!(pdf.contains("(scene.excalidraw) "));
+                assert!(pdf.contains("/Subtype /application#2Fvnd.excalidraw+json\n"));
+                assert!(crate::common::pdf_inspect::pdf_attachment(
+                    outcome.artifact().bytes(),
+                    "scene.excalidraw"
+                )
+                .is_some());
             }
             _ => unreachable!(),
         }
@@ -296,8 +303,9 @@ fn rasterized_font_glyphs_do_not_create_a_png_notice_manifest() {
             let notices = manifest["notices"].as_array().unwrap();
             // Both vector formats carry the family's attribution notice under
             // its license identity and the OFL body once under
-            // `license.ofl-1.1` (#151); the SVG adds the subset's Modified
-            // Version notice, the PDF embeds the complete chunk and adds none.
+            // `license.ofl-1.1` (#151), and each adds the Modified Version
+            // notice of what it embeds: the SVG's subset, the PDF's renamed
+            // program (ADR-0021).
             assert_eq!(notices[0]["asset_identity"], "font.cascadia-code.ofl-1.1");
             let attribution = notices[0]["text"].as_str().unwrap();
             assert!(attribution.starts_with(
@@ -323,7 +331,15 @@ fn rasterized_font_glyphs_do_not_create_a_png_notice_manifest() {
                     "Source SHA-256: 5bce041e0fcce617e35efbc335b1372d27a84acb65fb464c65ff80ab3424a885"
                 ));
             } else {
-                assert_eq!(notices.len(), 2);
+                assert_eq!(notices.len(), 3);
+                assert!(notices[2]["asset_identity"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("pdf-font-program@sha256:"));
+                let text = notices[2]["text"].as_str().unwrap();
+                assert!(text.starts_with("Derived font program of fonts/Cascadia/"));
+                assert!(text.contains("names rewritten for compatibility revision 1"));
+                assert!(text.contains("Effective alias: ExcalidrawRender-3."));
             }
         }
     }
@@ -455,12 +471,7 @@ fn artifact_manifest(format: OutputFormat, artifact: &[u8]) -> Option<String> {
                 .map(|(manifest, _)| xml_unescape(manifest))
         }
         OutputFormat::Png => optional_png_manifest(artifact),
-        OutputFormat::Pdf => {
-            let pdf = pdf_text(artifact);
-            pdf.split_once("<er:manifest>")
-                .and_then(|(_, rest)| rest.split_once("</er:manifest>"))
-                .map(|(manifest, _)| xml_unescape(manifest))
-        }
+        OutputFormat::Pdf => crate::common::pdf_inspect::pdf_manifest(artifact),
         _ => unreachable!(),
     }
 }
@@ -500,9 +511,11 @@ fn manifest_without_scene(format: OutputFormat, artifact: &[u8]) -> String {
             extract_png_manifest(artifact)
         }
         OutputFormat::Pdf => {
-            let pdf = pdf_text(artifact);
-            assert!(!pdf.contains("/Type /EmbeddedFile"));
-            xml_unescape(between(&pdf, "<er:manifest>", "</er:manifest>"))
+            assert!(
+                crate::common::pdf_inspect::pdf_attachment(artifact, "scene.excalidraw").is_none()
+            );
+            crate::common::pdf_inspect::pdf_manifest(artifact)
+                .expect("the PDF carries its manifest")
         }
         _ => unreachable!(),
     }
@@ -618,25 +631,11 @@ fn assert_png_metadata_tail(png: &[u8]) {
 }
 
 fn extract_pdf(pdf: &[u8]) -> (String, Vec<u8>) {
-    let pdf = &inflate_streams(pdf);
-    let text = String::from_utf8_lossy(pdf);
-    let manifest = between(&text, "<er:manifest>", "</er:manifest>");
-    let marker = b"/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n";
-    let start = pdf
-        .windows(marker.len())
-        .position(|bytes| bytes == marker)
-        .unwrap();
-    let stream = pdf[start..]
-        .windows(7)
-        .position(|bytes| bytes == b"stream\n")
-        .map(|offset| start + offset + 7)
-        .unwrap();
-    let end = pdf[stream..]
-        .windows(10)
-        .position(|bytes| bytes == b"\nendstream")
-        .map(|offset| stream + offset)
-        .unwrap();
-    (xml_unescape(manifest), pdf[stream..end].to_vec())
+    (
+        crate::common::pdf_inspect::pdf_manifest(pdf).expect("the PDF carries its manifest"),
+        crate::common::pdf_inspect::pdf_attachment(pdf, "scene.excalidraw")
+            .expect("the PDF carries its scene"),
+    )
 }
 
 fn decode_scene_wrapper(wrapper: &[u8]) -> Vec<u8> {

@@ -1,5 +1,5 @@
 //! Occurrence-specific SVG raster adaptation. The admitted closure grid is the
-//! encoder's grid; svg2pdf receives native content and already-rendered images.
+//! encoder's grid; the backend draws native content and already-rendered images.
 use std::collections::BTreeMap;
 use std::fmt::Write;
 
@@ -176,7 +176,7 @@ impl PreparedSvg {
                     self.render(closure)?
                 } else {
                     // A merged child is consumed by its parent's replacement;
-                    // an unselected/cropped-away group must not reach svg2pdf.
+                    // an unselected/cropped-away group must not reach the backend.
                     String::new()
                 };
             edits.try_reserve(1).map_err(|_| memory())?;

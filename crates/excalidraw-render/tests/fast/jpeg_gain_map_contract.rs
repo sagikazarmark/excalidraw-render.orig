@@ -84,11 +84,11 @@ fn evidence() -> Value {
     for (bytes, expected) in [
         (
             include_bytes!("png_profile_contract.rs").as_slice(),
-            "44a5b9b4fba24704191b32f53008467605e6afa67f3fad02a3937ea53aba64c5",
+            "994389eed1224886cfb0df9e8382d90bcac8b6350d72618409a01a1d108a3661",
         ),
         (
             include_bytes!("../common/pdf_inspect.rs").as_slice(),
-            "2e46ed33e8decbb629d47dd1a45f43781c102a4ceba5990620b33edc25bab074",
+            "285cac0d1029d1f7c2485cd0d3cfb7d4be7c8394b320adc837f9eaf49ab5e4b3",
         ),
         (
             include_bytes!("../common/raster.rs").as_slice(),
@@ -1549,11 +1549,12 @@ fn assert_output_mutations(record: &Value) {
         assert_ne!(changed, svg);
         assert!(std::panic::catch_unwind(|| svg_check(&changed, row, true)).is_err());
     }
-    let (pdf, _) = render(&row["scene"], OutputFormat::Pdf);
+    let pdf =
+        crate::common::pdf_inspect::inflate_streams(&render(&row["scene"], OutputFormat::Pdf).0);
     for marker in [
         b"/MediaBox [0 0 ".as_slice(),
         b"/CropBox [0 0 ",
-        b"/Im0 ",
+        b"/XObject << /x0 ",
         b"/ICCBased ",
     ] {
         let mut changed = pdf.clone();

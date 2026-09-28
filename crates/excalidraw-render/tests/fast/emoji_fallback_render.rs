@@ -241,34 +241,38 @@ fn pdf_embeds_the_complete_noto_emoji_face_for_the_emoji_runs_and_carries_the_st
     assert!(declares_base_font(&pdf, "LiberationSans"));
     assert!(!declares_base_font(&pdf, "Xiaolai"));
 
-    // Spec 8.6: the complete Noto Emoji fallback is embedded as its exact
-    // manifested bytes, which have no decode. It is the only embedded program
-    // that maps either emoji, which is what makes the substitution one.
+    // Spec 8.6 (ADR-0021): the Noto Emoji fallback is embedded as a renamed
+    // subset of its exact manifested bytes, which have no decode. It is the
+    // only embedded program that maps either emoji, which is what makes the
+    // substitution one.
     let fonts = embedded_pdf_fonts(bytes);
     assert_eq!(fonts.len(), 3, "one FontFile2 per family and one fallback");
     let noto_emoji = manifested_noto_emoji();
+    let noto_digest = {
+        use sha2::Digest as _;
+        format!("{:x}", sha2::Sha256::digest(&noto_emoji))
+    };
     assert!(
-        fonts.contains(&noto_emoji),
-        "the embedded Noto Emoji program is the manifested asset"
+        crate::common::pdf_inspect::pdf_font_program_sources(bytes)
+            .iter()
+            .any(
+                |(identity, digest)| identity == excalidraw_fonts::NOTO_EMOJI_IDENTITY
+                    && *digest == noto_digest
+            ),
+        "an embedded program is derived from the manifested Noto Emoji asset"
     );
+    assert!(fonts.iter().any(|font| {
+        family_name(&rustybuzz::Face::from_slice(font, 0).expect("embedded sfnt parses"))
+            == "Noto Emoji"
+    }));
     let noto_face = rustybuzz::Face::from_slice(&noto_emoji, 0).expect("Noto Emoji parses");
     for scalar in ['\u{1f600}', '\u{1f389}'] {
         assert!(noto_face.glyph_index(scalar).is_some());
     }
-    for font in fonts.iter().filter(|font| *font != &noto_emoji) {
-        let face = rustybuzz::Face::from_slice(font, 0).expect("embedded sfnt parses");
-        assert!(
-            face.glyph_index('L').is_some(),
-            "both family faces shape Latin"
-        );
-        for scalar in ['\u{1f600}', '\u{1f389}'] {
-            assert!(
-                face.glyph_index(scalar).is_none(),
-                "U+{:04X} is absent from the {} program",
-                u32::from(scalar),
-                family_name(&face)
-            );
-        }
+    // A subset carries no cmap; the family CMaps say both shape Latin.
+    for family in ["Excalifont", "LiberationSans"] {
+        let cmap = to_unicode_cmap(&pdf, family);
+        assert!(cmap.contains("<004C>\n"), "{family} shapes Latin: {cmap}");
     }
     // Noto Emoji's ToUnicode maps its two CIDs back to the emoji as surrogate
     // pairs, so extracting the glyph runs reads the emoji; neither family's
@@ -303,11 +307,12 @@ fn pdf_embeds_the_complete_noto_emoji_face_for_the_emoji_runs_and_carries_the_st
         line.split(&format!("{noto} 20 Tf\n"))
             .skip(1)
             .map(|run| {
-                run.split(" Tf\n")
-                    .next()
-                    .expect("the run ends at a font switch")
-                    .matches(" Tj")
-                    .count()
+                crate::common::pdf_inspect::shown_codes(
+                    run.split(" Tf\n")
+                        .next()
+                        .expect("the run ends at a font switch"),
+                )
+                .len()
             })
             .collect()
     };

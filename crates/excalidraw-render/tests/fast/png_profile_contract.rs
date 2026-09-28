@@ -396,25 +396,77 @@ fn pdf_reference(dictionary: &str, key: &str) -> usize {
     assert_eq!(&tokens[i + 2..i + 4], ["0", "R"]);
     tokens[i + 1].parse().unwrap()
 }
+/// The one drawn RGB image's straight samples with its soft mask's alpha. The
+/// image must be bound as a page XObject resource, carry exactly its own
+/// `/DeviceGray` soft mask, and sit in the same ICC-based RGB space the
+/// page's vector content uses; the file claims no output intent (ADR-0021).
 fn pdf_image_pixels(objects: &BTreeMap<usize, PdfObject>, width: usize, height: usize) -> Vec<u8> {
     let pages: Vec<_> = objects
         .values()
         .filter(|o| o.dictionary.contains("/Type /Page\n"))
         .collect();
     assert_eq!(pages.len(), 1);
-    let page = &pages[0].dictionary;
-    let content = &objects[&pdf_reference(page, "/Contents")];
-    assert!(std::str::from_utf8(content.stream.as_ref().unwrap())
-        .unwrap()
-        .contains("/Im0 Do\n"));
-    let xobjects = page
-        .split_once("/XObject <<")
-        .unwrap()
-        .1
-        .split_once(">>")
-        .unwrap()
-        .0;
-    let rgb = &objects[&pdf_reference(xobjects, "/Im0")];
+    let catalog = objects
+        .values()
+        .find(|o| o.dictionary.contains("/Type /Catalog"))
+        .unwrap();
+    assert!(!catalog.dictionary.contains("/OutputIntents"));
+    let images: Vec<usize> = objects
+        .iter()
+        .filter(|(_, o)| {
+            pdf_tokens(&o.dictionary)
+                .windows(2)
+                .any(|w| w == ["/Subtype", "/Image"])
+        })
+        .map(|(id, _)| *id)
+        .collect();
+    // The color plane is the image a resource dictionary binds for drawing;
+    // a soft mask is bound only through its image's `/SMask`.
+    let colors: Vec<usize> = images
+        .iter()
+        .copied()
+        .filter(|id| {
+            objects.values().any(|o| {
+                o.dictionary.split("/XObject << ").skip(1).any(|rest| {
+                    rest.split(">>")
+                        .next()
+                        .unwrap()
+                        .contains(&format!(" {id} 0 R"))
+                })
+            })
+        })
+        .collect();
+    assert_eq!(
+        colors.len(),
+        1,
+        "one RGB image plane is a drawn XObject resource"
+    );
+    let rgb_id = colors[0];
+    let rgb = &objects[&rgb_id];
+    // Some content stream paints it through a name bound to it.
+    let names: Vec<String> = objects
+        .values()
+        .flat_map(|o| o.dictionary.split("/XObject << ").skip(1))
+        .flat_map(|rest| {
+            let tokens = pdf_tokens(rest.split(">>").next().unwrap());
+            tokens
+                .windows(4)
+                .filter(|w| w[1] == rgb_id.to_string() && w[2] == "0" && w[3] == "R")
+                .map(|w| w[0].to_owned())
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    assert!(
+        objects
+            .values()
+            .any(|o| o.stream.as_ref().is_some_and(|stream| {
+                let text = String::from_utf8_lossy(stream);
+                names
+                    .iter()
+                    .any(|name| text.contains(&format!("{name} Do\n")))
+            })),
+        "the RGB plane is painted"
+    );
     let plane = |object: &PdfObject| {
         assert_eq!(pdf_value(&object.dictionary, "/Subtype"), "/Image");
         assert_eq!(
@@ -430,46 +482,30 @@ fn pdf_image_pixels(objects: &BTreeMap<usize, PdfObject>, width: usize, height: 
         }
     };
     plane(rgb);
-    // The direct writer binds canonical RGB through its sRGB ICC space.
-    assert_eq!(pdf_value(&rgb.dictionary, "/ColorSpace"), "/ICCBased");
-    let image_profile_id = pdf_reference(&rgb.dictionary, "/ICCBased");
-    assert_eq!(
-        rgb.dictionary
-            .split_once("/ColorSpace ")
-            .unwrap()
-            .1
-            .lines()
-            .next()
-            .unwrap(),
-        format!("[/ICCBased {image_profile_id} 0 R]")
-    );
-    let spaces = page
-        .split_once("/ColorSpace <<")
-        .unwrap()
-        .1
-        .split_once(">>")
-        .unwrap()
-        .0;
-    assert_eq!(pdf_value(spaces, "/CS1"), "/ICCBased");
-    let profile_id = pdf_reference(spaces, "/ICCBased");
-    assert_eq!(
-        image_profile_id, profile_id,
-        "image and content resources must bind the same ICC object"
-    );
+    // Canonical RGB is bound through the ICC-based sRGB space the page's
+    // vector content also uses.
+    let space_id = pdf_reference(&rgb.dictionary, "/ColorSpace");
+    let space = objects[&space_id].dictionary.trim();
+    let profile_id = space
+        .strip_prefix("[/ICCBased ")
+        .and_then(|rest| rest.strip_suffix(" 0 R]"))
+        .expect("the image space is ICCBased")
+        .parse::<usize>()
+        .unwrap();
     let profile = &objects[&profile_id];
     assert_eq!(pdf_number(&profile.dictionary, "/N"), 3);
-    assert_eq!(pdf_value(&profile.dictionary, "/Alternate"), "/DeviceRGB");
     assert_eq!(&profile.stream.as_ref().unwrap()[16..20], b"RGB ");
-    let catalog = objects
+    // Vector content, when the page has any, is colored in the same space.
+    for resources in objects
         .values()
-        .find(|o| o.dictionary.contains("/Type /Catalog"))
-        .unwrap();
-    let intent = &objects[&pdf_reference(&catalog.dictionary, "/OutputIntents")];
-    assert_eq!(pdf_value(&intent.dictionary, "/Type"), "/OutputIntent");
-    assert_eq!(
-        pdf_reference(&intent.dictionary, "/DestOutputProfile"),
-        profile_id
-    );
+        .flat_map(|o| o.dictionary.split("/ColorSpace << ").skip(1))
+    {
+        let spaces = resources.split(">>").next().unwrap();
+        assert!(
+            spaces.contains(&format!(" {space_id} 0 R")),
+            "image and content resources must bind the same ICC space"
+        );
+    }
     let colors = rgb.stream.as_ref().unwrap();
     assert_eq!(colors.len(), width * height * 3);
     let alphas = if pdf_tokens(&rgb.dictionary).contains(&"/SMask") {
@@ -538,13 +574,20 @@ fn pdf_sample_oracle_rejects_detached_or_wrongly_bound_planes() {
     let original = pdf_objects(outcome.artifact().bytes());
     let expected = vector.expected(0);
     assert_pdf_objects(&original, 9, 9, &expected);
-    let page_id = *original
+    let rgb_id = *original
         .iter()
-        .find(|(_, o)| o.dictionary.contains("/Type /Page\n"))
+        .find(|(_, o)| o.dictionary.contains("/Subtype /Image") && o.dictionary.contains("/SMask"))
         .unwrap()
         .0;
-    let rgb_id = pdf_reference(&original[&page_id].dictionary, "/Im0");
     let mask_id = pdf_reference(&original[&rgb_id].dictionary, "/SMask");
+    let binder = *original
+        .iter()
+        .find(|(_, o)| {
+            o.dictionary.contains(&format!(" {rgb_id} 0 R"))
+                && o.dictionary.contains("/XObject << ")
+        })
+        .unwrap()
+        .0;
     for mutation in 0..6 {
         let mut objects = original.clone();
         match mutation {
@@ -553,11 +596,10 @@ fn pdf_sample_oracle_rejects_detached_or_wrongly_bound_planes() {
                 rgb.dictionary = rgb.dictionary.replace("/SMask ", "/Unused ");
             }
             1 => {
-                let page = objects.get_mut(&page_id).unwrap();
-                page.dictionary = page.dictionary.replace(
-                    &format!("/Im0 {rgb_id} 0 R"),
-                    &format!("/Im0 {mask_id} 0 R"),
-                );
+                let resources = objects.get_mut(&binder).unwrap();
+                resources.dictionary = resources
+                    .dictionary
+                    .replace(&format!(" {rgb_id} 0 R"), &format!(" {mask_id} 0 R"));
             }
             2 => {
                 let rgb = objects.get_mut(&rgb_id).unwrap();
@@ -568,16 +610,24 @@ fn pdf_sample_oracle_rejects_detached_or_wrongly_bound_planes() {
             }
             3 => {
                 let rgb = objects.get_mut(&rgb_id).unwrap();
-                let profile = pdf_reference(&rgb.dictionary, "/ICCBased");
+                let space = pdf_reference(&rgb.dictionary, "/ColorSpace");
                 rgb.dictionary = rgb.dictionary.replace(
-                    &format!("/ColorSpace [/ICCBased {profile} 0 R]"),
-                    "/ColorSpace /CS1",
+                    &format!("/ColorSpace {space} 0 R"),
+                    "/ColorSpace /DeviceRGB",
                 );
             }
             4 => {
-                let rgb = objects.get_mut(&rgb_id).unwrap();
-                let profile = pdf_reference(&rgb.dictionary, "/ICCBased");
-                rgb.dictionary = rgb.dictionary.replace(
+                let space = pdf_reference(&objects[&rgb_id].dictionary, "/ColorSpace");
+                let entry = objects.get_mut(&space).unwrap();
+                let profile = entry
+                    .dictionary
+                    .trim()
+                    .trim_start_matches("[/ICCBased ")
+                    .split(' ')
+                    .next()
+                    .unwrap()
+                    .to_owned();
+                entry.dictionary = entry.dictionary.replace(
                     &format!("/ICCBased {profile} 0 R"),
                     &format!("/ICCBased {mask_id} 0 R"),
                 );
@@ -587,10 +637,9 @@ fn pdf_sample_oracle_rejects_detached_or_wrongly_bound_planes() {
                     .values_mut()
                     .find(|o| o.dictionary.contains("/Type /Catalog"))
                     .unwrap();
-                let intent = pdf_reference(&catalog.dictionary, "/OutputIntents");
                 catalog.dictionary = catalog.dictionary.replace(
-                    &format!("/OutputIntents [{intent} 0 R]"),
-                    &format!("/OutputIntents [{mask_id} 0 R]"),
+                    "/Type /Catalog\n",
+                    "/Type /Catalog\n/OutputIntents [1 0 R]\n",
                 );
             }
             _ => unreachable!(),

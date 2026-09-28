@@ -34,6 +34,15 @@ crc32fast = "=1.5.2"
 gif = { version = "=0.14.2", default-features = false, features = ["std"] }
 image-webp = "=0.2.4"
 jsonschema = { version = "=0.33.0", default-features = false }
+# The PDF writer (ADR-0021). Pinned exactly: a Krilla bump is a byte-affecting
+# change for every PDF, as svg2pdf's was. Krilla shapes nothing (every glyph
+# arrives positioned). `raster-images` only compiles its image module: every
+# image arrives as sample planes, so Krilla decodes nothing, and the
+# `zune-jpeg` default features it enables are the ones `resvg`'s
+# `raster-images` already enables. krilla-svg is ported as
+# `render/pdf/svg_draw.rs` instead of depended on, because its `tiny-skia` and
+# `resvg` default features would reach the PNG rasterizer.
+krilla = { version = "=0.8.2", default-features = false, features = ["raster-images"] }
 # Rendering math calls every transcendental function through this crate
 # (`crates/excalidraw-render/src/portable_math.rs`, ADR-0007) so that both
 # supported targets compute the same doubles. It is already in the lock through
@@ -42,10 +51,9 @@ libm = "=0.2.16"
 miniz_oxide = "=0.8.9"
 moxcms = { version = "=0.9.0", default-features = false }
 png = "=0.17.16"
-pdf-writer = "=0.12.0"
 jpeg-encoder = "=0.6.1"
-resvg = { version = "=0.45.1", default-features = false, features = ["raster-images"] }
-roxmltree = "=0.20.0"
+resvg = { version = "=0.47.0", default-features = false, features = ["raster-images"] }
+roxmltree = "=0.21.1"
 regex = "=1.13.1"
 serde = { version = "=1.0.229", features = ["derive"] }
 # Held at 1.0.141 (#206): 1.0.142+ formats floats through zmij, which writes
@@ -64,24 +72,23 @@ ryu-js = { version = "=1.0.3", default-features = false }
 unicode-bidi = "=0.3.18"
 unicode-normalization = "=0.1.24"
 unicase = "=2.9.0"
-svg2pdf = { version = "=0.13.0", default-features = false, features = ["filters", "image", "text"] }
-svgtypes = "=0.15.3"
+svgtypes = "=0.16.1"
 # Host-only: CLI delivery staging and xtask scratch directories. Never a
 # renderer dependency, so random temporary names cannot reach output bytes.
 tempfile = "=3.27.0"
-tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-format", "std"] }
+tiny-skia = { version = "=0.12.0", default-features = false, features = ["png-format", "std"] }
 # `default-features = false` drops upstream's `cli` feature (and `clap`);
 # `portable-float` passes through to `brotli/portable-float`, which is what keeps
 # quality-11 WOFF2 bytes identical between native and wasm32 (ADR-0003). The
 # identity token in `excalidraw-fonts` still names the retired
 # fork until the single evidence refresh ADR-0003 schedules.
 ttf2woff2 = { version = "=0.13.3", default-features = false, features = ["portable-float"] }
-usvg = { version = "=0.45.1", default-features = false, features = ["text"] }
+usvg = { version = "=0.47.0", default-features = false, features = ["text"] }
 wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
 # `write_fonts::read` is the renderer's only font parser: read-fonts 0.44,
 # the version skera plans over. Name handling and the typed layout validator
 # (ADR-0020) read subsets through it, so the workspace has no direct read-fonts
-# dependency. svg2pdf's subsetter carries its own older copy.
+# dependency.
 write-fonts = { version = "=0.53.0", default-features = false, features = ["read", "tables"] }
 zune-jpeg = { version = "=0.5.15", default-features = false, features = ["std"] }
 

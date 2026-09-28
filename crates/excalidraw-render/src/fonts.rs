@@ -21,7 +21,7 @@ use excalidraw_fonts::{AssetIntegrityError, VerifiedAsset};
 #[cfg(test)]
 pub(crate) mod inspection {
     pub(crate) use excalidraw_fonts::{
-        find_asset, font_face_order, font_face_unicode_ranges, load_asset, load_noto_emoji_sfnt,
+        font_face_order, font_face_unicode_ranges, load_asset, load_noto_emoji_sfnt,
         AssetIntegrityError, AssetRecord, FontLicense, VerifiedAsset, CJK_SCALAR_RANGES_V1,
         NOTO_EMOJI_FAMILY, NOTO_EMOJI_IDENTITY,
     };
@@ -36,14 +36,6 @@ pub(crate) fn excalifont_latin() -> Option<&'static Face> {
     find_face(excalidraw_fonts::excalifont_basic_latin_sfnt_transformation().source_path)
 }
 
-/// Resolve manifested identities exactly; a matching path with a different
-/// digest is not the same face. Complete fallback programs have no chunk tag.
-pub(crate) fn official_chunk_digest(identity: &str) -> Option<&'static str> {
-    let (path, _) = identity.split_once("@sha256:")?;
-    let face = find_face(path)?;
-    (face.is_official_chunk() && face.identity() == identity).then(|| face.source_sha256())
-}
-
 pub(crate) fn font_notice(identity: &str) -> Option<&'static FontNotice> {
     if identity == excalidraw_fonts::NOTO_EMOJI_IDENTITY {
         return FamilyId::NotoEmoji.notice();
@@ -53,6 +45,17 @@ pub(crate) fn font_notice(identity: &str) -> Option<&'static FontNotice> {
     (face.identity() == identity)
         .then(|| face.family().notice())
         .flatten()
+}
+
+/// The family of a manifested identity, resolved as exactly as `font_notice`
+/// resolves it; the complete Noto Emoji face is its own family.
+pub(crate) fn font_family(identity: &str) -> Option<FamilyId> {
+    if identity == excalidraw_fonts::NOTO_EMOJI_IDENTITY {
+        return Some(FamilyId::NotoEmoji);
+    }
+    let (path, _) = identity.split_once("@sha256:")?;
+    let face = find_face(path)?;
+    (face.identity() == identity).then(|| face.family())
 }
 
 #[derive(Debug)]

@@ -189,7 +189,7 @@ fn type_discrimination_preserves_known_unknown_and_malformed_occurrences() {
                         OutputFormat::Pdf => {
                             let pdf =
                                 crate::common::pdf_inspect::pdf_text(result.artifact().bytes());
-                            assert!(pdf.contains("0 0 200 80 re"));
+                            assert!(pdf.contains("0 0 m\n200 0 l\n200 80 l\n0 80 l\nh\n"));
                             assert!(pdf.contains("[6 4] 0 d"));
                         }
                         _ => unreachable!(),
@@ -353,11 +353,13 @@ fn pdf_link_regions_follow_rotation_and_frame_clipping() {
             .map(|n| n.parse().unwrap())
             .collect()
     };
+    // The quadrilaterals' bounds, widened by the 0.001 pt Krilla adds so
+    // Acrobat does not ignore quad points on the rectangle's edge (ADR-0021).
     let rect = array("/Rect [");
-    let expected = [67.5, 37.5, 75.0, 67.5];
+    let expected = [67.499, 37.499, 75.001, 67.501];
     assert_eq!(rect.len(), 4);
     for (a, b) in rect.iter().zip(expected) {
-        assert!((a - b).abs() < 1e-9, "Rect {rect:?}");
+        assert!((a - b).abs() < 1e-5, "Rect {rect:?}");
     }
     let quad = array("/QuadPoints [");
     assert_eq!(quad.len(), 8);

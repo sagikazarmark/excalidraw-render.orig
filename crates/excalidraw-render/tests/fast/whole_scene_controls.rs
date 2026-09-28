@@ -3,7 +3,7 @@ use excalidraw_render::{
     Renderer, SceneDocument, Sizing,
 };
 
-use crate::common::pdf_inspect::{pdf_text, stream_text};
+use crate::common::pdf_inspect::{page_content, pdf_text};
 use crate::common::raster::decode_png;
 use crate::common::render::{render_source, render_with_request};
 use crate::common::svg::{font_family_attribute, LIBERATION_FAMILIES};
@@ -38,9 +38,14 @@ pub(super) fn chromium_css_colors_are_canonicalized_for_every_projection() {
     assert!(decoded.rgba.as_chunks::<4>().0.contains(&[64, 0, 191, 255]));
 
     let pdf = render_source(COLORED_RECTANGLE, OutputFormat::Pdf);
-    let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
-    assert!(content.contains(concat!("0.4 0.2 0.6 scn\n", "0 0 40 30 re\nf\n")));
-    assert!(content.contains("0.25098039215686274 0 0.7490196078431373 SCN\n"));
+    let content = page_content(pdf.artifact().bytes());
+    // PDF colors are Krilla's single-precision spelling of each 8-bit
+    // component (ADR-0021): 64/255 and 191/255 here.
+    assert!(content.contains(concat!(
+        "0.4 0.2 0.6 scn\n",
+        "0 0 m\n40 0 l\n40 30 l\n0 30 l\nh\nf\n"
+    )));
+    assert!(content.contains("0.2509804 0 0.7490196 SCN\n"));
 }
 
 #[test]
@@ -61,6 +66,8 @@ pub(super) fn canonical_color_alpha_is_preserved_by_every_projection() {
         "files":{}
     }"##;
     const ALPHA: &str = "0.5019607843137255";
+    // The same 128/255 at PDF's single precision (ADR-0021).
+    const PDF_ALPHA: &str = "0.5019608";
 
     let svg = render_source(source, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
@@ -84,10 +91,13 @@ pub(super) fn canonical_color_alpha_is_preserved_by_every_projection() {
 
     let pdf = render_source(source, OutputFormat::Pdf);
     let pdf_text = pdf_text(pdf.artifact().bytes());
-    assert_eq!(pdf_text.matches("/Type /ExtGState\n").count(), 1);
-    assert!(pdf_text.contains(&format!("/CA {ALPHA}\n/ca {ALPHA}\n")));
-    let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
-    assert_eq!(content.matches("/GS1 gs").count(), 2);
+    // The background's fill opacity and the outline's stroke opacity are one
+    // graphics state each.
+    assert_eq!(pdf_text.matches("/Type /ExtGState\n").count(), 2);
+    assert!(pdf_text.contains(&format!("/Type /ExtGState\n/ca {PDF_ALPHA}\n")));
+    assert!(pdf_text.contains(&format!("/Type /ExtGState\n/CA {PDF_ALPHA}\n")));
+    let content = page_content(pdf.artifact().bytes());
+    assert_eq!(content.matches(" gs\n").count(), 2);
 }
 
 #[test]
@@ -109,6 +119,8 @@ pub(super) fn element_opacity_multiplies_color_alpha_in_every_projection() {
         "files":{}
     }"##;
     const EFFECTIVE_ALPHA: &str = "0.25098039215686274";
+    // The same 64/255 at PDF's single precision (ADR-0021).
+    const PDF_EFFECTIVE_ALPHA: &str = "0.2509804";
 
     let svg = render_source_with_request(
         source,
@@ -138,7 +150,7 @@ pub(super) fn element_opacity_multiplies_color_alpha_in_every_projection() {
             .expect("transparent PDF request is valid"),
     );
     assert!(pdf_text(pdf.artifact().bytes())
-        .contains(&format!("/CA {EFFECTIVE_ALPHA}\n/ca {EFFECTIVE_ALPHA}\n")));
+        .contains(&format!("/Type /ExtGState\n/CA {PDF_EFFECTIVE_ALPHA}\n")));
 }
 
 #[test]
@@ -174,9 +186,9 @@ pub(super) fn dark_mode_lowers_scene_colors_before_every_projection() {
     assert!(rgba.as_chunks::<4>().0.contains(&[211, 211, 211, 255]));
 
     let dark_pdf = render_dark(source, OutputFormat::Pdf);
-    let content = stream_text(dark_pdf.artifact().bytes(), b"4 0 obj");
-    assert!(content.contains("0.07058823529411765 0.07058823529411765 0.07058823529411765 scn"));
-    assert!(content.contains("0.8274509803921568 0.8274509803921568 0.8274509803921568 SCN"));
+    let content = page_content(dark_pdf.artifact().bytes());
+    assert!(content.contains("0.07058824 0.07058824 0.07058824 scn"));
+    assert!(content.contains("0.827451 0.827451 0.827451 SCN"));
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let light = render_source(source, format);
@@ -217,9 +229,9 @@ fn renderer_owned_fallback_colors_follow_dark_mode() {
     assert!(rgba.as_chunks::<4>().0.contains(&[26, 28, 30, 255]));
 
     let pdf = render_dark(source, OutputFormat::Pdf);
-    let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
-    assert!(content.contains("0.10588235294117647 0.11372549019607843 0.11764705882352941 scn"));
-    assert!(content.contains("0.43137254901960786 0.4588235294117647 0.48627450980392156 SCN"));
+    let content = page_content(pdf.artifact().bytes());
+    assert!(content.contains("0.105882354 0.11372549 0.11764706 scn"));
+    assert!(content.contains("0.43137255 0.45882353 0.4862745 SCN"));
 }
 
 #[test]
@@ -249,7 +261,7 @@ fn empty_and_fallback_only_scenes_use_the_scene_background() {
         assert_eq!(&rgba[..4], &[102, 51, 153, 255]);
 
         let pdf = render_source(source, OutputFormat::Pdf);
-        let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
+        let content = page_content(pdf.artifact().bytes());
         assert!(content.contains("0.4 0.2 0.6 scn"));
     }
 }

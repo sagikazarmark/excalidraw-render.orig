@@ -83,7 +83,7 @@ fn crop_has_independent_pixel_and_vector_semantics() {
         if format == OutputFormat::Pdf {
             let pdf = crate::common::pdf_inspect::pdf_text(result.artifact().bytes());
             assert!(pdf.contains("/Subtype /Image"));
-            assert!(pdf.contains("/Im0 Do"));
+            assert!(pdf.contains("/x0 Do"));
         }
     }
     // Nonzero X and Y offsets: source 2x2 cropped to its lower-right texel.
@@ -104,7 +104,9 @@ fn crop_has_independent_pixel_and_vector_semantics() {
             ));
         } else {
             let pdf = crate::common::pdf_inspect::pdf_text(result.artifact().bytes());
-            assert!(pdf.contains("-40 0 0 40 40 0 cm\n/Im0 Do"));
+            // The element-space matrix -40 0 0 40 40 0 at the 10 px padding,
+            // in top-down page points (ADR-0021).
+            assert!(pdf.contains("-30 0 0 -30 37.5 22.5 cm\n/x0 Do"));
         }
     }
 }

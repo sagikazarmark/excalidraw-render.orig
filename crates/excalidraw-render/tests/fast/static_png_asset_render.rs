@@ -63,10 +63,8 @@ fn pdf_embeds_static_png_as_a_lossless_rgb_image_with_a_soft_mask() {
     let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Subtype /Image"));
-    assert!(pdf.contains("/ColorSpace [/ICCBased 5 0 R]"));
-    assert!(pdf.contains("/ColorSpace /DeviceGray"));
-    assert!(pdf.contains("/SMask "));
-    assert!(pdf.contains("/Im0 Do"));
+    assert!(crate::common::pdf_inspect::images_are_icc_rgb_with_soft_masks(&pdf));
+    assert!(pdf.contains("/x0 Do"));
     assert!(!pdf.contains("pdf.raster-fallback"));
     assert!(outcome.report().diagnostics().is_empty());
 }
@@ -452,8 +450,8 @@ fn duplicate_semantic_png_bytes_share_one_pdf_resource_but_render_twice() {
     let outcome = render(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(outcome.artifact().bytes());
 
-    assert_eq!(pdf.matches("/ColorSpace [/ICCBased 5 0 R]").count(), 1);
-    assert_eq!(pdf.matches("/Im0 Do").count(), 2);
+    assert_eq!(crate::common::pdf_inspect::color_images(&pdf).len(), 1);
+    assert_eq!(pdf.matches("/x0 Do").count(), 2);
     assert!(outcome.report().diagnostics().is_empty());
 }
 
@@ -737,7 +735,12 @@ fn crop_and_negative_scale_map_the_same_static_png_source_in_every_format() {
         .bytes()
         .to_vec();
     let pdf = pdf_text(&pdf_bytes);
-    assert!(pdf.contains("-30 0 0 20 30 0 cm\n/Im0 Do"));
+    // The element-space image matrix -30 0 0 20 30 0 (the uncropped 30 x 20
+    // source mirrored in both axes), placed at the 10 px padding and mapped to
+    // top-down points (x 0.75, y 30 - 0.75 y), with the visible 20 x 20
+    // viewport clipped first (ADR-0021: Krilla writes page-space geometry).
+    assert!(pdf.contains("7.5 22.5 m\n22.5 22.5 l\n22.5 7.5 l\n7.5 7.5 l\nh\nW\nn\n"));
+    assert!(pdf.contains("-22.5 0 0 -15 30 22.5 cm\n/x0 Do"));
 }
 
 #[test]

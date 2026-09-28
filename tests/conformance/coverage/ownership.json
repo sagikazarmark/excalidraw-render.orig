@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "0a66ff95c5953785d0a347e7ea35e981fb908af0a99bfd5d9475585be14795f3",
+  "catalog_sha256": "3489caf4f086b3636d6818479c0aca9e94eb41a52c4dbec725336d9918302a76",
   "approval": null,
   "assignments": [
     {
@@ -1806,7 +1806,7 @@
           "kind": "record",
           "record": {
             "path": "tests/conformance/coverage/pdf-judgments.json",
-            "sha256": "152cc9371a099354a258a67cd7a879d68d17a33a2d6ba829f2d64566fff67a51"
+            "sha256": "8973deb1cf794770395f3dfc8af5ae29a018d6158c6f59cc04011f5980443355"
           },
           "approval_subject_sha256": "sha256:f0b9119f08e53d2d51873960722d4ab15619f6e2510291aa0389e6ad2f390f4a",
           "verifier": "pdf-judgments"
@@ -50450,16 +50450,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v26",
+            "case": "representative.stage4-frames-text-assets.v27",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "84fe8e1cb830e12baf1a2d2538285b4589206811e5a3181293c738dba1017e6c"
+              "sha256": "35ed30b3177f048b2c22c2c813bae723d67bf749842ee85ab4ecf4e84578377c"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v26/manifest.json",
-              "sha256": "88e49b55fc79ae7038219064d37ca48f92a8b47939552b014a4183031aef410e"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v27/manifest.json",
+              "sha256": "a3e68d5f65aad8d4071c205b256b82ab59d29603edf2e72da35b36640fbfffb0"
             },
-            "approval_subject_sha256": "sha256:8be7a55b44d48f33d9fd7d7614bb2e54d9ffb8e2d182bb4e51861d5f8d5fb256",
+            "approval_subject_sha256": "",
             "command": [
               "cargo",
               "run",
@@ -50470,7 +50470,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v26"
+              "tests/conformance/candidates/stage4-frames-text-assets-v27"
             ]
           }
         },

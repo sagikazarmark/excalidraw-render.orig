@@ -1466,7 +1466,7 @@ fn logical_glyph_ids(line: &text::ResolvedLabel, index: usize) -> Vec<u16> {
 
 /// The glyph ids `face` maps `characters` to.
 fn glyph_ids(font_family: i32, characters: &str) -> Vec<u16> {
-    let (_, _, sfnt) = text::OfficialFont::load(font_family, characters)
+    let (_, sfnt) = text::OfficialFont::load(font_family, characters)
         .ok()
         .unwrap_or_else(|| panic!("family {font_family} loads for {characters:?}"))
         .into_parts();
@@ -2036,7 +2036,7 @@ fn line_terminators_do_not_steer_face_selection() {
     // never shaped, so it picks the face `\n` text would.
     for family in [1, 2, 3, 5, 6, 7, 8, 9] {
         let identity = |text: &str| {
-            let (_, identity, _) = text::OfficialFont::load(family, text)
+            let (identity, _) = text::OfficialFont::load(family, text)
                 .ok()
                 .unwrap_or_else(|| panic!("family {family} loads for {text:?}"))
                 .into_parts();

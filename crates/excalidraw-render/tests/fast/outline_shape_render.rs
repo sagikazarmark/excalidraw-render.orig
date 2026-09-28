@@ -48,7 +48,9 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
                 Some("267d2f7b19997dbc9df1e0b5643a3bfeccfd317b78914428db09ab5a9064f170")
             }
             OutputFormat::Pdf => {
-                Some("052c33fd7106ce06f53fcceca9d91239abb53286a1cf70da50a78ed3287b1ebb")
+                // Moved when Krilla became the PDF writer (ADR-0021), with
+                // the same Rough paths.
+                Some("906fd0c4b9df540c1f5e59b781c3f36a6f71c3cb8ad662a5eb7dbeb96ba20df6")
             }
             _ => unreachable!("the test enumerates every revision-1 output format"),
         };

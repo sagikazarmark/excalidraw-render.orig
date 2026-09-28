@@ -371,10 +371,15 @@ fn forbidden_scope_and_recovery_envelope() {
                 )
                 .unwrap();
             same_image(&actual, &reference);
+            // The notice travels in the manifest, which PDF carries as a
+            // Flate-filtered attachment (ADR-0021).
+            let carried = if format == OutputFormat::Pdf {
+                crate::common::pdf_inspect::inflate_streams(actual.artifact().bytes())
+            } else {
+                actual.artifact().bytes().to_vec()
+            };
             assert_eq!(
-                actual
-                    .artifact()
-                    .bytes()
+                carried
                     .windows(b"font-awesome".len())
                     .any(|bytes| bytes == b"font-awesome"),
                 paint

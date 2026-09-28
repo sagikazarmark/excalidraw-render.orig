@@ -133,19 +133,43 @@ fn the_pdf_rotates_a_rough_linear_element_about_its_curve_box_and_a_smooth_one_a
     // box, up to a couple of pixels here: the arrow at roughness 2 sits
     // 1.57 px left of where the SVG puts it, the two-point arrow at
     // roughness 1 0.86 px right and 0.53 px down.
+    // Krilla writes each drawing's matrix composed with the page's
+    // logical-pixel mapping `x' = 0.75 x, y' = H - 0.75 y` (ADR-0021); undoing
+    // it recovers the element matrix, which every drawing of one element (its
+    // outline, then its arrowheads) repeats.
     let pdf = pdf_text(&render_artifact(&case_scene(), OutputFormat::Pdf));
-    let matrices: Vec<[f64; 6]> = pdf
-        .lines()
-        .filter(|line| line.ends_with(" cm") && !line.starts_with("0.75 0 0 -0.75"))
-        .map(|line| {
-            let numbers: Vec<f64> = line
-                .split(' ')
-                .take(6)
-                .map(|token| token.parse().expect("matrix components are numbers"))
-                .collect();
-            numbers.try_into().expect("a cm carries six components")
-        })
-        .collect();
+    let height: f64 = pdf
+        .split("/MediaBox [0 0 ")
+        .nth(1)
+        .and_then(|rest| rest.split(']').next())
+        .and_then(|rest| rest.split(' ').nth(1))
+        .expect("the page has a media box")
+        .parse()
+        .expect("the page height is a number");
+    let mut matrices: Vec<[f64; 6]> = Vec::new();
+    for line in pdf.lines().filter(|line| line.ends_with(" cm")) {
+        let numbers: Vec<f64> = line
+            .split(' ')
+            .take(6)
+            .map(|token| token.parse().expect("matrix components are numbers"))
+            .collect();
+        let [a, b, c, d, e, f]: [f64; 6] = numbers.try_into().expect("a cm carries six components");
+        let element = [
+            a / 0.75,
+            -b / 0.75,
+            c / 0.75,
+            -d / 0.75,
+            e / 0.75,
+            (height - f) / 0.75,
+        ];
+        let same = |x: &[f64; 6], y: &[f64; 6]| x.iter().zip(y).all(|(p, q)| (p - q).abs() < 1e-4);
+        if same(&element, &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0])
+            || matrices.last().is_some_and(|last| same(last, &element))
+        {
+            continue;
+        }
+        matrices.push(element);
+    }
     assert_eq!(matrices.len(), 6, "one element matrix per linear element");
     for ((id, official, rough), matrix) in OFFICIAL_TRANSFORMS.iter().zip(&matrices) {
         let (expected_x, expected_y) =
@@ -161,28 +185,33 @@ fn the_pdf_rotates_a_rough_linear_element_about_its_curve_box_and_a_smooth_one_a
                  to {distance} px"
             );
         } else {
+            // PDF numbers are single precision (ADR-0021), far below the
+            // 0.1 px the rough placements differ by.
             assert!(
-                distance < 1e-9,
+                distance < 1e-4,
                 "{id}: at roughness 0 the curve's box is the points' box, so the PDF places \
                  the element where the SVG does; they differ by {distance} px"
             );
         }
     }
-    // The exact placements, for the record: the curve-centre `e f` of each
-    // rough element's `cm`.
-    let placements: Vec<String> = matrices
-        .iter()
-        .map(|matrix| format!("{} {}", matrix[4], matrix[5]))
-        .collect();
-    assert_eq!(
-        placements,
-        [
-            "97.23558281494505 9.889289697332622",
-            "178.18471419585404 32.12689199348241",
-            "384.58717248073543 34.04690040389817",
-            "170.7067370739422 167.0187242376655",
-            "358.39697677985663 192.16991974942275",
-            "563.7258460440808 53.51881667524224",
-        ]
-    );
+    // The placements, for the record: the curve-centre `e f` of each rough
+    // element's `cm` as the renderer computes it, which the single-precision
+    // PDF carries to within 1e-4 px (ADR-0021).
+    let recorded = [
+        (97.23558281494505, 9.889289697332622),
+        (178.18471419585404, 32.12689199348241),
+        (384.58717248073543, 34.04690040389817),
+        (170.7067370739422, 167.0187242376655),
+        (358.39697677985663, 192.16991974942275),
+        (563.7258460440808, 53.51881667524224),
+    ];
+    assert_eq!(matrices.len(), recorded.len());
+    for (matrix, (x, y)) in matrices.iter().zip(recorded) {
+        assert!(
+            (matrix[4] - x).abs() < 1e-4 && (matrix[5] - y).abs() < 1e-4,
+            "placement {} {} is not {x} {y}",
+            matrix[4],
+            matrix[5]
+        );
+    }
 }

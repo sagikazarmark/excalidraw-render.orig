@@ -55,8 +55,14 @@ fn an_uncropped_fractional_image_fills_the_rounded_viewport_in_svg_and_pdf_and_t
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
+    // The rounded 41 x 40 viewport clips, then the asset fills it: in
+    // top-down page points (ADR-0021) at the 10 px padding on the 45.3 pt page,
+    // whose single-precision bottom edge Krilla spells 7.799999.
     assert!(
-        pdf.contains("0 0 41 40 re\nW\nn\n41 0 0 -40 0 40 cm\n/Im0 Do"),
+        pdf.contains(concat!(
+            "7.5 37.8 m\n38.25 37.8 l\n38.25 7.799999 l\n7.5 7.799999 l\nh\nW\nn\n",
+            "/Artifact BMC\nq\n30.75 0 0 30 7.5 7.799999 cm\n/x0 Do"
+        )),
         "PDF image viewport is not the rounded reference size: {pdf}"
     );
 
@@ -104,11 +110,15 @@ pub(super) fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_
     );
 
     // The PDF clip is the mirrored viewport and the content matrix mirrors the
-    // asset about the unrounded center: `x' = 40.5 - 41 * u`.
+    // asset about the unrounded center: `x' = 40.5 - 41 * u`, which is
+    // `37.875 - 30.75 * u` in page points.
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
     assert!(
-        pdf.contains("-0.5 0 41 40 re\nW\nn\n-41 0 0 -40 40.5 40 cm\n/Im0 Do"),
+        pdf.contains(concat!(
+            "7.125 37.8 m\n37.875 37.8 l\n37.875 7.799999 l\n7.125 7.799999 l\nh\nW\nn\n",
+            "/Artifact BMC\nq\n-30.75 0 0 30 37.875 7.799999 cm\n/x0 Do"
+        )),
         "PDF does not mirror the rounded viewport about the unrounded center: {pdf}"
     );
 
@@ -186,8 +196,8 @@ pub(super) fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewpo
     let pdf = pdf_text(&pdf);
     assert!(
         pdf.contains(concat!(
-            "0 0 21 20.5 re\nW\nn\n",
-            "-30.75 0 0 20.5 30.75 0 cm\n/Im0 Do"
+            "7.5 22.875 m\n23.25 22.875 l\n23.25 7.5 l\n7.5 7.5 l\nh\nW\nn\n",
+            "/Artifact BMC\nq\n-23.0625 0 0 -15.375 30.5625 22.875 cm\n/x0 Do"
         )),
         "PDF lacks the reference visible rectangle and content matrix: {pdf}"
     );
@@ -224,10 +234,11 @@ pub(super) fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewpo
 
 #[test]
 fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
-    // svg2pdf Forms carry SVG's Y axis inverted, so PDF draws a nested SVG's
-    // form Y-inverted in place: about the content rectangle, not the
-    // element's center. The two coincide only while the content is the
+    // PDF draws a nested SVG top-down within its content rectangle, not about
+    // the element's center. The two coincide only while the content is the
     // element's own rectangle, which a rounded viewport or a crop breaks.
+    // The tree is drawn in place (ADR-0021), so its placement is the matrix
+    // each of its paths is drawn under, in top-down page points.
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><rect width="20" height="10" fill="#ff0000"/><rect y="10" width="20" height="10" fill="#0000ff"/></svg>"##;
 
     // Uncropped, 40x40.4: the content is the rounded 40x40 viewport.
@@ -239,8 +250,12 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
     assert!(
-        pdf.contains("0 0 40 40 re\nW\nn\n40 0 0 -40 0 40 cm\n/Svg0 Do"),
-        "PDF does not invert the form within the rounded viewport: {pdf}"
+        pdf.contains("7.5 37.8 m\n37.5 37.8 l\n37.5 7.799999 l\n7.5 7.799999 l\nh\nW\nn\n"),
+        "PDF does not clip to the rounded viewport: {pdf}"
+    );
+    assert!(
+        pdf.contains("1.5 0 0 -1.5 7.5 37.8 cm\n"),
+        "PDF does not draw the tree top-down within the rounded viewport: {pdf}"
     );
 
     // Cropped to the source's red top half into 20x10: the whole 20x20 source
@@ -258,15 +273,18 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
     assert!(
-        pdf.contains("0 0 20 10 re\nW\nn\n20 0 0 -20 0 20 cm\n/Svg0 Do"),
-        "PDF does not invert the cropped form within its content rectangle: {pdf}"
+        pdf.contains("7.5 15 m\n22.5 15 l\n22.5 7.5 l\n7.5 7.5 l\nh\nW\nn\n"),
+        "PDF does not clip to the cropped viewport: {pdf}"
+    );
+    assert!(
+        pdf.contains("0.75 0 0 -0.75 7.5 15 cm\n"),
+        "PDF does not draw the cropped tree top-down within its content rectangle: {pdf}"
     );
     let png = render_png(&scene);
     assert_eq!(png.pixel(20, 15), [255, 0, 0, 255]);
 
     // The same crop flipped vertically: the element's flip about its center
-    // composes with the form's inversion into an upright form under the
-    // mirrored viewport.
+    // turns the tree's top-down axis upward under the mirrored viewport.
     let scene = asset_image_scene(
         "image/svg+xml",
         nested,
@@ -277,8 +295,8 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
     assert!(
-        pdf.contains("0 0 20 10 re\nW\nn\n20 0 0 20 0 -10 cm\n/Svg0 Do"),
-        "PDF does not compose the flip with the form inversion: {pdf}"
+        pdf.contains("0.75 0 0 0.75 7.5 7.5 cm\n"),
+        "PDF does not compose the flip with the tree's top-down axis: {pdf}"
     );
     let png = render_png(&scene);
     assert_eq!(png.pixel(20, 15), [255, 0, 0, 255]);

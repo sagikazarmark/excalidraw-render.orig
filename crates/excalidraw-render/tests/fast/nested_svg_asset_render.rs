@@ -37,9 +37,13 @@ fn basic_nested_svg_renders_in_svg_png_and_pdf() {
 
     let pdf = pdf_text(&render_artifact(&scene, OutputFormat::Pdf));
     assert!(pdf.starts_with("%PDF-1.7"));
-    assert!(pdf.contains("/Svg0 Do"));
-    assert!(pdf.contains("20 0 0 -10 0 10 cm\n/Svg0 Do"));
-    assert!(pdf.contains("/Subtype /Form"));
+    // The nested tree is drawn in place as vector paths (ADR-0021): at the
+    // 10 px padding on the 22.5 pt page, one SVG unit per logical pixel.
+    assert!(pdf.contains(concat!(
+        "0.75 0 0 -0.75 7.5 15 cm\n/c0 cs\n1 0 0 scn\n",
+        "0 0 m\n10 0 l\n10 10 l\n0 10 l\nh\nf\n"
+    )));
+    assert!(pdf.contains("0 0 1 scn\n10 0 m\n20 0 l\n20 10 l\n10 10 l\nh\nf\n"));
     assert!(!pdf.contains("/Subtype /Image"));
 }
 
@@ -788,7 +792,8 @@ fn closed_vector_native_families_remain_native_pdf_content() {
 #[test]
 fn every_native_blend_mode_remains_vector_pdf_content() {
     let blends = [
-        ("normal", "/BM /Normal"),
+        // Normal is PDF's default blend, which Krilla leaves unwritten.
+        ("normal", ""),
         ("multiply", "/BM /Multiply"),
         ("screen", "/BM /Screen"),
         ("overlay", "/BM /Overlay"),
@@ -820,7 +825,11 @@ fn every_native_blend_mode_remains_vector_pdf_content() {
             .expect("native blend renders without fallback");
         let pdf = pdf_text(outcome.artifact().bytes());
 
-        assert!(pdf.contains(pdf_name), "missing PDF blend {blend}");
+        if pdf_name.is_empty() {
+            assert!(!pdf.contains("/BM "), "unexpected PDF blend for {blend}");
+        } else {
+            assert!(pdf.contains(pdf_name), "missing PDF blend {blend}");
+        }
         assert!(!pdf.contains("/Subtype /Image"));
         assert!(!outcome
             .report()
@@ -877,7 +886,8 @@ fn nested_bmp_preserves_direct_svg_bytes_and_normalizes_png_and_pdf() {
 
     let pdf = pdf_text(&render_artifact(&scene, OutputFormat::Pdf));
     assert!(pdf.contains("/Subtype /Image"));
-    assert!(pdf.contains("/Subtype /Form"));
+    assert_eq!(crate::common::pdf_inspect::color_images(&pdf).len(), 1);
+    assert!(pdf.contains(" Do\n"), "the normalized BMP is painted");
 }
 
 #[test]
@@ -900,7 +910,7 @@ fn unavailable_nested_sans_text_uses_a_deterministic_fallback_in_png_and_pdf() {
     );
 
     let pdf = pdf_text(&render_artifact(&scene, OutputFormat::Pdf));
-    assert!(pdf.contains("/Subtype /Form"));
+    assert!(!pdf.contains("/Type /Font"));
     assert!(
         pdf.contains(" c\n"),
         "fallback glyphs must remain as vector outlines"
@@ -935,7 +945,6 @@ fn safe_class_styles_preserve_nested_opacity_and_layer_order() {
     assert!(embedded_svg(svg).contains("<style>"));
 
     let pdf = pdf_text(&render_artifact(&scene, OutputFormat::Pdf));
-    assert!(pdf.contains("/Subtype /Form"));
     assert!(pdf.contains("/ca 0.5"));
 }
 

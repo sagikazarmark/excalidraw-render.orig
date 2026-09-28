@@ -52,10 +52,8 @@ fn pdf_embeds_normalized_jpeg_losslessly_with_a_soft_mask_and_no_fallback() {
     let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Subtype /Image"));
-    assert!(pdf.contains("/ColorSpace [/ICCBased 5 0 R]"));
-    assert!(pdf.contains("/ColorSpace /DeviceGray"));
-    assert!(pdf.contains("/SMask "));
-    assert!(pdf.contains("/Im0 Do"));
+    assert!(crate::common::pdf_inspect::images_are_icc_rgb_with_soft_masks(&pdf));
+    assert!(pdf.contains("/x0 Do"));
     assert!(!pdf.contains("/DCTDecode"));
     assert!(!pdf.contains("pdf.raster-fallback"));
     assert!(outcome.report().diagnostics().is_empty());

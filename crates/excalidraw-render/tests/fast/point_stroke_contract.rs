@@ -402,7 +402,7 @@ fn placeholder_has_the_specified_visual_grammar() {
             }
             OutputFormat::Pdf => {
                 let pdf = crate::common::pdf_inspect::pdf_text(result.artifact().bytes());
-                assert!(pdf.contains("0 0 200 80 re"));
+                assert!(pdf.contains("0 0 m\n200 0 l\n200 80 l\n0 80 l\nh\n"));
                 assert!(pdf.contains("[6 4] 0 d"));
                 assert!(pdf.contains("200 80 l"));
                 assert!(!pdf.contains("/Subtype /Image"));

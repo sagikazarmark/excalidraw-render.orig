@@ -1,24 +1,22 @@
 //! The three policies by which an `f64` becomes artifact text, kept together
-//! so a reviewer can compare them:
+//! so a reviewer can compare them. PDF numbers are Krilla's spelling
+//! (ADR-0021); PDF Rough coordinates still take the Rough policy's value.
 //!
 //! - `push_rough_number`: Rough.js's path serialization, a fixed two-decimal
 //!   spelling with trailing zeros and a vanishing sign dropped, using the
 //!   pinned ECMAScript formatter's `toFixed(2)` rounding.
-//!   Both the SVG and the PDF backend spell Rough path coordinates with it.
+//!   The SVG backend spells Rough path coordinates with it; the PDF backend
+//!   draws the number it spells.
 //! - `ecmascript_number`: ECMAScript `Number#toString`, the shortest
 //!   round-trip digits with exponent notation from 1e21 and below 1e-6 and an
 //!   explicit plus sign on positive exponents. The freedraw port reduces its
 //!   coordinates through it the way the reference's `toFixed`-free path
 //!   builder does.
-//! - `push_svg_number` and `format_pdf_number`: Rust `Display`, which never
-//!   uses exponent notation, with negative zero canonicalized to zero. The PDF
-//!   variant additionally expands an exponent should one ever appear, since
-//!   PDF numbers have no exponent syntax.
+//! - `push_svg_number`: Rust `Display`, which never uses exponent notation,
+//!   with negative zero canonicalized to zero.
 //!
 //! `ecmascript_round` (`Math.round`) stays in `geometry`: it is a rounding
 //! policy applied to coordinates, not a spelling.
-
-use std::fmt::Write as _;
 
 use super::FormatEncodeError;
 
@@ -66,92 +64,9 @@ pub(super) fn push_svg_number<W: std::fmt::Write + ?Sized>(
         .map_err(|_| FormatEncodeError::Encoding(format!("failed to write {subject}")))
 }
 
-pub(super) fn format_pdf_number(value: f64, subject: &str) -> Result<String, FormatEncodeError> {
-    if !value.is_finite() {
-        return Err(FormatEncodeError::Encoding(format!(
-            "{subject} must be finite"
-        )));
-    }
-    let value = if value == 0.0 { 0.0 } else { value };
-    let mut rendered = String::new();
-    rendered
-        .try_reserve_exact(32)
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_number",
-        })?;
-    write!(rendered, "{value}")
-        .map_err(|_| FormatEncodeError::Encoding(format!("failed to write {subject}")))?;
-    let Some(exponent_marker) = rendered.find(['e', 'E']) else {
-        return Ok(rendered);
-    };
-    expand_exponent(&rendered, exponent_marker, subject)
-}
-
-fn expand_exponent(
-    rendered: &str,
-    exponent_marker: usize,
-    subject: &str,
-) -> Result<String, FormatEncodeError> {
-    let (mantissa, exponent) = rendered.split_at(exponent_marker);
-    let exponent = exponent[1..]
-        .parse::<i32>()
-        .map_err(|_| FormatEncodeError::Encoding(format!("failed to expand {subject} exponent")))?;
-    let (negative, unsigned) = mantissa
-        .strip_prefix('-')
-        .map_or((false, mantissa), |unsigned| (true, unsigned));
-    let decimal = unsigned.find('.').unwrap_or(unsigned.len());
-    let mut digits = String::new();
-    digits
-        .try_reserve_exact(unsigned.len())
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_number",
-        })?;
-    digits.extend(unsigned.chars().filter(|character| *character != '.'));
-    let decimal = i32::try_from(decimal)
-        .map_err(|_| FormatEncodeError::Encoding(format!("{subject} is too long")))?
-        + exponent;
-    let mut output = String::new();
-    output
-        .try_reserve(
-            rendered
-                .len()
-                .saturating_add(exponent.unsigned_abs() as usize),
-        )
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_number",
-        })?;
-    if negative {
-        output.push('-');
-    }
-    if decimal <= 0 {
-        output.push_str("0.");
-        for _ in 0..decimal.unsigned_abs() {
-            output.push('0');
-        }
-        output.push_str(&digits);
-    } else if usize::try_from(decimal).is_ok_and(|decimal| decimal >= digits.len()) {
-        output.push_str(&digits);
-        for _ in digits.len()..usize::try_from(decimal).unwrap_or(digits.len()) {
-            output.push('0');
-        }
-    } else {
-        let decimal = usize::try_from(decimal)
-            .map_err(|_| FormatEncodeError::Encoding(format!("{subject} is too long")))?;
-        output.push_str(&digits[..decimal]);
-        output.push('.');
-        output.push_str(&digits[decimal..]);
-    }
-    Ok(output)
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{
-        ecmascript_number, expand_exponent, format_pdf_number, push_rough_number, push_svg_number,
-    };
+    use super::{ecmascript_number, push_rough_number, push_svg_number};
 
     fn rough(value: f64) -> String {
         let mut output = String::new();
@@ -252,23 +167,5 @@ mod tests {
         assert_eq!(svg(0.5), "0.5");
         assert_eq!(svg(1e-7), "0.0000001");
         assert!(push_svg_number(&mut String::new(), f64::INFINITY, "test number").is_err());
-
-        assert_eq!(format_pdf_number(-0.0, "test number").unwrap(), "0");
-        assert_eq!(format_pdf_number(12.75, "test number").unwrap(), "12.75");
-        assert!(format_pdf_number(f64::NAN, "test number").is_err());
-    }
-
-    #[test]
-    fn pdf_exponent_expansion_writes_plain_decimals() {
-        assert_eq!(expand_exponent("1.5e3", 3, "test number").unwrap(), "1500");
-        assert_eq!(expand_exponent("1e2", 1, "test number").unwrap(), "100");
-        assert_eq!(
-            expand_exponent("-2.5e-3", 4, "test number").unwrap(),
-            "-0.0025"
-        );
-        assert_eq!(
-            expand_exponent("12.5e-1", 4, "test number").unwrap(),
-            "1.25"
-        );
     }
 }

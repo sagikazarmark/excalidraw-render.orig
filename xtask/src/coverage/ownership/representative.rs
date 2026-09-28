@@ -253,7 +253,10 @@ mod tests {
             gate::read(&root, "native.svg").unwrap(),
             read(&format!("{old}/native.svg")).unwrap()
         );
-        crate::conformance_pdf_bridge::validate(&gate::read(&root, "native.pdf").unwrap()).unwrap();
+        crate::conformance_candidate_exceptions::backend_successor(
+            &gate::read(&root, "native.pdf").unwrap(),
+        )
+        .unwrap();
         let status = std::process::Command::new("node")
             .current_dir(repo_root())
             .args([

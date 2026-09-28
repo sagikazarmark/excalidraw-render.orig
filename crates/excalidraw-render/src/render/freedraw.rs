@@ -57,10 +57,6 @@ fn operation_bounds(operations: &[PathOperation]) -> Option<(f64, f64, f64, f64)
 }
 
 impl ProjectedPath {
-    pub(super) fn operation_count(&self) -> usize {
-        self.operations.len()
-    }
-
     pub(super) fn bounds(&self) -> Option<(f64, f64, f64, f64)> {
         operation_bounds(&self.operations)
     }

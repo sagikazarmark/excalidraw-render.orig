@@ -35,7 +35,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(PROJECT_STRUCTURE)),
-        "442f0cb2580a4066d64bcb924eaa6e070252faca2fa2b37fa4f34c81ff600b1b"
+        "04febc1ee78a4dd01daceac2d3eeeb0d4910c2da48739bce2135b246da5f8d55"
     );
     let first = render_project_operations();
     let second = render_project_operations();
@@ -54,9 +54,14 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     // Moved with #171: the scene's arrow has a `circle` start and a `triangle`
     // end at roughness 1, and the triangle is now drawn at 1, not at the
     // start head's 0.5, so the content stream and `operation_sha256` moved.
+    // Moved with #209 (ADR-0021 slice 1): trees reach svg2pdf through the
+    // usvg 0.47 -> 0.45 SVG bridge, and one pattern coordinate rounds
+    // differently in the last `f32` digit; the viewer gates hold. Moved again
+    // when Krilla became the PDF writer (ADR-0021): every structure is
+    // Krilla's, and both viewer gates and the structural gate hold.
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "50180ecf1822d7d573ea78cc6375cd3f83af8ef2748422b7e9b3d52a1b7ba6dc"
+        "7f85f04d3f49585a2b85477c830ee7f69551e7cf6511460cc4e0f5a9cf1e7a31"
     );
 
     let pdf = pdf_text(first.artifact().bytes());
@@ -73,11 +78,13 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
         "/ShadingType 2",
         "/ShadingType 3",
         "/BM /Multiply",
-        "/Type /OutputIntent",
-        "/Type /Metadata",
+        "/F (artifact-manifest.json)",
     ] {
         assert!(pdf.contains(structure), "missing PDF structure {structure}");
     }
+    // Krilla claims no output intent and writes no XMP packet (ADR-0021).
+    assert!(!pdf.contains("/OutputIntents"));
+    assert!(!pdf.contains("/Type /Metadata"));
     assert!(pdf.matches("/Subtype /Link").count() >= 2);
     assert!(pdf.matches("W\nn\n").count() >= 1);
 }
@@ -86,16 +93,20 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
 fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
     assert_eq!(
         format!("{:x}", Sha256::digest(FALLBACK_STRUCTURE)),
-        "207ff3e6b4261d7293e8bb195160c4bf4b59f84814ff35701c83270b6373660f"
+        "7afc81f4873227495ecca61ffa82b86799cad7a5b29d4f2bae4205d38f665740"
     );
     let first = render_isolated_fallback();
     let second = render_isolated_fallback();
 
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     assert_eq!(first.report(), second.report());
+    // Moved with #209 (ADR-0021 slice 1): the reparsed tree wraps the
+    // fallback image in an identity `q 1 0 0 1 0 0 cm Q` group; the image
+    // bytes and the viewer gates are unchanged. Moved again when Krilla became
+    // the PDF writer (ADR-0021); the fallback's pixels are unchanged.
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "64bee9cbb44081c7202b47b392fbc8859164ca3a3f383bdc4f54d7cc87b50513"
+        "767770926e5f9f8f0e5eafb9a00e4ae7073a6ca401af589f6d0944a6746e8a23"
     );
     let [diagnostic] = first.report().diagnostics() else {
         panic!("one isolated closure produces one diagnostic");
@@ -104,7 +115,6 @@ fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
 
     let pdf = pdf_text(first.artifact().bytes());
     assert_eq!(pdf.matches("/Subtype /Image").count(), 2);
-    assert!(pdf.contains("/Subtype /Form"));
     assert!(pdf.contains("/Width 20"));
     assert!(pdf.contains("/Height 10"));
 }
@@ -187,7 +197,7 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(NESTED_NATIVE_STRUCTURE)),
-        "c767ae971e4d3bd73e7bee8a44cfd91ea1cdd3cbfaf2909db2ba4ade8ccb8f71"
+        "c4d1011ccdaf13833a74381433fbc21dffd1b146531b085193c1693b8bc6c5ba"
     );
     let outcome = render_nested_native_operations();
     let repeated = render_nested_native_operations();
@@ -195,9 +205,15 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
 
     assert_eq!(outcome.artifact().bytes(), repeated.artifact().bytes());
     assert_eq!(outcome.report(), repeated.report());
+    // Moved with #209 (ADR-0021 slice 1): after the usvg 0.47 -> 0.45 SVG
+    // bridge, path coordinates differ in the last `f32` digit, `-0` and
+    // `4.4e-16` residues print as `0`, and one identity group is added
+    // (three operators); the viewer gates hold. Moved again when Krilla became
+    // the PDF writer (ADR-0021): the nested tree is drawn in place, and both
+    // viewer gates and the structural gate hold.
     assert_eq!(
         format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
-        "8dea3f9c57db8bd680076875802bc7b39e144b27e6638e1cf79b4d88dd979ddc"
+        "9fa245dfdbd460c5b1bb0f8976db2e90fa7a9eeba1778b85d027363a66635dfd"
     );
     assert!(outcome.report().diagnostics().is_empty());
     for structure in [

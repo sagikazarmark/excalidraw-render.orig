@@ -204,9 +204,10 @@ fn compatibility_placeholder_labels_carry_their_derived_font_notice_and_artifact
     assert!(pdf.contains("/ActualText <FEFF2026>"));
     assert!(pdf.contains("/Subtype /Type0"));
     assert!(pdf.contains("/ToUnicode "));
-    assert!(pdf.contains("BT\n/F1 14 Tf\n"));
-    assert!(pdf.contains("/Type /Metadata\n/Subtype /XML"));
-    assert!(pdf.contains("<er:manifest>{\"schema_version\":1,"));
+    assert!(pdf.contains("/f0 14 Tf\n"));
+    // The manifest is the `artifact-manifest.json` attachment (ADR-0021).
+    assert!(pdf.contains("/F (artifact-manifest.json)\n"));
+    assert!(pdf.contains("{\"schema_version\":1,"));
     // The label's Liberation Sans family is noticed under its license identity
     // with the OFL body carried once beside it (#151).
     assert!(pdf.contains(
@@ -285,14 +286,15 @@ fn compatibility_placeholder_preserves_safe_links_only_in_semantic_formats() {
     let pdf = render(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(pdf.artifact().bytes());
     assert!(pdf.contains("/Subtype /Link"));
-    assert!(pdf.contains("/S /URI\n/URI (https://example.com/path?x=1&y=2)"));
+    assert!(pdf.contains("/A << /Type /Action /S /URI /URI (https://example.com/path?x=1&y=2) >>"));
     assert!(pdf.contains("/QuadPoints ["));
     let page = pdf
         .split_once("/Type /Page\n")
         .map(|(_, page)| page)
         .expect("PDF has one page dictionary");
-    assert!(page.contains("/Resources <<\n/ColorSpace"));
-    assert!(page.contains(">>\n/Annots ["));
+    let page = page.split("\nendobj\n").next().unwrap();
+    assert!(page.contains("/Resources "));
+    assert!(page.contains("/Annots ["));
 }
 
 #[test]
@@ -707,8 +709,10 @@ fn compatibility_placeholder_opacity_is_applied_to_the_composited_group() {
 
     let pdf = render(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(pdf.artifact().bytes());
-    assert!(pdf.contains("/Group << /S /Transparency /I true /CS /DeviceRGB >>"));
-    assert!(pdf.contains("/FB1 Do"));
+    // One isolated transparency group in the page's ICC-based sRGB space,
+    // painted at the element's opacity (ADR-0021).
+    assert!(pdf.contains("/Group << /Type /Group /S /Transparency /I true /CS "));
+    assert!(pdf.contains("/g0 gs\n/x0 Do"));
 }
 
 #[test]

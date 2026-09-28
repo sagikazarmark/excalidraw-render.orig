@@ -66,18 +66,19 @@ fn a_rounded_image_is_clipped_to_the_official_corner_radius_in_every_format() {
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
-    // The clip is the rounded rectangle in element space, at full precision,
-    // replacing the rectangular `re` clip an unrounded image carries.
+    // The clip is the rounded rectangle at full precision, replacing the
+    // rectangular clip an unrounded image carries. Krilla writes it in
+    // top-down page points (ADR-0021): element (10, 0) at the 10 px padding is
+    // (15, 37.5) on the 45 pt page, and the image fills the 40 x 40 element.
     assert!(
-        pdf.contains("10 0 m\n30 0 l\n"),
+        pdf.contains("15 37.5 m\n30 37.5 l\n"),
         "PDF lacks the rounded clip path: {pdf}"
     );
     assert!(
-        pdf.contains(" c\nW\nn\n"),
-        "PDF clip is not a path clip: {pdf}"
+        pdf.contains(" c\nW\nn\n/Artifact BMC\nq\n30 0 0 30 7.5 7.5 cm\n/x0 Do"),
+        "PDF clip is not a path clip before the image: {pdf}"
     );
-    assert!(pdf.contains("W\nn\n40 0 0 -40 0 40 cm\n/Im0 Do"));
-    assert!(!pdf.contains("0 0 40 40 re"));
+    assert!(!pdf.contains("7.5 37.5 m\n37.5 37.5 l\n37.5 7.5 l\n7.5 7.5 l\nh\nW"));
 }
 
 #[test]
@@ -96,7 +97,11 @@ fn an_unrounded_image_keeps_its_rectangular_bounds_in_every_format() {
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
-    assert!(pdf.contains("0 0 40 40 re\nW\nn\n40 0 0 -40 0 40 cm\n/Im0 Do"));
+    // The element's own 40 x 40 bounds clip it, in page points.
+    assert!(pdf.contains(concat!(
+        "7.5 37.5 m\n37.5 37.5 l\n37.5 7.5 l\n7.5 7.5 l\nh\nW\nn\n",
+        "/Artifact BMC\nq\n30 0 0 30 7.5 7.5 cm\n/x0 Do"
+    )));
 }
 
 #[test]
@@ -156,17 +161,19 @@ fn the_corner_clip_stays_in_element_space_when_the_image_is_cropped_and_flipped(
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
+    // Element (5, 0) at the 10 px padding is (11.25, 22.5) on the 30 pt page.
     assert!(
-        pdf.contains("5 0 m\n15 0 l\n"),
+        pdf.contains("11.25 22.5 m\n18.75 22.5 l\n"),
         "PDF lacks the rounded clip path: {pdf}"
     );
     // The corner clip comes first, then the crop's visible rectangle (its
     // mask meeting the mirrored viewport), then the whole 3x2 asset at its
-    // uncropped 30x20 mirrored about the center.
+    // uncropped 30x20 mirrored about the center (element matrix
+    // -30 0 0 20 30 0, in page points).
     assert!(pdf.contains(concat!(
-        " c\nW\nn\n",
-        "0 0 20 20 re\nW\nn\n",
-        "-30 0 0 20 30 0 cm\n/Im0 Do"
+        " c\nW\nn\nq\n",
+        "7.5 22.5 m\n22.5 22.5 l\n22.5 7.5 l\n7.5 7.5 l\nh\nW\nn\n",
+        "/Artifact BMC\nq\n-22.5 0 0 -15 30 22.5 cm\n/x0 Do"
     )));
 }
 
@@ -210,11 +217,14 @@ fn the_corner_clip_rotates_with_the_image() {
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
+    // Element (5, 0) and (35, 0) turn a quarter about the center (20, 10)
+    // and move by the (0, 20) the rotated bounds need: page (22.5, 33.75)
+    // and (22.5, 11.25) on the 45 pt page.
     assert!(
-        pdf.contains("5 0 m\n35 0 l\n"),
+        pdf.contains("22.5 33.75 m\n22.5 11.25 l\n"),
         "PDF lacks the rounded clip path: {pdf}"
     );
-    assert!(!pdf.contains(" re\nW\nn\n"));
+    assert!(!pdf.contains(" l\nh\nW\nn\n"));
 }
 
 #[test]

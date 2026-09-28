@@ -488,9 +488,13 @@ fn multiple_pdf_rectangles_keep_independent_opacity_resources() {
     );
     let pdf = pdf_text(outcome.artifact().bytes());
 
-    assert!(pdf.contains("/ExtGState << /GS1 7 0 R /GS2 8 0 R >>"));
-    assert_eq!(pdf.matches("/GS1 gs").count(), 1);
-    assert_eq!(pdf.matches("/GS2 gs").count(), 1);
+    // One graphics state per opacity, each applied once (ADR-0021: Krilla
+    // names them and writes the stroke opacity the outlines need).
+    assert!(pdf.contains("/Type /ExtGState\n/CA 0.5\n"));
+    assert!(pdf.contains("/Type /ExtGState\n/CA 0.75\n"));
+    assert!(pdf.contains("/ExtGState << /g0 5 0 R /g1 6 0 R >>"));
+    assert_eq!(pdf.matches("/g0 gs\n").count(), 1);
+    assert_eq!(pdf.matches("/g1 gs\n").count(), 1);
 }
 
 fn non_replacement_diagnostics(
