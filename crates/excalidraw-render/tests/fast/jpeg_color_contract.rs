@@ -38,7 +38,7 @@ fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/jpeg-color/reference.json");
     assert_eq!(
         lower_hex(&Sha256::digest(bytes)),
-        "3994872b3b14c89c1b64b0829629be8e496b8f9883d16f16e0ea8c02ff6b4846"
+        "8582dd4cbd0e251fcd7eaec51143ba32188f4a3f70f832ee0805432ca1aaca26"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(

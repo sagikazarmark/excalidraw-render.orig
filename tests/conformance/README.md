@@ -291,7 +291,8 @@ and in vector digest moves that a refresh lists (`COMPARATOR_REFRESHES`:
 `proposals/comparator-closure-refresh-v2/` for the #208 sha2 upgrade,
 `proposals/comparator-closure-refresh-v3/` for the #208 sha1 upgrade,
 `proposals/comparator-closure-refresh-v4/` for the #208 png upgrade,
-`proposals/comparator-closure-refresh-v5/` for the #211 serde_json upgrade). A later
+`proposals/comparator-closure-refresh-v5/` for the #211 serde_json upgrade,
+`proposals/comparator-closure-refresh-v6/` for the jsonschema 0.58 upgrade). A later
 refresh archives its own preimage and adds its own row. Review the diff and
 rerun qualification.
 

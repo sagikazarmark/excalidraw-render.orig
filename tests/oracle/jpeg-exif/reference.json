@@ -66,7 +66,7 @@
     },
     {
       "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
-      "sha256": "07ff1a5c7face36f419ef4fd20a4b75f9ef0b8f97091f8379494c9c402414e6c"
+      "sha256": "61e32b8f9a3667833bab0904dedede02eb8227e7fe3a9346e757eae0789edf87"
     }
   ],
   "collection": "Official v0.18.1; Chromium149; pinned OCI network none; two fresh processes forward/reverse; fresh context per vector",

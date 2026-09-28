@@ -21,7 +21,7 @@
     },
     {
       "path": "tests/oracle/webp-sample/comparison-boundary-controls/",
-      "digest": "b5bc6998cf4334a1f5a0be707d390294f00bf1ac41b685480cbba00a13ffd0fb"
+      "digest": "9cb383bf80d658abeb75934cdd0f61ad0e15f61af6d6ae0f68254b72da5aaf82"
     }
   ],
   "exceptions": [
