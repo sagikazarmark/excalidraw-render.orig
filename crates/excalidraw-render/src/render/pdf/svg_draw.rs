@@ -626,10 +626,13 @@ fn png_image(data: &[u8]) -> Result<Image, FormatEncodeError> {
         return Err(invalid("nested raster is not normalized RGBA8"));
     }
     let (width, height) = (info.width, info.height);
+    let size = reader
+        .output_buffer_size()
+        .ok_or_else(super::raster::memory)?;
     let mut rgba = Vec::new();
-    rgba.try_reserve_exact(reader.output_buffer_size())
+    rgba.try_reserve_exact(size)
         .map_err(|_| super::raster::memory())?;
-    rgba.resize(reader.output_buffer_size(), 0);
+    rgba.resize(size, 0);
     reader
         .next_frame(&mut rgba)
         .map_err(|_| invalid("nested raster did not decode"))?;

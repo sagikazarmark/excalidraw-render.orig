@@ -3,7 +3,7 @@
  "sources": [
   {
    "path": "tests/oracle/png-color/reference.json",
-   "sha256": "4bb3e477b7eb6264c1e8a276c2af9533b072e774212ae446eb131a8774a1f024"
+   "sha256": "81e428669358991408008eb0d4ed2c6bee6d3638dd3d191e48fad2262cd06eda"
   },
   {
    "path": "tests/oracle/reference-profiles/revision-1.json",
@@ -23,7 +23,7 @@
   },
   {
    "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
-   "sha256": "ce3609ea4c4145805cf9c17035c153baa5ccee744e97d1ffb154348f9d0e817e"
+   "sha256": "d0bac8d75a33ee2827ca1722ac42ac2e0545c0c0c136f819160fba77c8ad092e"
   }
  ],
  "options": {

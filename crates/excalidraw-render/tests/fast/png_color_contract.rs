@@ -265,7 +265,7 @@ fn hdr_adam7_preserves_reference_samples() {
             let mut reader = png::Decoder::new(std::io::Cursor::new(&original))
                 .read_info()
                 .unwrap();
-            let mut samples = vec![0; reader.output_buffer_size()];
+            let mut samples = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
             reader.next_frame(&mut samples).unwrap();
             let bpp = 4 * depth / 8;
             let mut scanlines = Vec::new();
@@ -614,7 +614,7 @@ fn exact_transfer_and_metadata_anchors() {
         lower_hex(&Sha256::digest(include_bytes!(
             "../common/png_color_reference.rs"
         ))),
-        "fb862de3a2c5ceffcba94d85ca9939be3e2d3fdb88c17a11acf8786d650c6186"
+        "6d2cba3ddfa2fcf017ea9972715aee3b0a6f002cb2afce950274059a1b64b83f"
     );
     let evidence = reference::evidence();
     let icc = evidence["cases"]

@@ -104,7 +104,7 @@ fn lower_png(encoded: &str) -> Result<Vec<u8>, FormatEncodeError> {
         return Err(invalid("nested raster is not normalized RGBA8"));
     }
     let (width, height) = (info.width, info.height);
-    let size = reader.output_buffer_size();
+    let size = reader.output_buffer_size().ok_or_else(memory)?;
     let mut rgba = Vec::new();
     rgba.try_reserve_exact(size).map_err(|_| memory())?;
     rgba.resize(size, 0);
@@ -196,7 +196,7 @@ mod tests {
         let mut reader = png::Decoder::new(std::io::Cursor::new(bytes))
             .read_info()
             .expect("PNG");
-        let mut rgba = vec![0; reader.output_buffer_size()];
+        let mut rgba = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
         reader.next_frame(&mut rgba).expect("decodes");
         // White is 17.85 per channel through the filter, rounded to #121212;
         // black is 237.15, rounded to #ededed.

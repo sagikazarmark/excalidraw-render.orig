@@ -18,7 +18,7 @@ fn png(bytes: &[u8]) -> Result<(u32, u32, Vec<u8>)> {
     let mut r = png::Decoder::new(std::io::Cursor::new(bytes))
         .read_info()
         .map_err(|e| e.to_string())?;
-    let mut out = vec![0; r.output_buffer_size()];
+    let mut out = vec![0; r.output_buffer_size().ok_or("PNG buffer overflows")?];
     let i = r.next_frame(&mut out).map_err(|e| e.to_string())?;
     require(
         i.color_type == png::ColorType::Rgba && i.bit_depth == png::BitDepth::Eight,

@@ -5,7 +5,6 @@
 //! and ICO decoders finish their RGBA here; GIF composites its indexed frame
 //! straight into both buffers itself.
 
-use std::io::Cursor;
 use std::sync::Arc;
 
 use moxcms::{
@@ -14,7 +13,7 @@ use moxcms::{
     Xyzd,
 };
 
-use super::png::PngSemantics;
+use super::png::{PngFrameReader, PngSemantics};
 use super::{try_copy, DecodedRaster, ResolveError};
 
 pub(super) enum ColorNormalization {
@@ -171,23 +170,23 @@ pub(super) fn prepare_png_color_normalization(
             ColorNormalization::Profile(Box::new(profile))
         });
     }
-    let mut decoder = png::Decoder::new(Cursor::new(bytes));
+    let mut decoder = png::Decoder::new(PngFrameReader::new(bytes));
     decoder.set_limits(png::Limits {
         bytes: usize::try_from(workspace_bytes).map_err(|_| ResolveError::Memory)?,
     });
     let reader = decoder
         .read_info()
         .map_err(|_| ResolveError::DecodeFailed)?;
-    png_color_profile(reader.info())
+    png_color_profile(reader.info(), semantics.zero_gamma)
 }
 
 /// The content peak luminance SkHdrAgtm tone maps PQ/HLG from, in nits: a
 /// positive cLLI MaxCLL, else a positive mDCV maximum luminance, else the
-/// default. The pinned codec reads both through png 0.17.16 before the first
+/// default. The pinned codec reads both through the png crate before the first
 /// IDAT: a malformed chunk counts as absent, the first valid one wins, and mDCV
 /// must precede PLTE and IDAT. Values are 0.0001 cd/m2 units converted in f32.
 fn png_peak_luminance(bytes: &[u8], workspace_bytes: u64) -> Result<f64, ResolveError> {
-    let mut decoder = png::Decoder::new(Cursor::new(bytes));
+    let mut decoder = png::Decoder::new(PngFrameReader::new(bytes));
     decoder.set_limits(png::Limits {
         bytes: usize::try_from(workspace_bytes).map_err(|_| ResolveError::Memory)?,
     });
@@ -259,7 +258,10 @@ fn cicp_color_profile(cicp: [u8; 4]) -> Result<ColorProfile, ResolveError> {
     Ok(profile)
 }
 
-fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, ResolveError> {
+fn png_color_profile(
+    info: &png::Info<'_>,
+    zero_gamma: bool,
+) -> Result<ColorNormalization, ResolveError> {
     if let Some(profile) = info.icc_profile.as_deref() {
         // Device-link, abstract and named-color profiles are not image source
         // spaces. Parsing their tag tables alone does not establish a usable
@@ -303,7 +305,7 @@ fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, Resolve
         {
             // skcms's default source priority is A2B0, then A2B1. An
             // otherwise valid saturation-only space is not selected.
-            return png_legacy_color_profile(info);
+            return png_legacy_color_profile(info, zero_gamma);
         }
         // Skia tags a profile it snaps to sRGB as sRGB, and Blink then needs
         // no transform: the pixels draw untransformed.
@@ -312,7 +314,7 @@ fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, Resolve
         }
         return Ok(ColorNormalization::Profile(Box::new(profile)));
     }
-    png_legacy_color_profile(info)
+    png_legacy_color_profile(info, zero_gamma)
 }
 
 /// A BMP V4/V5 calibrated-RGB colour space: `to_xyz_d50` holds the red, green
@@ -453,26 +455,34 @@ pub(crate) fn with_cms_failure_after<T>(site: CmsSite, skip: usize, body: impl F
     body()
 }
 
-fn png_legacy_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, ResolveError> {
+fn png_legacy_color_profile(
+    info: &png::Info<'_>,
+    zero_gamma: bool,
+) -> Result<ColorNormalization, ResolveError> {
     if info.srgb.is_some() {
         return Ok(ColorNormalization::None);
     }
+    // A zero gAMA is no usable transfer: unsupported whatever the
+    // chromaticities, as the strict policy declares.
+    if zero_gamma {
+        return Err(ResolveError::Unsupported);
+    }
     // The reference intentionally does not guess a transfer function from
     // chromaticities alone (SkPngRustCodec::CreateColorProfile).
-    if info.source_gamma.is_none() {
+    if info.gamma().is_none() {
         return Ok(ColorNormalization::None);
     }
-    if info.source_chromaticities.is_none()
-        && info.source_gamma.is_some_and(|gamma| {
+    if info.chromaticities().is_none()
+        && info.gamma().is_some_and(|gamma| {
             let neutral = gamma.into_value() * 2.2;
             neutral > 0.95 && neutral < 1.05
         })
     {
         return Ok(ColorNormalization::None);
     }
-    if info.source_chromaticities.is_none()
+    if info.chromaticities().is_none()
         && info
-            .source_gamma
+            .gamma()
             .is_some_and(|gamma| gamma.into_scaled() == 100_000)
     {
         return Ok(ColorNormalization::LinearSrgb);
@@ -480,7 +490,7 @@ fn png_legacy_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, 
 
     let mut profile = ColorProfile::new_srgb();
     profile.cicp = None;
-    if let Some(chromaticities) = info.source_chromaticities {
+    if let Some(chromaticities) = info.chromaticities() {
         let valid = [
             chromaticities.white,
             chromaticities.red,
@@ -515,7 +525,7 @@ fn png_legacy_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, 
             },
         );
     }
-    if let Some(gamma) = info.source_gamma {
+    if let Some(gamma) = info.gamma() {
         let gamma = gamma.into_value();
         if gamma <= 0.0 {
             return Err(ResolveError::Unsupported);

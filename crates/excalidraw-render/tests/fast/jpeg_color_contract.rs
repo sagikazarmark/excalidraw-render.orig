@@ -20,7 +20,7 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
     let mut decoder = png::Decoder::new(std::io::Cursor::new(bytes));
     decoder.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
     let mut reader = decoder.read_info().unwrap();
-    let mut bytes = vec![0; reader.output_buffer_size()];
+    let mut bytes = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
     let info = reader.next_frame(&mut bytes).unwrap();
     bytes.truncate(info.buffer_size());
     let rgba = match info.color_type {
@@ -38,7 +38,7 @@ fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/jpeg-color/reference.json");
     assert_eq!(
         lower_hex(&Sha256::digest(bytes)),
-        "b416cbbeec8536c2cd9f9d23e3ec81075a696110cfae51a12d8083512fae27ba"
+        "41fa9995a4d4df36c791f207ce9b38e9a111d6abc3706f4254d5caa99f03e056"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(

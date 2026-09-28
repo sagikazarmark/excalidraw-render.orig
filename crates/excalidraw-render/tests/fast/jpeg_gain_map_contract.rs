@@ -49,7 +49,7 @@ fn inputs() -> Value {
 fn base_evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-color/reference.json"),
-        "b416cbbeec8536c2cd9f9d23e3ec81075a696110cfae51a12d8083512fae27ba",
+        "41fa9995a4d4df36c791f207ce9b38e9a111d6abc3706f4254d5caa99f03e056",
     );
     assert_eq!(
         record["schema"],
@@ -70,7 +70,7 @@ fn by_id<'a>(record: &'a Value, id: &Value) -> &'a Value {
 fn evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-gain-map/reference.json"),
-        "2cd941e4549d903d3fe24ba1cd5b4d0ecc52cc321926cd11ffb7ce7ab56fa1f3",
+        "336c15004d14cace25d51b0825a11fff06a63b4347ef7ac2902481dea343bd05",
     );
     assert_eq!(
         record["schema"],
@@ -93,7 +93,7 @@ fn evidence() -> Value {
         ),
         (
             include_bytes!("../common/raster.rs").as_slice(),
-            "4f6bc5a85213b1268b8536c242687d58c3cdb81423c6643b6cd1c44e9d06d303",
+            "46a6ed5daacc715f1f3c28c2b806b95a04e13206b4bc7f6d13c0ea50c99b8e10",
         ),
     ] {
         assert_eq!(hash(bytes), expected);
@@ -508,7 +508,7 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
     let mut decoder = png::Decoder::new(std::io::Cursor::new(bytes));
     decoder.set_transformations(png::Transformations::EXPAND);
     let mut reader = decoder.read_info().unwrap();
-    let mut pixels = vec![0; reader.output_buffer_size()];
+    let mut pixels = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
     let info = reader.next_frame(&mut pixels).unwrap();
     assert_eq!(info.bit_depth, png::BitDepth::Eight);
     pixels.truncate(info.buffer_size());

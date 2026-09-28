@@ -4025,7 +4025,7 @@ fn png_rgba(scene: &SceneDocument, scale: f64) -> (u32, u32, Vec<u8>) {
     let mut decoder = ::png::Decoder::new(std::io::Cursor::new(outcome.artifact().bytes()));
     decoder.set_transformations(::png::Transformations::IDENTITY);
     let mut reader = decoder.read_info().expect("PNG structure is valid");
-    let mut rgba = vec![0; reader.output_buffer_size()];
+    let mut rgba = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
     let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
     rgba.truncate(frame.buffer_size());
     (frame.width, frame.height, rgba)

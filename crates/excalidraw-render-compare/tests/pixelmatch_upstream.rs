@@ -180,7 +180,7 @@ fn read_fixture(name: &str) -> (u32, u32, Vec<u8>) {
     let mut decoder = png::Decoder::new(Cursor::new(bytes));
     decoder.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
     let mut reader = decoder.read_info().unwrap();
-    let mut decoded = vec![0; reader.output_buffer_size()];
+    let mut decoded = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
     let info = reader.next_frame(&mut decoded).unwrap();
     assert_eq!(info.bit_depth, png::BitDepth::Eight, "{}", path.display());
     decoded.truncate(info.buffer_size());

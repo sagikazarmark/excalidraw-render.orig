@@ -1806,7 +1806,7 @@
           "kind": "record",
           "record": {
             "path": "tests/conformance/coverage/pdf-judgments.json",
-            "sha256": "842dd6f5a6c3a09a4dfb2f44183c65477eac8655a245903cab03f5bf477af1f7"
+            "sha256": "199847fbbe9a7424e83d50029296295a17c39a7201edd0d0b1bb339c2bb70ee0"
           },
           "approval_subject_sha256": "sha256:f0b9119f08e53d2d51873960722d4ab15619f6e2510291aa0389e6ad2f390f4a",
           "verifier": "pdf-judgments"

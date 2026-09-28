@@ -1939,7 +1939,7 @@ fn verify_png_semantics(
     let mut reader = decoder
         .read_info()
         .map_err(|error| format!("PNG evidence could not be decoded: {error}"))?;
-    let mut decoded = vec![0; reader.output_buffer_size()];
+    let mut decoded = vec![0; reader.output_buffer_size().ok_or("PNG buffer overflows")?];
     let output = reader
         .next_frame(&mut decoded)
         .map_err(|error| format!("PNG evidence frame is invalid: {error}"))?;

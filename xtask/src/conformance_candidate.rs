@@ -303,7 +303,7 @@ pub(crate) fn comparisons_with_scopes(collection: &str, scopes: &[Value]) -> Res
     let mut reader = png::Decoder::new(std::io::Cursor::new(bytes))
         .read_info()
         .map_err(|e| e.to_string())?;
-    let mut rgba = vec![0; reader.output_buffer_size()];
+    let mut rgba = vec![0; reader.output_buffer_size().ok_or("PNG buffer overflows")?];
     let info = reader.next_frame(&mut rgba).map_err(|e| e.to_string())?;
     if info.color_type != png::ColorType::Rgba || info.bit_depth != png::BitDepth::Eight {
         return Err("non-RGBA8 candidate".into());
