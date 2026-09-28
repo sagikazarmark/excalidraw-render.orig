@@ -1,6 +1,6 @@
 use std::fmt;
 
-use cssparser::{color::PredefinedColorSpace, Delimiter, ParseError, Parser, ParserInput, Token};
+use cssparser::{color::PredefinedColorSpace, Delimiter, ParseError, Parser, Token};
 use cssparser_color::Color as ParsedColor;
 
 use crate::portable_math::{atan2, cos, hypot, sin, square};
@@ -223,8 +223,7 @@ fn parse_css_at_depth(value: &str, depth: u32) -> Option<CanonicalColor> {
         }
     }
 
-    let mut input = ParserInput::new(value);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(value);
     let parsed = ParsedColor::parse(&mut parser).ok()?;
     parser.expect_exhausted().ok()?;
     if let ParsedColor::CurrentColor = parsed {
@@ -359,8 +358,7 @@ fn color_mix_parts(value: &str) -> Option<[&str; 3]> {
             &body[second + 1..],
         ]);
     }
-    let mut input = ParserInput::new(value);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(value);
     parser.expect_function_matching("color-mix").ok()?;
     let ([interpolation, first, second], end) = parser
         .parse_nested_block(|body| {
@@ -494,8 +492,7 @@ fn color_mix_stop(value: &str, depth: u32) -> Option<(CanonicalColor, Option<f64
     let split = if value.contains("/*") || !crate::css_syntax::fits_inline_block_stack(value) {
         compatibility_color_boundaries(value)?.1
     } else {
-        let mut input = ParserInput::new(value);
-        color_tokens(&mut Parser::new(&mut input), 0).ok()?
+        color_tokens(&mut Parser::new(value), 0).ok()?
     };
     if let Some(split) = split {
         if let Some(weight) = value[split..].trim().strip_suffix('%') {
@@ -517,13 +514,10 @@ fn color_mix_stop(value: &str, depth: u32) -> Option<(CanonicalColor, Option<f64
 /// Consume bounded component values, retaining the last top-level whitespace
 /// position for the historical weight grammar. Work is linear per invocation;
 /// mix evaluation makes at most MAX_COLOR_NESTING_DEPTH + 1 such passes.
-fn color_tokens<'i>(
-    parser: &mut Parser<'i, '_>,
-    depth: u32,
-) -> Result<Option<usize>, ParseError<'i, ()>> {
+fn color_tokens<'i>(parser: &mut Parser<'i>, depth: u32) -> Result<Option<usize>, ParseError<()>> {
     // A deepest admitted stop may itself be rgb()/color(), hence the extra level.
     if depth > MAX_COLOR_NESTING_DEPTH + 1 {
-        return Err(parser.new_custom_error(()));
+        return Err(ParseError::custom(()));
     }
     let start = parser.position();
     let mut whitespace = None;
@@ -539,7 +533,7 @@ fn color_tokens<'i>(
                     Ok(body.position())
                 })?;
                 if parser.slice(end..parser.position()) != ")" {
-                    return Err(parser.new_custom_error(()));
+                    return Err(ParseError::custom(()));
                 }
                 debug_assert!(parser.position() > body_start);
             }
@@ -547,9 +541,9 @@ fn color_tokens<'i>(
                 whitespace = Some(parser.slice(start..parser.position()).len() - 1);
             }
             Token::SquareBracketBlock | Token::CurlyBracketBlock | Token::QuotedString(_) => {
-                return Err(parser.new_custom_error(()));
+                return Err(ParseError::custom(()));
             }
-            token if token.is_parse_error() => return Err(parser.new_custom_error(())),
+            token if token.is_parse_error() => return Err(ParseError::custom(())),
             _ => {}
         }
     }

@@ -1,5 +1,5 @@
 //! Qualification guard for cssparser 0.37.0's nested-block APIs.
-use cssparser::{Parser, ParserInput, Token};
+use cssparser::{Parser, Token};
 
 /// cssparser's automatic error cleanup has a 16-entry inline block stack, then
 /// spills via infallible allocation. Inspect tokens without entering that
@@ -15,8 +15,7 @@ pub(crate) fn fits_inline_block_stack(mut source: &str) -> bool {
     let mut stack = [0_u8; 16];
     let mut depth = 0;
     while !source.is_empty() {
-        let mut input = ParserInput::new(source);
-        let mut parser = Parser::new(&mut input);
+        let mut parser = Parser::new(source);
         let Ok(token) = parser.next_including_whitespace_and_comments() else {
             break;
         };

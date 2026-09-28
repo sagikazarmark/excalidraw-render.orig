@@ -28,8 +28,8 @@ excalidraw-fonts = { path = "crates/excalidraw-fonts", version = "=0.1.0", defau
 excalidraw-fonts-xiaolai = { path = "crates/excalidraw-fonts-xiaolai", version = "=0.1.0" }
 excalidraw-fonts-xiaolai-extended = { path = "crates/excalidraw-fonts-xiaolai-extended", version = "=0.1.0" }
 csscolorparser = "=0.8.3"
-cssparser = "=0.37.0"
-cssparser-color = "=0.5.0"
+cssparser = "=0.38.0"
+cssparser-color = "=0.6.0"
 crc32fast = "=1.5.2"
 gif = { version = "=0.14.2", default-features = false, features = ["std"] }
 image-webp = "=0.2.4"
