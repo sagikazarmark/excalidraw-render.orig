@@ -185,6 +185,11 @@ pub(crate) const COMPARATOR_REFRESHES: &[ComparatorRefresh] = &[
         before: "tests/conformance/proposals/comparator-closure-refresh-v6/before",
         vectors: &[],
     },
+    // #207: wasm-bindgen 0.2.129 moved only the closure.
+    ComparatorRefresh {
+        before: "tests/conformance/proposals/comparator-closure-refresh-v7/before",
+        vectors: &[],
+    },
 ];
 /// Evidence measured under a comparator profile (or its closure) that a
 /// reviewed refresh superseded. Those refreshes moved the comparator's

@@ -22,9 +22,9 @@
   },
   "wasm_test_runner": {
     "crate": "wasm-bindgen-cli",
-    "version": "0.2.126",
-    "url": "https://static.crates.io/crates/wasm-bindgen-cli/wasm-bindgen-cli-0.2.126.crate",
-    "crate_sha256": "8e2ebf6eef87c34e662347f1dddfbea541304bb7294711ed2c2acd8746cc5b50"
+    "version": "0.2.129",
+    "url": "https://static.crates.io/crates/wasm-bindgen-cli/wasm-bindgen-cli-0.2.129.crate",
+    "crate_sha256": "5fd044ed178958a277eeaf21f3d384287b0f4428d38c019141df01da9c03168c"
   },
   "cargo_nextest": {
     "version": "0.9.143",
