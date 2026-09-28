@@ -6,7 +6,6 @@ mod conformance_candidate_exceptions;
 mod conformance_candidate_gate;
 mod conformance_candidate_native;
 mod conformance_candidate_semantics;
-mod conformance_pdf_bridge;
 #[cfg(test)]
 mod conformance_pdf_requalification;
 mod coverage;
@@ -244,7 +243,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         }
         C::CandidateRevise { directory } => conformance_candidate_gate::revise(&directory)?,
         C::CandidateExecutions => print_json(&conformance_candidate_gate::execute_registry()?)?,
-        C::CollectPdfColorspaceBridge => print_json(&conformance_pdf_bridge::collect()?)?,
         C::VerifySvgViewers => {
             svg_viewers::verify()?;
             println!("verified canonical SVG viewer qualification");

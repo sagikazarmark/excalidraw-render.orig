@@ -257,6 +257,14 @@ history, rather than supported maintenance commands.
   (2026-09-27, ADR-0021: the example is removed with pdf-writer, which it
   drove directly. Its source stays in Git history, and the #186 research and
   results remain.)
+- `xtask/src/conformance_pdf_bridge.rs` and `collect-pdf-colorspace-bridge`
+  are retired (2026-09-28). The bridge let a representative candidate carry the
+  image-ColorSpace-corrected svg2pdf PDF under the V4 typography diagnosis. The
+  V27 representative is a Krilla render, covered by the backend successor in
+  `conformance_candidate_exceptions.rs`, and the image ICC binding refresh that
+  also read the bridge is applied and now reports its retirement. The bridge
+  collection `tests/conformance/candidates/stage4-pdf-colorspace-bridge-v20` and
+  the V20–V26 proposals that recorded it remain as data.
 
 ### Verification
 

@@ -124,7 +124,6 @@ fn expected(directory: &str) -> Result<Value> {
     // The diagnosed font, geometry, PDF and viewer rasters are the scope of the
     // decision. Equal summary metrics on different inputs are not sufficient.
     let mut inputs = Vec::new();
-    let mut colour_binding_bridge = Value::Null;
     let mut successor = Value::Null;
     for name in [
         "scene.json",
@@ -145,15 +144,7 @@ fn expected(directory: &str) -> Result<Value> {
         let current = descriptor(&root, name)?;
         if current["sha256"] != bound["sha256"] || current["byte_length"] != bound["byte_length"] {
             if name == "native.pdf" {
-                let pdf = read(&root, name)?;
-                if let Ok(record) = backend_successor(&pdf) {
-                    successor = record;
-                } else {
-                    colour_binding_bridge = crate::conformance_pdf_bridge::validate(&pdf)?;
-                    if colour_binding_bridge["diagnosed_pdf"]["sha256"] != bound["sha256"] {
-                        return Err("colourspec bridge names a different diagnosis PDF".into());
-                    }
-                }
+                successor = backend_successor(&read(&root, name)?)?;
             } else {
                 return Err(format!(
                     "exception diagnosis does not cover changed input {name}"
@@ -172,7 +163,7 @@ fn expected(directory: &str) -> Result<Value> {
         };
         scopes.push(json!({"case_id":case_id(directory)?,"variant":"default","format":"pdf","comparison_id":format!("pdf-{viewer}"),"viewer_profile":{"id":value(&repo_root(),&profile)?["id"],"descriptor":descriptor(&repo_root(),&profile)?},"region":region,"bounds":if region=="whole"{json!([0,0,200,120])}else{json!([10,12,124,41])},"max_changed_pixels":pixels,"minimum_ssim_bits":bits,"reason":reason,"approving_issue":"https://github.com/sagikazarmark/excalidraw-render.orig/issues/85"}));
     }
-    let mut proposal = json!({"schema":"excalidraw-render/representative-exception-proposal/v1","status":"proposed-not-approved","case_id":case_id(directory)?,"diagnosis":[descriptor(&repo_root(),REPORT)?,descriptor(&repo_root(),EVIDENCE)?],"diagnosis_producer_chain":evidence["repository_bindings"],"diagnosis_upstream_sources":evidence["upstream_sources"],"colour_binding_bridge":colour_binding_bridge,"comparator":descriptor(&repo_root(),COMPARATOR_PROFILE)?,"inputs":inputs,"exceptions":scopes});
+    let mut proposal = json!({"schema":"excalidraw-render/representative-exception-proposal/v1","status":"proposed-not-approved","case_id":case_id(directory)?,"diagnosis":[descriptor(&repo_root(),REPORT)?,descriptor(&repo_root(),EVIDENCE)?],"diagnosis_producer_chain":evidence["repository_bindings"],"diagnosis_upstream_sources":evidence["upstream_sources"],"colour_binding_bridge":Value::Null,"comparator":descriptor(&repo_root(),COMPARATOR_PROFILE)?,"inputs":inputs,"exceptions":scopes});
     // Only a Krilla-era proposal carries the key, so earlier proposals keep
     // their exact shape.
     if !successor.is_null() {
@@ -327,39 +318,7 @@ mod tests {
         }
     }
     #[test]
-    fn scoped_fixed_pdf_requires_the_exact_validated_colourspec_bridge() {
-        use std::fs;
-        let nonce = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        let dir = format!(
-            "target/scoped-bridge-{}-{nonce}/stage4-frames-text-assets-v8",
-            std::process::id()
-        );
-        let root = repo_root().join(&dir);
-        fs::create_dir_all(root.join("viewer-evidence")).unwrap();
-        for name in [
-            "scene.json",
-            "official.svg",
-            "judgment-plan.json",
-            "viewer-evidence/official-chromium.rgba",
-            "viewer-evidence/native-pdfium.rgba",
-            "viewer-evidence/native-pdfjs.rgba",
-        ] {
-            fs::write(
-                root.join(name),
-                read(&repo_root(), &format!("{DIAGNOSED}/{name}")).unwrap(),
-            )
-            .unwrap();
-        }
-        let fixed = read(
-            &repo_root(),
-            &format!("{}/native.pdf", crate::conformance_pdf_bridge::DIRECTORY),
-        )
-        .unwrap();
-        fs::write(root.join("native.pdf"), &fixed).unwrap();
-        let proposal = expected(&dir).unwrap();
+    fn diagnosis_producer_successors_accept_only_their_reviewed_identities() {
         let evidence = proof().unwrap();
         for historical in evidence["repository_bindings"].as_array().unwrap() {
             if historical["path"]
@@ -387,26 +346,6 @@ mod tests {
                 }
             }
         }
-        assert_eq!(
-            proposal["colour_binding_bridge"]["fixed_pdf"]["sha256"],
-            sha256(&fixed)
-        );
-        assert_eq!(
-            proposal["colour_binding_bridge"]["diagnosed_pdf"]["sha256"],
-            "95c399f0eaaee5bd0b2ae13a50a1a68171c0d5abaeab0b71bdf8816abda5817b"
-        );
-        let mut missing = proposal.clone();
-        missing["colour_binding_bridge"] = Value::Null;
-        assert!(validate(&missing, &proposal).is_err());
-        let mut stale = proposal.clone();
-        stale["colour_binding_bridge"]["record"]["sha256"] = json!("stale");
-        assert!(validate(&stale, &proposal).is_err());
-        let mut unrelated = fixed;
-        unrelated.push(0);
-        fs::write(root.join("native.pdf"), unrelated).unwrap();
-        assert!(expected(&dir)
-            .unwrap_err()
-            .contains("unrelated PDF colourspec bridge"));
     }
     #[test]
     fn krilla_successor_covers_only_the_reviewed_pdf_with_identical_rasters() {
