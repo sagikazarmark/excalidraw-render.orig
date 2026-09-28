@@ -146,8 +146,9 @@ fn mixed_official_families_keep_independent_font_resources() {
                 let pdf = pdf_text(outcome.artifact().bytes());
                 assert!(declares_base_font(&pdf, "Virgil"));
                 assert!(declares_base_font(&pdf, "CascadiaCode"));
-                assert!(pdf.contains("/F2 20 Tf"));
-                assert!(pdf.contains("/F3 20 Tf"));
+                // Two font resources, one per family.
+                assert!(pdf.contains("/f0 20 Tf"));
+                assert!(pdf.contains("/f1 20 Tf"));
             }
             _ => unreachable!("this test covers revision 1 formats"),
         }
@@ -301,7 +302,15 @@ fn pdf_embeds_the_pinned_face_whose_declared_range_covers_the_text() {
     // Every Nunito chunk carries an `A` glyph, so glyph coverage alone cannot
     // choose a face and catalog order would embed the Cyrillic chunk. Face
     // selection follows declared Unicode ranges in pinned face order, so Latin
-    // text embeds the Latin chunk: the one mapping U+00E9 and not U+0416.
+    // text embeds the Latin chunk: the one declaring U+00E9 and not U+0416.
+    // Each embedded program is a renamed subset (ADR-0021), so its source is
+    // read from its notice in the manifest.
+    let declares = |record: &excalidraw_fonts::AssetRecord, scalar: char| {
+        excalidraw_fonts::font_face_unicode_ranges(record.family, record.upstream_path)
+            .expect("Nunito chunk declares ranges")
+            .iter()
+            .any(|(start, end)| (*start..=*end).contains(&u32::from(scalar)))
+    };
     let scene = text_scene(6, "A");
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
@@ -309,20 +318,15 @@ fn pdf_embeds_the_pinned_face_whose_declared_range_covers_the_text() {
     let outcome = Renderer::new()
         .render(&scene, &request)
         .expect("Nunito renders");
-    let fonts = embedded_pdf_fonts(outcome.artifact().bytes());
-    let [font] = fonts.as_slice() else {
-        panic!("one Nunito face is embedded, found {}", fonts.len());
+    let sources = embedded_sources(outcome.artifact().bytes());
+    let [latin] = sources.as_slice() else {
+        panic!("one Nunito face is embedded, found {}", sources.len());
     };
-    let face = rustybuzz::Face::from_slice(font, 0).expect("embedded font parses");
-
-    assert!(face.glyph_index('A').is_some());
+    assert_eq!(latin.family, "Nunito");
+    assert!(declares(latin, '\u{e9}'), "the Latin chunk declares é");
     assert!(
-        face.glyph_index('\u{e9}').is_some(),
-        "the Latin chunk maps é"
-    );
-    assert!(
-        face.glyph_index('\u{416}').is_none(),
-        "the Latin chunk does not map Ж"
+        !declares(latin, '\u{416}'),
+        "the Latin chunk does not declare Ж"
     );
 
     // Text spanning two declared ranges embeds the chunk declaring each scalar,
@@ -332,31 +336,29 @@ fn pdf_embeds_the_pinned_face_whose_declared_range_covers_the_text() {
         .render(&scene, &request)
         .expect("multi-range Nunito renders");
     assert!(outcome.report().is_empty());
-    let fonts = embedded_pdf_fonts(outcome.artifact().bytes());
-    let faces = fonts
-        .iter()
-        .map(|font| rustybuzz::Face::from_slice(font, 0).expect("embedded font parses"))
-        .collect::<Vec<_>>();
+    let sources = embedded_sources(outcome.artifact().bytes());
     assert_eq!(
-        faces.len(),
+        sources.len(),
         2,
         "the Latin and the Cyrillic chunk are embedded"
     );
-    assert!(faces.iter().any(|face| {
-        face.glyph_index('\u{e9}').is_some() && face.glyph_index('\u{416}').is_none()
-    }));
-    assert!(faces.iter().any(|face| {
-        face.glyph_index('\u{416}').is_some() && face.glyph_index('\u{e9}').is_none()
-    }));
+    assert!(sources
+        .iter()
+        .any(|record| declares(record, '\u{e9}') && !declares(record, '\u{416}')));
+    assert!(sources
+        .iter()
+        .any(|record| declares(record, '\u{416}') && !declares(record, '\u{e9}')));
 }
 
-/// Spec 8.6: PDF embeds each selected official font chunk's reviewed decode
-/// byte for byte, the sfnt whose length and digest the revision catalog
-/// records for the chunk under the #120 approval. A Latin, a multi-range, and
-/// a Xiaolai selection each embed exactly their chunks' reviewed decodes and
-/// nothing else.
+/// Spec 8.6 (ADR-0021): PDF embeds each selected official font chunk as a
+/// Modified Version of its reviewed decode. The program's notice binds it to
+/// the chunk and to the reviewed decode's digest the revision catalog records
+/// under the #120 approval, and the embedded program is a subset under the
+/// effective alias that keeps the decode's copyright and license records. A
+/// Latin, a multi-range, and a Xiaolai selection each embed exactly their
+/// chunks and nothing else.
 #[test]
-fn pdf_embeds_each_selected_chunks_reviewed_decode_byte_for_byte() {
+fn pdf_embeds_a_renamed_subset_of_each_selected_chunks_reviewed_decode() {
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
         .expect("PDF request is valid");
@@ -364,14 +366,28 @@ fn pdf_embeds_each_selected_chunks_reviewed_decode_byte_for_byte() {
         let outcome = Renderer::new()
             .render(&text_scene(font_family, text), &request)
             .expect("text renders");
-        embedded_pdf_fonts(outcome.artifact().bytes())
-            .into_iter()
-            .map(|font| {
-                reviewed_decode_of(&font).unwrap_or_else(|| {
-                    panic!("an embedded FontFile2 is no chunk's reviewed decode")
+        let bytes = outcome.artifact().bytes();
+        let sources = embedded_sources(bytes);
+        let programs = embedded_pdf_fonts(bytes);
+        assert_eq!(programs.len(), sources.len(), "one notice per program");
+        for record in &sources {
+            let decode = excalidraw_fonts::load_asset(record.upstream_path)
+                .expect("the chunk verifies")
+                .expect("the chunk is manifested");
+            let decode = wuff::decompress_woff2(decode.bytes()).expect("the chunk decodes");
+            let source = rustybuzz::Face::from_slice(&decode, 0).expect("the decode parses");
+            let program = programs
+                .iter()
+                .map(|program| rustybuzz::Face::from_slice(program, 0).expect("program parses"))
+                .find(|face| {
+                    name(face, 0) == name(&source, 0)
+                        && program_alias(record.family) == name(face, 1)
                 })
-            })
-            .collect::<Vec<_>>()
+                .unwrap_or_else(|| panic!("{} is embedded renamed", record.upstream_path));
+            assert_eq!(name(&program, 13), name(&source, 13), "license record kept");
+            assert!(program.number_of_glyphs() < source.number_of_glyphs());
+        }
+        sources
     };
 
     // Latin: the one chunk whose reviewed decode is also checked in (#58).
@@ -396,16 +412,15 @@ fn pdf_embeds_each_selected_chunks_reviewed_decode_byte_for_byte() {
     );
     assert!(nunito.iter().all(|chunk| chunk.family == "Nunito"));
     assert_ne!(nunito[0].identity, nunito[1].identity);
-    for (chunk, scalar) in nunito.iter().zip(['A', '\u{416}']) {
-        let declared =
-            excalidraw_fonts::font_face_unicode_ranges(chunk.family, chunk.upstream_path)
-                .expect("Nunito chunk declares ranges");
+    for scalar in ['A', '\u{416}'] {
         assert!(
-            declared
-                .iter()
-                .any(|(start, end)| (*start..=*end).contains(&u32::from(scalar))),
-            "{} declares {scalar:?}",
-            chunk.upstream_path
+            nunito.iter().any(|chunk| {
+                excalidraw_fonts::font_face_unicode_ranges(chunk.family, chunk.upstream_path)
+                    .expect("Nunito chunk declares ranges")
+                    .iter()
+                    .any(|(start, end)| (*start..=*end).contains(&u32::from(scalar)))
+            }),
+            "a Nunito chunk declares {scalar:?}"
         );
     }
 
@@ -413,13 +428,61 @@ fn pdf_embeds_each_selected_chunks_reviewed_decode_byte_for_byte() {
     // beside the Excalifont Latin chunk; both are reviewed decodes.
     let cjk = embedded_reviewed_decodes(5, "A\u{4e2d}");
     assert_eq!(cjk.len(), 2, "Excalifont Latin and one Xiaolai chunk");
-    assert_eq!(cjk[0].identity, excalifont_latin.identity);
-    assert_eq!(cjk[1].family, "Xiaolai");
-    let declared = excalidraw_fonts::font_face_unicode_ranges("Xiaolai", cjk[1].upstream_path)
+    assert!(cjk
+        .iter()
+        .any(|chunk| chunk.identity == excalifont_latin.identity));
+    let xiaolai = cjk
+        .iter()
+        .find(|chunk| chunk.family == "Xiaolai")
+        .expect("a Xiaolai chunk is embedded");
+    let declared = excalidraw_fonts::font_face_unicode_ranges("Xiaolai", xiaolai.upstream_path)
         .expect("Xiaolai chunk declares ranges");
     assert!(declared
         .iter()
         .any(|(start, end)| (*start..=*end).contains(&0x4e2d)));
+}
+
+/// The catalog record of each embedded program's source, from its Modified
+/// Version notice, checked against the reviewed decode the catalog records.
+fn embedded_sources(pdf: &[u8]) -> Vec<&'static excalidraw_fonts::AssetRecord> {
+    crate::common::pdf_inspect::pdf_font_program_sources(pdf)
+        .into_iter()
+        .map(|(identity, digest)| {
+            let record = excalidraw_fonts::revision_1()
+                .assets
+                .iter()
+                .find(|asset| asset.identity == identity)
+                .unwrap_or_else(|| panic!("{identity} is a catalogued chunk"));
+            assert_eq!(
+                record.decoded_sha256, digest,
+                "{identity} is its reviewed decode"
+            );
+            record
+        })
+        .collect()
+}
+
+/// The effective alias a family's program is renamed to (ADR-0001).
+fn program_alias(family: &str) -> Option<String> {
+    Some(
+        match family {
+            "Virgil" => "ExcalidrawRender-1",
+            "Cascadia" => "ExcalidrawRender-3",
+            "Lilita" => "ExcalidrawRender-7",
+            "Liberation" => "ExcalidrawRender-9",
+            "ComicShanns" => "Comic Shanns",
+            other => other,
+        }
+        .to_owned(),
+    )
+}
+
+/// The English Windows name record `id` of a face.
+fn name(face: &rustybuzz::Face<'_>, id: u16) -> Option<String> {
+    face.names()
+        .into_iter()
+        .find(|name| name.name_id == id && name.language_id == 0x0409)
+        .and_then(|name| name.to_string())
 }
 
 #[test]
@@ -804,16 +867,4 @@ fn embedded_woff2(svg: &str) -> Vec<Vec<u8>> {
         remaining = rest;
     }
     fonts
-}
-
-/// The official font chunk whose reviewed decode the embedded bytes are, by the
-/// length and digest the revision catalog records; `None` when they are no
-/// chunk's.
-fn reviewed_decode_of(font: &[u8]) -> Option<&'static excalidraw_fonts::AssetRecord> {
-    use sha2::{Digest as _, Sha256};
-    let digest = format!("{:x}", Sha256::digest(font));
-    excalidraw_fonts::revision_1()
-        .assets
-        .iter()
-        .find(|asset| asset.decoded_length == font.len() && asset.decoded_sha256 == digest)
 }

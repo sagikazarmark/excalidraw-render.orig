@@ -928,8 +928,7 @@ viewports around that `<use>`, and the flip a `translate(width height)
 scale()` group about the same center. PDF, whose clips all live in
 the element's space, installs the intersection of the two as one rectangle
 clip before the content matrix that maps the asset onto its content rectangle,
-and a nested SVG's form, whose Y axis svg2pdf inverts, is inverted back within
-that rectangle. PNG maps the crop onto the element's unrounded rectangle, as
+and a nested SVG's tree is drawn inline under that matrix. PNG maps the crop onto the element's unrounded rectangle, as
 `drawImage(..., 0, 0, element.width, element.height)` does, so the geometry
 stays fractional there while SVG and PDF round it; which device pixels that
 rectangle paints follows the canvas as well (#162). For an image whose device
@@ -1040,15 +1039,14 @@ theme filter reads it, and rounding the theme filter's result as Section 8.1
 describes; an SVG viewer evaluates the filters itself. None of
 this changes the semantic resource ledger: like every other color lowering, it
 is not a charged event. PDF also lowers dark mode into a nested-SVG image's
-content before `svg2pdf` converts it (#154): the sanitized tree is serialized
+content before the backend draws it (#154): the sanitized tree is serialized
 through the backend's lossless normalized writer, every `fill`, `stroke`,
 `stop-color`, `flood-color` and `lighting-color` color and every visible pixel
 of a nested raster (a normalized PNG) passes through the rounded theme filter,
 alpha untouched, and the result is parsed again. `<mask>` content keeps its
 light-mode colors, because a mask acts through their luminance while the
 reference filters only the composite. Nested-SVG images inside the image are
-inlined by that writer and lowered in the same pass. The content stays vector;
-no fork of `svg2pdf` is involved.
+inlined by that writer and lowered in the same pass. The content stays vector.
 
 A missing local image is omitted in SVG and PDF, uses the official image/error
 fallback in PNG, and is diagnosed in every selected format. Other invalid,
@@ -1714,9 +1712,10 @@ sizing, and the 0.75-point conversion:
 All other geometry retains full `f64`, including text placement, bounds, clips,
 masks, transforms, crop geometry, frames, effect regions, and link
 quadrilaterals. Reductions occur in local coordinates; transforms and sizing
-follow, then point conversion. PDF numbers use deterministic non-exponential
-round-trip decimals, strip redundant zeros, serialize negative zero as `0`, and
-add no second quantization.
+follow, then point conversion. The PDF writer, Krilla (ADR-0021), narrows each
+number once to single precision when it writes it, as the shortest
+non-exponential decimal that round-trips that `f32`; no other quantization is
+added. Tests match Krilla's spellings, not `f64` ones.
 
 Compatibility revision, not backend capability, owns this closed vector matrix.
 Every project-owned operation remains native PDF content:
@@ -1789,20 +1788,25 @@ It identifies the causative node, logical bounds, final pixel dimensions, and
 all cause pointers. Deduplicated bytes do not deduplicate diagnostics.
 
 PDF text uses deterministic `rustybuzz` shaping, explicit glyph positions,
-stored source lines, the reviewed decodes of official font chunks, deterministic
-character codes, complete `ToUnicode`, and line-level `ActualText`. It does not
-reflow, outline, rasterize, subset, or consult host services, and never
-rewrites a program's own name table; the PDF-level names of an official font
-chunk's program carry the subset tag below. Only the reviewed decodes of
-chunks selected for glyphs actually used are embedded, each as one complete
-`FontFile2` stream, byte for byte before the stream filter; the complete Noto
-Emoji fallback, when selected, is embedded the same way as its exact
-digest-verified manifested bytes (Section 10), which have no decode. This is
-deliberate and stays so after direct SVG began subsetting the fallback (#150):
-#120 admits only reviewed bytes into a PDF and ADR-0001 makes any subset a
-Modified Version, so PDF subsetting of the fallback is foreclosed on the same
-grounds as PDF subsetting of the chunks and is out of scope; the Flate filter
-below is what bounds the fallback's PDF cost.
+stored source lines, the reviewed decodes of official font chunks, complete
+`ToUnicode`, and line-level `ActualText`. It does not reflow, outline,
+rasterize, or consult host services. Each shaped run is drawn at the positions
+the renderer shaped, and each glyph maps to the text of its own cluster.
+
+Krilla always subsets the programs it embeds, and ADR-0001 makes any subset of
+an official program a Modified Version that must not keep a Reserved Font Name.
+PDF therefore embeds, for each reviewed decode of a chunk selected for glyphs
+actually used and for the Liberation Sans face labels use, a Modified Version:
+the complete reviewed decode with its names rewritten to the effective alias
+the SVG path uses (Section 8.4) and its legal records kept. Krilla subsets that
+program to the glyphs drawn. The complete Noto Emoji fallback, when selected,
+is renamed and subset the same way from its exact digest-verified manifested
+bytes (Section 10). Every embedded program carries one mandatory notice,
+identified as `pdf-font-program@sha256:<program identity>`, naming the source
+program's SHA-256, the attribution and license, both transformations, the
+effective alias, and the renamed program's length and SHA-256. This replaces
+#120's rule that PDF embeds only the reviewed decodes byte for byte, and #150's
+choice to embed the emoji fallback whole (ADR-0021).
 
 An official font chunk's reviewed decode is the sfnt the pinned `wuff 0.2.8`
 decode of the chunk's exact manifested WOFF2 bytes produces (#120). The revision
@@ -1831,64 +1835,48 @@ clips. Empty areas are omitted; overlaps are ordered topmost to bottommost.
 Relative links use the reference-profile origin. JavaScript, Launch, file, and
 other active actions are forbidden.
 
-Output is PDF 1.7 with one project-generated ICC v2.1 matrix/TRC sRGB profile
-and matching output intent. Images and fallback pixels are lossless canonical
-sRGB, unpremultiplied, with invisible RGB canonicalized and alpha in a grayscale
-soft mask. Source profiles, lossy re-encoding, timestamps, random IDs,
+Output is PDF 1.7 with no output intent. Every color, images included, is drawn
+in Krilla's ICC-based sRGB color space, never a device space. Images and
+fallback pixels are lossless canonical sRGB, unpremultiplied, with invisible
+RGB canonicalized and alpha in a grayscale soft mask; only a nested-SVG raster
+whose every pixel is opaque carries no mask. Source profiles, lossy re-encoding, timestamps, random IDs,
 encryption, signatures, incremental revisions, and linearization are forbidden.
 
-Every stream the renderer itself writes is one `/Filter /FlateDecode` zlib
-stream produced by the pinned `miniz_oxide 0.8.9` at compression level 6 with
-the default strategy, the configuration the PNG encoder uses for `IDAT`
-(ADR-0004, ADR-0008): the page content stream, the fallback Form XObject
-streams, the ICC profile, the `scene.excalidraw` embedded file, every
-`FontFile2` program (whose `/Length1` is the complete sfnt length), every
-`ToUnicode` CMap and `CIDToGIDMap`, and each image's RGB plane and gray soft
-mask. Nested-SVG Form chunks are requested from `svg2pdf` with compression on,
-which deflates their content streams through the same crate at the same
-level. The one stored stream is the XMP metadata stream: PDF/A requires the
-metadata stream to be readable without a filter, and the file carries a
-`GTS_PDFA1` output intent. No other filter, predictor, or filter chain is
-emitted.
+Every stream is one `/Filter /FlateDecode` zlib stream at compression level 6,
+produced by Krilla through flate2 over `miniz_oxide 0.9.1`, not the `0.8.9` the
+PNG encoder uses for `IDAT` (ADR-0021). No other filter, predictor, or filter
+chain is emitted, and no stream is stored. There is no XMP.
 
-Every embedded program that is an official font chunk — a Unicode-range chunk
-of its family, including the single Liberation Sans chunk — is named with a
-subset tag on the Type0 `/BaseFont`, the CIDFontType2 `/BaseFont`, and the
-descriptor `/FontName`: six uppercase letters and `+` before the family's PDF
-name, the letters spelling the first six nibbles of the chunk's manifested
-WOFF2 digest with `A` for 0 through `P` for 15, so two chunks of one family
-never share a name (`OEECDL+Excalifont`, `AAGKCL+LiberationSans`). The
-complete Noto Emoji face is not a subset and carries no tag. The `ToUnicode`
-`/CMapName` is the untagged `<PDF name>-UCS`.
+Font names, the subset tag, the `ToUnicode` CMap, and the character codes are
+Krilla's. The subset tag is six uppercase letters and `+` before the program's
+PostScript name, which is the effective alias, not an official family name.
 
-The trailer carries `/ID [<hex> <hex>]` with both entries equal: the first 16
-bytes of the SHA-256 over every byte of the file preceding the `trailer`
-keyword (the header, the objects, and the cross-reference table), as 32
-uppercase hexadecimal digits. No `/Info` dictionary is written, and the XMP
-carries no `pdfaid` schema: the output intent is stated, but no PDF/A
-conformance is claimed.
+Every PDF is a tagged PDF. Each text element, generated label, frame name, and
+fallback label is one paragraph (`P`) structure element, each of its lines one
+`Span` marked-content sequence with an MCID and its source line as
+`ActualText`, and every other drawing is artifact content. No accessibility
+conformance level is claimed.
 
-Complete bytes are stable through fixed semantic object numbering, classic
-xref/trailer, one revision, canonical decimals and zero, the fixed stream
-filter and Flate configuration above, the content-derived file identifier, and
-fixed dictionary and metadata order.
+Document metadata is deterministic and free of timestamps, but its recipe is
+the writer's, not this specification's. The renderer sets no document
+metadata. Krilla writes no `/Info` then, and derives the trailer `/ID` from its
+own stable hash of the document.
 
-PDF backend qualification MUST proceed in this order:
+Complete bytes are stable through Krilla's deterministic object numbering and
+serialization, a classic cross-reference table, one revision, the fixed Flate
+configuration above, and the content-derived file identifier. A Krilla version
+change is a byte-affecting change.
 
-1. First qualify an exactly pinned project-owned controlled fork of
-   `svg2pdf 0.13.0` with `pdf-writer 0.12.0` behind the replaceable adapter. The
-   typed PDF plan lowers directly into its bounded tree; serialized SVG is
-   forbidden.
-2. The fork deterministically sorts resources/objects, removes reachable panic
-   and `unwrap`, accepts only resolved assets, lowers dark mode first, and
-   exposes every required operation. The outer writer owns page, annotations,
-   output intent, XMP, attachment, and notices.
-3. Admit it only after the conformance spike proves every vector, text, color,
-   transparency, metadata, safety, and cross-target byte-stability gate without
-   whole-page rasterization or hidden resource access.
-4. If satisfying a gate would effectively rewrite `svg2pdf`, direct
-   `pdf-writer` over the same plan is mandatory. This mechanical result does not
-   reopen the PDF contract.
+The PDF backend is Krilla, pinned exactly (ADR-0021). The renderer lowers its
+typed plan directly onto a Krilla page; serialized SVG is never an input to the
+writer. Nested-SVG trees are drawn by the renderer's own port of krilla-svg,
+which admits only resolved, filter-free content: every raster closure is
+lowered first (ADR-0009), and a filter reaching it fails the render. Spread
+gradients are drawn as padded gradients with repeated stops over the painted
+bounds. The renderer owns the page, annotations, tag tree, attachments, and
+notices. Admission requires every vector, text, color, transparency, metadata,
+safety, and cross-target byte-stability gate to pass without whole-page
+rasterization or hidden resource access.
 
 ## 9. Architecture
 
@@ -1995,7 +1983,10 @@ source, intermediate, and output digests; exact versions and invocation; complet
 profile and corpus-table-manifest digest; table/name/metric/license comparison;
 workspace bounds; reviewer; and date. Any unprofiled content, metric, table, or
 name change needs new approval. For the source decode that record is the Section
-8.6 reviewed-decodes record. A WOFF2 decode is a lossless container
+8.6 reviewed-decodes record. The subsetting Krilla performs on the renamed
+programs PDF embeds (Section 8.6) has no such record: ADR-0021 leaves its output
+to the PDF viewer and text-extraction gates, and pins Krilla exactly so that a
+subsetter change is a byte-affecting change. A WOFF2 decode is a lossless container
 reconstruction: it has no intermediate and no profile or workspace of its own
 beyond the 8.3.3 qualification corpus whose digest it binds; its table, name,
 metric, and license comparison is byte identity with the recorded decode, which
@@ -2704,21 +2695,14 @@ one uncompressed `iTXt` manifest with keyword
 language and translated keyword. No other `tEXt` or `iTXt` is emitted.
 
 PDF attaches the raw canonical scene bytes as `scene.excalidraw` with media
-type `application/vnd.excalidraw+json`; it does not use the wrapper. The
-`EmbeddedFile` stream body is Flate-filtered like every other renderer-written
-stream (Section 8.6); its decoded content is the canonical scene bytes and
-nothing else. The artifact manifest is the sole custom value in this exact
-bare, unpadded UTF-8 XMP tree, carried in the one stream the file leaves
-stored:
-
-```xml
-<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:er="urn:excalidraw-render:pdf:metadata:1"><er:manifest>...canonical manifest JSON...</er:manifest></rdf:Description></rdf:RDF></x:xmpmeta>
-```
-
-There is no XML declaration, BOM, processing instruction, indentation, trailing
-LF, `xpacket`, or duplicate information-dictionary metadata. Only required XML
-character-data escaping changes JSON spelling, and XML unescaping reproduces
-the canonical manifest bytes. XMP is absent when no manifest is required.
+type `application/vnd.excalidraw+json` and relationship `Data`; it does not
+use the wrapper. The artifact manifest is attached as `artifact-manifest.json`
+with media type `application/json` and relationship `Supplement`; its decoded
+content is the canonical manifest bytes and nothing else, and it is absent when
+no manifest is required. Both `EmbeddedFile` stream bodies are Flate-filtered
+like every other stream (Section 8.6); the decoded scene is the canonical scene
+bytes and nothing else. Krilla cannot write custom XMP, so the file carries
+none (ADR-0021).
 
 ### 12.3 Atomicity and Failure
 
@@ -3494,10 +3478,10 @@ Chromium rendering of official SVG. Both viewers must pass independently.
 PDF visual classes use the same exact, geometry/image, typography, and mixed
 thresholds for PDFium; PDF.js typography permits 3% changed pixels and 0.990
 SSIM. Structural parsing also asserts page boxes, vector/text operators, fonts,
-`ToUnicode`, `ActualText`, annotations, clips/masks/transparency, output intent,
-XMP/notices/attachments, and exact image-XObject inventory. A full-page image,
-rasterized ordinary text/geometry, undeclared image, missing semantic object,
-parser warning, or viewer failure is a hard failure.
+`ToUnicode`, `ActualText`, annotations, clips/masks/transparency, the absence
+of an output intent, notices/attachments, and exact image-XObject inventory. A
+full-page image, rasterized ordinary text/geometry, undeclared image, missing
+semantic object, parser warning, or viewer failure is a hard failure.
 
 Focused PDF evidence proves every project-owned and nested-SVG vector family
 emits neither `pdf.raster-fallback` nor fallback image XObjects. Every allowed

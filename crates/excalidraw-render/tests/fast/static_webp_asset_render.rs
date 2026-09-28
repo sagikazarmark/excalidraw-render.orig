@@ -53,7 +53,7 @@ fn pdf_embeds_lossless_webp_with_its_alpha_as_a_soft_mask() {
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/Width 2\n/Height 1"));
     assert!(pdf.contains("/SMask "));
-    assert!(pdf.contains("/Im0 Do"));
+    assert!(pdf.contains("/x0 Do"));
     assert!(outcome.report().diagnostics().is_empty());
 }
 

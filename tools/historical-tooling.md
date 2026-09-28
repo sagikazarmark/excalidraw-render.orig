@@ -188,7 +188,8 @@ This pass deletes **97 files / 14,459 lines** beyond the earlier retirement:
   `stage4-typography.py`, and `webp191-{comparison-boundary,partial-viewers,
   pdfium-raw}.py`.
 - **One** `tools/pdf-harness/probe-pdf-writer.py`, the completed #186 bounded
-  serializer investigation. Its Rust example and research/results remain.
+  serializer investigation. Its research/results remain; its Rust example was
+  removed with pdf-writer (ADR-0021).
 
 Proposal `.py` inventory reached **108 → 1** across those two passes (**84 → 1** in
 that pass); final integration below removes the last copy, reaching **zero**.
@@ -253,6 +254,9 @@ history, rather than supported maintenance commands.
 - The preserved `crates/excalidraw-render/examples/pdf_writer_probe.rs` module
   comment names the retired probe driver; it is historical documentation, not
   an executable caller.
+  (2026-09-27, ADR-0021: the example is removed with pdf-writer, which it
+  drove directly. Its source stays in Git history, and the #186 research and
+  results remain.)
 
 ### Verification
 

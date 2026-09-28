@@ -9,7 +9,6 @@ use super::{svg_fonts, text, FormatEncodeError, RenderResourceAccount, RenderSes
 /// name, and the sfnt program itself.
 #[derive(Debug)]
 pub(super) struct ResolvedFont {
-    pub(super) pdf_name: &'static str,
     pub(super) identity: &'static str,
     pub(super) sfnt: std::sync::Arc<[u8]>,
 }

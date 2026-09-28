@@ -156,11 +156,11 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
     assert!(!declares_base_font(&pdf, "Xiaolai"));
     assert!(!declares_base_font(&pdf, "NotoEmoji"));
 
-    // The PDF embeds each family's complete program (subsetting is an SVG
-    // contract, 8.3), so what the replacement pins is which program the `?`
-    // runs are drawn from: the manifested Liberation Sans asset, byte for byte,
-    // which maps `?`; and no embedded program maps a missing scalar, which is
-    // what makes the replacement a replacement.
+    // The PDF embeds each family's program as a renamed subset (ADR-0021),
+    // so what the replacement pins is which program the `?` runs are drawn
+    // from: one derived from the manifested Liberation Sans asset, which maps
+    // `?`; and no embedded program maps a missing scalar, which is what makes
+    // the replacement a replacement.
     let fonts = embedded_pdf_fonts(bytes);
     assert_eq!(fonts.len(), 2, "one FontFile2 per family");
     let liberation_asset =
@@ -169,9 +169,18 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
             .expect("the Liberation Sans asset is manifested");
     let liberation_program =
         wuff::decompress_woff2(liberation_asset.bytes()).expect("manifested WOFF2 decodes");
+    let liberation_digest = {
+        use sha2::Digest as _;
+        format!("{:x}", sha2::Sha256::digest(&liberation_program))
+    };
     assert!(
-        fonts.contains(&liberation_program),
-        "the embedded Liberation Sans program is the manifested asset"
+        crate::common::pdf_inspect::pdf_font_program_sources(bytes)
+            .iter()
+            .any(
+                |(identity, digest)| identity.starts_with("fonts/Liberation/")
+                    && *digest == liberation_digest
+            ),
+        "an embedded program is derived from the manifested Liberation Sans asset"
     );
     let faces: Vec<_> = fonts
         .iter()
@@ -181,14 +190,15 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
         .expect("the Liberation Sans program parses");
     assert!(liberation_face.glyph_index('?').is_some());
     assert!(faces.iter().any(|face| family_name(face) == "Excalifont"));
-    for face in &faces {
-        assert!(face.glyph_index('L').is_some(), "both faces shape Latin");
-        for scalar in ['\u{10000}', '\u{10001}', '\u{10ffff}'] {
-            assert!(
-                face.glyph_index(scalar).is_none(),
-                "U+{:04X} is absent from every embedded face",
-                u32::from(scalar)
-            );
+    assert!(faces
+        .iter()
+        .any(|face| family_name(face) == "ExcalidrawRender-9"));
+    // A subset carries no cmap; the ToUnicode CMaps say what each maps.
+    for family in ["Excalifont", "LiberationSans"] {
+        let cmap = to_unicode_cmap(&pdf, family);
+        assert!(cmap.contains("<004C>\n"), "{family} shapes Latin: {cmap}");
+        for missing in ["<D800DC00>", "<D800DC01>", "<DBFFDFFF>"] {
+            assert!(!cmap.contains(missing), "{family} maps {missing}: {cmap}");
         }
     }
     // Liberation Sans's ToUnicode maps the replacement's CID back to `?`, so
@@ -234,8 +244,14 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
         })
         .collect();
     assert_eq!(replacement_runs.len(), 2, "`??` and `?`");
-    assert_eq!(replacement_runs[0].matches("<0001> Tj").count(), 2);
-    assert_eq!(replacement_runs[1].matches("<0001> Tj").count(), 1);
+    assert_eq!(
+        crate::common::pdf_inspect::shown_codes(replacement_runs[0]),
+        [1, 1]
+    );
+    assert_eq!(
+        crate::common::pdf_inspect::shown_codes(replacement_runs[1]),
+        [1]
+    );
     assert_eq!(
         excalifont_line
             .matches(&format!("{excalifont} 20 Tf"))

@@ -3,7 +3,7 @@
 //! The reference's dark SVG export inverts a nested-SVG image with the rest of
 //! the scene under its root `THEME_FILTER`. A PDF cannot carry that filter, so
 //! it lowers the filter into every color it paints (spec section 8.1); this
-//! extends the lowering into the nested SVG before `svg2pdf` converts it. The
+//! extends the lowering into the nested SVG before the backend draws it. The
 //! sanitized tree is serialized through the backend's lossless normalized
 //! writer, where every paint is a `#rrggbb` color attribute and every nested
 //! raster is a normalized PNG data URL, and parsed again after:

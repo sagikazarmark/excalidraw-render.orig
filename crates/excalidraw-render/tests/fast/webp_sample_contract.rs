@@ -1568,7 +1568,8 @@ fn negative_helpers(record: &Value) {
     tag.extend_from_slice(&crc32fast::hash(b"sRGB\0").to_be_bytes());
     tagged.splice(33..33, tag);
     rejects(|| super::png_profile_contract::assert_untagged_png(&tagged));
-    let (pdf, _) = render(&row["scene"], OutputFormat::Pdf);
+    let pdf =
+        crate::common::pdf_inspect::inflate_streams(&render(&row["scene"], OutputFormat::Pdf).0);
     rejects(|| {
         pdf_extent(&replace(
             &pdf,

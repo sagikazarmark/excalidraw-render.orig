@@ -665,8 +665,13 @@ fn renders_fixture_to_svg_png_and_pdf_deterministically() {
     assert_eq!(pixmap.height(), 2220);
     assert!(pdf_bytes.starts_with(b"%PDF-"));
     let pdf_text = String::from_utf8_lossy(&pdf_bytes);
-    // The chunk program is named with its subset tag (ADR-0008).
-    assert!(pdf_text.contains("/BaseFont /OEECDL+Excalifont\n"));
+    // Krilla names the embedded Excalifont program with its own subset tag
+    // (ADR-0021).
+    assert!(pdf_text.split("/BaseFont/").skip(1).any(|name| {
+        name.len() > 7
+            && name.as_bytes()[..6].iter().all(u8::is_ascii_uppercase)
+            && name[6..].starts_with("+Excalifont-Regular")
+    }));
 }
 
 #[test]
@@ -696,10 +701,11 @@ fn preserves_embedded_images_across_cli_formats() {
 
     let pdf = fs::read(pdf).expect("read PDF image output");
     let pdf = String::from_utf8_lossy(&pdf);
-    // The content stream is Flate (ADR-0008), so the image is observed through
-    // its XObject dictionary and the page's resource entry for it.
-    assert!(pdf.contains("/Subtype /Image"));
-    assert!(pdf.contains("/XObject << /Im0 "));
+    // The content stream is Flate, so the image is observed through its
+    // XObject dictionary and the page's resource entry for it, in Krilla's
+    // spelling (ADR-0021).
+    assert!(pdf.contains("/Subtype/Image"));
+    assert!(pdf.contains("/XObject<</x0 "));
 }
 
 #[test]

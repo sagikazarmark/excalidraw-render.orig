@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::common::pdf_inspect::{declares_base_font, pdf_actual_text, pdf_text, stream_data};
+use crate::common::pdf_inspect::{declares_base_font, pdf_actual_text, pdf_text};
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
 use crate::common::reports::assert_report_matches;
@@ -105,8 +105,9 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert!(declares_base_font(&pdf, "Excalifont"));
                 assert!(pdf.contains("/ToUnicode "));
                 assert!(pdf.contains("/FontFile2 "));
-                assert!(pdf.contains("/CIDToGIDMap "));
-                assert!(!pdf.contains("/CIDToGIDMap /Identity"));
+                // Krilla's character codes are the subset's glyph IDs
+                // (ADR-0021).
+                assert!(pdf.contains("/CIDToGIDMap /Identity"));
                 assert!(pdf.contains("<0001> <004F>"));
                 assert!(pdf.contains(
                     "/ActualText <FEFF004F006E0065002000740077006F002000740068007200650065000A>"
@@ -118,10 +119,13 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert!(pdf.contains("license.ofl-1.1"));
                 // Moved with #151 item 1: the XMP manifest carries the
                 // Excalifont attribution and the OFL body as two notices;
-                // every stream outside the metadata is unchanged.
+                // every stream outside the metadata is unchanged. Moved again
+                // when Krilla became the PDF writer (ADR-0021): the renamed
+                // subset program, its notice, and the manifest attachment;
+                // both viewer gates hold.
                 assert_eq!(
                     artifact_sha256(&first),
-                    "ed5dd7b2faf6fcd7c56c6afd5f8adbfb01d4326079414de7b16ef9d53cc2c6bb"
+                    "aeb807576e1f72aec4b951f32a2f5da8cc6d535ceab1a30ca6fdaa1e2249ad73"
                 );
             }
             _ => panic!("the test covers the revision-1 format set"),
@@ -345,17 +349,22 @@ fn png_text_coverage_uses_the_transformed_glyph_rectangle() {
 
 #[test]
 fn pdf_maps_the_same_glyph_id_to_distinct_unicode_character_codes() {
+    // A space and a no-break space are one glyph. Krilla gives a glyph one
+    // character code and one ToUnicode entry, so the second text it stands
+    // for travels in its own `/ActualText` span inside the line's (ADR-0021).
     let scene = text_scene(" \u{a0}", 40.0, 30.0);
     let outcome = render(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(outcome.artifact().bytes());
     assert!(pdf.contains("<0001> <0020>"));
-    assert!(pdf.contains("<0002> <00A0>"));
-    assert!(pdf.contains("<0001> Tj"));
-    assert!(pdf.contains("<0002> Tj"));
-    assert!(!pdf.contains("/CIDToGIDMap /Identity"));
-    let cid_to_gid = pdf_stream_referenced_after(outcome.artifact().bytes(), "/CIDToGIDMap ");
-    assert_eq!(&cid_to_gid[2..4], &cid_to_gid[4..6]);
-    assert_ne!(&cid_to_gid[2..4], &[0, 0]);
+    assert!(!pdf.contains("<00A0>\n"));
+    assert_eq!(
+        crate::common::pdf_inspect::shown_codes(&crate::common::pdf_inspect::page_content(
+            outcome.artifact().bytes()
+        )),
+        [1, 1]
+    );
+    assert!(pdf.contains("/ActualText <FEFF002000A0> >> BDC\n"));
+    assert!(pdf.contains("/Span << /ActualText <FEFF00A0> >> BDC\n"));
 }
 
 /// The focused Excalifont text: two centered lines, rotated, translucent.
@@ -444,17 +453,6 @@ fn work_crossing_descriptor(outcome: &RenderOutcome) -> Option<Value> {
         })
         .map(|diagnostic| serde_json::to_value(diagnostic).expect("work diagnostic serializes"))
         .max_by_key(|descriptor| descriptor["details"]["measurement"]["value"].as_u64())
-}
-
-/// The stream of the object that the reference following `key` names.
-fn pdf_stream_referenced_after(pdf: &[u8], key: &str) -> Vec<u8> {
-    let text = pdf_text(pdf);
-    let object = text
-        .split(key)
-        .nth(1)
-        .and_then(|tail| tail.split_whitespace().next())
-        .expect("PDF reference has an object number");
-    stream_data(pdf, format!("{object} 0 obj\n").as_bytes())
 }
 
 fn svg_source_text(svg: &str) -> String {

@@ -11,7 +11,6 @@ const APPROVED_PDF: &str = "b053159dc6ea0649e6c0fa5840196ccb81db6b41b7eb69d01813
 const CURRENT_PDF: &str = "50180ecf1822d7d573ea78cc6375cd3f83af8ef2748422b7e9b3d52a1b7ba6dc";
 const OLD_EXPECTATION: &str = "b6cbc6049556ae87780a83e9c252f64193594bf37c9d6a2f18a80434b31cb7b9";
 const NEW_EXPECTATION: &str = "442f0cb2580a4066d64bcb924eaa6e070252faca2fa2b37fa4f34c81ff600b1b";
-const TEST_SOURCE: &str = "crates/excalidraw-render/tests/fast/pdf_backend_qualification.rs";
 fn exact_pin_transition(
     before: &[u8],
     after: &[u8],
@@ -87,7 +86,11 @@ mod tests {
         let old = read(&root, "before-project-operations-structure.json").unwrap();
         let new = read(&root, "proposed-structure.json").unwrap();
         let old_test = read(&root, "before-pdf_backend_qualification.rs").unwrap();
-        let new_test = read(&repo_root(), TEST_SOURCE).unwrap();
+        // The test source as the transition left it (`after_test` in
+        // `applied-transition.json`), not the live `pdf_backend_qualification.rs`:
+        // later pin moves there are reviewed on their own and do not rewrite
+        // this history.
+        let new_test = read(&root, "after-pdf_backend_qualification.rs").unwrap();
         exact_pin_transition(&old, &new, &old_test, &new_test).unwrap();
         let mut bad: Value = serde_json::from_slice(&new).unwrap();
         bad["image_count"] = json!(99);

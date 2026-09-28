@@ -711,11 +711,11 @@ fn evidence() -> Value {
     for (bytes, digest) in [
         (
             include_bytes!("png_profile_contract.rs").as_slice(),
-            "44a5b9b4fba24704191b32f53008467605e6afa67f3fad02a3937ea53aba64c5",
+            "994389eed1224886cfb0df9e8382d90bcac8b6350d72618409a01a1d108a3661",
         ),
         (
             include_bytes!("../common/pdf_inspect.rs").as_slice(),
-            "2e46ed33e8decbb629d47dd1a45f43781c102a4ceba5990620b33edc25bab074",
+            "285cac0d1029d1f7c2485cd0d3cfb7d4be7c8394b320adc837f9eaf49ab5e4b3",
         ),
         (
             include_bytes!("../common/raster.rs").as_slice(),
@@ -1136,9 +1136,12 @@ fn negative_helpers(record: &Value) {
     let inflated = crate::common::pdf_inspect::inflate_streams(&pdf);
     for (from, to) in [
         ("/SMask ", "/Unused "),
-        ("/Im0 Do", "/Im9 Do"),
+        ("/x0 Do\n", "/x9 Do\n"),
         ("/ICCBased ", "/DeviceRGB "),
-        ("/OutputIntents ", "/UnusedIntents "),
+        (
+            "/Type /Catalog\n",
+            "/Type /Catalog\n/OutputIntents [1 0 R]\n",
+        ),
         ("/DeviceGray", "/DeviceRGB"),
         ("/Width 9\n", "/Width 8\n"),
         ("/MediaBox [0 0 6.75 5.25]", "/MediaBox [0 0 6.75 5.26]"),
@@ -1164,8 +1167,8 @@ fn negative_helpers(record: &Value) {
     };
     let detached = replace_once(
         &inflated,
-        &format!("/Im0 {} 0 R", reference("/Im0 ")),
-        &format!("/Im0 {} 0 R", reference("/ICCBased ")),
+        &format!("/XObject << /x0 {} 0 R", reference("/XObject << /x0 ")),
+        &format!("/XObject << /x0 {} 0 R", reference("/ICCBased ")),
     );
     rejects(|| artifact(&detached, OutputFormat::Pdf, &source, &expected));
     rejects(|| {

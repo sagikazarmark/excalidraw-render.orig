@@ -54,7 +54,7 @@ fn pdf_embeds_the_flattened_first_gif_frame_with_a_soft_mask() {
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/Width 2\n/Height 1"));
     assert!(pdf.contains("/SMask "));
-    assert!(pdf.contains("/Im0 Do"));
+    assert!(pdf.contains("/x0 Do"));
     assert_eq!(
         outcome
             .report()

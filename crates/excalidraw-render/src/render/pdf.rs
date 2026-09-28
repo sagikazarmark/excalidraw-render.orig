@@ -1,18 +1,14 @@
 //! The vector-first PDF backend (stage 5 and 6): `PdfPlan` lowers the resolved
-//! scene into paint-ordered `PdfElement`s and `encode` writes the object graph
-//! — catalog, page, resources, ExtGStates, XMP metadata, the embedded scene,
-//! link annotations, fallback forms, fonts, images and the nested-SVG chunks —
-//! with a hand-maintained object layout the `checked_object` arithmetic keeps
-//! honest. This file also owns the project sRGB ICC profile, the link-annotation
-//! geometry and the image-viewport projection the children share.
+//! scene into paint-ordered `PdfElement`s and `encode` writes them through
+//! Krilla (ADR-0021) — one page, its link annotations, the embedded scene and
+//! the artifact manifest as attachments, and the tag tree the page's text
+//! forms. This file also owns the link-annotation geometry and the
+//! image-viewport projection the children share.
 //!
-//! `content` writes the page content stream and the fallback form streams,
-//! `fonts` the Type0 font objects and their deterministic glyph mappings,
-//! `nested_svg` the raster-closure analysis over sanitized `usvg` trees and
-//! the bounded svg2pdf adapter that renumbers and canonicalizes its chunks,
-//! `streams` the one Flate configuration every renderer-written stream takes,
-//! `writer` the checked byte sink, object/stream framing and finalization,
-//! and `raster_preflight` the session's admission of those closures.
+//! `content` draws the page, `fonts` prepares the embedded Modified Versions
+//! and draws glyphs, `nested_svg` the raster-closure analysis over sanitized
+//! `usvg` trees and the tree each nested-SVG resource is drawn from, and
+//! `raster_preflight` the session's admission of those closures.
 
 mod content;
 mod dark_nested_svg;
@@ -21,69 +17,45 @@ mod nested_svg;
 mod raster;
 mod raster_preflight;
 mod raster_svg;
-mod streams;
-mod writer;
+mod svg_draw;
 
-use fonts::embedded_font_name;
-use nested_svg::{collect_raster_closures, renumber_svg_chunks, svg_chunks};
-use streams::deflate_stream;
-use writer::{Object, StreamEncoding, Writer};
+use content::PdfImages;
+use fonts::{finite_f32, PdfFonts};
+use nested_svg::{collect_raster_closures, svg_draw_trees};
 
 use std::sync::Arc;
 
+use krilla::action::{Action, LinkAction};
+use krilla::annotation::{Annotation, LinkAnnotation, Target};
+use krilla::configure::{ConfigurationBuilder, PdfVersion};
+use krilla::embed::{AssociationKind, EmbeddedFile, MimeType};
+use krilla::geom::{Point as KrillaPoint, Quadrilateral, Size};
+use krilla::image::{BitsPerComponent, CustomImage, Image, ImageColorspace};
+use krilla::page::PageSettings;
+use krilla::tagging::TagTree;
+use krilla::{Document, SerializeSettings};
+
 use crate::normalization::NormalizedElementSource;
 use crate::portable_math::{cube, sin_cos};
-use crate::{
-    color::{self, CanonicalColor},
-    LogicalBounds, NestedPath, RenderRequest,
-};
+use crate::{color::CanonicalColor, LogicalBounds, NestedPath, RenderRequest};
 
-use super::font_demand::ResolvedFont;
 use super::geometry::{clip_convex_polygon, Path, PathOperation, Point};
 use super::metadata::ArtifactMetadata;
 use super::notices::MandatoryNotices;
-use super::number_format::format_pdf_number;
 use super::plan::PlannedElement;
 use super::resolve::{
-    decoration_fill_color, DarkModeImageFilter, FallbackColors, FallbackSource, ResolvedClip,
-    ResolvedElement, ResolvedFrameName, ResolvedFrameOutline, ResolvedImageAsset,
-    ResolvedImageProjection, ResolvedImageSourceRect, ResolvedLabelMask, ResolvedScene,
-    ResolvedTransform, StrokeStyle,
+    DarkModeImageFilter, FallbackColors, FallbackSource, ResolvedClip, ResolvedElement,
+    ResolvedFrameName, ResolvedFrameOutline, ResolvedImageAsset, ResolvedImageProjection,
+    ResolvedImageSourceRect, ResolvedLabelMask, ResolvedScene, ResolvedTransform, StrokeStyle,
 };
 use super::rough::{Drawing, Fill};
-use super::text::{ResolvedLabel, ResolvedText, LIBERATION_SANS_IDENTITY};
+use super::text::{ResolvedLabel, ResolvedText};
 use super::{freedraw, FormatEncodeError, SvgTreeCache};
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
-const ICC_PROFILE_OBJECT: usize = 5;
-const OUTPUT_INTENT_OBJECT: usize = 6;
-const FIRST_EXT_GSTATE_OBJECT: usize = 7;
 
-// Exact sRGB device-to-linear values, frozen as profile data rather than
-// recalculated with target-dependent transcendental functions.
-const SRGB_TRC: [u16; 256] = [
-    0, 20, 40, 60, 80, 99, 119, 139, 159, 179, 199, 219, 241, 264, 288, 313, 340, 367, 396, 427,
-    458, 491, 526, 562, 599, 637, 677, 718, 761, 805, 851, 898, 947, 997, 1048, 1101, 1156, 1212,
-    1270, 1330, 1391, 1453, 1517, 1583, 1651, 1720, 1790, 1863, 1937, 2013, 2090, 2170, 2250, 2333,
-    2418, 2504, 2592, 2681, 2773, 2866, 2961, 3058, 3157, 3258, 3360, 3464, 3570, 3678, 3788, 3900,
-    4014, 4129, 4247, 4366, 4488, 4611, 4736, 4864, 4993, 5124, 5257, 5392, 5530, 5669, 5810, 5953,
-    6099, 6246, 6395, 6547, 6700, 6856, 7014, 7174, 7335, 7500, 7666, 7834, 8004, 8177, 8352, 8528,
-    8708, 8889, 9072, 9258, 9445, 9635, 9828, 10022, 10219, 10417, 10619, 10822, 11028, 11235,
-    11446, 11658, 11873, 12090, 12309, 12530, 12754, 12980, 13209, 13440, 13673, 13909, 14146,
-    14387, 14629, 14874, 15122, 15371, 15623, 15878, 16135, 16394, 16656, 16920, 17187, 17456,
-    17727, 18001, 18277, 18556, 18837, 19121, 19407, 19696, 19987, 20281, 20577, 20876, 21177,
-    21481, 21787, 22096, 22407, 22721, 23038, 23357, 23678, 24002, 24329, 24658, 24990, 25325,
-    25662, 26001, 26344, 26688, 27036, 27386, 27739, 28094, 28452, 28813, 29176, 29542, 29911,
-    30282, 30656, 31033, 31412, 31794, 32179, 32567, 32957, 33350, 33745, 34143, 34544, 34948,
-    35355, 35764, 36176, 36591, 37008, 37429, 37852, 38278, 38706, 39138, 39572, 40009, 40449,
-    40891, 41337, 41785, 42236, 42690, 43147, 43606, 44069, 44534, 45002, 45473, 45947, 46423,
-    46903, 47385, 47871, 48359, 48850, 49344, 49841, 50341, 50844, 51349, 51858, 52369, 52884,
-    53401, 53921, 54445, 54971, 55500, 56032, 56567, 57105, 57646, 58190, 58737, 59287, 59840,
-    60396, 60955, 61517, 62082, 62650, 63221, 63795, 64372, 64952, 65535,
-];
-
-// Project-owned content is lowered directly; the bounded svg2pdf adapter in
-// `nested_svg` is confined to sanitized nested-SVG Form chunks.
+// Project-owned content is drawn directly; krilla-svg draws only sanitized
+// nested-SVG trees.
 #[derive(Debug)]
 pub(super) struct PdfPlan {
     logical_width: f64,
@@ -95,8 +67,7 @@ pub(super) struct PdfPlan {
     fallback_colors: FallbackColors,
     mandatory_notices: Option<MandatoryNotices>,
     metadata: Option<ArtifactMetadata>,
-    fallback_font_sfnt: Option<Vec<u8>>,
-    official_fonts: Vec<ResolvedFont>,
+    fonts: PdfFonts,
     svg_trees: SvgTreeCache,
     elements: Vec<PdfElement>,
     raster_closures: Vec<PdfRasterClosure>,
@@ -371,6 +342,13 @@ impl PdfPlan {
                 }
             }
         }
+        // Every embedded program is a Modified Version (ADR-0021), so the
+        // artifact's notices name each program beside its family's.
+        let fonts = PdfFonts::prepare(scene.fallback_font_sfnt.as_deref(), &scene.official_fonts)?;
+        let mandatory_notices = scene
+            .mandatory_notices
+            .map(|_| fonts.notices(&scene.official_fonts))
+            .transpose()?;
         let mut plan = Self {
             logical_width: scene.logical_width,
             logical_height: scene.logical_height,
@@ -391,10 +369,9 @@ impl PdfPlan {
             page_height,
             background,
             fallback_colors: scene.fallback_colors,
-            mandatory_notices: scene.mandatory_notices,
+            mandatory_notices,
             metadata: None,
-            fallback_font_sfnt: scene.fallback_font_sfnt,
-            official_fonts: scene.official_fonts,
+            fonts,
             elements,
             raster_closures: Vec::new(),
             svg_resources: Vec::new(),
@@ -424,539 +401,79 @@ impl PdfPlan {
     }
 
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
-        let opacity_resources = self.opacity_resources()?;
-        let image_resources = self.image_resources()?;
-        let svg_resources = &self.svg_resources;
-        let raw_svg_chunks = svg_chunks(svg_resources, &self.svg_trees, &self.raster_closures)?;
-        let fallback_mappings = self.fallback_glyph_mappings()?;
-        let official_mappings = self.official_glyph_mappings()?;
-        // Every renderer-written stream is deflated before the output buffer
-        // is sized (ADR-0008). This capacity estimate includes the exact stream
-        // lengths; the writer also checks any growth beyond its allowances.
-        // The deflated streams are transients of the §13.2 PDF
-        // stream workspace; each is dropped with the encoder.
-        let content = deflate_stream(
-            self.encode_content(
-                &opacity_resources,
-                &image_resources,
-                svg_resources,
-                &fallback_mappings,
-                &official_mappings,
-            )?
-            .as_bytes(),
-            "pdf_content_stream",
-        )?;
-        let fallback_forms = self
-            .encode_fallback_forms(&fallback_mappings)?
+        let page_size = Size::from_wh(
+            finite_f32(self.page_width, "PDF page width")?,
+            finite_f32(self.page_height, "PDF page height")?,
+        )
+        .ok_or_else(|| FormatEncodeError::Encoding("PDF page has no drawable size".to_owned()))?;
+        let raster = self
+            .image_resources()?
             .iter()
-            .map(|form| deflate_stream(form.as_bytes(), "pdf_fallback_form_stream"))
+            .map(raster_image)
             .collect::<Result<Vec<_>, _>>()?;
-        // The XMP packet is the one stream left stored: PDF/A requires the
-        // metadata stream to be readable without a filter, and the file
-        // carries a `GTS_PDFA1` output intent (spec §8.6).
-        let xmp = self
-            .metadata
-            .as_ref()
-            .and_then(ArtifactMetadata::manifest)
-            .map(xmp_metadata)
-            .transpose()
-            .map_err(|error| {
-                super::metadata::metadata_failure(
-                    error,
-                    crate::diagnostic_registry::MetadataFailure::ManifestEmbedding,
+        let svg_trees =
+            svg_draw_trees(&self.svg_resources, &self.svg_trees, &self.raster_closures)?;
+        let annotations = self.link_annotations()?;
+
+        let mut document = Document::new_with(serialize_settings()?);
+        // The crop box restates the media box, as the page has always said.
+        let page_box =
+            krilla::geom::Rect::from_xywh(0.0, 0.0, page_size.width(), page_size.height());
+        let mut page =
+            document.start_page_with(PageSettings::new(page_size).with_crop_box(page_box));
+        let mut surface = page.surface();
+        let tags = self.draw_page(
+            &mut surface,
+            &self.fonts,
+            &PdfImages {
+                raster,
+                svg: svg_trees,
+            },
+        );
+        surface.finish();
+        for annotation in annotations {
+            page.add_annotation(annotation);
+        }
+        page.finish();
+        let mut tree = TagTree::new();
+        for group in tags? {
+            tree.push(group);
+        }
+        document.set_tag_tree(tree);
+
+        // The artifact manifest and the canonical scene are attachments; the
+        // manifest carries the mandatory notices (spec 12.2, ADR-0021).
+        if let Some(manifest) = self.metadata.as_ref().and_then(ArtifactMetadata::manifest) {
+            super::metadata::operation(super::metadata::Stage::ManifestEmbedding, || {
+                embed(
+                    &mut document,
+                    MANIFEST_ATTACHMENT,
+                    "application/json",
+                    "excalidraw-render artifact manifest",
+                    AssociationKind::Supplement,
+                    manifest.as_bytes(),
                 )
             })?;
-        let embedded_scene = self
+        }
+        if let Some(scene) = self
             .metadata
             .as_ref()
             .and_then(ArtifactMetadata::canonical_scene)
-            .map(|scene| {
-                super::metadata::operation(super::metadata::Stage::PdfSceneCompression, || {
-                    deflate_stream(scene, "pdf_embedded_scene_stream")
-                })
-            })
-            .transpose()?;
-        let attachment_object_count = usize::from(embedded_scene.is_some()) * 2;
-        let mut link_count = 0_usize;
-        for element in self
-            .elements
-            .iter()
-            .filter(|element| element.link.is_some())
-        {
-            if link_annotation_visible(
-                element.width,
-                element.height,
-                &element.transform,
-                &element.frame_clips,
-                self.scale * POINTS_PER_LOGICAL_PIXEL,
-                self.page_width,
-                self.page_height,
-            )? {
-                link_count = link_count.checked_add(1).ok_or_else(pdf_size_error)?;
-            }
-        }
-        let srgb_icc_profile = deflate_stream(&srgb_icc_profile()?, "pdf_srgb_profile_stream")?;
-        let fallback_font_program = self
-            .fallback_font_sfnt
-            .as_deref()
-            .map(|font| deflate_stream(font, "pdf_font_program_stream"))
-            .transpose()?;
-        let official_font_programs = self
-            .official_fonts
-            .iter()
-            .map(|font| deflate_stream(&font.sfnt, "pdf_font_program_stream"))
-            .collect::<Result<Vec<_>, _>>()?;
-        let image_streams = image_resources
-            .iter()
-            .map(image_planes)
-            .collect::<Result<Vec<_>, _>>()?;
-        let object_count = 6_usize
-            .checked_add(opacity_resources.len())
-            .and_then(|count| count.checked_add(usize::from(xmp.is_some())))
-            .and_then(|count| count.checked_add(attachment_object_count))
-            .and_then(|count| count.checked_add(link_count))
-            .and_then(|count| count.checked_add(fallback_forms.len()))
-            .ok_or_else(pdf_size_error)?;
-        let metadata_object = if xmp.is_some() {
-            Some(
-                FIRST_EXT_GSTATE_OBJECT
-                    .checked_add(opacity_resources.len())
-                    .ok_or_else(pdf_size_error)?,
-            )
-        } else {
-            None
-        };
-        let first_attachment_object = FIRST_EXT_GSTATE_OBJECT
-            .checked_add(opacity_resources.len())
-            .and_then(|object| object.checked_add(usize::from(xmp.is_some())))
-            .ok_or_else(pdf_size_error)?;
-        let attachment_filespec_object = embedded_scene
-            .as_ref()
-            .map(|_| {
-                first_attachment_object
-                    .checked_add(1)
-                    .ok_or_else(pdf_size_error)
-            })
-            .transpose()?;
-        let first_link_object = first_attachment_object
-            .checked_add(attachment_object_count)
-            .ok_or_else(pdf_size_error)?;
-        let first_fallback_form_object = first_link_object
-            .checked_add(link_count)
-            .ok_or_else(pdf_size_error)?;
-        let after_fallback_forms = first_fallback_form_object
-            .checked_add(fallback_forms.len())
-            .ok_or_else(pdf_size_error)?;
-        let fallback_font_object = self
-            .fallback_font_sfnt
-            .as_ref()
-            .map(|_| after_fallback_forms);
-        let fallback_font_object_count = usize::from(fallback_font_object.is_some())
-            .checked_mul(6)
-            .ok_or_else(pdf_size_error)?;
-        let official_font_object = if self.official_fonts.is_empty() {
-            None
-        } else {
-            Some(
-                after_fallback_forms
-                    .checked_add(fallback_font_object_count)
-                    .ok_or_else(pdf_size_error)?,
-            )
-        };
-        let official_font_object_count = self
-            .official_fonts
-            .len()
-            .checked_mul(6)
-            .ok_or_else(pdf_size_error)?;
-        let first_image_object = after_fallback_forms
-            .checked_add(fallback_font_object_count)
-            .and_then(|object| object.checked_add(official_font_object_count))
-            .ok_or_else(pdf_size_error)?;
-        let image_object_count = image_resources
-            .len()
-            .checked_mul(2)
-            .ok_or_else(pdf_size_error)?;
-        let first_svg_object = first_image_object
-            .checked_add(image_object_count)
-            .ok_or_else(pdf_size_error)?;
-        let svg_object_count = raw_svg_chunks
-            .iter()
-            .try_fold(0_usize, |count, chunk| {
-                count.checked_add(chunk.chunk.refs().len())
-            })
-            .ok_or_else(pdf_size_error)?;
-        let svg_chunks = renumber_svg_chunks(raw_svg_chunks, first_svg_object)?;
-        let object_count = object_count
-            .checked_add(fallback_font_object_count)
-            .and_then(|count| count.checked_add(official_font_object_count))
-            .and_then(|count| count.checked_add(image_object_count))
-            .and_then(|count| count.checked_add(svg_object_count))
-            .ok_or_else(pdf_size_error)?;
-        let page_width = format_pdf_number(self.page_width, "PDF page width")?;
-        let page_height = format_pdf_number(self.page_height, "PDF page height")?;
-
-        let output_capacity = 2_048_usize
-            .checked_add(content.len())
-            .and_then(|capacity| capacity.checked_add(srgb_icc_profile.len()))
-            .and_then(|capacity| {
-                opacity_resources
-                    .len()
-                    .checked_mul(256)
-                    .and_then(|extra| capacity.checked_add(extra))
-            })
-            .and_then(|capacity| {
-                svg_chunks.iter().try_fold(capacity, |capacity, resource| {
-                    capacity.checked_add(resource.bytes.len())
-                })
-            })
-            .and_then(|capacity| {
-                xmp.as_ref().map_or(Some(capacity), |xmp| {
-                    xmp.len()
-                        .checked_add(128)
-                        .and_then(|extra| capacity.checked_add(extra))
-                })
-            })
-            .and_then(|capacity| {
-                embedded_scene.as_ref().map_or(Some(capacity), |scene| {
-                    scene
-                        .len()
-                        .checked_add(1_024)
-                        .and_then(|extra| capacity.checked_add(extra))
-                })
-            })
-            .and_then(|capacity| {
-                link_count
-                    .checked_mul(512)
-                    .and_then(|extra| capacity.checked_add(extra))
-            })
-            .and_then(|capacity| {
-                fallback_forms.iter().try_fold(capacity, |capacity, form| {
-                    form.len()
-                        .checked_add(256)
-                        .and_then(|extra| capacity.checked_add(extra))
-                })
-            })
-            .and_then(|capacity| {
-                fallback_font_program
-                    .as_ref()
-                    .map_or(Some(capacity), |font| {
-                        font.len()
-                            .checked_add(16_384)
-                            .and_then(|extra| capacity.checked_add(extra))
-                    })
-            })
-            .and_then(|capacity| {
-                official_font_programs
-                    .iter()
-                    .try_fold(capacity, |capacity, font| {
-                        font.len()
-                            .checked_add(16_384)
-                            .and_then(|extra| capacity.checked_add(extra))
-                    })
-            })
-            .and_then(|capacity| {
-                image_streams
-                    .iter()
-                    .try_fold(capacity, |capacity, (rgb, alpha)| {
-                        rgb.len()
-                            .checked_add(alpha.len())
-                            .and_then(|bytes| bytes.checked_add(1_024))
-                            .and_then(|extra| capacity.checked_add(extra))
-                    })
-            })
-            .and_then(|capacity| {
-                object_count
-                    .checked_mul(32)
-                    .and_then(|extra| capacity.checked_add(extra))
-            })
-            .ok_or_else(pdf_size_error)?;
-        let mut pdf = Writer::new(output_capacity, object_count)?;
-
-        pdf.object(1, |pdf| {
-            write!(
-                pdf,
-                "<<\n/Type /Catalog\n/Pages 2 0 R\n/OutputIntents [{OUTPUT_INTENT_OBJECT} 0 R]\n"
-            )?;
-            if let Some(metadata_object) = metadata_object {
-                writeln!(pdf, "/Metadata {metadata_object} 0 R")?;
-            }
-            if let Some(filespec) = attachment_filespec_object {
-                writeln!(
-                    pdf,
-                    "/Names << /EmbeddedFiles << /Names [(scene.excalidraw) {filespec} 0 R] >> >>\n/AF [{filespec} 0 R]"
-                )?;
-            }
-            pdf.bytes(b">>\n")
-        })?;
-
-        pdf.object(2, |pdf| {
-            pdf.bytes(b"<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\n")
-        })?;
-
-        pdf.object(3, |pdf| {
-            write!(
-                pdf,
-                concat!(
-                    "<<\n/Type /Page\n/Parent 2 0 R\n",
-                    "/MediaBox [0 0 {} {}]\n",
-                    "/CropBox [0 0 {} {}]\n",
-                    "/Resources <<\n/ColorSpace << /CS1 [/ICCBased 5 0 R] >>\n"
-                ),
-                page_width, page_height, page_width, page_height,
-            )?;
-            if !opacity_resources.is_empty() {
-                pdf.bytes(b"/ExtGState <<")?;
-                for index in 0..opacity_resources.len() {
-                    write!(
-                        pdf,
-                        " /GS{} {} 0 R",
-                        index + 1,
-                        checked_object(FIRST_EXT_GSTATE_OBJECT, index, 1)?
-                    )?;
-                }
-                pdf.bytes(b" >>\n")?;
-            }
-            if !fallback_forms.is_empty() || !image_resources.is_empty() || !svg_chunks.is_empty() {
-                pdf.bytes(b"/XObject <<")?;
-                for index in 0..fallback_forms.len() {
-                    write!(
-                        pdf,
-                        " /FB{} {} 0 R",
-                        index + 1,
-                        checked_object(first_fallback_form_object, index, 1)?
-                    )?;
-                }
-                for index in 0..image_resources.len() {
-                    write!(
-                        pdf,
-                        " /Im{} {} 0 R",
-                        index,
-                        checked_object(first_image_object, index, 2)?
-                    )?;
-                }
-                for (index, resource) in svg_chunks.iter().enumerate() {
-                    write!(pdf, " /Svg{index} {} 0 R", resource.root.get())?;
-                }
-                pdf.bytes(b" >>\n")?;
-            }
-            if let Some(fallback_font_object) = fallback_font_object {
-                write!(pdf, "/Font << /F1 {fallback_font_object} 0 R")?;
-                if let Some(official_font_object) = official_font_object {
-                    for index in 0..self.official_fonts.len() {
-                        write!(
-                            pdf,
-                            " /F{} {} 0 R",
-                            index + 2,
-                            checked_object(official_font_object, index, 6)?
-                        )?;
-                    }
-                }
-                pdf.bytes(b" >>\n")?;
-            } else if let Some(official_font_object) = official_font_object {
-                pdf.bytes(b"/Font <<")?;
-                for index in 0..self.official_fonts.len() {
-                    write!(
-                        pdf,
-                        " /F{} {} 0 R",
-                        index + 2,
-                        checked_object(official_font_object, index, 6)?
-                    )?;
-                }
-                pdf.bytes(b" >>\n")?;
-            }
-            pdf.bytes(b">>\n")?;
-            if link_count != 0 {
-                pdf.bytes(b"/Annots [")?;
-                for index in 0..link_count {
-                    write!(pdf, " {} 0 R", checked_object(first_link_object, index, 1)?)?;
-                }
-                pdf.bytes(b" ]\n")?;
-            }
-            pdf.bytes(b"/Contents 4 0 R\n>>\n")
-        })?;
-
-        pdf.flate_stream(4, "", &content)?;
-
-        pdf.flate_stream(
-            ICC_PROFILE_OBJECT,
-            "/N 3\n/Alternate /DeviceRGB\n",
-            &srgb_icc_profile,
-        )?;
-
-        pdf.object(OUTPUT_INTENT_OBJECT, |pdf| {
-            write!(
-                pdf,
-                concat!(
-                    "<<\n/Type /OutputIntent\n/S /GTS_PDFA1\n",
-                    "/OutputConditionIdentifier (sRGB)\n",
-                    "/Info (excalidraw-render project sRGB)\n",
-                    "/DestOutputProfile 5 0 R\n>>\n"
-                )
-            )
-        })?;
-
-        for (index, opacity) in opacity_resources.iter().copied().enumerate() {
-            let opacity = format_pdf_number(opacity, "PDF opacity")?;
-            pdf.object(checked_object(FIRST_EXT_GSTATE_OBJECT, index, 1)?, |pdf| {
-                write!(
-                    pdf,
-                    "<<\n/Type /ExtGState\n/CA {opacity}\n/ca {opacity}\n/BM /Normal\n>>\n"
-                )
-            })?;
-        }
-        if let (Some(metadata_object), Some(xmp)) = (metadata_object, xmp.as_ref()) {
-            super::metadata::operation(super::metadata::Stage::ManifestEmbedding, || {
-                pdf.stream(
-                    metadata_object,
-                    StreamEncoding::Stored,
-                    xmp.as_bytes(),
-                    |pdf| pdf.bytes(b"/Type /Metadata\n/Subtype /XML\n"),
-                    format_args!(""),
-                )
-            })?;
-        }
-        if let (Some(scene), Some(filespec)) = (embedded_scene.as_ref(), attachment_filespec_object)
         {
             super::metadata::operation(super::metadata::Stage::SceneEmbedding, || {
-                pdf.flate_stream(
-                    first_attachment_object,
-                    "/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n",
+                embed(
+                    &mut document,
+                    "scene.excalidraw",
+                    "application/vnd.excalidraw+json",
+                    "Canonical Excalidraw scene",
+                    AssociationKind::Data,
                     scene,
-                )?;
-
-                pdf.object(filespec, |pdf| {
-                    write!(
-                        pdf,
-                        concat!(
-                            "<<\n/Type /Filespec\n/F (scene.excalidraw)\n/UF (scene.excalidraw)\n",
-                            "/AFRelationship /Data\n/Desc (Canonical Excalidraw scene)\n",
-                            "/EF << /F {} 0 R /UF {} 0 R >>\n>>\n"
-                        ),
-                        first_attachment_object, first_attachment_object
-                    )
-                })
+                )
             })?;
         }
-        let mut link_index = 0_usize;
-        for element in self.elements.iter().rev() {
-            let Some(link) = element.link.as_deref() else {
-                continue;
-            };
-            if !link_annotation_visible(
-                element.width,
-                element.height,
-                &element.transform,
-                &element.frame_clips,
-                self.scale * POINTS_PER_LOGICAL_PIXEL,
-                self.page_width,
-                self.page_height,
-            )? {
-                continue;
-            }
-            let object = first_link_object
-                .checked_add(link_index)
-                .ok_or_else(pdf_size_error)?;
-            pdf.object(object, |pdf| self.write_link_annotation(pdf, link, element))?;
-            link_index = link_index.saturating_add(1);
-        }
-        for (index, form) in fallback_forms.iter().enumerate() {
-            let object = first_fallback_form_object
-                .checked_add(index)
-                .ok_or_else(pdf_size_error)?;
-            let fallback = self
-                .elements
-                .iter()
-                .filter_map(|element| {
-                    (matches!(element.kind, PdfElementKind::Fallback { .. })
-                        && element.opacity != 1.0)
-                        .then_some((element.width, element.height))
-                })
-                .nth(index)
-                .ok_or_else(pdf_size_error)?;
-            pdf.stream(
-                object,
-                StreamEncoding::Flate,
-                form,
-                |pdf| {
-                    pdf.bytes(b"/Type /XObject\n/Subtype /Form\n/FormType 1\n/BBox [0 0 ")?;
-                    push_pdf_number(pdf, fallback.0, "PDF fallback form width")?;
-                    pdf.byte(b' ')?;
-                    push_pdf_number(pdf, fallback.1, "PDF fallback form height")?;
-                    pdf.bytes(b"]\n/Resources << /ColorSpace << /CS1 [/ICCBased 5 0 R] >>")?;
-                    if let Some(font_object) = fallback_font_object {
-                        write!(pdf, " /Font << /F1 {font_object} 0 R >>")?;
-                    }
-                    pdf.bytes(b" >>\n/Group << /S /Transparency /I true /CS /DeviceRGB >>\n")
-                },
-                format_args!(""),
-            )?;
-        }
-        if let (Some(font_object), Some(font), Some(program)) = (
-            fallback_font_object,
-            self.fallback_font_sfnt.as_deref(),
-            fallback_font_program.as_deref(),
-        ) {
-            self.write_font_objects(
-                &mut pdf,
-                font_object,
-                font,
-                program,
-                &embedded_font_name(LIBERATION_SANS_IDENTITY, "LiberationSans")?,
-                "LiberationSans",
-                &fallback_mappings,
-            )?;
-        }
-        if let Some(first_object) = official_font_object {
-            for (index, font) in self.official_fonts.iter().enumerate() {
-                self.write_font_objects(
-                    &mut pdf,
-                    checked_object(first_object, index, 6)?,
-                    &font.sfnt,
-                    &official_font_programs[index],
-                    &embedded_font_name(font.identity, font.pdf_name)?,
-                    font.pdf_name,
-                    &official_mappings[index],
-                )?;
-            }
-        }
-        for (index, (resource, (rgb, alpha))) in
-            image_resources.iter().zip(&image_streams).enumerate()
-        {
-            let asset = &resource.asset;
-            let image_object = checked_object(first_image_object, index, 2)?;
-            let mask_object = image_object.checked_add(1).ok_or_else(pdf_size_error)?;
-            pdf.flate_stream(
-                image_object,
-                &format!(
-                    concat!(
-                        "/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
-                        "/ColorSpace [/ICCBased {} 0 R]\n/BitsPerComponent 8\n/Interpolate true\n/SMask {} 0 R\n"
-                    ),
-                    asset.width, asset.height, ICC_PROFILE_OBJECT, mask_object
-                ),
-                rgb,
-            )?;
-            pdf.flate_stream(
-                mask_object,
-                &format!(
-                    concat!(
-                        "/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
-                        "/ColorSpace /DeviceGray\n/BitsPerComponent 8\n/Interpolate true\n"
-                    ),
-                    asset.width, asset.height
-                ),
-                alpha,
-            )?;
-        }
-        for resource in &svg_chunks {
-            pdf.import_chunk(
-                &resource.bytes,
-                &resource.object_offsets,
-                usize::try_from(resource.root.get()).map_err(|_| pdf_size_error())?,
-            )?;
-        }
-
-        pdf.finish()
+        document
+            .finish()
+            .map_err(|error| FormatEncodeError::Encoding(format!("failed to write PDF: {error:?}")))
     }
 
     pub(super) fn source_count(&self) -> usize {
@@ -976,148 +493,67 @@ impl PdfPlan {
         })
     }
 
-    /// The `/Link` annotation of `element`'s `link`, over the element's clipped
-    /// hit rectangle in page space.
-    fn write_link_annotation(
-        &self,
-        pdf: &mut Object<'_>,
-        link: &str,
-        element: &PdfElement,
-    ) -> Result<(), FormatEncodeError> {
+    /// One borderless URI annotation per visible linked element, topmost
+    /// first, over the element's clipped hit area in Krilla's top-down page
+    /// space.
+    fn link_annotations(&self) -> Result<Vec<Annotation>, FormatEncodeError> {
         let point_scale = self.scale * POINTS_PER_LOGICAL_PIXEL;
-        let points = clipped_link_polygon(
-            element.width,
-            element.height,
-            &element.transform,
-            &element.frame_clips,
-            point_scale,
-            self.page_width,
-            self.page_height,
-        )?;
-        if points.len() < 3 {
-            return Err(FormatEncodeError::Encoding(
-                "PDF link annotation has no clipped area".to_owned(),
+        let mut annotations = Vec::new();
+        for element in self.elements.iter().rev() {
+            let Some(link) = element.link.as_deref() else {
+                continue;
+            };
+            let points = clipped_link_polygon(
+                element.width,
+                element.height,
+                &element.transform,
+                &element.frame_clips,
+                point_scale,
+                self.page_width,
+                self.page_height,
+            )?;
+            if points.len() < 3 {
+                continue;
+            }
+            let point = |(x, y): (f64, f64)| -> Result<KrillaPoint, FormatEncodeError> {
+                Ok(KrillaPoint::from_xy(
+                    finite_f32(x, "PDF link x")?,
+                    finite_f32(self.page_height - y, "PDF link y")?,
+                ))
+            };
+            let mut quadrilaterals = Vec::new();
+            if points.len() == 4 {
+                quadrilaterals.push(Quadrilateral([
+                    point(points[0])?,
+                    point(points[1])?,
+                    point(points[3])?,
+                    point(points[2])?,
+                ]));
+            } else {
+                for index in 1..points.len() - 1 {
+                    quadrilaterals.push(Quadrilateral([
+                        point(points[0])?,
+                        point(points[index])?,
+                        point(points[index + 1])?,
+                        point(points[index + 1])?,
+                    ]));
+                }
+            }
+            annotations
+                .try_reserve(1)
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "format_workspace",
+                    subject: "pdf_link_annotations",
+                })?;
+            annotations.push(Annotation::new_link(
+                LinkAnnotation::new_with_quad_points(
+                    quadrilaterals,
+                    Target::Action(Action::Link(LinkAction::new(link_uri(link)))),
+                ),
+                None,
             ));
         }
-        let min_x = points
-            .iter()
-            .map(|point| point.0)
-            .fold(f64::INFINITY, f64::min);
-        let min_y = points
-            .iter()
-            .map(|point| point.1)
-            .fold(f64::INFINITY, f64::min);
-        let max_x = points
-            .iter()
-            .map(|point| point.0)
-            .fold(f64::NEG_INFINITY, f64::max);
-        let max_y = points
-            .iter()
-            .map(|point| point.1)
-            .fold(f64::NEG_INFINITY, f64::max);
-
-        pdf.bytes(b"<<\n/Type /Annot\n/Subtype /Link\n/Rect [")?;
-        push_pdf_number(pdf, min_x, "PDF link rectangle x minimum")?;
-        pdf.byte(b' ')?;
-        push_pdf_number(pdf, min_y, "PDF link rectangle y minimum")?;
-        pdf.byte(b' ')?;
-        push_pdf_number(pdf, max_x, "PDF link rectangle x maximum")?;
-        pdf.byte(b' ')?;
-        push_pdf_number(pdf, max_y, "PDF link rectangle y maximum")?;
-        pdf.bytes(b"]\n/QuadPoints [")?;
-        let mut first = true;
-        let mut write_quadrilateral = |quadrilateral: [(f64, f64); 4]| {
-            for (x, y) in quadrilateral {
-                if !first {
-                    pdf.byte(b' ')?;
-                }
-                first = false;
-                push_pdf_number(pdf, x, "PDF link quadrilateral x")?;
-                pdf.byte(b' ')?;
-                push_pdf_number(pdf, y, "PDF link quadrilateral y")?;
-            }
-            Ok::<(), FormatEncodeError>(())
-        };
-        if points.len() == 4 {
-            write_quadrilateral([points[0], points[1], points[3], points[2]])?;
-        } else {
-            for index in 1..points.len() - 1 {
-                write_quadrilateral([
-                    points[0],
-                    points[index],
-                    points[index + 1],
-                    points[index + 1],
-                ])?;
-            }
-        }
-        pdf.bytes(b"]\n/Border [0 0 0]\n/A <<\n/S /URI\n/URI (")?;
-        push_pdf_link(pdf, link)?;
-        pdf.bytes(b")\n>>\n>>\n")
-    }
-
-    fn opacity_resources(&self) -> Result<Vec<f64>, FormatEncodeError> {
-        let mut resources = Vec::new();
-        resources
-            .try_reserve_exact(self.elements.len().saturating_add(1))
-            .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                subject_kind: "format_workspace",
-                subject: "pdf_opacity_resources",
-            })?;
-        if let Some(background) = self.background.filter(|color| color.alpha() != 1.0) {
-            resources.push(background.alpha());
-        }
-        for element in &self.elements {
-            let mut retain = |opacity: f64| {
-                if opacity != 1.0
-                    && !resources
-                        .iter()
-                        .any(|retained: &f64| retained.to_bits() == opacity.to_bits())
-                {
-                    resources.push(opacity);
-                }
-            };
-            let opacity = element.opacity;
-            match &element.kind {
-                PdfElementKind::RoughOutline {
-                    stroke_color,
-                    fill_color,
-                    drawing,
-                    background_color,
-                    generated_label_color,
-                    ..
-                } => {
-                    retain(opacity * stroke_color.alpha());
-                    if let Some(fill_color) = fill_color {
-                        retain(opacity * fill_color.alpha());
-                    }
-                    for decoration in &drawing.decorations {
-                        if decoration.drawing.fill.is_some() {
-                            let color =
-                                decoration_fill_color(decoration, *stroke_color, *background_color);
-                            retain(opacity * color.alpha());
-                        }
-                    }
-                    if let Some(color) = generated_label_color {
-                        retain(color.alpha());
-                    }
-                }
-                PdfElementKind::Freedraw {
-                    color,
-                    background_color,
-                    ..
-                } => {
-                    retain(opacity * color.alpha());
-                    if let Some(background_color) = background_color {
-                        retain(opacity * background_color.alpha());
-                    }
-                }
-                PdfElementKind::Text { color, .. } => retain(opacity * color.alpha()),
-                PdfElementKind::Frame { .. }
-                | PdfElementKind::Image { .. }
-                | PdfElementKind::Fallback { .. } => retain(opacity),
-            }
-        }
-        Ok(resources)
+        Ok(annotations)
     }
 
     fn image_resources(&self) -> Result<Vec<PdfImageResource>, FormatEncodeError> {
@@ -1240,28 +676,6 @@ fn transformed_pdf_points(
     ]
 }
 
-fn link_annotation_visible(
-    width: f64,
-    height: f64,
-    transform: &ResolvedTransform,
-    frame_clips: &[ResolvedClip],
-    point_scale: f64,
-    page_width: f64,
-    page_height: f64,
-) -> Result<bool, FormatEncodeError> {
-    Ok(clipped_link_polygon(
-        width,
-        height,
-        transform,
-        frame_clips,
-        point_scale,
-        page_width,
-        page_height,
-    )?
-    .len()
-        >= 3)
-}
-
 fn clipped_link_polygon(
     width: f64,
     height: f64,
@@ -1377,9 +791,92 @@ fn transformed_clip_point(
     (x * point_scale, page_height - y * point_scale)
 }
 
-/// One image XObject's two deflated planes: the RGB samples, lowered through
-/// the dark-mode filter when the mode asks for it, and the alpha soft mask.
-fn image_planes(resource: &PdfImageResource) -> Result<(Vec<u8>, Vec<u8>), FormatEncodeError> {
+/// The name the artifact manifest is attached under (spec 12.2).
+const MANIFEST_ATTACHMENT: &str = "artifact-manifest.json";
+
+/// Krilla's settings for every artifact: PDF 1.7 with no conformance claim,
+/// every colour in Krilla's ICC-based sRGB rather than a device space, Flate
+/// content streams, no XMP packet (the manifest is an attachment), and tagging
+/// on for the page's text structure (ADR-0021).
+fn serialize_settings() -> Result<SerializeSettings, FormatEncodeError> {
+    let configuration = ConfigurationBuilder::new()
+        .with_version(PdfVersion::Pdf17)
+        .finish()
+        .map_err(|error| {
+            FormatEncodeError::Encoding(format!("invalid PDF configuration: {error:?}"))
+        })?;
+    Ok(SerializeSettings {
+        compress_content_streams: true,
+        no_device_cs: true,
+        ascii_compatible: false,
+        xmp_metadata: false,
+        enable_tagging: true,
+        configuration,
+        ..SerializeSettings::default()
+    })
+}
+
+fn embed(
+    document: &mut Document,
+    name: &str,
+    media_type: &str,
+    description: &str,
+    association: AssociationKind,
+    bytes: &[u8],
+) -> Result<(), FormatEncodeError> {
+    let mut data = Vec::new();
+    data.try_reserve_exact(bytes.len())
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "metadata",
+            subject: "pdf_attachment",
+        })?;
+    data.extend_from_slice(bytes);
+    document
+        .embed_file(EmbeddedFile {
+            path: name.to_owned(),
+            mime_type: MimeType::new(media_type),
+            description: Some(description.to_owned()),
+            association_kind: association,
+            data: data.into(),
+            modification_date: None,
+            compress: Some(true),
+            location: None,
+        })
+        .ok_or_else(|| FormatEncodeError::Encoding(format!("PDF attachment {name} is not unique")))
+}
+
+/// One image resource's two planes: the RGB samples, lowered through the
+/// dark-mode filter when the mode asks for it, and the alpha soft mask.
+#[derive(Clone, Hash)]
+struct ImagePlanes {
+    rgb: Arc<[u8]>,
+    alpha: Arc<[u8]>,
+    width: u32,
+    height: u32,
+}
+
+impl CustomImage for ImagePlanes {
+    fn color_channel(&self) -> &[u8] {
+        &self.rgb
+    }
+    fn alpha_channel(&self) -> Option<&[u8]> {
+        Some(&self.alpha)
+    }
+    fn bits_per_component(&self) -> BitsPerComponent {
+        BitsPerComponent::Eight
+    }
+    fn size(&self) -> (u32, u32) {
+        (self.width, self.height)
+    }
+    fn icc_profile(&self) -> Option<&[u8]> {
+        None
+    }
+    fn color_space(&self) -> ImageColorspace {
+        ImageColorspace::Rgb
+    }
+}
+
+fn raster_image(resource: &PdfImageResource) -> Result<Image, FormatEncodeError> {
     let asset = &resource.asset;
     let pixel_count = usize::try_from(asset.width)
         .ok()
@@ -1402,158 +899,50 @@ fn image_planes(resource: &PdfImageResource) -> Result<(Vec<u8>, Vec<u8>), Forma
     let rgba = asset.rgba.as_deref().ok_or_else(|| {
         FormatEncodeError::Encoding("PDF image has no normalized pixel resource".to_owned())
     })?;
+    if rgba.len() != pixel_count.saturating_mul(4) {
+        return Err(FormatEncodeError::Encoding(
+            "PDF image pixels disagree with its dimensions".to_owned(),
+        ));
+    }
     for pixel in rgba.as_chunks::<4>().0 {
         let [red, green, blue, pixel_alpha] = [pixel[0], pixel[1], pixel[2], pixel[3]];
         // Official SVG is the visual authority for PDF images (spec
-        // section 8.6): in dark mode a raster pixel passes through
-        // the reference's image filter and root filter. An invisible
-        // pixel keeps its canonical zero RGB.
+        // section 8.6): in dark mode a raster pixel passes through the
+        // reference's image filter and root filter. An invisible pixel keeps
+        // its canonical zero RGB.
         let lowered = match resource.dark_mode_filter {
             Some(DarkModeImageFilter::RasterImage) if pixel_alpha != 0 => {
-                color::dark_mode_raster_image_pixel([red, green, blue])
+                crate::color::dark_mode_raster_image_pixel([red, green, blue])
             }
             _ => [red, green, blue],
         };
         rgb.extend_from_slice(&lowered);
         alpha.push(pixel_alpha);
     }
-    Ok((
-        deflate_stream(&rgb, "pdf_image_rgb_stream")?,
-        deflate_stream(&alpha, "pdf_image_alpha_stream")?,
-    ))
+    Image::from_custom(
+        ImagePlanes {
+            rgb: rgb.into(),
+            alpha: alpha.into(),
+            width: asset.width,
+            height: asset.height,
+        },
+        true,
+    )
+    .map_err(|error| FormatEncodeError::Encoding(format!("PDF image is not embeddable: {error}")))
 }
 
-fn srgb_icc_profile() -> Result<Vec<u8>, FormatEncodeError> {
-    const PROFILE_SIZE: usize = 820;
-    const DATA_OFFSET: u32 = 216;
-    const XYZ_SIZE: u32 = 20;
-    const CURVE_OFFSET: u32 = DATA_OFFSET + 4 * XYZ_SIZE;
-    const CURVE_SIZE: u32 = 12 + 2 * SRGB_TRC.len() as u32;
-    const TAGS: [(&[u8; 4], u32, u32); 7] = [
-        (b"rXYZ", DATA_OFFSET, XYZ_SIZE),
-        (b"gXYZ", DATA_OFFSET + XYZ_SIZE, XYZ_SIZE),
-        (b"bXYZ", DATA_OFFSET + 2 * XYZ_SIZE, XYZ_SIZE),
-        (b"wtpt", DATA_OFFSET + 3 * XYZ_SIZE, XYZ_SIZE),
-        (b"rTRC", CURVE_OFFSET, CURVE_SIZE),
-        (b"gTRC", CURVE_OFFSET, CURVE_SIZE),
-        (b"bTRC", CURVE_OFFSET, CURVE_SIZE),
-    ];
-
-    let mut profile = Vec::new();
-    profile
-        .try_reserve_exact(PROFILE_SIZE)
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_srgb_profile",
-        })?;
-    profile.resize(128, 0);
-    profile[0..4].copy_from_slice(&(PROFILE_SIZE as u32).to_be_bytes());
-    profile[4..8].copy_from_slice(b"ERND");
-    profile[8..12].copy_from_slice(b"\x02\x10\0\0");
-    profile[12..16].copy_from_slice(b"mntr");
-    profile[16..20].copy_from_slice(b"RGB ");
-    profile[20..24].copy_from_slice(b"XYZ ");
-    profile[24..36].copy_from_slice(&[0x07, 0xd0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0]);
-    profile[36..40].copy_from_slice(b"acsp");
-    profile[48..52].copy_from_slice(b"ERND");
-    profile[52..56].copy_from_slice(b"sRGB");
-    profile[68..80].copy_from_slice(&[0, 0, 0xf6, 0xd6, 0, 1, 0, 0, 0, 0, 0xd3, 0x2d]);
-    profile[80..84].copy_from_slice(b"ERND");
-    profile.extend_from_slice(&(TAGS.len() as u32).to_be_bytes());
-    for (signature, offset, size) in TAGS {
-        profile.extend_from_slice(signature);
-        profile.extend_from_slice(&offset.to_be_bytes());
-        profile.extend_from_slice(&size.to_be_bytes());
-    }
-    append_xyz(&mut profile, [0x0000_6fa3, 0x0000_38f6, 0x0000_0391]);
-    append_xyz(&mut profile, [0x0000_6294, 0x0000_b785, 0x0000_18dc]);
-    append_xyz(&mut profile, [0x0000_24a1, 0x0000_0f85, 0x0000_b6d4]);
-    append_xyz(&mut profile, [0x0000_f6d6, 0x0001_0000, 0x0000_d32d]);
-    profile.extend_from_slice(b"curv\0\0\0\0");
-    profile.extend_from_slice(&(SRGB_TRC.len() as u32).to_be_bytes());
-    for sample in SRGB_TRC {
-        profile.extend_from_slice(&sample.to_be_bytes());
-    }
-    if profile.len() != PROFILE_SIZE {
-        return Err(FormatEncodeError::Encoding(
-            "project sRGB profile has an invalid size".to_owned(),
-        ));
-    }
-    Ok(profile)
-}
-
-fn append_xyz(profile: &mut Vec<u8>, coordinates: [i32; 3]) {
-    profile.extend_from_slice(b"XYZ \0\0\0\0");
-    for coordinate in coordinates {
-        profile.extend_from_slice(&coordinate.to_be_bytes());
-    }
-}
-
-fn xmp_metadata(manifest: &str) -> Result<String, FormatEncodeError> {
-    const PREFIX: &str = concat!(
-        "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"",
-        "http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description rdf:about=\"\" ",
-        "xmlns:er=\"urn:excalidraw-render:pdf:metadata:1\"><er:manifest>"
-    );
-    const SUFFIX: &str = "</er:manifest></rdf:Description></rdf:RDF></x:xmpmeta>";
-    let capacity = PREFIX
-        .len()
-        .checked_add(manifest.len().saturating_mul(6))
-        .and_then(|capacity| capacity.checked_add(SUFFIX.len()))
-        .ok_or_else(pdf_size_error)?;
-    let mut xmp = String::new();
-    xmp.try_reserve_exact(capacity)
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "metadata",
-            subject: "pdf_mandatory_notice_xmp",
-        })?;
-    xmp.push_str(PREFIX);
-    for character in manifest.chars() {
-        match character {
-            '&' => xmp.push_str("&amp;"),
-            '<' => xmp.push_str("&lt;"),
-            '>' => xmp.push_str("&gt;"),
-            character => xmp.push(character),
-        }
-    }
-    xmp.push_str(SUFFIX);
-    Ok(xmp)
-}
-
-fn push_pdf_number(
-    output: &mut Object<'_>,
-    value: f64,
-    subject: &str,
-) -> Result<(), FormatEncodeError> {
-    let number = format_pdf_number(value, subject)?;
-    output.bytes(number.as_bytes())
-}
-
-fn push_pdf_literal_string(output: &mut Object<'_>, value: &str) -> Result<(), FormatEncodeError> {
-    for byte in value.bytes() {
-        match byte {
-            b'(' => output.bytes(b"\\("),
-            b')' => output.bytes(b"\\)"),
-            b'\\' => output.bytes(b"\\\\"),
-            byte => output.byte(byte),
-        }?;
-    }
-    Ok(())
-}
-
-fn push_pdf_link(output: &mut Object<'_>, link: &str) -> Result<(), FormatEncodeError> {
+/// The URI a link annotation opens: a link without a scheme resolves against
+/// the reference's placeholder origin, as the reference export does.
+fn link_uri(link: &str) -> String {
     let path_end = link.find(['/', '?', '#']).unwrap_or(link.len());
     let has_scheme = link
         .find(':')
         .is_some_and(|scheme_end| scheme_end < path_end);
-    if !has_scheme {
-        if link.starts_with('/') {
-            output.bytes(b"http://reference.invalid")?;
-        } else {
-            output.bytes(b"http://reference.invalid/")?;
-        }
+    match (has_scheme, link.starts_with('/')) {
+        (true, _) => link.to_owned(),
+        (false, true) => format!("http://reference.invalid{link}"),
+        (false, false) => format!("http://reference.invalid/{link}"),
     }
-    push_pdf_literal_string(output, link)
 }
 
 fn pdf_size_error() -> FormatEncodeError {
@@ -1590,13 +979,6 @@ fn visible_rect(
         bottom = bottom.min(projection.viewport_height);
     }
     (left, top, right - left, bottom - top)
-}
-
-fn checked_object(first: usize, index: usize, stride: usize) -> Result<usize, FormatEncodeError> {
-    index
-        .checked_mul(stride)
-        .and_then(|offset| first.checked_add(offset))
-        .ok_or_else(pdf_size_error)
 }
 
 fn point_dimension(logical: f64) -> Result<f64, FormatEncodeError> {

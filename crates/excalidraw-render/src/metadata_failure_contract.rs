@@ -193,16 +193,7 @@ fn manifest(format: OutputFormat, bytes: &[u8]) -> Option<Value> {
                 .and_then(|n| n.text())
                 .map(str::to_owned)
         }
-        OutputFormat::Pdf => {
-            let text = pdf_inspect::pdf_text(bytes);
-            text.split_once("<er:manifest>")
-                .and_then(|(_, s)| s.split_once("</er:manifest>"))
-                .map(|(s, _)| {
-                    s.replace("&lt;", "<")
-                        .replace("&gt;", ">")
-                        .replace("&amp;", "&")
-                })
-        }
+        OutputFormat::Pdf => pdf_inspect::pdf_manifest(bytes),
         OutputFormat::Png => {
             let mut cursor = 8;
             let mut found = None;
@@ -266,7 +257,6 @@ fn metadata_failures_have_exact_recovery_in_every_format() {
     frame_failures_are_target_local_and_batch_replayed();
     long_frame_names_keep_exact_manifests_after_component_failure();
     generation_limits_precede_metadata_operation_faults();
-    pdf_carrier_compression_has_its_own_operation_site();
     fault_scopes_restore_state_after_panics_and_across_threads();
 }
 
@@ -709,50 +699,5 @@ fn generation_limits_precede_metadata_operation_faults() {
             None,
             true,
         );
-    }
-}
-
-#[test]
-fn pdf_carrier_compression_has_its_own_operation_site() {
-    let format = OutputFormat::Pdf;
-    for notices in [false, true] {
-        let (scene, canonical) = if notices {
-            notice_document(format)
-        } else {
-            document(false, false)
-        };
-        let (result, observed) = test_faults::run(&[Fault::at(Stage::PdfSceneCompression)], || {
-            Renderer::new().render(&scene, &request(format, Parts::ALL))
-        });
-        let actual = result.unwrap();
-        assert_eq!(observed.failures, [Stage::PdfSceneCompression]);
-        assert!(observed.visits.contains(&Stage::SceneCompression));
-        assert!(observed.visits.contains(&Stage::SceneWrapper));
-        report(
-            actual.report(),
-            format,
-            json!([prefix(), warning(CASES[3])]),
-        );
-        let control = Renderer::new()
-            .render(&scene, &request(format, Parts::PROVENANCE_AND_SUMMARY))
-            .unwrap();
-        assert_eq!(actual.artifact().bytes(), control.artifact().bytes());
-        assert_manifest(
-            &actual,
-            format,
-            Parts::PROVENANCE_AND_SUMMARY,
-            &canonical,
-            notices,
-            None,
-            true,
-        );
-        let (error, observed) = test_faults::run(
-            &[Fault::at(Stage::PdfSceneCompression).allocation()],
-            || Renderer::new().render(&scene, &request(format, Parts::ALL)),
-        );
-        let error = error.unwrap_err();
-        assert_eq!(observed.failures, [Stage::PdfSceneCompression]);
-        assert_eq!(error.code().as_str(), "resource.memory-unavailable");
-        report(error.report(), format, json!([prefix()]));
     }
 }

@@ -1,4 +1,3 @@
-use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
@@ -51,14 +50,15 @@ pub(super) fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_for
         // reference rotates the curve's control points about the centre of
         // the points' box and takes their extrema, 20.7 px less
         // (`viewBox` height 259.488887394336, the official export's); the
-        // paths are unchanged.
+        // paths are unchanged. The PDF moved again when Krilla became the PDF
+        // writer (ADR-0021), with the same Rough paths.
         let whole_artifact_digest = match format {
             OutputFormat::Svg => None,
             OutputFormat::Png => {
                 Some("94951f079f0d61fb6780f3c98324abb9a3cdf8e1d7a2caa1e1e546eff61b5315")
             }
             OutputFormat::Pdf => {
-                Some("b9e7577189ca4f08827b751958b9a2ad6bf701ed536458550c2f0d6a595eacd0")
+                Some("d35a2138960c31583967a5c609a6fe5a62a04da9e673ca969ff596846cb20b87")
             }
             _ => unreachable!("the test enumerates every revision-1 format"),
         };
@@ -86,11 +86,23 @@ pub(super) fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_for
                 "exact arrow vectors changed"
             );
         } else if format == OutputFormat::Pdf {
-            let pdf = pdf_text(outcome.artifact().bytes());
-            assert!(
-                pdf.contains("[] 0 d\n"),
-                "dashed arrowheads reset the shaft dash"
-            );
+            // Krilla draws each path in its own graphics state (ADR-0021), so
+            // a dash set for a shaft ends with it: every dashed state strokes
+            // one path, and the arrowheads after it are solid.
+            let content = crate::common::pdf_inspect::page_content(outcome.artifact().bytes());
+            let dashed: Vec<&str> = content
+                .split("\nq\n")
+                .map(|block| block.split("\nQ\n").next().unwrap())
+                .filter(|body| body.contains("] 0 d\n"))
+                .collect();
+            assert!(!dashed.is_empty(), "a dashed shaft is drawn");
+            for body in dashed {
+                assert_eq!(
+                    body.matches("\nS\n").count(),
+                    1,
+                    "dashed arrowheads reset the shaft dash"
+                );
+            }
         }
     }
 }

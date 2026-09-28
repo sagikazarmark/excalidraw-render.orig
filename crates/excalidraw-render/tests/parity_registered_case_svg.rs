@@ -226,8 +226,8 @@ const RASTERIZER_LIMITATIONS: &[RasterizerLimitation] = &[
 /// glyph fallback both pinned cases exercise — that the pins above were
 /// measured with, as the lockfile names them.
 const PINNED_RASTERIZER: &[(&str, &str)] = &[
-    ("resvg", "0.45.1"),
-    ("tiny-skia", "0.11.4"),
+    ("resvg", "0.47.0"),
+    ("tiny-skia", "0.12.0"),
     ("fontdb", "0.23.0"),
 ];
 

@@ -1,10 +1,8 @@
 //! Nested SVG in PDF: the planning analysis that finds every filter occurrence
 //! in a sanitized `usvg` tree and turns the ones the asset's effect census
 //! attributes into `PdfRasterClosure`s — the smallest page regions the raster
-//! fallback must paint — and the bounded svg2pdf adapter that lowers each
-//! sanitized tree to a Form XObject chunk, renumbers its objects into the plan's
-//! layout and canonicalizes the writer's dictionary spelling so the artifact
-//! bytes stay stable across the pinned dependency.
+//! fallback must paint — and the choice of the tree each resource is drawn
+//! from, which `svg_draw` draws where each element shows it (ADR-0021).
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -32,14 +30,6 @@ struct FilterOccurrence {
     /// A repeating texture is clipped to its own tile viewport, not to the
     /// location of the base tile within the consumer's scene crop.
     texture_consumer: Option<(f64, f64, f64, f64)>,
-}
-
-pub(super) struct PdfSvgChunk {
-    pub(super) chunk: pdf_writer::Chunk,
-    pub(super) root: pdf_writer::Ref,
-    pub(super) bytes: Vec<u8>,
-    pub(super) object_offsets: Vec<(usize, usize)>,
-    adapted: bool,
 }
 
 pub(super) fn collect_raster_closures(
@@ -566,319 +556,37 @@ fn effect_cause_path(cause: &EffectCause) -> NestedPath {
     NestedPath { segments }
 }
 
-pub(super) fn svg_chunks(
+/// The tree each nested-SVG resource is drawn from, in resource order: the
+/// sanitized tree itself, or, when the resource has raster closures, the tree
+/// `PreparedSvg::lower` makes with each closure replaced by its pixels, so
+/// Krilla receives no filter to rasterize on its own (ADR-0009).
+pub(super) fn svg_draw_trees(
     resources: &[PdfSvgResource],
     svg_trees: &SvgTreeCache,
     closures: &[PdfRasterClosure],
-) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
-    let mut chunks = Vec::new();
-    chunks.try_reserve_exact(resources.len()).map_err(|_| {
-        FormatEncodeError::MemoryUnavailable {
+) -> Result<Vec<Arc<usvg::Tree>>, FormatEncodeError> {
+    let mut trees = Vec::new();
+    trees
+        .try_reserve_exact(resources.len())
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
             subject_kind: "format_resource",
-            subject: "pdf_svg_chunks",
-        }
-    })?;
+            subject: "pdf_svg_trees",
+        })?;
     for resource in resources {
-        let original = svg_trees
-            .get(&resource.asset.identity)
-            .map(Arc::as_ref)
-            .ok_or_else(|| {
-                FormatEncodeError::Encoding("PDF SVG resource lost its sanitized tree".to_owned())
-            })?;
-        let lowered = resource
-            .prepared
-            .as_ref()
-            .map(|prepared| {
+        let original = svg_trees.get(&resource.asset.identity).ok_or_else(|| {
+            FormatEncodeError::Encoding("PDF SVG resource lost its sanitized tree".to_owned())
+        })?;
+        let tree = match resource.prepared.as_ref() {
+            Some(prepared) => {
                 let selected: Vec<_> = closures
                     .iter()
                     .filter(|closure| closure.source_index == resource.source_index)
                     .collect();
-                prepared.lower(&selected)
-            })
-            .transpose()?;
-        let tree = lowered.as_ref().unwrap_or(original);
-        // `compress` deflates the chunk's content streams through svg2pdf's own
-        // call into the pinned miniz_oxide at level 6 with the default
-        // strategy, the one configuration every renderer-written stream uses
-        // (ADR-0008); its image streams were already Flate regardless. The
-        // canonicalizer below reads each stream body by its direct `/Length`,
-        // so a binary body renumbers and canonicalizes like a stored one.
-        let (chunk, root) = svg2pdf::to_chunk(
-            tree,
-            svg2pdf::ConversionOptions {
-                compress: lowered.is_none(),
-                raster_scale: 1.0,
-                embed_text: false,
-                ..svg2pdf::ConversionOptions::default()
-            },
-        )
-        .map_err(|error| {
-            FormatEncodeError::Encoding(format!("failed to lower sanitized SVG to PDF: {error}"))
-        })?;
-        chunks.push(PdfSvgChunk {
-            chunk,
-            root,
-            bytes: Vec::new(),
-            object_offsets: Vec::new(),
-            adapted: lowered.is_some(),
-        });
-    }
-    Ok(chunks)
-}
-
-pub(super) fn renumber_svg_chunks(
-    chunks: Vec<PdfSvgChunk>,
-    first_object: usize,
-) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
-    let total_objects = chunks
-        .iter()
-        .try_fold(0_usize, |count, chunk| {
-            count.checked_add(chunk.chunk.refs().len())
-        })
-        .ok_or_else(pdf_size_error)?;
-    let last_object = first_object
-        .checked_add(total_objects)
-        .ok_or_else(pdf_size_error)?;
-    if last_object > i32::MAX as usize {
-        return Err(pdf_size_error());
-    }
-    let mut next = i32::try_from(first_object).map_err(|_| pdf_size_error())?;
-    let mut renumbered = Vec::new();
-    renumbered.try_reserve_exact(chunks.len()).map_err(|_| {
-        FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_resource",
-            subject: "pdf_svg_chunks",
-        }
-    })?;
-    for resource in chunks {
-        let mut mapping = BTreeMap::new();
-        let chunk = resource.chunk.renumber(|old| {
-            *mapping.entry(old).or_insert_with(|| {
-                let allocated = pdf_writer::Ref::new(next);
-                next += 1;
-                allocated
-            })
-        });
-        let root = *mapping.get(&resource.root).ok_or_else(pdf_size_error)?;
-        let (bytes, object_offsets) = canonicalize_pdf_chunk(&chunk, resource.adapted)?;
-        renumbered.push(PdfSvgChunk {
-            chunk,
-            root,
-            bytes,
-            object_offsets,
-            adapted: resource.adapted,
-        });
-    }
-    Ok(renumbered)
-}
-
-#[allow(clippy::type_complexity)]
-fn canonicalize_pdf_chunk(
-    chunk: &pdf_writer::Chunk,
-    adapted: bool,
-) -> Result<(Vec<u8>, Vec<(usize, usize)>), FormatEncodeError> {
-    let bytes = chunk.as_bytes();
-    let mut canonical = Vec::with_capacity(bytes.len());
-    let mut offsets = Vec::new();
-    offsets.try_reserve_exact(chunk.refs().len()).map_err(|_| {
-        FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_svg_object_offsets",
-        }
-    })?;
-    let mut cursor = 0_usize;
-    for reference in chunk.refs() {
-        while bytes.get(cursor).is_some_and(u8::is_ascii_whitespace) {
-            canonical.push(bytes[cursor]);
-            cursor += 1;
-        }
-        let marker = format!("{} 0 obj\n", reference.get());
-        if !bytes[cursor..].starts_with(marker.as_bytes()) {
-            return Err(FormatEncodeError::Encoding(
-                "PDF SVG chunk object order did not match its reference table".to_owned(),
-            ));
-        }
-        offsets.push((
-            usize::try_from(reference.get()).map_err(|_| pdf_size_error())?,
-            canonical.len(),
-        ));
-        canonical.extend_from_slice(marker.as_bytes());
-        cursor += marker.len();
-
-        let relative_end = find_bytes(&bytes[cursor..], b"endobj\n").ok_or_else(|| {
-            FormatEncodeError::Encoding("PDF SVG chunk object was unterminated".to_owned())
-        })?;
-        let relative_stream = find_bytes(&bytes[cursor..cursor + relative_end], b"stream\n");
-        if let Some(relative_stream) = relative_stream {
-            let stream = cursor + relative_stream;
-            let body = stream + b"stream\n".len();
-            let length = pdf_stream_length(&bytes[cursor..stream])?;
-            let body_end = body.checked_add(length).ok_or_else(pdf_size_error)?;
-            let trailer = b"\nendstream\nendobj\n";
-            let object_end = body_end
-                .checked_add(trailer.len())
-                .ok_or_else(pdf_size_error)?;
-            if bytes.get(body_end..object_end) != Some(trailer.as_slice()) {
-                return Err(FormatEncodeError::Encoding(
-                    "PDF SVG stream length did not match its object boundary".to_owned(),
-                ));
+                Arc::new(prepared.lower(&selected)?)
             }
-            let dictionary = &bytes[cursor..stream];
-            let original = bytes.get(body..body_end).ok_or_else(pdf_size_error)?;
-            let compacted = if adapted
-                && find_bytes(dictionary, b"/Filter ").is_none()
-                && find_bytes(dictionary, b"/Type /Metadata").is_none()
-            {
-                let compacted = if find_bytes(dictionary, b"/Subtype /Form").is_some()
-                    || find_bytes(dictionary, b"/PatternType 1").is_some()
-                {
-                    compact_image_wrappers(original)?
-                } else {
-                    None
-                };
-                Some(super::streams::deflate_stream(
-                    compacted.as_deref().unwrap_or(original),
-                    "pdf_raster_form_stream",
-                )?)
-            } else {
-                None
-            };
-            if let Some(compacted) = compacted {
-                let start = find_bytes(dictionary, b"/Length ").ok_or_else(pdf_size_error)? + 8;
-                let end = start
-                    + dictionary[start..]
-                        .iter()
-                        .take_while(|b| b.is_ascii_digit())
-                        .count();
-                let mut updated = Vec::new();
-                updated
-                    .try_reserve(dictionary.len() + 20)
-                    .map_err(|_| super::raster::memory())?;
-                updated.extend_from_slice(&dictionary[..start - 8]);
-                updated.extend_from_slice(b"/Filter /FlateDecode\n  /Length ");
-                updated.extend_from_slice(compacted.len().to_string().as_bytes());
-                updated.extend_from_slice(&dictionary[end..]);
-                canonical
-                    .try_reserve(updated.len() + compacted.len() + 32)
-                    .map_err(|_| super::raster::memory())?;
-                canonicalize_pdf_text(&updated, &mut canonical);
-                canonical.extend_from_slice(b"stream\n");
-                canonical.extend_from_slice(&compacted);
-            } else {
-                canonicalize_pdf_text(dictionary, &mut canonical);
-                canonical.extend_from_slice(b"stream\n");
-                canonical.extend_from_slice(original);
-            }
-            canonical.extend_from_slice(trailer);
-            cursor = object_end;
-        } else {
-            let object_end = cursor
-                .checked_add(relative_end)
-                .and_then(|end| end.checked_add(b"endobj\n".len()))
-                .ok_or_else(pdf_size_error)?;
-            canonicalize_pdf_text(&bytes[cursor..object_end], &mut canonical);
-            cursor = object_end;
-        }
+            None => Arc::clone(original),
+        };
+        trees.push(tree);
     }
-    canonicalize_pdf_text(&bytes[cursor..], &mut canonical);
-    Ok((canonical, offsets))
-}
-
-// usvg inserts a placement group around each decoded PNG. When its transform
-// is identity and its sole child is an independently saved/restored image draw,
-// that extra graphics-state scope is redundant. Remove exactly that wrapper in
-// one pass, retaining the qualified native Form structure around the closure.
-fn compact_image_wrappers(text: &[u8]) -> Result<Option<Vec<u8>>, FormatEncodeError> {
-    let mut lines = Vec::new();
-    lines
-        .try_reserve(text.iter().filter(|&&b| b == b'\n').count() + 1)
-        .map_err(|_| super::raster::memory())?;
-    lines.extend(text.split_inclusive(|&b| b == b'\n'));
-    let mut output = Vec::new();
-    output
-        .try_reserve(text.len())
-        .map_err(|_| super::raster::memory())?;
-    let mut i = 0;
-    let mut changed = false;
-    while i < lines.len() {
-        if let Some(window) = lines.get(i..i + 8) {
-            if window[0] == b"q\n"
-                && window[1] == b"1 0 0 1 0 0 cm\n"
-                && window[2] == b"q\n"
-                && window[3].ends_with(b" cm\n")
-                && window[4].ends_with(b" cm\n")
-                && window[5].starts_with(b"/xo")
-                && window[5].ends_with(b" Do\n")
-                && window[6] == b"Q\n"
-                && window[7] == b"Q\n"
-            {
-                for line in &window[2..7] {
-                    output.extend_from_slice(line);
-                }
-                i += 8;
-                changed = true;
-                continue;
-            }
-        }
-        output.extend_from_slice(lines[i]);
-        i += 1;
-    }
-    Ok(changed.then_some(output))
-}
-
-fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
-}
-
-fn pdf_stream_length(dictionary: &[u8]) -> Result<usize, FormatEncodeError> {
-    let marker = b"/Length ";
-    let start = find_bytes(dictionary, marker)
-        .and_then(|index| index.checked_add(marker.len()))
-        .ok_or_else(|| {
-            FormatEncodeError::Encoding("PDF SVG stream had no direct length".to_owned())
-        })?;
-    let digits = dictionary[start..]
-        .iter()
-        .take_while(|byte| byte.is_ascii_digit())
-        .copied()
-        .collect::<Vec<_>>();
-    if digits.is_empty() {
-        return Err(FormatEncodeError::Encoding(
-            "PDF SVG stream length was not an integer".to_owned(),
-        ));
-    }
-    std::str::from_utf8(&digits)
-        .ok()
-        .and_then(|digits| digits.parse().ok())
-        .ok_or_else(pdf_size_error)
-}
-
-fn canonicalize_pdf_text(bytes: &[u8], output: &mut Vec<u8>) {
-    let mut lines = bytes.split_inclusive(|byte| *byte == b'\n').peekable();
-    while let Some(line) = lines.next() {
-        let indentation = line.iter().take_while(|byte| **byte == b' ').count();
-        if line.get(indentation) != Some(&b'/') || line.ends_with(b"<<\n") {
-            output.extend_from_slice(line);
-            continue;
-        }
-        let mut run = vec![line];
-        while let Some(next) = lines.peek().copied() {
-            let next_indentation = next.iter().take_while(|byte| **byte == b' ').count();
-            if next_indentation != indentation
-                || next.get(next_indentation) != Some(&b'/')
-                || next.ends_with(b"<<\n")
-            {
-                break;
-            }
-            if let Some(next) = lines.next() {
-                run.push(next);
-            }
-        }
-        run.sort_unstable();
-        for line in run {
-            output.extend_from_slice(line);
-        }
-    }
+    Ok(trees)
 }

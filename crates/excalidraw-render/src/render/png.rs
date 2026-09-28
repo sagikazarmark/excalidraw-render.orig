@@ -1519,6 +1519,7 @@ impl PngPlan {
                                         blend_mode: tiny_skia::BlendMode::SourceOver,
                                         anti_alias: false,
                                         force_hq_pipeline: false,
+                                        colorspace: tiny_skia::ColorSpace::Linear,
                                     },
                                     Transform::identity(),
                                     paint_mask,

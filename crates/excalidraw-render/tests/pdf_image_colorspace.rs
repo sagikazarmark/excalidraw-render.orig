@@ -7,23 +7,6 @@ use serde_json::json;
 #[path = "common/pdf_inspect.rs"]
 mod pdf_inspect;
 
-fn reference(dictionary: &str, key: &str) -> usize {
-    let tokens: Vec<_> = dictionary
-        .split(|c: char| c.is_ascii_whitespace() || matches!(c, '[' | ']'))
-        .filter(|s| !s.is_empty())
-        .collect();
-    let at = tokens.iter().position(|t| *t == key).unwrap();
-    assert_eq!(&tokens[at + 2..at + 4], ["0", "R"]);
-    tokens[at + 1].parse().unwrap()
-}
-fn object(pdf: &str, id: usize) -> &str {
-    pdf.split_once(&format!("\n{id} 0 obj\n"))
-        .unwrap()
-        .1
-        .split_once("endobj\n")
-        .unwrap()
-        .0
-}
 fn image_pdf(size: u32, partial_alpha: bool) -> Vec<u8> {
     let mut rgba = Vec::new();
     for y in 0..size {
@@ -64,34 +47,39 @@ fn image_pdf(size: u32, partial_alpha: bool) -> Vec<u8> {
     assert!(result.report().is_empty());
     result.artifact().bytes().to_vec()
 }
-fn assert_binding(bytes: &[u8]) {
+/// Krilla binds canonical RGB through an ICC-based colour space on the image
+/// itself, with no output intent (ADR-0021).
+fn assert_binding(bytes: &[u8], partial_alpha: bool) {
     let pdf = pdf_inspect::pdf_text(bytes);
-    let page = object(&pdf, 3);
-    let content = object(&pdf, reference(page, "/Contents"));
-    assert!(!content.contains("/CS1 cs") && !content.contains("/CS1 CS"));
-    let image = object(&pdf, reference(page, "/Im0"));
+    let content = pdf_inspect::page_content(bytes);
     assert!(
-        image.contains("/ColorSpace [/ICCBased "),
-        "image must carry a self-contained colour-space value, not /CS1"
+        !content
+            .lines()
+            .any(|line| line.ends_with(" cs") || line.ends_with(" CS")),
+        "no colour operator primes a viewer before the image"
     );
-    let icc = reference(image, "/ICCBased");
-    let profile = object(&pdf, icc);
-    assert!(profile.contains("/N 3\n/Alternate /DeviceRGB"));
-    assert_eq!(
-        reference(page, "/ICCBased"),
-        icc,
-        "legal content resource uses the same profile"
+    assert!(!pdf.contains("/OutputIntents"));
+    let images = pdf_inspect::color_images(&pdf);
+    assert_eq!(images.len(), 1);
+    let space = pdf_inspect::image_color_space(&pdf, images[0]);
+    assert!(
+        space.starts_with("[/ICCBased "),
+        "image must carry a self-contained colour-space value, got {space}"
     );
-    let intent = object(&pdf, reference(object(&pdf, 1), "/OutputIntents"));
-    assert_eq!(reference(intent, "/DestOutputProfile"), icc);
-    let mask = object(&pdf, reference(image, "/SMask"));
-    assert!(mask.contains("/ColorSpace /DeviceGray"));
+    let profile =
+        pdf_inspect::pdf_object(&pdf, pdf_inspect::reference(&space, "/ICCBased ").unwrap());
+    assert!(profile.contains("/N 3\n"));
+    let mask = pdf_inspect::reference(pdf_inspect::pdf_object(&pdf, images[0]), "/SMask ");
+    if partial_alpha {
+        let mask = pdf_inspect::pdf_object(&pdf, mask.expect("partial alpha binds a soft mask"));
+        assert!(mask.contains("/ColorSpace /DeviceGray\n"));
+    }
 }
 #[test]
-fn unprimed_source_images_bind_their_icc_profile_directly_to_the_output_intent() {
+fn unprimed_source_images_bind_their_own_icc_profile() {
     for size in [2, 40] {
         for partial_alpha in [false, true] {
-            assert_binding(&image_pdf(size, partial_alpha));
+            assert_binding(&image_pdf(size, partial_alpha), partial_alpha);
         }
     }
 }
@@ -116,7 +104,7 @@ fn unprimed_source_colours_pass_both_pinned_viewers() {
     for size in [2, 40] {
         for partial in [false, true] {
             let bytes = image_pdf(size, partial);
-            assert_binding(&bytes);
+            assert_binding(&bytes, partial);
             assert_eq!(bytes, image_pdf(size, partial));
             let pdf = out.join(format!("source-{size}-{partial}.pdf"));
             fs::write(&pdf, bytes).unwrap();

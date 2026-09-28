@@ -26,7 +26,10 @@ fn source_image_projection_keeps_top_rows_and_canvas_filter_weights() {
         .unwrap();
     let text = crate::common::pdf_inspect::pdf_text(pdf.artifact().bytes());
     assert!(
-        text.contains("40 0 0 -40 0 40 cm\n/Im0 Do"),
+        // The element-space matrix 40 0 0 -40 0 40 for the element at
+        // (180, 40), in top-down page points (ADR-0021): the top row lands at
+        // the element's top edge, page y 60.
+        text.contains("30 0 0 30 135 30 cm\n/x0 Do"),
         "top-down samples must map to the element top"
     );
     assert_eq!(
@@ -67,7 +70,7 @@ fn silent(report: &excalidraw_render::CompatibilityReport) {
         ),
         (
             include_bytes!("../common/pdf_inspect.rs").as_slice(),
-            "2e46ed33e8decbb629d47dd1a45f43781c102a4ceba5990620b33edc25bab074",
+            "285cac0d1029d1f7c2485cd0d3cfb7d4be7c8394b320adc837f9eaf49ab5e4b3",
         ),
         (
             include_bytes!("../common/raster.rs").as_slice(),
@@ -101,7 +104,7 @@ fn nested_svg_dark_mode_inverts_nested_content_in_every_format() {
                     // paints, gradient stops and nested raster pixels alike.
                     assert_ne!(light.artifact().bytes(),dark.artifact().bytes(),"nested content stays light");
                     if index != 1 {let text=crate::common::pdf_inspect::pdf_text(dark.artifact().bytes());assert!(text.contains("0.827451 0.827451 0.827451"),"lowered #d3d3d3 missing");}
-                    let pdf=crate::common::pdf_inspect::pdf_text(dark.artifact().bytes());assert!(pdf.contains("/Subtype /Form"));
+                    let pdf=crate::common::pdf_inspect::pdf_text(dark.artifact().bytes());assert_eq!(pdf.contains("/Subtype /Image"),index==1,"only the nested raster is an image; the rest stays vector");
                 }
                 OutputFormat::Png=>{
                     let l=crate::common::raster::decode_png(light.artifact().bytes());let d=crate::common::raster::decode_png(dark.artifact().bytes());
@@ -248,10 +251,9 @@ fn representative_frames_text_assets_links_metadata_tracer() {
                 }
             }
             OutputFormat::Pdf => {
-                let s = String::from_utf8_lossy(&bytes);
+                let s = crate::common::pdf_inspect::pdf_text(&bytes);
                 for marker in [
                     "/Subtype /Image",
-                    "/Subtype /Form",
                     "/Subtype /Link",
                     "https://example.com/text",
                     "W\nn\n",

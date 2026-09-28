@@ -13,12 +13,6 @@ fn between<'a>(text: &'a str, start: &str, end: &str) -> Option<&'a str> {
         .map(|(body, _)| body)
 }
 
-fn xml_json(text: &str) -> Value {
-    let wrapped = format!("<root>{text}</root>");
-    let doc = roxmltree::Document::parse(&wrapped).unwrap();
-    serde_json::from_str(doc.root_element().text().unwrap()).unwrap()
-}
-
 fn png_chunks(bytes: &[u8]) -> Vec<(&[u8], &[u8])> {
     assert!(bytes.starts_with(b"\x89PNG\r\n\x1a\n"));
     let mut chunks = Vec::new();
@@ -51,9 +45,9 @@ pub(super) fn manifest(format: OutputFormat, bytes: &[u8]) -> Option<Value> {
             let payload = data.strip_prefix(b"excalidraw-render:artifact-manifest\0\0\0\0\0")?;
             Some(serde_json::from_slice(payload).unwrap())
         }),
+        // Attachments, not XMP, carry PDF metadata (ADR-0021).
         OutputFormat::Pdf => {
-            let text = crate::pdf_inspect::pdf_text(bytes);
-            between(&text, "<er:manifest>", "</er:manifest>").map(xml_json)
+            crate::pdf_inspect::pdf_manifest(bytes).map(|text| serde_json::from_str(&text).unwrap())
         }
         _ => unreachable!(),
     }
@@ -118,22 +112,7 @@ fn embedded_scene(format: OutputFormat, bytes: &[u8]) -> Option<Vec<u8>> {
             data.strip_prefix(b"application/vnd.excalidraw+json\0")
                 .map(scene_wrapper)
         }),
-        OutputFormat::Pdf => {
-            let inflated = crate::pdf_inspect::inflate_streams(bytes);
-            let marker = b"/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n";
-            let start = inflated.windows(marker.len()).position(|w| w == marker)?;
-            let stream = start
-                + inflated[start..]
-                    .windows(7)
-                    .position(|w| w == b"stream\n")
-                    .unwrap()
-                + 7;
-            let length = inflated[stream..]
-                .windows(10)
-                .position(|w| w == b"\nendstream")
-                .unwrap();
-            Some(inflated[stream..stream + length].to_vec())
-        }
+        OutputFormat::Pdf => crate::pdf_inspect::pdf_attachment(bytes, "scene.excalidraw"),
         _ => unreachable!(),
     }
 }

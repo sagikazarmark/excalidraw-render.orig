@@ -748,11 +748,11 @@ fn evidence() -> Value {
     for (bytes, digest) in [
         (
             include_bytes!("png_profile_contract.rs").as_slice(),
-            "44a5b9b4fba24704191b32f53008467605e6afa67f3fad02a3937ea53aba64c5",
+            "994389eed1224886cfb0df9e8382d90bcac8b6350d72618409a01a1d108a3661",
         ),
         (
             include_bytes!("../common/pdf_inspect.rs").as_slice(),
-            "2e46ed33e8decbb629d47dd1a45f43781c102a4ceba5990620b33edc25bab074",
+            "285cac0d1029d1f7c2485cd0d3cfb7d4be7c8394b320adc837f9eaf49ab5e4b3",
         ),
         (
             include_bytes!("../common/raster.rs").as_slice(),
@@ -1161,9 +1161,12 @@ fn negative_helpers(record: &Value) {
     artifact(&pdf, OutputFormat::Pdf, row);
     let inflated = crate::common::pdf_inspect::inflate_streams(&pdf);
     for (from, to) in [
-        ("/Im0 Do", "/Im9 Do"),
+        ("/x0 Do\n", "/x9 Do\n"),
         ("/ICCBased ", "/DeviceRGB "),
-        ("/OutputIntents ", "/UnusedIntents "),
+        (
+            "/Type /Catalog\n",
+            "/Type /Catalog\n/OutputIntents [1 0 R]\n",
+        ),
         ("/Width 129\n", "/Width 128\n"),
         ("/MediaBox [0 0 96.75 72.75]", "/MediaBox [0 0 96.75 72.76]"),
         ("/CropBox [0 0 96.75 72.75]", "/CropBox [0 0 96.75 72.76]"),
@@ -1174,7 +1177,7 @@ fn negative_helpers(record: &Value) {
     // Keep the correct RGB stream present but detach it from the page binding.
     let text = crate::common::pdf_inspect::pdf_text(&pdf);
     let image_ref = text
-        .split_once("/Im0 ")
+        .split_once("/XObject << /x0 ")
         .unwrap()
         .1
         .split_once(" 0 R")
@@ -1189,17 +1192,14 @@ fn negative_helpers(record: &Value) {
         .0;
     let detached = replace_once(
         &inflated,
-        &format!("/Im0 {image_ref} 0 R"),
-        &format!("/Im0 {profile_ref} 0 R"),
+        &format!("/XObject << /x0 {image_ref} 0 R"),
+        &format!("/XObject << /x0 {profile_ref} 0 R"),
     );
     rejects(|| artifact(&detached, OutputFormat::Pdf, row));
     // A well-framed, correctly sized gray mask with one nonopaque sample.
     // Test the actual alpha plane rather than merely removing an optional mask.
-    let mut masked = replace_once(
-        &inflated,
-        "/Subtype /Image\n",
-        "/Subtype /Image\n/SMask 99999 0 R\n",
-    );
+    // Rebind the drawn RGB plane's soft mask (the only image with one).
+    let mut masked = replace_once(&inflated, "/SMask ", "/SMask 99999 0 R\n/Unused ");
     masked.extend(format!("\n99999 0 obj\n<< /Type /XObject /Subtype /Image /Width 129 /Height 97 /BitsPerComponent 8 /ColorSpace /DeviceGray /Length {} >>\nstream\n",129*97).bytes());
     let mut alpha = vec![255; 129 * 97];
     alpha[0] = 254;

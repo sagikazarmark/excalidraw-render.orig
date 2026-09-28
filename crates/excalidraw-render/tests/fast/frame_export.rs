@@ -107,7 +107,9 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
         .expect("frame with metadata renders to PDF");
     assert_eq!(pdf.profile_digest(), frame_profile.profile_digest());
     let pdf = pdf_text(pdf.artifact().bytes());
-    assert!(pdf.contains("<er:manifest>{\"schema_version\":2,"));
+    // The manifest is the `artifact-manifest.json` attachment (ADR-0021).
+    assert!(pdf.contains("/F (artifact-manifest.json)\n"));
+    assert!(pdf.contains("{\"schema_version\":2,"));
     assert!(pdf.contains("\"target\":{\"kind\":\"frame\",\"ordinal\":1,\"name\":\"Roadmap\"}"));
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
@@ -122,6 +124,11 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
             .bytes()
             .windows(b"excalidraw-render:manifest".len())
             .any(|window| window == b"excalidraw-render:manifest"));
+        assert!(!metadata_off
+            .artifact()
+            .bytes()
+            .windows(b"artifact-manifest.json".len())
+            .any(|window| window == b"artifact-manifest.json"));
     }
 }
 

@@ -300,7 +300,7 @@ fn malformed_label_and_transform_oracle() {
             }
             OutputFormat::Pdf => {
                 let pdf = crate::common::pdf_inspect::pdf_text(actual.artifact().bytes());
-                assert!(pdf.contains("0 0 240 60 re"));
+                assert!(pdf.contains("0 0 m\n240 0 l\n240 60 l\n0 60 l\nh\n"));
                 assert!(pdf.contains("[6 4] 0 d"));
                 assert!(
                     crate::common::pdf_inspect::pdf_actual_text(&pdf).contains("Malformed element")
@@ -389,19 +389,34 @@ fn malformed_transform_opacity_and_clip_match_authored_geometry() {
                             values.len() == 6
                                 && values
                                     .iter()
-                                    .zip([0.0, 1.0, -1.0, 0.0, 45.0, 5.0])
-                                    .all(|(a, b)| (a - b).abs() < 1e-12)
+                                    // The element's quarter turn 0 1 -1 0 45 5
+                                    // under the page mapping 0.75 0 0 -0.75 0 45,
+                                    // which Krilla writes composed (ADR-0021).
+                                    .zip([0.0, -0.75, -0.75, 0.0, 33.75, 41.25])
+                                    .all(|(a, b)| (a - b).abs() < 1e-9)
                         })
                     })
                     .expect("quarter-turn source transform");
                 let before_transform = pdf.split(transform).next().unwrap();
-                let frame_clip = before_transform.rsplit("q\n").next().unwrap();
-                assert!(frame_clip.starts_with("18 10 m\n62 10 l\n"));
-                assert!(frame_clip.contains("18 40 l\n"));
-                assert!(frame_clip.contains("10 18 l\n"));
+                // The frame clip in page points: element (18, 10) is (13.5, 37.5).
+                let frame_clip = before_transform
+                    .strip_suffix("q\n")
+                    .unwrap()
+                    .rsplit("q\n")
+                    .next()
+                    .unwrap();
+                assert!(frame_clip.starts_with("13.5 37.5 m\n46.5 37.5 l\n"));
+                assert!(frame_clip.contains("13.5 15 l\n"));
+                assert!(frame_clip.contains("7.5 31.5 l\n"));
                 assert!(frame_clip.ends_with("W\nn\n"));
-                assert!(pdf.contains("/GS1 gs\n/FB1 Do"));
-                assert!(pdf.contains("0 0 40 10 re\nW\nn"), "{pdf}");
+                // The placeholder is one transparency group painted at half
+                // opacity, clipped to its own rectangle inside the group.
+                assert!(pdf.contains("/g0 gs\n/x0 Do"));
+                assert!(pdf.contains("/S /Transparency /I true"));
+                assert!(
+                    pdf.contains("0 0 m\n40 0 l\n40 10 l\n0 10 l\nh\nW\nn"),
+                    "{pdf}"
+                );
                 assert!(pdf.contains("/ca 0.5"), "{pdf}");
                 assert!(pdf.contains("[6 4] 0 d"));
                 assert!(pdf.contains("0 0 m\n40 10 l\n40 0 m\n0 10 l"));

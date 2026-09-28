@@ -97,7 +97,9 @@ fn approved_excalifont_text_passes_both_canonical_pdf_gates() {
                     .expect("PDF structure expectation is present")
             )
         ),
-        "004a23bb5e5ebc61fa56e7a68d2f078e940d4c97e91cca1313ce50c5509b24aa"
+        // Moved with the Krilla backend (ADR-0021): the expectation now
+        // pins Krilla's structure.
+        "2c0558caa059239967b113e875548a73781e8dbbd25f91a22b6ee4a903ea7e6d"
     );
     assert_structure(
         &root,

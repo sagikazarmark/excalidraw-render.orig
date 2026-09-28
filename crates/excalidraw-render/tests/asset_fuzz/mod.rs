@@ -289,13 +289,11 @@ fn has_mandatory_notices(format: OutputFormat, bytes: &[u8]) -> bool {
             }
             found
         }
-        OutputFormat::Svg | OutputFormat::Pdf => {
+        // The PDF manifest is the `artifact-manifest.json` attachment (ADR-0021).
+        OutputFormat::Pdf => super::pdf_inspect::pdf_manifest(bytes),
+        OutputFormat::Svg => {
             let text = String::from_utf8_lossy(bytes);
-            let (start, end) = if format == OutputFormat::Svg {
-                ("<excalidraw-render:manifest xmlns:excalidraw-render=\"urn:excalidraw-render:artifact-manifest:1\">", "</excalidraw-render:manifest>")
-            } else {
-                ("<er:manifest>", "</er:manifest>")
-            };
+            let (start, end) = ("<excalidraw-render:manifest xmlns:excalidraw-render=\"urn:excalidraw-render:artifact-manifest:1\">", "</excalidraw-render:manifest>");
             text.split_once(start)
                 .and_then(|(_, rest)| rest.split_once(end))
                 .map(|(json, _)| {

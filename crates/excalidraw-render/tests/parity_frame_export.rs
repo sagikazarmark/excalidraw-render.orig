@@ -180,17 +180,18 @@ fn frame_svg_and_png_match_the_pinned_official_evidence() {
             "frame {ordinal} remains vector-first"
         );
         if ordinal == 1 {
-            assert!(pdf.contains("0.8784313725490196 0.19215686274509805 0.19215686274509805"));
-            assert!(pdf.contains("0.09803921568627451 0.44313725490196076 0.7607843137254902"));
-            assert!(pdf.contains("0.611764705882353 0.21176470588235294 0.7098039215686275"));
-            assert!(!pdf.contains("0.1843137254901961 0.6196078431372549 0.26666666666666666"));
-            assert!(!pdf.contains("0.9411764705882353 0.5490196078431373 0"));
+            // Colors at PDF's single precision (ADR-0021).
+            assert!(pdf.contains("0.8784314 0.19215687 0.19215687"));
+            assert!(pdf.contains("0.09803922 0.44313726 0.7607843"));
+            assert!(pdf.contains("0.6117647 0.21176471 0.70980394"));
+            assert!(!pdf.contains("0.18431373 0.61960787 0.26666668"));
+            assert!(!pdf.contains("0.9411765 0.54901963 0"));
         }
         if ordinal == 3 {
-            assert!(!pdf.contains("0.047058823529411764 0.6509803921568628 0.47058823529411764"));
+            assert!(!pdf.contains("0.047058824 0.6509804 0.47058824"));
         }
         if ordinal == 4 {
-            assert!(pdf.contains("0.047058823529411764 0.6509803921568628 0.47058823529411764"));
+            assert!(pdf.contains("0.047058824 0.6509804 0.47058824"));
         }
         if ordinal == 7 {
             assert!(

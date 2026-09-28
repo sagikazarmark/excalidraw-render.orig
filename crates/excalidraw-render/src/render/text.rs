@@ -756,8 +756,8 @@ impl OfficialFont {
         Ok(wrapped)
     }
 
-    pub(super) fn into_parts(self) -> (&'static str, &'static str, Arc<[u8]>) {
-        (self.family.pdf_name(), self.identity, self.sfnt)
+    pub(super) fn into_parts(self) -> (&'static str, Arc<[u8]>) {
+        (self.identity, self.sfnt)
     }
 
     fn supports(&self, character: char) -> bool {

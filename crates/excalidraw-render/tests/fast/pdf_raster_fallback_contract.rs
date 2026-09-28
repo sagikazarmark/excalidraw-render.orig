@@ -367,8 +367,11 @@ fn every_effect_family_has_an_exact_report_and_isolated_artifact() {
         let actual = checked(&source, &request(), json!([expected]));
         isolated_pixels_match_source_effect(actual.artifact().bytes(), &svg);
         let pdf = crate::common::pdf_inspect::pdf_text(actual.artifact().bytes());
-        assert!(pdf.contains("/Subtype /Form"), "{name}");
         assert!(pdf.contains("/Subtype /Image"), "{name}");
+        assert!(
+            pdf.contains(" Do\n"),
+            "the rasterized closure is painted: {name}"
+        );
         assert!(
             pdf.contains("/Width 20") && pdf.contains("/Height 10"),
             "{name}"
@@ -1066,17 +1069,17 @@ fn assert_streams_are_compressed(bytes: &[u8]) {
             .rsplit("/Length ")
             .next()
             .unwrap()
-            .split_whitespace()
-            .next()
-            .unwrap()
+            .chars()
+            .take_while(char::is_ascii_digit)
+            .collect::<String>()
             .parse::<usize>()
             .unwrap();
-        if !header.contains("/Type /Metadata") {
-            assert!(
-                header.contains("/Filter /FlateDecode"),
-                "uncompressed stream: {header}"
-            );
-        }
+        // Krilla writes every stream Flate-filtered, in its compact syntax
+        // (ADR-0021).
+        assert!(
+            header.contains("/Filter/FlateDecode") || header.contains("/Filter /FlateDecode"),
+            "uncompressed stream: {header}"
+        );
         cursor = start + length + b"\nendstream".len();
     }
 }

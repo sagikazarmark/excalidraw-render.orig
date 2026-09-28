@@ -77,12 +77,15 @@ fn valid_empty_scene_renders_a_complete_one_page_pdf_artifact() {
     assert!(!pdf.contains("/ArtBox"));
     assert!(!pdf.contains("/Rotate"));
     assert!(!pdf.contains("/UserUnit"));
+    // The background alone, as an artifact in the ICC-based sRGB space,
+    // with no output intent claimed (ADR-0021).
     assert!(pdf.contains(concat!(
-        "q\n0.75 0 0 -0.75 0 15 cm\n",
-        "/CS1 cs\n1 1 1 scn\n0 0 20 20 re\nf\nQ"
+        "/Artifact BMC\nq\n0.75 0 0 -0.75 0 15 cm\n",
+        "/c0 cs\n1 1 1 scn\n0 0 m\n20 0 l\n20 20 l\n0 20 l\nh\nf\nQ\nEMC\n"
     )));
-    assert!(pdf.contains("/ColorSpace << /CS1 [/ICCBased 5 0 R] >>"));
-    assert!(pdf.contains("/OutputIntents [6 0 R]"));
+    assert!(pdf.contains("/ColorSpace << /c0 "));
+    assert!(pdf.contains("[/ICCBased "));
+    assert!(!pdf.contains("/OutputIntents"));
     assert!(!bytes.windows(4).any(|window| window == b"<svg"));
 }
 

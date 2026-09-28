@@ -15,7 +15,7 @@
 use base64::Engine as _;
 use excalidraw_render::{ColorMode, FrameOptions, OutputFormat, RenderRequest, SceneDocument};
 
-use crate::common::pdf_inspect::{find_bytes, inflate_streams, pdf_text};
+use crate::common::pdf_inspect::pdf_text;
 use crate::common::raster::{decode_png, DecodedPng};
 use crate::common::render::{artifact_without_diagnostics, render_with_request};
 
@@ -81,14 +81,15 @@ fn dark_mode_frame_outlines_pass_through_the_theme_filter_in_every_format() {
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Dark);
     let pdf = pdf_text(&pdf);
     let dark_outline_strokes = pdf
-        .matches("0.2980392156862745 0.2980392156862745 0.2980392156862745 SCN\n")
+        // 76/255 at PDF's single precision (ADR-0021).
+        .matches("0.29803923 0.29803923 0.29803923 SCN\n")
         .count();
     assert_eq!(
         dark_outline_strokes, 2,
         "both PDF frame outlines stroke the filtered #bbb: {pdf}"
     );
     assert!(
-        !pdf.contains("0.7333333333333333 SCN"),
+        !pdf.contains("0.73333335 SCN"),
         "light-mode PDF frame stroke survives"
     );
 }
@@ -110,7 +111,8 @@ fn light_mode_frame_outlines_keep_the_reference_light_constants() {
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Light);
     let pdf = pdf_text(&pdf);
     assert_eq!(
-        pdf.matches("0.7333333333333333 0.7333333333333333 0.7333333333333333 SCN\n")
+        // 187/255 at PDF's single precision (ADR-0021).
+        pdf.matches("0.73333335 0.73333335 0.73333335 SCN\n")
             .count(),
         2
     );
@@ -410,15 +412,15 @@ fn dark_mode_pdf_lowers_nested_svg_vector_content_like_the_root_filter() {
     let scene = image_scene(&[nested_svg_fixture(r#""x":0,"y":0,"width":20,"height":20"#)]);
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Dark);
     let pdf = pdf_text(&pdf);
-    // svg2pdf spells the nested rectangle's lowered #d3d3d3 fill as 211/255 in
-    // f32; the light #1e1e1e would be 30/255. The page background is lowered
-    // too.
+    // The nested rectangle's lowered #d3d3d3 fill is 211/255 at PDF's single
+    // precision; the light #1e1e1e would be 30/255. The page background is
+    // lowered too.
     assert!(pdf.contains("0.827451 0.827451 0.827451 scn\n"), "{pdf}");
     assert!(
         !pdf.contains("0.11764706 0.11764706 0.11764706 scn"),
         "{pdf}"
     );
-    assert!(pdf.contains("0.07058823529411765 0.07058823529411765 0.07058823529411765 scn\n"));
+    assert!(pdf.contains("0.07058824 0.07058824 0.07058824 scn\n"));
 }
 
 /// A 1x1 nested SVG filled with the text color `#1e1e1e`.
@@ -596,38 +598,14 @@ fn assert_rgb_near(actual: [u8; 3], expected: [u8; 3], tolerance: u8) {
     }
 }
 
-/// The RGB stream of the first image XObject and the DeviceGray stream of its
-/// soft mask.
+/// The RGB stream of the one color image XObject and the DeviceGray stream of
+/// its soft mask.
 fn image_xobject_streams(pdf: &[u8]) -> (Vec<u8>, Vec<u8>) {
-    let pdf = inflate_streams(pdf);
-    let rgb = stream_after(
-        &pdf,
-        b"/ColorSpace [/ICCBased 5 0 R]\n/BitsPerComponent 8\n/Interpolate true\n/SMask ",
-    );
-    let alpha = stream_after(&pdf, b"/ColorSpace /DeviceGray\n/BitsPerComponent 8\n");
-    (rgb, alpha)
-}
-
-/// The bytes of the inflated stream whose dictionary contains `marker`, sized
-/// by its `/Length`.
-fn stream_after(pdf: &[u8], marker: &[u8]) -> Vec<u8> {
-    let dictionary = find_bytes(pdf, marker).expect("PDF has the image dictionary");
-    let length_key = b"/Length ";
-    let length_start = dictionary
-        + find_bytes(&pdf[dictionary..], length_key).expect("dictionary has a length")
-        + length_key.len();
-    let length_end = length_start
-        + pdf[length_start..]
-            .iter()
-            .position(|byte| *byte == b'\n')
-            .expect("length ends");
-    let length: usize = std::str::from_utf8(&pdf[length_start..length_end])
-        .expect("length is ASCII")
-        .parse()
-        .expect("length is a number");
-    let stream_marker = b"stream\n";
-    let stream_start = length_end
-        + find_bytes(&pdf[length_end..], stream_marker).expect("dictionary opens a stream")
-        + stream_marker.len();
-    pdf[stream_start..stream_start + length].to_vec()
+    use crate::common::pdf_inspect::{color_images, object_stream, pdf_object, reference};
+    let text = pdf_text(pdf);
+    let [image] = color_images(&text)[..] else {
+        panic!("PDF has the image dictionary");
+    };
+    let mask = reference(pdf_object(&text, image), "/SMask ").expect("the image has a soft mask");
+    (object_stream(pdf, image), object_stream(pdf, mask))
 }

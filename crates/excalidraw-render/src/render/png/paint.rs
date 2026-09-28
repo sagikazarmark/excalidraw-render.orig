@@ -824,6 +824,7 @@ pub(super) fn solid_paint(
         blend_mode: BlendMode::SourceOver,
         anti_alias: true,
         force_hq_pipeline: true,
+        colorspace: tiny_skia::ColorSpace::Linear,
     })
 }
 

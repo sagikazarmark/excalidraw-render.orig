@@ -56,22 +56,27 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
         // trailer its content-derived /ID; then with #151 item 1, when the
         // XMP manifest began carrying the attribution and license body
         // notices; then with #172, the same one-ulp page height and origin
-        // as the SVG above. The report is unchanged.
+        // as the SVG above; then with ADR-0021, when Krilla became the PDF
+        // writer. The report is unchanged.
         OutputFormat::Pdf,
-        "098ce25631cf8e1f638e0fbe20e7ebe866767b92c391f87968e323a2bc0f8103",
+        "c6db8497bc8550d8514e45dc1be3f708f698f859fea3658bb6d6cc003a0e00b6",
         "737130c9efaa38327d3fe31ecdeddc35ad72a01ea8dc7c11e3a57942c4867247",
     ),
 ];
 // Every PDF artifact digest here and in PDF_FALLBACK_FAMILIES moved with
 // #133/#150 (ADR-0008: Flate streams, subset-tagged chunk programs, the
 // trailer /ID); the one font-bearing PDF here moved again with #151 item 1
-// (the XMP manifest's attribution and license body notices). No report digest
-// moved.
+// (the XMP manifest's attribution and license body notices). The nested-SVG
+// PDFs moved again with #209 (ADR-0021 slice 1): after the usvg 0.47 -> 0.45
+// bridge each fallback image sits in an identity `q 1 0 0 1 0 0 cm Q` group,
+// and a `8.9e-16` residue in the native nested SVG prints as `0`. Every PDF
+// digest here and `expected/rectangle.pdf` moved again when Krilla became the
+// PDF writer (ADR-0021). No report digest moved.
 const PDF_RISK_SET: &[(&str, &[u8], &str, &str)] = &[
     (
         "selectable-text",
         TEXT_SCENE,
-        "0f6bdbae5f1dbda52b2e99e5cd605a748df04600c6a41a8ae20cab1f1064655b",
+        "32f075d0cca826163720973c5ef06560dc169a8b572a678f58da30925d2c19b7",
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
     ),
     (
@@ -79,19 +84,19 @@ const PDF_RISK_SET: &[(&str, &[u8], &str, &str)] = &[
         SOURCE_IMAGE_SCENE,
         // c9fc43d corrected image orientation, explicit interpolation, and
         // direct ICCBased image color spaces. The report is unchanged.
-        "121f3a7270cb1e1ebb9339c427b63d4ed7beebf6b5865a0696d191cb3ca39ed4",
+        "91cd0d8b71788df8989fd7107e946c3571891d372405a37f10730e5276bf83dd",
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
     ),
     (
         "native-nested-svg",
         NATIVE_NESTED_SVG_SCENE,
-        "d90654a7e1c9c5f9ab1fbf49cf4d2c462e5c7f438e6823f7e948b5431e6d2f47",
+        "44d782533d4273324f33d5b7d91e5bfc21e849b5827b58081d1536aaf58925e2",
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
     ),
     (
         "isolated-raster-fallback",
         RASTER_FALLBACK_SCENE,
-        "64bee9cbb44081c7202b47b392fbc8859164ca3a3f383bdc4f54d7cc87b50513",
+        "767770926e5f9f8f0e5eafb9a00e4ae7073a6ca401af589f6d0944a6746e8a23",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
 ];
@@ -99,25 +104,25 @@ const PDF_FALLBACK_FAMILIES: &[(&str, &str, &str, &str)] = &[
     (
         "blur",
         r#"<feGaussianBlur stdDeviation="1"/>"#,
-        "64bee9cbb44081c7202b47b392fbc8859164ca3a3f383bdc4f54d7cc87b50513",
+        "767770926e5f9f8f0e5eafb9a00e4ae7073a6ca401af589f6d0944a6746e8a23",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "convolution",
         r#"<feConvolveMatrix order="3" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0"/>"#,
-        "0fe2d6a6f9b16d30a95164b29688dd8cd39f4b3cc029907636ef78b68a434a4e",
+        "8be83985eb902e84cd7a76521ead3692ff7d2880912d6bb9ef6ba299aee45086",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "morphology",
         r#"<feMorphology operator="dilate" radius="1"/>"#,
-        "0fe2d6a6f9b16d30a95164b29688dd8cd39f4b3cc029907636ef78b68a434a4e",
+        "8be83985eb902e84cd7a76521ead3692ff7d2880912d6bb9ef6ba299aee45086",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "displacement",
         r#"<feTurbulence baseFrequency="0.1" numOctaves="1" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>"#,
-        "d2bbe4eb43451ab42c5277d331d51748fbfe76bc40b9d5e9914a7a8635f9325b",
+        "a7aa9e03c47092f8c7be054a4947aa8215223936100b88bcff751ed303e43344",
         "a39664c294a12af60d1c206a0772a78ee73fccc76833b995d02cfdec127433c7",
     ),
     (
@@ -126,25 +131,25 @@ const PDF_FALLBACK_FAMILIES: &[(&str, &str, &str, &str)] = &[
         // The old pin predates the shared raster-closure pipeline (9712833).
         // Reconfirmed against the starting release tree, c5fec02; see the
         // packaged-consumer diagnosis in docs/release-preparation.md.
-        "0048833bf470ed4ebca0acfdae0487390af563509583c771aab394d590cd4c1a",
+        "174f12465f67aa2146e1b97ddf988640d5f3822b319f7f1198f004005c9611d9",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "lighting",
         r#"<feDiffuseLighting surfaceScale="2"><feDistantLight azimuth="45" elevation="60"/></feDiffuseLighting>"#,
-        "15216996f0649383e233ff69c26b47c2f69c3b75fc14bcfa2262b8992b6df311",
+        "fbda47cc3b3f5f04e4ff9bdadbfcb6f74b658fac99eaea3429f1d0ff6bf4548d",
         "130660f6f7c8091d99e2976c06043b1fa657c21159e98104dd50c5cd2128c14b",
     ),
     (
         "post-composite-color",
         r#"<feColorMatrix type="saturate" values="0.5"/>"#,
-        "f11515db8aef148eab30b4933e3e97a4b5e60192d362f8661c6d9200cdd63bc2",
+        "841a1685f9ebd96ace4918aa34694574706f82e6c0454b5202649146da14db69",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "filter-blend",
         r#"<feBlend in="SourceGraphic" in2="SourceGraphic" mode="overlay"/>"#,
-        "0fe2d6a6f9b16d30a95164b29688dd8cd39f4b3cc029907636ef78b68a434a4e",
+        "8be83985eb902e84cd7a76521ead3692ff7d2880912d6bb9ef6ba299aee45086",
         "7867f55c810c54ffd7d671366bad5db3de847cf44fecae17fd93323df6b56c31",
     ),
 ];

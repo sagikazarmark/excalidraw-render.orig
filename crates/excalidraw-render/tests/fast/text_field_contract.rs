@@ -424,7 +424,9 @@ fn alignment_and_container_positions_have_independent_oracles() {
         }
         if format == OutputFormat::Pdf {
             let pdf = crate::common::pdf_inspect::pdf_text(a.artifact().bytes());
-            assert!(pdf.contains("1 0 0 1 20 40.5 cm"));
+            // translate(20 40.5) under the page mapping 0.75 0 0 -0.75 0 105.375,
+            // which Krilla writes composed (ADR-0021).
+            assert!(pdf.contains("0.75 0 0 -0.75 15 75 cm"));
         }
     }
 }
