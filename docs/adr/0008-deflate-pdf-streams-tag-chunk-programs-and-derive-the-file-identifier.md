@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded in part by ADR-0021
 ---
 
 # Deflate every renderer-written PDF stream, tag embedded chunk programs, and derive the file identifier from the bytes
@@ -188,8 +188,9 @@ absence of `/Info` and the `/ID` derivation.
   here moves the file further from or closer to it except keeping the
   metadata stream stored.
 
-Amended 2026-09-27: ADR-0021 moves the PDF backend to Krilla. When that port
-lands, it replaces this decision's embedded-program rule and subset tag, its
-file identifier and absent `/Info`, and its output intent. The Flate level
-stays at 6, but the compressor becomes Krilla's. Until then this decision
-describes the shipped backend.
+Amended 2026-09-27: ADR-0021 moved the PDF backend to Krilla, and that port
+has landed. It supersedes this decision's embedded-program rule and
+digest-derived subset tag, its through-xref file identifier, its XMP metadata
+stream and its output intent. What survives is Flate at level 6 on every
+stream, now through Krilla's flate2 rather than the renderer's miniz_oxide
+call. The rest of this record describes the backend before Krilla.

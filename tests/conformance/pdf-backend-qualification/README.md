@@ -1,28 +1,32 @@
 # PDF backend qualification
 
-Compatibility revision 1 uses the mandated direct-writer path for project-owned
-PDF content. The controlled-fork candidate was rejected because exposing the
-complete semantic operation matrix while moving page construction, selectable
-text, annotations, output intent, metadata, source images, and fallback planning
-to the outer writer would replace rather than adapt `svg2pdf`.
+Compatibility revision 1 writes PDF through Krilla 0.8.2, pinned exactly
+(ADR-0021). It replaced a direct `pdf-writer 0.12` writer that spliced
+renumbered `svg2pdf 0.13` Form chunks into its file. svg2pdf is deprecated, and
+Krilla, its maintained successor, only produces whole documents, so the whole
+writer moved.
 
 The selected boundary is therefore:
 
 - Project-owned vectors, text, colors, transparency, source images, annotations,
-  clipping, metadata primitives, and page structure are written directly from
-  `PdfPlan` with `pdf-writer 0.12.0` object identities where applicable.
-- Exactly pinned `svg2pdf 0.13.0` receives only resolved, sanitized nested-SVG
-  trees and returns bounded Form chunks. The project renumbers and canonicalizes
-  every returned object before assembly.
+  clipping, the tag tree and both attachments are drawn from `PdfPlan` onto one
+  Krilla page. Each shaped run is one glyph run at the renderer's positions.
+  Each embedded font is a renamed Modified Version of its reviewed decode, which
+  Krilla subsets.
+- Resolved, sanitized nested-SVG trees are drawn inline by
+  `render/pdf/svg_draw.rs`, the renderer's port of krilla-svg. krilla-svg is not
+  a dependency, because its default features would reach the PNG rasterizer. A
+  filter reaching `svg_draw` is an error, never a rasterization.
 - Project-owned fallback preflight remains authoritative. Unsupported nested-SVG
   effects are admitted only as isolated closures; ordinary content is never
   broadened into raster fallback.
 
 The closure plan also drives rasterization and embedding (ADR-0009). The PDF
-adapter renders admitted input/output grids before invoking svg2pdf, whose input
-then contains native content and already-rendered closure PNGs. The internal
-normalized-SVG serializer, occurrence-local pattern/mask expansion, and redundant
-image-wrapper compaction must be qualified together when either dependency moves.
+adapter renders admitted input/output grids before drawing, so the tree
+`svg_draw` receives contains only native content and already-rendered closure
+PNGs. The internal normalized-SVG serializer, occurrence-local pattern/mask
+expansion, and redundant image-wrapper compaction must be qualified together
+when usvg or Krilla moves.
 
 `project-operations.excalidraw` and its structural expectation gate the complete
 native matrix through qpdf. Every image is explicitly classified as source
@@ -59,7 +63,7 @@ cargo test --locked --release -p excalidraw-render --test harness_pdf_viewers \
 The three `*-structure.json` expectations carry two digests that the readable
 field checks do not cover: `operation_sha256` hashes every content operator with
 its operands, and `inventory_sha256` hashes the structural inventory, including
-the XMP metadata stream, embedded font bytes, `ToUnicode` streams, image bytes,
+the attachments, embedded font bytes, `ToUnicode` streams, image bytes,
 clips, and `ActualText` mappings. Renderer work that moves any of those bytes
 moves the digests. The harness-free tests in
 `crates/excalidraw-render/tests/fast/pdf_backend_qualification.rs` pin the
