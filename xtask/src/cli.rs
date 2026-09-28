@@ -369,8 +369,6 @@ pub enum ConformanceCommand {
     },
     /// Execute every registered candidate.
     CandidateExecutions,
-    /// Collect the PDF colorspace bridge.
-    CollectPdfColorspaceBridge,
     /// Verify canonical SVG viewer qualification.
     VerifySvgViewers,
     /// Verify canonical SVG font subset viewer qualification.
@@ -752,7 +750,6 @@ mod tests {
                 "candidate-propose-exceptions",
                 "candidate-revise",
                 "candidate-executions",
-                "collect-pdf-colorspace-bridge",
                 "verify-svg-viewers",
                 "verify-svg-font-subsets",
                 "verify-svg-font-subset-release",

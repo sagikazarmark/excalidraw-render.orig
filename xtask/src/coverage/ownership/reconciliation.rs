@@ -43,8 +43,12 @@ fn desc(path: &str, bytes: &[u8]) -> Descriptor {
     }
 }
 pub fn reconcile_stage4_bindings(canary_qualification: &str) -> Result<Value, String> {
-    if canary_qualification == format!("{}/bridge.json", crate::conformance_pdf_bridge::DIRECTORY) {
-        return reconcile_image_icc_bindings();
+    if canary_qualification
+        == "tests/conformance/candidates/stage4-pdf-colorspace-bridge-v20/bridge.json"
+    {
+        // Applied as `stage4-image-icc-binding-reconciliation.json`; its
+        // svg2pdf colour bridge retired with the Krilla writer (ADR-0021).
+        return Err("the image ICC binding refresh is applied and retired".into());
     }
     let old_ledger_bytes = read(LEDGER)?;
     if sha256(&old_ledger_bytes) != BEFORE_LEDGER {
@@ -266,145 +270,6 @@ pub fn reconcile_stage4_bindings(canary_qualification: &str) -> Result<Value, St
         for (path, _, old) in &files {
             fs::write(repo_root().join(path), old)
                 .map_err(|e| format!("rollback failed: {e}; original: {error}"))?;
-        }
-        return Err(error);
-    }
-    Ok(record)
-}
-
-fn reconcile_image_icc_bindings() -> Result<Value, String> {
-    const FOLLOWUP: &str =
-        "tests/conformance/coverage/stage4-image-icc-binding-reconciliation.json";
-    let old_ledger = read(LEDGER)?;
-    if sha256(&old_ledger) != "fdc86c8ab6e29371d13f95a0190735286aca764ef0c1c1f3e663a889a33402b5"
-        || repo_root().join(FOLLOWUP).exists()
-    {
-        return Err("image ICC binding refresh requires its exact reviewed before-state".into());
-    }
-    let bridge = crate::conformance_pdf_bridge::validate(&read(&format!(
-        "{}/native.pdf",
-        crate::conformance_pdf_bridge::DIRECTORY
-    ))?)?;
-    let spec = read(SPEC)?;
-    if sha256(&spec) != SPEC_HASH {
-        return Err("spec changed during image-only binding refresh".into());
-    }
-    let old_requirements_bytes = read(REQUIREMENTS)?;
-    let mut requirements: Requirements = parse(&old_requirements_bytes)?;
-    let old_inventory_bytes = read(INVENTORY)?;
-    let old_inventory: Inventory = parse(&old_inventory_bytes)?;
-    if old_inventory.requirements != requirements.requirements {
-        return Err("stale requirements before image ICC refresh".into());
-    }
-    let r = requirements
-        .requirements
-        .iter_mut()
-        .find(|r| r.id == "fuzz.codecs")
-        .ok_or("fuzz.codecs")?;
-    if r.evidence.len() != 1
-        || r.evidence[0].source.path != LOCATOR
-        || r.evidence[0].source.sha256 != SOURCES[0].1
-    {
-        return Err("unexpected image ICC locator before-state".into());
-    }
-    r.evidence[0].source = descriptor(LOCATOR)?;
-    let requirements_bytes = pretty(&requirements)?;
-    let inventory =
-        derive_inventory_with_requirements(requirements, desc(REQUIREMENTS, &requirements_bytes))?;
-    let mut normalized = inventory.clone();
-    normalized.requirements = old_inventory.requirements.clone();
-    for d in &mut normalized.sources {
-        if d.path == REQUIREMENTS {
-            *d = desc(REQUIREMENTS, &old_requirements_bytes);
-        }
-    }
-    if normalized != old_inventory {
-        return Err("image ICC refresh changed execution/coverage semantics".into());
-    }
-    let inventory_bytes = pretty(&inventory)?;
-    let before =
-        catalog_from_inventory(&spec, old_inventory, desc(INVENTORY, &old_inventory_bytes))?;
-    let after =
-        catalog_from_inventory(&spec, inventory.clone(), desc(INVENTORY, &inventory_bytes))?;
-    let mut normalized = after.clone();
-    for d in &mut normalized.sources {
-        if d.path == INVENTORY {
-            *d = desc(INVENTORY, &old_inventory_bytes);
-        }
-    }
-    for r in &mut normalized.obligations {
-        if r.authority.path == INVENTORY {
-            r.authority = desc(INVENTORY, &old_inventory_bytes);
-        }
-    }
-    if digest(&normalized)? != digest(&before)? {
-        return Err("image ICC refresh changed catalog criteria".into());
-    }
-    let mut ledger: Ledger = parse(&old_ledger)?;
-    if ledger.catalog_sha256 != digest(&before)? {
-        return Err("image ICC refresh is not authorized by the before-ledger".into());
-    }
-    let approved_sources = [
-        (
-            LOCATOR,
-            "02377311ef96aea23ba878915cf7d95819c5b0c281bb224857b60014338dc61b",
-        ),
-        (
-            "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "44a5b9b4fba24704191b32f53008467605e6afa67f3fad02a3937ea53aba64c5",
-        ),
-        (
-            "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
-            "2676c6dac4e7f7f62f206cb78c71ad3e4c918fd54767751bcf024cb69655ce73",
-        ),
-    ];
-    let mut changes = Vec::new();
-    for a in &mut ledger.assignments {
-        if let Disposition::Owned {
-            owner: Owner::Test { source, .. },
-            ..
-        } = &mut a.disposition
-        {
-            let current = descriptor(&source.path)?;
-            if *source != current {
-                if !approved_sources
-                    .iter()
-                    .any(|(p, h)| source.path == *p && current.sha256 == *h)
-                {
-                    return Err(format!("unreviewed image ICC owner source {}", source.path));
-                }
-                changes.push(json!({"obligation":a.id,"before":source.clone(),"after":current}));
-                *source = current;
-            }
-        }
-    }
-    ledger.catalog_sha256 = digest(&after)?;
-    let gaps = validate(&after, &ledger, false)?;
-    let ledger_bytes = pretty(&ledger)?;
-    let record = json!({"schema":"excalidraw-render/stage4-image-icc-binding-reconciliation/v1","authorization":"User-authorized direct image ICC binding fix and stricter oracles; selectors, dispositions, criteria, execution records, exclusions and approvals unchanged.","bridge":bridge,"previous_reconciliation":descriptor(RECORD)?,"before_files":[desc(REQUIREMENTS,&old_requirements_bytes),desc(INVENTORY,&old_inventory_bytes),desc(LEDGER,&old_ledger)],"after_files":[desc(REQUIREMENTS,&requirements_bytes),desc(INVENTORY,&inventory_bytes),desc(LEDGER,&ledger_bytes)],"old_catalog_sha256":digest(&before)?,"new_catalog_sha256":digest(&after)?,"owner_source_changes":changes,"execution_count":inventory.executions.len(),"gaps":gaps,"approval":null});
-    let files = [
-        (REQUIREMENTS, requirements_bytes, old_requirements_bytes),
-        (INVENTORY, inventory_bytes, old_inventory_bytes),
-        (LEDGER, ledger_bytes, old_ledger),
-    ];
-    for (path, _, old) in &files {
-        if read(path)? != *old {
-            return Err("image ICC binding changed before publication".into());
-        }
-    }
-    let result: Result<(), String> = (|| {
-        for (path, new, _) in &files {
-            fs::write(repo_root().join(path), new).map_err(|e| e.to_string())?;
-        }
-        crate::conformance_candidate_native::write_new(
-            &repo_root().join(FOLLOWUP),
-            &pretty(&record)?,
-        )?;
-        Ok(())
-    })();
-    if let Err(error) = result {
-        for (path, _, old) in &files {
-            fs::write(repo_root().join(path), old).map_err(|e| e.to_string())?;
         }
         return Err(error);
     }
