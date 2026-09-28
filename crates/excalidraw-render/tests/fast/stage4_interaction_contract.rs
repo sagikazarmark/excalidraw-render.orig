@@ -75,7 +75,7 @@ fn silent(report: &excalidraw_render::CompatibilityReport) {
         ),
         (
             include_bytes!("../common/raster.rs").as_slice(),
-            "4f6bc5a85213b1268b8536c242687d58c3cdb81423c6643b6cd1c44e9d06d303",
+            "46a6ed5daacc715f1f3c28c2b806b95a04e13206b4bc7f6d13c0ea50c99b8e10",
         ),
     ] {
         assert_eq!(lower_hex(&Sha256::digest(bytes)), expected);

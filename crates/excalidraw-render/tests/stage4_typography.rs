@@ -22,7 +22,7 @@ fn rotated_canvas_glyph_origins_match_the_reference_typography_crop() {
     let mut decoder = png::Decoder::new(Cursor::new(result.artifact().bytes()));
     decoder.set_transformations(png::Transformations::EXPAND);
     let mut reader = decoder.read_info().unwrap();
-    let mut actual = vec![0; reader.output_buffer_size()];
+    let mut actual = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
     let info = reader.next_frame(&mut actual).unwrap();
     assert_eq!((info.width, info.height), (200, 120));
     assert_eq!(info.color_type, png::ColorType::Rgba);
@@ -111,7 +111,7 @@ fn phase_control_scaled(font_size: f64, angle: f64, scale: f64, origin: [f64; 2]
     let mut decoder = png::Decoder::new(Cursor::new(result.artifact().bytes()));
     decoder.set_transformations(png::Transformations::EXPAND);
     let mut reader = decoder.read_info().unwrap();
-    let mut rgba = vec![0; reader.output_buffer_size()];
+    let mut rgba = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
     let info = reader.next_frame(&mut rgba).unwrap();
     assert_eq!((info.width, info.height), (512, 512));
     assert_eq!(info.color_type, png::ColorType::Rgba);

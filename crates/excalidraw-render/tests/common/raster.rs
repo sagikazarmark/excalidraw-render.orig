@@ -37,7 +37,7 @@ pub fn decode_png(bytes: &[u8]) -> DecodedPng {
     let mut decoder = png::Decoder::new(Cursor::new(bytes));
     decoder.set_transformations(png::Transformations::IDENTITY);
     let mut reader = decoder.read_info().expect("PNG structure is valid");
-    let mut rgba = vec![0; reader.output_buffer_size()];
+    let mut rgba = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
     let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
     assert_eq!(frame.color_type, png::ColorType::Rgba);
     assert_eq!(frame.bit_depth, png::BitDepth::Eight);

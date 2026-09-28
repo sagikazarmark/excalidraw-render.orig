@@ -294,7 +294,7 @@ pub mod wasm_tests {
             let mut reader = png::Decoder::new(std::io::Cursor::new(bytes))
                 .read_info()
                 .unwrap();
-            let mut rgba = vec![0; reader.output_buffer_size()];
+            let mut rgba = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
             let info = reader.next_frame(&mut rgba).unwrap();
             assert_eq!(info.color_type, png::ColorType::Rgba);
             assert_eq!(info.bit_depth, png::BitDepth::Eight);

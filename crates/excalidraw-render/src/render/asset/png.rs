@@ -4,7 +4,7 @@
 //! re-encoding a nested raster receives before it is embedded in sanitized
 //! SVG.
 
-use std::io::{self, Read};
+use std::io::{self, BufRead, Read};
 
 use super::color::{finish_rgba, normalize_rgba, ColorNormalization};
 use super::orientation::{exif_orientation, orient_rgba, oriented_dimensions};
@@ -15,6 +15,9 @@ pub(super) const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
 #[derive(Clone, Copy, Default)]
 pub(super) struct PngSemantics {
     pub(super) cicp: Option<[u8; 4]>,
+    /// The first gAMA declares a zero gamma. png 0.18 drops such a chunk, but
+    /// the strict policy reads it as an unusable legacy transfer.
+    pub(super) zero_gamma: bool,
     pub(super) animation_frames: u32,
     pub(super) orientation: Option<u8>,
 }
@@ -98,6 +101,106 @@ pub(super) fn png_animation_validation_work(
         })
 }
 
+/// The strict policy for the ancillary metadata the decoder reads (see
+/// docs/research/png-sdr-color-ownership.md, "Rejection policy versus browser
+/// tolerance"). These are png 0.17.16's rules, which enforced the policy until
+/// png 0.18 made malformed ancillary chunks benign: a late, duplicate or short
+/// gAMA, cHRM, sRGB or pHYs, an unknown sRGB intent or pHYs unit, a late iCCP,
+/// and malformed text chunks fail the image. The reference browser admits all
+/// of them. Checked on every chunk the decoder sees, through IEND (an empty
+/// ancillary chunk is hidden, as png 0.17 never parsed one).
+#[derive(Default)]
+struct DecoderMetadata {
+    gama: bool,
+    chrm: bool,
+    srgb: bool,
+    phys: bool,
+}
+impl DecoderMetadata {
+    fn check(
+        &mut self,
+        kind: &[u8; 4],
+        data: &[u8],
+        after_idat: bool,
+        semantics: &mut PngSemantics,
+    ) -> Result<(), ResolveError> {
+        let once = |seen: &mut bool, minimum: usize| {
+            if after_idat || std::mem::replace(seen, true) || data.len() < minimum {
+                return Err(ResolveError::DecodeFailed);
+            }
+            Ok(())
+        };
+        match kind {
+            b"gAMA" => {
+                once(&mut self.gama, 4)?;
+                semantics.zero_gamma = data[..4] == [0; 4];
+            }
+            b"cHRM" => once(&mut self.chrm, 32)?,
+            b"sRGB" => {
+                once(&mut self.srgb, 1)?;
+                if data[0] > 3 {
+                    return Err(ResolveError::DecodeFailed);
+                }
+            }
+            b"pHYs" => {
+                once(&mut self.phys, 9)?;
+                if data[8] > 1 {
+                    return Err(ResolveError::DecodeFailed);
+                }
+            }
+            b"iCCP" if after_idat => return Err(ResolveError::DecodeFailed),
+            b"tEXt" | b"zTXt" | b"iTXt" => check_text_chunk(kind, data)?,
+            _ => {}
+        }
+        Ok(())
+    }
+}
+
+/// png 0.17.16's eager text-chunk validation: a 1-79 byte keyword before a
+/// NUL, a zero compression method, a 0/1 iTXt compression flag, an ASCII
+/// language tag, a UTF-8 translated keyword and UTF-8 uncompressed iTXt text.
+/// Compressed text is never inflated.
+fn check_text_chunk(kind: &[u8; 4], data: &[u8]) -> Result<(), ResolveError> {
+    let keyword = data
+        .iter()
+        .position(|&byte| byte == 0)
+        .ok_or(ResolveError::DecodeFailed)?;
+    if keyword == 0 || keyword > 79 {
+        return Err(ResolveError::DecodeFailed);
+    }
+    let value = &data[keyword + 1..];
+    match kind {
+        b"zTXt" if value.first() != Some(&0) => Err(ResolveError::DecodeFailed),
+        b"iTXt" => {
+            let (flag, method) = match value {
+                [flag, method, ..] => (*flag, *method),
+                _ => return Err(ResolveError::DecodeFailed),
+            };
+            let rest = &value[2..];
+            let language = rest
+                .iter()
+                .position(|&byte| byte == 0)
+                .ok_or(ResolveError::DecodeFailed)?;
+            let rest = &rest[language + 1..];
+            let translated = rest
+                .iter()
+                .position(|&byte| byte == 0)
+                .ok_or(ResolveError::DecodeFailed)?;
+            let text = &rest[translated + 1..];
+            if flag > 1
+                || (flag == 1 && method != 0)
+                || !value[2..2 + language].is_ascii()
+                || std::str::from_utf8(&rest[..translated]).is_err()
+                || (flag == 0 && std::str::from_utf8(text).is_err())
+            {
+                return Err(ResolveError::DecodeFailed);
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
 pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantics), ResolveError> {
     if !bytes.starts_with(PNG_SIGNATURE) {
         return Err(ResolveError::Unsupported);
@@ -121,6 +224,8 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
     let mut data_kind = None;
     let mut data_stream: Option<PngDataStream> = None;
     let mut semantics = PngSemantics::default();
+    let mut metadata = DecoderMetadata::default();
+    let mut decoder_in_frame = false;
     while offset < bytes.len() {
         let header_end = offset.checked_add(8).ok_or(ResolveError::DecodeFailed)?;
         let header = bytes
@@ -171,6 +276,14 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
             data_kind = None;
         }
         idat_ended |= saw_idat && &chunk_type != b"IDAT";
+        if !decoder_hides(&chunk_type, data.is_empty(), decoder_in_frame) {
+            metadata.check(&chunk_type, data, saw_idat, &mut semantics)?;
+            match &chunk_type {
+                b"fcTL" => decoder_in_frame = false,
+                b"fdAT" => decoder_in_frame = true,
+                _ => {}
+            }
+        }
         match &chunk_type {
             b"IHDR" if chunk_index == 0 && length == 13 => {
                 let width = u32::from_be_bytes(
@@ -369,32 +482,72 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
     Ok((width, height, semantics))
 }
 
-/// png 0.17 closes an fdAT stream at any intervening ancillary chunk. Feed
-/// its sample decoder a borrowed chunk view without the legal, non-sample
-/// ancillary chunks inside a frame. The outer validator has already checked
-/// every original chunk/CRC and EXIF; SVG still retains those original octets.
-/// Metadata with pre-IDAT ordering requirements remains visible to the decoder.
-struct PngFrameReader<'a> {
+/// Whether the chunk view below hides a chunk of `kind` from the decoder.
+/// png 0.17 never parsed an empty ancillary chunk; png 0.18 does, so an empty
+/// iCCP there would shadow a later valid one. Empty ancillary chunks are hidden.
+/// png closes an fdAT stream at any intervening ancillary chunk, so the legal,
+/// non-sample ancillary chunks inside a frame are hidden. Metadata with
+/// pre-IDAT ordering requirements stays visible. cICP and bKGD are always
+/// hidden: the validator reads cICP itself and nothing reads bKGD, while png
+/// 0.18 fails the whole decode on reserved cICP values (which the strict policy
+/// treats as unsupported signaling) and on a palette bKGD before PLTE.
+fn decoder_hides(kind: &[u8], empty: bool, in_frame: bool) -> bool {
+    let ordered = matches!(
+        kind,
+        b"acTL"
+            | b"fcTL"
+            | b"gAMA"
+            | b"cHRM"
+            | b"iCCP"
+            | b"sRGB"
+            | b"sBIT"
+            | b"tRNS"
+            | b"hIST"
+            | b"pHYs"
+            | b"sPLT"
+            | b"mDCV"
+            | b"cLLI"
+    );
+    (empty && kind[0].is_ascii_lowercase())
+        || matches!(kind, b"cICP" | b"bKGD")
+        || (in_frame && kind != b"fdAT" && kind[0].is_ascii_lowercase() && !ordered)
+}
+
+/// The borrowed chunk view every asset decoder reads. The outer validator has
+/// already checked every original chunk/CRC, EXIF and the strict metadata
+/// policy; SVG still retains the original octets. See `decoder_hides`.
+///
+/// Two png 0.18 changes drop chunks png 0.17 applied, so the view rewrites
+/// them (with a fresh CRC) rather than let the decoder ignore them:
+/// - an acTL whose play count exceeds 2^31-1 would draw the separate default
+///   image; the play count cannot affect a first frame, so it becomes zero;
+/// - an over-long gAMA, cHRM, sRGB or pHYs is now rejected, where png 0.17
+///   read its leading fields; the view trims it to that exact length.
+pub(super) struct PngFrameReader<'a> {
     remaining: &'a [u8],
     segment: &'a [u8],
+    /// A rewritten chunk, its length and how much the decoder has consumed.
+    patched: Option<([u8; 44], usize, usize)>,
     in_frame: bool,
+    /// Bytes the decoder has consumed from the view.
+    position: u64,
 }
 impl<'a> PngFrameReader<'a> {
-    fn new(bytes: &'a [u8]) -> Self {
+    pub(super) fn new(bytes: &'a [u8]) -> Self {
         let (segment, remaining) = bytes.split_at(bytes.len().min(8));
         Self {
             remaining,
             segment,
+            patched: None,
             in_frame: false,
+            position: 0,
         }
     }
 }
-impl Read for PngFrameReader<'_> {
-    fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
-        if output.is_empty() {
-            return Ok(0);
-        }
-        while self.segment.is_empty() && !self.remaining.is_empty() {
+impl PngFrameReader<'_> {
+    /// Moves to the next chunk the decoder should see.
+    fn next_segment(&mut self) -> io::Result<()> {
+        while self.segment.is_empty() && self.patched.is_none() && !self.remaining.is_empty() {
             let invalid = || io::Error::from(io::ErrorKind::InvalidData);
             let header = self.remaining.get(..8).ok_or_else(invalid)?;
             let length = u32::from_be_bytes(header[..4].try_into().map_err(|_| invalid())?);
@@ -405,25 +558,7 @@ impl Read for PngFrameReader<'_> {
             let segment = self.remaining.get(..end).ok_or_else(invalid)?;
             self.remaining = self.remaining.get(end..).ok_or_else(invalid)?;
             let kind = &header[4..8];
-            let ordered = matches!(
-                kind,
-                b"acTL"
-                    | b"fcTL"
-                    | b"cICP"
-                    | b"gAMA"
-                    | b"cHRM"
-                    | b"iCCP"
-                    | b"sRGB"
-                    | b"sBIT"
-                    | b"tRNS"
-                    | b"bKGD"
-                    | b"hIST"
-                    | b"pHYs"
-                    | b"sPLT"
-                    | b"mDCV"
-                    | b"cLLI"
-            );
-            if self.in_frame && kind != b"fdAT" && kind[0].is_ascii_lowercase() && !ordered {
+            if decoder_hides(kind, segment.len() == 12, self.in_frame) {
                 continue;
             }
             if kind == b"fcTL" {
@@ -432,12 +567,77 @@ impl Read for PngFrameReader<'_> {
             if kind == b"fdAT" {
                 self.in_frame = true;
             }
+            let exact = match kind {
+                b"gAMA" => 4,
+                b"cHRM" => 32,
+                b"sRGB" => 1,
+                b"pHYs" => 9,
+                b"acTL" => 8,
+                _ => usize::MAX,
+            };
+            let excess_plays = kind == b"acTL"
+                && segment.len() == 20
+                && u32::from_be_bytes([segment[12], segment[13], segment[14], segment[15]])
+                    > 0x7fff_ffff;
+            if excess_plays || (exact != 8 && exact != usize::MAX && segment.len() > exact + 12) {
+                let mut chunk = [0_u8; 44];
+                chunk[..4]
+                    .copy_from_slice(&u32::try_from(exact).map_err(|_| invalid())?.to_be_bytes());
+                chunk[4..8].copy_from_slice(kind);
+                chunk[8..8 + exact].copy_from_slice(&segment[8..8 + exact]);
+                if excess_plays {
+                    chunk[12..16].fill(0);
+                }
+                let mut crc = crc32fast::Hasher::new();
+                crc.update(&chunk[4..8 + exact]);
+                chunk[8 + exact..12 + exact].copy_from_slice(&crc.finalize().to_be_bytes());
+                self.patched = Some((chunk, 12 + exact, 0));
+                continue;
+            }
             self.segment = segment;
         }
-        let count = output.len().min(self.segment.len());
-        output[..count].copy_from_slice(&self.segment[..count]);
-        self.segment = &self.segment[count..];
+        Ok(())
+    }
+}
+impl Read for PngFrameReader<'_> {
+    fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+        let available = self.fill_buf()?;
+        let count = output.len().min(available.len());
+        output[..count].copy_from_slice(&available[..count]);
+        self.consume(count);
         Ok(count)
+    }
+}
+/// png 0.18 reads through `BufRead`; the view lends out the borrowed chunk
+/// bytes directly, so the decoder copies nothing extra.
+impl io::BufRead for PngFrameReader<'_> {
+    fn fill_buf(&mut self) -> io::Result<&[u8]> {
+        self.next_segment()?;
+        if let Some((chunk, length, consumed)) = &self.patched {
+            return Ok(&chunk[*consumed..*length]);
+        }
+        Ok(self.segment)
+    }
+    fn consume(&mut self, amount: usize) {
+        if let Some((_, length, consumed)) = &mut self.patched {
+            *consumed = (*consumed + amount).min(*length);
+            if *consumed == *length {
+                self.patched = None;
+            }
+        } else {
+            self.segment = &self.segment[amount.min(self.segment.len())..];
+        }
+        self.position = self.position.saturating_add(amount as u64);
+    }
+}
+/// png 0.18 requires `Seek` but never seeks: the view answers position
+/// queries and refuses to move, since skipped chunks have no position in it.
+impl io::Seek for PngFrameReader<'_> {
+    fn seek(&mut self, target: io::SeekFrom) -> io::Result<u64> {
+        match target {
+            io::SeekFrom::Current(0) => Ok(self.position),
+            _ => Err(io::Error::from(io::ErrorKind::Unsupported)),
+        }
     }
 }
 
@@ -460,11 +660,12 @@ fn validate_png_stream(bytes: &[u8], width: u32, height: u32) -> Result<(), Reso
             .num_frames
             .saturating_add(u32::from(default_image_is_separate))
     });
+    let frame_size = reader.output_buffer_size().ok_or(ResolveError::Memory)?;
     let mut frame = Vec::new();
     frame
-        .try_reserve_exact(reader.output_buffer_size())
+        .try_reserve_exact(frame_size)
         .map_err(|_| ResolveError::Memory)?;
-    frame.resize(reader.output_buffer_size(), 0);
+    frame.resize(frame_size, 0);
     for _ in 0..frame_count {
         let output = reader
             .next_frame(&mut frame)
@@ -480,7 +681,7 @@ fn validate_png_stream(bytes: &[u8], width: u32, height: u32) -> Result<(), Reso
             let depth = output.bit_depth as usize;
             let row_bytes = (output.width as usize * depth).div_ceil(8);
             let stride = if reader.info().interlaced {
-                reader.output_line_size(width)
+                reader.output_line_size(width).ok_or(ResolveError::Memory)?
             } else {
                 row_bytes
             };
@@ -638,7 +839,7 @@ pub(super) fn decode_static_png(
             .next_frame_info()
             .map_err(|_| ResolveError::DecodeFailed)?;
     }
-    let output_size = reader.output_buffer_size();
+    let output_size = reader.output_buffer_size().ok_or(ResolveError::Memory)?;
     let mut decoded = Vec::new();
     decoded
         .try_reserve_exact(output_size)
@@ -650,7 +851,9 @@ pub(super) fn decode_static_png(
     // png 0.17 writes Adam7 rows at the IHDR canvas stride even for narrow
     // APNG subframes. Repack those rows before interpreting a packed frame.
     if reader.info().interlaced {
-        let source_stride = reader.output_line_size(reader.info().width);
+        let source_stride = reader
+            .output_line_size(reader.info().width)
+            .ok_or(ResolveError::Memory)?;
         for y in 0..output.height as usize {
             let start = y
                 .checked_mul(source_stride)
@@ -899,8 +1102,9 @@ pub(in crate::render) fn encode_normalized_png(
         let mut encoder = png::Encoder::new(&mut bytes, width, height);
         encoder.set_color(png::ColorType::Rgba);
         encoder.set_depth(png::BitDepth::Eight);
-        encoder.set_compression(png::Compression::Best);
-        encoder.set_filter(png::FilterType::NoFilter);
+        // png 0.17's `Compression::Best`: flate2 at level 9.
+        encoder.set_deflate_compression(png::DeflateCompression::Level(9));
+        encoder.set_filter(png::Filter::NoFilter);
         let mut writer = encoder
             .write_header()
             .map_err(|_| ResolveError::DecodeFailed)?;

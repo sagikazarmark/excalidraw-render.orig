@@ -177,7 +177,8 @@ fn exercise(input: &[u8], mode: usize, forbid: bool, valid: bool) {
                     OutputFormat::Png => {
                         let decoder = png::Decoder::new(std::io::Cursor::new(bytes));
                         let mut reader = decoder.read_info().unwrap();
-                        let mut pixels = vec![0; reader.output_buffer_size()];
+                        let mut pixels =
+                            vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
                         let frame = reader.next_frame(&mut pixels).unwrap();
                         assert!(
                             u64::from(frame.width) * u64::from(frame.height)
@@ -616,8 +617,14 @@ fn compressed_and_dimension_bombs_have_typed_outcomes() {
     let mut stream = png[..33].to_vec();
     f::append_png_chunk(&mut stream, *b"IDAT", &compressed);
     f::append_png_chunk(&mut stream, *b"IEND", &[]);
+    // A profile expanding to just under the 1 MiB decoder workspace. Within
+    // about 2 KiB of it, whether png admits the profile depends on how it
+    // charges its own chunk buffer (0.17 and 0.18 differ), so stay clear.
     let mut profile = b"bomb\0\0".to_vec();
-    profile.extend_from_slice(&compressed);
+    profile.extend_from_slice(&miniz_oxide::deflate::compress_to_vec_zlib(
+        &vec![0; 1_048_576 - 8_192],
+        9,
+    ));
     for (id, bytes) in [
         ("dimensions", huge),
         ("scanline-expansion", stream),

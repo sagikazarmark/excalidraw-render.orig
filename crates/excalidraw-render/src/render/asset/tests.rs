@@ -362,6 +362,126 @@ mod png_codec {
     }
 
     #[test]
+    fn a_play_count_beyond_the_apng_range_still_draws_animation_frame_zero() {
+        let mut png = apng_with_separate_default(false);
+        mutate_first_png_chunk(&mut png, *b"acTL", |data| {
+            data[4..8].copy_from_slice(&u32::MAX.to_be_bytes());
+        });
+
+        assert_eq!(only_pixel(&decode("image/png", &png)), BLUE);
+    }
+
+    /// The strict metadata policy png 0.17 enforced and png 0.18 no longer
+    /// does: each of these fails the image in every format.
+    #[test]
+    fn malformed_late_or_duplicate_decoder_metadata_fails_the_image() {
+        let source = png_rgba(1, 1, &[GREY_128]);
+        let gama = 45_455_u32.to_be_bytes().to_vec();
+        let chrm: Vec<u8> = [
+            31_270_u32, 32_900, 64_000, 33_000, 30_000, 60_000, 15_000, 6_000,
+        ]
+        .iter()
+        .flat_map(|value| value.to_be_bytes())
+        .collect();
+        let phys = [2835_u32.to_be_bytes(), 2835_u32.to_be_bytes()].concat();
+        let before = |chunks: &[([u8; 4], Vec<u8>)]| png_with_chunks_before_idat(&source, chunks);
+        let late = |kind: [u8; 4], data: &[u8]| png_with_chunk_before_iend(&source, kind, data);
+        let cases = [
+            ("late gAMA", late(*b"gAMA", &gama)),
+            ("late cHRM", late(*b"cHRM", &chrm)),
+            ("late sRGB", late(*b"sRGB", &[0])),
+            (
+                "late pHYs",
+                late(*b"pHYs", &[phys.clone(), vec![0]].concat()),
+            ),
+            ("late iCCP", late(*b"iCCP", b"p\0\0x")),
+            (
+                "duplicate gAMA",
+                before(&[(*b"gAMA", gama.clone()), (*b"gAMA", gama.clone())]),
+            ),
+            (
+                "duplicate cHRM",
+                before(&[(*b"cHRM", chrm.clone()), (*b"cHRM", chrm.clone())]),
+            ),
+            (
+                "duplicate sRGB",
+                before(&[(*b"sRGB", vec![0]), (*b"sRGB", vec![0])]),
+            ),
+            ("short gAMA", before(&[(*b"gAMA", vec![0, 1, 2])])),
+            ("short cHRM", before(&[(*b"cHRM", chrm[..31].to_vec())])),
+            ("short pHYs", before(&[(*b"pHYs", phys.clone())])),
+            ("sRGB intent 4", before(&[(*b"sRGB", vec![4])])),
+            (
+                "pHYs unit 2",
+                before(&[(*b"pHYs", [phys.clone(), vec![2]].concat())]),
+            ),
+            ("tEXt without NUL", before(&[(*b"tEXt", b"Title".to_vec())])),
+            ("tEXt empty keyword", before(&[(*b"tEXt", b"\0v".to_vec())])),
+            (
+                "tEXt 80-byte keyword",
+                before(&[(*b"tEXt", [vec![b'k'; 80], b"\0v".to_vec()].concat())]),
+            ),
+            (
+                "zTXt method 1",
+                before(&[(*b"zTXt", b"Title\0\x01x".to_vec())]),
+            ),
+            (
+                "iTXt flag 2",
+                before(&[(*b"iTXt", b"Title\0\x02\0en\0T\0v".to_vec())]),
+            ),
+            (
+                "iTXt invalid UTF-8",
+                before(&[(*b"iTXt", b"Title\0\0\0en\0T\0\xff".to_vec())]),
+            ),
+        ];
+        for (case, png) in cases {
+            for format in [OutputFormat::Svg, OutputFormat::Png] {
+                assert_eq!(
+                    failure_for("image/png", &png, format),
+                    ResolveError::DecodeFailed,
+                    "{case} {format:?}"
+                );
+            }
+        }
+    }
+
+    /// What png 0.17 tolerated stays tolerated: empty ancillary chunks are never
+    /// read, and an over-long gAMA applies its leading value.
+    #[test]
+    fn empty_and_over_long_decoder_metadata_keep_png_0_17_semantics() {
+        let source = png_rgba(1, 1, &[GREY_128]);
+        for kind in [*b"gAMA", *b"sRGB", *b"cHRM", *b"iCCP", *b"tEXt"] {
+            let png = png_with_chunks_before_idat(&source, &[(kind, vec![])]);
+            assert_eq!(only_pixel(&decode("image/png", &png)), GREY_128, "{kind:?}");
+        }
+        let linear = |gama: Vec<u8>| {
+            only_pixel(&decode(
+                "image/png",
+                &png_with_chunks_before_idat(&source, &[(*b"gAMA", gama)]),
+            ))
+        };
+        assert_eq!(
+            linear([100_000_u32.to_be_bytes().as_slice(), &[9, 9]].concat()),
+            linear(100_000_u32.to_be_bytes().to_vec())
+        );
+        let garbage = (
+            *b"iCCP",
+            [b"p\0\0".as_slice(), &[120, 156, 3, 0, 0, 0, 0, 1]].concat(),
+        );
+        assert_eq!(
+            failure(
+                "image/png",
+                &png_with_chunks_before_idat(&source, &[(*b"iCCP", vec![]), garbage.clone()])
+            ),
+            failure(
+                "image/png",
+                &png_with_chunks_before_idat(&source, &[garbage])
+            ),
+            "an empty iCCP does not shadow the profile after it"
+        );
+    }
+
+    #[test]
     fn corrupt_image_data_behind_a_valid_crc_is_a_decode_failure() {
         let mut png = png_rgba(1, 1, &[RED]);
         mutate_first_png_chunk(&mut png, *b"IDAT", |data| data[0] ^= 0xff);

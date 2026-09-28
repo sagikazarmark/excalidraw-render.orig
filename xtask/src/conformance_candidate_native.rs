@@ -476,7 +476,7 @@ pub fn qualify_text_canary(directory: &str) -> Result<Value> {
     let mut reader = png::Decoder::new(std::io::Cursor::new(png_bytes))
         .read_info()
         .map_err(|e| e.to_string())?;
-    let mut rgba = vec![0; reader.output_buffer_size()];
+    let mut rgba = vec![0; reader.output_buffer_size().ok_or("PNG buffer overflows")?];
     let info = reader.next_frame(&mut rgba).map_err(|e| e.to_string())?;
     if (info.width, info.height) != (118, 102)
         || info.color_type != png::ColorType::Rgba

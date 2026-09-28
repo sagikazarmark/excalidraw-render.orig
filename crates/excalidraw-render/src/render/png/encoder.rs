@@ -506,7 +506,7 @@ mod tests {
     fn text_chunks(png: &[u8]) -> Vec<(&'static str, String, String)> {
         let decoder = png::Decoder::new(Cursor::new(png));
         let mut reader = decoder.read_info().expect("PNG structure is valid");
-        let mut rgba = vec![0; reader.output_buffer_size()];
+        let mut rgba = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
         reader.next_frame(&mut rgba).expect("PNG pixels decode");
         reader.finish().expect("trailing PNG chunks decode");
         let info = reader.info();
@@ -529,7 +529,7 @@ mod tests {
         let mut reader = decoder.read_info().expect("PNG structure is valid");
         assert_eq!(reader.info().color_type, png::ColorType::Rgba);
         assert_eq!(reader.info().bit_depth, png::BitDepth::Eight);
-        let mut rgba = vec![0; reader.output_buffer_size()];
+        let mut rgba = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
         let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
         rgba.truncate(frame.buffer_size());
         (frame.width, frame.height, rgba)

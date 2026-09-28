@@ -72,7 +72,7 @@ fn pinned_json(bytes: &[u8], expected: &str) -> Value {
 fn evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-exif/reference.json"),
-        "c90a6177890c98b9e9dc76902fa7081355d063a1836a773dc74e1675bd9b8e8e",
+        "f585f4fa3eaf0773c3441a4ebc999d119609cf9bcd27bfbbb4ac92bbcd531b88",
     );
     assert_eq!(record["schema"], "excalidraw-render/jpeg-exif-reference/v1");
     for source in record["sources"].as_array().unwrap() {
@@ -93,7 +93,7 @@ fn evidence() -> Value {
         ),
         (
             include_bytes!("../common/raster.rs").as_slice(),
-            "4f6bc5a85213b1268b8536c242687d58c3cdb81423c6643b6cd1c44e9d06d303",
+            "46a6ed5daacc715f1f3c28c2b806b95a04e13206b4bc7f6d13c0ea50c99b8e10",
         ),
     ] {
         assert_eq!(hash(bytes), expected);
@@ -110,7 +110,7 @@ fn inputs() -> Value {
 fn untagged_evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-color/reference.json"),
-        "b416cbbeec8536c2cd9f9d23e3ec81075a696110cfae51a12d8083512fae27ba",
+        "41fa9995a4d4df36c791f207ce9b38e9a111d6abc3706f4254d5caa99f03e056",
     );
     assert_eq!(
         record["schema"],
@@ -371,7 +371,7 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
     let mut decoder = png::Decoder::new(std::io::Cursor::new(bytes));
     decoder.set_transformations(png::Transformations::EXPAND);
     let mut reader = decoder.read_info().unwrap();
-    let mut bytes = vec![0; reader.output_buffer_size()];
+    let mut bytes = vec![0; reader.output_buffer_size().expect("PNG buffer fits")];
     let info = reader.next_frame(&mut bytes).unwrap();
     assert_eq!(info.bit_depth, png::BitDepth::Eight);
     bytes.truncate(info.buffer_size());

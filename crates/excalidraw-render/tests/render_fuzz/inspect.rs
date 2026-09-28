@@ -186,7 +186,7 @@ pub(super) fn artifact(
                 u64::from(info.width) * u64::from(info.height)
                     <= request.resource_limits().max_raster_surface_pixels()
             );
-            let mut pixels = vec![0; decoder.output_buffer_size()];
+            let mut pixels = vec![0; decoder.output_buffer_size().expect("PNG buffer fits")];
             decoder.next_frame(&mut pixels).unwrap();
         }
         OutputFormat::Pdf => {

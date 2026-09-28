@@ -164,6 +164,17 @@ pub(crate) const COMPARATOR_REFRESHES: &[ComparatorRefresh] = &[
         before: "tests/conformance/proposals/comparator-closure-refresh-v3/before",
         vectors: &[],
     },
+    // #208: png 0.18 returns decoder buffer sizes as options, so the
+    // Pixelmatch upstream harness unwraps its fixture's; the fixtures and the
+    // comparisons are unchanged.
+    ComparatorRefresh {
+        before: "tests/conformance/proposals/comparator-closure-refresh-v4/before",
+        vectors: &[(
+            "crates/excalidraw-render-compare/tests/pixelmatch_upstream.rs",
+            "55f131abcef6da2f1c9be21420d4f747e9acc7a7b944736996a5f01faadc8433",
+            "dfe0a102ec425fe01c027ac5e2eb409a804f810bdb3780ac379dc6b01eba4ca9",
+        )],
+    },
 ];
 /// Evidence measured under a comparator profile (or its closure) that a
 /// reviewed refresh superseded. Those refreshes moved the comparator's
