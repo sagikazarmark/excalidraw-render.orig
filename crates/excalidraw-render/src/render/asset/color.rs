@@ -601,3 +601,29 @@ fn validate_png_icc_direction(bytes: &[u8]) -> Result<&[u8], ResolveError> {
     }
     Ok(bytes)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_icc_profile, validate_png_icc_direction, ResolveError};
+
+    /// moxcms 0.9.1 reads an all-zero ICC version field as v2.0; the renderer
+    /// never hands untrusted bytes to that parser, and its own header gate
+    /// keeps rejecting a zero major version on every ICC path.
+    #[test]
+    fn zero_icc_version_is_unsupported() {
+        let mut header = vec![0; 132];
+        header[..4].copy_from_slice(&132u32.to_be_bytes());
+        header[12..16].copy_from_slice(b"mntr");
+        header[16..20].copy_from_slice(b"RGB ");
+        header[20..24].copy_from_slice(b"XYZ ");
+        header[36..40].copy_from_slice(b"acsp");
+        header[8] = 2;
+        assert!(validate_png_icc_direction(&header).is_ok());
+        header[8] = 0;
+        assert_eq!(
+            validate_png_icc_direction(&header),
+            Err(ResolveError::Unsupported)
+        );
+        assert!(parse_icc_profile(&header).is_err());
+    }
+}
