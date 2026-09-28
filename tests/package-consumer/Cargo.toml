@@ -17,7 +17,7 @@ serde_json = "=1.0.151"
 sha2 = "=0.11.0"
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-wasm-bindgen-test = "=0.3.76"
+wasm-bindgen-test = "=0.3.79"
 
 [patch.crates-io]
 excalidraw-fonts = { path = "../../target/package/excalidraw-fonts-0.1.0" }

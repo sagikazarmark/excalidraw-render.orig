@@ -59,7 +59,7 @@ libm = "=0.2.16"
 # 0.8.9, and moving the IDAT compressor changes every PNG (ADR-0004).
 # Revisit when png moves to miniz_oxide 0.9.
 miniz_oxide = "=0.8.9"
-moxcms = { version = "=0.9.0", default-features = false }
+moxcms = { version = "=0.9.1", default-features = false }
 png = "=0.18.1"
 jpeg-encoder = "=0.7.1"
 resvg = { version = "=0.47.0", default-features = false, features = ["raster-images"] }
@@ -78,7 +78,7 @@ skera = { version = "=0.7.0", default-features = false }
 rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
 ryu-js = { version = "=1.0.3", default-features = false }
 unicode-bidi = "=0.3.18"
-unicode-normalization = "=0.1.24"
+unicode-normalization = "=0.1.25"
 unicase = "=2.9.0"
 svgtypes = "=0.16.1"
 # Host-only: CLI delivery staging and xtask scratch directories. Never a

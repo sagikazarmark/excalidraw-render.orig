@@ -34,7 +34,7 @@ fn base64(value: &Value) -> Vec<u8> {
 pub(super) fn evidence() -> Value {
     assert_eq!(
         hash(RECORD),
-        "5297816747db3c2912b7db5aadb41a11a2ed847152de2ce327fd8c76b96b8a85"
+        "a87477a8071593560a8944fa15461ff67c0cfbd983668fedbc9e3c3be4c0fc0d"
     );
     let record: Value = serde_json::from_slice(RECORD).unwrap();
     assert_eq!(
