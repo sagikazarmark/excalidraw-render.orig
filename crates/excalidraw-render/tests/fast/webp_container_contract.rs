@@ -61,7 +61,7 @@ fn image(png: &[u8]) -> CanonicalRgba8 {
 fn evidence() -> Value {
     assert_eq!(
         hash(RECORD),
-        "e6a3073bf76c1dda3f525b8cf80b198dfae709b1a67fe45b5ecda60a4bd12ece"
+        "488e850a3aa62a37bdc81e499d490161f0e9c242935f95201f6cfc9e00648e77"
     );
     let record: Value = serde_json::from_slice(RECORD).unwrap();
     assert_eq!(
