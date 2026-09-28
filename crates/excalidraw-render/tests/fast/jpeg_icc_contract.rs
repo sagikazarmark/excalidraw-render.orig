@@ -9,6 +9,7 @@
 //! against both pinned color authorities, including discriminating untagged
 //! controls. The earlier failure measurements belong to the historical source.
 //! Recovery grants no tolerance exception.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
@@ -42,8 +43,8 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
 fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/jpeg-icc/reference.json");
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
-        "a7bd4129344285966ba78c9418f234da0d1c39c685ef7e002ac1798fa6cafa78"
+        lower_hex(&Sha256::digest(bytes)),
+        "e6877cac4a0c314e1e5a4bfe8f2277bea6cfc1e8b4d71e0a371220b61648639c"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/jpeg-icc-reference/v1");
@@ -52,7 +53,7 @@ fn evidence() -> Value {
             std::fs::read(crate::common::repository_root().join(source["path"].as_str().unwrap()))
                 .unwrap();
         assert_eq!(
-            format!("{:x}", Sha256::digest(bytes)),
+            lower_hex(&Sha256::digest(bytes)),
             source["sha256"].as_str().unwrap()
         );
     }
@@ -70,7 +71,7 @@ fn evidence() -> Value {
             "4f6bc5a85213b1268b8536c242687d58c3cdb81423c6643b6cd1c44e9d06d303",
         ),
     ] {
-        assert_eq!(format!("{:x}", Sha256::digest(bytes)), hash);
+        assert_eq!(lower_hex(&Sha256::digest(bytes)), hash);
     }
     let rows = record["cases"].as_array().unwrap();
     assert_eq!(rows.len(), 160);
@@ -94,7 +95,7 @@ fn reconstruct_contract(record: &Value) {
     let rows = record["cases"].as_array().unwrap();
     let inputs = include_bytes!("../../../../tests/oracle/jpeg-color/inputs.json");
     assert_eq!(
-        format!("{:x}", Sha256::digest(inputs)),
+        lower_hex(&Sha256::digest(inputs)),
         "acbbe2df5460565936f027513305b061730da77cb392f27d68d19220ddc34258"
     );
     let inputs: Value = serde_json::from_slice(inputs).unwrap();
@@ -162,14 +163,14 @@ fn reconstruct_contract(record: &Value) {
         }
         let profile = decode(&row["profile_base64"]);
         assert_eq!(
-            format!("{:x}", Sha256::digest(&profile)),
+            lower_hex(&Sha256::digest(&profile)),
             row["profile_sha256"].as_str().unwrap()
         );
         let source = decode(&base["jpeg_base64"]);
         assert_eq!(&source[..2], &[0xff, 0xd8]);
         let jpeg = decode(&row["jpeg_base64"]);
         assert_eq!(
-            format!("{:x}", Sha256::digest(&jpeg)),
+            lower_hex(&Sha256::digest(&jpeg)),
             row["jpeg_sha256"].as_str().unwrap()
         );
         assert_eq!(&jpeg[..2], &[0xff, 0xd8]);
@@ -380,7 +381,7 @@ fn check(row: &Value) {
     let id = row["id"].as_str().unwrap();
     assert_eq!(row["reference"]["admitted"], true);
     assert_eq!(
-        format!("{:x}", Sha256::digest(decode(&row["jpeg_base64"]))),
+        lower_hex(&Sha256::digest(decode(&row["jpeg_base64"]))),
         row["jpeg_sha256"].as_str().unwrap()
     );
     let scene = SceneDocument::parse(&serde_json::to_vec(&row["scene"]).unwrap()).unwrap();
@@ -859,8 +860,8 @@ pub(super) fn multipart_profiles_preserve_semantics_and_discriminate_ignored_icc
 fn untagged_evidence() -> Value {
     let old = include_bytes!("../../../../tests/oracle/jpeg-color/reference.json");
     assert_eq!(
-        format!("{:x}", Sha256::digest(old)),
-        "e1b0005465245eddca9ec625976302b07d480ae8f7f226afb6771a55d4859cf7"
+        lower_hex(&Sha256::digest(old)),
+        "77b84951bd4fbd7ce805993ed98cbf19149e0cf4c0b773da43f16905036cdc5b"
     );
     let old: Value = serde_json::from_slice(old).unwrap();
     assert_eq!(old["schema"], "excalidraw-render/jpeg-color-reference/v1");

@@ -16,7 +16,7 @@ use sha2::{Digest, Sha256};
 use super::super::font_demand::ResolvedFont;
 use super::super::font_subset;
 use super::super::notices::{FontNoticeSet, MandatoryNotices};
-use super::super::svg_fonts::Bundle;
+use super::super::svg_fonts::{encode_hex_32, Bundle};
 use super::super::text::{ResolvedGlyph, LIBERATION_SANS_IDENTITY};
 use super::super::FormatEncodeError;
 
@@ -105,12 +105,12 @@ pub(super) fn prepare_font(identity: &str, sfnt: &[u8]) -> Result<PdfFont, Forma
         FormatEncodeError::Encoding(format!("PDF font {identity} has no catalog notice"))
     })?;
     let alias = Bundle::effective_family(family.display_name());
-    let source_digest = format!("{:x}", Sha256::digest(sfnt));
+    let source_digest = encode_hex_32(&Sha256::digest(sfnt).into());
     let program_identity = program_identity(identity, &source_digest);
     let program = font_subset::rename_program(sfnt, alias, &program_identity).map_err(|_| {
         FormatEncodeError::Encoding(format!("PDF font {identity} could not be renamed"))
     })?;
-    let program_digest = format!("{:x}", Sha256::digest(&program));
+    let program_digest = encode_hex_32(&Sha256::digest(&program).into());
     let notice_text = format!(
         "Derived font program of {identity}. Source program SHA-256: {source_digest}. {} \
          Modified Version under {}. Transformation: names rewritten for compatibility \
@@ -144,7 +144,7 @@ fn program_identity(identity: &str, source_digest: &str) -> String {
     );
     hasher.update(identity.as_bytes());
     hasher.update(source_digest.as_bytes());
-    format!("{:x}", hasher.finalize())
+    encode_hex_32(&hasher.finalize().into())
 }
 
 /// One glyph of a run as Krilla draws it: its cluster's text, and the step

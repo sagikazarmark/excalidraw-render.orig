@@ -16,6 +16,7 @@ use crate::common::svg::{font_family_attribute, EXCALIFONT_FAMILIES, LIBERATION_
 use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
+use crate::common::lower_hex;
 use crate::common::pdf_inspect::{
     declares_base_font, embedded_pdf_fonts, family_name, font_resource, marked_content_line,
     pdf_actual_text, pdf_text, to_unicode_cmap,
@@ -250,7 +251,7 @@ fn pdf_embeds_the_complete_noto_emoji_face_for_the_emoji_runs_and_carries_the_st
     let noto_emoji = manifested_noto_emoji();
     let noto_digest = {
         use sha2::Digest as _;
-        format!("{:x}", sha2::Sha256::digest(&noto_emoji))
+        lower_hex(&sha2::Sha256::digest(&noto_emoji))
     };
     assert!(
         crate::common::pdf_inspect::pdf_font_program_sources(bytes)

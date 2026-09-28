@@ -3,6 +3,7 @@ use excalidraw_render::{
 };
 use sha2::{Digest, Sha256};
 
+use crate::common::lower_hex;
 use crate::common::svg::path_data;
 
 const ARROW_SCENE: &[u8] = br##"{
@@ -64,7 +65,7 @@ pub(super) fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_for
         };
         if let Some(expected_digest) = whole_artifact_digest {
             assert_eq!(
-                format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
+                lower_hex(&Sha256::digest(outcome.artifact().bytes())),
                 expected_digest,
                 "exact {format:?} arrow artifact changed"
             );
@@ -81,7 +82,7 @@ pub(super) fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_for
             let paths = path_data(svg);
             assert!(paths.len() > 8, "arrowheads are separate vectors");
             assert_eq!(
-                format!("{:x}", Sha256::digest(paths.join("\n"))),
+                lower_hex(&Sha256::digest(paths.join("\n"))),
                 "dd4a3a37eed922fa3ead257755202c3d3fe0e2872fc008e4cc95ef526d28cb87",
                 "exact arrow vectors changed"
             );

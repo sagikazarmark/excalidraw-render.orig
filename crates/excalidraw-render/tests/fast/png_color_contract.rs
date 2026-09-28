@@ -1,5 +1,6 @@
 //! PNG color contracts: canonical visual budgets plus independent exact
 //! semantic anchors, complete reports, source preservation and recovery.
+use crate::common::lower_hex;
 use crate::common::png_color_reference as reference;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
@@ -65,7 +66,7 @@ fn check_rows(evidence: &serde_json::Value, group: &str, count: usize) {
         let bytes =
             std::fs::read(crate::common::repository_root().join(source["path"].as_str().unwrap()))
                 .unwrap();
-        assert_eq!(source["sha256"], format!("{:x}", Sha256::digest(bytes)));
+        assert_eq!(source["sha256"], lower_hex(&Sha256::digest(bytes)));
     }
     let rows: Vec<_> = evidence["cases"]
         .as_array()
@@ -610,11 +611,10 @@ fn pixel_rgb(chunks: &[([u8; 4], Vec<u8>)], rgb: [u8; 3]) -> Vec<u8> {
 #[test]
 fn exact_transfer_and_metadata_anchors() {
     assert_eq!(
-        format!(
-            "{:x}",
-            Sha256::digest(include_bytes!("../common/png_color_reference.rs"))
-        ),
-        "587df4e08fead76757275069285e7bc1ce156cded0a8c6f4d7306ffeb7fcd008"
+        lower_hex(&Sha256::digest(include_bytes!(
+            "../common/png_color_reference.rs"
+        ))),
+        "18603743899f0fe432c34bb932188271e650bf16e10062de07e0d25edb277bde"
     );
     let evidence = reference::evidence();
     let icc = evidence["cases"]

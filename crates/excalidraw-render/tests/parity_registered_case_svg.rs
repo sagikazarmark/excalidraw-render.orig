@@ -76,6 +76,7 @@ use resvg::tiny_skia::{Pixmap, Transform};
 use serde_json::Value;
 use usvg::fontdb;
 
+use common::lower_hex;
 use common::registered_cases::{
     case_count, judge_each, observed, registered_scene_variants, variant_request, visual_class,
     PinnedDivergence, PinnedGeometryDefect, RasterizerLimitation, ReferenceAuthorityDivergence,
@@ -770,10 +771,7 @@ fn a_geometry_defect_pin_holds_the_renderer_geometry_and_requires_the_divergence
         svg_geometry(svg),
         "viewBox=0 0 200 120\nwidth=200\nheight=120\nM0 0 L1 1\nM2 2 L3 3\n"
     );
-    let digest = format!(
-        "{:x}",
-        <sha2::Sha256 as sha2::Digest>::digest(svg_geometry(svg))
-    );
+    let digest = lower_hex(&<sha2::Sha256 as sha2::Digest>::digest(svg_geometry(svg)));
     let pinned: &'static str = Box::leak(digest.into_boxed_str());
     let pin = PinnedGeometryDefect {
         case: "focused.example.v1",

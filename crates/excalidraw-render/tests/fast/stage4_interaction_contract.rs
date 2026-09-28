@@ -1,5 +1,6 @@
 //! Stage-4 interaction contracts. Representative-scene approval is a separate
 //! obligation: this authored tracer deliberately makes no approval claim.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{
     ColorMode, ErrorCode, FrameOptions, FrameRenderRequest, MetadataOptions, OutputFormat,
@@ -77,7 +78,7 @@ fn silent(report: &excalidraw_render::CompatibilityReport) {
             "4f6bc5a85213b1268b8536c242687d58c3cdb81423c6643b6cd1c44e9d06d303",
         ),
     ] {
-        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected);
+        assert_eq!(lower_hex(&Sha256::digest(bytes)), expected);
     }
     assert_eq!(
         serde_json::to_value(report).unwrap(),

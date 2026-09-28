@@ -3,6 +3,7 @@
 //! characterizations. Empty Plain Text uses measured browser RGBA, leaving the
 //! author's consuming-GCE hypothesis intact. No later composite is qualified by
 //! native first-frame output. Every selector runs all evidence/negative gates.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use serde_json::{json, Value};
@@ -64,7 +65,7 @@ const SOURCES: [&str; 18] = [
     "tools/reference-oracle/vite.config.mjs",
 ];
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 fn encode(bytes: &[u8]) -> Value {
     json!(base64::engine::general_purpose::STANDARD.encode(bytes))

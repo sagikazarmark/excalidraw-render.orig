@@ -4,6 +4,7 @@ use excalidraw_render::{
 };
 use sha2::{Digest, Sha256};
 
+use crate::common::lower_hex;
 use crate::common::raster::decode_png;
 use crate::common::svg::path_data;
 
@@ -56,7 +57,7 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
         };
         if let Some(expected_digest) = expected_digest {
             assert_eq!(
-                format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
+                lower_hex(&Sha256::digest(outcome.artifact().bytes())),
                 expected_digest,
                 "exact {format:?} focused-case artifact changed"
             );

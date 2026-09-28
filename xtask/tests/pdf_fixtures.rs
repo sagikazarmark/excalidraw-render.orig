@@ -82,9 +82,9 @@ fn generated_pdfs_and_report_match_tracked_qualification_fixtures() {
             expected.len()
         );
         expected_stdout.push_str(&format!(
-            "{name} {} {:x}\n",
+            "{name} {} {}\n",
             expected.len(),
-            Sha256::digest(&expected)
+            lower_hex(&Sha256::digest(&expected)),
         ));
     }
     assert_eq!(String::from_utf8(output.stdout).unwrap(), expected_stdout);
@@ -112,4 +112,8 @@ fn output_directory_errors_are_reported() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("not-a-directory"));
     assert_eq!(fs::read(path).unwrap(), b"keep this file");
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

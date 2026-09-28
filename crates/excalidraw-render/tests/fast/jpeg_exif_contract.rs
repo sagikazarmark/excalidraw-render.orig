@@ -5,6 +5,7 @@
 //! magic), then the first valid orientation within its IFD. Late/between-scan
 //! APP1 is ignored. Authored bounds controls below make no new browser claims.
 //! PDF checks inspect the page-bound native image and page extents, not a viewer.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{
@@ -62,7 +63,7 @@ fn decode(value: &Value) -> Vec<u8> {
         .unwrap()
 }
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 fn pinned_json(bytes: &[u8], expected: &str) -> Value {
     assert_eq!(hash(bytes), expected);
@@ -71,7 +72,7 @@ fn pinned_json(bytes: &[u8], expected: &str) -> Value {
 fn evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-exif/reference.json"),
-        "8432c6a8ce2ecc707cc9858f87f075781af249a394cae051ec330ae94c6a7103",
+        "57575f6b16ff7db2c15eb946d87a4278836fb9eac4d7e7705cf0e8b499481330",
     );
     assert_eq!(record["schema"], "excalidraw-render/jpeg-exif-reference/v1");
     for source in record["sources"].as_array().unwrap() {
@@ -109,7 +110,7 @@ fn inputs() -> Value {
 fn untagged_evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-color/reference.json"),
-        "e1b0005465245eddca9ec625976302b07d480ae8f7f226afb6771a55d4859cf7",
+        "77b84951bd4fbd7ce805993ed98cbf19149e0cf4c0b773da43f16905036cdc5b",
     );
     assert_eq!(
         record["schema"],

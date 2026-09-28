@@ -1,4 +1,5 @@
 use super::{font_subset, svg_fonts};
+use crate::resource_accounting::lower_hex;
 #[cfg(not(target_arch = "wasm32"))]
 use base64::Engine;
 use serde::{Deserialize, Serialize};
@@ -302,8 +303,8 @@ impl QualificationMeasurement {
 
     fn report(&self) -> QualificationMeasurementReport {
         QualificationMeasurementReport {
-            generated_bytes_sha256: format!("{:x}", self.generated_bytes.clone().finalize()),
-            resource_traces_sha256: format!("{:x}", self.resource_traces.clone().finalize()),
+            generated_bytes_sha256: lower_hex(&self.generated_bytes.clone().finalize()),
+            resource_traces_sha256: lower_hex(&self.resource_traces.clone().finalize()),
             successful_cells: self.successful_cells,
             traced_cells: self.traced_cells,
         }
@@ -1079,7 +1080,7 @@ fn family_failure_diagnosis(target: QualificationSource, scalars: &[u32]) -> Str
 }
 
 fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 
 fn effective_alias(family: &str) -> &'static str {

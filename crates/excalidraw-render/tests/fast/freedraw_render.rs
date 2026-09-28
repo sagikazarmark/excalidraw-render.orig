@@ -1,3 +1,4 @@
+use crate::common::lower_hex;
 use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
@@ -36,7 +37,7 @@ pub(super) fn simulated_pressure_freedraw_renders_directly_in_every_format() {
                     .unwrap()
                     .0;
                 assert_eq!(
-                    format!("{:x}", Sha256::digest(path)),
+                    lower_hex(&Sha256::digest(path)),
                     "9adff0c560710203718626bc817520baba2819a06898054e0b55d52a7cccd41e",
                     "path vector comes from perfect-freehand 1.2.0 and Excalidraw v0.18.1"
                 );

@@ -22,6 +22,7 @@ use excalidraw_render_compare::{
 };
 use serde_json::{json, Value};
 
+use super::lower_hex;
 use super::raster::decode_png;
 
 /// One export variant of a registered scene case, with everything a harness
@@ -467,7 +468,7 @@ impl PinnedExtentDefect {
                 rendered.0,
                 rendered.1,
                 official.0,
-                official.1
+                official.1,
             )
         })
     }
@@ -475,7 +476,7 @@ impl PinnedExtentDefect {
 
 fn sha256_hex(bytes: &[u8]) -> String {
     use sha2::Digest;
-    format!("{:x}", sha2::Sha256::digest(bytes))
+    lower_hex(&sha2::Sha256::digest(bytes))
 }
 
 impl ReferenceAuthorityDivergence {

@@ -12,6 +12,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 use super::webp_sample_contract::render;
+use crate::common::lower_hex;
 
 const RECORD: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -20,7 +21,7 @@ const RECORD: &[u8] = include_bytes!(concat!(
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 
 fn base64(value: &Value) -> Vec<u8> {
@@ -33,7 +34,7 @@ fn base64(value: &Value) -> Vec<u8> {
 pub(super) fn evidence() -> Value {
     assert_eq!(
         hash(RECORD),
-        "9db95958d39be14c88466f39bf15d275793e08102b60094cd41e9452af8a87a2"
+        "acce68ab59272abe749b6e057f294185ac1378c2fd012b7c26309193241f3931"
     );
     let record: Value = serde_json::from_slice(RECORD).unwrap();
     assert_eq!(

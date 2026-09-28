@@ -1611,7 +1611,11 @@ fn json_line(report: &impl Serialize) -> Vec<u8> {
 
 /// The `sha256:`-prefixed lowercase hex digest artifact descriptors carry.
 fn sha256(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    format!("sha256:{}", lower_hex(&Sha256::digest(bytes)))
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 #[cfg(test)]

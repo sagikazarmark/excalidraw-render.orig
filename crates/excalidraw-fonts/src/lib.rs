@@ -889,7 +889,11 @@ fn verify_asset(asset: &'static AssetRecord) -> Result<VerifiedAsset, AssetInteg
 }
 
 fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 #[cfg(test)]

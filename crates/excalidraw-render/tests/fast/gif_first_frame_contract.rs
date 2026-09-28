@@ -3,6 +3,7 @@
 //! controls. Expectations come from coordinates/palettes and an independent,
 //! bounded wire reader, never from the production GIF codec. PDF assertions
 //! inspect the actual bound image/ICC/SMask, not a whole-page viewer raster.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument};
 use serde_json::{json, Value};
@@ -60,7 +61,7 @@ const SOURCES: [&str; 18] = [
 ];
 
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 fn decode(value: &Value) -> Vec<u8> {
     base64::engine::general_purpose::STANDARD

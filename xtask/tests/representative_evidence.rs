@@ -146,7 +146,7 @@ fn collection_rederives_assets_crops_receipts_and_measurements() {
         fs::write(&path, &changed).unwrap();
         let mut record = original.clone();
         record["files"][file] =
-            json!({"bytes":changed.len(),"sha256":format!("{:x}",Sha256::digest(&changed))});
+            json!({"bytes":changed.len(),"sha256":lower_hex(&Sha256::digest(&changed))});
         write(&record_path, &record);
         assert!(run(&commands("verify"), false).contains(expected));
         fs::write(path, saved).unwrap();
@@ -188,7 +188,7 @@ fn collection_rederives_assets_crops_receipts_and_measurements() {
     write(&capture_path, &capture);
     let changed = fs::read(&capture_path).unwrap();
     let mut viewer = original.clone();
-    let binding = json!({"path":original["native"]["path"],"bytes":changed.len(),"sha256":format!("{:x}",Sha256::digest(&changed))});
+    let binding = json!({"path":original["native"]["path"],"bytes":changed.len(),"sha256":lower_hex(&Sha256::digest(&changed))});
     viewer["native"] = binding.clone();
     viewer["inputs"][4] = binding;
     viewer["producer"]["executable"]["sha256"] = json!("1".repeat(64));
@@ -212,7 +212,7 @@ fn collection_rederives_assets_crops_receipts_and_measurements() {
     fs::write(&extra, b"{}").unwrap();
     let mut changed = original.clone();
     changed["files"]["new-observation.json"] =
-        json!({"bytes":2,"sha256":format!("{:x}",Sha256::digest(b"{}"))});
+        json!({"bytes":2,"sha256":lower_hex(&Sha256::digest(b"{}"))});
     write(&record_path, &changed);
     run(&commands("verify"), true);
     assert!(run(&["compact", "check", compact.to_str().unwrap()], false)
@@ -276,4 +276,8 @@ fn registered_cases_pass_all_viewers_with_rust_collection() {
         let value: Value = serde_json::from_str(line).unwrap();
         assert!(value["viewers"].is_string());
     }
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

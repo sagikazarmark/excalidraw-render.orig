@@ -124,6 +124,9 @@ fn check_descriptor(root: &Path, d: &Value) -> Result<Vec<u8>> {
         if p == COMPARATOR_PROFILE || p == COMPARATOR_CLOSURE {
             return comparator_closure_successor(d);
         }
+        if reviewed_vector_move(p, &d["sha256"], &sha256(&b)) {
+            return Ok(b);
+        }
         return Err(format!("stale candidate evidence {p}"));
     }
     Ok(b)
@@ -132,39 +135,90 @@ pub(crate) const COMPARATOR_PROFILE: &str =
     "tests/conformance/comparator-profiles/canonical-visual-v1.json";
 const COMPARATOR_CLOSURE: &str =
     "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json";
-/// Preimages of the comparator files the #206 lock refresh superseded.
-pub(crate) const SUPERSEDED_COMPARATOR: &str =
-    "tests/conformance/proposals/comparator-closure-refresh-v1/before";
-/// Evidence measured under the comparator profile (or its closure) that the
-/// #206 lock refresh superseded. That refresh moved only the comparator's
-/// dependency closure, so its sources, protocol and fixtures are unchanged and
-/// those measurements stand; any later profile move needs its own review.
-/// Returns the archived file the evidence was measured under.
+/// One reviewed dependency refresh that moved the comparator profile: the
+/// preimages of the comparator files it superseded, and the adversarial
+/// vector sources it had to migrate, as `(path, before, after)` digests.
+pub(crate) struct ComparatorRefresh {
+    pub(crate) before: &'static str,
+    vectors: &'static [(&'static str, &'static str, &'static str)],
+}
+/// Every reviewed comparator refresh, oldest first.
+pub(crate) const COMPARATOR_REFRESHES: &[ComparatorRefresh] = &[
+    // #206: the lock refresh moved only the closure.
+    ComparatorRefresh {
+        before: "tests/conformance/proposals/comparator-closure-refresh-v1/before",
+        vectors: &[],
+    },
+    // #208: sha2 0.11 digests no longer format as hex, so the SSIM vectors
+    // spell their kernel digests through a helper; the asserted digests stay.
+    ComparatorRefresh {
+        before: "tests/conformance/proposals/comparator-closure-refresh-v2/before",
+        vectors: &[(
+            "crates/excalidraw-render-compare/tests/ssim_vectors.rs",
+            "40da83781c7d784201cb003817ec0c0f64c0deeca0263c2d56932824431a3439",
+            "76dfd706a784ceb19ee304f15994afbd5130ad20df4fee55948ff8a6dd25855c",
+        )],
+    },
+];
+/// Evidence measured under a comparator profile (or its closure) that a
+/// reviewed refresh superseded. Those refreshes moved the comparator's
+/// dependency closure and, where listed, migrated vector sources without
+/// changing what they assert, so its sources, protocol and fixtures are
+/// unchanged and those measurements stand; any other profile move needs its
+/// own review. Returns the archived file the evidence was measured under.
 pub(crate) fn comparator_closure_successor(historical: &Value) -> Result<Vec<u8>> {
     let path = historical["path"].as_str().ok_or("descriptor lacks path")?;
     if path != COMPARATOR_PROFILE && path != COMPARATOR_CLOSURE {
         return Err(format!("stale candidate evidence {path}"));
     }
-    let archived = read(&repo_root(), &format!("{SUPERSEDED_COMPARATOR}/{path}"))?;
-    if historical["sha256"] != sha256(&archived)
-        || historical
-            .get("byte_length")
-            .is_some_and(|n| n != &json!(archived.len()))
-    {
-        return Err(format!("stale candidate evidence {path}"));
-    }
-    let before = read(
-        &repo_root(),
-        &format!("{SUPERSEDED_COMPARATOR}/{COMPARATOR_PROFILE}"),
-    )?;
-    let after = read(&repo_root(), COMPARATOR_PROFILE)?;
+    let root = repo_root();
     let parse = |bytes: &[u8]| serde_json::from_slice::<Value>(bytes).map_err(|e| e.to_string());
-    if sha256(&after) != crate::pdf_viewers::COMPARATOR_DIGEST
-        || !differs_only_in_closure(&parse(&before)?, &parse(&after)?)
-    {
-        return Err("unreviewed comparator profile transition".into());
+    for (index, refresh) in COMPARATOR_REFRESHES.iter().enumerate() {
+        let archived = read(&root, &format!("{}/{path}", refresh.before))?;
+        if historical["sha256"] != sha256(&archived)
+            || historical
+                .get("byte_length")
+                .is_some_and(|n| n != &json!(archived.len()))
+        {
+            continue;
+        }
+        let mut before = parse(&read(
+            &root,
+            &format!("{}/{COMPARATOR_PROFILE}", refresh.before),
+        )?)?;
+        for later in &COMPARATOR_REFRESHES[index..] {
+            migrate_vectors(&mut before, later.vectors);
+        }
+        let after = read(&root, COMPARATOR_PROFILE)?;
+        if sha256(&after) != crate::pdf_viewers::COMPARATOR_DIGEST
+            || !differs_only_in_closure(&before, &parse(&after)?)
+        {
+            return Err("unreviewed comparator profile transition".into());
+        }
+        return Ok(archived);
     }
-    Ok(archived)
+    Err(format!("stale candidate evidence {path}"))
+}
+/// Applies one refresh's reviewed vector migrations to a superseded profile.
+fn migrate_vectors(profile: &mut Value, moves: &[(&str, &str, &str)]) {
+    let Some(vectors) = profile["vectors"].as_array_mut() else {
+        return;
+    };
+    for vector in vectors {
+        for (path, before, after) in moves {
+            if vector["path"] == *path && vector["sha256"] == *before {
+                vector["sha256"] = json!(after);
+            }
+        }
+    }
+}
+/// A superseded profile names its vector sources by digest; a source a
+/// reviewed refresh migrated stays valid only at exactly that transition.
+fn reviewed_vector_move(path: &str, historical: &Value, live: &str) -> bool {
+    COMPARATOR_REFRESHES
+        .iter()
+        .flat_map(|refresh| refresh.vectors)
+        .any(|(moved, before, after)| path == *moved && historical == before && live == *after)
 }
 fn differs_only_in_closure(before: &Value, after: &Value) -> bool {
     let without_closure = |profile: &Value| {
@@ -1138,36 +1192,53 @@ mod tests {
         assert!(!differs_only_in_closure(&before, &protocol));
     }
     #[test]
+    fn comparator_successor_migrates_only_the_reviewed_vector_digests() {
+        let profile = json!({"vectors": [
+            {"path": "ssim.rs", "sha256": "old"},
+            {"path": "pixelmatch.rs", "sha256": "old"}
+        ]});
+        let mut migrated = profile.clone();
+        migrate_vectors(&mut migrated, &[("ssim.rs", "old", "new")]);
+        assert_eq!(migrated["vectors"][0]["sha256"], "new");
+        assert_eq!(migrated["vectors"][1]["sha256"], "old");
+        let mut unreviewed = profile;
+        migrate_vectors(&mut unreviewed, &[("ssim.rs", "other", "new")]);
+        assert_eq!(unreviewed["vectors"][0]["sha256"], "old");
+        let (path, before, after) = COMPARATOR_REFRESHES[1].vectors[0];
+        assert!(reviewed_vector_move(path, &json!(before), after));
+        assert!(!reviewed_vector_move(path, &json!(before), "00"));
+        assert!(!reviewed_vector_move(path, &json!("00"), after));
+        assert!(!reviewed_vector_move("other.rs", &json!(before), after));
+    }
+    #[test]
     fn stale_comparator_bindings_pass_only_through_the_reviewed_closure_successor() {
         let root = repo_root();
-        let archived = read(
-            &root,
-            &format!("{SUPERSEDED_COMPARATOR}/{COMPARATOR_PROFILE}"),
-        )
-        .unwrap();
-        let historical = json!({"path":COMPARATOR_PROFILE,"byte_length":archived.len(),"sha256":sha256(&archived)});
-        assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
-        let required = vec![COMPARATOR_PROFILE.into()];
-        descriptor_set(&root, &json!([historical]), &required).unwrap();
-        for (key, bad) in [("sha256", json!("00")), ("byte_length", json!(1))] {
-            let mut stale = historical.clone();
-            stale[key] = bad;
-            assert!(check_descriptor(&root, &stale).is_err());
+        for refresh in COMPARATOR_REFRESHES {
+            let archived =
+                read(&root, &format!("{}/{COMPARATOR_PROFILE}", refresh.before)).unwrap();
+            let historical = json!({"path":COMPARATOR_PROFILE,"byte_length":archived.len(),"sha256":sha256(&archived)});
+            assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
+            let required = vec![COMPARATOR_PROFILE.into()];
+            descriptor_set(&root, &json!([historical]), &required).unwrap();
+            for (key, bad) in [("sha256", json!("00")), ("byte_length", json!(1))] {
+                let mut stale = historical.clone();
+                stale[key] = bad;
+                assert!(check_descriptor(&root, &stale).is_err());
+            }
         }
     }
     #[test]
     fn stale_comparator_closure_bindings_follow_the_same_successor() {
         let root = repo_root();
-        let archived = read(
-            &root,
-            &format!("{SUPERSEDED_COMPARATOR}/{COMPARATOR_CLOSURE}"),
-        )
-        .unwrap();
-        let historical = json!({"path":COMPARATOR_CLOSURE,"sha256":sha256(&archived)});
-        assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
-        let mut stale = historical;
-        stale["sha256"] = json!("00");
-        assert!(check_descriptor(&root, &stale).is_err());
+        for refresh in COMPARATOR_REFRESHES {
+            let archived =
+                read(&root, &format!("{}/{COMPARATOR_CLOSURE}", refresh.before)).unwrap();
+            let historical = json!({"path":COMPARATOR_CLOSURE,"sha256":sha256(&archived)});
+            assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
+            let mut stale = historical;
+            stale["sha256"] = json!("00");
+            assert!(check_descriptor(&root, &stale).is_err());
+        }
     }
     #[test]
     fn candidate_paths_cannot_escape_the_repository() {

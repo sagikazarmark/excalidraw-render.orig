@@ -13,6 +13,7 @@ use crate::common::svg::{font_family_attribute, EXCALIFONT_FAMILIES, LIBERATION_
 use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
+use crate::common::lower_hex;
 use crate::common::pdf_inspect::{
     declares_base_font, embedded_pdf_fonts, family_name, font_resource, pdf_actual_text, pdf_text,
     to_unicode_cmap,
@@ -171,7 +172,7 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
         wuff::decompress_woff2(liberation_asset.bytes()).expect("manifested WOFF2 decodes");
     let liberation_digest = {
         use sha2::Digest as _;
-        format!("{:x}", sha2::Sha256::digest(&liberation_program))
+        lower_hex(&sha2::Sha256::digest(&liberation_program))
     };
     assert!(
         crate::common::pdf_inspect::pdf_font_program_sources(bytes)

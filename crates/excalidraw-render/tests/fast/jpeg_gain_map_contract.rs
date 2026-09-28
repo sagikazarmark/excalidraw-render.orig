@@ -7,6 +7,7 @@
 //! against browser-rasterized SVG, not a whole-PDF viewer claim.
 //! Optional MPF tags and relocated IFDs are additional native structural
 //! controls; they add no browser evidence or qualified matrix cells.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{
@@ -33,7 +34,7 @@ fn decode(value: &Value) -> Vec<u8> {
         .unwrap()
 }
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 fn pinned_json(bytes: &[u8], expected: &str) -> Value {
     assert_eq!(hash(bytes), expected);
@@ -48,7 +49,7 @@ fn inputs() -> Value {
 fn base_evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-color/reference.json"),
-        "e1b0005465245eddca9ec625976302b07d480ae8f7f226afb6771a55d4859cf7",
+        "77b84951bd4fbd7ce805993ed98cbf19149e0cf4c0b773da43f16905036cdc5b",
     );
     assert_eq!(
         record["schema"],
@@ -69,7 +70,7 @@ fn by_id<'a>(record: &'a Value, id: &Value) -> &'a Value {
 fn evidence() -> Value {
     let record = pinned_json(
         include_bytes!("../../../../tests/oracle/jpeg-gain-map/reference.json"),
-        "85a2e60b9b8cbe48096c19338fc0052930aea51bc264f6cb8cdfbd0ce246524c",
+        "5080fb85b4d9bbc3b98c121eea584798f5039bbe8df7b7e9a73a299d9d918f9d",
     );
     assert_eq!(
         record["schema"],

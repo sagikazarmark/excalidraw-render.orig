@@ -5,6 +5,7 @@
 //! only failing views, the PDF black/white composites, pass under approved
 //! exact-ceiling tolerance exceptions (spec section 14.4). Synthetic PDF
 //! projection failures are not measurements of any PDF viewer.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
@@ -136,7 +137,7 @@ const SOURCES: [&str; 20] = [
 ];
 
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 fn decode(v: &Value) -> Vec<u8> {
     base64::engine::general_purpose::STANDARD

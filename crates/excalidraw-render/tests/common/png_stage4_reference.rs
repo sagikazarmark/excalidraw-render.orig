@@ -3,8 +3,8 @@ use sha2::{Digest, Sha256};
 pub fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/png-color/stage4-reference.json");
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
-        "a784e8ac7a6e97517d407154c92eb104c6174b04e9d3d71b5abfe7b8a3098ddf"
+        lower_hex(&Sha256::digest(bytes)),
+        "1f20c73a77ee3076ae49f300f06fbe8dd116b68e5986ee2b968990bfb9dbfc5e"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["cases"].as_array().unwrap().len(), 186);
@@ -51,4 +51,8 @@ pub fn anchor(row: &Value, rgba: &[u8]) {
             row["id"]
         );
     }
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

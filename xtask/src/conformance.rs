@@ -1897,7 +1897,11 @@ fn u32_field(value: &Map<String, Value>, key: &str) -> Result<u32, String> {
 }
 
 pub(crate) fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 /// Reads a repository-relative file named by an evidence manifest, refusing

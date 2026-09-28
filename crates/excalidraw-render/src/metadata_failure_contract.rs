@@ -1,6 +1,7 @@
 //! Metadata operation fault contracts through the public scene/frame facade.
 use crate::render::test_faults::{self, Fault};
 use crate::render::MetadataStage as Stage;
+use crate::resource_accounting::lower_hex;
 use crate::{
     FrameRenderRequest, MetadataOptions, OutputFormat, RenderErrorCategory, RenderRequest,
     Renderer, ResourceLimits, SceneDocument,
@@ -239,7 +240,7 @@ fn assert_manifest(
         expected["diagnostic_summary"] = json!({"snapshot":"pre_metadata","total":u8::from(has_prefix),"by_severity":{"info":0,"warning":u8::from(has_prefix)},"by_code":if has_prefix{json!([{"code":if notices&&format==OutputFormat::Png {"image.missing-file"}else{"compatibility.unsupported-element-type"},"count":1}])}else{json!([])}});
     }
     if parts.embedded_scene {
-        expected["embedded_scene"] = json!({"name":"scene.excalidraw","media_type":"application/vnd.excalidraw+json","sha256":format!("sha256:{:x}",Sha256::digest(canonical))});
+        expected["embedded_scene"] = json!({"name":"scene.excalidraw","media_type":"application/vnd.excalidraw+json","sha256":format!("sha256:{}", lower_hex(&Sha256::digest(canonical)))});
     }
     if notices {
         assert!(!actual["notices"].as_array().unwrap().is_empty());

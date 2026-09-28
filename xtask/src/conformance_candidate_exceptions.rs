@@ -179,7 +179,7 @@ fn validate(proposal: &Value, wanted: &Value) -> Result<()> {
     }
     Ok(())
 }
-/// A proposal measured under the comparator profile the #206 lock refresh
+/// A proposal measured under a comparator profile that a reviewed refresh
 /// superseded keeps that comparator; any other difference still fails.
 fn with_measured_comparator(mut wanted: Value, proposal: &Value) -> Value {
     if comparator_closure_successor(&proposal["comparator"]).is_ok() {
@@ -282,7 +282,7 @@ mod tests {
             &repo_root(),
             &format!(
                 "{}/{COMPARATOR_PROFILE}",
-                crate::conformance_candidate_gate::SUPERSEDED_COMPARATOR
+                crate::conformance_candidate_gate::COMPARATOR_REFRESHES[0].before
             ),
         )
         .unwrap();

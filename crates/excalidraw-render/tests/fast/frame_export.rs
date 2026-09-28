@@ -6,6 +6,7 @@ use excalidraw_render::{
 };
 use sha2::{Digest, Sha256};
 
+use crate::common::lower_hex;
 use crate::common::raster::decode_png;
 use crate::common::repository_root;
 
@@ -55,7 +56,7 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
     let profile_bytes = std::fs::read(profile_path).expect("frame profile is checked");
     assert_eq!(
         frame_profile.profile_digest(),
-        format!("sha256:{:x}", Sha256::digest(profile_bytes))
+        format!("sha256:{}", lower_hex(&Sha256::digest(profile_bytes)))
     );
     assert_eq!(
         renderer.selected_frame_profile_identity().profile_digest(),

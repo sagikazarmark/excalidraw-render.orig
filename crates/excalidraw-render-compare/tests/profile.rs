@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 use serde_json::{json, Value};
-use sha1::Sha1;
+use sha1::{Digest as _, Sha1};
 use sha2::{Digest, Sha256};
 
 const PROFILE_PATH: &str = "tests/conformance/comparator-profiles/canonical-visual-v1.json";
@@ -463,7 +463,11 @@ fn assert_safe_relative_path(path: &str) {
 }
 
 fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 fn git_blob_sha1(bytes: &[u8]) -> String {

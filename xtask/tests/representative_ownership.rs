@@ -84,10 +84,9 @@ fn authority_migration_cli_only_previews_authenticated_metadata_and_preserves_li
     let path = root().join("tests/conformance/coverage/ownership.json");
     let before = fs::read(&path).unwrap();
     let ledger: serde_json::Value = serde_json::from_slice(&before).unwrap();
-    let hash = format!(
-        "{:x}",
-        Sha256::digest(fs::read(root().join("docs/renderer-spec-v1.md")).unwrap())
-    );
+    let hash = lower_hex(&Sha256::digest(
+        fs::read(root().join("docs/renderer-spec-v1.md")).unwrap(),
+    ));
     let output = run(&[
         "conformance",
         "ownership-authority-migration",
@@ -130,4 +129,8 @@ fn authority_migration_cli_only_previews_authenticated_metadata_and_preserves_li
         ));
     }
     assert_eq!(fs::read(path).unwrap(), before);
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

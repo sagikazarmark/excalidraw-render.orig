@@ -8,7 +8,7 @@ fn ssim_uses_the_normative_gaussian_words() {
         bytes.extend_from_slice(&word.to_le_bytes());
     }
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
+        lower_hex(&Sha256::digest(bytes)),
         "b931d31602d633632c7a2f29b24dbe5812a49a8e8a016002b07dc8c0ce93efd3"
     );
 }
@@ -230,7 +230,11 @@ fn ssim_matches_every_normative_kernel_position_vector() {
 
     let bytes: Vec<u8> = actual.iter().flat_map(|word| word.to_le_bytes()).collect();
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
+        lower_hex(&Sha256::digest(bytes)),
         "5707c05ca69429cbe1345e7fe3062444bd32614188dbcc4f9f3d6c5e574d45f1"
     );
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

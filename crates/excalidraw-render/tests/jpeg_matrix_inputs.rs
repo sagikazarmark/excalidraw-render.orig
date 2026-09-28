@@ -157,8 +157,8 @@ fn authored_jpeg_inputs_reproduce_exactly() -> Result<(), Box<dyn std::error::Er
                     cases.push(json!({"id":format!("{cell}-{pattern}"),"cell":cell,"model":model,
                         "sampling":[h,v],"mode":mode,"pattern":pattern,"width":width,"height":height,
                         "jpeg_base64":base64::engine::general_purpose::STANDARD.encode(&bytes),
-                        "jpeg_sha256":format!("{:x}",Sha256::digest(&bytes)),
-                        "authored_samples_sha256":format!("{:x}",Sha256::digest(&samples))}));
+                        "jpeg_sha256":lower_hex(&Sha256::digest(&bytes)),
+                        "authored_samples_sha256":lower_hex(&Sha256::digest(&samples))}));
                 }
             }
         }
@@ -175,4 +175,8 @@ fn authored_jpeg_inputs_reproduce_exactly() -> Result<(), Box<dyn std::error::Er
         include_bytes!("../../../tests/oracle/jpeg-color/inputs.json")
     );
     Ok(())
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

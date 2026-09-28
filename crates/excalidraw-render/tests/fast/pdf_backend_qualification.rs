@@ -13,6 +13,7 @@ use crate::common::approved_scenes::{
     render_isolated_fallback, render_nested_native_operations, render_project_operations,
     NESTED_NATIVE_OPERATIONS, PROJECT_OPERATIONS,
 };
+use crate::common::lower_hex;
 
 const PROJECT_STRUCTURE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -30,11 +31,11 @@ const FALLBACK_STRUCTURE: &[u8] = include_bytes!(concat!(
 #[test]
 fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     assert_eq!(
-        format!("{:x}", Sha256::digest(PROJECT_OPERATIONS)),
+        lower_hex(&Sha256::digest(PROJECT_OPERATIONS)),
         "eaef67702df489f774c8eb862159098b6e220e1dac1e79bc45fada6b6a43afda"
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(PROJECT_STRUCTURE)),
+        lower_hex(&Sha256::digest(PROJECT_STRUCTURE)),
         "04febc1ee78a4dd01daceac2d3eeeb0d4910c2da48739bce2135b246da5f8d55"
     );
     let first = render_project_operations();
@@ -60,7 +61,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     // when Krilla became the PDF writer (ADR-0021): every structure is
     // Krilla's, and both viewer gates and the structural gate hold.
     assert_eq!(
-        format!("{:x}", Sha256::digest(first.artifact().bytes())),
+        lower_hex(&Sha256::digest(first.artifact().bytes())),
         "7f85f04d3f49585a2b85477c830ee7f69551e7cf6511460cc4e0f5a9cf1e7a31"
     );
 
@@ -92,7 +93,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
 #[test]
 fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
     assert_eq!(
-        format!("{:x}", Sha256::digest(FALLBACK_STRUCTURE)),
+        lower_hex(&Sha256::digest(FALLBACK_STRUCTURE)),
         "7afc81f4873227495ecca61ffa82b86799cad7a5b29d4f2bae4205d38f665740"
     );
     let first = render_isolated_fallback();
@@ -105,7 +106,7 @@ fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
     // bytes and the viewer gates are unchanged. Moved again when Krilla became
     // the PDF writer (ADR-0021); the fallback's pixels are unchanged.
     assert_eq!(
-        format!("{:x}", Sha256::digest(first.artifact().bytes())),
+        lower_hex(&Sha256::digest(first.artifact().bytes())),
         "767770926e5f9f8f0e5eafb9a00e4ae7073a6ca401af589f6d0944a6746e8a23"
     );
     let [diagnostic] = first.report().diagnostics() else {
@@ -192,11 +193,11 @@ fn every_pixel_domain_fallback_family_is_isolated_and_deterministic() {
 #[test]
 fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     assert_eq!(
-        format!("{:x}", Sha256::digest(NESTED_NATIVE_OPERATIONS)),
+        lower_hex(&Sha256::digest(NESTED_NATIVE_OPERATIONS)),
         "6aebb7ca70ae3742d23597ca3ff109341219269d70d134ace5157d3112bfa257"
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(NESTED_NATIVE_STRUCTURE)),
+        lower_hex(&Sha256::digest(NESTED_NATIVE_STRUCTURE)),
         "c4d1011ccdaf13833a74381433fbc21dffd1b146531b085193c1693b8bc6c5ba"
     );
     let outcome = render_nested_native_operations();
@@ -212,7 +213,7 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     // the PDF writer (ADR-0021): the nested tree is drawn in place, and both
     // viewer gates and the structural gate hold.
     assert_eq!(
-        format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
+        lower_hex(&Sha256::digest(outcome.artifact().bytes())),
         "9fa245dfdbd460c5b1bb0f8976db2e90fa7a9eeba1778b85d027363a66635dfd"
     );
     assert!(outcome.report().diagnostics().is_empty());

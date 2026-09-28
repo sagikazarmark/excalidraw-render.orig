@@ -19,7 +19,7 @@
     ],
     "closure": {
       "path": "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json",
-      "sha256": "c57ef53c4ca544302bc22a6d259a3eaf492e7a9fa62894f2595a3015dd3ec926"
+      "sha256": "27117c3d17f6970f5b35a0a2b81140278ffd7059b81dc0e90594608bfa90b485"
     }
   },
   "features": [],
@@ -60,7 +60,7 @@
     { "id": "pixelmatch-adversarial", "path": "crates/excalidraw-render-compare/tests/pixelmatch_vectors.rs", "sha256": "bc2f6964f818468fe7644d5aed6b075570169608c0c5c0278637af5ca622afa7" },
     { "id": "pixelmatch-upstream-harness", "path": "crates/excalidraw-render-compare/tests/pixelmatch_upstream.rs", "sha256": "55f131abcef6da2f1c9be21420d4f747e9acc7a7b944736996a5f01faadc8433" },
     { "id": "pixelmatch-upstream-fixtures", "path": "tests/conformance/comparator-vectors/pixelmatch-v7.2.0/manifest.json", "sha256": "72f8f23eaa77ac081258c83a0d003138b0790ba4a359ffb06bbf3d78590bc027" },
-    { "id": "ssim-adversarial", "path": "crates/excalidraw-render-compare/tests/ssim_vectors.rs", "sha256": "40da83781c7d784201cb003817ec0c0f64c0deeca0263c2d56932824431a3439" },
+    { "id": "ssim-adversarial", "path": "crates/excalidraw-render-compare/tests/ssim_vectors.rs", "sha256": "76dfd706a784ceb19ee304f15994afbd5130ad20df4fee55948ff8a6dd25855c" },
     { "id": "region-crop-and-budget", "path": "crates/excalidraw-render-compare/tests/comparison_protocol.rs", "sha256": "f6ddf051acec015a1fa63bcfe283504b8760c8b1e88a6b0bf2e1165d1bc0c384" }
   ],
   "license": {

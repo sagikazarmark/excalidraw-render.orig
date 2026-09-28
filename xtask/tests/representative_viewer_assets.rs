@@ -343,7 +343,7 @@ fn substitution_records_require_agreement_pinned_bytes_and_one_match() {
         )
         .unwrap();
         let mut resolution = original.clone();
-        resolution["input"]["sha256"] = json!(format!("{:x}", Sha256::digest(svg.as_bytes())));
+        resolution["input"]["sha256"] = json!(lower_hex(&Sha256::digest(svg.as_bytes())));
         match mutation {
             0 => resolution["undeclared"][0]["chromium"]["postScriptName"] = json!("different"),
             1 => resolution["undeclared"][0]["system_font"]["sha256"] = json!("0".repeat(64)),
@@ -381,9 +381,9 @@ fn caller_relative_verification_encodes_the_retained_substitute() {
     let mut resolution: Value = serde_json::from_slice(&fs::read(root().join("tests/conformance/proposals/slides84-evidence-v2/viewers/light/official-font-resolution.json")).unwrap()).unwrap();
     assert_eq!(
         resolution["undeclared"][0]["system_font"]["sha256"],
-        format!("{:x}", Sha256::digest(&bytes))
+        lower_hex(&Sha256::digest(&bytes))
     );
-    resolution["input"]["sha256"] = json!(format!("{:x}", Sha256::digest(svg.as_bytes())));
+    resolution["input"]["sha256"] = json!(lower_hex(&Sha256::digest(svg.as_bytes())));
     fs::write(
         scratch.0.join("official-font-resolution.json"),
         serde_json::to_vec(&resolution).unwrap(),
@@ -399,4 +399,8 @@ fn caller_relative_verification_encodes_the_retained_substitute() {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
