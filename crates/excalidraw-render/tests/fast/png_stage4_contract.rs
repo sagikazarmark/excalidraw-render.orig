@@ -12,7 +12,7 @@ fn source_bindings() {
         ),
         (
             include_bytes!("../common/png_stage4_composition.rs").as_slice(),
-            "b4b78675cafb5d33b7fa6096c20ee31a5be35c96edc3ff608afff177fe8c6068",
+            "9948525b0edfc55fcd4bf2aff84a8e2d99326fdbd2f8837bb0be581336462be1",
         ),
         (
             include_bytes!("../common/png_stage4_review.rs").as_slice(),

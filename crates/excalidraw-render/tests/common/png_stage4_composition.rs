@@ -1,4 +1,3 @@
-use super::lower_hex;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 pub fn evidence() -> Value {
@@ -53,4 +52,10 @@ pub fn report(row: &Value, format: &str, actual: Value) {
         ),
     };
     super::png_stage4::report(&case, format, actual);
+}
+
+// Also compiled as a module of the library under wasm32, where `common` is
+// not in scope, so the helper is local like its siblings'.
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
