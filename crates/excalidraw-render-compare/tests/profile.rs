@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 use serde_json::{json, Value};
-use sha1::{Digest as _, Sha1};
+use sha1::Sha1;
 use sha2::{Digest, Sha256};
 
 const PROFILE_PATH: &str = "tests/conformance/comparator-profiles/canonical-visual-v1.json";
@@ -474,7 +474,7 @@ fn git_blob_sha1(bytes: &[u8]) -> String {
     let mut hash = Sha1::new();
     hash.update(format!("blob {}\0", bytes.len()));
     hash.update(bytes);
-    format!("{:x}", hash.finalize())
+    lower_hex(&hash.finalize())
 }
 
 fn repository_root() -> PathBuf {

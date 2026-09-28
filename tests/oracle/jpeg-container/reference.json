@@ -7,7 +7,7 @@
   },
   {
    "path": "tests/oracle/png-color/reference.json",
-   "sha256": "208921ac569863f6dbf2193a82b8ce83b593824b7b987cb9b3ba401a30207243"
+   "sha256": "4bb3e477b7eb6264c1e8a276c2af9533b072e774212ae446eb131a8774a1f024"
   },
   {
    "path": "tests/oracle/reference-profiles/revision-1.json",
@@ -27,7 +27,7 @@
   },
   {
    "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
-   "sha256": "91543dea36b3a58fe0bab0acf50a972be505481c33b73a6de3ecd3dc73dfaf6b"
+   "sha256": "ce3609ea4c4145805cf9c17035c153baa5ccee744e97d1ffb154348f9d0e817e"
   }
  ],
  "options": {

@@ -4,7 +4,7 @@ pub fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/png-color/stage4-oracle-reference.json");
     assert_eq!(
         lower_hex(&Sha256::digest(bytes)),
-        "775525fd6b1b1d7e21f5f1de3c826eff6d656c0ac2d936e27049e13296a51bc3"
+        "ef41ba3388ba0f850203703ab0274c961399ba6d329263904f01ad30b14c9c28"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     let rows = record["cases"].as_array().unwrap();
@@ -28,7 +28,7 @@ pub fn supplemental_evidence() -> Value {
     );
     assert_eq!(
         lower_hex(&Sha256::digest(bytes)),
-        "67c28d9b727735dc321de3d706a9135ceb17456e2f162f0b5bcfedf723385cf4"
+        "e2b89f405aa2120002cf27004dcbe89bf2dc6372da38867b0b8d65107e97e955"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     let rows = record["cases"].as_array().unwrap();

@@ -67,7 +67,7 @@ function gate(candidate, independent, source, viewer, measurement) {
   assert.equal(sha(candidate), measurement.actual_sha256, "observed viewer hash moved");
 }
 
-assert.equal(sha(read(control, "measurements.json")), "24ff03b2679a873edfe07b50b0dc3c9b2be3403213ef8afad0e5e2f0b643fbbb", "control record changed");
+assert.equal(sha(read(control, "measurements.json")), "95c1d9da1075dc08206fb2c1edb25795baddea40abfc72b712307f26e08542c2", "control record changed");
 assert.equal(sha(read(current, "measurements.json")), "6d47db1399e8c857b8f402d7604d21bd0ed8474f4422fa2128bcab6a40833879", "viewer record changed");
 const record = json(control, "measurements.json");
 for (const [directory, manifest] of [[control, record], [current, json(current, "measurements.json")]]) {
