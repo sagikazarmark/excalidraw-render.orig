@@ -14,6 +14,37 @@ fn git_bytes(commit: &str, path: &str) -> Result<Vec<u8>, String> {
     Ok(output.stdout)
 }
 
+/// The repository path of a manifest-declared `readme` that lies outside the
+/// crate directory, keyed by the file name Cargo archives it under.
+fn external_readme(commit: &str, crate_name: &str) -> Result<Option<(String, String)>, String> {
+    let manifest = git_bytes(commit, &format!("crates/{crate_name}/Cargo.toml"))?;
+    let manifest: toml::Value =
+        toml::from_str(std::str::from_utf8(&manifest).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+    let Some(readme) = manifest
+        .get("package")
+        .and_then(|p| p.get("readme"))
+        .and_then(|r| r.as_str())
+    else {
+        return Ok(None);
+    };
+    let mut parts = vec!["crates", crate_name];
+    for component in readme.split('/') {
+        match component {
+            ".." => {
+                parts.pop().ok_or("readme escapes the repository")?;
+            }
+            "." | "" => {}
+            name => parts.push(name),
+        }
+    }
+    if parts.first() == Some(&"crates") && parts.get(1) == Some(&crate_name) {
+        return Ok(None);
+    }
+    let name = parts.last().ok_or("empty readme path")?.to_string();
+    Ok(Some((name, parts.join("/"))))
+}
+
 pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String> {
     for source in [
         &bundle.inventory,
@@ -45,6 +76,7 @@ pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String>
         let crate_name = prefix
             .strip_suffix("-0.1.0")
             .ok_or("unexpected package version")?;
+        let readme = external_readme(&bundle.commit, crate_name)?;
         let archive = candidate.join("packages").join(name);
         let listing = Command::new("tar")
             .arg("-tzf")
@@ -90,9 +122,13 @@ pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String>
                 } else {
                     relative
                 };
-                if output.stdout
-                    != git_bytes(&bundle.commit, &format!("crates/{crate_name}/{authored}"))?
-                {
+                // Cargo archives a readme from outside the crate under its
+                // file name at the package root.
+                let path = match &readme {
+                    Some((name, path)) if name == authored => path.clone(),
+                    _ => format!("crates/{crate_name}/{authored}"),
+                };
+                if output.stdout != git_bytes(&bundle.commit, &path)? {
                     return Err(format!("archived source disagrees with commit: {entry}"));
                 }
             }
