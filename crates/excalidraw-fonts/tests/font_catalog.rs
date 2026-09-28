@@ -60,7 +60,7 @@ fn font_source_loading_preserves_manifested_bytes_and_optional_payloads() {
             }
             assert_eq!(source.bytes().len(), face.source_length());
             assert_eq!(
-                format!("{:x}", Sha256::digest(source.bytes())),
+                lower_hex(&Sha256::digest(source.bytes())),
                 face.source_sha256()
             );
         } else {
@@ -88,4 +88,8 @@ fn reviewed_program_validation_rejects_different_bytes_for_chunks_and_complete_f
         assert_eq!(error.asset_identity(), face.identity());
         assert!(!error.is_unavailable());
     }
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

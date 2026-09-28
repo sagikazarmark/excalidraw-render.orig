@@ -1,4 +1,5 @@
 //! Point, pressure and arrow field contracts at the public facade.
+use crate::common::lower_hex;
 use excalidraw_render::{
     FrameRenderRequest, MetadataOptions, OutputFormat, RenderOutcome, RenderRequest, Renderer,
     SceneDocument,
@@ -350,7 +351,7 @@ fn explicit_pressure_vector_matches_the_qualified_geometry() {
                 .attribute("d")
                 .unwrap();
             assert_eq!(
-                format!("{:x}", Sha256::digest(path)),
+                lower_hex(&Sha256::digest(path)),
                 "0bb4552d75b1f4b8a39f1d5721b052c288db07d3d51e7b5303ab3c6ffffd0f1e"
             );
         }

@@ -1086,18 +1086,18 @@ pub(crate) fn sha256_digest(input: &[u8]) -> [u8; 32] {
 
 #[cfg(test)]
 pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
-    hex_bytes(&sha256_digest(bytes))
+    lower_hex(&sha256_digest(bytes))
 }
 
 #[cfg(test)]
 fn sha256_string(digest: &[u8]) -> String {
     let mut output = String::from("sha256:");
-    output.push_str(&hex_bytes(digest));
+    output.push_str(&lower_hex(digest));
     output
 }
 
 #[cfg(test)]
-fn hex_bytes(bytes: &[u8]) -> String {
+pub(crate) fn lower_hex(bytes: &[u8]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut output = String::with_capacity(bytes.len() * 2);
     for byte in bytes {

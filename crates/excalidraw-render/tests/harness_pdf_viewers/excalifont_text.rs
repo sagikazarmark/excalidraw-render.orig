@@ -10,6 +10,7 @@ use excalidraw_render_compare::{
 };
 use sha2::{Digest, Sha256};
 
+use crate::common::lower_hex;
 use crate::common::pdf_harness::{assert_structure, render_viewer};
 use crate::common::repository_root;
 use crate::common::scratch::ScratchDir;
@@ -30,7 +31,7 @@ fn approved_excalifont_text_passes_both_canonical_pdf_gates() {
     let exception_bytes =
         fs::read(case.join("pdf-visual-exception.json")).expect("PDF exception is present");
     assert_eq!(
-        format!("{:x}", Sha256::digest(&exception_bytes)),
+        lower_hex(&Sha256::digest(&exception_bytes)),
         "57906d0d050b20c68990c07417a66574e6685f1b8783fadcff0637e14500a0f3"
     );
     let exception: serde_json::Value =
@@ -90,13 +91,10 @@ fn approved_excalifont_text_passes_both_canonical_pdf_gates() {
 
     let structure_output = scratch.relative("structure.json");
     assert_eq!(
-        format!(
-            "{:x}",
-            Sha256::digest(
-                fs::read(case.join("expected-pdf-structure.json"))
-                    .expect("PDF structure expectation is present")
-            )
-        ),
+        lower_hex(&Sha256::digest(
+            fs::read(case.join("expected-pdf-structure.json"))
+                .expect("PDF structure expectation is present")
+        )),
         // Moved with the Krilla backend (ADR-0021): the expectation now
         // pins Krilla's structure.
         "2c0558caa059239967b113e875548a73781e8dbbd25f91a22b6ee4a903ea7e6d"

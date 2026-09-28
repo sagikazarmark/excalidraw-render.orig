@@ -10,6 +10,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 use super::webp_sample_contract::render;
+use crate::common::lower_hex;
 
 const RECORD: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -17,13 +18,13 @@ const RECORD: &[u8] = include_bytes!(concat!(
 ));
 
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 
 fn evidence() -> Value {
     assert_eq!(
         hash(RECORD),
-        "9d69d11106ec3193a404ffa1134e25ee6005e142adb65ca28f5288c40874e045"
+        "d0c95515e8c6bc2047cf46869950bb598a703f4523379d6a1f4f328fdf02cb45"
     );
     let record: Value = serde_json::from_slice(RECORD).unwrap();
     assert_eq!(

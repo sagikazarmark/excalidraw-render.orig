@@ -39,7 +39,7 @@ impl Fixture {
                 "permalink": format!("https://github.com/example/board/blob/{}/scene.excalidraw", "a".repeat(40)),
             },
             "license": {"spdx": "MIT", "text": "LICENSE"},
-            "scene": {"file": "scene.excalidraw", "bytes": scene.len(), "sha256": format!("{:x}", Sha256::digest(scene.as_bytes()))},
+            "scene": {"file": "scene.excalidraw", "bytes": scene.len(), "sha256": lower_hex(&Sha256::digest(scene.as_bytes()))},
         });
         // Raw insertion also permits invalid JSON and duplicate-member controls.
         let provenance = serde_json::to_string(&provenance).unwrap().replace(
@@ -230,7 +230,7 @@ fn huge_integer_truthiness_excludes_deleted_elements_from_census() {
     let mut provenance: Value =
         serde_json::from_slice(&fs::read(&provenance_path).unwrap()).unwrap();
     provenance["scene"]["bytes"] = json!(scene.len());
-    provenance["scene"]["sha256"] = json!(format!("{:x}", Sha256::digest(scene.as_bytes())));
+    provenance["scene"]["sha256"] = json!(lower_hex(&Sha256::digest(scene.as_bytes())));
     fs::write(provenance_path, serde_json::to_vec(&provenance).unwrap()).unwrap();
     assert_census(&f.prepare(), 0, "");
 }
@@ -247,4 +247,8 @@ fn missing_provenance_identity_cannot_match_null_source_identity() {
     plan["source_identity"] = Value::Null;
     fs::write(path, serde_json::to_vec(&plan).unwrap()).unwrap();
     f.reject("source identity mismatch");
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

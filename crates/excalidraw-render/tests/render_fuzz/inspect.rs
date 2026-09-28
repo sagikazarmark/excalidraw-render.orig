@@ -276,7 +276,11 @@ pub(super) fn artifact(
         );
         assert_eq!(
             manifest["embedded_scene"]["sha256"],
-            format!("sha256:{:x}", Sha256::digest(&original))
+            format!("sha256:{}", lower_hex(&Sha256::digest(&original)))
         );
     }
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

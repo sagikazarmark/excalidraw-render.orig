@@ -14,9 +14,7 @@ wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 const SCENE: &[u8] =
     include_bytes!("../../conformance/cases/focused/rectangle-outline/scene.excalidraw");
 const EXPECTED_REPORT: &[u8] =
-    include_bytes!(
-        "../../conformance/cases/focused/rectangle-outline/expected-report-svg.json"
-    );
+    include_bytes!("../../conformance/cases/focused/rectangle-outline/expected-report-svg.json");
 const LICENSE_BUNDLE_SHA256: &str =
     "cadd243b2228954efb8f61f62d492bcde65a23f8e7e96a2db5a6cc42ce78a9f2";
 const FALLBACK_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"future","type":"future","x":0,"y":0,"width":200,"height":60,"angle":0.2,"opacity":40,"updated":1},null],"appState":{},"files":{}}"#;
@@ -215,7 +213,7 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     // body as two notices. ADR-0003's identity refresh changes the embedded
     // subset's name table and its profile-derived identity/notice.
     assert_eq!(
-        format!("{:x}", Sha256::digest(first.artifact().bytes())),
+        lower_hex(&Sha256::digest(first.artifact().bytes())),
         "e124ad8add5d237a75d5a506c68c062977f8d0ecbbb484d02acd2446ffc78307"
     );
     assert!(svg.contains("\"asset_identity\":\"license.ofl-1.1\""));
@@ -305,7 +303,7 @@ fn packaged_public_facade_exposes_the_exact_license_bundle() {
     let bundle: &'static str = license_bundle();
 
     assert_eq!(
-        format!("{:x}", Sha256::digest(bundle.as_bytes())),
+        lower_hex(&Sha256::digest(bundle.as_bytes())),
         LICENSE_BUNDLE_SHA256
     );
 }
@@ -349,13 +347,13 @@ fn packaged_public_facade_renders_fallbacks_with_cross_target_stable_bytes() {
         let report = serde_json::to_vec(outcome.report()).expect("the report serializes");
 
         assert_eq!(
-            format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
+            lower_hex(&Sha256::digest(outcome.artifact().bytes())),
             *artifact_sha256,
             "{} fallback artifact changed",
             format.as_str()
         );
         assert_eq!(
-            format!("{:x}", Sha256::digest(&report)),
+            lower_hex(&Sha256::digest(&report)),
             *report_sha256,
             "{} fallback report changed",
             format.as_str()
@@ -396,11 +394,11 @@ fn packaged_public_facade_preserves_png_scanline_filter_bytes_across_targets() {
         "the PNG is not deflate-compressed"
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(first.artifact().bytes())),
+        lower_hex(&Sha256::digest(first.artifact().bytes())),
         "46501d857058f88ab033e3e5b2fbf1d1b3e1bdef71510420d907b2b40a8dcea7"
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(&report)),
+        lower_hex(&Sha256::digest(&report)),
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
     );
 }
@@ -420,18 +418,20 @@ fn packaged_public_facade_preserves_pdf_risk_set_bytes_across_targets() {
             .render(&scene, &request)
             .expect("the PDF risk-set scene renders repeatedly");
         let report = serde_json::to_vec(first.report()).expect("the report serializes");
-        let actual_artifact_sha256 = format!("{:x}", Sha256::digest(first.artifact().bytes()));
-        let actual_report_sha256 = format!("{:x}", Sha256::digest(&report));
-        assert_eq!(first.artifact().bytes(), second.artifact().bytes(), "{name}");
+        let actual_artifact_sha256 = lower_hex(&Sha256::digest(first.artifact().bytes()));
+        let actual_report_sha256 = lower_hex(&Sha256::digest(&report));
+        assert_eq!(
+            first.artifact().bytes(),
+            second.artifact().bytes(),
+            "{name}"
+        );
         assert_eq!(first.report(), second.report(), "{name}");
         assert_eq!(
-            actual_artifact_sha256,
-            *artifact_sha256,
+            actual_artifact_sha256, *artifact_sha256,
             "{name} PDF artifact changed"
         );
         assert_eq!(
-            actual_report_sha256,
-            *report_sha256,
+            actual_report_sha256, *report_sha256,
             "{name} PDF report changed"
         );
     }
@@ -448,7 +448,8 @@ fn packaged_public_facade_preserves_every_pdf_fallback_family_across_targets() {
         let source = format!(
             r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}}],"appState":{{}},"files":{{"asset":{{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,{encoded}","created":1}}}}}}"#
         );
-        let scene = SceneDocument::parse(source.as_bytes()).expect("fallback-family scene is admitted");
+        let scene =
+            SceneDocument::parse(source.as_bytes()).expect("fallback-family scene is admitted");
         let request = RenderRequest::builder(OutputFormat::Pdf)
             .build()
             .expect("fallback-family request is valid");
@@ -457,12 +458,12 @@ fn packaged_public_facade_preserves_every_pdf_fallback_family_across_targets() {
             .expect("fallback-family scene renders");
         let report = serde_json::to_vec(outcome.report()).expect("fallback report serializes");
         assert_eq!(
-            format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
+            lower_hex(&Sha256::digest(outcome.artifact().bytes())),
             *artifact_sha256,
             "{name} PDF artifact changed"
         );
         assert_eq!(
-            format!("{:x}", Sha256::digest(&report)),
+            lower_hex(&Sha256::digest(&report)),
             *report_sha256,
             "{name} PDF report changed"
         );
@@ -499,4 +500,8 @@ fn render_round<'a>(
             (outcome.artifact().bytes().to_vec(), report)
         })
         .collect()
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

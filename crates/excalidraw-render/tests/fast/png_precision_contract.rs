@@ -1,5 +1,6 @@
 //! Pinned official direct-PNG evidence and independently authored straight PDF
 //! samples distinguish low-byte precision, full-width keys and alpha rounding.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use serde_json::{json, Value};
@@ -16,7 +17,7 @@ fn decode(value: &Value) -> Vec<u8> {
 }
 fn reference() -> Value {
     assert_eq!(
-        format!("{:x}", Sha256::digest(REFERENCE)),
+        lower_hex(&Sha256::digest(REFERENCE)),
         "8400494ec5f6e744b00e175db6931aff33c2a659dc57c3b3ab62646da0cf83e5"
     );
     let evidence: Value = serde_json::from_slice(REFERENCE).unwrap();
@@ -40,7 +41,7 @@ fn reference() -> Value {
                 .join(path),
         )
         .unwrap();
-        assert_eq!(source["sha256"], format!("{:x}", Sha256::digest(bytes)));
+        assert_eq!(source["sha256"], lower_hex(&Sha256::digest(bytes)));
     }
     assert_eq!(evidence["cases"].as_array().unwrap().len(), 30);
     evidence
@@ -63,7 +64,7 @@ fn check_group(group: &str, count: usize) {
             .unwrap();
         assert_eq!(
             row["source_sha256"],
-            format!("{:x}", Sha256::digest(&source_bytes))
+            lower_hex(&Sha256::digest(&source_bytes))
         );
         let width = row["width"].as_u64().unwrap() as usize;
         let height = row["height"].as_u64().unwrap() as usize;

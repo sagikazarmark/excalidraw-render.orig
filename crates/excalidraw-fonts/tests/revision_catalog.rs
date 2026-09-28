@@ -83,10 +83,7 @@ fn xiaolai_groups_match_published_path_and_content_fingerprints() {
             .collect::<Vec<_>>();
         lines.sort();
         assert_eq!(lines.len(), count);
-        assert_eq!(
-            format!("{:x}", Sha256::digest(lines.join("\n"))),
-            fingerprint
-        );
+        assert_eq!(lower_hex(&Sha256::digest(lines.join("\n"))), fingerprint);
     }
 }
 
@@ -190,7 +187,7 @@ fn every_official_font_chunk_carries_a_reviewed_decode_the_catalog_verifies() {
             asset.upstream_path
         );
         assert_eq!(
-            format!("{:x}", Sha256::digest(&decoded)),
+            lower_hex(&Sha256::digest(&decoded)),
             asset.decoded_sha256,
             "{} decodes to its reviewed digest",
             asset.upstream_path
@@ -232,7 +229,7 @@ fn the_checked_in_excalifont_decode_is_the_catalog_reviewed_decode() {
     let sfnt = load_excalifont_basic_latin_sfnt().expect("predecoded sfnt integrity");
     assert_eq!(sfnt.bytes().len(), asset.decoded_length);
     assert_eq!(
-        format!("{:x}", Sha256::digest(sfnt.bytes())),
+        lower_hex(&Sha256::digest(sfnt.bytes())),
         asset.decoded_sha256
     );
     assert_eq!(
@@ -251,11 +248,11 @@ fn predecoded_excalifont_basic_latin_sfnt_is_checked_in_and_digest_verified() {
     let transformation = excalifont_basic_latin_sfnt_transformation();
 
     assert_eq!(
-        format!("{:x}", Sha256::digest(source.bytes())),
+        lower_hex(&Sha256::digest(source.bytes())),
         transformation.source_sha256
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(sfnt.bytes())),
+        lower_hex(&Sha256::digest(sfnt.bytes())),
         transformation.output_sha256
     );
     assert_eq!(
@@ -439,7 +436,7 @@ fn chromium_149_cjk_scalar_table_bytes_and_classes_are_frozen() {
         CJK_SCALAR_COUNT_V1
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(CJK_SCALAR_TABLE_BYTES_V1)),
+        lower_hex(&Sha256::digest(CJK_SCALAR_TABLE_BYTES_V1)),
         CJK_SCALAR_TABLE_SHA256_V1
     );
     assert!(CJK_SCALAR_RANGES_V1
@@ -618,4 +615,8 @@ fn every_official_font_resolves_one_notice_by_asset_identity_that_agrees_with_it
         .asset("fonts/Assistant/Assistant-Regular.woff2")
         .is_none());
     assert!(catalog.font_notice("Assistant").is_none());
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

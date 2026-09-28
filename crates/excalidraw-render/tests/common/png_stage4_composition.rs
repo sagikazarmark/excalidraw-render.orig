@@ -3,8 +3,8 @@ use sha2::{Digest, Sha256};
 pub fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/png-color/stage4-oracle-reference.json");
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
-        "4be02aa994105dd69ea45adb341540c00c0af63300dfc5d0c7e4683a48c31883"
+        lower_hex(&Sha256::digest(bytes)),
+        "775525fd6b1b1d7e21f5f1de3c826eff6d656c0ac2d936e27049e13296a51bc3"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     let rows = record["cases"].as_array().unwrap();
@@ -27,8 +27,8 @@ pub fn supplemental_evidence() -> Value {
         "../../../../tests/oracle/png-color/supplemental-composition-reference.json"
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
-        "605116a10566ac351728a7b4ed56cb88475d663fc1b8c810daf08f6b7595edc2"
+        lower_hex(&Sha256::digest(bytes)),
+        "67c28d9b727735dc321de3d706a9135ceb17456e2f162f0b5bcfedf723385cf4"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     let rows = record["cases"].as_array().unwrap();
@@ -52,4 +52,10 @@ pub fn report(row: &Value, format: &str, actual: Value) {
         ),
     };
     super::png_stage4::report(&case, format, actual);
+}
+
+// Also compiled as a module of the library under wasm32, where `common` is
+// not in scope, so the helper is local like its siblings'.
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

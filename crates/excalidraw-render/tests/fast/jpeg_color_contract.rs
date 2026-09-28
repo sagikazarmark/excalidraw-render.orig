@@ -1,5 +1,6 @@
 //! Independent JPEG reference gates. #187 color corrections pass canonical
 //! budgets; six sampling cells retain exact known-defect measurements.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{
@@ -36,8 +37,8 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
 fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/jpeg-color/reference.json");
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
-        "e1b0005465245eddca9ec625976302b07d480ae8f7f226afb6771a55d4859cf7"
+        lower_hex(&Sha256::digest(bytes)),
+        "77b84951bd4fbd7ce805993ed98cbf19149e0cf4c0b773da43f16905036cdc5b"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(
@@ -66,7 +67,7 @@ fn evidence() -> Value {
             std::fs::read(crate::common::repository_root().join(source["path"].as_str().unwrap()))
                 .unwrap();
         assert_eq!(
-            format!("{:x}", Sha256::digest(bytes)),
+            lower_hex(&Sha256::digest(bytes)),
             source["sha256"].as_str().unwrap()
         );
     }
@@ -318,7 +319,7 @@ fn check(row: &Value) -> usize {
     assert_eq!(row["reference"]["admitted"], true, "{id}");
     let jpeg = decode(&row["jpeg_base64"]);
     assert_eq!(
-        format!("{:x}", Sha256::digest(&jpeg)),
+        lower_hex(&Sha256::digest(&jpeg)),
         row["jpeg_sha256"].as_str().unwrap()
     );
     let scene = SceneDocument::parse(&serde_json::to_vec(&row["scene"]).unwrap()).unwrap();

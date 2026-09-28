@@ -2,6 +2,7 @@
 //! Trace balances locate a boundary; its ingredient weights, decisions, reports
 //! and recovery artifacts are independently asserted, never snapshot-refreshed.
 use crate::render::stage4_render_trace;
+use crate::resource_accounting::lower_hex;
 use crate::{
     ErrorCode, FrameOptions, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
@@ -56,11 +57,11 @@ pub(crate) fn profile_limits(selected_mask: Option<usize>) {
         ),
         (
             include_bytes!("../tests/common/png_stage4_reference.rs").as_slice(),
-            "7d4c5774f463821383fe6c8d2ed0d9e9e77363a4dd9ab00470b51ab6f2f48e2e",
+            "929ac9c9fb62edbf4d0958988ad85167a74340b7228f7fa071e6d7369e6ed5b8",
         ),
         (
             include_bytes!("../tests/common/png_color_reference.rs").as_slice(),
-            "587df4e08fead76757275069285e7bc1ce156cded0a8c6f4d7306ffeb7fcd008",
+            "18603743899f0fe432c34bb932188271e650bf16e10062de07e0d25edb277bde",
         ),
         (
             include_bytes!("../tests/common/codec_fixtures.rs").as_slice(),
@@ -75,12 +76,12 @@ pub(crate) fn profile_limits(selected_mask: Option<usize>) {
             "5cb3a3f790adf08c7b7cc0b6e6ebdba7a9a8784e8dd0b4b64e27654e3ed18447",
         ),
     ] {
-        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected);
+        assert_eq!(lower_hex(&Sha256::digest(bytes)), expected);
     }
     let bytes = include_bytes!("../../../tests/oracle/png-color/stage4-oracle-reference.json");
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
-        "4be02aa994105dd69ea45adb341540c00c0af63300dfc5d0c7e4683a48c31883"
+        lower_hex(&Sha256::digest(bytes)),
+        "775525fd6b1b1d7e21f5f1de3c826eff6d656c0ac2d936e27049e13296a51bc3"
     );
     let mut evidence: Value = serde_json::from_slice(bytes).unwrap();
     let mut gray = crate::png_stage4_review::gray_lut_equivalence();

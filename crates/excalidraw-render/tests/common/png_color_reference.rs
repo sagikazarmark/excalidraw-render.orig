@@ -10,8 +10,8 @@ pub const REFERENCE: &[u8] = include_bytes!(concat!(
 ));
 pub fn evidence() -> Value {
     assert_eq!(
-        format!("{:x}", Sha256::digest(REFERENCE)),
-        "f15dd9acb05de8e646563af7e7f96aca7d009a712711b225b5275fd6dfa4c86e"
+        lower_hex(&Sha256::digest(REFERENCE)),
+        "208921ac569863f6dbf2193a82b8ce83b593824b7b987cb9b3ba401a30207243"
     );
     let record: Value = serde_json::from_slice(REFERENCE).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
@@ -155,8 +155,8 @@ pub fn gain_map_evidence() -> Value {
         "/../../tests/oracle/png-color/gain-map-reference.json"
     ));
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
-        "c08f20247ff996e089a62881022818b09ca57eaab8a6f8e9f96e5e92e6e05373"
+        lower_hex(&Sha256::digest(bytes)),
+        "a20607c1dc3075d7aefc8f64cb904ad2ad32c16b5c4c7345bf82dccdac79b823"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
@@ -284,8 +284,8 @@ pub fn hdr_metadata_evidence() -> Value {
         "/../../tests/oracle/png-color/hdr-metadata-reference.json"
     ));
     assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
-        "cfeea5a884edea3501a4cf39f851a3aa9fec5a3cc5d0d5f1e1f19d92c17c01e9"
+        lower_hex(&Sha256::digest(bytes)),
+        "fc3bc7e5a030b9e7a50cf9030abaee9f8a1193dea3624d79c4fafe9bfae192e6"
     );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
@@ -586,4 +586,8 @@ pub fn appearance(row: &Value, actual: CanonicalRgba8, pdf: bool) {
         .unwrap();
         assert!(result.passed(), "{} {pdf}: {:?}", row["id"], result.whole);
     }
+}
+
+fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

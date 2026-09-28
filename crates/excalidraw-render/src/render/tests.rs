@@ -5,6 +5,7 @@ use super::resolve::{
 use super::*;
 use crate::diagnostic_registry::{DiagnosticKind, MetadataFailure};
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
+use crate::resource_accounting::lower_hex;
 use crate::{
     font_metadata::FamilyMetrics, CompatibilityRevision, DiagnosticCode, DiagnosticEffect,
     Renderer, ResourceLimits,
@@ -306,7 +307,7 @@ fn font_subset_representative_direct_svg_corpus_does_not_grow_against_complete_c
         let scene_bytes = fs::read(root.join(path))
             .unwrap_or_else(|error| panic!("failed to read size case {id}: {error}"));
         assert_eq!(
-            format!("{:x}", Sha256::digest(&scene_bytes)),
+            lower_hex(&Sha256::digest(&scene_bytes)),
             case["scene_sha256"]
                 .as_str()
                 .expect("size case has a scene digest"),

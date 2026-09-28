@@ -2,6 +2,7 @@
 //! metadata-operation seam. Expected rows are authored from spec §11.3.
 use crate::render::test_faults::{self, Fault};
 use crate::render::MetadataStage;
+use crate::resource_accounting::lower_hex;
 use crate::{
     MetadataOptions, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
@@ -12,10 +13,9 @@ use serde_json::json;
 fn mixed_normalization_render_resource_metadata_preserve_source_order() {
     use sha2::{Digest, Sha256};
     assert_eq!(
-        format!(
-            "{:x}",
-            Sha256::digest(include_bytes!("render/metadata/test_faults.rs"))
-        ),
+        lower_hex(&Sha256::digest(include_bytes!(
+            "render/metadata/test_faults.rs"
+        ))),
         "e85951d3aa5db4ee8dc6493806bfe3d0be907e0b0f2d90aa7cf02f99f431e550"
     );
     let bytes = b"\x89PNG\r\n\x1a\n";

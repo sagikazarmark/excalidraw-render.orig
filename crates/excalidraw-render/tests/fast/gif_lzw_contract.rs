@@ -4,6 +4,7 @@
 //! The frozen missing-EOI control also underfills its 49,601-pixel descriptor.
 //! A separate parent-authored 4x1 pair below isolates EOI with exact pixel counts;
 //! it adds no browser evidence or frozen matrix cells.
+use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use serde_json::{json, Value};
@@ -57,7 +58,7 @@ const SOURCES: [&str; 18] = [
     "tools/reference-oracle/vite.config.mjs",
 ];
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 fn decode(value: &Value) -> Vec<u8> {
     base64::engine::general_purpose::STANDARD

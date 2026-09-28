@@ -286,8 +286,11 @@ superseded profile — the stage4 typography diagnosis and the current
 candidate — stays valid only through the explicit
 successor in `xtask/src/conformance_candidate_gate.rs`, which requires an
 archived preimage and a profile that differs only in `implementation.closure`
-(`proposals/comparator-closure-refresh-v1/`, #206). A later refresh adds its own
-reviewed successor. Review the diff and rerun qualification.
+and in vector digest moves that a refresh lists (`COMPARATOR_REFRESHES`:
+`proposals/comparator-closure-refresh-v1/` for #206,
+`proposals/comparator-closure-refresh-v2/` for the #208 sha2 upgrade). A later
+refresh archives its own preimage and adds its own row. Review the diff and
+rerun qualification.
 
 ## Canonical SVG viewers
 

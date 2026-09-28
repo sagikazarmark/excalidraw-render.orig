@@ -20,6 +20,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 use super::webp_sample_contract::{render, report, svg};
+use crate::common::lower_hex;
 
 const RECORD: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -42,7 +43,7 @@ const KNOWN_DIVERGENCES: [(&str, &str); 1] = [(
 )];
 
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 
 fn base64(value: &Value) -> Vec<u8> {
@@ -60,7 +61,7 @@ fn image(png: &[u8]) -> CanonicalRgba8 {
 fn evidence() -> Value {
     assert_eq!(
         hash(RECORD),
-        "a4447e7ab884669fb68176abcae004c5850368448ac06eb69ad6826d2c097a27"
+        "dd8ca9b8c2a9d62f4625dd2513c833d42e8dd17edf7a5d78eaa07e7110b5ffd7"
     );
     let record: Value = serde_json::from_slice(RECORD).unwrap();
     assert_eq!(

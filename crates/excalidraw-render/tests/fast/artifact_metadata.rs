@@ -5,6 +5,7 @@ use excalidraw_render::{
 };
 use sha2::{Digest, Sha256};
 
+use crate::common::lower_hex;
 use crate::common::pdf_inspect::pdf_text;
 
 const SOURCE: &[u8] = br#"{
@@ -32,7 +33,7 @@ fn every_format_round_trips_one_canonical_artifact_manifest() {
             .render(&scene, &request)
             .expect("metadata render succeeds");
         let (manifest, embedded_scene) = extract(format, outcome.artifact().bytes());
-        let scene_digest = format!("sha256:{:x}", Sha256::digest(CANONICAL_SCENE));
+        let scene_digest = format!("sha256:{}", lower_hex(&Sha256::digest(CANONICAL_SCENE)));
         let expected = format!(
             concat!(
                 "{{\"schema_version\":1,",

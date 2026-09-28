@@ -934,7 +934,7 @@ pub(super) fn subset_notice(
     derived: &font_subset::Derived,
 ) -> Result<SubsetNotice, BuildError> {
     let provenance = family_notice(source, family)?;
-    let output_digest = format!("{:x}", Sha256::digest(derived.woff2.as_ref()));
+    let output_digest = encode_hex_32(&Sha256::digest(derived.woff2.as_ref()).into());
     let profile_digest = encode_hex_32(&crate::fonts::font_subset_profile_digest_v1());
     Ok(SubsetNotice {
         provenance,
@@ -996,7 +996,7 @@ pub(super) fn source_semantic_identity(source: SubsetSource, scalars: &[u32]) ->
     for scalar in scalars {
         hasher.update(scalar.to_le_bytes());
     }
-    Some(format!("{:x}", hasher.finalize()))
+    Some(encode_hex_32(&hasher.finalize().into()))
 }
 
 fn decode_hex_32(value: &str) -> Option<[u8; 32]> {
@@ -1011,7 +1011,7 @@ fn decode_hex_32(value: &str) -> Option<[u8; 32]> {
     Some(output)
 }
 
-fn encode_hex_32(value: &[u8; 32]) -> String {
+pub(super) fn encode_hex_32(value: &[u8; 32]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut output = String::with_capacity(64);
     for byte in value {

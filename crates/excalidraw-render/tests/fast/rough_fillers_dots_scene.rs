@@ -15,6 +15,7 @@
 use excalidraw_render::{OutputFormat, SceneDocument};
 use sha2::{Digest, Sha256};
 
+use crate::common::lower_hex;
 use crate::common::render::render_artifact;
 use crate::common::svg::path_data;
 
@@ -45,7 +46,7 @@ fn the_dots_scene_matches_the_pinned_roughjs_vectors_in_every_format() {
         "nine elements, a dots fill and an outline each"
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(paths.join("\n"))),
+        lower_hex(&Sha256::digest(paths.join("\n"))),
         "a93d84031a9f37d62c70b6282776ec66905e95590bbfd400953a4fed8387c5c8"
     );
 

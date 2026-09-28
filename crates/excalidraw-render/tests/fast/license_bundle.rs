@@ -1,3 +1,4 @@
+use crate::common::lower_hex;
 use excalidraw_render::license_bundle;
 use sha2::{Digest, Sha256};
 
@@ -25,7 +26,7 @@ fn public_license_bundle_returns_the_complete_static_utf8_bundle() {
     )));
     assert!(bundle.ends_with('\n'));
     assert_eq!(
-        format!("{:x}", Sha256::digest(bundle.as_bytes())),
+        lower_hex(&Sha256::digest(bundle.as_bytes())),
         LICENSE_BUNDLE_SHA256
     );
 }

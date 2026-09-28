@@ -1,3 +1,4 @@
+use crate::common::lower_hex;
 use crate::common::png_stage4::{self as vectors, Case, Outcome};
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use serde_json::json;
@@ -11,7 +12,7 @@ fn source_bindings() {
         ),
         (
             include_bytes!("../common/png_stage4_composition.rs").as_slice(),
-            "60071cc0156d77aab6b355baf53eb4c62dcc07718022a786b637295f92aa8f5d",
+            "9948525b0edfc55fcd4bf2aff84a8e2d99326fdbd2f8837bb0be581336462be1",
         ),
         (
             include_bytes!("../common/png_stage4_review.rs").as_slice(),
@@ -23,11 +24,11 @@ fn source_bindings() {
         ),
         (
             include_bytes!("../common/png_stage4_reference.rs").as_slice(),
-            "7d4c5774f463821383fe6c8d2ed0d9e9e77363a4dd9ab00470b51ab6f2f48e2e",
+            "929ac9c9fb62edbf4d0958988ad85167a74340b7228f7fa071e6d7369e6ed5b8",
         ),
         (
             include_bytes!("../common/png_color_reference.rs").as_slice(),
-            "587df4e08fead76757275069285e7bc1ce156cded0a8c6f4d7306ffeb7fcd008",
+            "18603743899f0fe432c34bb932188271e650bf16e10062de07e0d25edb277bde",
         ),
         (
             include_bytes!("png_profile_contract.rs").as_slice(),
@@ -46,7 +47,7 @@ fn source_bindings() {
             "4f6bc5a85213b1268b8536c242687d58c3cdb81423c6643b6cd1c44e9d06d303",
         ),
     ] {
-        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected);
+        assert_eq!(lower_hex(&Sha256::digest(bytes)), expected);
     }
 }
 
@@ -529,7 +530,7 @@ fn check_evidence(evidence: serde_json::Value, group: &str, count: usize) {
         let bytes =
             std::fs::read(crate::common::repository_root().join(source["path"].as_str().unwrap()))
                 .unwrap();
-        assert_eq!(source["sha256"], format!("{:x}", Sha256::digest(bytes)));
+        assert_eq!(source["sha256"], lower_hex(&Sha256::digest(bytes)));
     }
     let rows: Vec<_> = evidence["cases"]
         .as_array()

@@ -10,6 +10,7 @@ use excalidraw_render::{FrameRenderRequest, OutputFormat, Renderer, SceneDocumen
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
 use sha2::{Digest, Sha256};
 
+use crate::common::lower_hex;
 use crate::common::pdf_harness::render_viewer;
 use crate::common::registered_cases::{divergence, exception_limits, visual_class};
 use crate::common::repository_root;
@@ -154,7 +155,7 @@ fn pdf_tolerance_exceptions(case: &Path, case_id: &str) -> Vec<serde_json::Value
     let bytes = fs::read(case.join("pdf-tolerance-exceptions.json"))
         .expect("frame PDF tolerance exceptions are present");
     assert_eq!(
-        format!("{:x}", Sha256::digest(&bytes)),
+        lower_hex(&Sha256::digest(&bytes)),
         PDF_TOLERANCE_EXCEPTIONS_SHA256,
         "frame PDF tolerance exceptions moved without a reviewed re-pin"
     );

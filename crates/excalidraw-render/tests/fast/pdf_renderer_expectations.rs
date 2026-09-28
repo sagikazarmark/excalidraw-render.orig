@@ -8,6 +8,7 @@ use std::path::Path;
 
 use sha2::{Digest, Sha256};
 
+use crate::common::lower_hex;
 use crate::common::{read_json, repository_root};
 
 const CASE: &str = "tests/conformance/cases/focused/rectangle-outline";
@@ -153,5 +154,5 @@ fn pdf_viewer_profile_ids(root: &Path) -> Vec<String> {
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }

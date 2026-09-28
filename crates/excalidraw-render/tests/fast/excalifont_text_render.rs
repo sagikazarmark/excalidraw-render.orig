@@ -1,5 +1,6 @@
 use std::fs;
 
+use crate::common::lower_hex;
 use crate::common::pdf_inspect::{declares_base_font, pdf_actual_text, pdf_text};
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
@@ -134,7 +135,7 @@ fn excalifont_text_renders_semantically_in_every_format() {
 }
 
 fn artifact_sha256(outcome: &RenderOutcome) -> String {
-    format!("{:x}", Sha256::digest(outcome.artifact().bytes()))
+    lower_hex(&Sha256::digest(outcome.artifact().bytes()))
 }
 
 #[test]

@@ -13,6 +13,7 @@ use sha2::{Digest, Sha256};
 use crate::common::approved_scenes::{
     render_isolated_fallback, render_nested_native_operations, render_project_operations,
 };
+use crate::common::lower_hex;
 use crate::common::pdf_harness::{assert_structure, render_viewer};
 use crate::common::repository_root;
 use crate::common::scratch::ScratchDir;
@@ -53,23 +54,21 @@ fn isolated_fallback_passes_both_canonical_pdf_visual_gates() {
     let root = repository_root();
     let evidence = root.join("tests/conformance/cases/focused/pdf-isolated-fallback");
     assert_eq!(
-        format!(
-            "{:x}",
-            Sha256::digest(fs::read(evidence.join("scene.excalidraw")).unwrap())
-        ),
+        lower_hex(&Sha256::digest(
+            fs::read(evidence.join("scene.excalidraw")).unwrap()
+        )),
         "fda8b589d6010f75bc73b5694c8832d9400e401d61c634442f0faea4f4c3eaf0"
     );
     assert_eq!(
-        format!(
-            "{:x}",
-            Sha256::digest(fs::read(evidence.join("evidence/official.svg")).unwrap())
-        ),
+        lower_hex(&Sha256::digest(
+            fs::read(evidence.join("evidence/official.svg")).unwrap()
+        )),
         "8efab916e92d110a76ac8ecb692027895a6b021d3bf594ca747f742ac600c363"
     );
     let reference_bytes = fs::read(evidence.join("evidence/official-svg.rgba"))
         .expect("approved official-SVG fallback evidence is present");
     assert_eq!(
-        format!("{:x}", Sha256::digest(&reference_bytes)),
+        lower_hex(&Sha256::digest(&reference_bytes)),
         "e08641597e5c3a4c2e222153a196f591639d97355552a6e25e3b007dae3821d6"
     );
     let reference = CanonicalRgba8::new(40, 30, reference_bytes)
@@ -77,17 +76,14 @@ fn isolated_fallback_passes_both_canonical_pdf_visual_gates() {
     let exception_bytes = fs::read(evidence.join("pdf-visual-exception.json"))
         .expect("approved fallback visual exception is present");
     assert_eq!(
-        format!("{:x}", Sha256::digest(&exception_bytes)),
+        lower_hex(&Sha256::digest(&exception_bytes)),
         "e79c29f3849c480dcce62fa6169c01a7f11a399dd241e37fc0ee08780669e6cc"
     );
     assert_eq!(
-        format!(
-            "{:x}",
-            Sha256::digest(
-                fs::read(root.join("tools/reference-oracle/scripts/pdf-fallback-evidence.mjs"))
-                    .expect("fallback evidence generator is present")
-            )
-        ),
+        lower_hex(&Sha256::digest(
+            fs::read(root.join("tools/reference-oracle/scripts/pdf-fallback-evidence.mjs"))
+                .expect("fallback evidence generator is present")
+        )),
         "1d49b89a04fd7a05a634fa4906d611f71c6f72379306bb6d22a684494d0ca656"
     );
     let exception: serde_json::Value =

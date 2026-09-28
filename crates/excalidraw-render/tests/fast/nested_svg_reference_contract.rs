@@ -16,6 +16,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 use super::webp_sample_contract::render;
+use crate::common::lower_hex;
 
 const RECORD: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -32,7 +33,7 @@ const REMOVALS: [&str; 2] = [
 const EXTERNAL_IMAGE_PNG: &str = "368ec0b0b05d7c238069191bb1ba2edd12eaa6758da6daaf8ce1e2295aa883fd";
 
 fn hash(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    lower_hex(&Sha256::digest(bytes))
 }
 
 fn image(png: &[u8]) -> CanonicalRgba8 {
@@ -43,7 +44,7 @@ fn image(png: &[u8]) -> CanonicalRgba8 {
 fn evidence() -> Value {
     assert_eq!(
         hash(RECORD),
-        "1fcf9c728b1ba653b5fa47aa2b1f652bcb872a2e58e7c4de1063b5788e8a8e54"
+        "74a189231d03553608f2bbe8790870e72b602e73c054634e783af4f7254eff04"
     );
     let record: Value = serde_json::from_slice(RECORD).unwrap();
     assert_eq!(

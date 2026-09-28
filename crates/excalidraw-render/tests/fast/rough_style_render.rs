@@ -3,6 +3,7 @@ use excalidraw_render::{
 };
 use sha2::{Digest, Sha256};
 
+use crate::common::lower_hex;
 use crate::common::pdf_inspect::pdf_text;
 use crate::common::raster::decode_png;
 
@@ -42,7 +43,7 @@ pub(super) fn rough_fills_and_stroke_variants_render_directly_in_every_format() 
                     .map(|tail| tail.split_once('"').unwrap().0)
                     .collect::<Vec<_>>();
                 assert_eq!(
-                    format!("{:x}", Sha256::digest(paths.join("\n"))),
+                    lower_hex(&Sha256::digest(paths.join("\n"))),
                     "2bfc1930d3b3801246550bfb278b4a0e8dc43809b04adbc9dcf1cf9474ec255c"
                 );
             }
@@ -116,15 +117,15 @@ pub(super) fn dots_dashed_and_zigzag_line_fills_render_undiagnosed_in_every_form
                 // `render::tests::dots_dashed_and_zigzag_line_fills_match_the_pinned_roughjs_vectors`
                 // pins for the same elements against the npm Rough.js.
                 assert_eq!(
-                    format!("{:x}", Sha256::digest(paths[0])),
+                    lower_hex(&Sha256::digest(paths[0])),
                     "3e71799dc22c6afd54dfbe1034b6f7104760ebfcf3d2a814f21f923f73cea877"
                 );
                 assert_eq!(
-                    format!("{:x}", Sha256::digest(paths[2])),
+                    lower_hex(&Sha256::digest(paths[2])),
                     "86d629cf4d59ca89c11c073e8279b5f6a09eb11f0d47c920f49439f7c614b0cf"
                 );
                 assert_eq!(
-                    format!("{:x}", Sha256::digest(paths[4])),
+                    lower_hex(&Sha256::digest(paths[4])),
                     "b323939a39be484b021100620064bab064c5bb7ef4fa8121e1182710c52e30b5"
                 );
             }
@@ -171,12 +172,12 @@ pub(super) fn patterned_curved_boundaries_match_pinned_js_sampling() {
     assert!(outcome.report().is_empty());
     assert_eq!(paths.len(), 4);
     assert_eq!(
-        format!("{:x}", Sha256::digest(paths[0])),
+        lower_hex(&Sha256::digest(paths[0])),
         "c211c4346fa692dc825164e947714aaed5b66e99ae2fcecdfe43ef656683bfb0",
         "rounded path fill was generated independently with pinned Rough.js 4.6.4",
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(paths[2])),
+        lower_hex(&Sha256::digest(paths[2])),
         "9176fe003ade6804f0f3e9fe2b79aa67835300b4999ac2c72e43e639d0748f06",
         "rounded curve fill was generated independently with pinned Rough.js 4.6.4",
     );

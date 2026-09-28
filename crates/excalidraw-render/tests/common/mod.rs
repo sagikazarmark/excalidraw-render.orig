@@ -47,3 +47,8 @@ pub fn read_json(path: &Path) -> Value {
     )
     .unwrap_or_else(|error| panic!("{} is valid JSON: {error}", path.display()))
 }
+
+/// Lowercase hex of a digest, as evidence records spell it.
+pub fn lower_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
