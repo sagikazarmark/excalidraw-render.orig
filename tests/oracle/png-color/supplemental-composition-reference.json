@@ -39,7 +39,7 @@
     },
     {
       "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
-      "sha256": "d0bac8d75a33ee2827ca1722ac42ac2e0545c0c0c136f819160fba77c8ad092e"
+      "sha256": "07ff1a5c7face36f419ef4fd20a4b75f9ef0b8f97091f8379494c9c402414e6c"
     }
   ],
   "options": {

@@ -88,8 +88,9 @@ ordinals, not names. `inputs_sha256` binds canonical JSON containing the manifes
 descriptor, scene descriptor, reference-profile descriptor, asset-catalog
 descriptor, options and export target. Each descriptor hashes the actual file
 bytes. The draft v1 digest uses this repository's `conformance::canonical_bytes`:
-recursive sorted object keys, compact arrays/objects and serde_json 1.0.141
-string/number spelling. It is independent of pretty printing but **not RFC8785
+recursive sorted object keys, compact arrays/objects, serde_json string
+spelling, and (xtask enables `arbitrary_precision`) each parsed number's own
+source spelling. It is independent of pretty printing but **not RFC8785
 number normalization** (for example, `1.0` remains distinct from `1`). Collectors
 must use `inventory-digest` rather than reserialize with another JSON library.
 The approved closure/snapshot transition must settle RFC8785 number handling;

@@ -175,6 +175,11 @@ pub(crate) const COMPARATOR_REFRESHES: &[ComparatorRefresh] = &[
             "dfe0a102ec425fe01c027ac5e2eb409a804f810bdb3780ac379dc6b01eba4ca9",
         )],
     },
+    // #211: serde_json 1.0.151 moved only the closure.
+    ComparatorRefresh {
+        before: "tests/conformance/proposals/comparator-closure-refresh-v5/before",
+        vectors: &[],
+    },
 ];
 /// Evidence measured under a comparator profile (or its closure) that a
 /// reviewed refresh superseded. Those refreshes moved the comparator's

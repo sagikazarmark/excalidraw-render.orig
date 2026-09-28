@@ -19,7 +19,7 @@
     ],
     "closure": {
       "path": "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json",
-      "sha256": "635f6d73db68d3b47dec5a3c54cc81708e2f57e1d5914c22c7c0d2fa7edac0d8"
+      "sha256": "811af451cb5449bd9603c355cb13d5b77060d1615c2741afe76afb89428503c7"
     }
   },
   "features": [],

@@ -7,11 +7,11 @@
   },
   {
    "path": "tests/oracle/png-color/reference.json",
-   "sha256": "81e428669358991408008eb0d4ed2c6bee6d3638dd3d191e48fad2262cd06eda"
+   "sha256": "789429cedd4b77e2680e07cbfca14d2c09c5f7492fb22a6424c1c3b745f21ce1"
   },
   {
    "path": "tests/oracle/png-color/stage4-reference.json",
-   "sha256": "7dc27033eaad05f06d1d259f55f0fdbd700b750f0218c1e74602ebdd5bcac174"
+   "sha256": "d6f89a4e4d2972e8319a9cbbe35530c95d16246abf97dedee475a6674c436239"
   },
   {
    "path": "tests/oracle/reference-profiles/revision-1.json",
@@ -31,7 +31,7 @@
   },
   {
    "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
-   "sha256": "d0bac8d75a33ee2827ca1722ac42ac2e0545c0c0c136f819160fba77c8ad092e"
+   "sha256": "07ff1a5c7face36f419ef4fd20a4b75f9ef0b8f97091f8379494c9c402414e6c"
   }
  ],
  "options": {
