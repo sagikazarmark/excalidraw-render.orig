@@ -1,0 +1,29 @@
+[package]
+name = "harfrust-evaluation"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+excalidraw-fonts = { path = "../../crates/excalidraw-fonts" }
+harfrust = { version = "=0.13.3", default-features = false, features = ["std"] }
+rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
+serde_json = "=1.0.151"
+sha2 = "=0.11.0"
+unicode-bidi-mirroring = "=0.4.0"
+wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
+
+[features]
+# Route HarfRust's float maths through core_maths (ADR-0007 determinism check).
+libm = ["harfrust/libm"]
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "=0.3.79"
+
+[profile.dev]
+opt-level = 3
+
+[lints.rust]
+unsafe_code = "forbid"
