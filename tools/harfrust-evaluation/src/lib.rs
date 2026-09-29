@@ -344,8 +344,11 @@ pub fn report() -> Value {
         }
     }
 
+    let sweep = scalar_sweep();
+
     json!({
         "schema": "excalidraw-render/harfrust-evaluation/v1",
+        "scalar_sweep": sweep,
         "rustybuzz": RUSTYBUZZ,
         "harfrust": HARFRUST,
         "harfrust_libm": cfg!(feature = "libm"),
@@ -365,4 +368,66 @@ pub fn report() -> Value {
         },
         "examples": examples,
     })
+}
+
+/// Every Unicode scalar shaped between two letters (`a<c>b`) in the
+/// renderer's configuration through the fallback face and the first
+/// Excalifont chunk. This covers the default-ignorable class the spec pins to
+/// the shaper (spec 8.3, `render/text.rs::is_default_ignorable`), mirroring
+/// and `.notdef` handling beyond the scalars a face maps.
+fn scalar_sweep() -> Value {
+    let fonts = fonts();
+    let maps_a = |font: &&Font| {
+        rustybuzz::Face::from_slice(&font.sfnt, 0).is_some_and(|face| face.glyph_index('a').is_some())
+    };
+    let faces = [
+        fonts
+            .iter()
+            .find(|font| font.name.ends_with("LiberationSans-Regular.woff2"))
+            .expect("Liberation Sans is bundled"),
+        fonts
+            .iter()
+            .filter(|font| font.family == "Excalifont")
+            .find(maps_a)
+            .expect("an Excalifont chunk maps Basic Latin"),
+    ];
+    let mut out = Vec::new();
+    for font in faces {
+        let rb_face = rustybuzz::Face::from_slice(&font.sfnt, 0).expect("face parses");
+        let hr_font = harfrust::FontRef::new(&font.sfnt).expect("face parses");
+        let data = harfrust::ShaperData::new(&hr_font);
+        let shaper = data.shaper(&hr_font).build();
+        let mut differing = Vec::new();
+        let mut count = 0u64;
+        let mut hidden = (0u64, 0u64);
+        for scalar in 0..=0x10_ffffu32 {
+            let Some(c) = char::from_u32(scalar) else { continue };
+            let text: String = ['a', c, 'b'].into_iter().collect();
+            for config in [(Features::Render, Direction::Guess), (Features::Render, Direction::Rtl)] {
+                let rb = shape_rustybuzz(&rb_face, &text, config);
+                let hr = shape_harfrust(&shaper, &text, config);
+                count += 1;
+                // A hidden scalar: three glyphs in, the middle one with zero advance.
+                let zero = |g: &[Glyph]| g.len() == 3 && g.iter().any(|x| x[1] == 1 && x[2] == 0);
+                hidden.0 += u64::from(zero(&rb));
+                hidden.1 += u64::from(zero(&hr));
+                if rb != hr {
+                    differing.push(json!({
+                        "scalar": format!("U+{scalar:04X}"),
+                        "config": config_name(config),
+                        "kinds": difference_kinds(&rb, &hr),
+                        "rustybuzz": rb, "harfrust": hr,
+                    }));
+                }
+            }
+        }
+        out.push(json!({
+            "font": font.name,
+            "cases": count,
+            "zero_advance_middle": {"rustybuzz": hidden.0, "harfrust": hidden.1},
+            "differing": differing.len(),
+            "differences": differing,
+        }));
+    }
+    json!(out)
 }

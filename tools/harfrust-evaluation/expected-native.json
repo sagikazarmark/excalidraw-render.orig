@@ -3821,5 +3821,207 @@
     }
   ],
   "rustybuzz": "0.20.1",
+  "scalar_sweep": [
+    {
+      "cases": 2224128,
+      "differences": [
+        {
+          "config": "render/rtl",
+          "harfrust": [
+            [
+              69,
+              4,
+              1139,
+              0,
+              0,
+              0
+            ],
+            [
+              575,
+              1,
+              1124,
+              0,
+              0,
+              0
+            ],
+            [
+              68,
+              0,
+              1139,
+              0,
+              0,
+              0
+            ]
+          ],
+          "kinds": [
+            "glyph-id"
+          ],
+          "rustybuzz": [
+            [
+              69,
+              4,
+              1139,
+              0,
+              0,
+              0
+            ],
+            [
+              576,
+              1,
+              1124,
+              0,
+              0,
+              0
+            ],
+            [
+              68,
+              0,
+              1139,
+              0,
+              0,
+              0
+            ]
+          ],
+          "scalar": "U+2265"
+        },
+        {
+          "config": "render/rtl",
+          "harfrust": [
+            [
+              69,
+              4,
+              1139,
+              0,
+              0,
+              0
+            ],
+            [
+              539,
+              1,
+              342,
+              0,
+              0,
+              0
+            ],
+            [
+              68,
+              0,
+              1139,
+              0,
+              0,
+              0
+            ]
+          ],
+          "kinds": [
+            "glyph-id",
+            "advance"
+          ],
+          "rustybuzz": [
+            [
+              69,
+              4,
+              1139,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              1536,
+              0,
+              0,
+              0
+            ],
+            [
+              68,
+              0,
+              1139,
+              0,
+              0,
+              0
+            ]
+          ],
+          "scalar": "U+29F5"
+        },
+        {
+          "config": "render/rtl",
+          "harfrust": [
+            [
+              69,
+              4,
+              1139,
+              0,
+              0,
+              0
+            ],
+            [
+              569,
+              1,
+              2005,
+              0,
+              0,
+              0
+            ],
+            [
+              68,
+              0,
+              1139,
+              0,
+              0,
+              0
+            ]
+          ],
+          "kinds": [
+            "glyph-id",
+            "advance"
+          ],
+          "rustybuzz": [
+            [
+              69,
+              4,
+              1139,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              1536,
+              0,
+              0,
+              0
+            ],
+            [
+              68,
+              0,
+              1139,
+              0,
+              0,
+              0
+            ]
+          ],
+          "scalar": "U+2BFE"
+        }
+      ],
+      "differing": 3,
+      "font": "fonts/Liberation/LiberationSans-Regular.woff2",
+      "zero_advance_middle": {
+        "harfrust": 7612,
+        "rustybuzz": 7612
+      }
+    },
+    {
+      "cases": 2224128,
+      "differences": [],
+      "differing": 0,
+      "font": "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
+      "zero_advance_middle": {
+        "harfrust": 7612,
+        "rustybuzz": 7612
+      }
+    }
+  ],
   "schema": "excalidraw-render/harfrust-evaluation/v1"
 }
