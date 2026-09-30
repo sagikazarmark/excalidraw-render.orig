@@ -94,7 +94,7 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 // User-approved draft §8.5 per-glyph device phases. Independent
                 // pinned Chromium replay of this same rotated scene: 0 changed
                 // pixels, SSIM bits 3feffa5b1c4f155c; SVG/PDF canaries unchanged.
-                // See docs/research/png-stage4-binding-reconciliation.md.
+                // See docs/research/archive/png-stage4-binding-reconciliation.md.
                 assert_eq!(
                     artifact_sha256(&first),
                     "9b2da5d13b6a2c672ab80be51edbeeb9491195b57939dea9f48e80e3887f3b95"

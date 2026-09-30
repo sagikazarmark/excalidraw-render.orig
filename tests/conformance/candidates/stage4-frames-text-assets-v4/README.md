@@ -8,5 +8,5 @@ authorings remain diagnostic records. Every whole/crop threshold is unchanged.
 **Not approval-ready:** `judgments.json` records failing PDFium, PDF.js and direct
 PNG gates. SVG comparisons and nontext crops are exact. The
 `decision-subject.json` bundle is diagnostic; no approval subject was issued.
-See [the current follow-up audit](../../../../docs/research/png-stage4-followup.md)
+See [the current follow-up audit](../../../../docs/research/archive/png-stage4-followup.md)
 for the remaining qualification and corpus-integration work.

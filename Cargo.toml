@@ -53,7 +53,8 @@ krilla = { version = "=0.8.2", default-features = false, features = ["raster-ima
 # Rendering math calls every transcendental function through this crate
 # (`crates/excalidraw-render/src/portable_math.rs`, ADR-0007) so that both
 # supported targets compute the same doubles. It is already in the lock through
-# `rustybuzz -> core_maths`; the direct edge adds no package.
+# `ttf-parser -> core_maths` (the `no-std-float` feature); the direct edge adds
+# no package.
 libm = "=0.2.16"
 # Held at 0.8 (#208): png 0.18.1 requires `^0.8`, so 0.9 would not remove
 # 0.8.9, and moving the IDAT compressor changes every PNG (ADR-0004).

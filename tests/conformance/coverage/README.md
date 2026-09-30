@@ -230,7 +230,7 @@ parent-commit collection, and 34 keys from the approved WebP composition and
 PDFium successor requalifications. It was approved on 2026-09-23 in
 [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5788473732),
 subject `sha256:46e23f43096064aef51dcd9f539ab7d31525aab610a520b2b41b410ee0d46965`.
-See [the requalification record](../../../docs/research/dark-mode-root-filter-requalification.md).
+See [the requalification record](../../../docs/research/archive/dark-mode-root-filter-requalification.md).
 
 The preceding baseline contains the approved clean `d96cddd` recollection
 after the nested resource-limit amendment. All 168 artifact/report pairs and 187
@@ -245,7 +245,7 @@ blobs match the prior baseline exactly; refreshed input bindings and provenance
 were approved on 2026-09-14 in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5662705380),
 subject `sha256:3296d5a63885e443cd191fcacf6f0924656e81fb434640564a3e753b49b9f890`.
 Canonical packaged replay passes.
-See [the nested-claim binding refresh](../../../docs/research/nested-claim-binding-refresh.md).
+See [the nested-claim binding refresh](../../../docs/research/archive/nested-claim-binding-refresh.md).
 
 The preceding baseline contains the approved clean `3836a21` recollection
 after image registry reapproval. All 168 artifact/report pairs and 187 blobs
@@ -253,7 +253,7 @@ match the prior baseline exactly; updated input bindings and provenance were
 approved on 2026-09-13 in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5654932917),
 subject `sha256:56aa7e51d3990375b31bea1198f2c262871c5a7dbfd59344b2254cdf35c52721`.
 Canonical packaged replay passes.
-See [the image binding refresh](../../../docs/research/image-registry-binding-refresh.md).
+See [the image binding refresh](../../../docs/research/archive/image-registry-binding-refresh.md).
 
 The preceding approved baseline contains the clean `b419e23` recollection
 after the font registry/case-binding reconciliation. All 168 artifact/report
@@ -261,7 +261,7 @@ expectations and 187 blobs are byte-identical to the prior approved baseline;
 input digests and provenance are refreshed. **Reapproved on 2026-09-13** in
 [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5652971255) for subject
 `sha256:f6e6a9e6a538b60b088038d19586c943b92166a18f5a9dee8a1b68c37984c957`.
-The canonical packaged replay passes. See [the reconciliation record](../../../docs/research/font-registry-snapshot-reconciliation.md).
+The canonical packaged replay passes. See [the reconciliation record](../../../docs/research/archive/font-registry-snapshot-reconciliation.md).
 
 The original clean `2155a99` collection was **approved on 2026-09-11** in
 [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5641266771),
@@ -471,7 +471,7 @@ unreferenced. Every problem is listed.
 The retired writer/approval commands are not an update procedure. Historically,
 the closure owner bound this record through the compiled-in `layers` verifier
 (`verify-layers --strict` in-process today). See
-[the five-layer note](../../../docs/research/five-layer-integration.md).
+[the five-layer note](../../../docs/research/archive/five-layer-integration.md).
 
 ### Native snapshot candidates
 

@@ -68,7 +68,8 @@ existing strict recovery behavior, not visual parity or a newly granted exceptio
 ## Ownership migration
 
 The normal authenticated append-only extension uses the prior catalog at
-`tests/conformance/proposals/jpeg187-requalification-v1/pending/catalog.json`.
+`tests/conformance/proposals/jpeg187-requalification-v1/pending/catalog.json`
+(pruned by ADR-0022; in Git history at `20ab732`).
 All **1,912 prior dispositions**, criteria, three exclusions, 168 inventory keys,
 V9 approval and dependency pins survive. Only new ICC cells receive owners/gaps.
 

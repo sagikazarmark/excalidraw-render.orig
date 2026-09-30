@@ -4,7 +4,7 @@
 with the dev native profile. §14.4 requires release qualification. Preserve v6
 as historical evidence; do not request approval of its subject. The new release
 and global-owner adapters are described in
-[the release/owner checkpoint](png-stage4-release-owner-adapter.md). A successor
+[the release/owner checkpoint](archive/png-stage4-release-owner-adapter.md). A successor
 capture awaits the parent's final production/spec hashes.
 
 **Approval subject (canonical subject digest):**

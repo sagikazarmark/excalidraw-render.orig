@@ -1,4 +1,0 @@
-225 independently authored nonuniform mixed-scan controls pass
-132 restart mutations rejected; 3 mixed inter-scan metadata cases pass
-9 missing/duplicate/extra-entropy scans rejected strictly; permissive runs do not panic
-32 strict terminal/physical-EOF/padding cases rejected; valid minimal grayscale passes

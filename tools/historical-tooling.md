@@ -21,6 +21,19 @@ individually with the completed representative CI handoff in
 [python-inventory.md](python-inventory.md). Counts and retention decisions in the
 earlier passes below are historical snapshots, not current blockers.
 
+## Retired: finished evaluation probes (2026-09-30)
+
+Removed the probe crates and records of five completed evaluations:
+`tools/bmp-evaluation` (#183), `tools/color-evaluation` (#185),
+`tools/kurbo-evaluation` (#184), `tools/harfrust-evaluation` (#202, adopted in
+72fe740) and `tools/jpeg187-diagnosis`. Each reached its conclusion, which the
+matching `docs/research` note records; nothing in xtask, CI, Dagger or the
+renderer tests read them. The bmp, color and kurbo probes depended on the
+renderer by path, so every renderer dependency move forced a lock refresh in
+each. Their paths remain in whole-tree `freeze.json`/`before-files.json`
+snapshots, which are historical observations, not file-existence requirements.
+Restore any of them with `git checkout 20ab732 -- tools/<name>`.
+
 ## Latest retirement: evaluations and final audit (2026-09-25)
 
 Retired eight Python experiment runners: BMP `run-browser.py`, color

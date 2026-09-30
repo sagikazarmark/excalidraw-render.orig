@@ -162,8 +162,6 @@ pub fn verify_layers() -> Result<(), String> {
 mod tests {
     use super::*;
 
-    const URL: &str =
-        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-1";
     const FONT_FUZZ: &str = "crates/excalidraw-render/src/render/font_subset_fuzz.rs";
     const SCENE_REGRESSIONS: &str =
         "crates/excalidraw-render/tests/qualification/scene-fuzz-regressions.json";
@@ -647,86 +645,6 @@ mod tests {
             "{after:?}"
         );
         fixture.has_problem("vector color: layer:vector:color: case owner does not establish");
-    }
-
-    #[test]
-    #[ignore = "optional historical five-layer audit"]
-    fn representative_84_cases_need_approval_sanitization_license_and_crops() {
-        // case.py's subject computation reproduces every approved subject.
-        for entry in Fixture::new().record["representative"]["cases"]
-            .as_array()
-            .unwrap()
-        {
-            let case: Value =
-                parse(&read(&format!("{}/case.json", entry["path"].as_str().unwrap())).unwrap())
-                    .unwrap();
-            assert_eq!(
-                case["approval"]["approval_subject_sha256"],
-                entry["subject_sha256"]
-            );
-        }
-        let edit = |edit: &dyn Fn(&mut Value), expected: &str| {
-            let mut fixture = Fixture::new();
-            let mut case = fixture.json(VARMQ);
-            edit(&mut case);
-            fixture.set(VARMQ, crate::conformance::canonical_bytes(&case).unwrap());
-            fails(fixture.structure(), expected);
-        };
-        edit(
-            &|c| c["approval"]["approval_url"] = json!(URL.replace("/issues/85#", "/issues/84#")),
-            "approval identity, date, or URL is invalid",
-        );
-        edit(
-            &|c| c["approval"]["approval_subject_sha256"] = json!("sha256:invalid"),
-            "approval subject",
-        );
-        edit(
-            &|c| c["semantic_expectations"]["light"]["links"] = json!(1),
-            "approval subject does not match",
-        );
-        edit(&|c| c["comparisons"] = json!([]), "comparisons are empty");
-        edit(
-            &|c| c["intake"]["sha256"] = json!("0".repeat(64)),
-            "intake bundle changed",
-        );
-
-        let bundle = "tests/conformance/intake/varmq-queue-diagram-v1";
-        let manifest_path = format!("{bundle}/manifest.json");
-        let rebind = |fixture: &mut Fixture, manifest: &Value| {
-            let bytes = serde_json::to_vec_pretty(manifest).unwrap();
-            let mut case = fixture.json(VARMQ);
-            case["intake"]["bytes"] = json!(bytes.len());
-            case["intake"]["sha256"] = json!(sha256(&bytes));
-            fixture.set(&manifest_path, bytes);
-            fixture.set_json(VARMQ, &case);
-        };
-        // Sanitization: a retained digest that is not the retained scene's.
-        let mut fixture = Fixture::new();
-        let mut manifest = fixture.json(&manifest_path);
-        manifest["sanitization"]["retained_sha256"] = json!("0".repeat(64));
-        rebind(&mut fixture, &manifest);
-        fails(fixture.structure(), "sanitization retained_sha256");
-        // License: an empty SPDX value.
-        let mut fixture = Fixture::new();
-        let mut manifest = fixture.json(&manifest_path);
-        manifest["license"] = json!(" ");
-        rebind(&mut fixture, &manifest);
-        fails(fixture.structure(), "no license");
-        // Crops: only the whole-scene judgment left.
-        let mut fixture = Fixture::new();
-        let plan_path = format!("{bundle}/plan.json");
-        let mut plan = fixture.json(&plan_path);
-        plan["regions"]
-            .as_array_mut()
-            .unwrap()
-            .retain(|r| r["id"] == "whole");
-        fixture.set_json(&plan_path, &plan);
-        let plan_bytes = fixture.repo.read(&plan_path).unwrap();
-        let mut manifest = fixture.json(&manifest_path);
-        manifest["files"]["plan.json"] =
-            json!({"bytes":plan_bytes.len(),"sha256":sha256(&plan_bytes)});
-        rebind(&mut fixture, &manifest);
-        fails(fixture.structure(), "at least one anchored crop");
     }
 
     #[test]

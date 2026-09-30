@@ -18,7 +18,8 @@ filtering after compositing and compositing lowered colors disagree. The dark
 pixels. Rounding the exact filter of the official light raster reproduces
 99.2% of the official dark crop's pixels (at most 3 levels off), while the
 lowered native SVG matched 0.9% (up to 29 levels off); see
-`tests/conformance/proposals/varmq84-dark-diagnosis-v1/DIAGNOSIS.md`. The same
+`tests/conformance/proposals/varmq84-dark-diagnosis-v1/DIAGNOSIS.md` (pruned by
+ADR-0022; in Git history at `20ab732`). The same
 evidence showed the pinned browser **rounds** the root filter where the
 renderer floored, leaving flat colors one level low in some channels.
 

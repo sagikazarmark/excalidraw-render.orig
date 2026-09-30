@@ -10,10 +10,11 @@ CI/release maintainer:
 
 The count includes existing untracked first-party files, excludes deleted index
 entries, dependencies and build/cache trees. Python under the reference oracle's
-`node_modules/` is third-party. The archived
-`tests/conformance/proposals/jpeg187-requalification-v1/nested/collector-at-capture.py.txt`
-is historical source text, not an executable module. No first-party extensionless
+`node_modules/` is third-party. No first-party extensionless
 Python entry point remains.
+`docs/research/archive/krilla-pdf-backend-gap-audit/pdfium-text.py` is a
+retained script from the completed ADR-0021 spike, kept with that audit's
+method and not run by anything.
 
 ## Completed replacements and retirements
 
@@ -28,8 +29,9 @@ Python entry point remains.
   `cargo test --locked -p xtask --test webp_boundary`. It preserves both record
   pins, input/output/profile checks, 144 viewer comparisons, and 672 negative
   buffer/semantic mutations.
-- Eight BMP/color/kurbo/JPEG experiment runners retired. Their observations,
-  patches, fixtures, probe sources and conclusions remain historical research.
+- Eight BMP/color/kurbo/JPEG experiment runners retired; the probe crates
+  followed on 2026-09-30. Their conclusions remain in `docs/research`, and the
+  sources are in Git history.
   JPEG sampling and malformed-entropy behavior remain ordinary renderer tests.
 - Completed proposal/approval transactions and frozen Python producers retired;
   retained evidence is checked by current Rust consumers.

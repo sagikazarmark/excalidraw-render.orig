@@ -16,8 +16,11 @@ evaluation; it does not authorize conversion, grammar or tolerance changes.
 
 ## Evidence and adapter seam
 
-- [Reproduction and scope](../../tools/color-evaluation/README.md).
-- [Generated numeric, canonical, artifact and browser matrix](../../tools/color-evaluation/matrix.md).
+The probe was retired on 2026-09-30 with no live consumer; it is in Git
+history at `20ab732`. Restore it with `git checkout 20ab732 -- tools/color-evaluation`.
+
+- Reproduction and scope: `tools/color-evaluation/README.md`.
+- Generated numeric, canonical, artifact and browser matrix: `tools/color-evaluation/matrix.md`.
 - [Versioned source audit](color-library-source-audit.md).
 - `tools/color-evaluation/expected-{native,wasm,reference}.json`: exact observations.
 

@@ -14,10 +14,13 @@ production migration would be a separate task.
 
 ## Reproducible evidence
 
-- [Standalone probe and reproduction commands](../../tools/bmp-evaluation/README.md).
-- [Exact, readable matrix](../../tools/bmp-evaluation/matrix.md): **84 BMP vectors
+The probe was retired on 2026-09-30 with no live consumer; it is in Git
+history at `20ab732`. Restore it with `git checkout 20ab732 -- tools/bmp-evaluation`.
+
+- Standalone probe and reproduction commands: `tools/bmp-evaluation/README.md`.
+- Exact, readable matrix, `tools/bmp-evaluation/matrix.md`: **84 BMP vectors
   and 70 EXIF vectors**, generated from deterministic byte builders.
-- [Machine-readable evidence](../../tools/bmp-evaluation/expected.json): input
+- Machine-readable evidence, `tools/bmp-evaluation/expected.json`: input
   bytes, exact output bytes or rejection category, the raw library and the
   library behind current validation, mask sweeps, limits probes, and artifact
   hashes. BMP pixels are straight RGBA before `finish_rgba` zeroes transparent

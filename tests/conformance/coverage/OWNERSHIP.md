@@ -32,7 +32,7 @@ are preserved. **Current totals: 1,912 obligations, 1,820 assigned/excluded
 (1,817 owners and three exclusions), 92 gaps.** The tables and Stage-4 narrative
 below remain the prior 1,874-obligation checkpoint; the codec/profile category
 now has 1,037 obligations. The current representative is approved V8, as recorded
-in the [Stage-4 completion audit](../../../docs/research/png-stage4-completion.md).
+in the [Stage-4 completion audit](../../../docs/research/archive/png-stage4-completion.md).
 
 | Obligation family | Count | Source |
 | --- | ---: | --- |
@@ -140,14 +140,14 @@ The three media-type assignments have a
 The four closure obligations prevent that remaining scope from disappearing
 behind a zero-gap claim for only the current coarse inventory.
 
-The [Stage 4 binding reconciliation](../../../docs/research/png-stage4-binding-reconciliation.md)
+The [Stage 4 binding reconciliation](../../../docs/research/archive/png-stage4-binding-reconciliation.md)
 applies the user-approved §8.5 authority transition, the proven `fuzz.codecs`
 locator refresh, and 101 focused-tested owner-source bindings. All 168 complete
 execution records, criterion/disposition semantics and three approved exclusions
 are preserved. Inventory/catalog/ledger validation now passes without stale
 locators; global coverage and approval remain incomplete.
 
-The [final six-case PNG requalification](../../../docs/research/png-stage4-final-metadata-application.md)
+The [final six-case PNG requalification](../../../docs/research/archive/png-stage4-final-metadata-application.md)
 applies the user's exact batch approval: four remeasured whole-PNG exceptions and
 two withdrawals now passing canonical budgets. Only those two unowned tolerance
 obligations were retired. It refreshes 122 authority and 12 case-owner manifest

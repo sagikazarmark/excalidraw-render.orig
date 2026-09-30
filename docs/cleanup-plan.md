@@ -1,8 +1,11 @@
 # Architecture Cleanup Plan
 
-Status: reviewed twice (adversarial multi-agent critique + judge; second
-multi-agent pass 2026-09-01, amendments applied), awaiting execution.
-Date: 2026-09-01. Owner: Mark Sagi-Kazar.
+Status: executed; this is a historical record. D1 and D2 and the execution
+steps have landed (the trace pins are gone, the brotli fork is retired for
+upstream `ttf2woff2`/`portable-float`, see ADR-0002 and ADR-0003), and the
+"External gate" below no longer applies. Only the ride-along rule in
+"Deferred follow-ups" is still current.
+Date: 2026-09-01 (marked executed 2026-09-30). Owner: Mark Sagi-Kazar.
 
 Scope: right-size the machinery around the renderer while compatibility
 revision 1 is still draft. The rendering architecture itself (SceneDocument →
