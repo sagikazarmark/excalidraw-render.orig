@@ -44,7 +44,7 @@ bounds, because PDF.js mis-samples the function shading Krilla writes for them.
 
 ## Where Krilla differs from earlier decisions
 
-The gap audit (`docs/research/krilla-pdf-backend-gap-audit.md`) found four
+The gap audit (`docs/research/archive/krilla-pdf-backend-gap-audit.md`) found four
 places where Krilla 0.8.2 cannot produce what earlier decisions require. Each
 is settled here, by a spec change reviewed with the port rather than by an
 upstream request:
@@ -77,7 +77,7 @@ upstream request:
 ## Allocation inside the writer
 
 Krilla, pdf-writer 0.15, subsetter and Krilla's flate2 calls allocate
-infallibly (Stage 1 gate 1 of #201, `docs/research/krilla-pdf-feasibility.md`).
+infallibly (Stage 1 gate 1 of #201, `docs/research/archive/krilla-pdf-feasibility.md`).
 If the allocator refuses during serialization, the process aborts. It does not
 return `resource.memory-unavailable`. svg2pdf already had this property for
 nested-SVG content; with Krilla it covers the whole PDF serialization stage.

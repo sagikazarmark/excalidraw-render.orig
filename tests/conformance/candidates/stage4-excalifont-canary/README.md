@@ -9,5 +9,5 @@ native processes repeated; the PNG comparison has zero changed pixels and SSIM
 
 These files support the one authorized native canary update; they are not an
 approved reference replacement, final representative case, or approval record.
-See `docs/research/png-stage4-binding-reconciliation.md` and the bound
+See `docs/research/archive/png-stage4-binding-reconciliation.md` and the bound
 `qualification.json` / `provenance.json` for the evidence and source identities.

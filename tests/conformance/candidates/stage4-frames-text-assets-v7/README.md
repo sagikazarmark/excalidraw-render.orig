@@ -32,7 +32,7 @@ owner is recorded for `interaction:frames-text-assets`. See
 `docs/research/png-stage4-v7-approved-owner.md` for the approval/owner audit.
 
 Full measurements, release identity, source-freeze checks and the post-decision
-approval-recording procedure: `docs/research/png-stage4-v7-release-capture.md`.
+approval-recording procedure: `docs/research/archive/png-stage4-v7-release-capture.md`.
 Only the manifest's `approval` field is omitted from the canonical approval
 subject; keep captured evidence and producer/adapter sources frozen. This README
 is excluded explanatory metadata. V4/v6 historical records are preserved.

@@ -15,13 +15,13 @@ Nested unsupported-image tests cover two rejected nodes with distinct canonical 
 
 ## Authority proposal
 
-[image-diagnostic-contract-proposal.json](image-diagnostic-contract-proposal.json) records replacement registry rows against the current authority digest. Proposal SHA-256 (canonical JSON without trailing LF):
+[image-diagnostic-contract-proposal.json](archive/image-diagnostic-contract-proposal.json) records replacement registry rows against the current authority digest. Proposal SHA-256 (canonical JSON without trailing LF):
 
 `cb1a875bd95749581f2965f97dd793c44dddae40f742a8373ab998935c6c9250`
 
 This is a decision/amendment proposal, not a case-approval subject. The active scene-surface authority and its existing approvals have not been rewritten. Applying it requires regenerating catalog/case bindings, preparing the affected case subjects and downstream PDF/snapshot binding refreshes, and obtaining approval of those exact subjects. The existing conditional semantic-effects clause is preserved; tests here establish the visual-only unsupported raster boundary, not every nested semantic-content case. Related nested decode-failure registry scope should be reviewed in the same authority round to avoid another partial schema correction.
 
-Subsequent staging: the amendment and adjacent nested decode-failure rules are now applied, and all 36 affected case subjects are explicitly approved and recorded. See [the reapproval record](image-registry-reapproval.md). Original approvals are preserved in the bundle; separate PDF and snapshot binding refreshes remain pending.
+Subsequent staging: the amendment and adjacent nested decode-failure rules are now applied, and all 36 affected case subjects are explicitly approved and recorded. See [the reapproval record](archive/image-registry-reapproval.md). Original approvals are preserved in the bundle; separate PDF and snapshot binding refreshes remain pending.
 
 The six malformed-file/unsupported-format obligations remain explicit gaps pending that authority and remaining branch review. Global ownership stays at 149 proposed owners / 779 gaps.
 

@@ -13,7 +13,7 @@ of this README preserves the reviewed proposal.
 | Representative V25 (`representative.stage4-frames-text-assets.v25`) | `bab27df4f9dc2ff5b2424f2dcab27980271006ac41bc8cf25def63eafa348bef` |
 
 This closes `closure:all-five-layers` through ADR-0015. The design is in
-`docs/research/five-layer-integration.md`.
+`docs/research/archive/five-layer-integration.md`.
 
 - **Owner adapter:** test owners may now name a nested library module, a root
   test binary of the renderer, or the comparator crate's test binaries. Each

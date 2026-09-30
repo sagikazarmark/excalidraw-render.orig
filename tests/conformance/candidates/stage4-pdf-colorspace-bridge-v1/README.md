@@ -7,4 +7,4 @@ viewer rasters repeat and match the diagnosed rasters byte-for-byte.
 
 The exception adapter validates this bridge before accepting the new PDF hash;
 an unrelated PDF or stale proof is rejected. See
-`docs/research/stage4-image-icc-fix.md` for identities, metrics and review steps.
+`docs/research/archive/stage4-image-icc-fix.md` for identities, metrics and review steps.

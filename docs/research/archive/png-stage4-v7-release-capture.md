@@ -2,7 +2,7 @@
 
 Subsequent status: the user approved this exact subject and its three exception
 scopes; the approved release consumers passed and the strict owner was recorded.
-See the [approval/owner audit](png-stage4-v7-approved-owner.md). The sections below
+See the [approval/owner audit](../png-stage4-v7-approved-owner.md). The sections below
 preserve the original pending-capture checkpoint and post-decision procedure.
 
 ## Review identity and status
@@ -239,7 +239,7 @@ record this interaction owner, the existing strict command is:
 ```sh
 cargo run --release --locked -p xtask -- conformance record-representative-owner \
   representative.stage4-frames-text-assets.v7 \
-  'User-approved release representative and exact three scoped PDF exceptions; see the actual final issue #85 approval comment and docs/research/png-stage4-v7-release-capture.md.'
+  'User-approved release representative and exact three scoped PDF exceptions; see the actual final issue #85 approval comment and docs/research/archive/png-stage4-v7-release-capture.md.'
 ```
 
 This does not approve the global ledger or refresh the native baseline.

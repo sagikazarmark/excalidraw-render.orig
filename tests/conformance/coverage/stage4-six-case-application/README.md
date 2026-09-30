@@ -27,4 +27,4 @@ That audit validates the approved batch and exact live transition, then uses its
 authenticated before bytes solely to verify earlier historical checkpoints.
 Current case/inventory/ownership/v7 CLI checks always read the real applied files.
 
-Final audit: `docs/research/png-stage4-final-metadata-application.md`.
+Final audit: `docs/research/archive/png-stage4-final-metadata-application.md`.

@@ -14,6 +14,9 @@ entries, dependencies and build/cache trees. Python under the reference oracle's
 `tests/conformance/proposals/jpeg187-requalification-v1/nested/collector-at-capture.py.txt`
 is historical source text, not an executable module. No first-party extensionless
 Python entry point remains.
+`docs/research/archive/krilla-pdf-backend-gap-audit/pdfium-text.py` is a
+retained script from the completed ADR-0021 spike, kept with that audit's
+method and not run by anything.
 
 ## Completed replacements and retirements
 

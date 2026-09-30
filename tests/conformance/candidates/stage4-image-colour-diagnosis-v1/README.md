@@ -9,5 +9,5 @@ pass both pinned viewers. Priming explains the previously passing larger case.
 proposal for the separately measured protected project scene. It does not
 approve the malformed colour-space entry or claim the original 2×2 passed.
 
-See `docs/research/stage4-image-colour-diagnosis.md` for the normative source,
+See `docs/research/archive/stage4-image-colour-diagnosis.md` for the normative source,
 controls, identities and recommended production regression/fix.

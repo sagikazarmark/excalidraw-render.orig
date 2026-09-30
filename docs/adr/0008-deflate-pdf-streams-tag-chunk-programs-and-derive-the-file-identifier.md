@@ -16,7 +16,7 @@ basic-Latin chunk, 223 KB for Cascadia, 134 KB of Liberation Sans for any
 label or frame name, 863 KB for one emoji. Users compare against the browser's
 "print to PDF", so the size read as a defect regardless of correctness, and
 the spec sentence was false. The review named this finding 3 of
-`docs/research/review-2026-09-07/asset-comparability.md` and #133 asked for
+`docs/research/archive/review-2026-09-07/asset-comparability.md` and #133 asked for
 the decision: adopt a fixed Flate configuration or correct the spec.
 
 The same review's finding 13 listed the metadata gaps of the font embedding

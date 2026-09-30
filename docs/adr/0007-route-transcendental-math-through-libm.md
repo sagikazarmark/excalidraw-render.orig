@@ -24,7 +24,7 @@ double. Two-decimal Rough path quantization and 8-bit color quantization absorb
 most of the difference, but a value within an ulp of a rounding boundary flips
 a digit, and until now nothing but the two-target pins would have noticed.
 
-The review (`docs/research/review-2026-09-07/architecture.md` §7) named this
+The review (`docs/research/archive/review-2026-09-07/architecture.md` §7) named this
 the single largest determinism gap and #148 asked for a strategy. Three were on
 the table: freeze more tables, as the sRGB curve is; record why quantization
 makes divergence impossible and keep the empirical pins; or call one

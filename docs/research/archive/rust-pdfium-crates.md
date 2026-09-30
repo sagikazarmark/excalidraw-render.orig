@@ -53,10 +53,10 @@ The dependency is **pypdfium2 5.12.1**, supplying native **PDFium
 the complete wheel. Installation extracts it and rendering imports its Python
 helpers and raw bindings. The Python adapter is only 157 lines and already does
 the important rendering through the native C API; Python is not essential to
-that operation. Sources: [lock](../../tools/pdf-harness/pdfium.lock.json),
-[installer](../../tools/pdf-harness/install.sh),
-[launcher](../../tools/pdf-harness/run-pdfium.sh),
-[adapter](../../tools/pdf-harness/pdfium/render.py).
+that operation. Sources: [lock](../../../tools/pdf-harness/pdfium.lock.json),
+[installer](../../../tools/pdf-harness/install.sh),
+[launcher](../../../tools/pdf-harness/run-pdfium.sh),
+[adapter](../../../tools/pdf-harness/pdfium/render.py).
 
 The replacement needs to preserve:
 
@@ -73,15 +73,15 @@ The replacement needs to preserve:
   containing dimensions, digest, layout, and implementation/native identities.
 
 These requirements come from the live adapter and
-[harness README](../../tools/pdf-harness/README.md), rather than assuming a
+[harness README](../../../tools/pdf-harness/README.md), rather than assuming a
 generic PDF-to-image interface is sufficient.
 
 **The alpha question is resolved by current local code.** `canonicalize()` at
 lines 141–153 explicitly avoids unpremultiplication. The independent
-[alpha controls](../../tools/pdf-harness/pdfium/test_alpha.py) cover vector
+[alpha controls](../../../tools/pdf-harness/pdfium/test_alpha.py) cover vector
 opacity and image soft masks with alpha 0, 1, 128, and 255, plus every alpha value
 in the adapter-only check. The older
-[`pdf-harness-primary-sources.md`](pdf-harness-primary-sources.md) describes the
+[`pdf-harness-primary-sources.md`](../pdf-harness-primary-sources.md) describes the
 previous unpremultiplication behavior and must not be used as the current porting
 contract. This review inspected the tests but did not execute them.
 
@@ -109,19 +109,19 @@ contract. This review inspected the tests but did not execute them.
    `pypdfium2`, Python, and the Python adapter's source hashes. A Rust worker must
    emit its real identity and refresh the corresponding profile/receipt
    validation and evidence, even if every pixel is identical. Sources:
-   [`pdf_viewers.rs:303–348`](../../xtask/src/pdf_viewers.rs),
-   [`receipts.rs:143–158`](../../xtask/src/representative/evidence/receipts.rs),
-   [`conformance_pdf_requalification.rs`](../../xtask/src/conformance_pdf_requalification.rs).
+   [`pdf_viewers.rs:303–348`](../../../xtask/src/pdf_viewers.rs),
+   [`receipts.rs:143–158`](../../../xtask/src/representative/evidence/receipts.rs),
+   [`conformance_pdf_requalification.rs`](../../../xtask/src/conformance_pdf_requalification.rs).
 
 The raw approach is a concrete policy decision here: the workspace sets
 `unsafe_code = "forbid"`, and `xtask` inherits it. Safe use of a dependency that
 internally uses FFI is compatible with that lint; owned unsafe calls are not.
-Sources: [workspace manifest](../../Cargo.toml), [xtask manifest](../../xtask/Cargo.toml).
+Sources: [workspace manifest](../../../Cargo.toml), [xtask manifest](../../../xtask/Cargo.toml).
 
 ### Utilities beyond the core adapter
 
 The two raw-pixel audit utilities mostly reuse the adapter, but the
-[typography diagnostic](../../tools/pdf-harness/diagnostics/stage4-typography.py)
+[typography diagnostic](../../../tools/pdf-harness/diagnostics/stage4-typography.py)
 also enumerates page objects, inspects text-object matrices and font embedding,
 and extracts glyph outlines using `FPDFFont_GetGlyphPath` and path-segment APIs.
 That makes a broad binding such as `pdfium-render` more useful than a restricted
