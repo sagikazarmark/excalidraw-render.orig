@@ -1,6 +1,6 @@
 //! The shaping boundary (#202): ttf-parser parses and measures a face, and
 //! HarfRust shapes it. [`Face`] dereferences to the parsed face, so metric,
-//! outline and table access reads as it did under rustybuzz.
+//! outline and table access go straight to ttf-parser.
 
 use std::ops::Deref;
 
