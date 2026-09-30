@@ -21,7 +21,7 @@
     "implementation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["crate", "publish", "edition", "lints", "sources", "closure"],
+      "required": ["crate", "publish", "edition", "lints", "sources"],
       "properties": {
         "crate": { "const": "excalidraw-render-compare" },
         "publish": { "const": false },
@@ -36,16 +36,6 @@
               { "properties": { "path": { "pattern": "^crates/excalidraw-render-compare/" } } }
             ]
           }
-        },
-        "closure": {
-          "allOf": [
-            { "$ref": "#/$defs/fileDescriptor" },
-            {
-              "properties": {
-                "path": { "const": "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json" }
-              }
-            }
-          ]
         }
       }
     },

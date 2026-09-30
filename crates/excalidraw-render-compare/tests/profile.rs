@@ -10,6 +10,8 @@ const PROFILE_PATH: &str = "tests/conformance/comparator-profiles/canonical-visu
 const PROFILE_DIGEST_PATH: &str =
     "tests/conformance/comparator-profiles/canonical-visual-v1.sha256";
 const CLOSURE_PATH: &str = "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json";
+/// Opts `materialize` into writing the committed closure instead of staging it.
+const REFRESH_ENV: &str = "EXCALIDRAW_REFRESH_COMPARATOR_CLOSURE";
 const CLOSURE_SCHEMA: &str = "excalidraw-render/conformance-comparator-closure/v1";
 const CLOSURE_HEADER_KEYS: [&str; 3] = ["schema", "lockfile", "root"];
 const PACKAGE_KEYS: [&str; 4] = ["name", "version", "source", "checksum"];
@@ -45,7 +47,7 @@ fn canonical_comparator_profile_schema_and_all_bound_bytes_are_current() {
         verify_descriptor(&root, descriptor);
     }
     verify_workspace_inheritance(&root, implementation);
-    verify_closure(&root, implementation);
+    verify_closure(&root);
     for descriptor in profile["vectors"].as_array().unwrap() {
         verify_descriptor(&root, descriptor);
     }
@@ -74,11 +76,12 @@ fn verify_workspace_inheritance(root: &Path, implementation: &Value) {
 }
 
 /// The committed closure is exactly the comparator's reachable subgraph of the live
-/// workspace lock, so a renderer dependency change moves the profile only when it also
-/// moves a package the comparator builds against.
-fn verify_closure(root: &Path, implementation: &Value) {
-    let committed: Value =
-        serde_json::from_slice(&verify_descriptor(root, &implementation["closure"])).unwrap();
+/// workspace lock. It records what the comparator builds against, but no digest binds
+/// it: the profile names only what can change a measurement (ADR-0005, amended for #212), so a
+/// dependency move changes this file and nothing else.
+fn verify_closure(root: &Path) {
+    let committed: Value = serde_json::from_slice(&fs::read(root.join(CLOSURE_PATH)).unwrap())
+        .expect("the committed closure is JSON");
     let current = current_closure(root);
     for key in CLOSURE_HEADER_KEYS {
         assert_eq!(committed[key], current[key], "closure {key}");
@@ -93,8 +96,8 @@ fn verify_closure(root: &Path, implementation: &Value) {
         "committed comparator closure differs from {LOCKFILE_PATH}\n\
          no longer locked: {stale:#?}\n\
          not committed: {missing:#?}\n\
-         refresh with: cargo test --locked -p {CRATE_NAME} --test profile -- --ignored materialize \
-         --nocapture, then copy the staged closure it names over {CLOSURE_PATH}"
+         refresh with: {REFRESH_ENV}=1 cargo test --locked -p {CRATE_NAME} --test profile \
+         -- --ignored materialize"
     );
 }
 
@@ -119,22 +122,29 @@ fn current_closure(root: &Path) -> Value {
     })
 }
 
-/// Stages the current closure under Cargo's scratch directory and names the copy
-/// that refreshes the committed file, so a run of every `--ignored` test leaves
-/// the source tree clean.
+/// Writes the current closure over the committed file when
+/// `EXCALIDRAW_REFRESH_COMPARATOR_CLOSURE=1`, and
+/// otherwise only stages it under Cargo's scratch directory, so a run of every
+/// `--ignored` test leaves the source tree clean.
 #[test]
 #[ignore = "explicitly refreshes the comparator's committed dependency closure"]
 fn materialize_canonical_comparator_closure() {
     let root = repository_root();
     let committed = root.join(CLOSURE_PATH);
+    let closure = format_closure(&current_closure(&root));
+    if std::env::var_os(REFRESH_ENV).is_some_and(|value| value == "1") {
+        fs::write(&committed, closure).unwrap();
+        println!("refreshed {}", committed.display());
+        return;
+    }
     let staged = Path::new(env!("CARGO_TARGET_TMPDIR")).join(
         committed
             .file_name()
             .expect("the committed closure has a file name"),
     );
-    fs::write(&staged, format_closure(&current_closure(&root))).unwrap();
+    fs::write(&staged, closure).unwrap();
     println!(
-        "staged the current comparator closure; refresh the committed one with:\n  cp {} {}",
+        "staged the current comparator closure at {}; set {REFRESH_ENV}=1 to write {}",
         staged.display(),
         committed.display()
     );

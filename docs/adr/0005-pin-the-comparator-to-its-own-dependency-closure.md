@@ -76,3 +76,58 @@ entry's lock dependencies and so to the closure. And the root package's own
 version is a closure entry, so a `workspace.package.version` bump moves the
 profile; that is a release event, when every artifact moves anyway, and it was
 already true under the old binding through the root `Cargo.toml` digest.
+
+## Amended 2026-09-30: the closure is recorded, not bound (#212)
+
+Pinning the closure still made routine renderer bumps expensive. `serde_json`,
+`sha1`, `sha2`, `png`, `jsonschema`, `wasm-bindgen` and `syn` all reach the
+comparator, and seven closure refreshes followed (`comparator-closure-refresh-v1`
+to `v7`: #206, #208 ×4, #211, #207). Two of them also migrated a vector source
+that dependency's API change touched.
+- **The cascade:** each one moved the profile digest, and live evidence binds
+  that digest: 18 oracle references, both viewer qualifications with their
+  sidecars, the rectangle PDF expectations, `xtask/src/pdf_viewers.rs`, and in
+  turn the test sources, `coverage/pdf-judgments.json` and `coverage/
+  ownership.json` that bind those. A refresh rebound about 50 files without
+  changing one measurement.
+- **The trust code:** each refresh also needed an archived preimage and a
+  `COMPARATOR_REFRESHES` row, so that evidence measured under the old profile
+  stayed valid.
+
+**Decision.** The profile names only what can change a measurement: the
+comparator's sources, the protocol, the limits, the vectors and the imported
+fixtures. It no longer carries `implementation.closure`, and the schema drops
+the field. `canonical-visual-v1.closure.json` stays committed and reviewed in
+Git (ADR-0019), and the profile test still requires it to equal the
+comparator's reachable subgraph of the live `Cargo.lock`, naming any package
+that differs. No digest binds it, so a closure-only move changes that one file
+and nothing else. Refreshing it is one command:
+
+```sh
+EXCALIDRAW_REFRESH_COMPARATOR_CLOSURE=1 cargo test --locked -p excalidraw-render-compare --test profile -- --ignored materialize
+```
+
+Without the variable, `materialize` only stages the closure under Cargo's
+scratch directory, so a run of every `--ignored` test leaves the tree clean.
+
+**Why this is enough.** A dependency move that changed what the comparator
+computes would show up where measurements are defined:
+- the adversarial Pixelmatch and SSIM vectors and the imported upstream
+  fixtures, which the profile still binds by digest and the comparator's tests
+  execute;
+- the viewer qualifications and oracle references, which record measured
+  results.
+
+The closure digest added no evidence beyond those. It only restated
+`Cargo.lock`, which Git already reviews. The three triggers listed above no
+longer move the profile.
+
+**Transition.** Removing the field moved the profile, and its schema digest,
+one last time. `comparator-closure-refresh-v8` archives the preimages, and its
+`COMPARATOR_REFRESHES` row migrates the schema digest the way earlier rows
+migrated vector digests. That is the last row. Evidence bound to any archived
+profile still validates through the same successor: after the reviewed digest
+migrations, a superseded profile must equal the live one once
+`implementation.closure` is removed. A profile move now means a change to the
+comparator's sources, protocol, limits, vectors or fixtures, and that gets its
+own review.

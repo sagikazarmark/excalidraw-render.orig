@@ -12,7 +12,7 @@ fn source_bindings() {
         ),
         (
             include_bytes!("../common/png_stage4_composition.rs").as_slice(),
-            "74684c9bcd7d531a5edeaf8e31225ba1568360a4312631b7b08814805c6222a4",
+            "472b000e565d975e33e434799c1cf44845fef949a6aa5afd3465122da311c116",
         ),
         (
             include_bytes!("../common/png_stage4_review.rs").as_slice(),
@@ -24,11 +24,11 @@ fn source_bindings() {
         ),
         (
             include_bytes!("../common/png_stage4_reference.rs").as_slice(),
-            "2f5a6345f1ea4260b6a882afdad08072a0fa279afafa8f9e15f357546adf6bf2",
+            "7579570bcca2466cec5a1ee0b406679c43568ebad69f3d01fac7b3fbe78d6bec",
         ),
         (
             include_bytes!("../common/png_color_reference.rs").as_slice(),
-            "705ec066b8e081420975b3484100fedfbf150f20e99a646c6af91eb647ab6ba3",
+            "581e09c740b50e8b1eff3ec97145698199c96adfb462ac8fbaa40d781c70144f",
         ),
         (
             include_bytes!("png_profile_contract.rs").as_slice(),
