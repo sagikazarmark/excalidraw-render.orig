@@ -31,8 +31,8 @@ and the per-user split below.
   requires the same bytes.
 - **Supporting examples:** `examples/mirror.rs` prints the mirroring table
   entries behind every difference, and `examples/bench.rs` measures throughput.
-- **Renderer prototype:** branch `prototype/202-harfrust-renderer`, described
-  in [Renderer prototype](#renderer-prototype).
+- **Renderer prototype:** landed as the migration, #226 (commit `72fe740`),
+  described in [Renderer prototype](#renderer-prototype).
 
 Both shapers see the exact SFNT bytes the renderer loads. Each catalog WOFF2 is
 decoded with wuff 0.2.8 and checked against the catalog's reviewed decode
@@ -155,7 +155,7 @@ infallible allocation site, so it doesn't change §13.3 compliance.
 
 ## Renderer prototype
 
-Branch `prototype/202-harfrust-renderer` puts the renderer behind a small
+The prototype, merged as #226 (commit `72fe740`), puts the renderer behind a small
 adapter, `crates/excalidraw-render/src/shaping.rs`:
 
 - **`Face`** holds a `ttf_parser::Face`, a `harfrust::FontRef` and its
