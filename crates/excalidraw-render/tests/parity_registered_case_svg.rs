@@ -226,10 +226,13 @@ const RASTERIZER_LIMITATIONS: &[RasterizerLimitation] = &[
 /// The rasterizer, its pixel backend and its font database — which drives the
 /// glyph fallback both pinned cases exercise — that the pins above were
 /// measured with, as the lockfile names them.
+///
+/// Re-derived for resvg 0.48.1 and fontdb 0.24.0 (#209): every pin above
+/// measured exactly as it did under resvg 0.47.0 and fontdb 0.23.0.
 const PINNED_RASTERIZER: &[(&str, &str)] = &[
-    ("resvg", "0.47.0"),
+    ("resvg", "0.48.1"),
     ("tiny-skia", "0.12.0"),
-    ("fontdb", "0.23.0"),
+    ("fontdb", "0.24.0"),
 ];
 
 /// System families the official export names without embedding, and the

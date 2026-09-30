@@ -21,9 +21,9 @@ homepage = "https://github.com/sagikazarmark/excalidraw"
 rust-version = "1.97"
 
 [workspace.dependencies]
-# Held at 0.22 (#208): Krilla 0.8.2 requires `^0.22.1`, so 0.23 would add a
-# second copy. Revisit with a Krilla release or with usvg 0.48 (#209), which
-# requires `^0.23`.
+# Held at 0.22 (#208) with Krilla 0.8.2, which requires `^0.22.1`. usvg 0.48's
+# `writer` feature (implied by `text`) brings 0.23 as a second copy (#209);
+# move to 0.23 with a Krilla release that accepts it.
 base64 = { version = "=0.22.1", default-features = false, features = ["alloc"] }
 clap = { version = "=4.6.7", features = ["derive"] }
 excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
@@ -62,7 +62,7 @@ miniz_oxide = "=0.8.9"
 moxcms = { version = "=0.9.1", default-features = false }
 png = "=0.18.1"
 jpeg-encoder = "=0.7.1"
-resvg = { version = "=0.47.0", default-features = false, features = ["raster-images"] }
+resvg = { version = "=0.48.1", default-features = false, features = ["raster-images"] }
 roxmltree = "=0.21.1"
 regex = "=1.13.1"
 serde = { version = "=1.0.229", features = ["derive"] }
@@ -96,7 +96,7 @@ tiny-skia = { version = "=0.12.0", default-features = false, features = ["png-fo
 # identity token in `excalidraw-fonts` still names the retired
 # fork until the single evidence refresh ADR-0003 schedules.
 ttf2woff2 = { version = "=0.13.3", default-features = false, features = ["portable-float"] }
-usvg = { version = "=0.47.0", default-features = false, features = ["text"] }
+usvg = { version = "=0.48.1", default-features = false, features = ["text"] }
 wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
 # `write_fonts::read` is the renderer's only font parser: read-fonts 0.44,
 # the version skera plans over. Name handling and the typed layout validator
