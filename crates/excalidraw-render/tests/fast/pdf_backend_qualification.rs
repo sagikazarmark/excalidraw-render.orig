@@ -198,7 +198,7 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     );
     assert_eq!(
         lower_hex(&Sha256::digest(NESTED_NATIVE_STRUCTURE)),
-        "c4d1011ccdaf13833a74381433fbc21dffd1b146531b085193c1693b8bc6c5ba"
+        "bf55a897acef1a0bd7946c9b88205445292f8d0a419574930d60b330fd80d146"
     );
     let outcome = render_nested_native_operations();
     let repeated = render_nested_native_operations();
@@ -211,10 +211,14 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     // `4.4e-16` residues print as `0`, and one identity group is added
     // (three operators); the viewer gates hold. Moved again when Krilla became
     // the PDF writer (ADR-0021): the nested tree is drawn in place, and both
-    // viewer gates and the structural gate hold.
+    // viewer gates and the structural gate hold. Moved with usvg 0.48 (#209):
+    // it outlines the nested text with skrifa instead of ttf-parser, whose
+    // pen closed each glyph contour with an explicit line back to its start
+    // before `h`; one filled glyph path loses that segment, which closepath
+    // draws anyway, so the fill is unchanged.
     assert_eq!(
         lower_hex(&Sha256::digest(outcome.artifact().bytes())),
-        "9fa245dfdbd460c5b1bb0f8976db2e90fa7a9eeba1778b85d027363a66635dfd"
+        "271f105c692f15d8970dd10829b3f6ef2bf9b4755bd6783de3e45a65ddcab802"
     );
     assert!(outcome.report().diagnostics().is_empty());
     for structure in [
