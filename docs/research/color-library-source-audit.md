@@ -17,7 +17,8 @@ The completed [measured evaluation](color-conversion-evaluation.md) retains the
 kernel. Its resolved graph confirms both candidates' libm-only selection; it also
 pins **palette_derive 0.7.6** explicitly after 0.7.7's generated references to
 `lms`/`xyz::meta` failed to compile with palette 0.7.6. The snippets below are
-source recipes; the compiled probe's exact routes live in `tools/color-evaluation`.
+source recipes; the compiled probe's exact routes lived in `tools/color-evaluation`
+(retired 2026-09-30; in Git history at `20ab732`).
 
 ## Types, white points and conversion behavior
 
@@ -111,6 +112,8 @@ num-traits tree with `--target wasm32-unknown-unknown` also shows std and libm.
 These are observations of the **existing renderer lockfile**; the candidate
 selection above is derived from published manifests/source. Capture the final
 evaluation graph (and transitive versions) after its manifest/lockfile exists:
+
+Historical transcript; the probe manifest is only in Git history (`20ab732`).
 
 ```sh
 # Repeat for x86_64-unknown-linux-gnu and wasm32-unknown-unknown.

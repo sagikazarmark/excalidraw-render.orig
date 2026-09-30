@@ -12,8 +12,11 @@ This is a completed no-go evaluation, not a production migration.
 
 ## Reproducible evidence
 
-- [Probe and commands](../../tools/kurbo-evaluation/README.md).
-- [Generated matrix](../../tools/kurbo-evaluation/matrix.md).
+The probe was retired on 2026-09-30 with no live consumer; it is in Git
+history at `20ab732`. Restore it with `git checkout 20ab732 -- tools/kurbo-evaluation`.
+
+- Probe and commands: `tools/kurbo-evaluation/README.md`.
+- Generated matrix: `tools/kurbo-evaluation/matrix.md`.
 - Four `tools/kurbo-evaluation/expected-*.json` observations, with exact binary64
   witnesses, stream hashes, complete scene elements, artifact/report records,
   decoded PNG digests, PDF matrices, and resource-limit boundary outcomes.

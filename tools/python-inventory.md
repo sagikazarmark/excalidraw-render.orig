@@ -28,8 +28,9 @@ Python entry point remains.
   `cargo test --locked -p xtask --test webp_boundary`. It preserves both record
   pins, input/output/profile checks, 144 viewer comparisons, and 672 negative
   buffer/semantic mutations.
-- Eight BMP/color/kurbo/JPEG experiment runners retired. Their observations,
-  patches, fixtures, probe sources and conclusions remain historical research.
+- Eight BMP/color/kurbo/JPEG experiment runners retired; the probe crates
+  followed on 2026-09-30. Their conclusions remain in `docs/research`, and the
+  sources are in Git history.
   JPEG sampling and malformed-entropy behavior remain ordinary renderer tests.
 - Completed proposal/approval transactions and frozen Python producers retired;
   retained evidence is checked by current Rust consumers.

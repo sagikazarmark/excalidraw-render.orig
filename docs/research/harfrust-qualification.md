@@ -20,11 +20,14 @@ and the per-user split below.
 
 ## Reproducible evidence
 
-- **Probe:** [`tools/harfrust-evaluation`](../../tools/harfrust-evaluation).
+The probe was retired on 2026-09-30 with no live consumer; it is in Git
+history at `20ab732`. Restore it with `git checkout 20ab732 -- tools/harfrust-evaluation`.
+
+- **Probe:** `tools/harfrust-evaluation`.
   `cargo run --release` prints the summary; `--record <path>` writes the full
   report.
 - **Recorded report:**
-  [`expected-native.json`](../../tools/harfrust-evaluation/expected-native.json).
+  `tools/harfrust-evaluation/expected-native.json`.
   The native test (`tests/native.rs`) requires it exactly, with and without
   HarfRust's `libm` feature. The browser test (`tests/wasm.rs`, run with the
   manifest-pinned wasm-bindgen-test-runner 0.2.129 and Chrome 149.0.7827.55)
@@ -236,7 +239,7 @@ the binary, which offsets part of it.
      - It moves with usvg in #209, not with the renderer.
    - **Stay on rustybuzz:** `tools/representative-intake/viewer-fonts` (its
      source and lock are bound representative evidence) and
-     `tools/kurbo-evaluation` (a finished evaluation).
+     `tools/kurbo-evaluation` (a finished evaluation, retired 2026-09-30).
 3. **Text that names the shaper.**
    - Spec 8.3's default-ignorable paragraph and spec 8.6's "PDF text uses
      deterministic `rustybuzz` shaping" name rustybuzz 0.20.1, as does the doc

@@ -32,6 +32,8 @@ grayscale stream where fabricated zeroes could otherwise look correct.
 
 ## Historical execution
 
+The probe directory was retired on 2026-09-30; it is in Git history at `20ab732`.
+
 ```sh
 python3 tools/jpeg187-diagnosis/hardening/run.py /tmp/opencode/jpeg187-hardening-new
 ```

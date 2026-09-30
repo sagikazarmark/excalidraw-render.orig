@@ -38,8 +38,9 @@ baseline decoding; actual progressive JPEG decoding follows `mcu_prog.rs`.
 
 ## Reproducible results
 
-`tools/jpeg187-diagnosis/` retains the four-hunk patch, external-only Cargo project,
-locked graph, executable probe and raw results. Run:
+`tools/jpeg187-diagnosis/` (retired 2026-09-30; restore with
+`git checkout 20ab732 -- tools/jpeg187-diagnosis`) retained the four-hunk patch, external-only Cargo project,
+locked graph, executable probe and raw results. The historical command was:
 
 ```sh
 python3 tools/jpeg187-diagnosis/run.py /tmp/opencode/jpeg187-new-run
