@@ -2,7 +2,7 @@
 
 This nested, unpublished test workspace pins the canonical pure-Rust SVG viewer
 separately from production renderer dependencies. It uses `resvg` and `usvg`
-0.47.0 with only reviewed text and raster-image features, explicit rendering
+0.48.1 with only reviewed text and raster-image features, explicit rendering
 options, no resource directory, no system or memory-mapped fonts, and custom
 resolvers that admit only catalog-bound embedded resources. WOFF2 identities map
 to reviewed owned sfnt faces; raster identities map to reviewed canonical PNG;

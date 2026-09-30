@@ -71,3 +71,82 @@ Fallback reshapes the whole text with each selected fallback font. If one fallba
 A reproducible hard Rust-viewer gate is feasible, but it is not "run resvg on the SVG with defaults." Its approved profile needs one exact resvg/usvg source identity and lockfile; a custom library tool with `text` and the required raster decoders but no system-font/memmap features; native rounded dimensions and identity render transform; transparent sRGB output; all `Options` values frozen; local-file image resolution disabled; and a fresh font database populated from an ordered, hashed set of predecoded sfnt bytes with explicit generic mappings and collision policy.
 
 The largest compatibility qualification is typography: resvg cannot consume Excalidraw's embedded CSS data-URL WOFF2, and its pure-Rust shaping/fallback pipeline is not Chromium's. Preloading the same reviewed sfnt database makes the Rust gate deterministic and useful as a portability guard, but does not turn it into the Chromium compatibility authority.
+
+## Requalification on 0.48.1 (2026-09-30)
+
+The pure-Rust viewer (`tools/svg-viewer-rust`, profile
+`canonical-svg.pure-rust.v1`) moved from `0.47.0` to `resvg`/`usvg` `0.48.1`.
+The `v0.48.1` tag peels to commit
+[`68b14c4c3bccdb60344c777406486b54c36ec1a4`](https://github.com/linebender/resvg/tree/68b14c4c3bccdb60344c777406486b54c36ec1a4).
+Checked against that commit and the crates.io sources of the new
+dependencies.
+
+### Text stack
+
+`0.48.0` moved text onto fontations. Shaping uses `harfrust` instead of
+`rustybuzz`, and font parsing and outlines use `skrifa` instead of
+`ttf-parser`. [Source: 0.48.0 changelog](https://github.com/linebender/resvg/blob/68b14c4c3bccdb60344c777406486b54c36ec1a4/CHANGELOG.md)
+
+These are the identities in the upstream `v0.48.1` lockfile:
+
+| Component | Version | Registry checksum |
+| --- | --- | --- |
+| fontdb | `0.24.0` | `2660c5e9157bf76d2db1294e4a9feba604ef610819a3b591088d0d8392a3290f` |
+| harfrust | `0.12.0` | `c03d949a14aa089bbb282f7dd76a498a7f684428e4257202efc119ec010376f9` |
+| skrifa | `0.44.0` | `819ab7d62b1d3e72d9d9dea5650bac30424f9111364bb94928dbf5ecad1baa68` |
+| read-fonts | `0.41.0` | `046a7d674daf459825b32f5062056d6882db0d2f5a479fbd76ccfc870ac18709` |
+| font-types | `0.12.1` | `ad67eced03f5504d9cbd3a879b5958b5c54d4e5fd794361c6eb21b05fb703411` |
+| tiny-skia | `0.12.0` | `47ffee5eaaf5527f630fb0e356b90ebdec84d5d18d937c5e440350f88c5a91ea` |
+| simplecss | `0.2.2` | `7a9c6883ca9c3c7c90e888de77b7a5c849c779d25d74a1269b0218b14e8b136c` |
+| base64 | `0.23.0` | `b25655df2c3cdd83c5e5b293b88acd880332b2ddadd7c30ac43144fdc0033da9` |
+
+The viewer's lock carries these exact versions and checksums for every package
+it shares with the upstream lockfile. It also moves its direct `roxmltree` to
+`0.21.1`, the version `usvg` 0.48 requires, and its direct `base64` to
+`0.23.0`. The packages that are not upstream's are the viewer's own `serde_json`
+and `sha2` and their dependencies.
+
+### What still holds
+
+- **Options.** `usvg::Options` and its defaults are unchanged:
+  `crates/usvg/src/parser/options.rs` is byte-identical between `0.47.0` and
+  `0.48.1`. The profile still sets every output-affecting option explicitly.
+- **Font matching.** fontdb `0.24.0` changes only platform `cfg`s (iOS) in
+  `lib.rs`, and vendors a minimal `ttf_parser` module for names and OS/2
+  metadata in place of the `ttf-parser` crate. Family matching, query order,
+  the style/weight/stretch selection and the generic-family defaults are
+  unchanged.
+- **Font selectors.** usvg's primary and fallback selectors in
+  `src/text/mod.rs` are unchanged. The file only gains a glyph-ID type and the
+  `opsz` tag.
+- **WOFF2 stays inert.** The vendored fontdb parser still accepts only the
+  `0x00010000`, `true`, `OTTO` and `ttcf` magics, and simplecss `0.2.2` still
+  skips `@font-face`. The viewer still preloads reviewed sfnt bytes.
+- **Shaping model.** usvg still forces an LTR paragraph level and shapes each
+  UAX #9 visual run with an explicit direction and guessed script. Kerning is
+  off only when disabled, `smcp` still comes from `small-caps`, and automatic
+  `opsz` is still applied. The calls now go through `harfrust::Shaper` with
+  `ShapeOptions`.
+- **Outlines.** Glyph outlines come from `skrifa` at unscaled size and the
+  default (or requested) location, unhinted. Unlike ttf-parser's pen, skrifa's
+  does not close a contour with an explicit line back to its start before
+  closepath. Filled geometry is unchanged.
+
+### Qualification outcome
+
+- **Rectangle case:** both canonical viewers reproduce the retained rectangle
+  qualification rasters byte for byte.
+- **SVG font subset qualification:** regenerated.
+  - The report runner (`xtask/src/svg_font_subset_runner.rs`) reads and shapes
+    each face with the viewer's `skrifa` `0.44.0` and `harfrust` `0.12.0`, so
+    the semantic source and subset digests describe the stack the viewer renders
+    with.
+  - The Chromium report is byte-identical, and all 662 pure-Rust executions
+    pass with identical source and subset rasters.
+  - Four `full-intersection` rasters moved in both source and subset (3 to 904
+    changed pixels), around combining marks, spacing diacritics and the Hangul
+    filler. Shaping those lines is identical under rustybuzz 0.20.1 and HarfRust
+    0.12.0 and 0.13.3, so the changes come from usvg 0.48's layout and outline
+    code, not from the shaper.
+  - The earlier evidence is archived in
+    `tests/conformance/proposals/svg-viewer-pure-rust-resvg-0.48-v1/`.

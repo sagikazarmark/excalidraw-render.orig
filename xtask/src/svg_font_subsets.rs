@@ -282,7 +282,7 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
         || manifest["viewer_profiles"]["chromium"]["sha256"]
             != json!("be1664b3ad79c09b99680ff5e8ca0e56a98fce703c94a13e19e889097c90426b")
         || manifest["viewer_profiles"]["pure_rust"]["sha256"]
-            != json!("8be13868942970480bb083b454ed003f5809b2b7f1725adbaaa7d5450b69316d")
+            != json!("3ffb9edeb9f02ccb8fe6e18ad714017bacee1af06cfffbda36568dc765bee674")
     {
         return Err("qualification dependency identity is stale".to_owned());
     }
@@ -491,14 +491,15 @@ fn verify_viewer_report(
             "timezone": "UTC",
         }),
         "pure_rust" => json!({
-            "fontdb": "0.23.0",
+            "fontdb": "0.24.0",
+            "harfrust": "0.12.0",
             "host": "linux-amd64",
-            "resvg": "0.47.0",
+            "resvg": "0.48.1",
             "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
-            "rustybuzz": "0.20.1",
+            "skrifa": "0.44.0",
             "target": "x86_64-unknown-linux-gnu",
             "tiny-skia": "0.12.0",
-            "usvg": "0.47.0",
+            "usvg": "0.48.1",
         }),
         _ => return Err(format!("unknown viewer report {viewer}")),
     };

@@ -2,8 +2,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder, Rect};
 use serde_json::{json, Value};
+use viewer_harfrust as harfrust;
+use viewer_skrifa::instance::{LocationRef, Size};
+use viewer_skrifa::outline::{DrawSettings, OutlinePen};
+use viewer_skrifa::{FontRef, GlyphId, MetadataProvider};
 
 use crate::conformance::{canonical_bytes, repo_root, sha256};
 
@@ -55,14 +58,15 @@ pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> 
 
     let report = json!({
         "environment": {
-            "fontdb": "0.23.0",
+            "fontdb": "0.24.0",
             "host": "linux-amd64",
-            "resvg": "0.47.0",
+            "harfrust": "0.12.0",
+            "resvg": "0.48.1",
             "rustc": rustc_version()?,
-            "rustybuzz": "0.20.1",
+            "skrifa": "0.44.0",
             "target": "x86_64-unknown-linux-gnu",
             "tiny-skia": "0.12.0",
-            "usvg": "0.47.0",
+            "usvg": "0.48.1",
         },
         "fresh_state_per_role": true,
         "inputs_sha256": sha256(&bytes),
@@ -226,9 +230,12 @@ fn advances_and_offsets(report: &Value) -> Value {
     })
 }
 
+/// The viewer's usvg 0.48.1 reads fonts with skrifa (charmap, unscaled
+/// metrics, unhinted outlines at the default location) and shapes with
+/// HarfRust 0.12; the report reads and shapes each face the same way.
 fn semantic_report(sfnt: &[u8], svg: &[u8], scalars: &[u32]) -> Result<Value, String> {
-    let face = rustybuzz::Face::from_slice(sfnt, 0)
-        .ok_or_else(|| "qualification sfnt could not be parsed".to_owned())?;
+    let face = FontRef::from_index(sfnt, 0)
+        .map_err(|error| format!("qualification sfnt could not be parsed: {error}"))?;
     let text = std::str::from_utf8(svg).map_err(|error| format!("SVG is not UTF-8: {error}"))?;
     let document = roxmltree::Document::parse(text)
         .map_err(|error| format!("qualification SVG is invalid: {error}"))?;
@@ -248,53 +255,51 @@ fn semantic_report(sfnt: &[u8], svg: &[u8], scalars: &[u32]) -> Result<Value, St
         return Err("selectable SVG text does not match mapped corpus scalars".to_owned());
     }
 
+    let charmap = face.charmap();
+    let glyph_metrics = face.glyph_metrics(Size::unscaled(), LocationRef::default());
     let glyphs = scalars
         .iter()
         .map(|scalar| {
-            let character = char::from_u32(*scalar)
-                .ok_or_else(|| format!("U+{scalar:04X} is not a Unicode scalar"))?;
-            let glyph = face
-                .glyph_index(character)
+            let glyph = charmap
+                .map(*scalar)
                 .ok_or_else(|| format!("U+{scalar:04X} is not mapped"))?;
             Ok(json!({
-                "advance": face.glyph_hor_advance(glyph),
+                "advance": glyph_metrics.advance_width(glyph),
                 "outline": outline_identity(&face, glyph),
                 "scalar": scalar,
             }))
         })
         .collect::<Result<Vec<_>, String>>()?;
+    let shaper_font = harfrust::FontRef::from_index(sfnt, 0)
+        .map_err(|error| format!("qualification sfnt could not be shaped: {error}"))?;
+    let shaper_data = harfrust::ShaperData::new(&shaper_font);
+    let shaper = shaper_data.shaper(&shaper_font).build();
+    let shape = |scalars: &[u32], direction| shape_report(&shaper, &face, scalars, direction);
     let line_layout = selected_lines
         .iter()
-        .map(|line| shape_report(&face, line, None))
+        .map(|line| shape(line, None))
         .collect::<Result<Vec<_>, _>>()?;
-    let mut probes = vec![shape_report(&face, scalars, None)?];
+    let mut probes = vec![shape(scalars, None)?];
     for scalar in scalars {
         let repeated = [*scalar, *scalar, *scalar];
-        probes.push(shape_report(
-            &face,
-            &repeated,
-            Some(rustybuzz::Direction::LeftToRight),
-        )?);
-        probes.push(shape_report(
-            &face,
-            &repeated,
-            Some(rustybuzz::Direction::RightToLeft),
-        )?);
+        probes.push(shape(&repeated, Some(harfrust::Direction::LeftToRight))?);
+        probes.push(shape(&repeated, Some(harfrust::Direction::RightToLeft))?);
     }
     for probe in ["fi", "fl", "ffi", "office", "لا"] {
         let values = probe.chars().map(u32::from).collect::<Vec<_>>();
         if values.iter().all(|scalar| scalars.contains(scalar)) {
-            probes.push(shape_report(&face, &values, None)?);
+            probes.push(shape(&values, None)?);
         }
     }
+    let metrics = face.metrics(Size::unscaled(), LocationRef::default());
     Ok(json!({
         "glyphs": glyphs,
         "line_layout": line_layout,
         "metrics": {
-            "ascender": face.ascender(),
-            "descender": face.descender(),
-            "line_gap": face.line_gap(),
-            "units_per_em": face.units_per_em(),
+            "ascender": metrics.ascent,
+            "descender": metrics.descent,
+            "line_gap": metrics.leading,
+            "units_per_em": metrics.units_per_em,
         },
         "selectable_text": selected,
         "shaping": probes,
@@ -302,46 +307,44 @@ fn semantic_report(sfnt: &[u8], svg: &[u8], scalars: &[u32]) -> Result<Value, St
 }
 
 fn shape_report(
-    face: &rustybuzz::Face<'_>,
+    shaper: &harfrust::Shaper<'_>,
+    face: &FontRef<'_>,
     scalars: &[u32],
-    direction: Option<rustybuzz::Direction>,
+    direction: Option<harfrust::Direction>,
 ) -> Result<Value, String> {
     let direction_name = direction.map_or("guessed", |direction| match direction {
-        rustybuzz::Direction::LeftToRight => "left-to-right",
-        rustybuzz::Direction::RightToLeft => "right-to-left",
-        rustybuzz::Direction::TopToBottom => "top-to-bottom",
-        rustybuzz::Direction::BottomToTop => "bottom-to-top",
+        harfrust::Direction::LeftToRight => "left-to-right",
+        harfrust::Direction::RightToLeft => "right-to-left",
+        harfrust::Direction::TopToBottom => "top-to-bottom",
+        harfrust::Direction::BottomToTop => "bottom-to-top",
         _ => "invalid",
     });
     let text = scalars
         .iter()
         .map(|scalar| char::from_u32(*scalar).ok_or_else(|| "invalid shaping scalar".to_owned()))
         .collect::<Result<String, _>>()?;
-    let mut buffer = rustybuzz::UnicodeBuffer::new();
+    let mut buffer = harfrust::UnicodeBuffer::new();
     buffer.push_str(&text);
     if let Some(direction) = direction {
         buffer.set_direction(direction);
     }
     buffer.guess_segment_properties();
-    let shaped = rustybuzz::shape(face, &[], buffer);
+    let shaped = shaper.shape(buffer, harfrust::ShapeOptions::new());
     let glyphs = shaped
         .glyph_infos()
         .iter()
         .zip(shaped.glyph_positions())
         .map(|(info, position)| {
-            let glyph = u16::try_from(info.glyph_id)
-                .map(GlyphId)
-                .map_err(|_| "shaped glyph ID exceeds u16".to_owned())?;
-            Ok(json!({
+            json!({
                 "cluster": info.cluster,
-                "outline": outline_identity(face, glyph),
+                "outline": outline_identity(face, GlyphId::new(info.glyph_id)),
                 "x_advance": position.x_advance,
                 "x_offset": position.x_offset,
                 "y_advance": position.y_advance,
                 "y_offset": position.y_offset,
-            }))
+            })
         })
-        .collect::<Result<Vec<_>, String>>()?;
+        .collect::<Vec<_>>();
     Ok(json!({
         "direction": direction_name,
         "glyphs": glyphs,
@@ -360,7 +363,7 @@ impl OutlineDigest {
     }
 }
 
-impl OutlineBuilder for OutlineDigest {
+impl OutlinePen for OutlineDigest {
     fn move_to(&mut self, x: f32, y: f32) {
         self.bytes.push(b'M');
         self.coordinate(x);
@@ -392,17 +395,25 @@ impl OutlineBuilder for OutlineDigest {
     }
 }
 
-fn outline_identity(face: &rustybuzz::Face<'_>, glyph: GlyphId) -> Value {
+fn outline_identity(face: &FontRef<'_>, glyph: GlyphId) -> Value {
     let mut outline = OutlineDigest::default();
-    let bounds = face.outline_glyph(glyph, &mut outline);
+    let drawn = face.outline_glyphs().get(glyph).is_some_and(|glyph| {
+        glyph
+            .draw(
+                DrawSettings::unhinted(Size::unscaled(), LocationRef::default()),
+                &mut outline,
+            )
+            .is_ok()
+    });
+    let bounds = face
+        .glyph_metrics(Size::unscaled(), LocationRef::default())
+        .bounds(glyph)
+        .map(|bounds| json!([bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max]));
     json!({
-        "bounds": bounds.map(rect_value),
+        "bounds": bounds,
         "commands_sha256": sha256(&outline.bytes),
+        "drawn": drawn,
     })
-}
-
-fn rect_value(rect: Rect) -> Value {
-    json!([rect.x_min, rect.y_min, rect.x_max, rect.y_max])
 }
 
 fn read_case_file(case: &Value, path_field: &str, hash_field: &str) -> Result<Vec<u8>, String> {
