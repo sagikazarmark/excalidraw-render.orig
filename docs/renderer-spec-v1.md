@@ -1197,9 +1197,10 @@ SVG's browser raster is its authority.
 
 The registered-case SVG harness cannot judge right-to-left alignment on its
 raster dimension at all, for a reason of its own (#168): `usvg 0.45.1` (and
-0.47) parses `direction` but never reads it, resolving `text-anchor` as if
-every text were left-to-right and running UAX #9 at a left-to-right base level,
-and it lays out only the first UAX #9 paragraph of a `<text>`. Under it the
+0.47 and 0.48.1) parses `direction` but never reads it, resolving
+`text-anchor` as if every text were left-to-right and running UAX #9 at a
+left-to-right base level, and it lays out only the first UAX #9 paragraph of a
+`<text>`. Under it the
 official document's left-aligned right-to-left elements land off the canvas,
 its right-aligned ones coincide with the canvas by accident, and a
 right-to-left line's digits and neutrals take left-to-right positions; a
@@ -3455,11 +3456,11 @@ midpoint from every source-frame interval in the first loop relative to its
 fresh resource-ready epoch, each in a fresh context and reproducible in both
 oracle runs.
 
-The pure-Rust SVG gate uses test-only `resvg`/`usvg 0.47.0`, commit
-`3a0fdba53ccf2d346b54cc53ba7adf0ee60d0707`, separate from any production
-version, with a complete lockfile and exact transitive checksums. Default
-features, system/memory-mapped fonts, ambient fonts, and file-backed faces are
-disabled; only reviewed text and raster-image features are enabled.
+The pure-Rust SVG gate uses test-only `resvg`/`usvg 0.48.1`, commit
+`68b14c4c3bccdb60344c777406486b54c36ec1a4`, built from its own complete
+lockfile with exact transitive checksums, separate from the production build.
+Default features, system/memory-mapped fonts, ambient fonts, and file-backed
+faces are disabled; only reviewed text and raster-image features are enabled.
 
 Its explicit profile is 96 DPI; languages `["en-US"]`; default Liberation Sans
 12; shape `GeometricPrecision`; text `OptimizeLegibility`; image

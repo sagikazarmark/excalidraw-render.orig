@@ -126,12 +126,12 @@ fn verify_chromium_profile(profile: &Value) -> Result<(), String> {
 fn verify_rust_profile(profile: &Value) -> Result<(), String> {
     let runtime = array(&profile["runtime"], "pure-Rust runtime records")?;
     for (name, version) in [
-        ("resvg", "0.47.0"),
-        ("usvg", "0.47.0"),
+        ("resvg", "0.48.1"),
+        ("usvg", "0.48.1"),
         ("tiny-skia", "0.12.0"),
-        ("fontdb", "0.23.0"),
-        ("rustybuzz", "0.20.1"),
-        ("ttf-parser", "0.25.1"),
+        ("fontdb", "0.24.0"),
+        ("harfrust", "0.12.0"),
+        ("skrifa", "0.44.0"),
         ("simplecss", "0.2.2"),
         ("rustc", "1.97.1 (8bab26f4f 2026-07-14)"),
         ("target", "x86_64-unknown-linux-gnu"),
@@ -142,7 +142,7 @@ fn verify_rust_profile(profile: &Value) -> Result<(), String> {
     }
     if profile["id"] != json!("canonical-svg.pure-rust.v1")
         || profile["identity"]["upstream_commit"]
-            != json!("3a0fdba53ccf2d346b54cc53ba7adf0ee60d0707")
+            != json!("68b14c4c3bccdb60344c777406486b54c36ec1a4")
         || profile["implementation"]["features"]
             != json!(["resvg:raster-images", "resvg:text", "usvg:text"])
         || profile["implementation"]["forbidden_features"]

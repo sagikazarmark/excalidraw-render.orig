@@ -163,7 +163,7 @@ rasterizer's rather than the reference's (#168). `usvg 0.45.1` parses the
 `direction` attribute but never reads it: it resolves `text-anchor` as if every
 text were left-to-right (`end` puts the text's right edge at `x`), runs UAX #9
 at a left-to-right base level, and lays out only the first UAX #9 paragraph of
-a `<text>`; `usvg 0.47` does the same. The official exporter writes every
+a `<text>`; `usvg 0.47` and `0.48.1` do the same. The official exporter writes every
 right-to-left element as `<text direction="rtl" text-anchor="end">` with `x` at
 0, width/2 or width for `textAlign` left, center or right, which browsers place
 at the element's left edge, centre or, overflowing, right edge (the last a

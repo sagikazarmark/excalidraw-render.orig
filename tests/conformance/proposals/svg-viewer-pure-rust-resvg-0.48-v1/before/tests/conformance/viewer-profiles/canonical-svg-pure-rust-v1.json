@@ -1,0 +1,111 @@
+{
+  "schema": {
+    "id": "excalidraw-render/conformance-svg-viewer-profile/v1",
+    "path": "tests/conformance/svg-viewer-profile-v1.schema.json",
+    "sha256": "c266dcdc84a8bbebbfe3413bf38d6825768de844b1866496300d254a11e73ac3"
+  },
+  "id": "canonical-svg.pure-rust.v1",
+  "identity": {
+    "viewer": "resvg-usvg",
+    "upstream_commit": "3a0fdba53ccf2d346b54cc53ba7adf0ee60d0707",
+    "reference_profile_digest": "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
+  },
+  "runtime": [
+    { "name": "fontdb", "value": "0.23.0" },
+    { "name": "resvg", "value": "0.47.0" },
+    { "name": "rustc", "value": "1.97.1 (8bab26f4f 2026-07-14)" },
+    { "name": "rustybuzz", "value": "0.20.1" },
+    { "name": "simplecss", "value": "0.2.2" },
+    { "name": "tiny-skia", "value": "0.12.0" },
+    { "name": "ttf-parser", "value": "0.25.1" },
+    { "name": "usvg", "value": "0.47.0" },
+    { "name": "target", "value": "x86_64-unknown-linux-gnu" }
+  ],
+  "implementation": {
+    "lockfile": {
+      "path": "tools/svg-viewer-rust/Cargo.lock",
+      "sha256": "987d8627af80014951265cdc527ef5f2716635d928a9348609292b87bdfd6c39"
+    },
+    "sources": [
+      {
+        "path": "tools/svg-viewer-rust/Cargo.toml",
+        "sha256": "fcb2d6b7277899494ea30183c01e8463ef3fde8678266b5a0bf022980da7d75f"
+      },
+      {
+        "path": "tools/svg-viewer-rust/src/main.rs",
+        "sha256": "2105e33e86647c8873487970b2bf06fe88b6f2db1bac473b4db221a3e936b722"
+      },
+      {
+        "path": "tools/svg-viewer-rust/tests/viewer_cli.rs",
+        "sha256": "934d6f15bdecd6036310a33b410b6d77f618064db362c69e7e3ecca1aab62c91"
+      },
+      {
+        "path": "tools/svg-viewer-rust/rust-toolchain.toml",
+        "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+      },
+      {
+        "path": "tests/conformance/svg-viewer-qualification/rectangle-outline/asset-declaration-v1.schema.json",
+        "sha256": "0cdbf901a61143209c7ba525ba91a4e25772e08d2271218d43f381ba29e03520"
+      }
+    ],
+    "features": ["resvg:raster-images", "resvg:text", "usvg:text"],
+    "forbidden_features": ["memmap-fonts", "system-fonts", "file-backed-faces", "ambient-fonts"]
+  },
+  "settings": {
+    "dimensions": {
+      "source": "Tree::size().to_int_size() native nearest-integer dimensions",
+      "transform": "tiny-skia identity transform",
+      "transforms": "no resize, fit, translation, registration, or alignment search"
+    },
+    "color": {
+      "canvas": "transparent sRGB tiny-skia pixmap",
+      "unpremultiply": "alpha zero clears RGB; otherwise min(255,(channel*255+floor(alpha/2))/alpha)",
+      "output": "top-left-row-major straight-alpha sRGB RGBA8"
+    },
+    "lifecycle": {
+      "parse": "synchronous usvg parse with explicit options",
+      "render": "one synchronous resvg render into a fresh pixmap",
+      "animation": "static initial SVG state"
+    },
+    "locale": {
+      "languages": "en-US",
+      "dpi": "96",
+      "default_viewport": "100x100"
+    },
+    "time": {
+      "clock": "no clock API is consulted",
+      "randomness": "no random source is consulted"
+    },
+    "fonts": {
+      "database": "fresh empty owned fontdb for every artifact, populated only with artifact-declared reviewed sfnt faces in catalog order",
+      "generic_families": "serif,sans-serif,cursive,fantasy,monospace all map explicitly to Liberation Sans",
+      "default": "Liberation Sans 12, OptimizeLegibility",
+      "qualification_assets": "the first case has no text; later text verifies WOFF2 digest, CSS metadata, sfnt descriptor and face metadata before owned loading"
+    },
+    "images": {
+      "resolver": "custom resolver admits only catalog-bound data identities and supplies verified canonical in-memory PNG or sanitized nested SVG bytes; arbitrary strings return no resource",
+      "default_hint": "OptimizeQuality",
+      "qualification_assets": "the first case has no images; later PNG, APNG, JPEG/JFIF, GIF, WebP, BMP, ICO and AVIF sources require a declared canonical PNG, while nested SVG requires declared sanitized SVG"
+    },
+    "resources": {
+      "resources_dir": "none",
+      "style_sheet": "none",
+      "local_network_resolution": "hard failure before parse",
+      "shape_hint": "GeometricPrecision"
+    },
+    "state": {
+      "process": "fresh process for every artifact and repeat",
+      "database": "fresh font database and parser tree per artifact",
+      "sharing": "official and candidate inputs share no mutable viewer state"
+    }
+  },
+  "qualification": {
+    "case_id": "focused.rectangle-outline.v1",
+    "declared_font_faces": 0,
+    "declared_image_assets": 0,
+    "restrictions": [
+      "The first qualification case declares no font or image assets.",
+      "Cases with text or images must supply a closed declaration that binds embedded source identity to reviewed sfnt or canonical image bytes."
+    ]
+  }
+}

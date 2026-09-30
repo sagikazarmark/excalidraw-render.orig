@@ -95,7 +95,7 @@
     "approvalSubject": "sha256:15ef4a33035bd4083d9c18704e39045b2b8bef3662c80f8d8480181eabf41d27",
     "executions": 662,
     "path": "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json",
-    "sha256": "af9f516a081b0aee54ce09a7dcaab9ba36eb396cde671ff0b6d92c6791cccfd5",
+    "sha256": "4332799964b5fa905e8d6115d7db88f08633d4cd9270a309c89faf47aa95b176",
     "status": "approved"
   }
 }

@@ -7,29 +7,29 @@
   "id": "canonical-svg.pure-rust.v1",
   "identity": {
     "viewer": "resvg-usvg",
-    "upstream_commit": "3a0fdba53ccf2d346b54cc53ba7adf0ee60d0707",
+    "upstream_commit": "68b14c4c3bccdb60344c777406486b54c36ec1a4",
     "reference_profile_digest": "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
   },
   "runtime": [
-    { "name": "fontdb", "value": "0.23.0" },
-    { "name": "resvg", "value": "0.47.0" },
+    { "name": "fontdb", "value": "0.24.0" },
+    { "name": "harfrust", "value": "0.12.0" },
+    { "name": "resvg", "value": "0.48.1" },
     { "name": "rustc", "value": "1.97.1 (8bab26f4f 2026-07-14)" },
-    { "name": "rustybuzz", "value": "0.20.1" },
     { "name": "simplecss", "value": "0.2.2" },
+    { "name": "skrifa", "value": "0.44.0" },
     { "name": "tiny-skia", "value": "0.12.0" },
-    { "name": "ttf-parser", "value": "0.25.1" },
-    { "name": "usvg", "value": "0.47.0" },
+    { "name": "usvg", "value": "0.48.1" },
     { "name": "target", "value": "x86_64-unknown-linux-gnu" }
   ],
   "implementation": {
     "lockfile": {
       "path": "tools/svg-viewer-rust/Cargo.lock",
-      "sha256": "987d8627af80014951265cdc527ef5f2716635d928a9348609292b87bdfd6c39"
+      "sha256": "50591b69b32ee857b2f70cebe25a4caec04e8ee4edc4f4f54b959d2d8157cec2"
     },
     "sources": [
       {
         "path": "tools/svg-viewer-rust/Cargo.toml",
-        "sha256": "fcb2d6b7277899494ea30183c01e8463ef3fde8678266b5a0bf022980da7d75f"
+        "sha256": "9606f477c766e56809e19d454548c97aa9f511c8b6c82f21c686bc12592785cd"
       },
       {
         "path": "tools/svg-viewer-rust/src/main.rs",

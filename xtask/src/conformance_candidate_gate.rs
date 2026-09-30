@@ -124,12 +124,61 @@ fn check_descriptor(root: &Path, d: &Value) -> Result<Vec<u8>> {
         if p == COMPARATOR_PROFILE || p == COMPARATOR_CLOSURE {
             return comparator_closure_successor(d);
         }
+        if PURE_RUST_SVG_VIEWER_FILES.contains(&p) {
+            return pure_rust_svg_viewer_successor(d);
+        }
         if reviewed_vector_move(p, &d["sha256"], &sha256(&b)) {
             return Ok(b);
         }
         return Err(format!("stale candidate evidence {p}"));
     }
     Ok(b)
+}
+const PURE_RUST_SVG_PROFILE: &str =
+    "tests/conformance/viewer-profiles/canonical-svg-pure-rust-v1.json";
+/// The pure-Rust SVG viewer's identity files candidate evidence binds that a
+/// requalification may move; each requalification archives all of them.
+const PURE_RUST_SVG_VIEWER_FILES: &[&str] = &[
+    PURE_RUST_SVG_PROFILE,
+    "tools/svg-viewer-rust/Cargo.toml",
+    "tools/svg-viewer-rust/Cargo.lock",
+];
+/// Every reviewed requalification of the pure-Rust SVG viewer, oldest first:
+/// the archive holding the profile it superseded, and the profile digest it
+/// approved.
+const PURE_RUST_SVG_REQUALIFICATIONS: &[(&str, &str)] = &[
+    // resvg/usvg 0.47.0 -> 0.48.1: the viewer reads and shapes with skrifa
+    // and HarfRust instead of ttf-parser and rustybuzz.
+    (
+        "tests/conformance/proposals/svg-viewer-pure-rust-resvg-0.48-v1/before",
+        "3ffb9edeb9f02ccb8fe6e18ad714017bacee1af06cfffbda36568dc765bee674",
+    ),
+];
+/// Frozen candidate evidence was measured under the pure-Rust SVG viewer of
+/// its time. Its binding of a viewer identity file stays valid only when it
+/// names, byte for byte, the file a reviewed requalification archived, and
+/// the live profile is the one the last requalification approved; new
+/// evidence measures under the live viewer. Returns the archived file.
+fn pure_rust_svg_viewer_successor(historical: &Value) -> Result<Vec<u8>> {
+    let path = historical["path"].as_str().ok_or("descriptor lacks path")?;
+    let approved = PURE_RUST_SVG_REQUALIFICATIONS
+        .last()
+        .map(|(_, approved)| *approved)
+        .ok_or("no pure-Rust SVG viewer requalification")?;
+    if sha256(&read(&repo_root(), PURE_RUST_SVG_PROFILE)?) != approved {
+        return Err("unreviewed pure-Rust SVG viewer profile".into());
+    }
+    for (before, _) in PURE_RUST_SVG_REQUALIFICATIONS {
+        let archived = read(&repo_root(), &format!("{before}/{path}"))?;
+        if historical["sha256"] == sha256(&archived)
+            && historical
+                .get("byte_length")
+                .is_none_or(|n| n == &json!(archived.len()))
+        {
+            return Ok(archived);
+        }
+    }
+    Err(format!("stale candidate evidence {path}"))
 }
 pub(crate) const COMPARATOR_PROFILE: &str =
     "tests/conformance/comparator-profiles/canonical-visual-v1.json";
@@ -1286,6 +1335,23 @@ mod tests {
             let mut stale = historical;
             stale["sha256"] = json!("00");
             assert!(check_descriptor(&root, &stale).is_err());
+        }
+    }
+    #[test]
+    fn stale_pure_rust_svg_viewer_bindings_pass_only_through_a_reviewed_requalification() {
+        let root = repo_root();
+        for (before, _) in PURE_RUST_SVG_REQUALIFICATIONS {
+            for path in PURE_RUST_SVG_VIEWER_FILES {
+                let archived = read(&root, &format!("{before}/{path}")).unwrap();
+                let historical =
+                    json!({"path":path,"byte_length":archived.len(),"sha256":sha256(&archived)});
+                assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
+                for (key, bad) in [("sha256", json!("00")), ("byte_length", json!(1))] {
+                    let mut stale = historical.clone();
+                    stale[key] = bad;
+                    assert!(check_descriptor(&root, &stale).is_err());
+                }
+            }
         }
     }
     #[test]

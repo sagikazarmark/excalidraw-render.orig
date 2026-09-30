@@ -22,10 +22,12 @@ roxmltree.workspace = true
 regex.workspace = true
 ttf-parser.workspace = true
 # svg_font_subset_runner drives the controlled pure-Rust SVG viewer
-# (tools/svg-viewer-rust, its own lock on resvg/usvg 0.47) and shapes as that
-# viewer does. It moves when the viewer is requalified on a newer resvg, not
-# with the workspace's usvg.
-rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
+# (tools/svg-viewer-rust, its own lock on resvg/usvg 0.48.1) and reads and
+# shapes fonts as that viewer's usvg does: skrifa 0.44 and HarfRust 0.12, as
+# upstream v0.48.1 locks them. They move when the viewer is requalified, not
+# with the renderer's HarfRust.
+viewer-harfrust = { package = "harfrust", version = "=0.12.0" }
+viewer-skrifa = { package = "skrifa", version = "=0.44.0", default-features = false, features = ["std"] }
 serde.workspace = true
 serde_json = { workspace = true, features = ["raw_value", "arbitrary_precision"] }
 sha2.workspace = true
