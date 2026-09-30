@@ -135,9 +135,10 @@ pub(crate) const COMPARATOR_PROFILE: &str =
     "tests/conformance/comparator-profiles/canonical-visual-v1.json";
 const COMPARATOR_CLOSURE: &str =
     "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json";
-/// One reviewed dependency refresh that moved the comparator profile: the
-/// preimages of the comparator files it superseded, and the adversarial
-/// vector sources it had to migrate, as `(path, before, after)` digests.
+/// One reviewed refresh that moved the comparator profile: the preimages of
+/// the comparator files it superseded, and the file digests it migrated
+/// without changing what they assert, as `(path, before, after)`: adversarial
+/// vector sources, and for the #212 split the profile schema.
 pub(crate) struct ComparatorRefresh {
     pub(crate) before: &'static str,
     vectors: &'static [(&'static str, &'static str, &'static str)],
@@ -190,13 +191,25 @@ pub(crate) const COMPARATOR_REFRESHES: &[ComparatorRefresh] = &[
         before: "tests/conformance/proposals/comparator-closure-refresh-v7/before",
         vectors: &[],
     },
+    // #212 (ADR-0005 amendment): the profile stops binding the closure, and its schema
+    // drops `implementation.closure`. This is the last row: the closure is
+    // no longer part of the profile, so a dependency move leaves it as it is.
+    ComparatorRefresh {
+        before: "tests/conformance/proposals/comparator-closure-refresh-v8/before",
+        vectors: &[(
+            "tests/conformance/comparator-profile-v1.schema.json",
+            "8070979db5c71227a163a73c320c553d5ff5bb30da2a99876be614fdd5b81ac6",
+            "dc954fe044214d560b1bfa57a4b9f1d2488d769034f5dac8ad34ccd78cb30ca6",
+        )],
+    },
 ];
 /// Evidence measured under a comparator profile (or its closure) that a
 /// reviewed refresh superseded. Those refreshes moved the comparator's
-/// dependency closure and, where listed, migrated vector sources without
-/// changing what they assert, so its sources, protocol and fixtures are
-/// unchanged and those measurements stand; any other profile move needs its
-/// own review. Returns the archived file the evidence was measured under.
+/// dependency closure (until #212 removed it from the profile) and, where
+/// listed, migrated vector sources or the schema without changing what they
+/// assert, so its sources, protocol and fixtures are unchanged and those
+/// measurements stand; any other profile move needs its own review. Returns
+/// the archived file the evidence was measured under.
 pub(crate) fn comparator_closure_successor(historical: &Value) -> Result<Vec<u8>> {
     let path = historical["path"].as_str().ok_or("descriptor lacks path")?;
     if path != COMPARATOR_PROFILE && path != COMPARATOR_CLOSURE {
@@ -218,7 +231,7 @@ pub(crate) fn comparator_closure_successor(historical: &Value) -> Result<Vec<u8>
             &format!("{}/{COMPARATOR_PROFILE}", refresh.before),
         )?)?;
         for later in &COMPARATOR_REFRESHES[index..] {
-            migrate_vectors(&mut before, later.vectors);
+            migrate_descriptors(&mut before, later.vectors);
         }
         let after = read(&root, COMPARATOR_PROFILE)?;
         if sha256(&after) != crate::pdf_viewers::COMPARATOR_DIGEST
@@ -230,17 +243,21 @@ pub(crate) fn comparator_closure_successor(historical: &Value) -> Result<Vec<u8>
     }
     Err(format!("stale candidate evidence {path}"))
 }
-/// Applies one refresh's reviewed vector migrations to a superseded profile.
-fn migrate_vectors(profile: &mut Value, moves: &[(&str, &str, &str)]) {
-    let Some(vectors) = profile["vectors"].as_array_mut() else {
-        return;
-    };
-    for vector in vectors {
+/// Applies one refresh's reviewed digest migrations to a superseded profile's
+/// vector and schema descriptors.
+fn migrate_descriptors(profile: &mut Value, moves: &[(&str, &str, &str)]) {
+    let migrate = |descriptor: &mut Value| {
         for (path, before, after) in moves {
-            if vector["path"] == *path && vector["sha256"] == *before {
-                vector["sha256"] = json!(after);
+            if descriptor["path"] == *path && descriptor["sha256"] == *before {
+                descriptor["sha256"] = json!(after);
             }
         }
+    };
+    if let Some(schema) = profile.get_mut("schema") {
+        migrate(schema);
+    }
+    if let Some(vectors) = profile.get_mut("vectors").and_then(Value::as_array_mut) {
+        vectors.iter_mut().for_each(migrate);
     }
 }
 /// A superseded profile names its vector sources by digest; a source a
@@ -1229,11 +1246,11 @@ mod tests {
             {"path": "pixelmatch.rs", "sha256": "old"}
         ]});
         let mut migrated = profile.clone();
-        migrate_vectors(&mut migrated, &[("ssim.rs", "old", "new")]);
+        migrate_descriptors(&mut migrated, &[("ssim.rs", "old", "new")]);
         assert_eq!(migrated["vectors"][0]["sha256"], "new");
         assert_eq!(migrated["vectors"][1]["sha256"], "old");
         let mut unreviewed = profile;
-        migrate_vectors(&mut unreviewed, &[("ssim.rs", "other", "new")]);
+        migrate_descriptors(&mut unreviewed, &[("ssim.rs", "other", "new")]);
         assert_eq!(unreviewed["vectors"][0]["sha256"], "old");
         let (path, before, after) = COMPARATOR_REFRESHES[1].vectors[0];
         assert!(reviewed_vector_move(path, &json!(before), after));

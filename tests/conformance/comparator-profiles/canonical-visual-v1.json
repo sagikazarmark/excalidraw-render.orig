@@ -2,7 +2,7 @@
   "schema": {
     "id": "excalidraw-render/conformance-comparator-profile/v1",
     "path": "tests/conformance/comparator-profile-v1.schema.json",
-    "sha256": "8070979db5c71227a163a73c320c553d5ff5bb30da2a99876be614fdd5b81ac6"
+    "sha256": "dc954fe044214d560b1bfa57a4b9f1d2488d769034f5dac8ad34ccd78cb30ca6"
   },
   "id": "canonical-visual-comparator.v1",
   "implementation": {
@@ -16,11 +16,7 @@
       { "path": "crates/excalidraw-render-compare/src/comparison.rs", "sha256": "5988dd5f973171facf1ccc9712bef2e68e47af8f3947cd3213f21b1b320fb807" },
       { "path": "crates/excalidraw-render-compare/src/pixelmatch.rs", "sha256": "1c505a0a266b0aa2779dcaa237483c28fe0bdbe4543cf43f88344844872d246d" },
       { "path": "crates/excalidraw-render-compare/src/ssim.rs", "sha256": "4746f89206960465784bbddf13176b865232b472b20f02335c468e2d61aab007" }
-    ],
-    "closure": {
-      "path": "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json",
-      "sha256": "ecd6277e5ce14ddf82954797a38a457357cb9e14b15458e8b768c0c5d9f05745"
-    }
+    ]
   },
   "features": [],
   "pixelmatch": {

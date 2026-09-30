@@ -250,52 +250,64 @@ and reproduction.
 
 `comparator-profiles/canonical-visual-v1.json` freezes the format-neutral
 RGBA8 projection, Pixelmatch, SSIM, crop, and visual-budget protocol. Its
-adjacent digest binds the profile; the profile in turn binds the unpublished
-Rust implementation, the comparator's own dependency closure, adversarial
-vectors, and imported Pixelmatch 7.2.0 fixtures. Verify all of them offline
-with:
+adjacent digest binds the profile. The profile in turn binds what can change a
+measurement: the unpublished Rust implementation, adversarial vectors, and
+imported Pixelmatch 7.2.0 fixtures. Verify all of them offline with:
 
 ```sh
 cargo test --locked -p excalidraw-render-compare
 ```
 
-The closure, `comparator-profiles/canonical-visual-v1.closure.json`, is the
-set of `Cargo.lock` packages reachable from `excalidraw-render-compare` — name,
-exact version, source, and checksum — rather than the whole workspace lock, so
-a renderer dependency change moves the profile only when it also moves a
-package the comparator builds against (ADR-0005). The profile test recomputes
-the closure from the live lock and names any package that differs. When a
-comparator dependency legitimately moves, refresh the committed closure with:
+The comparator's dependency closure,
+`comparator-profiles/canonical-visual-v1.closure.json`, lists the `Cargo.lock`
+packages reachable from `excalidraw-render-compare`: name, exact version,
+source, and checksum. It is committed and reviewed in Git, and the profile
+test recomputes it from the live lock and names any package that differs. No
+digest binds it (ADR-0005, amended for #212), so when a comparator dependency
+moves, the closure file is the only thing that changes. Refresh it with:
 
 ```sh
-cargo test --locked -p excalidraw-render-compare --test profile -- --ignored materialize
+EXCALIDRAW_REFRESH_COMPARATOR_CLOSURE=1 cargo test --locked -p excalidraw-render-compare --test profile -- --ignored materialize
 ```
 
-then repin `closure.sha256` in the profile and the profile's adjacent digest.
-The profile digest is bound by live evidence, and each rebinding moves that
-evidence's own digest in turn: the SVG and PDF viewer qualifications (and their
-sidecars, digests of the manifest without its trailing LF), the rectangle PDF
-renderer expectations, the oracle references under `tests/oracle/` and the test
-sources that pin them, `coverage/pdf-judgments.json`, and the `pdf-judgments`
-record digest in `coverage/ownership.json`. Follow each moved digest until
-nothing live changes. Historical records stay as they were: `proposals/`,
-`candidates/`, `coverage/*-application-v*/`, `docs/research/`,
-`coverage/font-packaging-reconciliation-2.json`, and the `source` digests of
-test-owned rows in `coverage/ownership.json`. Evidence measured under the
-superseded profile — the stage4 typography diagnosis and the current
-candidate — stays valid only through the explicit
-successor in `xtask/src/conformance_candidate_gate.rs`, which requires an
-archived preimage and a profile that differs only in `implementation.closure`
-and in vector digest moves that a refresh lists (`COMPARATOR_REFRESHES`:
-`proposals/comparator-closure-refresh-v1/` for #206,
-`proposals/comparator-closure-refresh-v2/` for the #208 sha2 upgrade,
-`proposals/comparator-closure-refresh-v3/` for the #208 sha1 upgrade,
-`proposals/comparator-closure-refresh-v4/` for the #208 png upgrade,
-`proposals/comparator-closure-refresh-v5/` for the #211 serde_json upgrade,
-`proposals/comparator-closure-refresh-v6/` for the jsonschema 0.58 upgrade,
-`proposals/comparator-closure-refresh-v7/` for the wasm-bindgen 0.2.129 upgrade). A later
-refresh archives its own preimage and adds its own row. Review the diff and
-rerun qualification.
+Without the variable, `materialize` only stages the closure under Cargo's
+scratch directory.
+
+The profile itself moves only when the comparator's sources, protocol, limits,
+vectors or fixtures change, and that change gets its own review. Its digest is
+bound by live evidence, and each rebinding moves that evidence's own digest in
+turn:
+- the SVG and PDF viewer qualifications, and their sidecars (digests of the
+  manifest without its trailing LF);
+- the rectangle PDF renderer expectations;
+- the oracle references under `tests/oracle/` and the test sources that pin
+  them;
+- `coverage/pdf-judgments.json`, and the `pdf-judgments` record digest in
+  `coverage/ownership.json`.
+
+Follow each moved digest until nothing live changes. Historical records stay
+as they were: `proposals/`, `candidates/`, `coverage/*-application-v*/`,
+`docs/research/`, `coverage/font-packaging-reconciliation-2.json`, and the
+`source` digests of test-owned rows in `coverage/ownership.json`.
+
+Evidence measured under a superseded profile, such as the stage4 typography
+diagnosis and the current candidate, stays valid only through the successor in
+`xtask/src/conformance_candidate_gate.rs`. The successor requires an archived
+preimage. After the reviewed digest migrations its refresh lists, the archived
+profile must equal the live one once `implementation.closure` is removed.
+`COMPARATOR_REFRESHES` holds one row per refresh:
+
+- `proposals/comparator-closure-refresh-v1/`: #206.
+- `v2/`: the #208 sha2 upgrade.
+- `v3/`: the #208 sha1 upgrade.
+- `v4/`: the #208 png upgrade.
+- `v5/`: the #211 serde_json upgrade.
+- `v6/`: the jsonschema 0.58 upgrade.
+- `v7/`: the wasm-bindgen 0.2.129 upgrade.
+- `v8/`: #212, which removed the closure from the profile and its schema.
+
+v8 is the last closure refresh. A future comparator change that moves the
+profile needs its own review and its own successor decision.
 
 ## Canonical SVG viewers
 
