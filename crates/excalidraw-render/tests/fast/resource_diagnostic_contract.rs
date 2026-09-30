@@ -1429,7 +1429,7 @@ fn official_a_geometry() -> (u64, u64) {
             self.bounds[3] = self.bounds[3].max(y);
         }
     }
-    impl rustybuzz::ttf_parser::OutlineBuilder for Count {
+    impl ttf_parser::OutlineBuilder for Count {
         fn move_to(&mut self, x: f32, y: f32) {
             self.commands += 1;
             self.point(x, y);
@@ -1459,7 +1459,7 @@ fn official_a_geometry() -> (u64, u64) {
     .unwrap()
     .unwrap();
     let sfnt = wuff::decompress_woff2(asset.bytes()).unwrap();
-    let face = rustybuzz::ttf_parser::Face::parse(&sfnt, 0).unwrap();
+    let face = ttf_parser::Face::parse(&sfnt, 0).unwrap();
     assert_eq!(face.units_per_em(), 1000);
     let mut count = Count {
         commands: 0,

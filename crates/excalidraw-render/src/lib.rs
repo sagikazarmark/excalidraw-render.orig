@@ -58,6 +58,7 @@ mod scene;
 #[cfg(test)]
 mod scene_fuzz;
 mod scene_surface;
+mod shaping;
 #[cfg(test)]
 mod stage4_diagnostic_contract;
 

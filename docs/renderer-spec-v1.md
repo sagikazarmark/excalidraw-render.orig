@@ -1077,7 +1077,7 @@ Emoji substitution is reported with one informational
 scene text or generated embeddable label. Missing codepoints use the
 bundled deterministic replacement glyph at defined metrics and identify the
 element and codepoint. A default-ignorable code point is not a missing
-codepoint (#167): the class is the pinned shaper's (`rustybuzz 0.20.1`,
+codepoint (#167): the class is the pinned shaper's (`harfrust 0.13.3`,
 HarfBuzz's `is_default_ignorable`, the Unicode `Default_Ignorable_Code_Point`
 property less the Hangul fillers U+115F, U+1160, U+3164 and U+FFA0) — the
 bidi controls U+200E, U+200F, U+202A–U+202E and U+2060–U+206F, the joiners
@@ -1787,7 +1787,7 @@ closure occurrence, ordered by scene occurrence and expanded nested-tree order.
 It identifies the causative node, logical bounds, final pixel dimensions, and
 all cause pointers. Deduplicated bytes do not deduplicate diagnostics.
 
-PDF text uses deterministic `rustybuzz` shaping, explicit glyph positions,
+PDF text uses deterministic `harfrust` shaping, explicit glyph positions,
 stored source lines, the reviewed decodes of official font chunks, complete
 `ToUnicode`, and line-level `ActualText`. It does not reflow, outline,
 rasterize, or consult host services. Each shaped run is drawn at the positions

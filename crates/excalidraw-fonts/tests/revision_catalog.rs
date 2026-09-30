@@ -259,7 +259,7 @@ fn predecoded_excalifont_basic_latin_sfnt_is_checked_in_and_digest_verified() {
         wuff::decompress_woff2(source.bytes()).expect("source decodes"),
         sfnt.bytes()
     );
-    let face = rustybuzz::Face::from_slice(sfnt.bytes(), 0).expect("output is a valid sfnt");
+    let face = ttf_parser::Face::parse(sfnt.bytes(), 0).expect("output is a valid sfnt");
     assert!(face.glyph_index('A').is_some());
     assert_eq!(transformation.tool, "wuff 0.2.8");
     assert_eq!(
@@ -279,7 +279,7 @@ fn noto_emoji_3003_fallback_is_digest_verified_and_parseable() {
     let asset =
         excalidraw_fonts::load_noto_emoji_sfnt().expect("approved Noto Emoji fallback verifies");
     assert_eq!(asset.bytes().len(), 862_680);
-    let face = rustybuzz::Face::from_slice(asset.bytes(), 0).expect("Noto Emoji is valid SFNT");
+    let face = ttf_parser::Face::parse(asset.bytes(), 0).expect("Noto Emoji is valid SFNT");
     assert_eq!(face.units_per_em(), 1_000);
     assert!(face.glyph_index('\u{1f600}').is_some());
     assert!(face.glyph_index('A').is_none());

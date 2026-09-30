@@ -432,11 +432,11 @@ fn canonical_tables(sfnt: &[u8]) -> BTreeMap<String, Vec<u8>> {
     for tag in ["glyf", "loca", "hmtx"] {
         tables.remove(tag);
     }
-    let face = rustybuzz::Face::from_slice(sfnt, 0).expect("sfnt shapes");
+    let face = crate::shaping::Face::from_slice(sfnt, 0).expect("sfnt shapes");
     let glyph_count = face.number_of_glyphs();
     let mut glyphs = Vec::new();
     for glyph in 0..glyph_count {
-        let glyph = rustybuzz::ttf_parser::GlyphId(glyph);
+        let glyph = ttf_parser::GlyphId(glyph);
         let mut outline = OutlineDigest::default();
         let bounds = face.outline_glyph(glyph, &mut outline);
         glyphs.extend_from_slice(
@@ -468,7 +468,7 @@ struct OutlineDigest {
     bytes: Vec<u8>,
 }
 
-impl rustybuzz::ttf_parser::OutlineBuilder for OutlineDigest {
+impl ttf_parser::OutlineBuilder for OutlineDigest {
     fn move_to(&mut self, x: f32, y: f32) {
         self.bytes.push(b'M');
         self.bytes.extend_from_slice(&x.to_bits().to_le_bytes());
@@ -695,7 +695,7 @@ struct ClassifiedCell {
 }
 
 fn classify_source(family: &str, ranges: &[(u32, u32)], sfnt: &[u8]) -> Vec<ClassifiedCell> {
-    let face = rustybuzz::Face::from_slice(sfnt, 0).expect("qualified source parses");
+    let face = crate::shaping::Face::from_slice(sfnt, 0).expect("qualified source parses");
     let font = FontRef::new(sfnt).expect("qualified source is an sfnt");
 
     let mapped = first_mapped(&face, ranges, |_| true).expect("source declares a mapped scalar");
@@ -772,7 +772,7 @@ fn not_applicable(reason: &'static str) -> ClassifiedCell {
 }
 
 fn first_mapped(
-    face: &rustybuzz::Face<'_>,
+    face: &crate::shaping::Face<'_>,
     ranges: &[(u32, u32)],
     predicate: impl Fn(u32) -> bool,
 ) -> Option<u32> {
@@ -789,7 +789,7 @@ fn first_mapped(
     None
 }
 
-fn range_boundaries(face: &rustybuzz::Face<'_>, ranges: &[(u32, u32)]) -> Vec<u32> {
+fn range_boundaries(face: &crate::shaping::Face<'_>, ranges: &[(u32, u32)]) -> Vec<u32> {
     let mut scalars = Vec::new();
     let range = ranges.first().copied().expect("source declares a range");
     if let Some(scalar) = first_mapped(face, &[range], |scalar| !is_combining_mark(scalar)) {
@@ -811,7 +811,7 @@ fn range_boundaries(face: &rustybuzz::Face<'_>, ranges: &[(u32, u32)]) -> Vec<u3
     scalars
 }
 
-fn full_intersection(face: &rustybuzz::Face<'_>, ranges: &[(u32, u32)]) -> Vec<u32> {
+fn full_intersection(face: &crate::shaping::Face<'_>, ranges: &[(u32, u32)]) -> Vec<u32> {
     let mut scalars =
         vec![first_mapped(face, ranges, |_| true).expect("source declares a mapped scalar")];
     for (start, end) in ranges {
@@ -875,7 +875,11 @@ fn qualification_character(scalar: u32) -> Option<char> {
     }
 }
 
-fn mapped_glyph_is_composite(face: &rustybuzz::Face<'_>, font: &FontRef<'_>, scalar: u32) -> bool {
+fn mapped_glyph_is_composite(
+    face: &crate::shaping::Face<'_>,
+    font: &FontRef<'_>,
+    scalar: u32,
+) -> bool {
     let Some(character) = char::from_u32(scalar) else {
         return false;
     };
@@ -894,7 +898,7 @@ fn mapped_glyph_is_composite(face: &rustybuzz::Face<'_>, font: &FontRef<'_>, sca
     )
 }
 
-fn layout_probe(face: &rustybuzz::Face<'_>, font: &FontRef<'_>) -> Option<Vec<u32>> {
+fn layout_probe(face: &crate::shaping::Face<'_>, font: &FontRef<'_>) -> Option<Vec<u32>> {
     if font.gsub().is_err() && font.gpos().is_err() {
         return None;
     }
@@ -981,15 +985,15 @@ fn probe_scalars(probe: &str) -> Vec<u32> {
     scalars
 }
 
-fn probe_exercises_layout(face: &rustybuzz::Face<'_>, probe: &str) -> bool {
+fn probe_exercises_layout(face: &crate::shaping::Face<'_>, probe: &str) -> bool {
     let mapped = probe
         .chars()
         .filter_map(|character| face.glyph_index(character))
         .collect::<Vec<_>>();
-    let mut buffer = rustybuzz::UnicodeBuffer::new();
+    let mut buffer = crate::shaping::UnicodeBuffer::new();
     buffer.push_str(probe);
     buffer.guess_segment_properties();
-    let shaped = rustybuzz::shape(face, &[], buffer);
+    let shaped = crate::shaping::shape(face, &[], buffer);
     if shaped.glyph_infos().len() != mapped.len()
         || shaped
             .glyph_infos()
@@ -1356,7 +1360,7 @@ fn materialize_viewer_inputs() {
                 .copied()
                 .filter(|scalar| {
                     char::from_u32(*scalar).is_some_and(|character| {
-                        rustybuzz::Face::from_slice(&source_sfnt, 0)
+                        crate::shaping::Face::from_slice(&source_sfnt, 0)
                             .is_some_and(|face| face.glyph_index(character).is_some())
                     })
                 })
@@ -1656,7 +1660,7 @@ fn layout_probe_detects_horizontal_advance_only_gpos() {
             .expect("Liberation source verifies")
             .expect("Liberation source exists");
         let sfnt = wuff::decompress_woff2(asset.bytes()).expect("Liberation source decodes");
-        let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("Liberation source parses");
+        let face = crate::shaping::Face::from_slice(&sfnt, 0).expect("Liberation source parses");
         for probe in ["AV", "To", "Ta", "Wa", "Yo"] {
             let mapped = probe
                 .chars()
@@ -1665,10 +1669,10 @@ fn layout_probe_detects_horizontal_advance_only_gpos() {
             if mapped.len() != probe.chars().count() {
                 continue;
             }
-            let mut buffer = rustybuzz::UnicodeBuffer::new();
+            let mut buffer = crate::shaping::UnicodeBuffer::new();
             buffer.push_str(probe);
             buffer.guess_segment_properties();
-            let shaped = rustybuzz::shape(&face, &[], buffer);
+            let shaped = crate::shaping::shape(&face, &[], buffer);
             let glyphs_unchanged = shaped.glyph_infos().len() == mapped.len()
                 && shaped
                     .glyph_infos()

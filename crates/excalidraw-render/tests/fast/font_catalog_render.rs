@@ -375,10 +375,10 @@ fn pdf_embeds_a_renamed_subset_of_each_selected_chunks_reviewed_decode() {
                 .expect("the chunk verifies")
                 .expect("the chunk is manifested");
             let decode = wuff::decompress_woff2(decode.bytes()).expect("the chunk decodes");
-            let source = rustybuzz::Face::from_slice(&decode, 0).expect("the decode parses");
+            let source = ttf_parser::Face::parse(&decode, 0).expect("the decode parses");
             let program = programs
                 .iter()
-                .map(|program| rustybuzz::Face::from_slice(program, 0).expect("program parses"))
+                .map(|program| ttf_parser::Face::parse(program, 0).expect("program parses"))
                 .find(|face| {
                     name(face, 0) == name(&source, 0)
                         && program_alias(record.family) == name(face, 1)
@@ -478,7 +478,7 @@ fn program_alias(family: &str) -> Option<String> {
 }
 
 /// The English Windows name record `id` of a face.
-fn name(face: &rustybuzz::Face<'_>, id: u16) -> Option<String> {
+fn name(face: &ttf_parser::Face<'_>, id: u16) -> Option<String> {
     face.names()
         .into_iter()
         .find(|name| name.name_id == id && name.language_id == 0x0409)
@@ -804,13 +804,13 @@ fn embedded_subsets_retain_demanded_mappings_and_drop_unrelated_cmap_entries() {
         .map(|font| wuff::decompress_woff2(font).expect("generated WOFF2 decodes"))
         .collect::<Vec<_>>();
     assert!(faces.iter().any(|font| {
-        rustybuzz::Face::from_slice(font, 0).is_some_and(|face| face.glyph_index('A').is_some())
+        ttf_parser::Face::parse(font, 0).is_ok_and(|face| face.glyph_index('A').is_some())
     }));
     assert!(faces.iter().any(|font| {
-        rustybuzz::Face::from_slice(font, 0).is_some_and(|face| face.glyph_index('Ж').is_some())
+        ttf_parser::Face::parse(font, 0).is_ok_and(|face| face.glyph_index('Ж').is_some())
     }));
     assert!(faces.iter().all(|font| {
-        rustybuzz::Face::from_slice(font, 0).is_some_and(|face| face.glyph_index('Ω').is_none())
+        ttf_parser::Face::parse(font, 0).is_ok_and(|face| face.glyph_index('Ω').is_none())
     }));
 }
 
@@ -829,7 +829,7 @@ fn reserved_font_names_are_rewritten_inside_embedded_subsets() {
         panic!("one Virgil subset is embedded");
     };
     let sfnt = wuff::decompress_woff2(font).expect("generated WOFF2 decodes");
-    let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("generated sfnt parses");
+    let face = ttf_parser::Face::parse(&sfnt, 0).expect("generated sfnt parses");
     let name = |id| {
         face.names()
             .into_iter()

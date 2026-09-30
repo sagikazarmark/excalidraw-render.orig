@@ -163,7 +163,7 @@ fn complementary_same_family_faces_are_rejected_in_either_order() {
         .map(|bytes| wuff::decompress_woff2(bytes).unwrap());
     let faces = decoded
         .each_ref()
-        .map(|bytes| rustybuzz::Face::from_slice(bytes, 0).unwrap());
+        .map(|bytes| ttf_parser::Face::parse(bytes, 0).unwrap());
     let exclusive = [0, 1].map(|index| {
         (0x80..=0xffff)
             .filter_map(char::from_u32)

@@ -20,7 +20,10 @@ miniz_oxide.workspace = true
 png.workspace = true
 roxmltree.workspace = true
 regex.workspace = true
-rustybuzz.workspace = true
+ttf-parser.workspace = true
+# The pure-Rust SVG viewer (svg_font_subset_runner) shapes as usvg 0.47 does;
+# it follows usvg to HarfRust 0.12 with #209.
+rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
 serde.workspace = true
 serde_json = { workspace = true, features = ["raw_value", "arbitrary_precision"] }
 sha2.workspace = true

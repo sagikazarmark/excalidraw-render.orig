@@ -710,7 +710,7 @@ pub fn to_unicode_cmap<'a>(pdf: &'a str, cmap_name: &str) -> &'a str {
 }
 
 /// The English family name (name ID 1) of an embedded face.
-pub fn family_name(face: &rustybuzz::Face<'_>) -> String {
+pub fn family_name(face: &ttf_parser::Face<'_>) -> String {
     face.names()
         .into_iter()
         .find(|name| name.name_id == 1 && name.language_id == 0x0409)

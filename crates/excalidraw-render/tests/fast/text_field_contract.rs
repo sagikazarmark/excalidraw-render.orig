@@ -299,21 +299,17 @@ fn original_text_demands_extra_subset_characters_without_changing_display_text()
     assert!(!fonts.is_empty());
     for character in ['A', 'B', 'C', 'D', 'Z'] {
         assert!(
-            fonts
-                .iter()
-                .any(|bytes| rustybuzz::Face::from_slice(bytes, 0)
-                    .unwrap()
-                    .glyph_index(character)
-                    .is_some()),
+            fonts.iter().any(|bytes| ttf_parser::Face::parse(bytes, 0)
+                .unwrap()
+                .glyph_index(character)
+                .is_some()),
             "demanded {character}"
         );
     }
-    assert!(fonts
-        .iter()
-        .all(|bytes| rustybuzz::Face::from_slice(bytes, 0)
-            .unwrap()
-            .glyph_index('Q')
-            .is_none()));
+    assert!(fonts.iter().all(|bytes| ttf_parser::Face::parse(bytes, 0)
+        .unwrap()
+        .glyph_index('Q')
+        .is_none()));
     assert!(svg.contains("data-source-text=\"AB"));
     assert!(!svg.contains("data-source-text=\"AB\nCDZ"));
 }

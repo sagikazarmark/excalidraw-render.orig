@@ -71,7 +71,7 @@ fn silent(report: &excalidraw_render::CompatibilityReport) {
         ),
         (
             include_bytes!("../common/pdf_inspect.rs").as_slice(),
-            "285cac0d1029d1f7c2485cd0d3cfb7d4be7c8394b320adc837f9eaf49ab5e4b3",
+            "28e13e1b91eacaf9743e41a1f43aecc1ecb7cab0020d9ac21c0368377500cda2",
         ),
         (
             include_bytes!("../common/raster.rs").as_slice(),
