@@ -1,3 +1,0 @@
-   Compiling xtask v0.1.0 (/home/laborant/excalidraw-render.orig/xtask)
-    Finished `release` profile [optimized] target(s) in 50.04s
-     Running `target/release/xtask conformance candidate-inspect tests/conformance/candidates/stage4-frames-text-assets-v14`

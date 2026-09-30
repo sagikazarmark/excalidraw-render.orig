@@ -1,3 +1,0 @@
-# Retain exact frozen command output rather than modifying approved evidence.
-checks/*.stdout whitespace=-blank-at-eof
-logs/*.stdout whitespace=-blank-at-eof

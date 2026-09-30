@@ -1,2 +1,0 @@
-    Finished `release` profile [optimized] target(s) in 0.10s
-     Running `target/release/xtask conformance candidate-revise tests/conformance/candidates/stage4-frames-text-assets-v17`

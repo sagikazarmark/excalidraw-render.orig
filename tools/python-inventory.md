@@ -10,9 +10,7 @@ CI/release maintainer:
 
 The count includes existing untracked first-party files, excludes deleted index
 entries, dependencies and build/cache trees. Python under the reference oracle's
-`node_modules/` is third-party. The archived
-`tests/conformance/proposals/jpeg187-requalification-v1/nested/collector-at-capture.py.txt`
-is historical source text, not an executable module. No first-party extensionless
+`node_modules/` is third-party. No first-party extensionless
 Python entry point remains.
 `docs/research/archive/krilla-pdf-backend-gap-audit/pdfium-text.py` is a
 retained script from the completed ADR-0021 spike, kept with that audit's

@@ -1,3 +1,0 @@
-    Finished `release` profile [optimized] target(s) in 0.06s
-     Running `target/release/xtask conformance pdf-requalification-subject tests/conformance/candidates/stage4-pdf-backend-requalification-v2`
-error: stale native production/source bindings

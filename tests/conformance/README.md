@@ -288,7 +288,10 @@ turn:
 Follow each moved digest until nothing live changes. Historical records stay
 as they were: `proposals/`, `candidates/`, `coverage/*-application-v*/`,
 `docs/research/`, `coverage/font-packaging-reconciliation-2.json`, and the
-`source` digests of test-owned rows in `coverage/ownership.json`.
+`source` digests of test-owned rows in `coverage/ownership.json`. A digest
+refresh never rewrites them. A proposal or candidate that no check, test or
+script reads is deleted instead of kept (ADR-0022); kept records may still name
+deleted ones, which resolve against Git history.
 
 Evidence measured under a superseded profile, such as the stage4 typography
 diagnosis and the current candidate, stays valid only through the successor in
