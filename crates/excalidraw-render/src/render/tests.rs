@@ -1471,7 +1471,7 @@ fn glyph_ids(font_family: i32, characters: &str) -> Vec<u16> {
         .ok()
         .unwrap_or_else(|| panic!("family {font_family} loads for {characters:?}"))
         .into_parts();
-    let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("face parses");
+    let face = crate::shaping::Face::from_slice(&sfnt, 0).expect("face parses");
     characters
         .chars()
         .map(|character| {
@@ -2644,7 +2644,7 @@ fn bundled_faces_carry_their_families_metadata_metrics_and_only_helvetica_differ
             .expect("bundled font is intact")
             .expect("bundled font is present");
         let sfnt = wuff::decompress_woff2(asset.bytes()).expect("bundled font decodes");
-        let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("bundled font parses");
+        let face = crate::shaping::Face::from_slice(&sfnt, 0).expect("bundled font parses");
         let metadata = FamilyMetrics::for_source_family(source_family(record.family))
             .expect("every bundled family has metadata metrics");
         assert_eq!(
@@ -2653,7 +2653,11 @@ fn bundled_faces_carry_their_families_metadata_metrics_and_only_helvetica_differ
                 metadata.ascender,
                 metadata.descender
             ),
-            (face.units_per_em(), face.ascender(), face.descender()),
+            (
+                i32::from(face.units_per_em()),
+                face.ascender(),
+                face.descender()
+            ),
             "{} hhea table differs from its family metadata metrics",
             record.upstream_path
         );

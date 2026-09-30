@@ -29,6 +29,6 @@ excalidraw-fonts-xiaolai-extended = { workspace = true, optional = true }
 sha2.workspace = true
 
 [dev-dependencies]
-rustybuzz.workspace = true
+ttf-parser.workspace = true
 serde_json.workspace = true
 wuff.workspace = true

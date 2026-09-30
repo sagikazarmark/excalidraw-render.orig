@@ -310,7 +310,7 @@ fn unicode_ranges(css: &Value) -> Result<Vec<std::ops::RangeInclusive<u32>>> {
 }
 
 struct CoverageFace<'a> {
-    face: rustybuzz::Face<'a>,
+    face: ttf_parser::Face<'a>,
     ranges: Vec<std::ops::RangeInclusive<u32>>,
 }
 
@@ -462,7 +462,7 @@ fn derive(directory: &Path) -> Result<Files> {
             decoded.insert(
                 family,
                 CoverageFace {
-                    face: rustybuzz::Face::from_slice(sfnt, 0).ok_or("invalid SFNT")?,
+                    face: ttf_parser::Face::parse(sfnt, 0).map_err(|_| "invalid SFNT")?,
                     ranges: unicode_ranges(css)?,
                 },
             );

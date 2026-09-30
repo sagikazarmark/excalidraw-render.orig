@@ -77,7 +77,9 @@ fn derived_assets(directory: &str, verify: bool) -> Result<(), String> {
                 return Err("stale WOFF2".into());
             }
             let sfnt = wuff::decompress_woff2(&woff).map_err(|e| format!("WOFF2 decode: {e:?}"))?;
-            let face = rustybuzz::Face::from_slice(&sfnt, 0).ok_or("invalid decoded SFNT")?;
+            let face = ttf_parser::Face::parse(&sfnt, 0)
+                .ok()
+                .ok_or("invalid decoded SFNT")?;
             let family = [16, 1]
                 .into_iter()
                 .find_map(|id| {

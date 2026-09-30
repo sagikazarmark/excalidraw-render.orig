@@ -124,7 +124,8 @@ rasterization and deflate dominate a render, not the trigonometry.
 - The residual exposure is inside dependencies, where the rule does not reach:
   `csscolorparser`'s OKLab/OKLCH, HSL and HWB conversions in `f32`, which
   `color-mix()` and gamut mapping in `color.rs` call, and whatever `tiny-skia`,
-  `resvg`/`usvg`, `svg2pdf`, `rustybuzz` and `moxcms` compute internally. Those
+  `resvg`/`usvg`, `svg2pdf`, `rustybuzz`, `harfrust` (the shaper since #202,
+  whose own float use is IEEE-exact rounding) and `moxcms` compute internally. Those
   stay under the empirical two-target pins as before; a divergence found there
   is handled as ADR-0003 handled brotli — adapter, pinned controlled fork,
   focused owned port, in that order.

@@ -150,8 +150,8 @@ fn svg_sets_the_emoji_from_a_noto_emoji_subset_and_keeps_the_stored_text() {
     assert_eq!(media_type, "font/woff2");
     assert!(payload.len() < source.len() / 64, "{} bytes", payload.len());
     let subset_sfnt = wuff::decompress_woff2(&payload).expect("the emoji subset decodes");
-    let subset = rustybuzz::Face::from_slice(&subset_sfnt, 0).expect("the emoji subset parses");
-    let complete = rustybuzz::Face::from_slice(&source, 0).expect("Noto Emoji parses");
+    let subset = ttf_parser::Face::parse(&subset_sfnt, 0).expect("the emoji subset parses");
+    let complete = ttf_parser::Face::parse(&source, 0).expect("Noto Emoji parses");
     for emoji in ['\u{1f600}', '\u{1f389}'] {
         let subset_glyph = subset
             .glyph_index(emoji)
@@ -263,10 +263,10 @@ fn pdf_embeds_the_complete_noto_emoji_face_for_the_emoji_runs_and_carries_the_st
         "an embedded program is derived from the manifested Noto Emoji asset"
     );
     assert!(fonts.iter().any(|font| {
-        family_name(&rustybuzz::Face::from_slice(font, 0).expect("embedded sfnt parses"))
+        family_name(&ttf_parser::Face::parse(font, 0).expect("embedded sfnt parses"))
             == "Noto Emoji"
     }));
-    let noto_face = rustybuzz::Face::from_slice(&noto_emoji, 0).expect("Noto Emoji parses");
+    let noto_face = ttf_parser::Face::parse(&noto_emoji, 0).expect("Noto Emoji parses");
     for scalar in ['\u{1f600}', '\u{1f389}'] {
         assert!(noto_face.glyph_index(scalar).is_some());
     }

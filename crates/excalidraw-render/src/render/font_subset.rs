@@ -191,7 +191,7 @@ pub(super) fn derive(
     // HarfBuzz hides default-ignorables using the nominal space glyph. Without
     // that cmap entry it deletes them instead, changing cluster cardinality.
     // Space is a shaping dependency even when absent from the semantic text.
-    let face = rustybuzz::Face::from_slice(&source_sfnt, 0).ok_or(Error {
+    let face = crate::shaping::Face::from_slice(&source_sfnt, 0).ok_or(Error {
         stage: crate::SvgFontSubsetStage::Plan,
     })?;
     if scalars
@@ -562,10 +562,10 @@ fn validate_mappings_and_metrics(
     subset: &[u8],
     scalars: &[u32],
 ) -> Result<(), Error> {
-    let source = rustybuzz::Face::from_slice(source, 0).ok_or(Error {
+    let source = crate::shaping::Face::from_slice(source, 0).ok_or(Error {
         stage: crate::SvgFontSubsetStage::Validate,
     })?;
-    let subset = rustybuzz::Face::from_slice(subset, 0).ok_or(Error {
+    let subset = crate::shaping::Face::from_slice(subset, 0).ok_or(Error {
         stage: crate::SvgFontSubsetStage::Validate,
     })?;
     if source.units_per_em() != subset.units_per_em()
@@ -625,13 +625,13 @@ fn validate_mappings_and_metrics(
             &source,
             &subset,
             &repeated,
-            Some(rustybuzz::Direction::LeftToRight),
+            Some(crate::shaping::Direction::LeftToRight),
         )?;
         validate_shaping_probe(
             &source,
             &subset,
             &repeated,
-            Some(rustybuzz::Direction::RightToLeft),
+            Some(crate::shaping::Direction::RightToLeft),
         )?;
     }
     for probe in ["fi", "fl", "ffi", "office", "لا"] {
@@ -997,19 +997,19 @@ const fn validate_error() -> Error {
 }
 
 fn validate_shaping_probe(
-    source: &rustybuzz::Face<'_>,
-    subset: &rustybuzz::Face<'_>,
+    source: &crate::shaping::Face<'_>,
+    subset: &crate::shaping::Face<'_>,
     text: &str,
-    direction: Option<rustybuzz::Direction>,
+    direction: Option<crate::shaping::Direction>,
 ) -> Result<(), Error> {
-    let shape = |face: &rustybuzz::Face<'_>| {
-        let mut buffer = rustybuzz::UnicodeBuffer::new();
+    let shape = |face: &crate::shaping::Face<'_>| {
+        let mut buffer = crate::shaping::UnicodeBuffer::new();
         buffer.push_str(text);
         if let Some(direction) = direction {
             buffer.set_direction(direction);
         }
         buffer.guess_segment_properties();
-        rustybuzz::shape(face, &[], buffer)
+        crate::shaping::shape(face, &[], buffer)
     };
     let source_shape = shape(source);
     let subset_shape = shape(subset);
@@ -1047,14 +1047,10 @@ fn validate_shaping_probe(
         })?;
         let mut source_outline = Outline::default();
         let mut subset_outline = Outline::default();
-        let source_bounds = source.outline_glyph(
-            rustybuzz::ttf_parser::GlyphId(source_id),
-            &mut source_outline,
-        );
-        let subset_bounds = subset.outline_glyph(
-            rustybuzz::ttf_parser::GlyphId(subset_id),
-            &mut subset_outline,
-        );
+        let source_bounds =
+            source.outline_glyph(ttf_parser::GlyphId(source_id), &mut source_outline);
+        let subset_bounds =
+            subset.outline_glyph(ttf_parser::GlyphId(subset_id), &mut subset_outline);
         if source_bounds != subset_bounds || source_outline != subset_outline {
             return Err(Error {
                 stage: crate::SvgFontSubsetStage::Validate,
@@ -1345,7 +1341,7 @@ enum OutlineCommand {
     Close,
 }
 
-impl rustybuzz::ttf_parser::OutlineBuilder for Outline {
+impl ttf_parser::OutlineBuilder for Outline {
     fn move_to(&mut self, x: f32, y: f32) {
         self.0.push(OutlineCommand::Move(x, y));
     }
@@ -1724,7 +1720,7 @@ mod tests {
                 .unwrap()
                 .unwrap();
         let source_sfnt = wuff::decompress_woff2(asset.bytes()).unwrap();
-        let source = rustybuzz::Face::from_slice(&source_sfnt, 0).unwrap();
+        let source = crate::shaping::Face::from_slice(&source_sfnt, 0).unwrap();
         for text in ["\u{ad}", "A\u{ad}B", "A\u{200d}B", "AB"] {
             let scalars: Vec<_> = text.chars().map(u32::from).collect();
             let derived = derive(
@@ -1736,18 +1732,18 @@ mod tests {
             )
             .unwrap();
             let sfnt = wuff::decompress_woff2(&derived.woff2).unwrap();
-            let subset = rustybuzz::Face::from_slice(&sfnt, 0).unwrap();
+            let subset = crate::shaping::Face::from_slice(&sfnt, 0).unwrap();
             assert_eq!(subset.glyph_index(' ').is_some(), text != "AB");
             for direction in [
-                rustybuzz::Direction::LeftToRight,
-                rustybuzz::Direction::RightToLeft,
+                crate::shaping::Direction::LeftToRight,
+                crate::shaping::Direction::RightToLeft,
             ] {
                 validate_shaping_probe(&source, &subset, text, Some(direction)).unwrap();
             }
-            let mut buffer = rustybuzz::UnicodeBuffer::new();
+            let mut buffer = crate::shaping::UnicodeBuffer::new();
             buffer.push_str(text);
             buffer.guess_segment_properties();
-            let shaped = rustybuzz::shape(&subset, &[], buffer);
+            let shaped = crate::shaping::shape(&subset, &[], buffer);
             assert_eq!(shaped.glyph_infos().len(), text.chars().count());
             if let Some(offset) = text.find(super::super::text::is_default_ignorable) {
                 // A joiner can merge into its preceding grapheme cluster;
@@ -1760,8 +1756,7 @@ mod tests {
                     .unwrap();
                 assert!(shaped.glyph_infos()[index].cluster <= offset as u32);
                 assert_eq!(shaped.glyph_positions()[index].x_advance, 0);
-                let id =
-                    rustybuzz::ttf_parser::GlyphId(shaped.glyph_infos()[index].glyph_id as u16);
+                let id = ttf_parser::GlyphId(shaped.glyph_infos()[index].glyph_id as u16);
                 assert!(subset.outline_glyph(id, &mut Outline::default()).is_none());
             }
         }
@@ -1850,8 +1845,8 @@ mod tests {
         assert_eq!(derived.decoded_sfnt_bytes, asset.bytes().len());
         assert!(derived.woff2.len() < asset.bytes().len() / 64);
         let sfnt = wuff::decompress_woff2(&derived.woff2).expect("subset decodes");
-        let subset = rustybuzz::Face::from_slice(&sfnt, 0).expect("subset parses");
-        let source = rustybuzz::Face::from_slice(asset.bytes(), 0).expect("source parses");
+        let subset = crate::shaping::Face::from_slice(&sfnt, 0).expect("subset parses");
+        let source = crate::shaping::Face::from_slice(asset.bytes(), 0).expect("source parses");
         for scalar in scalars {
             let character = char::from_u32(scalar).expect("scalar is a character");
             let source_glyph = source

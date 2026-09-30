@@ -104,7 +104,7 @@ pub(crate) fn load_sfnt(id: FaceId) -> Result<Vec<u8>, FontError> {
 
 fn validate_sfnt(id: FaceId, bytes: Vec<u8>) -> Result<Vec<u8>, FontError> {
     let bytes = id.face().verify_decode(bytes)?;
-    rustybuzz::Face::from_slice(&bytes, 0).ok_or(FontError::InvalidProgram)?;
+    crate::shaping::Face::from_slice(&bytes, 0).ok_or(FontError::InvalidProgram)?;
     Ok(bytes)
 }
 

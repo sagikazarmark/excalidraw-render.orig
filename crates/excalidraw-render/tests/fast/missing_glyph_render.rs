@@ -185,9 +185,9 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
     );
     let faces: Vec<_> = fonts
         .iter()
-        .map(|font| rustybuzz::Face::from_slice(font, 0).expect("embedded sfnt parses"))
+        .map(|font| ttf_parser::Face::parse(font, 0).expect("embedded sfnt parses"))
         .collect();
-    let liberation_face = rustybuzz::Face::from_slice(&liberation_program, 0)
+    let liberation_face = ttf_parser::Face::parse(&liberation_program, 0)
         .expect("the Liberation Sans program parses");
     assert!(liberation_face.glyph_index('?').is_some());
     assert!(faces.iter().any(|face| family_name(face) == "Excalifont"));

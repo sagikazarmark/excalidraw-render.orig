@@ -2,7 +2,7 @@ use std::collections::TryReserveError;
 use std::sync::Arc;
 
 use crate::fonts::{Face, FaceId, FamilyId};
-use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder, Tag};
+use ttf_parser::{GlyphId, OutlineBuilder};
 
 use crate::font_metadata::FamilyMetrics;
 use crate::fonts::{FontError, FontLoader};
@@ -299,7 +299,8 @@ impl FallbackFont {
         name: &str,
         frame_width: f64,
     ) -> Result<FrameName, LabelError> {
-        let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let face =
+            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let scale = FRAME_NAME_FONT_SIZE / f64::from(face.units_per_em());
         let baseline = FamilyMetrics::for_source_family(FRAME_NAME_FONT_FAMILY)
             .ok_or(LabelError::InvalidFont)?
@@ -373,7 +374,8 @@ impl FallbackFont {
         width: f64,
         height: f64,
     ) -> Result<Option<ResolvedLabel>, LabelError> {
-        let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let face =
+            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let (display_text, missing_codepoints) = fallback_display_text(&face, text)?;
         let glyphs = shape_text(&face, &display_text, ShapeDirection::Guessed);
         let units_per_em = f64::from(face.units_per_em());
@@ -404,7 +406,7 @@ impl FallbackFont {
 /// reported (spec 8.3, #167): the shaper hides it, as the browser does. `text`
 /// is one line's content; a line terminator never reaches this.
 fn fallback_display_text(
-    face: &rustybuzz::Face<'_>,
+    face: &crate::shaping::Face<'_>,
     text: &str,
 ) -> Result<(String, Vec<u32>), LabelError> {
     let mut display_text = String::new();
@@ -423,7 +425,7 @@ fn fallback_display_text(
 }
 
 /// Whether `character` is a default-ignorable code point as the pinned shaper
-/// (`rustybuzz 0.20.1`, HarfBuzz's `is_default_ignorable`) classifies it: the
+/// (`harfrust 0.13.3`, HarfBuzz's `is_default_ignorable`) classifies it: the
 /// bidi controls U+200E, U+200F, U+202A–U+202E and U+2066–U+2069 with the
 /// rest of U+2060–U+206F, the joiners U+200B–U+200D, the soft hyphen U+00AD,
 /// the combining grapheme joiner U+034F, the Arabic letter mark U+061C, the
@@ -462,7 +464,7 @@ pub(super) fn is_default_ignorable(character: char) -> bool {
     }
 }
 
-fn shaped_advance_units(glyphs: &rustybuzz::GlyphBuffer) -> i64 {
+fn shaped_advance_units(glyphs: &crate::shaping::GlyphBuffer) -> i64 {
     glyphs
         .glyph_positions()
         .iter()
@@ -472,7 +474,7 @@ fn shaped_advance_units(glyphs: &rustybuzz::GlyphBuffer) -> i64 {
 }
 
 /// The advance of `text` shaped with `face`, in logical pixels at `scale`.
-fn shaped_advance(face: &rustybuzz::Face<'_>, text: &str, scale: f64) -> f64 {
+fn shaped_advance(face: &crate::shaping::Face<'_>, text: &str, scale: f64) -> f64 {
     shaped_advance_units(&shape_text(face, text, ShapeDirection::Guessed)) as f64 * scale
 }
 
@@ -481,7 +483,7 @@ fn shaped_advance(face: &rustybuzz::Face<'_>, text: &str, scale: f64) -> f64 {
 /// prefix that contains the character its cluster starts at, so the widths
 /// keep the kerning the shaper applied inside each prefix.
 fn shaped_prefix_widths(
-    glyphs: &rustybuzz::GlyphBuffer,
+    glyphs: &crate::shaping::GlyphBuffer,
     display_text: &str,
     scale: f64,
 ) -> Result<Vec<f64>, LabelError> {
@@ -522,8 +524,8 @@ fn char_boundary(text: &str, count: usize) -> Result<usize, LabelError> {
 /// origin at `origin_x` on `baseline`.
 #[allow(clippy::too_many_arguments)]
 fn build_label(
-    face: &rustybuzz::Face<'_>,
-    glyphs: &rustybuzz::GlyphBuffer,
+    face: &crate::shaping::Face<'_>,
+    glyphs: &crate::shaping::GlyphBuffer,
     text: &str,
     display_text: String,
     missing_codepoints: Vec<u32>,
@@ -561,8 +563,7 @@ fn build_label(
         let advance = face
             .glyph_hor_advance(GlyphId(glyph_id))
             .unwrap_or_default();
-        let units_per_em =
-            u64::try_from(face.units_per_em()).map_err(|_| LabelError::InvalidFont)?;
+        let units_per_em = u64::from(face.units_per_em());
         let advance_1000 =
             u16::try_from((u64::from(advance) * 1_000 + units_per_em / 2) / units_per_em)
                 .map_err(|_| LabelError::InvalidFont)?;
@@ -660,7 +661,8 @@ impl OfficialFont {
         text: &str,
         layout: TextLayout<'_>,
     ) -> Result<ResolvedText, LabelError> {
-        let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let face =
+            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let text_align = ResolvedTextAlign::from_normalized(layout.text_align);
         let mut missing_codepoints = Vec::new();
         let mut stored_lines = Vec::new();
@@ -718,7 +720,8 @@ impl OfficialFont {
         if max_width < 0.0 || !max_width.is_finite() {
             return try_owned(text);
         }
-        let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let face =
+            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let scale = font_size / f64::from(face.units_per_em());
         let mut wrapped = String::new();
         wrapped.try_reserve_exact(text.len().saturating_add(text.chars().count()))?;
@@ -761,7 +764,7 @@ impl OfficialFont {
     }
 
     fn supports(&self, character: char) -> bool {
-        rustybuzz::Face::from_slice(&self.sfnt, 0)
+        crate::shaping::Face::from_slice(&self.sfnt, 0)
             .and_then(|face| face.glyph_index(character))
             .is_some()
     }
@@ -772,7 +775,8 @@ impl OfficialFont {
         font_size: f64,
         direction: ShapeDirection,
     ) -> Result<f64, LabelError> {
-        let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let face =
+            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let units = shape_text(&face, text, direction)
             .glyph_positions()
             .iter()
@@ -790,7 +794,7 @@ impl OfficialFont {
         let sfnt = loader
             .load_sfnt(id)
             .map_err(|error| font_error(id, error))?;
-        let face = rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let face = crate::shaping::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
         if face.glyph_index(character).is_none() {
             return Ok(None);
         }
@@ -961,7 +965,8 @@ pub(super) fn layout_with_loader(
         let mut display_text = String::new();
         for (_, rtl, font_index, run_text) in grouped {
             let font = fonts.get(font_index).ok_or(LabelError::InvalidFont)?;
-            let face = rustybuzz::Face::from_slice(&font.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+            let face =
+                crate::shaping::Face::from_slice(&font.sfnt, 0).ok_or(LabelError::InvalidFont)?;
             let direction = ShapeDirection::Run { rtl };
             let mut run = shape_official_line(
                 &face,
@@ -1262,7 +1267,7 @@ fn select_catalog_font(
 
 /// Whether one decoded face maps a scalar to a glyph.
 fn sfnt_maps(sfnt: &[u8], character: char) -> bool {
-    rustybuzz::Face::from_slice(sfnt, 0)
+    crate::shaping::Face::from_slice(sfnt, 0)
         .and_then(|face| face.glyph_index(character))
         .is_some()
 }
@@ -1580,7 +1585,7 @@ impl ResolvedText {
 
 #[allow(clippy::too_many_arguments)]
 fn shape_official_line(
-    face: &rustybuzz::Face<'_>,
+    face: &crate::shaping::Face<'_>,
     source_text: &str,
     display_text: &str,
     width: f64,
@@ -1625,8 +1630,7 @@ fn shape_official_line(
         unicode.extend(cluster_text.encode_utf16());
         let advance = face.glyph_hor_advance(GlyphId(glyph_id));
         let advance_units = advance.unwrap_or_default();
-        let units_per_em =
-            u64::try_from(face.units_per_em()).map_err(|_| LabelError::InvalidFont)?;
+        let units_per_em = u64::from(face.units_per_em());
         let advance_1000 =
             u16::try_from((u64::from(advance_units) * 1_000 + units_per_em / 2) / units_per_em)
                 .map_err(|_| LabelError::InvalidFont)?;
@@ -1685,26 +1689,26 @@ fn shape_official_line(
 }
 
 fn shape_text(
-    face: &rustybuzz::Face<'_>,
+    face: &crate::shaping::Face<'_>,
     text: &str,
     direction: ShapeDirection,
-) -> rustybuzz::GlyphBuffer {
-    let mut buffer = rustybuzz::UnicodeBuffer::new();
+) -> crate::shaping::GlyphBuffer {
+    let mut buffer = crate::shaping::UnicodeBuffer::new();
     buffer.push_str(text);
     if let ShapeDirection::Run { rtl } = direction {
         buffer.set_direction(if rtl {
-            rustybuzz::Direction::RightToLeft
+            crate::shaping::Direction::RightToLeft
         } else {
-            rustybuzz::Direction::LeftToRight
+            crate::shaping::Direction::LeftToRight
         });
     }
     // Guesses the script (and the direction when none is set) from the text.
     buffer.guess_segment_properties();
     let features = [
-        rustybuzz::Feature::new(Tag::from_bytes(b"liga"), 0, ..),
-        rustybuzz::Feature::new(Tag::from_bytes(b"clig"), 0, ..),
+        crate::shaping::Feature::new(crate::shaping::Tag::new(b"liga"), 0, ..),
+        crate::shaping::Feature::new(crate::shaping::Tag::new(b"clig"), 0, ..),
     ];
-    rustybuzz::shape(face, &features, buffer)
+    crate::shaping::shape(face, &features, buffer)
 }
 
 /// The direction text is shaped in.
@@ -1733,7 +1737,7 @@ fn try_owned(value: &str) -> Result<String, LabelError> {
 }
 
 fn glyph_cluster_text<'a>(
-    glyphs: &rustybuzz::GlyphBuffer,
+    glyphs: &crate::shaping::GlyphBuffer,
     text: &'a str,
     cluster: usize,
 ) -> Result<&'a str, LabelError> {

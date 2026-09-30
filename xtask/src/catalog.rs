@@ -949,7 +949,8 @@ fn materialize_predecoded_excalifont(root: &Path, assets: &[ImportedAsset]) -> R
             "predecoded Excalifont basic-Latin bytes do not match the sealed identity".to_owned(),
         );
     }
-    rustybuzz::Face::from_slice(&sfnt, 0)
+    ttf_parser::Face::parse(&sfnt, 0)
+        .ok()
         .ok_or_else(|| "predecoded Excalifont basic Latin is not a valid sfnt".to_owned())?;
     let destination = root
         .join("crates/excalidraw-fonts")
@@ -968,7 +969,8 @@ fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String
     {
         return Err("checked-in Excalifont basic-Latin sfnt digest is invalid".to_owned());
     }
-    rustybuzz::Face::from_slice(&sfnt, 0)
+    ttf_parser::Face::parse(&sfnt, 0)
+        .ok()
         .ok_or_else(|| "checked-in Excalifont basic Latin is not a valid sfnt".to_owned())?;
     let metadata_path = path.with_extension("sfnt.json");
     let metadata: Value = serde_json::from_slice(
@@ -1065,7 +1067,8 @@ fn review_decode(upstream_path: &str, source: &[u8]) -> Result<ReviewedDecode, S
             decoded.len()
         ));
     }
-    rustybuzz::Face::from_slice(&decoded, 0)
+    ttf_parser::Face::parse(&decoded, 0)
+        .ok()
         .ok_or_else(|| format!("{upstream_path} does not decode to a valid sfnt"))?;
     let source_sha256 = sha256(source);
     Ok(ReviewedDecode {
@@ -1260,7 +1263,8 @@ fn verify_noto_emoji(root: &Path) -> Result<(), String> {
     if sfnt.len() != NOTO_EMOJI_LENGTH || sha256(&sfnt) != NOTO_EMOJI_SHA256 {
         return Err("checked-in Noto Emoji 3.003 fallback digest is invalid".to_owned());
     }
-    let face = rustybuzz::Face::from_slice(&sfnt, 0)
+    let face = ttf_parser::Face::parse(&sfnt, 0)
+        .ok()
         .ok_or_else(|| "checked-in Noto Emoji fallback is not a valid sfnt".to_owned())?;
     if face.units_per_em() != 1_000
         || face.glyph_index('\u{1f600}').is_none()
@@ -1561,7 +1565,7 @@ fn assign_layout(assets: &mut [ImportedAsset]) -> Result<(), String> {
 fn xiaolai_shard(source: &[u8]) -> Result<usize, String> {
     let decoded = wuff::decompress_woff2(source)
         .map_err(|error| format!("Xiaolai classification decode failed: {error}"))?;
-    let face = rustybuzz::ttf_parser::Face::parse(&decoded, 0)
+    let face = ttf_parser::Face::parse(&decoded, 0)
         .map_err(|error| format!("Xiaolai classification cmap parse failed: {error}"))?;
     let cmap = face.tables().cmap.ok_or("Xiaolai has no cmap")?;
     let mut codepoints = BTreeSet::new();
