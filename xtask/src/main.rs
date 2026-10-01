@@ -9,6 +9,7 @@ mod conformance_candidate_semantics;
 #[cfg(test)]
 mod conformance_pdf_requalification;
 mod coverage;
+mod demo;
 mod pdf_harness;
 mod pdf_viewers;
 mod representative;
@@ -58,6 +59,7 @@ fn run(family: Family) -> Result<(), String> {
         Family::Conformance(command) => run_conformance(command),
         Family::Representative(command) => representative::run(command),
         Family::PdfHarness(command) => pdf_harness::run(command),
+        Family::Demo(command) => demo::run(command),
     }
 }
 
