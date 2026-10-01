@@ -1,0 +1,73 @@
+{
+  "schema": "excalidraw-render/demo-examples/v1",
+  "groups": [
+    {
+      "title": "Basics & rough style",
+      "examples": [
+        {"id": "rectangle-outline", "source": "tests/conformance/cases/focused/rectangle-outline", "title": "Rectangle outline", "caption": "A single unrounded Rough.js rectangle outline with a transparent fill.", "variants": ["light"]},
+        {"id": "ellipse-diamond-fills", "source": "tests/conformance/cases/focused/ellipse-diamond-fills", "title": "Ellipse and diamond fills", "caption": "Ellipses and diamonds through every fill style (hachure, cross-hatch, solid, zigzag) and every stroke style (solid, dashed, dotted).", "variants": ["light"]},
+        {"id": "rough-fillers-dashed-zigzag-line", "source": "tests/conformance/cases/focused/rough-fillers-dashed-zigzag-line", "title": "Dashed and zigzag-line fillers", "caption": "Rough.js dashed and zigzag-line fillers on rectangles, ellipses, diamonds and closed lines across stroke widths and roughness levels.", "variants": ["light"]},
+        {"id": "cartoonist-roughness", "source": "tests/conformance/cases/focused/cartoonist-roughness", "title": "Cartoonist roughness", "caption": "Roughness 2 (cartoonist) shapes, fills, lines, arrows and a rounded closed line at two stroke widths.", "variants": ["light"]},
+        {"id": "roundness-records", "source": "tests/conformance/cases/focused/roundness-records", "title": "Roundness records", "caption": "Adaptive (default, 8, 64) and legacy proportional corner roundness on rectangles and diamonds, plus curved lines and arrows.", "variants": ["light"]}
+      ]
+    },
+    {
+      "title": "Lines & arrows",
+      "examples": [
+        {"id": "arrow-suite", "source": "tests/conformance/cases/focused/arrow-suite", "title": "Arrow suite", "caption": "Every arrowhead kind on both ends, an elbow arrow, and a bound label whose mask interrupts the shaft.", "variants": ["light"]},
+        {"id": "cartoonist-arrowheads", "source": "tests/conformance/cases/focused/cartoonist-arrowheads", "title": "Cartoonist arrowheads", "caption": "Roughness 2 arrows whose arrow, dot, circle-outline, triangle and crowfoot heads share one per-kind roughness clamp.", "variants": ["light"]},
+        {"id": "rotated-rough-linear", "source": "tests/conformance/cases/focused/rotated-rough-linear", "title": "Rotated rough lines", "caption": "Rotated rough lines, arrows (arrow and bar heads) and an elbow arrow whose drawn outline overshoots their point box.", "variants": ["light"]}
+      ]
+    },
+    {
+      "title": "Freedraw",
+      "examples": [
+        {"id": "freedraw", "source": "tests/conformance/cases/focused/freedraw", "title": "Freedraw strokes", "caption": "Perfect Freehand strokes with simulated pressure (velocity) and recorded per-point pressure.", "variants": ["light"]},
+        {"id": "freedraw-loop-fills", "source": "tests/conformance/cases/focused/freedraw-loop-fills", "title": "Freedraw loop fills", "caption": "Closed freedraw loops filled solid and with hachure at roughness 0, 1 and 2.", "variants": ["light"]}
+      ]
+    },
+    {
+      "title": "Text & fonts",
+      "examples": [
+        {"id": "bound-text-containers", "source": "tests/conformance/cases/focused/bound-text-containers", "title": "Bound text in containers", "caption": "Multi-line bound labels under every text alignment inside rectangle, ellipse and diamond containers.", "variants": ["light"]},
+        {"id": "text-alignment-vertical", "source": "tests/conformance/cases/focused/text-alignment-vertical", "title": "Horizontal and vertical alignment", "caption": "Standalone and bound Excalifont text at left/center/right and top/middle/bottom alignment, placed by stored fields.", "variants": ["light"]},
+        {"id": "excalifont-text", "source": "tests/conformance/cases/focused/excalifont-text", "title": "Excalifont text", "caption": "Wrapped Excalifont text with an embedded font subset.", "variants": ["light"]},
+        {"id": "font-families-virgil-lilita-comic", "source": "tests/conformance/cases/focused/font-families-virgil-lilita-comic", "title": "Virgil, Lilita One, Comic Shanns", "caption": "Bundled Virgil, Lilita One and Comic Shanns families beside an Excalifont control, at two sizes and line heights.", "variants": ["light"]},
+        {"id": "helvetica-text", "source": "tests/conformance/cases/focused/helvetica-text", "title": "Helvetica text", "caption": "Helvetica-family text positioned by Excalidraw's metrics and shaped with the Liberation Sans substitute, under every alignment.", "variants": ["light"]},
+        {"id": "cjk-propagation", "source": "tests/conformance/cases/focused/cjk-propagation", "title": "CJK fallback", "caption": "CJK text falling back from Excalifont to the Xiaolai chain, including mixed Latin, digit and CJK runs.", "variants": ["light"]},
+        {"id": "emoji-fallback", "source": "tests/conformance/cases/focused/emoji-fallback", "title": "Emoji fallback", "caption": "Emoji in Excalifont and Liberation Sans text substituted with the bundled Noto Emoji face.", "variants": ["light"]},
+        {"id": "bidi-text", "source": "tests/conformance/cases/focused/bidi-text", "title": "Bidirectional text", "caption": "Right-to-left Hebrew and Arabic lines and left-to-right text in Excalifont and Helvetica, with a missing glyph.", "variants": ["light"]}
+      ]
+    },
+    {
+      "title": "Images",
+      "examples": [
+        {"id": "image-codecs", "source": "tests/conformance/cases/focused/image-codecs", "title": "Image codecs", "caption": "Embedded PNG, JPEG, WebP, GIF, BMP, ICO and sanitized nested SVG images, with crop and both flip axes.", "variants": ["light"]},
+        {"id": "rounded-image-crop", "source": "tests/conformance/cases/focused/rounded-image-crop", "title": "Rounded image crop", "caption": "A cropped raster image clipped to its roundness corner radius, beside the same crop without roundness.", "variants": ["light"]}
+      ]
+    },
+    {
+      "title": "Transforms & grouping",
+      "examples": [
+        {"id": "transform-opacity-groups", "source": "tests/conformance/cases/focused/transform-opacity-groups", "title": "Rotation, opacity and groups", "caption": "Rotated shapes and linear elements, element opacity, overlapping groups and dashed/dotted strokes.", "variants": ["light"]},
+        {"id": "rotated-shape-bounds", "source": "tests/conformance/cases/focused/rotated-shape-bounds", "title": "Rotated shape bounds", "caption": "Scene extent derived from a rotated ellipse, a rotated diamond and a rotated four-point line on its edges.", "variants": ["light"]}
+      ]
+    },
+    {
+      "title": "Frames, links, dark mode",
+      "examples": [
+        {"id": "frame-export", "source": "tests/conformance/cases/focused/frame-export", "title": "Frame export", "caption": "Per-frame export with the frames subcommand: named, nested, rotated, unnamed and magic frames, clipping and arrow bindings.", "variants": ["frame"]},
+        {"id": "embeddable-links", "source": "tests/conformance/cases/focused/embeddable-links", "title": "Embeddables and links", "caption": "The offline embeddable shell with its label, and admitted and rejected link schemes across element kinds.", "variants": ["light"]},
+        {"id": "dark-mode-images", "source": "tests/conformance/cases/focused/dark-mode-images", "title": "Dark mode with images", "caption": "Dark-mode export filters on a raster PNG image and a nested SVG image.", "variants": ["light", "dark"]}
+      ]
+    },
+    {
+      "title": "Real-world scenes",
+      "examples": [
+        {"id": "velox-design", "source": "tests/conformance/cases/representative/velox-design", "title": "Velox design board", "caption": "A real architecture board: dense arrow bindings, bound Comic Shanns text, rounded rectangles and an embedded scene.", "variants": ["light", "dark"]},
+        {"id": "varmq-queue-diagram", "source": "tests/conformance/cases/representative/varmq-queue-diagram", "title": "varmq queue diagram", "caption": "A real concurrency diagram in one named frame on a tinted background: Excalifont text, labelled bound arrows, cross-hatch fill, exported at scale 0.5.", "variants": ["light", "dark"]},
+        {"id": "excali-local-slides", "source": "tests/conformance/cases/representative/excali-local-slides", "title": "excali-local slides", "caption": "A real slide-deck board: eight named frames clipping sixteen nested-SVG images and framed Virgil text.", "variants": ["light", "dark"]}
+      ]
+    }
+  ]
+}

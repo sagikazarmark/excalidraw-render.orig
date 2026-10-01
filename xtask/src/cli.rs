@@ -31,6 +31,9 @@ pub enum Family {
     /// Independent qpdf structural inspection and calibration fixtures.
     #[command(subcommand)]
     PdfHarness(PdfHarnessCommand),
+    /// Side-by-side demo against official Excalidraw exports.
+    #[command(subcommand)]
+    Demo(DemoCommand),
 }
 
 /// Rejects retired invocations with their migration guidance before parsing,
@@ -624,6 +627,16 @@ pub enum CompactCommand {
     Check {
         /// Output.
         output: PathBuf,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum DemoCommand {
+    /// Render every example in tools/demo/examples.json and write a static page.
+    Build {
+        /// Output directory, replaced on each build [default: target/demo].
+        #[arg(long)]
+        out: Option<PathBuf>,
     },
 }
 
