@@ -1,63 +1,180 @@
 """
 The pinned reference oracle run natively in Dagger, without a Docker daemon.
-The image, platform, user, environment and command match the approval-pinned
-`tools/reference-oracle/run-*.sh` runners. The source is Dagger's own copy, so
-the oracle cannot write to the checkout; results leave only as an exported
-Directory. Collection runs in an empty network namespace (stricter than
-`--network none`: loopback stays down), and only `npm ci` reaches the network.
+Each function runs what the matching approval-pinned
+`tools/reference-oracle/run-*.sh` runner runs, with the same image, platform,
+user and environment, on Dagger's own copy of the source: the oracle cannot
+write to the checkout. Collection runs in an empty network namespace
+(stricter than `--network none`: loopback stays down), and only `npm ci`
+reaches the network.
+
+Every writer returns exactly the files its run added or changed, so
+`export --path .` from the repository root lands them in place. Generate
+modes refuse to overwrite, as the scripts do; list the outputs to replace in
+`fresh` to collect them from scratch without touching the checkout.
+
+The Docker runners stay: the profile and each reference bind them by digest.
+`run-svg-viewer.sh` and `run-svg-text-audit.sh` are viewers driven per file by
+the Rust harness and the candidate gate, not oracle evidence, and are not here.
 """
 type Oracle {
   let source: Directory!
 
   new(source: Directory!) {
     self.source = source.filter(exclude: [
-      ".git", "target", "tools/reference-oracle/node_modules", "tools/reference-oracle/dist",
+      ".git", "target", "tools/reference-oracle/node_modules",
+      "tools/reference-oracle/dist", "tools/reference-oracle/frame-dist",
     ])
     self
   }
 
   """
-  Verify or generate the GIF LZW, palette and extension reference.
-  Verify recollects and fails unless the result is byte-identical to the
-  checked-in reference; generate collects from scratch. Both export
-  tests/oracle/gif-lzw.
+  Run one standalone evidence script (`run-<name>.sh`): build the browser
+  bundle, verify the pinned profile, then `node scripts/<script> <mode> <args>`.
+  The script validates its own modes (generate, verify, and extend or probe
+  where it has them).
   """
-  gifLzw(mode: String! = "verify"): Directory! {
-    if (mode != "verify" and mode != "generate") {
-      raise "mode must be verify or generate"
+  evidence(name: String!, mode: String! = "verify", args: [String!]! = [], fresh: [String!]! = []): Directory! {
+    let script = case (name) {
+      "bmp-ico-container" => "bmp-ico-container-evidence.mjs"
+      "gif-container" => "gif-container-evidence.mjs"
+      "gif-control" => "gif-control-evidence.mjs"
+      "gif-first-frame" => "gif-first-frame-evidence.mjs"
+      "gif-lzw" => "gif-lzw-evidence.mjs"
+      "image-resample" => "image-resample-evidence.mjs"
+      "jpeg-color" => "jpeg-color-evidence.mjs"
+      "jpeg-container" => "jpeg-container-evidence.mjs"
+      "jpeg-exif" => "jpeg-exif-evidence.mjs"
+      "jpeg-gain-map" => "jpeg-gain-map-evidence.mjs"
+      "jpeg-icc" => "jpeg-icc-evidence.mjs"
+      "nested-svg" => "nested-svg-evidence.mjs"
+      "png-color" => "png-color-evidence.mjs"
+      "png-gain-map" => "png-gain-map-evidence.mjs"
+      "png-hdr-metadata" => "png-hdr-metadata-evidence.mjs"
+      "png-precision" => "png-precision-evidence.mjs"
+      "png-stage4" => "png-stage4-evidence.mjs"
+      "png-stage4-oracle" => "png-stage4-oracle-evidence.mjs"
+      "png-stage4-qualified" => "png-stage4-qualified-evidence.mjs"
+      "png-stage4-review" => "png-stage4-review-evidence.mjs"
+      "png-supplemental-composition" => "png-supplemental-composition-evidence.mjs"
+      "stage4-representative" => "stage4-representative.mjs"
+      "stage4-representative-v2" => "stage4-representative-v2.mjs"
+      "stage4-representative-v3" => "stage4-representative-v3.mjs"
+      "stage4-representative-v4" => "stage4-representative-v4.mjs"
+      "webp-container" => "webp-container-evidence.mjs"
+      else => raise "unknown evidence " + name + "; webp-sample, cases and profiles have their own functions"
     }
-    let source = self.source
-    if (mode == "generate") {
-      source = source.withoutFile("tests/oracle/gif-lzw/reference.json")
-    }
-    self.collect(source, "node scripts/gif-lzw-evidence.mjs \"$1\"", [mode])
-      .directory("/workspace/tests/oracle/gif-lzw")
+    self.written(self.installed(self.playwright), self.source.withoutFiles(fresh),
+      "npm run build -- --logLevel error && npm run profile:verify && node scripts/" + script + " \"$@\"",
+      [mode] + args)
   }
 
   """
-  Build the browser bundle, verify the pinned profile, then run one evidence
-  script, as the Docker runners do.
+  `run-webp-sample.sh`: prepare, generate, verify or test-helper, in the image
+  built from `webp-helper.Dockerfile` (the build-helper step).
   """
-  let collect(source: Directory!, script: String!, args: [String!]!): Container! {
-    self.installed
+  webpSample(mode: String! = "verify", fresh: [String!]! = []): Directory! {
+    self.written(self.installed(self.webpHelper), self.source.withoutFiles(fresh),
+      "if [[ \"$1\" == test-helper ]]; then exec node --test scripts/webp-encode-inputs.test.mjs; fi; if [[ \"$1\" != prepare ]]; then npm run build -- --logLevel error && npm run profile:verify; fi; node scripts/webp-sample-evidence.mjs \"$@\"",
+      [mode])
+  }
+
+  """
+  Generate or reproduce a registered conformance case with its registered
+  runner (scene, frame or typography). Reproduce compares against the
+  approved evidence and exports the staged collection under target/.
+  `cargo run -p xtask -- conformance verify <case>` checks the result.
+  """
+  case(caseId: String!, mode: String! = "reproduce"): Directory! {
+    if (mode != "reproduce" and mode != "generate") {
+      raise "mode must be reproduce or generate"
+    }
+    self.written(self.installed(self.playwright), self.source,
+      "runner=\"$(node -e 'const c=JSON.parse(require(\"fs\").readFileSync(\"../../tests/conformance/cases/registry.json\")).cases.find(c=>c.id===process.argv[1]);if(!c)process.exit(1);console.log(c.runner)' \"$2\")\"; " +
+      "case \"$runner\" in " +
+      "tools/reference-oracle/run-conformance.sh) npm run build && node scripts/profile.mjs verify && node scripts/conformance-case.mjs \"$1\" \"$2\" ;; " +
+      "tools/reference-oracle/run-frame-conformance.sh) npm exec vite -- build --config vite.frame.config.mjs && node scripts/frame-profile.mjs verify && node scripts/frame-conformance-case.mjs \"$1\" \"$2\" ;; " +
+      "tools/reference-oracle/run-typography-conformance.sh) npm run build && node scripts/profile.mjs verify && node scripts/typography-conformance-case.mjs \"$1\" \"$2\" ;; " +
+      "*) echo \"unsupported runner: $runner\" >&2; exit 2 ;; " +
+      "esac",
+      [mode, caseId])
+  }
+
+  """
+  `run-container.sh verify|update`: build, check or rewrite the revision-1
+  profile, then run the two-process smoke.
+  """
+  profile(mode: String! = "verify"): Directory! {
+    if (mode != "verify" and mode != "update") {
+      raise "mode must be verify or update"
+    }
+    self.written(self.installed(self.playwright), self.source,
+      "npm run build && npm run profile:\"$1\" && npm run smoke", [mode])
+  }
+
+  """
+  `run-frame-profile.sh verify|update`: the frame bundle and its profile.
+  """
+  frameProfile(mode: String! = "verify"): Directory! {
+    if (mode != "verify" and mode != "update") {
+      raise "mode must be verify or update"
+    }
+    self.written(self.installed(self.playwright), self.source,
+      "npm exec vite -- build --config vite.frame.config.mjs && node scripts/frame-profile.mjs \"$1\"", [mode])
+  }
+
+  """
+  `run-scene-surface.sh verify|update`: the scene-surface evidence and catalog.
+  The Docker runner relies on a dist/ left by an earlier build; this builds it.
+  """
+  sceneSurface(mode: String! = "verify"): Directory! {
+    if (mode != "verify" and mode != "update") {
+      raise "mode must be verify or update"
+    }
+    self.written(self.installed(self.playwright), self.source,
+      "npm run build -- --logLevel error && node scripts/scene-surface-evidence.mjs \"$1\" && node scripts/scene-surface.mjs \"$1\"", [mode])
+  }
+
+  """
+  `run-pdf-fallback-evidence.sh`: rebuild and verify the PDF fallback evidence.
+  """
+  pdfFallback: String! {
+    self.collect(self.installed(self.playwright), self.source,
+      "npm run build && node scripts/pdf-fallback-evidence.mjs verify", []).stdout
+  }
+
+  """
+  The files one oracle run added or changed, without build output.
+  """
+  let written(base: Container!, source: Directory!, command: String!, args: [String!]!): Directory! {
+    let before = base.withDirectory("/workspace", source, owner: "pwuser")
+    before.directory("/workspace")
+      .diff(self.collect(base, source, command, args).directory("/workspace"))
+      .filter(exclude: [
+        "tools/reference-oracle/dist", "tools/reference-oracle/frame-dist",
+        "tools/reference-oracle/node_modules",
+      ])
+  }
+
+  """
+  Run one oracle command as pwuser in an empty network namespace.
+  """
+  let collect(base: Container!, source: Directory!, command: String!, args: [String!]!): Container! {
+    base
       .withDirectory("/workspace", source, owner: "pwuser")
       .withMountedTemp("/dev/shm")
       .withUser("root")
       .withExec([
         "unshare", "--net", "--",
         "setpriv", "--reuid=pwuser", "--regid=pwuser", "--init-groups", "--",
-        "bash", "-eu", "-c",
-        "npm run build -- --logLevel error && npm run profile:verify && " + script,
-        "oracle",
+        "bash", "-eu", "-c", command, "oracle",
       ] + args, insecureRootCapabilities: true)
   }
 
   """
   `run-container.sh install`: the locked dependencies, cached on the lockfile.
   """
-  let installed: Container! {
-    Dagger.container(platform: "linux/amd64")
-      .from(oracleImage)
+  let installed(base: Container!): Container! {
+    base
       .withEnvVariable("HOME", "/tmp")
       .withEnvVariable("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
       .withEnvVariable("REFERENCE_ORACLE_CANONICAL", "1")
@@ -67,6 +184,18 @@ type Oracle {
       .withWorkdir("/workspace/tools/reference-oracle")
       .withUser("pwuser")
       .withExec(["npm", "ci", "--no-audit", "--no-fund"])
+  }
+
+  let playwright: Container! {
+    Dagger.container(platform: "linux/amd64").from(oracleImage)
+  }
+
+  """
+  `run-webp-sample.sh build-helper`: both stages pin the canonical image.
+  """
+  let webpHelper: Container! {
+    self.source.directory("tools/reference-oracle")
+      .dockerBuild(dockerfile: "webp-helper.Dockerfile", platform: "linux/amd64")
   }
 }
 
