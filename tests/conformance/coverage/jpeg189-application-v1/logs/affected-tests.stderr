@@ -1,5 +1,0 @@
-   Compiling xtask v0.1.0 (/home/laborant/excalidraw-render.orig/xtask)
-    Finished `test` profile [optimized] target(s) in 18.04s
-     Running unittests src/main.rs (target/debug/deps/xtask-77a028f4fc8b72b0)
-     Running tests/coverage.rs (target/debug/deps/coverage-0990459f9c41a6c6)
-     Running tests/representative_candidate.rs (target/debug/deps/representative_candidate-46047322f0f9e369)

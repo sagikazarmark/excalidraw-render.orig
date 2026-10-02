@@ -1,2 +1,0 @@
-# Retain the exact recorded command output, including its final blank line.
-logs/*.stdout whitespace=-blank-at-eof

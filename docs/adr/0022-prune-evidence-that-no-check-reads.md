@@ -52,6 +52,21 @@ archived research still name them; those names resolve against Git history at
 `20ab732`. Deleting from the tree does not shrink the repository's history, and
 history is not rewritten.
 
+On 2026-10-02 the same rule removed nine more directories (about 25 MB, the
+tree at `48c0b22` has them). It also covers the completed coverage
+applications under `coverage/`, whose transactions have no remaining reader:
+
+- coverage: `jpeg187-application-v2`, `jpeg188-application-v2`,
+  `jpeg189-application-v1`, `jpeg190-application-v1`,
+  `webp191-application-v1`, `pdfium192-application-v1`,
+  `stage4-format-application-v2` and `stage4-six-case-application`;
+- candidates: `stage4-pdf-backend-requalification-v1`.
+
+`stage4-format-application-v2`, `stage4-six-case-application` and the
+candidate were named only by `jpeg187-application-v2/before-files.json`, which
+went in the same change. `tests/conformance/.gitattributes` went too: every
+path it named had been removed.
+
 ## Consequences
 
 - A future round deletes its own collection once the gate no longer reads it,
