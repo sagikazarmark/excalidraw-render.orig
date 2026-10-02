@@ -209,6 +209,15 @@ pub fn build() -> Result<(PathBuf, Value)> {
         return Err("native candidate replay requires pinned Rust 1.97.1 Linux x86_64".into());
     }
     let cargo = tool("cargo", &["--version"])?;
+    let (executable, cargo_profile) = release_cli()?;
+    let identity = json!({"rustc":rustc.trim(),"cargo":cargo.trim(),"executable_sha256":sha256(&fs::read(&executable).map_err(|e|e.to_string())?),"profile":"release","build_command":build_command_identity(),"cargo_profile":cargo_profile,"incremental":false,"debug":0,"rustflags":[],"codegen_units":1,"lto":true,"panic":"abort"});
+    validate_build_identity(&identity)?;
+    Ok((executable, identity))
+}
+/// Builds the release CLI exactly as `build` does, without the pinned-host
+/// qualification, for callers that record no build identity (the demo).
+/// Returns the executable and Cargo's reported profile.
+pub fn release_cli() -> Result<(PathBuf, Value)> {
     let result = release_command().output().map_err(|e| e.to_string())?;
     if !result.status.success() {
         return Err(format!(
@@ -229,9 +238,7 @@ pub fn build() -> Result<(PathBuf, Value)> {
             }
         })
         .ok_or("Cargo did not return the native CLI executable")?;
-    let identity = json!({"rustc":rustc.trim(),"cargo":cargo.trim(),"executable_sha256":sha256(&fs::read(&executable).map_err(|e|e.to_string())?),"profile":"release","build_command":build_command_identity(),"cargo_profile":cargo_profile,"incremental":false,"debug":0,"rustflags":[],"codegen_units":1,"lto":true,"panic":"abort"});
-    validate_build_identity(&identity)?;
-    Ok((executable, identity))
+    Ok((executable, cargo_profile))
 }
 pub fn render(
     executable: &Path,

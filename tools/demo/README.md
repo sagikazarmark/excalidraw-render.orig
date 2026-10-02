@@ -1,7 +1,7 @@
 # Side-by-side demo
 
-A static page showing this library's SVG, PNG and PDF renders beside the
-official Excalidraw 0.18.1 exports of the same scenes.
+A static page showing this library's SVG and PNG renders beside the official
+Excalidraw 0.18.1 exports of the same scenes.
 
 ```sh
 cargo run --locked -p xtask -- demo build [--out DIR]
@@ -12,9 +12,10 @@ The default output is `target/demo/`; open `target/demo/index.html` directly
 the network. A rebuild replaces the directory, and the command refuses to
 replace a non-empty directory it did not build.
 
-Prerequisites: the pinned Rust 1.97.1 toolchain, Docker, and the reference
-oracle's npm install (`tools/reference-oracle/run-container.sh install`, the
-only step that uses the network).
+Prerequisites: a Rust toolchain. Unlike the native conformance capture, the
+demo records no build identity, so it does not require pinned Rust 1.97.1 on
+Linux x86_64; it builds on any host. Renders can differ slightly between hosts
+and toolchains.
 
 ## What it does
 
@@ -39,25 +40,12 @@ only step that uses the network).
 - Diagnostics are each render's `--report-format json` report, kept next to
   the artifacts and shown collapsed on the page.
 
-## Official PDFs
-
-Excalidraw has no PDF export. `print-official-pdf.mjs` prints each committed
-official SVG with Chromium's `page.pdf()` (page size = the SVG's intrinsic
-width and height in CSS pixels, zero margins, `printBackground`, first page
-only), in the reference oracle's pinned Playwright image with `--network none`
-and the checkout mounted read-only. It uses the oracle's launch arguments and
-browser context, so text falls back to the same 48 system fonts as the oracle;
-fonts the official SVG embeds are used as embedded. The page labels these
-files "Official SVG printed by Chromium".
-
-Skia writes the wall-clock time into `/CreationDate` and `/ModDate`; the script
-overwrites both with `D:20000101000000+00'00'` (same length, so cross-reference
-offsets stay valid). Nothing else in the PDFs varies between runs, so they are
-part of the determinism check.
+- PDF is not part of the demo: Excalidraw has no PDF export, so there is no
+  official PDF to sit beside this library's.
 
 ## Determinism
 
-Two builds produce byte-identical trees, PDFs included:
+Two builds produce byte-identical trees:
 
 ```sh
 cargo run --locked -p xtask -- demo build --out /tmp/demo-a
@@ -70,7 +58,7 @@ when tracked files differ from it.
 
 ## Why the output is not committed
 
-The demo is about 35 MB of artifacts derived entirely from committed inputs,
+The demo is about 19 MB of artifacts derived entirely from committed inputs,
 and one command regenerates it byte for byte. Committing it would double-store
 evidence that is already in the repository (ADR-0022 pruned unread evidence for
 the same reason), and every renderer change would churn it.

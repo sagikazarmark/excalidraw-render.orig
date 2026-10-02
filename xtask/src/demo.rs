@@ -2,9 +2,8 @@
 //!
 //! `demo build` reads `tools/demo/examples.json`, renders every example with
 //! the `--locked` release CLI under its case's export options, copies the
-//! committed official SVG and PNG evidence beside the renders, prints each
-//! official SVG to PDF with Chromium in the pinned oracle container (Excalidraw
-//! has no PDF export), and writes one static `index.html`. Nothing under
+//! committed official SVG and PNG evidence beside the renders, and writes one
+//! static `index.html`. Nothing under
 //! `tests/` is written; every output is a function of the checkout.
 use std::{
     fmt::Write as _,
@@ -23,13 +22,9 @@ type Result<T> = std::result::Result<T, String>;
 
 const EXAMPLES: &str = "tools/demo/examples.json";
 const EXAMPLES_SCHEMA: &str = "excalidraw-render/demo-examples/v1";
-const PRINT_SCRIPT: &str = "tools/demo/print-official-pdf.mjs";
-const ORACLE_PLAYWRIGHT: &str = "tools/reference-oracle/node_modules/playwright/package.json";
-/// The reference oracle's pinned Playwright image (`tools/reference-oracle/run-container.sh`).
-const ORACLE_IMAGE: &str = "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9";
 /// Marks a directory this command built, so a rebuild may replace it.
 const MARKER: &str = ".excalidraw-render-demo";
-const FORMATS: [&str; 3] = ["svg", "png", "pdf"];
+const FORMATS: [&str; 2] = ["svg", "png"];
 
 pub fn run(command: DemoCommand) -> Result<()> {
     match command {
@@ -73,10 +68,7 @@ fn build(out: &Path) -> Result<()> {
     if examples["schema"] != EXAMPLES_SCHEMA {
         return Err(format!("{EXAMPLES}: schema must be {EXAMPLES_SCHEMA}"));
     }
-    if !root.join(ORACLE_PLAYWRIGHT).is_file() {
-        return Err("the reference oracle's Playwright is not installed; run tools/reference-oracle/run-container.sh install".into());
-    }
-    let (cli, _) = conformance_candidate_native::build()?;
+    let (cli, _) = conformance_candidate_native::release_cli()?;
     let version = cli_version(&cli)?;
     let commit = commit()?;
 
@@ -84,11 +76,10 @@ fn build(out: &Path) -> Result<()> {
     let out = fs::canonicalize(out).map_err(|e| format!("{}: {e}", out.display()))?;
 
     let mut groups = Vec::new();
-    let mut prints = Vec::new();
     for group in array(&examples["groups"], "groups")? {
         let mut built = Vec::new();
         for example in array(&group["examples"], "examples")? {
-            let example = build_example(&cli, &out, example, &mut prints)?;
+            let example = build_example(&cli, &out, example)?;
             eprintln!("rendered {}", example.id);
             built.push(example);
         }
@@ -97,7 +88,6 @@ fn build(out: &Path) -> Result<()> {
             examples: built,
         });
     }
-    print_official_pdfs(&out, &prints)?;
     fs::copy(
         root.join("docs/known-limitations.md"),
         out.join("known-limitations.md"),
@@ -127,12 +117,7 @@ fn prepare_output(out: &Path) -> Result<()> {
     fs::write(out.join(MARKER), "").map_err(|e| e.to_string())
 }
 
-fn build_example(
-    cli: &Path,
-    out: &Path,
-    example: &Value,
-    prints: &mut Vec<Value>,
-) -> Result<Example> {
+fn build_example(cli: &Path, out: &Path, example: &Value) -> Result<Example> {
     let id = string(&example["id"], "id")?;
     if id.is_empty()
         || !id
@@ -155,15 +140,6 @@ fn build_example(
             mode @ ("light" | "dark") => rows.push(scene_row(cli, out, &case, &dir, mode)?),
             other => return Err(format!("{id}: unknown variant {other:?}")),
         }
-    }
-    for row in &rows {
-        let (width, height) = &row.official_svg_size;
-        prints.push(json!({
-            "svg": format!("/out/{}/official.svg", row.dir),
-            "pdf": format!("/out/{}/official.pdf", row.dir),
-            "width": width,
-            "height": height,
-        }));
     }
     Ok(Example {
         id: id.into(),
@@ -498,56 +474,6 @@ fn check_background(scene: &Path, options: &Value) -> Result<()> {
     Ok(())
 }
 
-/// Prints every official SVG to PDF in one run of the pinned oracle container,
-/// without network, with the checkout mounted read-only.
-fn print_official_pdfs(out: &Path, jobs: &[Value]) -> Result<()> {
-    let jobs_file = out.join("print-jobs.json");
-    fs::write(
-        &jobs_file,
-        serde_json::to_vec(jobs).map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())?;
-    let user = format!("{}:{}", id("-u")?, id("-g")?);
-    let status = Command::new("docker")
-        .args(["run", "--rm", "--init", "--ipc=host", "--network", "none"])
-        .args(["--platform", "linux/amd64", "--user", &user])
-        .args([
-            "--env",
-            "HOME=/tmp",
-            "--env",
-            "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1",
-        ])
-        .args(["--env", "REFERENCE_ORACLE_CANONICAL=1", "--mount"])
-        .arg(format!(
-            "type=bind,src={},dst=/workspace,readonly",
-            repo_root().display()
-        ))
-        .arg("--mount")
-        .arg(format!("type=bind,src={},dst=/out", out.display()))
-        .args([
-            "--workdir",
-            "/workspace/tools/reference-oracle",
-            ORACLE_IMAGE,
-            "node",
-        ])
-        .arg(format!("/workspace/{PRINT_SCRIPT}"))
-        .arg("/out/print-jobs.json")
-        .status()
-        .map_err(|e| format!("docker: {e}"))?;
-    if !status.success() {
-        return Err("printing the official SVGs to PDF failed".into());
-    }
-    fs::remove_file(jobs_file).map_err(|e| e.to_string())
-}
-
-fn id(flag: &str) -> Result<String> {
-    let output = Command::new("id")
-        .arg(flag)
-        .output()
-        .map_err(|e| e.to_string())?;
-    Ok(String::from_utf8_lossy(&output.stdout).trim().to_owned())
-}
-
 fn cli_version(cli: &Path) -> Result<String> {
     let output = Command::new(cli)
         .arg("--version")
@@ -679,7 +605,6 @@ fn page(groups: &[Group], version: &str, commit: &str) -> String {
 <div><dt>Compatibility target</dt><dd>Excalidraw 0.18.1</dd></div>
 <div><dt>Commit</dt><dd><code>{commit}</code></dd></div>
 </dl>
-<p class="note">Excalidraw has no PDF export. Each “official PDF” below is the official SVG printed by Chromium, not an Excalidraw export.</p>
 </header>
 <div class="layout">
 <nav class="toc" aria-label="Examples">
@@ -749,7 +674,6 @@ fn example_html(html: &mut String, example: &Example) {
 <figure><figcaption>Official PNG</figcaption><div class="render"><img src="{dir}/official.png" alt="Official PNG, {label}" width="{official_w}" height="{official_h}" loading="lazy"></div></figure>
 <figure><figcaption>excalidraw-render PNG</figcaption><div class="render"><img src="{dir}/library.png" alt="excalidraw-render PNG, {label}" width="{library_w}" height="{library_h}" loading="lazy"></div></figure>
 </div>
-<p class="downloads"><a href="{dir}/official.pdf" download>Official SVG printed by Chromium (PDF)</a> <a href="{dir}/library.pdf" download>excalidraw-render PDF</a></p>
 <details><summary>Compatibility diagnostics ({count})</summary>
 "#,
             label = escape(&row.label),
@@ -781,7 +705,6 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0
 .facts div { min-width: 0; }
 .facts dt { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .facts dd { margin: 0; overflow-wrap: anywhere; }
-.note { color: var(--muted); }
 .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; max-width: 1400px; margin: 0 auto; padding: 0 16px 48px; }
 .toc { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; padding: 16px 0; font-size: 0.9rem; }
 .toc h2 { font-size: 1rem; margin: 0 0 4px; }
@@ -795,9 +718,10 @@ main { min-width: 0; }
 .caption { margin: 4px 0 8px; color: var(--muted); }
 .variant h4 { margin: 16px 0 8px; font-size: 0.95rem; }
 .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 12px; }
-figure { margin: 0; min-width: 0; }
+figure { margin: 0; min-width: 0; display: flex; flex-direction: column; }
 figcaption { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
-.render { border: 1px solid var(--line); padding: 8px; overflow: hidden;
+.render { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0;
+  border: 1px solid var(--line); padding: 8px; overflow: hidden;
   background: repeating-conic-gradient(#e8e8e8 0 25%, #ffffff 0 50%) 0 0 / 16px 16px; }
 .render img { display: block; max-width: 100%; height: auto; }
 .downloads { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 4px 0 8px; font-size: 0.9rem; }
