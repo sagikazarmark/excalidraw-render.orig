@@ -99,6 +99,13 @@ type ExcalidrawRender {
   }
 
   """
+  The pinned reference oracle run natively, without a Docker daemon.
+  """
+  oracle: Oracle! {
+    Oracle(self.builds.inputs("runtime"))
+  }
+
+  """
   Collect test-only traces on both targets and export all disagreements.
   """
   traces: Directory! {

@@ -1,0 +1,73 @@
+"""
+The pinned reference oracle run natively in Dagger, without a Docker daemon.
+The image, platform, user, environment and command match the approval-pinned
+`tools/reference-oracle/run-*.sh` runners. The source is Dagger's own copy, so
+the oracle cannot write to the checkout; results leave only as an exported
+Directory. Collection runs in an empty network namespace (stricter than
+`--network none`: loopback stays down), and only `npm ci` reaches the network.
+"""
+type Oracle {
+  let source: Directory!
+
+  new(source: Directory!) {
+    self.source = source.filter(exclude: [
+      ".git", "target", "tools/reference-oracle/node_modules", "tools/reference-oracle/dist",
+    ])
+    self
+  }
+
+  """
+  Verify or generate the GIF LZW, palette and extension reference.
+  Verify recollects and fails unless the result is byte-identical to the
+  checked-in reference; generate collects from scratch. Both export
+  tests/oracle/gif-lzw.
+  """
+  gifLzw(mode: String! = "verify"): Directory! {
+    if (mode != "verify" and mode != "generate") {
+      raise "mode must be verify or generate"
+    }
+    let source = self.source
+    if (mode == "generate") {
+      source = source.withoutFile("tests/oracle/gif-lzw/reference.json")
+    }
+    self.collect(source, "node scripts/gif-lzw-evidence.mjs \"$1\"", [mode])
+      .directory("/workspace/tests/oracle/gif-lzw")
+  }
+
+  """
+  Build the browser bundle, verify the pinned profile, then run one evidence
+  script, as the Docker runners do.
+  """
+  let collect(source: Directory!, script: String!, args: [String!]!): Container! {
+    self.installed
+      .withDirectory("/workspace", source, owner: "pwuser")
+      .withMountedTemp("/dev/shm")
+      .withUser("root")
+      .withExec([
+        "unshare", "--net", "--",
+        "setpriv", "--reuid=pwuser", "--regid=pwuser", "--init-groups", "--",
+        "bash", "-eu", "-c",
+        "npm run build -- --logLevel error && npm run profile:verify && " + script,
+        "oracle",
+      ] + args, insecureRootCapabilities: true)
+  }
+
+  """
+  `run-container.sh install`: the locked dependencies, cached on the lockfile.
+  """
+  let installed: Container! {
+    Dagger.container(platform: "linux/amd64")
+      .from(oracleImage)
+      .withEnvVariable("HOME", "/tmp")
+      .withEnvVariable("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
+      .withEnvVariable("REFERENCE_ORACLE_CANONICAL", "1")
+      .withDirectory("/workspace/tools/reference-oracle",
+        self.source.directory("tools/reference-oracle").filter(include: ["package.json", "package-lock.json"]),
+        owner: "pwuser")
+      .withWorkdir("/workspace/tools/reference-oracle")
+      .withUser("pwuser")
+      .withExec(["npm", "ci", "--no-audit", "--no-fund"])
+  }
+}
+
+let oracleImage: String! = "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9"
