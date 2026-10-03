@@ -299,34 +299,29 @@ fn backend_requalification_reports_retain_exact_bytes() {
     let qpdf = std::env::var_os("QPDF")
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("target/pdf-harness/qpdf/bin/qpdf"));
-    for version in ["v1", "v2"] {
-        let directory = root.join(format!(
-            "tests/conformance/candidates/stage4-pdf-backend-requalification-{version}"
-        ));
-        for role in ["approved", "candidate"] {
-            for repeat in ["", "-repeat"] {
-                let retained =
-                    fs::read(directory.join(format!("{role}-structure{repeat}.json"))).unwrap();
-                let report: Value = serde_json::from_slice(&retained).unwrap();
-                let expectation = scratch.0.join("expectation.json");
-                fs::write(
-                    &expectation,
-                    serde_json::to_vec(&expectation_from_report(&report)).unwrap(),
-                )
-                .unwrap();
-                let output = scratch.inspect(
-                    &qpdf,
-                    &directory.join(format!("{role}{repeat}.pdf")),
-                    &expectation,
-                    report["expected_pass"].as_bool().unwrap(),
-                );
-                assert!(!String::from_utf8_lossy(&output.stderr).contains("panicked"));
-                let actual = fs::read(scratch.0.join("report.json")).unwrap();
-                assert!(
-                    actual == retained,
-                    "{version}/{role}{repeat} report bytes differ"
-                );
-            }
+    // v1, the blocked proposal ADR-0022 pruned, retained the same approved
+    // PDFs and reports and a candidate failing the same two checks.
+    let directory = root.join("tests/conformance/candidates/stage4-pdf-backend-requalification-v2");
+    for role in ["approved", "candidate"] {
+        for repeat in ["", "-repeat"] {
+            let retained =
+                fs::read(directory.join(format!("{role}-structure{repeat}.json"))).unwrap();
+            let report: Value = serde_json::from_slice(&retained).unwrap();
+            let expectation = scratch.0.join("expectation.json");
+            fs::write(
+                &expectation,
+                serde_json::to_vec(&expectation_from_report(&report)).unwrap(),
+            )
+            .unwrap();
+            let output = scratch.inspect(
+                &qpdf,
+                &directory.join(format!("{role}{repeat}.pdf")),
+                &expectation,
+                report["expected_pass"].as_bool().unwrap(),
+            );
+            assert!(!String::from_utf8_lossy(&output.stderr).contains("panicked"));
+            let actual = fs::read(scratch.0.join("report.json")).unwrap();
+            assert!(actual == retained, "{role}{repeat} report bytes differ");
         }
     }
 }

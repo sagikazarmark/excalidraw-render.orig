@@ -73,8 +73,9 @@ pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String>
         let prefix = name
             .strip_suffix(".crate")
             .ok_or("invalid archive suffix")?;
-        let crate_name = prefix
-            .strip_suffix("-0.1.0")
+        let (crate_name, _) = SNAPSHOT_PACKAGES
+            .iter()
+            .find(|(name, version)| prefix == format!("{name}-{version}"))
             .ok_or("unexpected package version")?;
         let readme = external_readme(&bundle.commit, crate_name)?;
         let archive = candidate.join("packages").join(name);

@@ -53,12 +53,21 @@ impl Fixture {
         write_json(self.root.join("plan.json"), &self.plan);
     }
     fn run(&self, args: &[&str], success: bool) -> Output {
-        let out = Command::new(env!("CARGO_BIN_EXE_xtask"))
+        self.run_with(args, success, |_| {})
+    }
+    fn run_with(
+        &self,
+        args: &[&str],
+        success: bool,
+        configure: impl FnOnce(&mut Command),
+    ) -> Output {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_xtask"));
+        command
             .arg("representative")
             .args(args)
-            .current_dir(&self.root)
-            .output()
-            .unwrap();
+            .current_dir(&self.root);
+        configure(&mut command);
+        let out = command.output().unwrap();
         assert_eq!(
             out.status.success(),
             success,
@@ -298,6 +307,14 @@ fn real_capture_repeats_and_rejects_resealed_report_tampering() {
 #[test]
 fn capture_timeout_and_failure_terminate_wrapper_descendants() {
     use std::os::unix::fs::PermissionsExt;
+    // The wrapper needs only `sleep`. Terminating its group must not need a
+    // `kill` executable: slim images such as the Dagger base ship none.
+    let bin = tempfile::tempdir().unwrap();
+    let sleep = std::env::split_paths(&std::env::var_os("PATH").unwrap())
+        .map(|dir| dir.join("sleep"))
+        .find(|path| path.is_file())
+        .unwrap();
+    std::os::unix::fs::symlink(sleep, bin.path().join("sleep")).unwrap();
     for (ending, expected) in [("wait", "process timeout"), ("exit 1", "render failed")] {
         let f = Fixture::new();
         f.prepare(true);
@@ -307,7 +324,7 @@ fn capture_timeout_and_failure_terminate_wrapper_descendants() {
         )
         .unwrap();
         fs::set_permissions(f.root.join("renderer"), fs::Permissions::from_mode(0o755)).unwrap();
-        let output = f.run(
+        let output = f.run_with(
             &[
                 "capture",
                 "bundle",
@@ -317,6 +334,9 @@ fn capture_timeout_and_failure_terminate_wrapper_descendants() {
                 "0.2",
             ],
             false,
+            |command| {
+                command.env("PATH", bin.path());
+            },
         );
         assert!(String::from_utf8_lossy(&output.stderr).contains(expected));
         std::thread::sleep(std::time::Duration::from_millis(1200));
