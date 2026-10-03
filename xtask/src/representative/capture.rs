@@ -195,14 +195,15 @@ fn validate_report(artifact: &[u8], report: &[u8], format: &str) -> Result<()> {
 }
 
 pub(super) fn terminate_tree(child: &mut std::process::Child) {
-    // Unix groups survive the leader's exit. Windows taskkill is best-effort:
+    // Unix groups survive the leader's exit. Signal the group through the
+    // syscall: slim images ship no `kill` executable, and a failed spawn of
+    // one would leave descendants running. Windows taskkill is best-effort:
     // a terminated wrapper may no longer expose its descendant tree.
     #[cfg(unix)]
-    let _ = Command::new("kill")
-        .args(["-KILL", "--", &format!("-{}", child.id())])
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status();
+    let _ = rustix::process::kill_process_group(
+        rustix::process::Pid::from_child(child),
+        rustix::process::Signal::KILL,
+    );
     #[cfg(windows)]
     let _ = Command::new("taskkill")
         .args(["/F", "/T", "/PID", &child.id().to_string()])

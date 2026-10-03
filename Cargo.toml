@@ -90,6 +90,10 @@ svgtypes = "=0.16.1"
 # Host-only: CLI delivery staging and xtask scratch directories. Never a
 # renderer dependency, so random temporary names cannot reach output bytes.
 tempfile = "=3.27.0"
+# Host-only: xtask signals a capture wrapper's process group through the
+# syscall, since slim images ship no `kill` executable. Already in the lock
+# through tempfile; `process` adds no package.
+rustix = { version = "=1.1.5", features = ["process"] }
 tiny-skia = { version = "=0.12.0", default-features = false, features = ["png-format", "std"] }
 # `default-features = false` drops upstream's `cli` feature (and `clap`);
 # `portable-float` passes through to `brotli/portable-float`, which is what keeps
