@@ -3,6 +3,18 @@
 use super::*;
 use std::path::Path;
 
+/// The packages a snapshot bundle archives, by name and version. The font
+/// packages' versions carry the Excalidraw release as build metadata.
+const SNAPSHOT_PACKAGES: [(&str, &str); 4] = [
+    ("excalidraw-render", "0.1.0"),
+    ("excalidraw-fonts", "0.1.0+excalidraw.0.18.1"),
+    ("excalidraw-fonts-xiaolai", "0.1.0+excalidraw.0.18.1"),
+    (
+        "excalidraw-fonts-xiaolai-extended",
+        "0.1.0+excalidraw.0.18.1",
+    ),
+];
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct FileRecord {
@@ -314,13 +326,11 @@ fn verified_bundle(root: &Path, inventory: &Inventory) -> Result<Snapshots, Stri
             return Err(format!("snapshot package bytes disagree: {name}"));
         }
     }
-    let expected: [&str; 4] = [
-        "target/package/excalidraw-render-0.1.0.crate",
-        "target/package/excalidraw-fonts-0.1.0.crate",
-        "target/package/excalidraw-fonts-xiaolai-0.1.0.crate",
-        "target/package/excalidraw-fonts-xiaolai-extended-0.1.0.crate",
-    ];
-    if packages != expected.into_iter().collect() {
+    let expected: BTreeSet<_> = SNAPSHOT_PACKAGES
+        .iter()
+        .map(|(name, version)| format!("target/package/{name}-{version}.crate"))
+        .collect();
+    if packages != expected.iter().map(String::as_str).collect() {
         return Err("incomplete snapshot package inventory".into());
     }
     validate(root, inventory, &bundle)?;

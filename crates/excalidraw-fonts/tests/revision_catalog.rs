@@ -9,6 +9,19 @@ use excalidraw_fonts::{
 };
 use sha2::{Digest, Sha256};
 
+/// The `+excalidraw.x.y.z` build metadata names the release the bundled fonts
+/// come from, so the label cannot drift from the catalog.
+#[test]
+fn package_version_names_the_catalog_excalidraw_release() {
+    let (_, metadata) = env!("CARGO_PKG_VERSION")
+        .split_once('+')
+        .expect("the package version carries build metadata");
+    let release = metadata
+        .strip_prefix("excalidraw.")
+        .expect("the build metadata names the Excalidraw release");
+    assert_eq!(format!("v{release}"), revision_1().excalidraw_release);
+}
+
 #[test]
 fn payloads_keep_whole_chunks_in_the_approved_family_and_declaration_order() {
     let mut payloads = BTreeMap::<&str, Vec<_>>::new();

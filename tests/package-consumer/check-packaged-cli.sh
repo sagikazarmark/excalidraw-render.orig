@@ -11,14 +11,16 @@ if [[ -z "${TARGET}" ]]; then
 fi
 
 cd "${REPO_ROOT}"
-for package in \
-  excalidraw-render-cli \
-  excalidraw-render \
-  excalidraw-fonts \
-  excalidraw-fonts-xiaolai \
-  excalidraw-fonts-xiaolai-extended
+# Font package versions carry the Excalidraw release as build metadata.
+for stem in \
+  excalidraw-render-cli-0.1.0 \
+  excalidraw-render-0.1.0 \
+  excalidraw-fonts-0.1.0+excalidraw.0.18.1 \
+  excalidraw-fonts-xiaolai-0.1.0+excalidraw.0.18.1 \
+  excalidraw-fonts-xiaolai-extended-0.1.0+excalidraw.0.18.1
 do
-  archive="target/package/${package}-0.1.0.crate"
+  package="${stem%-0.1.0*}"
+  archive="target/package/${stem}.crate"
   if [[ ! -f "${archive}" ]]; then
     echo "missing packaged crate archive: ${archive}" >&2
     exit 1
@@ -41,6 +43,6 @@ cargo check \
   --target "${TARGET}" \
   --manifest-path target/package/excalidraw-render-cli-0.1.0/Cargo.toml \
   --config 'patch.crates-io.excalidraw-render.path="target/package/excalidraw-render-0.1.0"' \
-  --config 'patch.crates-io.excalidraw-fonts.path="target/package/excalidraw-fonts-0.1.0"' \
-  --config 'patch.crates-io.excalidraw-fonts-xiaolai.path="target/package/excalidraw-fonts-xiaolai-0.1.0"' \
-  --config 'patch.crates-io.excalidraw-fonts-xiaolai-extended.path="target/package/excalidraw-fonts-xiaolai-extended-0.1.0"'
+  --config 'patch.crates-io.excalidraw-fonts.path="target/package/excalidraw-fonts-0.1.0+excalidraw.0.18.1"' \
+  --config 'patch.crates-io.excalidraw-fonts-xiaolai.path="target/package/excalidraw-fonts-xiaolai-0.1.0+excalidraw.0.18.1"' \
+  --config 'patch.crates-io.excalidraw-fonts-xiaolai-extended.path="target/package/excalidraw-fonts-xiaolai-extended-0.1.0+excalidraw.0.18.1"'

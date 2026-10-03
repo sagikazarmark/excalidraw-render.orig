@@ -11,6 +11,11 @@ const EXCALIDRAW_RELEASE: &str = "v0.18.1";
 const SOURCE_COMMIT: &str = "a2ec2889babf7d2295469c6d90ebe77fae57df84";
 const NPM_INTEGRITY: &str =
     "sha512-6i5Gt7IDTOH//qa0Z315Ly5iVRhjWpu2whrlQFqkuwrkKUWgRsMk0P5qdE7bpyDpai7jeLeWYkyj1eVAfni1lw==";
+/// The npm lockfile that pins the Excalidraw package the revision is measured
+/// against and its fonts are imported from. Its resolved version is the one
+/// the font packages' build metadata names.
+const ORACLE_LOCKFILE: &str = "tools/reference-oracle/package-lock.json";
+const EXCALIDRAW_LOCK_ENTRY: &str = "node_modules/@excalidraw/excalidraw";
 const PROFILE_DIGEST: &str = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 const FRAME_PROFILE_DIGEST: &str =
     "63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e";
@@ -614,6 +619,7 @@ pub fn materialize() -> Result<(), String> {
     let base = root.join("crates/excalidraw-fonts");
     materialize_svg_font_subset_qualification_schema(&root)?;
     materialize_svg_font_subset_profile(&root)?;
+    materialize_font_package_versions(&root)?;
     materialize_incorporated_artifacts(&root, &base)?;
 
     let scene_surface = read_canonical_json(
@@ -869,6 +875,7 @@ pub fn verify() -> Result<(), String> {
     )?;
     verify_catalog_schema(&base, &catalog)?;
     verify_catalog_identity(&catalog, &scene_surface)?;
+    verify_font_package_versions(&root)?;
     verify_font_subset_qualification_corpus(&root, &catalog)?;
     let sources = verify_assets(&root, &catalog)?;
     let reviewed_decodes = read_reviewed_decodes(&root)?;
@@ -1196,6 +1203,85 @@ fn verify_decoder_pin(root: &Path) -> Result<(), String> {
             "Cargo.lock does not resolve exactly one {DECODER_NAME} at {DECODER_VERSION}, \
              the decoder the reviewed-decodes record names"
         ));
+    }
+    Ok(())
+}
+
+/// The `+excalidraw.x.y.z` build metadata every font package version carries:
+/// the Excalidraw version the oracle lockfile resolves, which must be the
+/// release and integrity the catalog records. Cargo and crates.io ignore build
+/// metadata when comparing versions, so it labels a version and never stands
+/// in for a version bump.
+fn font_package_build_metadata(root: &Path) -> Result<String, String> {
+    let path = root.join(ORACLE_LOCKFILE);
+    let lock: Value = serde_json::from_slice(
+        &fs::read(&path).map_err(|error| format!("failed to read {ORACLE_LOCKFILE}: {error}"))?,
+    )
+    .map_err(|error| format!("invalid {ORACLE_LOCKFILE}: {error}"))?;
+    let entry = &lock["packages"][EXCALIDRAW_LOCK_ENTRY];
+    let version = entry["version"]
+        .as_str()
+        .ok_or_else(|| format!("{ORACLE_LOCKFILE} does not resolve @excalidraw/excalidraw"))?;
+    if format!("v{version}") != EXCALIDRAW_RELEASE || entry["integrity"] != json!(NPM_INTEGRITY) {
+        return Err(format!(
+            "{ORACLE_LOCKFILE} resolves @excalidraw/excalidraw {version}, not the \
+             {EXCALIDRAW_RELEASE} release the catalog records"
+        ));
+    }
+    Ok(format!("excalidraw.{version}"))
+}
+
+/// A font package's own version, as its manifest declares it.
+fn font_package_version(root: &Path, package: &str) -> Result<(PathBuf, String, String), String> {
+    let path = root.join(package).join("Cargo.toml");
+    let manifest = fs::read_to_string(&path)
+        .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    let parsed: toml::Value = toml::from_str(&manifest)
+        .map_err(|error| format!("invalid {}: {error}", path.display()))?;
+    let version = parsed
+        .get("package")
+        .and_then(|section| section.get("version"))
+        .and_then(toml::Value::as_str)
+        .ok_or_else(|| format!("{package} must declare its own package version"))?
+        .to_owned();
+    Ok((path, manifest, version))
+}
+
+/// Rewrites each font package's build metadata from the oracle lockfile,
+/// keeping the hand-maintained version before the `+`.
+fn materialize_font_package_versions(root: &Path) -> Result<(), String> {
+    let metadata = font_package_build_metadata(root)?;
+    for package in FONT_PACKAGES {
+        let (path, manifest, version) = font_package_version(root, package)?;
+        let base = version
+            .split_once('+')
+            .map_or(version.as_str(), |(base, _)| base);
+        let declared = format!("\nversion = \"{version}\"\n");
+        if !manifest.contains(&declared) {
+            return Err(format!(
+                "{package} does not declare its version on one line"
+            ));
+        }
+        let updated = manifest.replacen(
+            &declared,
+            &format!("\nversion = \"{base}+{metadata}\"\n"),
+            1,
+        );
+        write_if_changed(&path, updated.as_bytes())?;
+    }
+    Ok(())
+}
+
+fn verify_font_package_versions(root: &Path) -> Result<(), String> {
+    let metadata = font_package_build_metadata(root)?;
+    for package in FONT_PACKAGES {
+        let (_, _, version) = font_package_version(root, package)?;
+        if version.split_once('+').map(|(_, actual)| actual) != Some(metadata.as_str()) {
+            return Err(format!(
+                "{package} version {version} does not carry the +{metadata} build metadata \
+                 {ORACLE_LOCKFILE} pins"
+            ));
+        }
     }
     Ok(())
 }

@@ -27,6 +27,15 @@ The workspace separates the supported `excalidraw-render` Rust library from the
 native `excalidraw-render-cli` package. They share one lockstep version, and the
 CLI is a thin adapter over the public library facade.
 
+The three font packages version separately: their versions carry the Excalidraw
+release their fonts come from as semver build metadata, e.g.
+`0.1.0+excalidraw.0.18.1`. The reference oracle's npm lockfile
+(`tools/reference-oracle/package-lock.json`) is the source of that release;
+`cargo run -p xtask -- catalog materialize` writes it into the manifests and
+`catalog verify` rejects drift. Cargo and crates.io ignore build metadata when
+comparing versions, so a new Excalidraw release still needs a version bump, and
+dependency requirements name only the part before the `+`.
+
 Every dependency is pinned to an exact version (`=x.y.z`), because artifact
 bytes are the product and any transitive bump can change them. For a project
 that depends on the library this has consequences. Cargo resolves one version

@@ -12,6 +12,17 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 const INVENTORY: &str = "tests/conformance/coverage/inventory.json";
+/// The packaged sources the consumer resolves. Font package versions carry the
+/// Excalidraw release as build metadata.
+const PACKAGES: [(&str, &str); 4] = [
+    ("excalidraw-render", "0.1.0"),
+    ("excalidraw-fonts", "0.1.0+excalidraw.0.18.1"),
+    ("excalidraw-fonts-xiaolai", "0.1.0+excalidraw.0.18.1"),
+    (
+        "excalidraw-fonts-xiaolai-extended",
+        "0.1.0+excalidraw.0.18.1",
+    ),
+];
 
 fn main() -> ExitCode {
     match run() {
@@ -110,12 +121,7 @@ fn collect(root: &Path, output: &Path) -> Result<(), String> {
         &["cargo", "metadata", "--locked", "--format-version", "1"],
     )?)
     .map_err(|e| e.to_string())?;
-    for package in [
-        "excalidraw-render",
-        "excalidraw-fonts",
-        "excalidraw-fonts-xiaolai",
-        "excalidraw-fonts-xiaolai-extended",
-    ] {
+    for (package, version) in PACKAGES {
         let matches: Vec<_> = metadata["packages"]
             .as_array()
             .ok_or("missing Cargo packages")?
@@ -125,7 +131,10 @@ fn collect(root: &Path, output: &Path) -> Result<(), String> {
         let [resolved] = matches.as_slice() else {
             return Err(format!("ambiguous package resolution: {package}"));
         };
-        let expected = safe_path(&root, &format!("target/package/{package}-0.1.0/Cargo.toml"))?;
+        let expected = safe_path(
+            &root,
+            &format!("target/package/{package}-{version}/Cargo.toml"),
+        )?;
         if io(Path::new(text(resolved, "manifest_path")?).canonicalize())? != expected {
             return Err(format!(
                 "consumer did not resolve packaged source for {package}"
@@ -138,15 +147,10 @@ fn collect(root: &Path, output: &Path) -> Result<(), String> {
         &["git", "status", "--porcelain", "--untracked-files=all"],
     )?;
     let mut packages = Vec::new();
-    for package in [
-        "excalidraw-render",
-        "excalidraw-fonts",
-        "excalidraw-fonts-xiaolai",
-        "excalidraw-fonts-xiaolai-extended",
-    ] {
+    for (package, version) in PACKAGES {
         packages.push(describe_file(
             &root,
-            &format!("target/package/{package}-0.1.0.crate"),
+            &format!("target/package/{package}-{version}.crate"),
         )?);
     }
     // Refuse overwrite: a failed collection stays inspectable, never a partial success.

@@ -499,7 +499,7 @@ dependencies = [
 
 [[package]]
 name = "excalidraw-fonts"
-version = "0.1.0"
+version = "0.1.0+excalidraw.0.18.1"
 dependencies = [
  "excalidraw-fonts-xiaolai",
  "excalidraw-fonts-xiaolai-extended",
@@ -511,11 +511,11 @@ dependencies = [
 
 [[package]]
 name = "excalidraw-fonts-xiaolai"
-version = "0.1.0"
+version = "0.1.0+excalidraw.0.18.1"
 
 [[package]]
 name = "excalidraw-fonts-xiaolai-extended"
-version = "0.1.0"
+version = "0.1.0+excalidraw.0.18.1"
 
 [[package]]
 name = "excalidraw-render"

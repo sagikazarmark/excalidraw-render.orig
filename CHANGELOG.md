@@ -15,6 +15,8 @@ Initial release candidate of the pure-Rust Excalidraw rendering library and CLI.
 ### Compatibility
 
 - Targets Excalidraw 0.18.1, with [known limitations](docs/known-limitations.md).
+- The font packages name that release in their version's build metadata
+  (`0.1.0+excalidraw.0.18.1`).
 - Linux x86-64 GNU is release-qualified. Browser WASM is experimental.
 - Rendering and diagnostics may change in later 0.x releases. Consumers needing
   historical bytes should pin the renderer version and dependency lockfile.
