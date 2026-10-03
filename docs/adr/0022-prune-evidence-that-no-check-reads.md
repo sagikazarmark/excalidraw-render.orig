@@ -64,7 +64,10 @@ applications under `coverage/`, whose transactions have no remaining reader:
 
 `stage4-format-application-v2`, `stage4-six-case-application` and the
 candidate were named only by `jpeg187-application-v2/before-files.json`, which
-went in the same change. `tests/conformance/.gitattributes` went too: every
+went in the same change. The candidate was also read by
+`backend_requalification_reports_retain_exact_bytes`, which built its path from
+a version loop and so escaped the search; the test now reads only `-v2`, whose
+approved PDFs and reports are byte-identical to the removed ones. `tests/conformance/.gitattributes` went too: every
 path it named had been removed.
 
 ## Consequences
