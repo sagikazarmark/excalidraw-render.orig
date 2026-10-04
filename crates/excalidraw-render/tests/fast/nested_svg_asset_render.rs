@@ -217,7 +217,26 @@ fn nested_svg_at_the_element_depth_ceiling_draws_on_a_spawned_thread_stack() {
                 &format!("<defs>{}</defs><g>", text(r#" id="t""#, LEVELS - 2)),
                 1,
             );
-        for nested in [chain, spans, reused.into_bytes()] {
+        // PDF lowers a filtered group through its own raster walk.
+        let filtered = deeply_nested_svg(
+            LEVELS - 1,
+            "<g>",
+            "</g>",
+            r##"<rect width="20" height="10" fill="#00ff00" filter="url(#f)"/>"##,
+        );
+        let filtered = String::from_utf8(filtered)
+            .expect("fixture is UTF-8")
+            .replacen(
+                "<g>",
+                r#"<defs><filter id="f"><feGaussianBlur stdDeviation="1"/></filter></defs><g>"#,
+                1,
+            );
+        for (nested, effect) in [
+            (chain, false),
+            (spans, false),
+            (reused.into_bytes(), false),
+            (filtered.into_bytes(), true),
+        ] {
             let scene = nested_svg_scene(&nested, 20, 10);
             for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
                 let request = RenderRequest::builder(format)
@@ -226,10 +245,15 @@ fn nested_svg_at_the_element_depth_ceiling_draws_on_a_spawned_thread_stack() {
                 let outcome = Renderer::new()
                     .render(&scene, &request)
                     .expect("nesting at the ceiling renders");
-                assert_eq!(
-                    outcome.report().diagnostics(),
-                    [],
-                    "nesting at the ceiling draws in {format:?}"
+                assert!(
+                    outcome
+                        .report()
+                        .diagnostics()
+                        .iter()
+                        .all(|diagnostic| effect
+                            && diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK),
+                    "nesting at the ceiling draws in {format:?}: {:?}",
+                    outcome.report().diagnostics()
                 );
             }
         }
