@@ -135,6 +135,10 @@ whole `Cargo.lock` and test/helper source bytes are not expectation inputs.
 | Native/WASM snapshots and replay | [Snapshot operations](tests/conformance/coverage/README.md#native-snapshot-candidates) |
 | PDF fixtures, structural checks and pinned viewers | [PDF harness](tools/pdf-harness/README.md) |
 
+Python remains in CI/release tooling, legacy representative bindings and
+approval recording, and selected research/audit tools; see the
+[Python inventory and CI handoff](tools/python-inventory.md).
+
 Completed evaluations and proposal migrations are historical research. Their
 command transcripts are not additional contribution steps; see
 [retired tooling](tools/historical-tooling.md). Older approval records and command

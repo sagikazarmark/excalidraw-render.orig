@@ -65,6 +65,9 @@ opt-level = 2
   fallback (about 12 MiB). Without it, a render that needs Xiaolai fails with
   `render.font-unavailable` instead of substituting another font. All other
   fonts, including Noto Emoji, are always bundled.
+  Features are additive, so another dependency can enable `cjk` again;
+  disabling it removes the font crates from the build, not necessarily from
+  your lockfile or `cargo fetch`.
 
 ## Reproducibility
 
