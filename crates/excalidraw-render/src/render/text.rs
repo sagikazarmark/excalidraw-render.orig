@@ -1788,73 +1788,6 @@ impl ClusterStarts {
     }
 }
 
-#[cfg(test)]
-mod cluster_tests {
-    use super::*;
-
-    /// The text of the cluster at `cluster` as it was found before the starts
-    /// were indexed: the nearest greater start among all glyphs.
-    fn scanned(clusters: &[u32], text: &str, cluster: usize) -> Option<String> {
-        let end = clusters
-            .iter()
-            .filter_map(|candidate| usize::try_from(*candidate).ok())
-            .filter(|candidate| *candidate > cluster)
-            .min()
-            .unwrap_or(text.len());
-        text.get(cluster..end).map(str::to_owned)
-    }
-
-    #[test]
-    fn indexed_cluster_text_matches_the_nearest_greater_cluster_start() {
-        let text = "a\u{301}b\u{10ffff}c d\u{5d0}\u{5d1}";
-        let mut state = 0x2545_f491_u32;
-        let mut next = move || {
-            state ^= state << 13;
-            state ^= state >> 17;
-            state ^= state << 5;
-            state
-        };
-        for _ in 0..2_000 {
-            // Clusters in any order, repeated, past the text or off a
-            // character boundary, as logical, visual or merged runs give them.
-            let clusters = (0..next() % 12)
-                .map(|_| next() % (u32::try_from(text.len()).expect("short") + 3))
-                .collect::<Vec<_>>();
-            let starts = ClusterStarts::new(clusters.iter().copied()).expect("starts index");
-            for &cluster in &clusters {
-                let cluster = usize::try_from(cluster).expect("cluster fits");
-                assert_eq!(
-                    starts.text(text, cluster).ok().map(str::to_owned),
-                    scanned(&clusters, text, cluster),
-                    "{clusters:?} at {cluster}"
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn cluster_text_of_a_long_run_is_not_quadratic() {
-        // A scan per glyph took seconds here; an indexed lookup takes
-        // milliseconds. Right-to-left runs list their clusters descending.
-        let text = "\u{200b}".repeat(400_000);
-        let clusters = (0..text.len())
-            .step_by('\u{200b}'.len_utf8())
-            .rev()
-            .map(|cluster| u32::try_from(cluster).expect("cluster fits"))
-            .collect::<Vec<_>>();
-        let started = std::time::Instant::now();
-        let starts = ClusterStarts::new(clusters.iter().copied()).expect("starts index");
-        for &cluster in &clusters {
-            let cluster = usize::try_from(cluster).expect("cluster fits");
-            assert_eq!(
-                starts.text(&text, cluster).expect("cluster text"),
-                "\u{200b}"
-            );
-        }
-        assert!(started.elapsed() < std::time::Duration::from_secs(5));
-    }
-}
-
 /// The font notices a PDF carries for the complete programs it embeds (spec
 /// 12, #151): one attribution notice per font family whose chunk or fallback
 /// face is embedded, plus the Liberation Sans family's when a generated label
@@ -1983,5 +1916,71 @@ impl OutlineBuilder for GlyphOutlineBuilder<'_> {
 
     fn close(&mut self) {
         self.push(LabelPathOperation::Close);
+    }
+}
+#[cfg(test)]
+mod cluster_tests {
+    use super::*;
+
+    /// The text of the cluster at `cluster` as it was found before the starts
+    /// were indexed: the nearest greater start among all glyphs.
+    fn scanned(clusters: &[u32], text: &str, cluster: usize) -> Option<String> {
+        let end = clusters
+            .iter()
+            .filter_map(|candidate| usize::try_from(*candidate).ok())
+            .filter(|candidate| *candidate > cluster)
+            .min()
+            .unwrap_or(text.len());
+        text.get(cluster..end).map(str::to_owned)
+    }
+
+    #[test]
+    fn indexed_cluster_text_matches_the_nearest_greater_cluster_start() {
+        let text = "a\u{301}b\u{10ffff}c d\u{5d0}\u{5d1}";
+        let mut state = 0x2545_f491_u32;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            state
+        };
+        for _ in 0..2_000 {
+            // Clusters in any order, repeated, past the text or off a
+            // character boundary, as logical, visual or merged runs give them.
+            let clusters = (0..next() % 12)
+                .map(|_| next() % (u32::try_from(text.len()).expect("short") + 3))
+                .collect::<Vec<_>>();
+            let starts = ClusterStarts::new(clusters.iter().copied()).expect("starts index");
+            for &cluster in &clusters {
+                let cluster = usize::try_from(cluster).expect("cluster fits");
+                assert_eq!(
+                    starts.text(text, cluster).ok().map(str::to_owned),
+                    scanned(&clusters, text, cluster),
+                    "{clusters:?} at {cluster}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn cluster_text_of_a_long_run_is_not_quadratic() {
+        // A scan per glyph took seconds here; an indexed lookup takes
+        // milliseconds. Right-to-left runs list their clusters descending.
+        let text = "\u{200b}".repeat(400_000);
+        let clusters = (0..text.len())
+            .step_by('\u{200b}'.len_utf8())
+            .rev()
+            .map(|cluster| u32::try_from(cluster).expect("cluster fits"))
+            .collect::<Vec<_>>();
+        let started = std::time::Instant::now();
+        let starts = ClusterStarts::new(clusters.iter().copied()).expect("starts index");
+        for &cluster in &clusters {
+            let cluster = usize::try_from(cluster).expect("cluster fits");
+            assert_eq!(
+                starts.text(&text, cluster).expect("cluster text"),
+                "\u{200b}"
+            );
+        }
+        assert!(started.elapsed() < std::time::Duration::from_secs(5));
     }
 }
