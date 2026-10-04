@@ -540,6 +540,7 @@ fn build_label(
     let mut pen_y = 0_i64;
     let mut resolved_glyphs = Vec::new();
     resolved_glyphs.try_reserve_exact(glyphs.glyph_infos().len())?;
+    let cluster_starts = ClusterStarts::of(glyphs)?;
     for (info, position) in glyphs.glyph_infos().iter().zip(glyphs.glyph_positions()) {
         let outline_start = operations.len();
         let mut builder = GlyphOutlineBuilder {
@@ -553,7 +554,7 @@ fn build_label(
         };
         let glyph_id = u16::try_from(info.glyph_id).map_err(|_| LabelError::InvalidFont)?;
         let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
-        let cluster_text = glyph_cluster_text(glyphs, &display_text, cluster)?;
+        let cluster_text = cluster_starts.text(&display_text, cluster)?;
         if glyph_id == 0 {
             return Err(LabelError::InvalidFont);
         }
@@ -1615,10 +1616,11 @@ fn shape_official_line(
     resolved_glyphs.try_reserve_exact(glyphs.glyph_infos().len())?;
     let mut pen_x = 0_i64;
     let mut pen_y = 0_i64;
+    let cluster_starts = ClusterStarts::of(&glyphs)?;
     for (info, position) in glyphs.glyph_infos().iter().zip(glyphs.glyph_positions()) {
         let glyph_id = u16::try_from(info.glyph_id).map_err(|_| LabelError::InvalidFont)?;
         let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
-        let cluster_text = glyph_cluster_text(&glyphs, display_text, cluster)?;
+        let cluster_text = cluster_starts.text(display_text, cluster)?;
         if glyph_id == 0 {
             if let Some(codepoint) = cluster_text.chars().next().map(u32::from) {
                 missing_codepoints.try_reserve(1)?;
@@ -1736,20 +1738,100 @@ fn try_owned(value: &str) -> Result<String, LabelError> {
     Ok(owned)
 }
 
-fn glyph_cluster_text<'a>(
-    glyphs: &crate::shaping::GlyphBuffer,
-    text: &'a str,
-    cluster: usize,
-) -> Result<&'a str, LabelError> {
-    let cluster_end = glyphs
-        .glyph_infos()
-        .iter()
-        .filter_map(|candidate| usize::try_from(candidate.cluster).ok())
-        .filter(|candidate| *candidate > cluster)
-        .min()
-        .unwrap_or(text.len());
-    text.get(cluster..cluster_end)
-        .ok_or(LabelError::InvalidFont)
+/// The distinct cluster starts of one shaped run, ascending whatever the run's
+/// visual order, so each glyph finds where its cluster's text ends without
+/// scanning every other glyph.
+struct ClusterStarts(Vec<usize>);
+
+impl ClusterStarts {
+    fn of(glyphs: &crate::shaping::GlyphBuffer) -> Result<Self, LabelError> {
+        Self::new(glyphs.glyph_infos().iter().map(|info| info.cluster))
+    }
+
+    fn new(clusters: impl ExactSizeIterator<Item = u32>) -> Result<Self, LabelError> {
+        let mut starts = Vec::new();
+        starts.try_reserve_exact(clusters.len())?;
+        starts.extend(clusters.filter_map(|cluster| usize::try_from(cluster).ok()));
+        starts.sort_unstable();
+        starts.dedup();
+        Ok(Self(starts))
+    }
+
+    /// The text of the cluster starting at `cluster`: up to the nearest
+    /// greater cluster start, else to the end of `text`.
+    fn text<'a>(&self, text: &'a str, cluster: usize) -> Result<&'a str, LabelError> {
+        let next = self.0.partition_point(|start| *start <= cluster);
+        let cluster_end = self.0.get(next).copied().unwrap_or(text.len());
+        text.get(cluster..cluster_end)
+            .ok_or(LabelError::InvalidFont)
+    }
+}
+
+#[cfg(test)]
+mod cluster_tests {
+    use super::*;
+
+    /// The text of the cluster at `cluster` as it was found before the starts
+    /// were indexed: the nearest greater start among all glyphs.
+    fn scanned(clusters: &[u32], text: &str, cluster: usize) -> Option<String> {
+        let end = clusters
+            .iter()
+            .filter_map(|candidate| usize::try_from(*candidate).ok())
+            .filter(|candidate| *candidate > cluster)
+            .min()
+            .unwrap_or(text.len());
+        text.get(cluster..end).map(str::to_owned)
+    }
+
+    #[test]
+    fn indexed_cluster_text_matches_the_nearest_greater_cluster_start() {
+        let text = "a\u{301}b\u{10ffff}c d\u{5d0}\u{5d1}";
+        let mut state = 0x2545_f491_u32;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            state
+        };
+        for _ in 0..2_000 {
+            // Clusters in any order, repeated, past the text or off a
+            // character boundary, as logical, visual or merged runs give them.
+            let clusters = (0..next() % 12)
+                .map(|_| next() % (u32::try_from(text.len()).expect("short") + 3))
+                .collect::<Vec<_>>();
+            let starts = ClusterStarts::new(clusters.iter().copied()).expect("starts index");
+            for &cluster in &clusters {
+                let cluster = usize::try_from(cluster).expect("cluster fits");
+                assert_eq!(
+                    starts.text(text, cluster).ok().map(str::to_owned),
+                    scanned(&clusters, text, cluster),
+                    "{clusters:?} at {cluster}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn cluster_text_of_a_long_run_is_not_quadratic() {
+        // A scan per glyph took seconds here; an indexed lookup takes
+        // milliseconds. Right-to-left runs list their clusters descending.
+        let text = "\u{200b}".repeat(400_000);
+        let clusters = (0..text.len())
+            .step_by('\u{200b}'.len_utf8())
+            .rev()
+            .map(|cluster| u32::try_from(cluster).expect("cluster fits"))
+            .collect::<Vec<_>>();
+        let started = std::time::Instant::now();
+        let starts = ClusterStarts::new(clusters.iter().copied()).expect("starts index");
+        for &cluster in &clusters {
+            let cluster = usize::try_from(cluster).expect("cluster fits");
+            assert_eq!(
+                starts.text(&text, cluster).expect("cluster text"),
+                "\u{200b}"
+            );
+        }
+        assert!(started.elapsed() < std::time::Duration::from_secs(5));
+    }
 }
 
 /// The font notices a PDF carries for the complete programs it embeds (spec
