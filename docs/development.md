@@ -79,9 +79,10 @@ deterministically. `--name-regex` filters nonempty source frame names. Batch
 publication is stage-all by default; `--allow-partial` publishes independent
 successes while retaining a nonzero exit status for any failed frame.
 
-`--list` is a dry run: it reports the ordinal, kind, name, and derived basename
-of every frame the same selection would export, and writes nothing. An empty
-selection succeeds, with a `note:` line in human mode. `--output` and `--format`
+`--list` is a dry run: it prints the ordinal, kind, name, and derived basename
+of every frame the same selection would export to standard output (or to
+`--report-output`), and writes nothing else. An empty selection succeeds, with
+a `note:` line on stderr in human mode. `--output` and `--format`
 are required only outside `--list`: the output is a directory, so there is no
 extension to infer the format from.
 

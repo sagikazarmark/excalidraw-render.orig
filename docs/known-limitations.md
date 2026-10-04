@@ -20,9 +20,11 @@ each one at runtime.
 
 ## Scene input
 
-- A version-2 scene must carry a `files` map, even an empty one. Excalidraw
-  treats a missing map as empty; this renderer rejects the scene with
-  `scene.invalid-envelope`, and the CLI suggests adding `"files": {}`.
+- A scene must be a version-2 document with `type`, `version`, `elements`,
+  `appState` and `files` members, even empty ones. Excalidraw's own exports
+  always have them, and Excalidraw treats a missing `files` map as empty; this
+  renderer rejects a document missing any of them with
+  `scene.invalid-envelope`, and the CLI names every missing member in one hint.
 - Only `.excalidraw` JSON is read. PNG and SVG exports with an embedded scene,
   library files, and clipboard data are recognized and rejected.
 
@@ -44,7 +46,15 @@ each one at runtime.
   ICC profile has a known color mismatch (#197).
 - Emoji render as monochrome Noto Emoji outlines, not the colour emoji a
   browser draws from system fonts (#233 tracks an opt-in colour face).
-- Bundled font substitution and glyph fallback differ from ambient browser fonts.
+- Text is drawn only with the bundled fonts. A browser falls back to system
+  fonts; this renderer draws `?` for a character none of them covers and
+  reports `font.missing-glyph`. The bundled fonts cover Latin, Greek and
+  Cyrillic (Nunito lacks Greek; Lilita One and Comic Shanns lack both), and
+  Chinese, Japanese and Korean only in the Excalifont family (through Xiaolai,
+  the default `cjk` feature). Hebrew, Arabic, Armenian, Georgian, Ethiopic,
+  Thai, and Indic scripts such as Devanagari, Bengali and Tamil draw as `?`, as
+  do Vietnamese stacked diacritics outside Nunito and Cascadia Code.
+- Other bundled font substitutions differ from ambient browser fonts.
   These are diagnosed. SVG/PDF viewer antialiasing can differ within reviewed
   visual budgets or case-specific exceptions.
 - PDF is vector-first, not universally all-vector: unsupported nested-SVG effects
