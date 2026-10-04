@@ -1,5 +1,8 @@
 //! Pinned Excalidraw fonts and complete selection metadata.
 //!
+//! An implementation detail of `excalidraw-render`, which pins this crate
+//! exactly; its API carries no stability guarantee for other consumers.
+//!
 //! The default `cjk` feature bundles Xiaolai. Disabling it retains every catalog
 //! record and declaration; loading an unavailable chunk returns an explicit error.
 
