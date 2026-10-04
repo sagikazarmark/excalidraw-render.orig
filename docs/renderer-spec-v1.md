@@ -455,11 +455,11 @@ basename is reported as a stem. An empty selection is a valid answer and exits
 `0`, unlike an export, which fails `cli.frame-no-match`. Exceeding
 `--max-frames` still fails `cli.frame-limit-exceeded`. `--list` does not accept
 `--report-format none`. The listing is delivered on the report channel: human
-mode emits one tab-separated line per frame; JSON mode emits one schema-1
-document whose top-level member order is `schema_version`, `status`,
-`renderer_version`, `compatibility_revision`, `excalidraw_release`,
-`reference_profile_digest`, `mode`, `frames`, with `mode` fixed to `list` and
-each entry ordered `ordinal`, `kind`, `name`, `output_basename`.
+mode emits one tab-separated line per frame, or one `note:` line for an empty
+selection; JSON mode emits one schema-1 document whose top-level member order
+is `schema_version`, `status`, `renderer_version`, `compatibility_revision`,
+`excalidraw_release`, `reference_profile_digest`, `mode`, `frames`, with `mode`
+fixed to `list` and each entry ordered `ordinal`, `kind`, `name`, `output_basename`.
 
 The optional name regex uses Unicode-aware linear-time Rust regex search,
 case-sensitive by default. It is applied only to nonempty source string names.
@@ -530,9 +530,13 @@ also fails, exit 1 without claiming successful reporting or trying another
 channel. The failure envelope has top-level `artifact: null`; delivery details
 record whether artifact bytes were already delivered.
 
-Human mode prints all diagnostics for a diagnosed success and nothing for clean
-success. JSON mode always emits one report document. `none` suppresses successful
-reporting and emits one non-JSON family/code/message line on failure.
+Human mode prints the diagnostics of a diagnosed success and nothing for clean
+success. It folds occurrences with the same code and message into one line with
+their count and element IDs, and lists informational diagnostics only with
+`-v, --verbose`; a failure is an `error: MESSAGE [CODE]` line, optionally
+followed by `hint:` lines. JSON mode always emits one report document with every
+occurrence. `none` suppresses successful reporting and emits one non-JSON
+`error: MESSAGE [CODE]` line on failure.
 
 | Exit | Meaning |
 | ---: | --- |
@@ -541,7 +545,7 @@ reporting and emits one non-JSON family/code/message line on failure.
 | `2` | Grammar, request, format, duplicate-ID, or unsupported-revision usage error |
 
 `--list-revisions` accepts only human or JSON report controls and lists revisions
-in increasing order. `--version` is human-only standalone stdout and prints
+in increasing order. `-V, --version` is human-only standalone stdout and prints
 package version, default revision, Excalidraw release, and profile digest.
 
 ## 8. Rendering Semantics

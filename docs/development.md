@@ -51,7 +51,9 @@ For scene export, `INPUT` and `OUTPUT` may be `-` for standard input and artifac
 standard output. Frame batches accept standard input but require an output
 directory. The scene output format is inferred from a recognized path extension
 or selected with `--format`; the default padding is 10 logical pixels. Run
-`excalidraw-render --help` for the complete request and reporting controls.
+`excalidraw-render --help` and `excalidraw-render help frames` for the complete
+request and reporting controls. `--max-dimension` applies to PNG and PDF only;
+SVG output ignores it with a warning.
 For large scenes, prefer `--max-dimension <value>` for PNG and PDF output;
 the default scale of 1 preserves the full logical dimensions and may exceed the
 raster-surface or PDF page-size limits.
@@ -64,8 +66,17 @@ publication is stage-all by default; `--allow-partial` publishes independent
 successes while retaining a nonzero exit status for any failed frame.
 
 `--list` is a dry run: it reports the ordinal, kind, name, and derived basename
-of every frame the same selection would export, and writes nothing. `--output`
-and `--format` are required only outside `--list`.
+of every frame the same selection would export, and writes nothing. An empty
+selection succeeds, with a `note:` line in human mode. `--output` and `--format`
+are required only outside `--list`: the output is a directory, so there is no
+extension to infer the format from.
+
+The human report (the default, on stderr) prints one line per distinct
+diagnostic, `warning: MESSAGE [CODE] (N occurrences; elements ...)`, and hides
+informational ones unless `-v, --verbose` is given. A failure prints
+`error: MESSAGE [CODE]` with the path and operating-system reason where one
+applies, followed by `hint:` lines suggesting a fix. Use `--report-format json`
+for every diagnostic occurrence in a stable, machine-readable form.
 
 ```sh
 target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.svg
