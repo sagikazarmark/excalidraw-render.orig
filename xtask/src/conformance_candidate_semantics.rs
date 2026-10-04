@@ -191,7 +191,9 @@ fn resources(d: &str, key: &str) -> Result<Vec<(String, usize)>> {
         t.len().is_multiple_of(4),
         "resource entries must be references",
     )?;
-    t.chunks_exact(4)
+    t.as_chunks::<4>()
+        .0
+        .iter()
         .map(|e| {
             require(
                 e[0].starts_with('/') && e[2..] == ["0", "R"],
@@ -305,7 +307,7 @@ fn pdf_graph(map: &BTreeMap<usize, Object>, expected: &Value, source: &Value) ->
         colors.len() == w * h * 3 && alphas.len() == w * h,
         "plane lengths",
     )?;
-    for (i, p) in pixels.chunks_exact(4).enumerate() {
+    for (i, p) in pixels.as_chunks::<4>().0.iter().enumerate() {
         require(
             alphas[i] == p[3],
             "attached PDF alpha sample differs from authored oracle",
@@ -353,7 +355,7 @@ fn pdf_graph(map: &BTreeMap<usize, Object>, expected: &Value, source: &Value) ->
         .collect::<Vec<_>>();
     require(refs.len() == 6, "exactly two page annotations")?;
     let mut links = BTreeMap::new();
-    for triple in refs.chunks_exact(3) {
+    for triple in refs.as_chunks::<3>().0 {
         require(triple[1..] == ["0", "R"], "annotation reference")?;
         let a = object(
             map,

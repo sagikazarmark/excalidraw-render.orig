@@ -414,7 +414,7 @@ pub fn palette_cases() -> Vec<Case> {
             [85, 170, 255, 0, 85, 170].map(|g| [g, g, g, 255]).to_vec()
         };
         let mut raw = Vec::new();
-        for row in pixels.chunks_exact(3) {
+        for row in pixels.as_chunks::<3>().0 {
             raw.push(0);
             for p in row {
                 match color {
@@ -467,7 +467,7 @@ pub fn palette_cases() -> Vec<Case> {
                 Outcome::Accepted(1),
             );
             if color == 2 {
-                for p in r.pixels.chunks_exact_mut(4) {
+                for p in r.pixels.as_chunks_mut::<4>().0 {
                     p[3] = 255;
                 }
             }

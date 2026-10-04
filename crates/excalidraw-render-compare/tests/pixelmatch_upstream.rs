@@ -187,11 +187,15 @@ fn read_fixture(name: &str) -> (u32, u32, Vec<u8>) {
     let rgba = match info.color_type {
         png::ColorType::Rgba => decoded,
         png::ColorType::Rgb => decoded
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .flat_map(|pixel| [pixel[0], pixel[1], pixel[2], 255])
             .collect(),
         png::ColorType::GrayscaleAlpha => decoded
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .flat_map(|pixel| [pixel[0], pixel[0], pixel[0], pixel[1]])
             .collect(),
         png::ColorType::Grayscale => decoded

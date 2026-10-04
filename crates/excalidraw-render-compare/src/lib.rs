@@ -40,7 +40,7 @@ impl CanonicalRgba8 {
             });
         }
 
-        for pixel in rgba.chunks_exact_mut(4) {
+        for pixel in rgba.as_chunks_mut::<4>().0 {
             if pixel[3] == 0 {
                 pixel[..3].fill(0);
             }
@@ -70,7 +70,7 @@ impl CanonicalRgba8 {
         let mut black = Vec::with_capacity(self.rgba.len());
         let mut white = Vec::with_capacity(self.rgba.len());
 
-        for pixel in self.rgba.chunks_exact(4) {
+        for pixel in self.rgba.as_chunks::<4>().0 {
             let [red, green, blue, opacity] =
                 [pixel[0], pixel[1], pixel[2], pixel[3]].map(u32::from);
             let projected_black = [red, green, blue].map(|channel| {
