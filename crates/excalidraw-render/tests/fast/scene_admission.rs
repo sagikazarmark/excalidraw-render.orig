@@ -43,39 +43,87 @@ fn admitted_scene_documents_are_cloneable_and_safe_to_share_between_threads() {
 
 #[test]
 fn noncanonical_scene_envelopes_are_rejected_at_the_offending_or_expected_member() {
-    let cases: &[(&[u8], &str)] = &[
-        (br#"[]"#, ""),
+    let cases: &[(&[u8], &str, &str)] = &[
+        (
+            br#"[]"#,
+            "",
+            "scene document must be a JSON object, not an array",
+        ),
+        (
+            br#""excalidraw""#,
+            "",
+            "scene document must be a JSON object, not a string",
+        ),
         (
             br#"{"version":2,"elements":[],"appState":{},"files":{}}"#,
             "/type",
+            "scene document has no \"type\" member; expected \"excalidraw\"",
         ),
         (
             br#"{"type":"clipboard","version":2,"elements":[],"appState":{},"files":{}}"#,
             "/type",
+            "scene document type must be \"excalidraw\", not \"clipboard\"",
+        ),
+        (
+            br#"{"type":7,"version":2,"elements":[],"appState":{},"files":{}}"#,
+            "/type",
+            "scene document type must be the string \"excalidraw\", not a number",
+        ),
+        (
+            br#"{"type":"excalidrawlib","version":2,"source":"https://excalidraw.com","libraryItems":[]}"#,
+            "/type",
+            "this is an Excalidraw library (type \"excalidrawlib\"), not a scene document; \
+             open it in Excalidraw and export the scene instead",
+        ),
+        (
+            br#"{"type":"excalidraw/clipboard","elements":[],"files":{}}"#,
+            "/type",
+            "this is an Excalidraw clipboard payload (type \"excalidraw/clipboard\"), \
+             not a scene document; paste it into Excalidraw and export the scene instead",
         ),
         (
             br#"{"type":"excalidraw","elements":[],"appState":{},"files":{}}"#,
             "/version",
+            "scene document has no \"version\" member; expected envelope version 2",
+        ),
+        (
+            br#"{"type":"excalidraw","version":3,"elements":[],"appState":{},"files":{}}"#,
+            "/version",
+            "scene envelope version 3 is not supported; only version 2 is",
         ),
         (
             br#"{"type":"excalidraw","version":2.0,"elements":[],"appState":{},"files":{}}"#,
             "/version",
+            "scene envelope version 2.0 is not supported; only version 2 is",
+        ),
+        (
+            br#"{"type":"excalidraw","version":"2","elements":[],"appState":{},"files":{}}"#,
+            "/version",
+            "scene envelope version must be the number 2, not a string",
         ),
         (
             br#"{"type":"excalidraw","version":2,"elements":null,"appState":{},"files":{}}"#,
             "/elements",
+            "scene document \"elements\" must be an array, not null",
+        ),
+        (
+            br#"{"type":"excalidraw","version":2,"appState":{},"files":{}}"#,
+            "/elements",
+            "scene document has no \"elements\" member; expected an array",
         ),
         (
             br#"{"type":"excalidraw","version":2,"elements":[],"appState":[],"files":{}}"#,
             "/appState",
+            "scene document \"appState\" must be an object, not an array",
         ),
         (
             br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":null}"#,
             "/files",
+            "scene document \"files\" must be an object, not null",
         ),
     ];
 
-    for &(bytes, expected_pointer) in cases {
+    for &(bytes, expected_pointer, expected_message) in cases {
         let error = SceneDocument::parse(bytes).expect_err("envelope must be rejected");
         let descriptor = error.descriptor();
 
@@ -86,6 +134,8 @@ fn noncanonical_scene_envelopes_are_rejected_at_the_offending_or_expected_member
         assert_eq!(descriptor.element_id(), None);
         assert_eq!(descriptor.json_pointer(), Some(expected_pointer));
         assert_eq!(descriptor.details(), None);
+        assert_eq!(error.to_string(), expected_message);
+        assert_eq!(descriptor.message(), expected_message);
     }
 }
 

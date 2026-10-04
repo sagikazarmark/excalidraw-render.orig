@@ -195,7 +195,10 @@ members:
 all other root members are permitted and preserved. Bare arrays, scalars, null,
 partial envelopes, clipboard or library payloads, another type, another envelope
 version, or a wrong required container type MUST fail with
-`scene.invalid-envelope`. Duplicate object members MUST be rejected.
+`scene.invalid-envelope`. Its message names the offending or missing member and
+what was found there, and says when the document is an Excalidraw library
+(`"excalidrawlib"`) or clipboard (`"excalidraw/clipboard"`) payload rather
+than a scene document. Duplicate object members MUST be rejected.
 
 After the envelope passes, parsing MUST remain compatibility-revision-neutral.
 It MUST retain every occurrence, including scalar element entries, malformed
