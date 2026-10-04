@@ -166,6 +166,12 @@ mod shaping;
 #[cfg(test)]
 mod stage4_diagnostic_contract;
 
+/// Compiles the crate README's examples, so the crates.io page stays in step
+/// with the API.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;
+
 pub use compatibility::{
     AssetChainEntry, CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily,
     FiniteValue, LogicalBounds, Measurement, MetadataComponent, MetadataOperation, NestedPath,
