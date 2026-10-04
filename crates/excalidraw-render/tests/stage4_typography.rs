@@ -163,7 +163,7 @@ fn assert_phase_axis(font_size: f64, angle: f64, scale: f64, identical: [bool; 2
             .as_chunks::<4>()
             .0
             .iter()
-            .zip(shifted.chunks_exact(4))
+            .zip(shifted.as_chunks::<4>().0.iter())
             .filter(|(left, right)| left != right)
             .count();
         assert_eq!(

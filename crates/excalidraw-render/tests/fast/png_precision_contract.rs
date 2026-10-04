@@ -123,8 +123,10 @@ fn check_group(group: &str, count: usize) {
                     );
                     let differences: Vec<_> = actual
                         .rgba
-                        .chunks_exact(4)
-                        .zip(expected_png.rgba.chunks_exact(4))
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
+                        .zip(expected_png.rgba.as_chunks::<4>().0.iter())
                         .enumerate()
                         .filter(|(_, (a, b))| a != b)
                         .take(8)

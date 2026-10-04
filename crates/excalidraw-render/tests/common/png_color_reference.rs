@@ -555,7 +555,7 @@ pub fn appearance(row: &Value, actual: CanonicalRgba8, pdf: bool) {
         .as_chunks::<4>()
         .0
         .iter()
-        .zip(expected_bytes.chunks_exact_mut(4))
+        .zip(expected_bytes.as_chunks_mut::<4>().0.iter_mut())
         .zip(row["alpha"].as_array().unwrap())
     {
         let alpha = alpha.as_u64().unwrap() as u8;

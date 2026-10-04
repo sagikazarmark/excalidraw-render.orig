@@ -391,7 +391,9 @@ fn pdf_link_regions_follow_rotation_and_frame_clipping() {
         .collect::<Vec<_>>();
     assert_eq!(refs.len(), 6);
     for (reference, url) in refs
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .zip(["https://example.com/top", "https://example.com/visible"])
     {
         assert_eq!(&reference[1..], &["0", "R"]);

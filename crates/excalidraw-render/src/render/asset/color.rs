@@ -60,7 +60,7 @@ pub(super) fn normalize_rgba(
         }
         ColorNormalization::Lut(lut) => {
             let lut = lut.first().ok_or(ResolveError::DecodeFailed)?;
-            for p in rgba.chunks_exact_mut(4) {
+            for p in rgba.as_chunks_mut::<4>().0.iter_mut() {
                 if lut.gray() && (p[0] != p[1] || p[1] != p[2]) {
                     return Err(ResolveError::Unsupported);
                 }
@@ -91,7 +91,12 @@ pub(super) fn normalize_rgba(
             let mut output = [0_u16; 1024];
             for block in rgba.chunks_mut(source.len()) {
                 let source_len = if gray {
-                    for (pixel, target) in block.chunks_exact(4).zip(source.chunks_exact_mut(2)) {
+                    for (pixel, target) in block
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
+                        .zip(source.as_chunks_mut::<2>().0.iter_mut())
+                    {
                         if pixel[0] != pixel[1] || pixel[1] != pixel[2] {
                             return Err(ResolveError::Unsupported);
                         }
@@ -567,7 +572,7 @@ fn validate_png_icc_direction(bytes: &[u8]) -> Result<&[u8], ResolveError> {
         .and_then(|v| v.checked_add(132))
         .ok_or(ResolveError::Unsupported)?;
     let table = bytes.get(132..size).ok_or(ResolveError::Unsupported)?;
-    for tag in table.chunks_exact(12) {
+    for tag in table.as_chunks::<12>().0.iter() {
         let offset = usize::try_from(u32::from_be_bytes(
             tag[4..8]
                 .try_into()

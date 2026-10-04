@@ -159,7 +159,9 @@ fn check_rows(evidence: &serde_json::Value, group: &str, count: usize) {
                         h as usize,
                     );
                     assert!(rgba
-                        .chunks_exact(4)
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
                         .all(|p| p[3] != 0 || p[..3] == [0, 0, 0]));
                     reference::appearance(row, CanonicalRgba8::new(w, h, rgba).unwrap(), true);
                 }

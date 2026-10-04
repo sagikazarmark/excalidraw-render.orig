@@ -518,7 +518,9 @@ fn pdf_image_pixels(objects: &BTreeMap<usize, PdfObject>, width: usize, height: 
     };
     assert_eq!(alphas.len(), width * height);
     colors
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .zip(alphas)
         .flat_map(|(rgb, a)| [rgb[0], rgb[1], rgb[2], a])
         .collect()

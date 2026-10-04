@@ -57,7 +57,7 @@ fn trc(data: &[u8]) -> Result<ToneReprCurve> {
                 values
                     .try_reserve_exact(count)
                     .map_err(|_| ResolveError::Memory)?;
-                for pair in bytes.chunks_exact(2) {
+                for pair in bytes.as_chunks::<2>().0.iter() {
                     values.push(u16::from_be_bytes([pair[0], pair[1]]));
                 }
                 Ok(values)
@@ -102,7 +102,7 @@ pub(super) fn parse(bytes: &[u8]) -> Result<ColorProfile> {
         count.checked_mul(12).ok_or(ResolveError::Unsupported)?,
     )?;
     let mut selected = [None; 12];
-    for tag in table.chunks_exact(12) {
+    for tag in table.as_chunks::<12>().0.iter() {
         if let Some(i) = NAMES.iter().position(|n| n == &tag[..4]) {
             selected[i] = Some(span(bytes, word(tag, 4)? as usize, word(tag, 8)? as usize)?);
         }

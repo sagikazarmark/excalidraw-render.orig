@@ -45,9 +45,14 @@ pub(super) fn composite_unmasked_raster_blocks(
                         "PNG raster block bounds invariant failed".to_owned(),
                     )
                 })?;
-            for (source, block) in row.chunks_exact(4).zip(target.chunks_exact_mut(scale * 4)) {
+            for (source, block) in row
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(target.chunks_exact_mut(scale * 4))
+            {
                 let inverse = 256 - u16::from(source[3]);
-                for pixel in block.chunks_exact_mut(4) {
+                for pixel in block.as_chunks_mut::<4>().0.iter_mut() {
                     for (destination, source) in pixel.iter_mut().zip(source) {
                         *destination =
                             (u16::from(*source) + ((u16::from(*destination) * inverse) >> 8)) as u8;

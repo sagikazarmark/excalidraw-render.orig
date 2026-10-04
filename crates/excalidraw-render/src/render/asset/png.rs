@@ -420,7 +420,7 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
                 saw_trns = true;
                 if matches!(color_type, Some(0 | 2)) {
                     let maximum = (1_u32 << bit_depth) - 1;
-                    for sample in data.chunks_exact(2) {
+                    for sample in data.as_chunks::<2>().0.iter() {
                         if u32::from(u16::from_be_bytes([sample[0], sample[1]])) > maximum {
                             return Err(ResolveError::DecodeFailed);
                         }

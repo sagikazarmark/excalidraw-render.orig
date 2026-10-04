@@ -58,7 +58,9 @@ pub(super) fn has_tag(profile: &[u8], name: &[u8; 4]) -> Result<bool> {
         132,
         count.checked_mul(12).ok_or(ResolveError::Unsupported)?,
     )?
-    .chunks_exact(12)
+    .as_chunks::<12>()
+    .0
+    .iter()
     .any(|t| &t[..4] == name))
 }
 fn short(data: &[u8], at: usize) -> Result<u16> {
@@ -270,7 +272,7 @@ impl Lut {
         )?;
         let mut selected = None;
         for wanted in [b"A2B0", b"A2B1"] {
-            if let Some(tag) = table.chunks_exact(12).find(|t| &t[..4] == wanted) {
+            if let Some(tag) = table.as_chunks::<12>().0.iter().find(|t| &t[..4] == wanted) {
                 selected = Some(span(profile, word(tag, 4)?, word(tag, 8)?)?);
                 break;
             }

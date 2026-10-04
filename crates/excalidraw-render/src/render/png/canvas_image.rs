@@ -214,7 +214,7 @@ pub(super) fn skia_half(source: PremulView<'_>) -> Result<PremulImage, FormatEnc
     for (row, line) in output.data.chunks_exact_mut(output_width * 4).enumerate() {
         let (y_taps, y_count) = taps(height, row);
         let y_total: u32 = y_taps[..y_count].iter().map(|tap| tap.1).sum();
-        for (column, pixel) in line.chunks_exact_mut(4).enumerate() {
+        for (column, pixel) in line.as_chunks_mut::<4>().0.iter_mut().enumerate() {
             let (x_taps, x_count) = taps(width, column);
             let x_total: u32 = x_taps[..x_count].iter().map(|tap| tap.1).sum();
             let shift = (x_total * y_total).trailing_zeros();
@@ -362,7 +362,7 @@ pub(super) fn lowp_bilinear(
     let output_width = width as usize;
     for (row, line) in output.data.chunks_exact_mut(output_width * 4).enumerate() {
         let (y0, y1, ty) = axis((row as f32 + 0.5) * inverse_y, source.height);
-        for (column, pixel) in line.chunks_exact_mut(4).enumerate() {
+        for (column, pixel) in line.as_chunks_mut::<4>().0.iter_mut().enumerate() {
             let (x0, x1, tx) = axis((column as f32 + 0.5) * inverse_x, source.width);
             let (p00, p10) = (source.pixel(x0, y0), source.pixel(x1, y0));
             let (p01, p11) = (source.pixel(x0, y1), source.pixel(x1, y1));
@@ -605,7 +605,7 @@ pub(super) fn device_draw_image_rect(
                 let row_bytes = (rect.2 - rect.0) as usize * 4;
                 for (row, line) in output.pixels.chunks_exact_mut(row_bytes).enumerate() {
                     let y = (i64::from(rect.1) + row as i64 - iy) as usize;
-                    for (column, pixel) in line.chunks_exact_mut(4).enumerate() {
+                    for (column, pixel) in line.as_chunks_mut::<4>().0.iter_mut().enumerate() {
                         let x = (i64::from(rect.0) + column as i64 - ix) as usize;
                         pixel.copy_from_slice(bitmap.pixel(x, y));
                     }
@@ -708,7 +708,7 @@ fn legacy_shade(
         {
             for (row, line) in output.pixels.chunks_exact_mut(row_bytes).enumerate() {
                 let y = (i64::from(top) + row as i64 + ry).clamp(0, max_y) as usize;
-                for (column, pixel) in line.chunks_exact_mut(4).enumerate() {
+                for (column, pixel) in line.as_chunks_mut::<4>().0.iter_mut().enumerate() {
                     let x = (i64::from(left) + column as i64 + rx).clamp(0, max_x) as usize;
                     pixel.copy_from_slice(bitmap.pixel(x, y));
                 }
@@ -735,7 +735,7 @@ fn legacy_shade(
     for (row, line) in output.pixels.chunks_exact_mut(row_bytes).enumerate() {
         let y = top + row as u32;
         let (mut fx, mut fy) = (0_i64, 0_i64);
-        for (column, pixel) in line.chunks_exact_mut(4).enumerate() {
+        for (column, pixel) in line.as_chunks_mut::<4>().0.iter_mut().enumerate() {
             if column % 127 == 0 {
                 (fx, fy) = start(left + column as u32, y);
             }

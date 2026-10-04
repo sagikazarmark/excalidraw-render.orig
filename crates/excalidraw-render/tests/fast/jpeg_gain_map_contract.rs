@@ -85,7 +85,7 @@ fn evidence() -> Value {
     for (bytes, expected) in [
         (
             include_bytes!("png_profile_contract.rs").as_slice(),
-            "994389eed1224886cfb0df9e8382d90bcac8b6350d72618409a01a1d108a3661",
+            "264f8425ecb989052f433ed501a3f98e2bf1a55f03b4f54d61dbeb83f5883973",
         ),
         (
             include_bytes!("../common/pdf_inspect.rs").as_slice(),
@@ -515,7 +515,9 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
     let rgba = match info.color_type {
         png::ColorType::Rgba => pixels,
         png::ColorType::Rgb => pixels
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .flat_map(|p| [p[0], p[1], p[2], 255])
             .collect(),
         _ => panic!("reference PNG layout"),
@@ -525,7 +527,7 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
 fn opaque_extent(pixels: &CanonicalRgba8, row: &Value) {
     assert_eq!(u64::from(pixels.width()), row["width"].as_u64().unwrap());
     assert_eq!(u64::from(pixels.height()), row["height"].as_u64().unwrap());
-    assert!(pixels.rgba().chunks_exact(4).all(|p| p[3] == 255));
+    assert!(pixels.rgba().as_chunks::<4>().0.iter().all(|p| p[3] == 255));
 }
 fn comparison(
     reference: &CanonicalRgba8,
@@ -1577,7 +1579,9 @@ fn assert_output_mutations(record: &Value) {
         let channels = if color == png::ColorType::Rgb { 3 } else { 4 };
         let mut samples: Vec<u8> = original
             .rgba
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .flat_map(|p| {
                 if channels == 3 {
                     p[..3].to_vec()

@@ -256,11 +256,7 @@ fn inspect(bytes: &[u8]) -> Result<Wire, &'static str> {
     let flags = r.byte()?;
     require(flags & 0xf8 == 0xf0, "global palette flags")?;
     require(r.take(2)? == [0, 0], "background/aspect")?;
-    let palette: Vec<[u8; 3]> = r
-        .take(3 * (2 << (flags & 7)))?
-        .chunks_exact(3)
-        .map(|p| p.try_into().unwrap())
-        .collect();
+    let palette: Vec<[u8; 3]> = r.take(3 * (2 << (flags & 7)))?.as_chunks::<3>().0.to_vec();
     let mut extensions = Vec::new();
     let mut image = None;
     loop {
@@ -749,7 +745,7 @@ fn evidence() -> Value {
     for (bytes, digest) in [
         (
             include_bytes!("png_profile_contract.rs").as_slice(),
-            "994389eed1224886cfb0df9e8382d90bcac8b6350d72618409a01a1d108a3661",
+            "264f8425ecb989052f433ed501a3f98e2bf1a55f03b4f54d61dbeb83f5883973",
         ),
         (
             include_bytes!("../common/pdf_inspect.rs").as_slice(),
@@ -919,7 +915,7 @@ fn png_pixels(bytes: &[u8], expected: &[u8], w: usize, h: usize, native: bool) {
     assert_eq!((actual.width as usize, actual.height as usize), (w, h));
     assert!(actual.rgba == expected, "exact PNG samples");
     assert!(
-        actual.rgba.chunks_exact(4).all(|p| p[3] == 255),
+        actual.rgba.as_chunks::<4>().0.iter().all(|p| p[3] == 255),
         "opaque samples"
     );
 }
@@ -962,7 +958,7 @@ fn artifact(bytes: &[u8], format: OutputFormat, row: &Value) {
                 actual == expected,
                 "exact page-bound PDF image/alpha samples"
             );
-            assert!(actual.chunks_exact(4).all(|p| p[3] == 255));
+            assert!(actual.as_chunks::<4>().0.iter().all(|p| p[3] == 255));
         }
         _ => unreachable!(),
     }
@@ -1128,7 +1124,9 @@ fn negative_helpers(record: &Value) {
         match mutation {
             "rgb" => {
                 samples = samples
-                    .chunks_exact(4)
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
                     .flat_map(|p| p[..3].iter().copied())
                     .collect()
             }

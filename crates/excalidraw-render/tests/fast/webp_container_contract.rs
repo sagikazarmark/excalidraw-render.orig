@@ -114,7 +114,12 @@ fn animated(row: &Value) -> bool {
 /// `(Pixelmatch changed pixels, differing pixels, maximum channel delta)`.
 fn measure(whole: &RegionReport, expected: &[u8], actual: &[u8]) -> (usize, usize, u8) {
     let (mut differing, mut maximum) = (0, 0);
-    for (a, b) in expected.chunks_exact(4).zip(actual.chunks_exact(4)) {
+    for (a, b) in expected
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(actual.as_chunks::<4>().0.iter())
+    {
         differing += usize::from(a != b);
         maximum = maximum.max((0..4).map(|c| a[c].abs_diff(b[c])).max().unwrap());
     }
@@ -228,10 +233,21 @@ fn check(groups: &[&str], formats: &[OutputFormat]) -> usize {
                 },
                 OutputFormat::Pdf if divergence.is_none() => {
                     let rgba = super::png_profile_contract::pdf_rgba(&bytes, 9, 7);
-                    let alpha =
-                        |rgba: &[u8]| rgba.chunks_exact(4).map(|p| p[3]).collect::<Vec<_>>();
+                    let alpha = |rgba: &[u8]| {
+                        rgba.as_chunks::<4>()
+                            .0
+                            .iter()
+                            .map(|p| p[3])
+                            .collect::<Vec<_>>()
+                    };
                     assert_eq!(alpha(&rgba), alpha(reference.rgba()), "{id} PDF alpha");
-                    if reference.rgba().chunks_exact(4).all(|p| p[3] == 255) {
+                    if reference
+                        .rgba()
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
+                        .all(|p| p[3] == 255)
+                    {
                         let actual = CanonicalRgba8::new(9, 7, rgba).unwrap();
                         judge(
                             id,
