@@ -74,7 +74,9 @@ fn unknown_options_and_short_version_use_the_command_grammar() {
         assert_eq!(bogus.status.code(), Some(2), "{args:?}");
         let stderr = String::from_utf8_lossy(&bogus.stderr);
         assert!(
-            stderr.contains("error: unexpected argument '--bogus' found"),
+            stderr.starts_with(
+                "error: unexpected argument '--bogus' found [cli.invalid-arguments]\n"
+            ),
             "{args:?}: {stderr}"
         );
         assert!(stderr.contains("Usage:"), "{stderr}");
@@ -83,7 +85,7 @@ fn unknown_options_and_short_version_use_the_command_grammar() {
     let frames_bogus = cli(&["frames", "scene.excalidraw", "--padding", "3"]);
     assert_eq!(frames_bogus.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&frames_bogus.stderr)
-        .contains("error: unexpected argument '--padding' found"));
+        .starts_with("error: unexpected argument '--padding' found [cli.invalid-arguments]\n"));
 }
 
 #[test]
@@ -103,6 +105,151 @@ fn a_scene_file_named_like_the_subcommand_stays_addressable() {
             .expect("render the scene named frames");
         assert!(result.status.success(), "{args:?}: {result:?}");
         assert!(temp.join(output).is_file(), "{args:?}");
+    }
+}
+
+#[test]
+fn human_errors_name_the_path_the_reason_and_the_fix() {
+    let scratch = temp_directory_named("human-errors");
+    let temp = scratch.path();
+
+    let missing = temp.join("missing.excalidraw");
+    let reason = fs::File::open(&missing).expect_err("the input is missing");
+    let result = cli(&[missing.to_str().unwrap(), "-o", "x.svg"]);
+    assert_eq!(result.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: cannot open input '{}': {reason} [cli.input-read-failed]\n",
+            missing.display()
+        )
+    );
+
+    let existing = temp.join("existing.svg");
+    fs::write(&existing, b"old").expect("create existing output");
+    let result = render_command(&existing)
+        .output()
+        .expect("render over output");
+    assert_eq!(result.status.code(), Some(2));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: output '{}' already exists [cli.destination-exists]\nhint: use --force to overwrite it\n",
+            existing.display()
+        )
+    );
+
+    let nested = temp.join("no-such-directory").join("out.svg");
+    let result = render_command(&nested)
+        .output()
+        .expect("render into a missing directory");
+    assert_eq!(result.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains(&format!(
+            "\nerror: cannot create output '{}': ",
+            nested.display()
+        )),
+        "{stderr}"
+    );
+    assert!(stderr.contains("[cli.output-write-failed]\n"), "{stderr}");
+    assert!(
+        stderr.contains(&format!(
+            "hint: directory '{}' does not exist",
+            temp.join("no-such-directory").display()
+        )),
+        "{stderr}"
+    );
+
+    let broken = temp.join("broken.excalidraw");
+    fs::write(
+        &broken,
+        b"{\"type\":\"excalidraw\",\n  \"version\":2,\n  \"elements\":[1,,]}",
+    )
+    .expect("write broken JSON");
+    let result = cli(&[broken.to_str().unwrap(), "-o", "-", "-f", "svg"]);
+    assert_eq!(result.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: cannot parse '{}': scene document is not valid JSON at line 3, column 17 [scene.invalid-json]\n",
+            broken.display()
+        )
+    );
+
+    let huge = temp.join("huge.png");
+    let result = render_command(&huge)
+        .args(["--scale", "20"])
+        .output()
+        .expect("render an oversized PNG");
+    assert_eq!(result.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("\nerror: ") && stderr.contains("[resource.raster-surface-exceeded]\n"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("hint: use --max-dimension"), "{stderr}");
+
+    // `none` keeps failures to one line, without hints.
+    let result = render_command(&existing)
+        .args(["--report-format", "none"])
+        .output()
+        .expect("render over output without a report");
+    assert_eq!(result.status.code(), Some(2));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: output '{}' already exists [cli.destination-exists]\n",
+            existing.display()
+        )
+    );
+}
+
+#[test]
+fn image_inputs_are_recognized_and_explained() {
+    let scratch = temp_directory_named("image-inputs");
+    let temp = scratch.path();
+    let png = temp.join("embedded.png");
+    let svg = temp.join("plain.svg");
+    render_command(&png)
+        .arg("--embed-scene")
+        .output()
+        .expect("render a PNG with an embedded scene");
+    render_command(&svg).output().expect("render an SVG");
+
+    for (image, kind, code) in [
+        (&png, "PNG", "scene.invalid-utf8"),
+        (&svg, "SVG", "scene.invalid-json"),
+    ] {
+        let result = cli(&[image.to_str().unwrap(), "-o", "-", "-f", "svg"]);
+        assert_eq!(result.status.code(), Some(1), "{kind}");
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(
+            stderr.starts_with(&format!(
+                "error: cannot parse '{}': it is {} {kind} image, not an Excalidraw scene [{code}]\n",
+                image.display(),
+                if kind == "SVG" { "an" } else { "a" }
+            )),
+            "{stderr}"
+        );
+        assert!(
+            stderr.contains("hint: PNG and SVG input is not supported"),
+            "{stderr}"
+        );
+
+        // The machine-readable report keeps the library's error.
+        let json = cli(&[
+            image.to_str().unwrap(),
+            "-o",
+            "-",
+            "-f",
+            "svg",
+            "--report-format",
+            "json",
+        ]);
+        let report: serde_json::Value =
+            serde_json::from_slice(&json.stderr).expect("JSON failure report");
+        assert_eq!(report["error"]["code"], code);
     }
 }
 
@@ -230,7 +377,7 @@ fn validation_uses_normative_failure_order_and_stable_exit_statuses() {
         .output()
         .expect("run invalid none-mode command");
     assert_eq!(invalid_none.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&invalid_none.stderr).contains("cli cli.invalid-arguments:"));
+    assert!(String::from_utf8_lossy(&invalid_none.stderr).contains("[cli.invalid-arguments]"));
     assert_failure(
         &[
             fixture.to_str().unwrap(),
@@ -394,7 +541,7 @@ fn validation_uses_normative_failure_order_and_stable_exit_statuses() {
         .expect("run none-mode failure");
     assert_eq!(none.status.code(), Some(1));
     assert!(serde_json::from_slice::<serde_json::Value>(&none.stderr).is_err());
-    assert!(String::from_utf8_lossy(&none.stderr).contains("cli cli.input-read-failed:"));
+    assert!(String::from_utf8_lossy(&none.stderr).contains("[cli.input-read-failed]"));
 }
 
 #[test]
@@ -1117,7 +1264,16 @@ fn frame_batches_are_stage_all_by_default_and_partial_only_when_requested() {
         .expect("run human collision report");
     assert_eq!(human.status.code(), Some(1));
     let human = String::from_utf8(human.stderr).expect("human report is UTF-8");
-    assert!(human.contains("cli cli.destination-exists: frame 1 ("));
+    assert!(human.contains("error: frame 1: output '"), "{human}");
+    assert!(
+        human.contains("already exists [cli.destination-exists]\n"),
+        "{human}"
+    );
+    assert_eq!(
+        human.matches("hint: use --force to overwrite").count(),
+        1,
+        "{human}"
+    );
     assert!(!human.contains("frame-batch-"));
 
     let none = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
@@ -1130,7 +1286,11 @@ fn frame_batches_are_stage_all_by_default_and_partial_only_when_requested() {
         .expect("run suppressed collision report");
     assert_eq!(none.status.code(), Some(1));
     let none = String::from_utf8(none.stderr).expect("none report is UTF-8");
-    assert!(none.contains("cli cli.destination-exists: output destination already exists"));
+    assert!(
+        none.contains("already exists [cli.destination-exists]\n"),
+        "{none}"
+    );
+    assert_eq!(none.lines().count(), 1, "{none}");
     assert!(!none.contains("frame-batch-"));
 
     let missing_asset = temp.join("missing-asset.bin");

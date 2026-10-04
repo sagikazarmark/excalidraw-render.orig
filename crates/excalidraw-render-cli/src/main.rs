@@ -18,6 +18,7 @@ use sha2::{Digest, Sha256};
 use tempfile::TempPath;
 
 mod frames;
+mod human;
 
 use frames::{run_frames, FramesCli};
 
@@ -245,14 +246,22 @@ enum ReportError {
 }
 
 impl ReportError {
-    fn human_parts(&self) -> (&str, &str, &str) {
+    fn code(&self) -> &str {
         match self {
-            Self::Library(error) => (
-                error.family().as_str(),
-                error.code().as_str(),
-                error.message(),
-            ),
-            Self::Cli(error) => (error.family, error.code, &error.message),
+            Self::Library(error) => error.code().as_str(),
+            Self::Cli(error) => error.code,
+        }
+    }
+
+    /// The message a person reads: the report message, with the element a
+    /// library failure names.
+    fn human_message(&self) -> String {
+        match self {
+            Self::Library(error) => match error.element_id() {
+                Some(element) => format!("{} (element {element})", error.message()),
+                None => error.message().to_owned(),
+            },
+            Self::Cli(error) => error.message.clone(),
         }
     }
 }
@@ -442,6 +451,11 @@ struct Failure {
     error: Box<ReportError>,
     exit: u8,
     diagnostics: Vec<CompatibilityDiagnostic>,
+    /// Human-report wording that replaces the report message, when the CLI
+    /// knows more context (the input path, a JSON line and column).
+    human_message: Option<String>,
+    /// Human-report advice beyond what the error code implies.
+    hints: Vec<String>,
 }
 
 impl Failure {
@@ -468,6 +482,8 @@ impl Failure {
             })),
             exit,
             diagnostics: Vec::new(),
+            human_message: None,
+            hints: Vec::new(),
         }
     }
 
@@ -476,7 +492,14 @@ impl Failure {
             error: Box::new(ReportError::Library(descriptor)),
             exit,
             diagnostics: Vec::new(),
+            human_message: None,
+            hints: Vec::new(),
         }
+    }
+
+    fn with_hint(mut self, hint: impl Into<String>) -> Self {
+        self.hints.push(hint.into());
+        self
     }
 }
 
@@ -511,13 +534,19 @@ fn command_line_error(error: &clap::Error, preparse_json: bool) -> ExitCode {
             ExitCode::from(EXIT_USAGE)
         }
         _ => {
-            let failure = Failure::cli(
-                "cli.invalid-arguments",
-                error.to_string().trim().to_owned(),
-                None,
-                EXIT_USAGE,
-            );
-            emit_early_failure(failure, preparse_json);
+            let rendered = error.to_string();
+            let bytes = if preparse_json {
+                let failure = Failure::cli(
+                    "cli.invalid-arguments",
+                    rendered.trim().to_owned(),
+                    None,
+                    EXIT_USAGE,
+                );
+                failure_report_bytes(ReportFormat::Json, None, None, failure)
+            } else {
+                human::clap_error(&rendered, "cli.invalid-arguments").into_bytes()
+            };
+            let _ = write_stream(&mut io::stderr().lock(), &bytes);
             ExitCode::from(EXIT_USAGE)
         }
     }
@@ -733,6 +762,7 @@ fn run_render(
             None,
             EXIT_USAGE,
         )
+        .with_hint("pass -o FILE, or -o - with --format to write standard output")
     })?;
 
     let revision = match &cli.compatibility_revision {
@@ -778,9 +808,7 @@ fn run_render(
     validate_paths(input, output, report_output(cli), &asset_paths)?;
     check_destinations(output, report_output(cli), cli.force)?;
 
-    let scene_bytes = read_scene_bounded(input, MAX_SCENE_BYTES)?;
-    let scene = SceneDocument::parse(&scene_bytes)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_OPERATIONAL))?;
+    let scene = read_scene(input)?;
 
     let limits = ResourceLimits::default();
     let mut assets_builder = SupplementalAssets::builder();
@@ -878,7 +906,10 @@ fn select_format(explicit: Option<FormatArg>, output: &str) -> Result<OutputForm
     match (explicit.map(OutputFormat::from), inferred) {
         (Some(format), Some(inferred)) if format != inferred => Err(Failure::cli(
             "cli.format-mismatch",
-            "explicit format does not match the output extension",
+            format!(
+                "--format {} does not match the extension of output '{output}'",
+                format.as_str()
+            ),
             Some(CliDetails::CliArgument {
                 argument: "--format".to_owned(),
                 value: Some(format.as_str().to_owned()),
@@ -1009,9 +1040,19 @@ fn validate_paths(
 }
 
 fn path_conflict<const N: usize>(entries: [(&'static str, Option<&str>, &str); N]) -> Failure {
+    let named = entries
+        .iter()
+        .map(|(role, asset_id, path)| match asset_id {
+            Some(asset_id) => format!("{role} {asset_id} '{path}'"),
+            None => format!("{role} '{path}'"),
+        })
+        .collect::<Vec<_>>();
     Failure::cli(
         "cli.path-conflict",
-        "input, asset, output, and report paths must not alias",
+        format!(
+            "{} are the same file; input, asset, output, and report paths must differ",
+            named.join(" and ")
+        ),
         Some(CliDetails::CliPath {
             entries: entries
                 .into_iter()
@@ -1083,43 +1124,65 @@ fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Fai
             continue;
         }
         if path_entry_exists(Path::new(path)) && !force {
-            return Err(Failure::cli(
-                "cli.destination-exists",
-                format!("{} destination already exists", role.as_str()),
-                Some(CliDetails::Delivery {
-                    role,
-                    operation: CliOperation::Create,
-                    path: path.to_owned(),
-                    artifact_state: DeliveryState::None,
-                }),
-                EXIT_USAGE,
-            ));
+            return Err(destination_exists(role, path));
         }
     }
     Ok(())
 }
 
+/// `cli.destination-exists` for an existing `role` destination at `path`.
+fn destination_exists(role: DeliveryRole, path: &str) -> Failure {
+    Failure::cli(
+        "cli.destination-exists",
+        format!("{} '{path}' already exists", role.as_str()),
+        Some(CliDetails::Delivery {
+            role,
+            operation: CliOperation::Create,
+            path: path.to_owned(),
+            artifact_state: DeliveryState::None,
+        }),
+        EXIT_USAGE,
+    )
+}
+
+/// Reads and parses the scene at `path` (`-` for stdin).
+fn read_scene(path: &str) -> Result<SceneDocument, Failure> {
+    let bytes = read_scene_bounded(path, MAX_SCENE_BYTES)?;
+    SceneDocument::parse(&bytes).map_err(|error| {
+        let descriptor = error.descriptor();
+        let (message, hints) = human::scene_parse_context(path, &bytes, &descriptor);
+        let mut failure = Failure::library(descriptor, EXIT_OPERATIONAL);
+        failure.human_message = Some(message);
+        failure.hints = hints;
+        failure
+    })
+}
+
 fn read_scene_bounded(path: &str, limit: u64) -> Result<Vec<u8>, Failure> {
-    let mut reader: Box<dyn Read> = if path == "-" {
-        Box::new(io::stdin().lock())
-    } else {
-        Box::new(
-            File::open(path)
-                .map_err(|_| io_failure(IoRole::Input, None, CliOperation::Open, path))?,
-        )
-    };
+    let mut reader: Box<dyn Read> =
+        if path == "-" {
+            Box::new(io::stdin().lock())
+        } else {
+            Box::new(File::open(path).map_err(|error| {
+                io_failure(IoRole::Input, None, CliOperation::Open, path, &error)
+            })?)
+        };
     let capacity = usize::try_from(limit.min(1024 * 1024)).unwrap_or(1024 * 1024);
     let mut bytes = Vec::with_capacity(capacity);
     reader
         .by_ref()
         .take(limit.saturating_add(1))
         .read_to_end(&mut bytes)
-        .map_err(|_| io_failure(IoRole::Input, None, CliOperation::Read, path))?;
+        .map_err(|error| io_failure(IoRole::Input, None, CliOperation::Read, path, &error))?;
     let measured = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
     if measured > limit {
         return Err(Failure::cli(
             "scene.input-too-large",
-            "scene input exceeds the fixed parser transport ceiling",
+            format!(
+                "scene input {} exceeds the {} MiB limit",
+                human::input_name(path),
+                limit / (1024 * 1024)
+            ),
             Some(CliDetails::ParseLimit {
                 field: "max_input_bytes",
                 configured: limit,
@@ -1139,14 +1202,29 @@ fn read_bounded_asset(
     aggregate_limit: u64,
     aggregate_remaining: u64,
 ) -> Result<Vec<u8>, Failure> {
-    let file = File::open(path)
-        .map_err(|_| io_failure(IoRole::Asset, Some(asset_id), CliOperation::Open, path))?;
+    let file = File::open(path).map_err(|error| {
+        io_failure(
+            IoRole::Asset,
+            Some(asset_id),
+            CliOperation::Open,
+            path,
+            &error,
+        )
+    })?;
     let stream_limit = per_asset_limit.min(aggregate_remaining);
     let capacity = usize::try_from(stream_limit.min(1024 * 1024)).unwrap_or(1024 * 1024);
     let mut bytes = Vec::with_capacity(capacity);
     file.take(stream_limit.saturating_add(1))
         .read_to_end(&mut bytes)
-        .map_err(|_| io_failure(IoRole::Asset, Some(asset_id), CliOperation::Read, path))?;
+        .map_err(|error| {
+            io_failure(
+                IoRole::Asset,
+                Some(asset_id),
+                CliOperation::Read,
+                path,
+                &error,
+            )
+        })?;
     let measured = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
     if measured > aggregate_remaining {
         return Err(transport_limit_failure(
@@ -1195,22 +1273,23 @@ fn io_failure(
     asset_id: Option<&str>,
     operation: CliOperation,
     path: &str,
+    error: &io::Error,
 ) -> Failure {
-    let code = if role == IoRole::Input {
-        "cli.input-read-failed"
-    } else {
-        "cli.asset-read-failed"
+    let (code, subject) = match (role, asset_id) {
+        (IoRole::Input, _) if path == "-" => ("cli.input-read-failed", "standard input".to_owned()),
+        (IoRole::Input, _) => ("cli.input-read-failed", format!("input '{path}'")),
+        (IoRole::Asset, Some(asset_id)) => (
+            "cli.asset-read-failed",
+            format!("asset {asset_id} '{path}'"),
+        ),
+        (IoRole::Asset, None) => ("cli.asset-read-failed", format!("asset '{path}'")),
     };
     Failure::cli(
         code,
         format!(
-            "failed to {} {}",
+            "cannot {} {subject}: {}",
             operation.as_str(),
-            if role == IoRole::Input {
-                "input"
-            } else {
-                "asset"
-            }
+            human::os_reason(error)
         ),
         Some(CliDetails::CliIo {
             role,
@@ -1254,14 +1333,14 @@ fn deliver_success(
     } else {
         match StagedFile::new(Path::new(output), &artifact, cli.force) {
             Ok(staged) => Some(staged),
-            Err(operation) => {
+            Err(error) => {
                 return emit_failure(
                     cli,
                     Some(identity),
                     Some(format),
                     delivery_failure(
                         DeliveryRole::Output,
-                        operation,
+                        &error,
                         output,
                         DeliveryState::None,
                         diagnostics.clone(),
@@ -1276,14 +1355,14 @@ fn deliver_success(
     } else {
         match StagedFile::new(Path::new(report_output), &report_bytes, cli.force) {
             Ok(staged) => Some(staged),
-            Err(operation) => {
+            Err(error) => {
                 return emit_failure(
                     cli,
                     Some(identity),
                     Some(format),
                     delivery_failure(
                         DeliveryRole::Report,
-                        operation,
+                        &error,
                         report_output,
                         DeliveryState::None,
                         diagnostics.clone(),
@@ -1294,21 +1373,21 @@ fn deliver_success(
     };
 
     if let Some(staged) = staged_output.take() {
-        if let Err(operation) = staged.deliver() {
+        if let Err(error) = staged.deliver() {
             return emit_failure(
                 cli,
                 Some(identity),
                 Some(format),
                 delivery_failure(
                     DeliveryRole::Output,
-                    operation,
+                    &error,
                     output,
                     DeliveryState::None,
                     diagnostics.clone(),
                 ),
             );
         }
-    } else if let Err((operation, artifact_state)) =
+    } else if let Err((error, artifact_state)) =
         write_stream_tracked(&mut io::stdout().lock(), &artifact)
     {
         return emit_failure(
@@ -1317,7 +1396,7 @@ fn deliver_success(
             Some(format),
             delivery_failure(
                 DeliveryRole::Output,
-                operation,
+                &error,
                 output,
                 artifact_state,
                 diagnostics.clone(),
@@ -1326,12 +1405,12 @@ fn deliver_success(
     }
 
     if let Some(staged) = staged_report.take() {
-        if let Err(operation) = staged.deliver() {
+        if let Err(error) = staged.deliver() {
             return emergency_report_failure(
                 cli,
                 identity,
                 format,
-                operation,
+                &error,
                 DeliveryState::Complete,
                 diagnostics,
             );
@@ -1344,7 +1423,7 @@ fn deliver_success(
     0
 }
 
-fn stage_report_file(cli: &Cli, bytes: &[u8]) -> Result<Option<StagedFile>, CliOperation> {
+fn stage_report_file(cli: &Cli, bytes: &[u8]) -> Result<Option<StagedFile>, DeliveryError> {
     let report = report_output(cli);
     if report == "stderr" {
         Ok(None)
@@ -1360,11 +1439,7 @@ fn success_report_bytes(
 ) -> Vec<u8> {
     match mode {
         ReportFormat::Json => json_line(report),
-        ReportFormat::Human => diagnostics
-            .iter()
-            .map(|diagnostic| format!("{}: {}\n", diagnostic.code(), diagnostic.message()))
-            .collect::<String>()
-            .into_bytes(),
+        ReportFormat::Human => human::diagnostics(diagnostics).into_bytes(),
         ReportFormat::None => Vec::new(),
     }
 }
@@ -1384,12 +1459,12 @@ fn emit_failure(
         || !report_destination_is_safe(cli)
     {
         let _ = write_stream(&mut io::stderr().lock(), &bytes);
-    } else if let Err(operation) =
+    } else if let Err(error) =
         StagedFile::new(Path::new(report_output), &bytes, cli.force).and_then(StagedFile::deliver)
     {
         let fallback = delivery_failure(
             DeliveryRole::Report,
-            operation,
+            &error,
             report_output,
             DeliveryState::None,
             diagnostics,
@@ -1444,6 +1519,8 @@ fn report_destination_is_safe(cli: &Cli) -> bool {
     })
 }
 
+/// The failure report: one JSON document, or for people the grouped
+/// diagnostics, an error line, and its hints (`none` keeps only the line).
 fn failure_report_bytes(
     mode: ReportFormat,
     identity: Option<&SelectedIdentity>,
@@ -1451,18 +1528,22 @@ fn failure_report_bytes(
     failure: Failure,
 ) -> Vec<u8> {
     if mode != ReportFormat::Json {
-        let (family, code, message) = failure.error.human_parts();
+        let code = failure.error.code();
+        let message = failure
+            .human_message
+            .clone()
+            .unwrap_or_else(|| failure.error.human_message());
         let mut text = String::new();
         if mode == ReportFormat::Human {
-            for diagnostic in &failure.diagnostics {
-                text.push_str(&format!(
-                    "{}: {}\n",
-                    diagnostic.code(),
-                    diagnostic.message()
-                ));
-            }
+            text.push_str(&human::diagnostics(&failure.diagnostics));
         }
-        text.push_str(&format!("{} {}: {}\n", family, code, message));
+        text.push_str(&human::error_line(&message, code));
+        if mode == ReportFormat::Human {
+            text.push_str(&human::hint_lines(
+                code,
+                failure.hints.iter().map(String::as_str),
+            ));
+        }
         return text.into_bytes();
     }
     json_line(&RenderReport {
@@ -1479,43 +1560,83 @@ fn failure_report_bytes(
     })
 }
 
-fn emit_early_failure(failure: Failure, json: bool) {
-    let bytes = failure_report_bytes(
-        if json {
-            ReportFormat::Json
-        } else {
-            ReportFormat::Human
-        },
-        None,
-        None,
-        failure,
-    );
-    let _ = write_stream(&mut io::stderr().lock(), &bytes);
+/// Why writing a destination failed: the step and the operating system's
+/// reason.
+struct DeliveryError {
+    operation: CliOperation,
+    kind: io::ErrorKind,
+    reason: String,
+}
+
+impl DeliveryError {
+    fn new(operation: CliOperation, error: &io::Error) -> Self {
+        Self {
+            operation,
+            kind: error.kind(),
+            reason: human::os_reason(error),
+        }
+    }
+
+    /// The message for failing to deliver `subject` (for example
+    /// `output 'a.svg'`).
+    fn message(&self, subject: &str) -> String {
+        format!(
+            "cannot {} {subject}: {}",
+            self.operation.as_str(),
+            self.reason
+        )
+    }
+
+    /// Advice for delivering to `path`: name a missing parent directory, or
+    /// the flag that replaces a destination created meanwhile.
+    fn hint(&self, path: &Path) -> Option<String> {
+        match self.kind {
+            io::ErrorKind::AlreadyExists => Some("use --force to overwrite it".to_owned()),
+            io::ErrorKind::NotFound => path
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty() && !parent.is_dir())
+                .map(|parent| {
+                    format!(
+                        "directory '{}' does not exist; create it first",
+                        parent.display()
+                    )
+                }),
+            _ => None,
+        }
+    }
 }
 
 fn delivery_failure(
     role: DeliveryRole,
-    operation: CliOperation,
+    error: &DeliveryError,
     path: &str,
     artifact_state: DeliveryState,
     diagnostics: Vec<CompatibilityDiagnostic>,
 ) -> Failure {
+    let subject = if role == DeliveryRole::Output && path == "-" {
+        "output to standard output".to_owned()
+    } else {
+        format!("{} '{path}'", role.as_str())
+    };
     let mut failure = Failure::cli(
         if role == DeliveryRole::Output {
             "cli.output-write-failed"
         } else {
             "cli.report-write-failed"
         },
-        format!("failed to deliver {}", role.as_str()),
+        error.message(&subject),
         Some(CliDetails::Delivery {
             role,
-            operation,
+            operation: error.operation,
             path: path.to_owned(),
             artifact_state,
         }),
         EXIT_OPERATIONAL,
     );
     failure.diagnostics = diagnostics;
+    if path != "-" {
+        failure.hints.extend(error.hint(Path::new(path)));
+    }
     failure
 }
 
@@ -1523,13 +1644,13 @@ fn emergency_report_failure(
     cli: &Cli,
     identity: &SelectedIdentity,
     format: OutputFormat,
-    operation: CliOperation,
+    error: &DeliveryError,
     artifact_state: DeliveryState,
     diagnostics: Vec<CompatibilityDiagnostic>,
 ) -> u8 {
     let failure = delivery_failure(
         DeliveryRole::Report,
-        operation,
+        error,
         report_output(cli),
         artifact_state,
         diagnostics,
@@ -1555,10 +1676,10 @@ fn deliver_report_bytes(cli: &Cli, bytes: &[u8], artifact_state: DeliveryState) 
     }
     match StagedFile::new(Path::new(report_output), bytes, false).and_then(StagedFile::deliver) {
         Ok(()) => 0,
-        Err(operation) => {
+        Err(error) => {
             let failure = delivery_failure(
                 DeliveryRole::Report,
-                operation,
+                &error,
                 report_output,
                 artifact_state,
                 Vec::new(),
@@ -1578,14 +1699,14 @@ fn write_stdout(bytes: &[u8]) -> u8 {
     }
 }
 
-fn write_stream(writer: &mut impl Write, bytes: &[u8]) -> Result<(), CliOperation> {
-    write_stream_tracked(writer, bytes).map_err(|(operation, _)| operation)
+fn write_stream(writer: &mut impl Write, bytes: &[u8]) -> Result<(), DeliveryError> {
+    write_stream_tracked(writer, bytes).map_err(|(error, _)| error)
 }
 
 fn write_stream_tracked(
     writer: &mut impl Write,
     mut bytes: &[u8],
-) -> Result<(), (CliOperation, DeliveryState)> {
+) -> Result<(), (DeliveryError, DeliveryState)> {
     let mut wrote_bytes = false;
     let state = |wrote_bytes| {
         if wrote_bytes {
@@ -1597,15 +1718,22 @@ fn write_stream_tracked(
     while !bytes.is_empty() {
         match writer.write(bytes) {
             Ok(0) => {
-                return Err((CliOperation::Write, state(wrote_bytes)));
+                let error = io::Error::from(io::ErrorKind::WriteZero);
+                return Err((
+                    DeliveryError::new(CliOperation::Write, &error),
+                    state(wrote_bytes),
+                ));
             }
             Ok(written) => {
                 wrote_bytes = true;
                 bytes = &bytes[written..];
             }
             Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
-            Err(_) => {
-                return Err((CliOperation::Write, state(wrote_bytes)));
+            Err(error) => {
+                return Err((
+                    DeliveryError::new(CliOperation::Write, &error),
+                    state(wrote_bytes),
+                ));
             }
         }
     }
@@ -1613,7 +1741,12 @@ fn write_stream_tracked(
         match writer.flush() {
             Ok(()) => return Ok(()),
             Err(error) if error.kind() == io::ErrorKind::Interrupted => {}
-            Err(_) => return Err((CliOperation::Flush, state(wrote_bytes))),
+            Err(error) => {
+                return Err((
+                    DeliveryError::new(CliOperation::Flush, &error),
+                    state(wrote_bytes),
+                ))
+            }
         }
     }
 }
@@ -1627,7 +1760,7 @@ struct StagedFile {
 }
 
 impl StagedFile {
-    fn new(destination: &Path, bytes: &[u8], replace: bool) -> Result<Self, CliOperation> {
+    fn new(destination: &Path, bytes: &[u8], replace: bool) -> Result<Self, DeliveryError> {
         let parent = destination
             .parent()
             .filter(|path| !path.as_os_str().is_empty())
@@ -1640,7 +1773,7 @@ impl StagedFile {
         destination: &Path,
         bytes: &[u8],
         replace: bool,
-    ) -> Result<Self, CliOperation> {
+    ) -> Result<Self, DeliveryError> {
         let name = destination
             .file_name()
             .and_then(|name| name.to_str())
@@ -1653,11 +1786,12 @@ impl StagedFile {
         builder.permissions(std::os::unix::fs::PermissionsExt::from_mode(0o666));
         let mut file = builder
             .tempfile_in(staging_parent)
-            .map_err(|_| CliOperation::Create)?;
-        file.write_all(bytes).map_err(|_| CliOperation::Write)?;
+            .map_err(|error| DeliveryError::new(CliOperation::Create, &error))?;
+        file.write_all(bytes)
+            .map_err(|error| DeliveryError::new(CliOperation::Write, &error))?;
         file.flush()
             .and_then(|()| file.as_file().sync_all())
-            .map_err(|_| CliOperation::Flush)?;
+            .map_err(|error| DeliveryError::new(CliOperation::Flush, &error))?;
         Ok(Self {
             temporary: file.into_temp_path(),
             destination: destination.to_path_buf(),
@@ -1667,15 +1801,15 @@ impl StagedFile {
 
     /// Atomically publishes the staged file; without `replace` an existing
     /// destination, even one created after staging, is never overwritten.
-    fn deliver(self) -> Result<(), CliOperation> {
+    fn deliver(self) -> Result<(), DeliveryError> {
         if self.replace {
             self.temporary
                 .persist(&self.destination)
-                .map_err(|_| CliOperation::Replace)
+                .map_err(|error| DeliveryError::new(CliOperation::Replace, &error.error))
         } else {
             self.temporary
                 .persist_noclobber(&self.destination)
-                .map_err(|_| CliOperation::Create)
+                .map_err(|error| DeliveryError::new(CliOperation::Create, &error.error))
         }
     }
 }
@@ -1733,9 +1867,9 @@ mod tests {
     use super::{
         json_line, lexical_absolute, parse_asset_declarations, preparse_json_mode, same_path,
         select_format, sha256, split_asset_option, ArtifactDescriptor, CliDetails, CliError,
-        CliMeasurement, CliOperation, CliPathEntry, DeliveryRole, DeliveryState, Failure,
-        FormatArg, IoRole, RenderReport, ReportError, RevisionEntry, RevisionReport, StagedFile,
-        EXIT_USAGE,
+        CliMeasurement, CliOperation, CliPathEntry, DeliveryError, DeliveryRole, DeliveryState,
+        Failure, FormatArg, IoRole, RenderReport, ReportError, RevisionEntry, RevisionReport,
+        StagedFile, EXIT_USAGE,
     };
 
     /// `--help` describes every argument of every command.
@@ -2027,7 +2161,7 @@ mod tests {
         let scratch = tempfile::tempdir().expect("the scratch directory is created");
         let destination = scratch.path().join("result.svg");
         let staged = StagedFile::new(&destination, b"artifact", false)
-            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+            .unwrap_or_else(|error| panic!("{}", error.message("the stage")));
         let [temporary] = entries(scratch.path()).try_into().expect("one staged file");
         assert!(
             temporary.starts_with(".result.svg.") && temporary.ends_with(".tmp"),
@@ -2053,10 +2187,16 @@ mod tests {
         let scratch = tempfile::tempdir().expect("the scratch directory is created");
         let destination = scratch.path().join("result.svg");
         let staged = StagedFile::new(&destination, b"artifact", false)
-            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+            .unwrap_or_else(|error| panic!("{}", error.message("the stage")));
         fs::write(&destination, b"late").expect("a racing writer creates the destination");
 
-        assert!(matches!(staged.deliver(), Err(CliOperation::Create)));
+        assert!(matches!(
+            staged.deliver(),
+            Err(DeliveryError {
+                operation: CliOperation::Create,
+                ..
+            })
+        ));
         assert_eq!(fs::read(&destination).expect("kept"), b"late");
         assert_eq!(
             entries(scratch.path()),
@@ -2070,7 +2210,7 @@ mod tests {
         let scratch = tempfile::tempdir().expect("the scratch directory is created");
         let destination = scratch.path().join("result.svg");
         let staged = StagedFile::new(&destination, b"artifact", true)
-            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+            .unwrap_or_else(|error| panic!("{}", error.message("the stage")));
         fs::write(&destination, b"late").expect("a racing writer creates the destination");
 
         assert!(staged.deliver().is_ok());
@@ -2084,11 +2224,14 @@ mod tests {
         let missing = scratch.path().join("missing").join("result.svg");
         assert!(matches!(
             StagedFile::new(&missing, b"artifact", false),
-            Err(CliOperation::Create)
+            Err(DeliveryError {
+                operation: CliOperation::Create,
+                ..
+            })
         ));
 
         let staged = StagedFile::new(&scratch.path().join("result.svg"), b"artifact", false)
-            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+            .unwrap_or_else(|error| panic!("{}", error.message("the stage")));
         drop(staged);
         assert!(
             entries(scratch.path()).is_empty(),

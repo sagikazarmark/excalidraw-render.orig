@@ -13,14 +13,15 @@ use regex::Regex;
 use serde::{Serialize, Serializer};
 use unicode_normalization::UnicodeNormalization as _;
 
+use crate::human;
 use crate::{
-    deliver_report_bytes, emergency_report_failure, emit_failure, json_line,
-    parse_asset_declarations, path_conflict, path_entry_exists, read_bounded_asset,
-    read_scene_bounded, report_output, same_path, sha256, stage_report_file, validate_paths,
-    validate_report_options, write_stream, ArtifactDescriptor, Cli, CliDetails, CliError,
-    CliOperation, DeliveryRole, DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError,
-    ReportFormat, SelectedIdentity, StagedFile, ASSETS, EXIT_OPERATIONAL, EXIT_USAGE,
-    MAX_SCENE_BYTES, METADATA, OUTPUT, RENDERING, REPORTING,
+    deliver_report_bytes, destination_exists, emergency_report_failure, emit_failure, json_line,
+    parse_asset_declarations, path_conflict, path_entry_exists, read_bounded_asset, read_scene,
+    report_output, same_path, sha256, stage_report_file, validate_paths, validate_report_options,
+    write_stream, ArtifactDescriptor, Cli, CliDetails, CliError, CliOperation, DeliveryError,
+    DeliveryRole, DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError, ReportFormat,
+    SelectedIdentity, StagedFile, ASSETS, EXIT_OPERATIONAL, EXIT_USAGE, METADATA, OUTPUT,
+    RENDERING, REPORTING,
 };
 
 pub(crate) const LONG_ABOUT: &str = "\
@@ -299,22 +300,10 @@ fn prepare_frame_list(
         // overwriting the scene it is reporting on.
         validate_paths(&frames.input, "-", report_path, &BTreeMap::new())?;
         if path_entry_exists(Path::new(report_path)) && !frames.force {
-            return Err(Failure::cli(
-                "cli.destination-exists",
-                "report destination already exists",
-                Some(CliDetails::Delivery {
-                    role: DeliveryRole::Report,
-                    operation: CliOperation::Create,
-                    path: report_path.to_owned(),
-                    artifact_state: DeliveryState::None,
-                }),
-                EXIT_USAGE,
-            ));
+            return Err(destination_exists(DeliveryRole::Report, report_path));
         }
     }
-    let scene_bytes = read_scene_bounded(&frames.input, MAX_SCENE_BYTES)?;
-    let scene = SceneDocument::parse(&scene_bytes)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_OPERATIONAL))?;
+    let scene = read_scene(&frames.input)?;
     let selected = select_frames(&scene, regex.as_ref());
     if selected.len() > frames.max_frames as usize {
         return Err(frame_limit_exceeded(frames));
@@ -547,26 +536,17 @@ fn prepare_and_render_frames(
         ));
     }
     if report_path != "stderr" && path_entry_exists(Path::new(report_path)) && !frames.force {
-        return Err(Failure::cli(
-            "cli.destination-exists",
-            "report destination already exists",
-            Some(CliDetails::Delivery {
-                role: DeliveryRole::Report,
-                operation: CliOperation::Create,
-                path: report_path.to_owned(),
-                artifact_state: DeliveryState::None,
-            }),
-            EXIT_USAGE,
-        ));
+        return Err(destination_exists(DeliveryRole::Report, report_path));
     }
-    let scene_bytes = read_scene_bounded(&frames.input, MAX_SCENE_BYTES)?;
-    let scene = SceneDocument::parse(&scene_bytes)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_OPERATIONAL))?;
+    let scene = read_scene(&frames.input)?;
     let selected = select_frames(&scene, regex.as_ref());
     if selected.is_empty() {
         return Err(Failure::cli(
             "cli.frame-no-match",
-            "scene contains no frames matching the requested selection",
+            match &frames.name_regex {
+                Some(regex) => format!("no frames match --name-regex '{regex}'"),
+                None => "the scene has no frames".to_owned(),
+            },
             None,
             EXIT_OPERATIONAL,
         ));
@@ -611,7 +591,10 @@ fn prepare_and_render_frames(
                     .zip(&destination_collisions)
                     .find_map(|(destination, collision)| collision.then_some(destination))
                 {
-                    return Err(destination_exists(destination));
+                    return Err(destination_exists(
+                        DeliveryRole::Output,
+                        &destination.to_string_lossy(),
+                    ));
                 }
                 return Err(error);
             }
@@ -636,7 +619,10 @@ fn prepare_and_render_frames(
                 .zip(&destination_collisions)
                 .find_map(|(destination, collision)| collision.then_some(destination))
             {
-                return Err(destination_exists(destination));
+                return Err(destination_exists(
+                    DeliveryRole::Output,
+                    &destination.to_string_lossy(),
+                ));
             }
             return Err(
                 if error.kind() == FrameBatchErrorKind::SharedPreparationFailed {
@@ -697,18 +683,9 @@ fn prepare_and_render_frames(
                 }
                 match StagedFile::new_at(staging_parent, destination, bytes, frames.force) {
                     Ok(staged) => entries.push((entry, Some(staged))),
-                    Err(operation) => {
+                    Err(error) => {
                         had_failure = true;
-                        entry.error = Some(frame_cli_error(
-                            "cli.output-write-failed",
-                            "failed to stage frame artifact",
-                            CliDetails::Delivery {
-                                role: DeliveryRole::Output,
-                                operation,
-                                path: destination.to_string_lossy().into_owned(),
-                                artifact_state: DeliveryState::None,
-                            },
-                        ));
+                        entry.error = Some(frame_delivery_error(&error, &entry.output_path));
                         entries.push((entry, None));
                     }
                 }
@@ -732,28 +709,19 @@ fn prepare_and_render_frames(
     })
 }
 
-fn destination_exists(destination: &Path) -> Failure {
-    Failure::cli(
-        "cli.destination-exists",
-        "output destination already exists",
-        Some(CliDetails::Delivery {
-            role: DeliveryRole::Output,
-            operation: CliOperation::Create,
-            path: destination.to_string_lossy().into_owned(),
-            artifact_state: DeliveryState::None,
-        }),
-        EXIT_USAGE,
-    )
+fn frame_destination_error(destination: &Path) -> ReportError {
+    *destination_exists(DeliveryRole::Output, &destination.to_string_lossy()).error
 }
 
-fn frame_destination_error(destination: &Path) -> ReportError {
+/// `cli.output-write-failed` for a frame file that `error` kept from `path`.
+fn frame_delivery_error(error: &DeliveryError, path: &str) -> ReportError {
     frame_cli_error(
-        "cli.destination-exists",
-        "output destination already exists",
+        "cli.output-write-failed",
+        error.message(&format!("output '{path}'")),
         CliDetails::Delivery {
             role: DeliveryRole::Output,
-            operation: CliOperation::Create,
-            path: destination.to_string_lossy().into_owned(),
+            operation: error.operation,
+            path: path.to_owned(),
             artifact_state: DeliveryState::None,
         },
     )
@@ -965,12 +933,12 @@ fn deliver_frame_batch(
     );
     let mut staged_report = match stage_report_file(cli, &report_bytes) {
         Ok(staged) => staged,
-        Err(operation) => {
+        Err(error) => {
             return emergency_report_failure(
                 cli,
                 identity,
                 format,
-                operation,
+                &error,
                 DeliveryState::None,
                 frame_batch_diagnostics(&global_diagnostics, &entries),
             )
@@ -987,13 +955,20 @@ fn deliver_frame_batch(
 
     if publish_artifacts {
         let output = Path::new(cli.output.as_deref().expect("frame output validated"));
-        if !output.is_dir() && fs::create_dir(output).is_err() {
+        let created = if output.is_dir() {
+            Ok(())
+        } else {
+            fs::create_dir(output)
+        };
+        if let Err(error) = created {
+            let error = DeliveryError::new(CliOperation::Create, &error);
+            let message = error.message(&format!("output directory '{}'", output.display()));
             for (entry, staged) in &mut entries {
                 if staged.take().is_some() {
                     entry.delivery_state = DeliveryState::None;
                     entry.error = Some(frame_cli_error(
                         "cli.output-write-failed",
-                        "failed to create frame output directory",
+                        message.clone(),
                         CliDetails::Delivery {
                             role: DeliveryRole::Output,
                             operation: CliOperation::Create,
@@ -1030,19 +1005,10 @@ fn deliver_frame_batch(
                 }
                 match staged.deliver() {
                     Ok(()) => entry.delivery_state = DeliveryState::Complete,
-                    Err(operation) => {
+                    Err(error) => {
                         had_failure = true;
                         entry.delivery_state = DeliveryState::None;
-                        entry.error = Some(frame_cli_error(
-                            "cli.output-write-failed",
-                            "failed to deliver frame artifact",
-                            CliDetails::Delivery {
-                                role: DeliveryRole::Output,
-                                operation,
-                                path: entry.output_path.clone(),
-                                artifact_state: DeliveryState::None,
-                            },
-                        ));
+                        entry.error = Some(frame_delivery_error(&error, &entry.output_path));
                         if !allow_partial {
                             commit_failed = true;
                         }
@@ -1071,12 +1037,12 @@ fn deliver_frame_batch(
         report_bytes = final_report_bytes;
         staged_report = match stage_report_file(cli, &report_bytes) {
             Ok(staged) => staged,
-            Err(operation) => {
+            Err(error) => {
                 return emergency_report_failure(
                     cli,
                     identity,
                     format,
-                    operation,
+                    &error,
                     artifact_state,
                     frame_batch_diagnostics(&global_diagnostics, &entries),
                 )
@@ -1159,29 +1125,29 @@ fn frame_batch_report_bytes(
         ReportFormat::None if status == "success" => Vec::new(),
         ReportFormat::None => frame_batch_error_line(entries),
         ReportFormat::Human => {
-            let mut text = String::new();
-            for diagnostic in global_diagnostics.iter().chain(
-                entries
-                    .iter()
-                    .flat_map(|(entry, _)| entry.diagnostics.iter()),
-            ) {
-                text.push_str(&format!(
-                    "{}: {}\n",
-                    diagnostic.code(),
-                    diagnostic.message()
-                ));
-            }
+            let diagnostics = frame_batch_diagnostics(global_diagnostics, entries);
+            let mut text = human::diagnostics(&diagnostics);
+            let mut codes = Vec::new();
             for (entry, _) in entries {
                 if let Some(error) = &entry.error {
-                    let (family, code, message) = error.human_parts();
-                    text.push_str(&format!(
-                        "{family} {code}: frame {} ({}): {message}\n",
-                        entry.ordinal, entry.output_path
+                    text.push_str(&human::error_line(
+                        &frame_error_message(entry, error),
+                        error.code(),
                     ));
+                    if !codes.contains(&error.code()) {
+                        codes.push(error.code());
+                    }
                 }
             }
-            if status != "success" && entries.iter().all(|(entry, _)| entry.error.is_none()) {
-                text.push_str("cli cli.output-write-failed: frame batch delivery failed\n");
+            if status != "success" && codes.is_empty() {
+                text.push_str(&human::error_line(
+                    "frame batch delivery failed",
+                    "cli.output-write-failed",
+                ));
+            }
+            // Each fix once, however many frames it applies to.
+            for code in codes {
+                text.push_str(&human::hint_lines(code, std::iter::empty()));
             }
             text.into_bytes()
         }
@@ -1203,17 +1169,29 @@ fn frame_batch_report_bytes(
     }
 }
 
+/// The `frame N` prefix of a frame's error; CLI messages already name the
+/// path, library ones get it here.
+fn frame_error_message(entry: &FrameCliEntry, error: &ReportError) -> String {
+    match error {
+        ReportError::Cli(_) => format!("frame {}: {}", entry.ordinal, error.human_message()),
+        ReportError::Library(_) => format!(
+            "frame {} ({}): {}",
+            entry.ordinal,
+            entry.output_path,
+            error.human_message()
+        ),
+    }
+}
+
 fn frame_batch_error_line(entries: &[(FrameCliEntry, Option<StagedFile>)]) -> Vec<u8> {
     entries
         .iter()
-        .find_map(|(entry, _)| entry.error.as_ref())
+        .find_map(|(entry, _)| Some((entry, entry.error.as_ref()?)))
         .map_or_else(
-            || b"cli cli.output-write-failed: frame batch delivery failed\n".to_vec(),
-            |error| {
-                let (family, code, message) = error.human_parts();
-                format!("{family} {code}: {message}\n").into_bytes()
-            },
+            || human::error_line("frame batch delivery failed", "cli.output-write-failed"),
+            |(entry, error)| human::error_line(&frame_error_message(entry, error), error.code()),
         )
+        .into_bytes()
 }
 
 fn deliver_frame_report(
@@ -1229,14 +1207,9 @@ fn deliver_frame_report(
     if let Some(staged) = staged_report {
         return match staged.deliver() {
             Ok(()) => 0,
-            Err(operation) => emergency_report_failure(
-                cli,
-                identity,
-                format,
-                operation,
-                artifact_state,
-                diagnostics,
-            ),
+            Err(error) => {
+                emergency_report_failure(cli, identity, format, &error, artifact_state, diagnostics)
+            }
         };
     }
     debug_assert_eq!(report, "stderr");
