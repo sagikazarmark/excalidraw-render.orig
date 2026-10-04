@@ -30,6 +30,7 @@ jobs:
                     - input-boundaries
                     - lint:clippy
                     - lint:fmt
+                    - lint:msrv
                     - packaging:cli
                     - packaging:no-cjk
                     - packaging:public-facade
