@@ -177,6 +177,21 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
         )
     );
 
+    let no_files = temp.join("no-files.excalidraw");
+    fs::write(
+        &no_files,
+        br#"{"type":"excalidraw","version":2,"elements":[],"appState":{}}"#,
+    )
+    .expect("write a scene without a files map");
+    let result = cli(&[no_files.to_str().unwrap(), "-o", "-", "-f", "svg"]);
+    assert_eq!(result.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("[scene.invalid-envelope]\nhint: ")
+            && stderr.contains("add \"files\": {} to the scene"),
+        "{stderr}"
+    );
+
     let huge = temp.join("huge.png");
     let result = render_command(&huge)
         .args(["--scale", "20"])

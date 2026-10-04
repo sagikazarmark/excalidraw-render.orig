@@ -18,6 +18,14 @@ each one at runtime.
 - Later 0.x releases may change rendering. Pin the renderer version, dependencies,
   and build environment when preserving exact output is important.
 
+## Scene input
+
+- A version-2 scene must carry a `files` map, even an empty one. Excalidraw
+  treats a missing map as empty; this renderer rejects the scene with
+  `scene.invalid-envelope`, and the CLI suggests adding `"files": {}`.
+- Only `.excalidraw` JSON is read. PNG and SVG exports with an embedded scene,
+  library files, and clipboard data are recognized and rejected.
+
 ## Images and rendering
 
 - AVIF is unsupported (#68) and follows unsupported-image recovery.

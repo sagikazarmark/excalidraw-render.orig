@@ -171,7 +171,14 @@ pub(crate) fn scene_parse_context(
                 }
             }
         }
-        "scene.invalid-envelope" => hints.push(envelope_hint(bytes).to_owned()),
+        "scene.invalid-envelope" => hints.push(
+            if error.json_pointer() == Some("/files") && !bytes_have_files(bytes) {
+                "this renderer requires the files map that Excalidraw treats as optional; add \"files\": {} to the scene"
+            } else {
+                envelope_hint(bytes)
+            }
+            .to_owned(),
+        ),
         _ => {
             if let Some(pointer) = error.json_pointer().filter(|pointer| !pointer.is_empty()) {
                 let _ = write!(message, " at {pointer}");
@@ -187,6 +194,12 @@ fn looks_like_svg(bytes: &[u8]) -> bool {
         .unwrap_or(bytes)
         .trim_ascii_start();
     start.starts_with(b"<svg") || start.starts_with(b"<?xml") || start.starts_with(b"<!DOCTYPE svg")
+}
+
+/// Whether the document's root object has a `files` member at all.
+fn bytes_have_files(bytes: &[u8]) -> bool {
+    serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(bytes)
+        .is_ok_and(|root| root.contains_key("files"))
 }
 
 /// What a JSON document that is not a version-2 scene probably is.
