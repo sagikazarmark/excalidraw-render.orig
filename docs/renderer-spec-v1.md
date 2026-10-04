@@ -2978,6 +2978,13 @@ whole-text face is fixed, the faces already serving the target change neither
 their count nor their order, and neither the whole-text face's initial `cmap`
 test nor a declared-range test is a probe.
 
+PDF hands each glyph its whole cluster's text for `ToUnicode` and
+`ActualText`, so a cluster shaped to several glyphs repeats its text once per
+glyph. Before encoding, each element pays one work unit per UTF-16 code unit
+of cluster text that every glyph of such a cluster carries, in the
+`pdf_repeated_cluster_text` event; an element that repeats nothing has no
+event. SVG and PNG repeat nothing and pay nothing.
+
 Direct SVG font subsetting adds these canonical events for each target. First,
 all family-scalar-set events occur in resolved family order. Then each candidate
 face produces one considered event in pinned face order and, when selected, an

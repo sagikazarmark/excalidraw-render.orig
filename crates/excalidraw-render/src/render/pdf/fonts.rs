@@ -208,16 +208,48 @@ pub(super) fn draw_glyphs(
             subject_kind: "format_workspace",
             subject: "pdf_text_run",
         })?;
+    // The glyphs of one cluster share its text. Krilla reads each glyph's
+    // range for its content, compares neighbouring ranges for equality (equal
+    // ranges mark one cluster for `ActualText`), and orders ranges to detect a
+    // reversed run. Giving every glyph its own copy kept neighbours unequal and
+    // ranges ascending, but cost the cluster's length per glyph. Two copies,
+    // alternated, keep each content, neighbours unequal and no run reversed,
+    // so Krilla sees the same run in space linear in the text.
+    let mut shared: Option<(&ResolvedGlyph, [Range<usize>; 2], usize)> = None;
     for (index, glyph) in glyphs.iter().enumerate() {
-        let start = text.len();
-        text.push_str(&String::from_utf16_lossy(&glyph.unicode));
+        let range = match &mut shared {
+            Some((previous, copies, next))
+                if !glyph.unicode.is_empty()
+                    && std::sync::Arc::ptr_eq(&previous.unicode, &glyph.unicode) =>
+            {
+                *previous = glyph;
+                let range = copies[*next].clone();
+                *next = 1 - *next;
+                range
+            }
+            _ => {
+                let start = text.len();
+                text.push_str(&String::from_utf16_lossy(&glyph.unicode));
+                let own = start..text.len();
+                shared = None;
+                if glyphs.get(index + 1).is_some_and(|next| {
+                    !glyph.unicode.is_empty()
+                        && std::sync::Arc::ptr_eq(&next.unicode, &glyph.unicode)
+                }) {
+                    let copy = text.len();
+                    text.push_str(&String::from_utf16_lossy(&glyph.unicode));
+                    shared = Some((glyph, [own.clone(), copy..text.len()], 1));
+                }
+                own
+            }
+        };
         let step = match glyphs.get(index + 1) {
             Some(next) => (next.x - glyph.x) / font_size,
             None => f64::from(glyph.advance_1000) / 1000.0,
         };
         run.push(RunGlyph {
             id: GlyphId::new(u32::from(glyph.id)),
-            text: start..text.len(),
+            text: range,
             advance: finite_f32(step, "PDF text glyph advance")?,
             rise: finite_f32((first.y - glyph.y) / font_size, "PDF text glyph rise")?,
         });
