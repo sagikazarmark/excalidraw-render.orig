@@ -754,6 +754,11 @@ What remains draws as the pinned reference draws an SVG image:
     declaration, or an expansion beyond the documented bound rejects the image
     with the usual decode-failed recovery.
   - External entities expand to nothing.
+- Nesting: an element more than 256 levels below the outermost nested root
+  rejects its document with the usual decode-failed recovery, before any
+  recursive parse. Levels count on through nested data SVGs, whose root sits
+  one level below its image element; a nested image that crosses fails locally
+  like any other nested image failure.
 - External references:
   - A non-fragment `url()` resolves as a missing fragment, so its fallback
     paint applies.
