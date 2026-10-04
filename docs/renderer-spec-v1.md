@@ -3006,8 +3006,11 @@ mandatory. Pinned dependencies that do not expose incremental budget hooks run
 under one revision-defined conservative dependency envelope. For a selected
 chunk, let `S` be its exact compressed byte length, `D` its manifested decoded
 sfnt length, `U` the family scalar count, `T = D / 16`, `G = 65,535`,
-`F = 256 * D`, `W = 2 * D`, and `E = 8 MiB`. `F` is the maximum
-adapter-produced sfnt and adapter workspace, `W` is the maximum generated WOFF2,
+`F = 2 * D + 1 MiB`, `W = 2 * D`, and `E = 8 MiB`. `F` is the maximum
+adapter-produced sfnt and adapter workspace: a subset keeping every glyph,
+with its widened `loca` and rewritten names, stays within twice its source. An
+earlier draft's `F = 256 * D` charged a few emoji and CJK chunks past the
+default total work ceiling. `W` is the maximum generated WOFF2,
 `E` is the quality-11 encoder workspace, `T` is the sfnt table-record ceiling,
 and `G` is the TrueType glyph ceiling. The per-chunk work envelope is:
 

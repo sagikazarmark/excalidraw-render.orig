@@ -63,6 +63,47 @@ fn manifested_noto_emoji() -> Vec<u8> {
         .to_vec()
 }
 
+/// A font showcase board: CJK, Hangul, Arabic and emoji text select many
+/// chunks and the complete emoji face, and the SVG's conservative dependency
+/// envelope for their subsets still fits the default work and working-byte
+/// ceilings that PNG and PDF already fit.
+#[cfg(feature = "cjk")]
+#[test]
+fn multilingual_emoji_board_subsets_within_the_default_svg_budgets() {
+    let texts = [
+        "你好世界 こんにちは 안녕하세요",
+        "Emoji: 🎉🚀👍❤️ 👨‍👩‍👧",
+        "مرحبا بالعالم",
+    ];
+    let elements = texts
+        .iter()
+        .enumerate()
+        .map(|(index, text)| {
+            serde_json::json!({
+                "id": format!("text-{index}"), "type": "text", "x": 0, "y": index * 40,
+                "width": 300, "height": 25, "fontSize": 20, "fontFamily": 5,
+                "text": text, "updated": 1
+            })
+        })
+        .collect::<Vec<_>>();
+    let source = serde_json::json!({
+        "type": "excalidraw", "version": 2, "elements": elements,
+        "appState": {}, "files": {}
+    });
+    let scene = SceneDocument::parse(source.to_string().as_bytes()).expect("board is admitted");
+    let request = excalidraw_render::RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("default SVG request is valid");
+
+    let outcome = excalidraw_render::Renderer::new().render(&scene, &request);
+
+    assert!(
+        outcome.is_ok(),
+        "the board renders within the default budgets: {:?}",
+        outcome.err().map(|error| error.code())
+    );
+}
+
 #[test]
 fn every_format_reports_one_noto_emoji_substitution_per_occurrence() {
     let scene = registered_scene();
