@@ -16,6 +16,10 @@ use serde::Deserialize;
 const SHOWN_ELEMENTS: usize = 3;
 const SHOWN_CHARACTERS: usize = 5;
 
+/// The library's message for official text drawn with the `?` replacement glyph.
+const OFFICIAL_MISSING_GLYPH: &str =
+    "official text used the deterministic basic-Latin replacement glyph";
+
 /// Human-report choices that do not change the JSON report.
 #[derive(Clone, Copy)]
 pub(crate) struct HumanReport {
@@ -171,14 +175,8 @@ pub(crate) fn scene_parse_context(
                 }
             }
         }
-        "scene.invalid-envelope" => hints.push(
-            if error.json_pointer() == Some("/files") && !bytes_have_files(bytes) {
-                "this renderer requires the files map that Excalidraw treats as optional; add \"files\": {} to the scene"
-            } else {
-                envelope_hint(bytes)
-            }
-            .to_owned(),
-        ),
+        "scene.invalid-envelope" => hints
+            .push(missing_members_hint(bytes).unwrap_or_else(|| envelope_hint(bytes).to_owned())),
         _ => {
             if let Some(pointer) = error.json_pointer().filter(|pointer| !pointer.is_empty()) {
                 let _ = write!(message, " at {pointer}");
@@ -196,10 +194,43 @@ fn looks_like_svg(bytes: &[u8]) -> bool {
     start.starts_with(b"<svg") || start.starts_with(b"<?xml") || start.starts_with(b"<!DOCTYPE svg")
 }
 
-/// Whether the document's root object has a `files` member at all.
-fn bytes_have_files(bytes: &[u8]) -> bool {
-    serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(bytes)
-        .is_ok_and(|root| root.contains_key("files"))
+/// The members a version-2 scene document must have, with the empty value
+/// that satisfies each.
+const SCENE_MEMBERS: [(&str, &str); 5] = [
+    ("type", "\"excalidraw\""),
+    ("version", "2"),
+    ("elements", "[]"),
+    ("appState", "{}"),
+    ("files", "{}"),
+];
+
+/// Every scene member a would-be scene lacks, in one hint, so a hand-written
+/// or generated document is fixed in one pass rather than one member at a
+/// time. `None` for a document that is something else, or lacks nothing.
+fn missing_members_hint(bytes: &[u8]) -> Option<String> {
+    let root = serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(bytes).ok()?;
+    if root.get("type").is_some_and(|kind| kind != "excalidraw")
+        || root.get("version").is_some_and(|version| version != 2)
+    {
+        return None;
+    }
+    let missing = SCENE_MEMBERS
+        .iter()
+        .filter(|(name, _)| !root.contains_key(*name))
+        .map(|(name, value)| format!("\"{name}\": {value}"))
+        .collect::<Vec<_>>();
+    let mut hint = match missing.as_slice() {
+        [] => return None,
+        [member] => format!("add the missing member {member} to the scene"),
+        members => format!(
+            "add the missing members {} to the scene",
+            members.join(", ")
+        ),
+    };
+    if !root.contains_key("files") {
+        hint.push_str(" (this renderer requires the files map that Excalidraw treats as optional)");
+    }
+    Some(hint)
 }
 
 /// What a JSON document that is not a version-2 scene probably is.
@@ -283,8 +314,22 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
             DiagnosticSeverity::Info => "info",
             _ => "note",
         };
+        // The library's message names the mechanism; say what the reader sees.
+        let replaced_characters = group.first.code().as_str() == "font.missing-glyph"
+            && group.first.message() == OFFICIAL_MISSING_GLYPH;
+        let message = if replaced_characters {
+            match group.count {
+                1 => "1 character has no glyph in the bundled fonts and was drawn as \"?\""
+                    .to_owned(),
+                count => format!(
+                    "{count} characters have no glyph in the bundled fonts and were drawn as \"?\""
+                ),
+            }
+        } else {
+            group.first.message().to_owned()
+        };
         let mut facts = Vec::new();
-        if group.count > 1 {
+        if group.count > 1 && !replaced_characters {
             facts.push(format!("{} occurrences", group.count));
         }
         match group.elements.as_slice() {
@@ -303,12 +348,7 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
                 listed(&characters, SHOWN_CHARACTERS)
             ));
         }
-        let _ = write!(
-            text,
-            "{severity}: {} [{}]",
-            group.first.message(),
-            group.first.code()
-        );
+        let _ = write!(text, "{severity}: {message} [{}]", group.first.code());
         if !facts.is_empty() {
             let _ = write!(text, " ({})", facts.join("; "));
         }

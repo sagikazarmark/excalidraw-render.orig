@@ -188,7 +188,20 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(
         stderr.contains("[scene.invalid-envelope]\nhint: ")
-            && stderr.contains("add \"files\": {} to the scene"),
+            && stderr.contains("add the missing member \"files\": {} to the scene"),
+        "{stderr}"
+    );
+
+    let bare = temp.join("bare.excalidraw");
+    fs::write(&bare, br#"{"type":"excalidraw","elements":[]}"#)
+        .expect("write a scene missing several members");
+    let result = cli(&[bare.to_str().unwrap(), "-o", "-", "-f", "svg"]);
+    assert_eq!(result.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains(
+            "hint: add the missing members \"version\": 2, \"appState\": {}, \"files\": {} to the scene"
+        ),
         "{stderr}"
     );
 
@@ -293,10 +306,10 @@ fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
     let lines = stderr.lines().collect::<Vec<_>>();
     assert_eq!(lines.len(), 2, "{stderr}");
     assert!(
-        lines.iter().any(|line| line.starts_with("warning: ")
-            && line.contains(
-                "[font.missing-glyph] (12 occurrences; element ar; characters U+0645, U+0631, "
-            )
+        lines.iter().any(|line| line.starts_with(
+            "warning: 12 characters have no glyph in the bundled fonts and were drawn as \"?\" "
+        ) && line
+            .contains("[font.missing-glyph] (element ar; characters U+0645, U+0631, ")
             && line.ends_with(" more)")),
         "{stderr}"
     );
@@ -873,6 +886,9 @@ fn failed_non_json_report_delivery_emits_one_emergency_line() {
     assert!(String::from_utf8_lossy(&result.stderr).contains("cli.report-write-failed"));
 }
 
+// `/dev/full` fails every write without moving a byte. Linux has it, and only
+// Linux promises that a failed write moved nothing (`write_stream_tracked`).
+#[cfg(target_os = "linux")]
 #[test]
 fn stdout_failure_before_first_byte_reports_that_no_artifact_bytes_escaped() {
     let scratch = temp_directory_named("closed-stdout");
@@ -890,20 +906,13 @@ fn stdout_failure_before_first_byte_reports_that_no_artifact_bytes_escaped() {
             "--report-format=json",
         ])
         .stderr(Stdio::piped());
-    #[cfg(unix)]
     command.stdout(Stdio::from(
         fs::OpenOptions::new()
             .write(true)
             .open("/dev/full")
             .expect("open always-failing stdout"),
     ));
-    #[cfg(not(unix))]
-    command.stdout(Stdio::piped());
     let child = command.spawn().expect("spawn renderer with closed stdout");
-    #[cfg(not(unix))]
-    let mut child = child;
-    #[cfg(not(unix))]
-    drop(child.stdout.take().expect("take stdout pipe"));
     let result = child.wait_with_output().expect("wait for stdout failure");
 
     assert_eq!(result.status.code(), Some(1));
@@ -1093,9 +1102,10 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
         .output()
         .expect("run frame listing");
     assert!(human.status.success());
-    assert!(human.stdout.is_empty());
+    // The listing is the command's output: on stdout, so it can be piped.
+    assert!(human.stderr.is_empty());
     assert_eq!(
-        String::from_utf8_lossy(&human.stderr),
+        String::from_utf8_lossy(&human.stdout),
         "1\tframe\tRoad Map\tRoad-Map\n2\tframe\tRoad Map\tRoad-Map-2\n3\tmagicframe\t\tframe-3\n"
     );
     assert!(!output.exists());
@@ -1110,7 +1120,7 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
         .expect("run frame listing");
     assert!(json.status.success());
     let report: serde_json::Value =
-        serde_json::from_slice(&json.stderr).expect("frame list JSON report");
+        serde_json::from_slice(&json.stdout).expect("frame list JSON report");
     assert_eq!(report["schema_version"], 1);
     assert_eq!(report["status"], "success");
     assert_eq!(report["mode"], "list");
@@ -1138,7 +1148,7 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
         .expect("run filtered frame listing");
     assert!(filtered.status.success());
     assert_eq!(
-        String::from_utf8_lossy(&filtered.stderr),
+        String::from_utf8_lossy(&filtered.stdout),
         "1\tframe\tRoad Map\tRoad-Map\n2\tframe\tRoad Map\tRoad-Map-2\n"
     );
 
@@ -1166,7 +1176,7 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
         .expect("run empty frame listing");
     assert!(empty.status.success());
     let empty_report: serde_json::Value =
-        serde_json::from_slice(&empty.stderr).expect("empty frame list JSON report");
+        serde_json::from_slice(&empty.stdout).expect("empty frame list JSON report");
     assert_eq!(empty_report["frames"].as_array().map(Vec::len), Some(0));
 
     // A human listing says so explicitly instead of printing nothing.

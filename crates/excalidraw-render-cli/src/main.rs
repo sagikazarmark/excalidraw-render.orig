@@ -151,19 +151,30 @@ struct Cli {
     force: bool,
 
     /// Space around the drawing, in scene pixels [default: 10]
-    #[arg(long, value_name = "PX", help_heading = RENDERING)]
+    #[arg(
+        long,
+        value_name = "PX",
+        allow_negative_numbers = true,
+        help_heading = RENDERING
+    )]
     padding: Option<f64>,
     /// Multiply the output size by FACTOR [default: 1]
     #[arg(
         long,
         value_name = "FACTOR",
+        allow_negative_numbers = true,
         conflicts_with = "max_dimension",
         help_heading = RENDERING
     )]
     scale: Option<f64>,
     /// Shrink PNG and PDF output so its longer side is at most PX pixels
-    /// (never enlarges; SVG keeps its size)
-    #[arg(long, value_name = "PX", help_heading = RENDERING)]
+    /// (never enlarges; SVG keeps its size; replaces --scale)
+    #[arg(
+        long,
+        value_name = "PX",
+        allow_negative_numbers = true,
+        help_heading = RENDERING
+    )]
     max_dimension: Option<f64>,
     /// Use a transparent background instead of the scene's background color
     #[arg(long, help_heading = RENDERING)]
@@ -1764,9 +1775,13 @@ fn write_stream_tracked(
             }
             Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
             Err(error) => {
+                // Linux reports a write that moved some bytes before failing as
+                // a short count, so a failed call there moved none. macOS can
+                // fail a pipe write with EPIPE after its reader consumed part
+                // of it, so elsewhere a failed call may have moved bytes.
                 return Err((
                     DeliveryError::new(CliOperation::Write, &error),
-                    state(wrote_bytes),
+                    state(wrote_bytes || !cfg!(target_os = "linux")),
                 ));
             }
         }
