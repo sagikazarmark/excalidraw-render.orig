@@ -458,7 +458,7 @@ fn evidence() -> Value {
     for (bytes, digest) in [
         (
             include_bytes!("png_profile_contract.rs").as_slice(),
-            "264f8425ecb989052f433ed501a3f98e2bf1a55f03b4f54d61dbeb83f5883973",
+            "994389eed1224886cfb0df9e8382d90bcac8b6350d72618409a01a1d108a3661",
         ),
         (
             include_bytes!("../common/pdf_inspect.rs").as_slice(),

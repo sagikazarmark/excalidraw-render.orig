@@ -490,9 +490,7 @@ fn ssim_planes(views: &ComparisonViews) -> [Vec<f64>; 3] {
     [
         views
             .alpha()
-            .as_chunks::<4>()
-            .0
-            .iter()
+            .chunks_exact(4)
             .map(|pixel| f64::from(pixel[0]))
             .collect(),
         luma_plane(views.black()),
@@ -504,9 +502,7 @@ fn luma_plane(rgba: &[u8]) -> Vec<f64> {
     let red_coefficient = f64::from_bits(0x3fd3_2119_cb58_2d94);
     let green_coefficient = f64::from_bits(0x3fe2_c59c_7c77_f5b0);
     let blue_coefficient = f64::from_bits(0x3fbd_4eb5_19d2_b9f7);
-    rgba.as_chunks::<4>()
-        .0
-        .iter()
+    rgba.chunks_exact(4)
         .map(|pixel| {
             let luma = red_coefficient * f64::from(pixel[0]);
             let luma = luma + green_coefficient * f64::from(pixel[1]);

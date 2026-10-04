@@ -457,9 +457,7 @@ pub fn png(bytes: &[u8]) -> CanonicalRgba8 {
     assert_eq!(info.bit_depth, png::BitDepth::Eight);
     data.truncate(info.buffer_size());
     assert!(data
-        .as_chunks::<4>()
-        .0
-        .iter()
+        .chunks_exact(4)
         .all(|p| p[3] != 0 || p[..3] == [0, 0, 0]));
     CanonicalRgba8::new(info.width, info.height, data).unwrap()
 }
@@ -552,10 +550,8 @@ pub fn appearance(row: &Value, actual: CanonicalRgba8, pdf: bool) {
     let mut expected_bytes = expected.rgba().to_vec();
     for ((actual_pixel, expected_pixel), alpha) in actual
         .rgba()
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .zip(expected_bytes.as_chunks_mut::<4>().0.iter_mut())
+        .chunks_exact(4)
+        .zip(expected_bytes.chunks_exact_mut(4))
         .zip(row["alpha"].as_array().unwrap())
     {
         let alpha = alpha.as_u64().unwrap() as u8;
