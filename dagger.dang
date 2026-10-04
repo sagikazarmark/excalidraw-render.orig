@@ -337,8 +337,8 @@ second compile. nextest runs no doc tests, so `doc` runs them through cargo.
 The test profile in the root Cargo.toml is optimized, and the two corpus-driven
 tests the push gate does not carry are held back the way the workflow holds
 them: the frame batch property test and the SVG font subset qualification
-corpus are both `#[ignore]`d unless the `release-qualification` feature is on
-(off here). `packaging:qualification` runs both in `--release`.
+corpus both return at once unless `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`
+(unset here). `packaging:qualification` runs both in `--release`.
 """
 type Test {
   let container: Container!
@@ -457,8 +457,8 @@ type Packaging {
   """
   Execute the release-mode qualification set.
 
-  The complete renderer unit target in `--release` with the
-  `release-qualification` feature, the way the workflow's native leg runs it
+  The complete renderer unit target in `--release` with
+  `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`, the way the workflow's native leg runs it
   before materializing target evidence: the SVG font subset qualification
   corpus and the frame batch property test, which the `test` checks leave out,
   execute here. No name filter, so a renamed test cannot drop out of the run.

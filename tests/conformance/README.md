@@ -373,13 +373,13 @@ Evidence verification is offline and read-only: it checks the accepted corpus,
 profiles, complete execution inventory and retained results from both viewers.
 The corpus test regenerates subsets with today's implementation and compares
 their exact bytes and qualification behavior with the accepted corpus. It is
-part of the release-mode qualification set and needs the `release-qualification`
-feature:
+part of the release-mode qualification set and runs only with
+`EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`:
 
 ```sh
 cargo run --locked -p xtask -- conformance verify-svg-font-subsets
 cargo run --locked -p xtask -- conformance verify-svg-font-subset-release
-cargo test --locked --release -p excalidraw-render --features release-qualification --lib \
+EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1 cargo test --locked --release -p excalidraw-render --lib \
   complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces
 ```
 

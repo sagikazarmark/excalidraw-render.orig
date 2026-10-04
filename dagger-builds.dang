@@ -159,8 +159,7 @@ type Builds {
 
   let nativeReleaseBuilt: Container! {
     self.nativeSlim.withExec(["cargo", "test", "--locked", "--release",
-      "--target", hostTarget, "-p", "excalidraw-render", "--lib",
-      "--features", "release-qualification", "--no-run"])
+      "--target", hostTarget, "-p", "excalidraw-render", "--lib", "--no-run"])
   }
 
   let nativeTraceBuilt: Container! {

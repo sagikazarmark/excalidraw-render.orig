@@ -243,16 +243,18 @@ and the frame batch property test
 (`render::frame_batch_property::frame_batch_rendering_matches_standalone_around_resource_limits`).
 The `Packaged public facade` workflow's native leg and the
 `packaging:qualification` Dagger check run the complete renderer unit target in
-`--release` with the feature that lifts their `#[ignore]`, without a name
+`--release` with the environment variable that admits them, without a name
 filter, so a renamed test cannot drop out silently:
 
 ```sh
-cargo test --locked --release -p excalidraw-render --features release-qualification --lib
+EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1 cargo test --locked --release -p excalidraw-render --lib
 ```
 
-Both tests are `#[ignore]`d unless `release-qualification` is enabled, so a
-plain `cargo test` or `cargo nextest run` leaves them to the release-mode run
-without naming them.
+Both tests return at once unless `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`,
+so a plain `cargo test` or `cargo nextest run` leaves them to the release-mode
+run without naming them. The variable is read when the tests run, so it needs
+no rebuild and no Cargo feature; any value other than unset, empty, `0` or `1`
+fails them.
 
 ## Canonical CI and evidence generation
 
