@@ -96,8 +96,8 @@ fn assert_scene_trace_replay() {
         .iter()
         .find(|entry| entry["event"] == "svg_font_dependency_envelope")
         .expect("font dependency envelope is traced");
-    assert_eq!(envelope["deltas"]["working_bytes"], 28_628_224);
-    assert_eq!(envelope["deltas"]["total_work_units"], 52_456_060);
+    assert_eq!(envelope["deltas"]["working_bytes"], 13_942_016);
+    assert_eq!(envelope["deltas"]["total_work_units"], 8_397_412);
 }
 
 fn assert_frame_batch_trace_replay() {

@@ -638,12 +638,9 @@ pub(super) fn account_dependency_envelope<A: ResourceAccount>(
             })?)
             .map_err(|_| account.internal_failure("SVG font decoded size overflowed"))?;
             let table_bound = decoded / 16;
-            let sfnt_bound = checked_product(
-                account,
-                decoded,
-                256,
-                "SVG font subset sfnt envelope overflowed",
-            )?;
+            let sfnt_bound = font_subset::sfnt_ceiling(decoded).ok_or_else(|| {
+                account.internal_failure("SVG font subset sfnt envelope overflowed")
+            })?;
             let woff2_bound = checked_product(
                 account,
                 decoded,

@@ -70,6 +70,14 @@ impl DerivationMetrics {
     }
 }
 
+/// The ceiling `F` on the sfnt, and its workspace, that the subset adapter
+/// derives from a `decoded`-byte source (spec 13.2): the whole source twice over,
+/// which covers a subset keeping every glyph with its widened `loca` and
+/// rewritten names, plus 1 MiB of fixed headroom.
+pub(super) fn sfnt_ceiling(decoded: u64) -> Option<u64> {
+    decoded.checked_mul(2)?.checked_add(1_024 * 1_024)
+}
+
 pub(super) fn account_derivation<A: ResourceAccount>(
     account: &mut A,
     metrics: &DerivationMetrics,
@@ -78,8 +86,7 @@ pub(super) fn account_derivation<A: ResourceAccount>(
     let subset = u64::try_from(metrics.subset_sfnt_bytes).unwrap_or(u64::MAX);
     let encoded = u64::try_from(metrics.subset_woff2_bytes).unwrap_or(u64::MAX);
     let tables = u64::try_from(metrics.subset_tables).unwrap_or(u64::MAX);
-    let sfnt_bound = decoded
-        .checked_mul(256)
+    let sfnt_bound = sfnt_ceiling(decoded)
         .ok_or_else(|| account.internal_failure("SVG font subset sfnt envelope overflowed"))?;
     let woff2_bound = decoded
         .checked_mul(2)

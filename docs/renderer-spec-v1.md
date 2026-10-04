@@ -757,6 +757,11 @@ What remains draws as the pinned reference draws an SVG image:
     declaration, or an expansion beyond the documented bound rejects the image
     with the usual decode-failed recovery.
   - External entities expand to nothing.
+- Nesting: an element more than 256 levels below the outermost nested root
+  rejects its document with the usual decode-failed recovery, before any
+  recursive parse. Levels count on through nested data SVGs, whose root sits
+  one level below its image element; a nested image that crosses fails locally
+  like any other nested image failure.
 - External references:
   - A non-fragment `url()` resolves as a missing fragment, so its fallback
     paint applies.
@@ -3004,8 +3009,11 @@ mandatory. Pinned dependencies that do not expose incremental budget hooks run
 under one revision-defined conservative dependency envelope. For a selected
 chunk, let `S` be its exact compressed byte length, `D` its manifested decoded
 sfnt length, `U` the family scalar count, `T = D / 16`, `G = 65,535`,
-`F = 256 * D`, `W = 2 * D`, and `E = 8 MiB`. `F` is the maximum
-adapter-produced sfnt and adapter workspace, `W` is the maximum generated WOFF2,
+`F = 2 * D + 1 MiB`, `W = 2 * D`, and `E = 8 MiB`. `F` is the maximum
+adapter-produced sfnt and adapter workspace: a subset keeping every glyph,
+with its widened `loca` and rewritten names, stays within twice its source. An
+earlier draft's `F = 256 * D` charged a few emoji and CJK chunks past the
+default total work ceiling. `W` is the maximum generated WOFF2,
 `E` is the quality-11 encoder workspace, `T` is the sfnt table-record ceiling,
 and `G` is the TrueType glyph ceiling. The per-chunk work envelope is:
 
