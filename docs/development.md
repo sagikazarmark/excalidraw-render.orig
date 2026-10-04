@@ -36,17 +36,24 @@ release their fonts come from as semver build metadata, e.g.
 comparing versions, so a new Excalidraw release still needs a version bump, and
 dependency requirements name only the part before the `+`.
 
-Every dependency is pinned to an exact version (`=x.y.z`), because artifact
-bytes are the product and any transitive bump can change them. For a project
-that depends on the library this has consequences. Cargo resolves one version
-per semver-compatible range, so within each such range the pins decide which
-version of a shared crate (`serde`, `png`, `resvg`, ...) your whole build uses:
-a requirement of yours in the same range that the pinned version cannot satisfy
+Dependencies whose code computes artifact bytes (decoders, shaping,
+subsetting, rasterization, PDF writing, compression, number formatting) are
+pinned to exact versions (`=x.y.z`), because any bump can change output. For a
+project that depends on the library, Cargo resolves one version per
+semver-compatible range, so within each such range those pins decide which
+version of a shared crate (`png`, `resvg`, ...) your whole build uses: a
+requirement of yours in the same range that the pinned version cannot satisfy
 fails to resolve, while one in a different range builds a second copy alongside
 it. A patch release of a pinned crate only reaches you through an
 `excalidraw-render` release that moves the pin and re-verifies the artifact
-bytes. The workspace and its published crates also declare `rust-version`, the
-toolchain the release gates build with; older compilers are not exercised.
+bytes. Crates that cannot change output (`serde`, `base64`, digests, CRC) take
+caret requirements so they do not constrain applications, and `serde_json` is
+a test-only dependency of the library; `Cargo.lock` still fixes every version
+the gates test.
+
+The published crates declare `rust-version = "1.90"`, the oldest compiler they
+support; the `lint:msrv` Dagger check compiles the renderer and CLI with it.
+The gates otherwise build with the toolchain pinned in `dagger.toml` (1.97.1).
 
 ## Run
 
