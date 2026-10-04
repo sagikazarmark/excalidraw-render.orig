@@ -279,7 +279,12 @@ fn run_frames_list(frames: &FramesCli) -> u8 {
     let cli = frames.report_cli();
     let mut identity = None;
     match prepare_frame_list(frames, &mut identity) {
-        Ok(entries) => deliver_frame_list(&cli, identity.as_ref(), &entries),
+        Ok(entries) => deliver_frame_list(
+            &cli,
+            identity.as_ref(),
+            &entries,
+            frames.name_regex.as_deref(),
+        ),
         Err(failure) => emit_failure(&cli, identity.as_ref(), None, failure),
     }
 }
@@ -329,8 +334,16 @@ fn deliver_frame_list(
     cli: &Cli,
     identity: Option<&SelectedIdentity>,
     entries: &[FrameListEntry],
+    name_regex: Option<&str>,
 ) -> u8 {
     let bytes = match cli.report_format {
+        // An empty listing still succeeds, but says so rather than printing
+        // nothing.
+        ReportFormat::Human if entries.is_empty() => match name_regex {
+            Some(regex) => format!("note: no frames match --name-regex '{regex}'\n"),
+            None => "note: the scene has no frames\n".to_owned(),
+        }
+        .into_bytes(),
         ReportFormat::Human => entries
             .iter()
             .map(|entry| {

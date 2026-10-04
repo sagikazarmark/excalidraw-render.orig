@@ -1156,6 +1156,32 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
         serde_json::from_slice(&empty.stderr).expect("empty frame list JSON report");
     assert_eq!(empty_report["frames"].as_array().map(Vec::len), Some(0));
 
+    // A human listing says so explicitly instead of printing nothing.
+    let empty_human = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .args(["--list", "--name-regex", "^Missing$"])
+        .output()
+        .expect("run empty human frame listing");
+    assert!(empty_human.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&empty_human.stderr),
+        "note: no frames match --name-regex '^Missing$'\n"
+    );
+    let frameless = temp.join("frameless.excalidraw");
+    fs::copy(corpus_scene("basic-shapes.excalidraw"), &frameless).expect("copy frameless scene");
+    let frameless = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&frameless)
+        .arg("--list")
+        .output()
+        .expect("run frameless listing");
+    assert!(frameless.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&frameless.stderr),
+        "note: the scene has no frames\n"
+    );
+
     let suppressed = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .arg("frames")
         .arg(&input)
