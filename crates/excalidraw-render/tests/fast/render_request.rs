@@ -110,14 +110,15 @@ fn numeric_request_values_are_validated_before_rendering() {
         assert_eq!(error.descriptor().family(), ErrorFamily::Request);
         assert_eq!(error.descriptor().category(), None);
         assert_eq!(error.descriptor().json_pointer(), None);
-        assert_eq!(
+        assert!(matches!(
             error.descriptor().details(),
-            Some(&ErrorDetails::RequestValue {
-                field: expected_field,
+            Some(ErrorDetails::RequestValue {
+                field,
                 asset_id: None,
                 option: None,
-            })
-        );
+                ..
+            }) if *field == expected_field
+        ));
     }
 
     let error = RenderRequest::builder(OutputFormat::Svg)

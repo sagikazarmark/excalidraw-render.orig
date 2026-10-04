@@ -579,6 +579,7 @@ fn pdf_rasterizes_an_isolated_effect_closure_with_exact_diagnostics() {
         pixel_width: Some(20),
         pixel_height: Some(10),
         causes,
+        ..
     }) = diagnostic.details()
     else {
         panic!("fallback diagnostic has exact typed details");
@@ -614,6 +615,7 @@ fn pdf_forbid_rejects_the_first_effect_closure_without_a_fallback_warning() {
             pixel_width: Some(20),
             pixel_height: Some(10),
             causes,
+            ..
         }) if !causes.is_empty()
     ));
 }

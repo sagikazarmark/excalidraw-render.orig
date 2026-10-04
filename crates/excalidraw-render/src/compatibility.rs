@@ -417,6 +417,7 @@ impl fmt::Display for ErrorCode {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ErrorDetails {
     /// Identifies a fixed scene-parser ceiling crossing.
+    #[non_exhaustive]
     ParseLimit {
         /// The canonical parser-limit field.
         field: &'static str,
@@ -428,11 +429,13 @@ pub enum ErrorDetails {
         measurement: Measurement,
     },
     /// Identifies a requested compatibility revision.
+    #[non_exhaustive]
     Revision {
         /// The revision supplied by the caller.
         requested: CompatibilityRevision,
     },
     /// Identifies the rejected request field and any applicable asset or option.
+    #[non_exhaustive]
     RequestValue {
         /// The canonical request field.
         field: &'static str,
@@ -442,6 +445,7 @@ pub enum ErrorDetails {
         option: Option<&'static str>,
     },
     /// Describes a compatibility recovery and optional renderer recipe.
+    #[non_exhaustive]
     Compatibility {
         /// The recovery applied to retain a meaningful artifact.
         recovery: Recovery,
@@ -449,6 +453,7 @@ pub enum ErrorDetails {
         recipe_id: Option<String>,
     },
     /// Describes an authoritative or supplemental asset recovery.
+    #[non_exhaustive]
     Asset {
         /// Scene file ID of the affected asset.
         asset_id: String,
@@ -462,6 +467,7 @@ pub enum ErrorDetails {
         recipe_id: Option<String>,
     },
     /// Describes a fatal or recoverable semantic resource crossing.
+    #[non_exhaustive]
     ResourceLimit {
         /// Canonical resource-limit field.
         field: &'static str,
@@ -475,6 +481,7 @@ pub enum ErrorDetails {
         recovery: Option<Recovery>,
     },
     /// Identifies a physical allocation that could not be satisfied.
+    #[non_exhaustive]
     MemoryUnavailable {
         /// Stable category of allocation subject.
         subject_kind: String,
@@ -482,6 +489,7 @@ pub enum ErrorDetails {
         subject: String,
     },
     /// Identifies one missing Unicode scalar and its substitution.
+    #[non_exhaustive]
     MissingGlyph {
         /// Missing Unicode scalar value.
         codepoint: u32,
@@ -489,6 +497,7 @@ pub enum ErrorDetails {
         recovery: Recovery,
     },
     /// Identifies a demanded bundled font unavailable in this build.
+    #[non_exhaustive]
     FontUnavailable {
         /// Resolved bundled family required by the render.
         resolved_family: String,
@@ -496,6 +505,7 @@ pub enum ErrorDetails {
         asset_identity: String,
     },
     /// Identifies a fatal direct-SVG font subset operation.
+    #[non_exhaustive]
     SvgFontSubsetFailure {
         /// First failed subset pipeline stage.
         stage: SvgFontSubsetStage,
@@ -505,6 +515,7 @@ pub enum ErrorDetails {
         asset_identity: String,
     },
     /// Identifies an optional metadata component failure.
+    #[non_exhaustive]
     Metadata {
         /// Metadata component being processed.
         component: MetadataComponent,
@@ -514,6 +525,7 @@ pub enum ErrorDetails {
         recovery: Recovery,
     },
     /// Identifies one nested source occurrence and recovery.
+    #[non_exhaustive]
     NestedSource {
         /// Asset occurrence chain from the scene to the nested source.
         asset_chain: Vec<AssetChainEntry>,
@@ -523,6 +535,7 @@ pub enum ErrorDetails {
         recovery: Recovery,
     },
     /// A measured resource crossing with its exact nested source identity.
+    #[non_exhaustive]
     NestedResourceLimit {
         /// Canonical limit field and configured ceiling.
         field: &'static str,
@@ -542,6 +555,7 @@ pub enum ErrorDetails {
         recipe_id: Option<String>,
     },
     /// Identifies a repaired media claim on a nested image reference.
+    #[non_exhaustive]
     NestedAssetClaim {
         /// Asset occurrence chain from the scene to the nested source.
         asset_chain: Vec<AssetChainEntry>,
@@ -555,6 +569,7 @@ pub enum ErrorDetails {
         recovery: Recovery,
     },
     /// Describes an emitted or fatal PDF raster fallback closure.
+    #[non_exhaustive]
     PdfRasterFallback {
         /// Rasterized for a warning; null for a fatal fallback failure.
         recovery: Option<Recovery>,
