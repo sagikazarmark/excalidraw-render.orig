@@ -229,6 +229,23 @@ type Lint {
     ])
   }
 
+  """
+  Compile the published crates with the workspace `rust-version`, so the
+  declared minimum supported Rust version stays true. Keep the image tag in
+  step with `rust-version` in the root `Cargo.toml`.
+  """
+  msrv: String! @check {
+    Dagger.container(platform: "linux/amd64").from("rust:1.90.0-slim-trixie")
+      .withDirectory("/src", self.builds.inputs("code"))
+      .withWorkdir("/src")
+      .withEnvVariable("CARGO_BUILD_JOBS", "2")
+      .withExec([
+        "cargo", "check", "--locked",
+        "-p", "excalidraw-render", "-p", "excalidraw-render-cli",
+      ])
+      .combinedOutput
+  }
+
   let run(args: [String!]!): String! {
     self.builds.nativeSlim.withExec(args).combinedOutput
   }
