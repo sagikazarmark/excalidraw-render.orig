@@ -195,7 +195,10 @@ members:
 all other root members are permitted and preserved. Bare arrays, scalars, null,
 partial envelopes, clipboard or library payloads, another type, another envelope
 version, or a wrong required container type MUST fail with
-`scene.invalid-envelope`. Duplicate object members MUST be rejected.
+`scene.invalid-envelope`. Its message names the offending or missing member and
+what was found there, and says when the document is an Excalidraw library
+(`"excalidrawlib"`) or clipboard (`"excalidraw/clipboard"`) payload rather
+than a scene document. Duplicate object members MUST be rejected.
 
 After the envelope passes, parsing MUST remain compatibility-revision-neutral.
 It MUST retain every occurrence, including scalar element entries, malformed
@@ -299,12 +302,8 @@ The supported facade MUST have this topology:
 SceneDocument::parse(&[u8]) -> Result<SceneDocument, SceneParseError>
 
 Renderer::new() -> Renderer
-Renderer::for_revision(CompatibilityRevision)
-    -> Result<Renderer, UnsupportedRevisionError>
-Renderer::supported_revisions() -> &'static [CompatibilityRevision]
-Renderer::profile_identity(CompatibilityRevision)
-    -> Result<&'static ReferenceProfileIdentity, UnsupportedRevisionError>
-Renderer::selected_profile_identity(&self) -> &'static ReferenceProfileIdentity
+Renderer::profile_identity(&self) -> &'static ReferenceProfileIdentity
+Renderer::frame_profile_identity(&self) -> &'static ReferenceProfileIdentity
 Renderer::render(&self, &SceneDocument, &RenderRequest)
     -> Result<RenderOutcome, RenderError>
 Renderer::render_frame(&self, FrameRef, &FrameRenderRequest)
@@ -324,20 +323,20 @@ fresh request-scoped session. Public structs have private fields and read-only
 accessors. Evolvable enums and string-backed code enums are non-exhaustive.
 Requests are constructible only through validated builders.
 
-Every `Renderer` exposes its selected `ReferenceProfileIdentity` through a
-read-only accessor. A successful outcome exposes read-only access to its
-artifact, immutable ordered report, selected revision, Excalidraw release, and
-profile digest. `RenderError` exposes the complete ordered report accumulated
+Every `Renderer` exposes its scene and frame `ReferenceProfileIdentity`
+through read-only accessors. A successful outcome exposes read-only access to its
+artifact, immutable ordered report, and the `ReferenceProfileIdentity` it
+reproduces (the frame profile for a frame export). `RenderError` exposes the complete ordered report accumulated
 before failure; pre-render typed failures expose no report.
 
-`CompatibilityRevision` is a public string/number-parseable newtype with named
-constants. `ReferenceProfileIdentity` exposes compatibility revision,
-Excalidraw release, and canonical profile digest. `Renderer::new()` selects the
-documented package default, which is compatibility revision `1` in the first
-release. A named package-default constant is public and callers do not infer it
-from list order. Every revision retained in the semver-major line
-remains selectable. Exact reproduction requires both package release and
-compatibility revision; a profile digest is discoverable but not a selector.
+`CompatibilityRevision` is a public read-only newtype with a named constant for
+each revision. `ReferenceProfileIdentity` exposes compatibility revision,
+Excalidraw release, and canonical profile digest. A renderer release implements
+exactly one compatibility revision, which `Renderer::new()` selects; revision
+`1` in the 0.x releases. There is no revision selector: per ADR-0016 no
+historical revision is retained, so callers pin the package release and
+dependency lockfile for exact reproduction. A profile digest is discoverable but
+not a selector.
 
 One target request produces exactly one `OutputFormat`: `Svg`, `Png`, or `Pdf`, spelled
 `svg`, `png`, and `pdf` in serialized forms.
@@ -2114,8 +2113,8 @@ Excalidraw release, and profile digest. Recoverable repair, replacement,
 omission, local loss, or optional-metadata failure returns that outcome.
 `RenderError` never contains partial artifact bytes.
 
-The five typed library failures are `SceneParseError`, `RequestError`,
-`FrameBatchError`, `UnsupportedRevisionError`, and `RenderError`. They implement
+The four typed library failures are `SceneParseError`, `RequestError`,
+`FrameBatchError`, and `RenderError`. They implement
 `std::error::Error`, typed accessors, and `descriptor() -> ErrorDescriptor`.
 Descriptors, diagnostics, reports, compatibility identity, and stable views
 implement `serde::Serialize`. Opaque scene documents, artifacts, outcomes,
@@ -2143,7 +2142,7 @@ Schema-1 errors have this exact member order and explicit nulls:
 
 ```json
 {
-  "family": "scene_parse | request | frame_batch | unsupported_revision | render | cli",
+  "family": "scene_parse | request | frame_batch | render | cli",
   "category": "input | resource_limit | no_meaningful_artifact | encoding | internal | null",
   "code": "stable.code",
   "message": "human explanation",
@@ -2174,7 +2173,7 @@ Parse pointer rules are:
 | `scene.object-key-too-large` | Expected member, containing object, or null in decreasing reliability |
 | `scene.duplicate-object-key` | Expected path of the later duplicate member |
 
-Malformed syntax never causes an invented path. Request, unsupported-revision,
+Malformed syntax never causes an invented path. Request,
 CLI grammar/path/transport/delivery, and supplemental transport failures use
 null. CLI-preserved library errors preserve the library pointer.
 
@@ -2310,7 +2309,7 @@ Detail bindings are fixed, not producer-selected:
 | `scene.number-token-too-large` | `parse_limit`, `max_number_token_bytes`, bytes |
 | `scene.parse-memory-exceeded` | `parse_limit`, `max_parse_working_bytes`, bytes |
 | Every `request.*` | `request_value`; canonical rejected field and applicable asset/option |
-| `revision.unsupported` | `revision` with parsed requested revision |
+| `revision.unsupported` (CLI only) | family `cli`, `cli_argument` with the rejected `--compatibility-revision` value |
 | `scene.unbounded-geometry`, encoder/internal failures other than `encode.svg-font-subset-failed` | null |
 | `encode.svg-font-subset-failed` | `svg_font_subset_failure`; first failed stage, resolved family, source asset identity |
 | Fatal PDF fallback | `pdf_raster_fallback`, null recovery, first closure |
@@ -2388,7 +2387,7 @@ scene.duplicate-object-key
 scene.parse-memory-exceeded
 ```
 
-Request and revision codes are:
+Request codes, and the CLI-only revision code, are:
 
 ```text
 request.invalid-padding

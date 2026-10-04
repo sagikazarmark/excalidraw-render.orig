@@ -59,7 +59,12 @@ fn duplicate_frame_identity_reports_the_channels_consuming_disambiguation() {
     for format in FORMATS {
         for clip in [true, false] {
             let request = RenderRequest::builder(format)
-                .frame_options(FrameOptions::new(true, clip, false, false))
+                .frame_options(
+                    FrameOptions::default()
+                        .with_clip(clip)
+                        .with_name(false)
+                        .with_outline(false),
+                )
                 .build()
                 .unwrap();
             let result = Renderer::new().render(&parse(&source), &request).unwrap();
@@ -163,7 +168,7 @@ fn assert_scene_equivalence(
     assert_report(&first, expected.clone());
     let metadata = RenderRequest::builder(request.format())
         .frame_options(request.frame_options().clone())
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .build()
         .unwrap();
     let embedded = renderer.render(&document, &metadata).unwrap();
@@ -297,7 +302,13 @@ fn frame_opacity_and_target_scope_select_duplicate_effects() {
         source["elements"][0]["opacity"] = json!(opacity);
         for format in FORMATS {
             let request = RenderRequest::builder(format)
-                .frame_options(FrameOptions::new(false, false, false, false))
+                .frame_options(
+                    FrameOptions::default()
+                        .with_enabled(false)
+                        .with_clip(false)
+                        .with_name(false)
+                        .with_outline(false),
+                )
                 .build()
                 .unwrap();
             let result = Renderer::new().render(&parse(&source), &request).unwrap();
@@ -327,7 +338,13 @@ fn empty_text_does_not_consume_disambiguated_frame_opacity() {
     source["elements"][2] = json!({"id":"child","type":"text","x":5,"y":5,"width":30,"height":20,"text":"","fontFamily":3,"fontSize":16,"lineHeight":1.25,"frameId":"duplicate","updated":0});
     for format in FORMATS {
         let request = RenderRequest::builder(format)
-            .frame_options(FrameOptions::new(false, false, false, false))
+            .frame_options(
+                FrameOptions::default()
+                    .with_enabled(false)
+                    .with_clip(false)
+                    .with_name(false)
+                    .with_outline(false),
+            )
             .build()
             .unwrap();
         let result = Renderer::new().render(&parse(&source), &request).unwrap();
@@ -343,7 +360,7 @@ fn empty_text_does_not_consume_disambiguated_frame_opacity() {
         let mut outside = source.clone();
         outside["elements"][2]["x"] = json!(500);
         let clip_request = RenderRequest::builder(format)
-            .frame_options(FrameOptions::new(true, true, false, false))
+            .frame_options(FrameOptions::default().with_name(false).with_outline(false))
             .build()
             .unwrap();
         let clipped = Renderer::new()
@@ -391,7 +408,13 @@ fn retained_placeholders_consume_disambiguated_frame_opacity() {
     source["elements"][2]["type"] = json!("future");
     for format in FORMATS {
         let request = RenderRequest::builder(format)
-            .frame_options(FrameOptions::new(false, false, false, false))
+            .frame_options(
+                FrameOptions::default()
+                    .with_enabled(false)
+                    .with_clip(false)
+                    .with_name(false)
+                    .with_outline(false),
+            )
             .build()
             .unwrap();
         let result = Renderer::new().render(&parse(&source), &request).unwrap();
@@ -694,12 +717,12 @@ fn duplicate_reports_survive_diagnostic_and_output_failures_in_scene_and_frames(
             }
         }
         let default = RenderRequest::builder(format)
-            .frame_options(FrameOptions::new(true, true, false, false))
+            .frame_options(FrameOptions::default().with_name(false).with_outline(false))
             .build()
             .unwrap();
         let baseline = renderer.render(&document, &default).unwrap();
         let request = RenderRequest::builder(format)
-            .frame_options(FrameOptions::new(true, true, false, false))
+            .frame_options(FrameOptions::default().with_name(false).with_outline(false))
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(baseline.artifact().bytes().len() as u64 - 1)

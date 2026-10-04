@@ -26,7 +26,12 @@ fn every_format_round_trips_one_canonical_artifact_manifest() {
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let request = RenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(true, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_embedded_scene(true)
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .build()
             .expect("metadata request is valid");
         let outcome = renderer
@@ -50,7 +55,7 @@ fn every_format_round_trips_one_canonical_artifact_manifest() {
                 "\"sha256\":\"{}\"}}}}"
             ),
             env!("CARGO_PKG_VERSION"),
-            outcome.profile_digest(),
+            outcome.profile_identity().profile_digest(),
             scene_digest,
         );
         assert_eq!(manifest, expected, "{format:?} manifest");
@@ -88,7 +93,10 @@ fn output_exhaustion_omits_only_the_crossing_optional_component() {
     let renderer = Renderer::new();
     let scene = SceneDocument::parse(SOURCE).expect("scene is admitted");
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let metadata = MetadataOptions::new(true, true, true);
+        let metadata = MetadataOptions::default()
+            .with_embedded_scene(true)
+            .with_provenance(true)
+            .with_diagnostic_summary(true);
         let unlimited_request = RenderRequest::builder(format)
             .metadata_options(metadata.clone())
             .build()
@@ -189,7 +197,10 @@ fn svg_one_byte_below_mandatory_notice_output_reports_the_resource_crossing() {
 fn svg_exact_measurement_preserves_optional_metadata_selection() {
     let renderer = Renderer::new();
     let scene = SceneDocument::parse(SOURCE).expect("scene is admitted");
-    let metadata = MetadataOptions::new(true, true, true);
+    let metadata = MetadataOptions::default()
+        .with_embedded_scene(true)
+        .with_provenance(true)
+        .with_diagnostic_summary(true);
     let unlimited_request = RenderRequest::builder(OutputFormat::Svg)
         .metadata_options(metadata.clone())
         .build()
@@ -229,7 +240,7 @@ fn rejected_higher_priority_metadata_does_not_block_a_later_component() {
             .render(
                 &scene,
                 &RenderRequest::builder(format)
-                    .metadata_options(MetadataOptions::new(false, true, false))
+                    .metadata_options(MetadataOptions::default().with_provenance(true))
                     .build()
                     .unwrap(),
             )
@@ -238,7 +249,7 @@ fn rejected_higher_priority_metadata_does_not_block_a_later_component() {
             .render(
                 &scene,
                 &RenderRequest::builder(format)
-                    .metadata_options(MetadataOptions::new(false, false, true))
+                    .metadata_options(MetadataOptions::default().with_diagnostic_summary(true))
                     .build()
                     .unwrap(),
             )
@@ -249,7 +260,11 @@ fn rejected_higher_priority_metadata_does_not_block_a_later_component() {
             "the vector must isolate the higher-priority component"
         );
         let request = RenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(false, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(limit)
@@ -530,7 +545,7 @@ fn embedded_scene_excludes_supplements_and_keeps_source_spelling() {
         .build()
         .expect("supplement is valid");
     let request = RenderRequest::builder(OutputFormat::Png)
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .supplemental_assets(supplements)
         .build()
         .expect("request is valid");

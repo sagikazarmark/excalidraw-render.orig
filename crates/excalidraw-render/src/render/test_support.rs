@@ -11,9 +11,9 @@ use crate::outcome::DiagnosticAttribution;
 use crate::resource_accounting::ResourceMeter;
 use crate::scene_surface::SceneSurfacePolicy;
 use crate::{
-    CompatibilityReport, CompatibilityRevision, ErrorCode, FrameRef, FrameRenderRequest,
-    OutputFormat, ReferenceProfileIdentity, RenderError, RenderOutcome, RenderRequest, Renderer,
-    SceneDocument, SvgFontSubsetStage,
+    CompatibilityReport, ErrorCode, FrameRef, FrameRenderRequest, OutputFormat,
+    ReferenceProfileIdentity, RenderError, RenderOutcome, RenderRequest, Renderer, SceneDocument,
+    SvgFontSubsetStage,
 };
 
 use super::font_demand::release_svg_font_encoding_records;
@@ -81,8 +81,7 @@ pub(super) fn render_font_subset_qualification_trace(
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("qualification SVG request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let mut session =
         RenderSession::new_with_trace(profile, REVISION_1.scene_surface(), &scene, &request);
     let result = (|| {

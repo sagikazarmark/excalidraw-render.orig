@@ -18,7 +18,7 @@ fn source_image_projection_keeps_top_rows_and_canvas_filter_weights() {
         RenderRequest::builder(format)
             .padding(0.)
             .include_background(false)
-            .frame_options(FrameOptions::new(true, true, false, false))
+            .frame_options(FrameOptions::default().with_name(false).with_outline(false))
             .build()
             .unwrap()
     };
@@ -207,8 +207,13 @@ fn representative_frames_text_assets_links_metadata_tracer() {
         let request = RenderRequest::builder(format)
             .padding(0.0)
             .include_background(false)
-            .frame_options(FrameOptions::new(true, true, false, false))
-            .metadata_options(MetadataOptions::new(true, true, true))
+            .frame_options(FrameOptions::default().with_name(false).with_outline(false))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_embedded_scene(true)
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .build()
             .unwrap();
         let first = Renderer::new().render(&parse(&source), &request).unwrap();

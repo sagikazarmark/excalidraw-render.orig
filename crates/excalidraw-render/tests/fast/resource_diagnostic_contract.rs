@@ -700,9 +700,13 @@ fn asset_reference_scope_and_prefix(limit: AssetLimit) {
                 let request = RenderRequest::builder(format)
                     .supplemental_assets(assets.clone())
                     .resource_limits(limit.limits(n - 1))
-                    .frame_options(excalidraw_render::FrameOptions::new(
-                        false, false, false, false,
-                    ))
+                    .frame_options(
+                        excalidraw_render::FrameOptions::default()
+                            .with_enabled(false)
+                            .with_clip(false)
+                            .with_name(false)
+                            .with_outline(false),
+                    )
                     .build()
                     .unwrap();
                 let actual = assert_repeat(&source, &request, json!(rows));
@@ -712,9 +716,13 @@ fn asset_reference_scope_and_prefix(limit: AssetLimit) {
                     .render(
                         &parse(&missing),
                         &RenderRequest::builder(format)
-                            .frame_options(excalidraw_render::FrameOptions::new(
-                                false, false, false, false,
-                            ))
+                            .frame_options(
+                                excalidraw_render::FrameOptions::default()
+                                    .with_enabled(false)
+                                    .with_clip(false)
+                                    .with_name(false)
+                                    .with_outline(false),
+                            )
                             .build()
                             .unwrap(),
                     )
@@ -1389,9 +1397,13 @@ fn element_reference_order_and_frames(limit: ElementLimit) {
         source["elements"][1]["isDeleted"] = json!(true);
         let request = RenderRequest::builder(format)
             .resource_limits(limit.limits(n - 1))
-            .frame_options(excalidraw_render::FrameOptions::new(
-                false, false, false, false,
-            ))
+            .frame_options(
+                excalidraw_render::FrameOptions::default()
+                    .with_enabled(false)
+                    .with_clip(false)
+                    .with_name(false)
+                    .with_outline(false),
+            )
             .build()
             .unwrap();
         assert_repeat(&source, &request, json!([]));
@@ -2864,7 +2876,10 @@ fn nested_raster_work_rejection_has_exact_measurements_and_recovery_budget() {
 fn optional_metadata_output_boundary_retains_lower_priority_contract() {
     let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
     for format in FORMATS {
-        let metadata = MetadataOptions::new(true, true, true);
+        let metadata = MetadataOptions::default()
+            .with_embedded_scene(true)
+            .with_provenance(true)
+            .with_diagnostic_summary(true);
         let request = RenderRequest::builder(format)
             .metadata_options(metadata.clone())
             .build()
@@ -2924,11 +2939,11 @@ fn optional_metadata_components_have_exact_output_boundaries_and_priority() {
                 )
                 .unwrap()
         };
-        let baseline = render(MetadataOptions::new(false, false, false));
+        let baseline = render(MetadataOptions::default());
         for options in [
-            MetadataOptions::new(true, false, false),
-            MetadataOptions::new(false, true, false),
-            MetadataOptions::new(false, false, true),
+            MetadataOptions::default().with_embedded_scene(true),
+            MetadataOptions::default().with_provenance(true),
+            MetadataOptions::default().with_diagnostic_summary(true),
         ] {
             let full = render(options.clone());
             let n = full.artifact().bytes().len() as u64;
@@ -2960,12 +2975,16 @@ fn optional_metadata_components_have_exact_output_boundaries_and_priority() {
                 );
             }
         }
-        let provenance = render(MetadataOptions::new(false, true, false));
-        let summary = render(MetadataOptions::new(false, false, true));
+        let provenance = render(MetadataOptions::default().with_provenance(true));
+        let summary = render(MetadataOptions::default().with_diagnostic_summary(true));
         let limit = summary.artifact().bytes().len() as u64;
         assert!(provenance.artifact().bytes().len() as u64 > limit);
         let request = RenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(false, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(limit)
@@ -3004,12 +3023,12 @@ fn metadata_omissions_order_and_required_report_failure_are_exact() {
                 )
                 .unwrap()
         };
-        let baseline = render(MetadataOptions::new(false, false, false));
+        let baseline = render(MetadataOptions::default());
         let limit = baseline.artifact().bytes().len() as u64;
         let rows: Vec<_> = [
-            MetadataOptions::new(false, true, false),
-            MetadataOptions::new(false, false, true),
-            MetadataOptions::new(true, false, false),
+            MetadataOptions::default().with_provenance(true),
+            MetadataOptions::default().with_diagnostic_summary(true),
+            MetadataOptions::default().with_embedded_scene(true),
         ]
         .into_iter()
         .map(|options| {
@@ -3021,7 +3040,12 @@ fn metadata_omissions_order_and_required_report_failure_are_exact() {
         })
         .collect();
         let request = RenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(true, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_embedded_scene(true)
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(limit)
@@ -3033,7 +3057,12 @@ fn metadata_omissions_order_and_required_report_failure_are_exact() {
         let outcome = assert_repeat(&source, &request, json!(rows));
         assert_eq!(outcome.artifact().bytes(), baseline.artifact().bytes());
         let request = RenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(true, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_embedded_scene(true)
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(limit)
@@ -3056,7 +3085,12 @@ fn metadata_omissions_order_and_required_report_failure_are_exact() {
         first["format"] = json!(format.as_str());
         assert_eq!(actual, json!({"schema_version":1,"diagnostics":[first]}));
         let request = RenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(true, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_embedded_scene(true)
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(limit - 1)
@@ -3107,14 +3141,18 @@ fn optional_metadata_keeps_notices_and_nonempty_frozen_summary() {
                 )
                 .unwrap()
         };
-        let baseline = render(MetadataOptions::new(false, false, false));
-        let provenance = render(MetadataOptions::new(false, true, false));
-        let summary = render(MetadataOptions::new(false, false, true));
+        let baseline = render(MetadataOptions::default());
+        let provenance = render(MetadataOptions::default().with_provenance(true));
+        let summary = render(MetadataOptions::default().with_diagnostic_summary(true));
         let limit = summary.artifact().bytes().len() as u64;
         assert!(provenance.artifact().bytes().len() as u64 > limit);
         let missing = json!({"code":"image.missing-file","severity":"warning","effects":["visual"],"element_id":"image","json_pointer":"/elements/0/fileId","details":{"kind":"asset","asset_id":"missing","claimed_media_type":null,"validated_media_type":null,"recovery":if format==OutputFormat::Png {"placeholder"} else {"omitted"},"recipe_id":if format==OutputFormat::Png {json!("official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9")} else {Value::Null}}});
         let request = RenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(false, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(limit)
@@ -3139,7 +3177,12 @@ fn optional_metadata_keeps_notices_and_nonempty_frozen_summary() {
         // The PNG ordinary error recipe requires notices even without optional
         // metadata. Exact baseline bytes preserve them when all options fail.
         let request = RenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(true, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_embedded_scene(true)
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(baseline.artifact().bytes().len() as u64)
@@ -3165,7 +3208,12 @@ fn optional_metadata_frame_limits_are_independent_and_replayed() {
     for format in FORMATS {
         let renderer = Renderer::new();
         let full_request = FrameRenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(true, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_embedded_scene(true)
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .build()
             .unwrap();
         let full: Vec<_> = frames
@@ -3175,7 +3223,12 @@ fn optional_metadata_frame_limits_are_independent_and_replayed() {
         let limit = full[0].artifact().bytes().len() as u64;
         assert!(full[1].artifact().bytes().len() as u64 > limit);
         let request = FrameRenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(true, true, true))
+            .metadata_options(
+                MetadataOptions::default()
+                    .with_embedded_scene(true)
+                    .with_provenance(true)
+                    .with_diagnostic_summary(true),
+            )
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(limit)
@@ -3209,7 +3262,12 @@ fn optional_metadata_frame_limits_are_independent_and_replayed() {
                 .render_frame(
                     *frame,
                     &FrameRenderRequest::builder(format)
-                        .metadata_options(MetadataOptions::new(i == 0, true, true))
+                        .metadata_options(
+                            MetadataOptions::default()
+                                .with_embedded_scene(i == 0)
+                                .with_provenance(true)
+                                .with_diagnostic_summary(true),
+                        )
                         .build()
                         .unwrap(),
                 )
@@ -3259,7 +3317,7 @@ fn embedded_scene_scratch_rejection_is_exact_and_keeps_visual_output() {
         .render(
             &parse(&source),
             &RenderRequest::builder(OutputFormat::Svg)
-                .metadata_options(MetadataOptions::new(true, false, false))
+                .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                 .build()
                 .unwrap(),
         )
@@ -3295,7 +3353,7 @@ fn embedded_scene_scratch_rejection_is_exact_and_keeps_visual_output() {
             .render(
                 &parse(&source),
                 &RenderRequest::builder(format)
-                    .metadata_options(MetadataOptions::new(true, false, false))
+                    .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                     .build()
                     .unwrap(),
             )
@@ -3303,7 +3361,7 @@ fn embedded_scene_scratch_rejection_is_exact_and_keeps_visual_output() {
         let retained = n + 512 + align(full.artifact().bytes().len() as u64);
         for configured in [n - 1, n, n + 1, retained - 1, retained, retained + 1] {
             let request = RenderRequest::builder(format)
-                .metadata_options(MetadataOptions::new(true, false, false))
+                .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                 .resource_limits(
                     ResourceLimits::builder()
                         .max_working_bytes(configured)
@@ -3341,8 +3399,8 @@ fn embedded_scene_scratch_rejection_is_exact_and_keeps_visual_output() {
 fn optional_metadata_work_crossings_preserve_committed_measurement() {
     let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
     for options in [
-        MetadataOptions::new(false, true, false),
-        MetadataOptions::new(false, false, true),
+        MetadataOptions::default().with_provenance(true),
+        MetadataOptions::default().with_diagnostic_summary(true),
     ] {
         let full_svg = Renderer::new()
             .render(
@@ -3432,7 +3490,7 @@ fn embedded_scene_work_rejects_at_each_stage_with_exact_retained_cost() {
         .render(
             &parse(&source),
             &RenderRequest::builder(OutputFormat::Svg)
-                .metadata_options(MetadataOptions::new(true, false, false))
+                .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                 .build()
                 .unwrap(),
         )
@@ -3469,7 +3527,7 @@ fn embedded_scene_work_rejects_at_each_stage_with_exact_retained_cost() {
             .render(
                 &parse(&source),
                 &RenderRequest::builder(format)
-                    .metadata_options(MetadataOptions::new(true, false, false))
+                    .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                     .build()
                     .unwrap(),
             )
@@ -3489,7 +3547,7 @@ fn embedded_scene_work_rejects_at_each_stage_with_exact_retained_cost() {
         for (stage, attempted) in stages.into_iter().enumerate() {
             let configured = attempted - 1;
             let request = RenderRequest::builder(format)
-                .metadata_options(MetadataOptions::new(true, false, false))
+                .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                 .resource_limits(
                     ResourceLimits::builder()
                         .max_element_work_units(1)
@@ -3878,7 +3936,11 @@ fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
             {"id":"bad","type":"frame","x":21,"width":10,"height":10,"updated":0},
             {"id":"child","type":"rectangle","width":5,"height":5,"frameId":"bad","seed":1,"updated":0}
         ],"appState":{},"files":{}});
-        let options = excalidraw_render::FrameOptions::new(false, false, false, false);
+        let options = excalidraw_render::FrameOptions::default()
+            .with_enabled(false)
+            .with_clip(false)
+            .with_name(false)
+            .with_outline(false);
         let request = RenderRequest::builder(format)
             .frame_options(options)
             .resource_limits(
@@ -3921,9 +3983,7 @@ fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
         );
         cycle["elements"][2]["frameId"] = json!("good");
         let request = RenderRequest::builder(format)
-            .frame_options(excalidraw_render::FrameOptions::new(
-                true, true, false, true,
-            ))
+            .frame_options(excalidraw_render::FrameOptions::default().with_name(false))
             .resource_limits(
                 ResourceLimits::builder()
                     .max_coordinate_magnitude(20.0)

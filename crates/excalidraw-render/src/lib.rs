@@ -5,6 +5,110 @@
 //! In 0.x, output and diagnostics may change between reviewed releases;
 //! pin the renderer version and dependency lockfile for reproducible output.
 //! Linux x86-64 GNU is release-qualified; browser WASM is experimental.
+//!
+//! # Quick start
+//!
+//! Admit the scene once with [`SceneDocument::parse`], describe one output
+//! with a [`RenderRequest`], and render it with a [`Renderer`]. A successful
+//! render returns the complete [`Artifact`] together with a
+//! [`CompatibilityReport`] listing every repair, substitution or omission the
+//! renderer made to keep the artifact meaningful; an empty report means none
+//! were needed.
+//!
+//! ```
+//! use excalidraw_render::{
+//!     FrameRenderRequest, OutputFormat, RenderRequest, Renderer, SceneDocument, Sizing,
+//! };
+//!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! // The contents of an `.excalidraw` file.
+//! let bytes = br##"{
+//!     "type": "excalidraw",
+//!     "version": 2,
+//!     "elements": [
+//!         {"id": "overview", "type": "frame", "name": "Overview",
+//!          "x": 0, "y": 0, "width": 200, "height": 140},
+//!         {"id": "box", "type": "rectangle", "frameId": "overview",
+//!          "x": 40, "y": 30, "width": 120, "height": 80}
+//!     ],
+//!     "appState": {"viewBackgroundColor": "#ffffff"},
+//!     "files": {}
+//! }"##;
+//! let scene = SceneDocument::parse(bytes)?;
+//! let renderer = Renderer::new();
+//!
+//! // Export the whole scene as SVG with the reference export defaults.
+//! let request = RenderRequest::builder(OutputFormat::Svg).build()?;
+//! let outcome = renderer.render(&scene, &request)?;
+//! for diagnostic in outcome.report().diagnostics() {
+//!     eprintln!(
+//!         "{:?} {} at {}: {}",
+//!         diagnostic.severity(),
+//!         diagnostic.code(),
+//!         diagnostic.json_pointer(),
+//!         diagnostic.message()
+//!     );
+//! }
+//! let svg = outcome.artifact().bytes();
+//! assert!(svg.starts_with(b"<svg"));
+//!
+//! // Export every frame as a PNG no larger than 1024 pixels on either side.
+//! let request = FrameRenderRequest::builder(OutputFormat::Png)
+//!     .sizing(Sizing::MaxDimension(1024.0))
+//!     .build()?;
+//! for frame in scene.frames() {
+//!     let outcome = renderer.render_frame(frame, &request)?;
+//!     let png = outcome.artifact().bytes();
+//!     println!("{}: {} bytes", frame.name().unwrap_or("unnamed"), png.len());
+//!     assert!(png.starts_with(b"\x89PNG"));
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! Each failure type ([`SceneParseError`], [`RequestError`], [`RenderError`])
+//! carries a stable [`ErrorCode`] and typed details; `descriptor()` gives the
+//! serializable form. [`Renderer::render_frames`] renders a frame batch that
+//! shares scene preparation across frames.
+//!
+//! # Serving untrusted input
+//!
+//! The renderer is built to render scene documents from untrusted sources, but
+//! a service still has to decide how much CPU time and memory one request may
+//! take.
+//!
+//! - **Share and move freely.** [`Renderer`] and [`SceneDocument`] are
+//!   immutable, `Clone`, `Send` and `Sync`; one renderer can serve every
+//!   request concurrently, and an admitted scene can be rendered to several
+//!   formats from different threads.
+//! - **Rendering is synchronous and CPU-bound.** In an async server, run it on
+//!   a blocking pool (for example `tokio::task::spawn_blocking`) rather than on
+//!   the executor's worker threads.
+//! - **There is no deadline or cancellation.** Every render terminates, because
+//!   all work is bounded by [`ResourceLimits`], but a render cannot be
+//!   interrupted once started. When you need a hard wall-clock deadline, render
+//!   in a separate process you can kill.
+//! - **Bound raster sizes from the request.** Prefer
+//!   [`Sizing::MaxDimension`] over a caller-chosen [`Sizing::Scale`] so a
+//!   large scene cannot request an enormous PNG; then lower
+//!   `max_raster_dimension` and `max_raster_surface_pixels` to what you are
+//!   willing to allocate.
+//! - **`max_working_bytes` is not a memory cap.** It budgets the renderer's
+//!   deterministic, logical working set so that the same input fails the same
+//!   way on every machine; it does not measure or limit allocator usage.
+//!   Actual peak memory is higher, dominated by raster surfaces: a PNG render
+//!   of a scene around 2800×3900 pixels peaks near 1.4 GB of resident memory.
+//!   Size worker memory (or a container limit) for your raster ceilings and
+//!   concurrency.
+//! - **Build with optimizations.** Unoptimized builds are roughly 50 times
+//!   slower, which turns ordinary scenes into multi-second renders and makes
+//!   resource limits much easier to exhaust in wall-clock terms. In a debug
+//!   build of your service, optimize at least this crate:
+//!
+//!   ```toml
+//!   [profile.dev.package.excalidraw-render]
+//!   opt-level = 2
+//!   ```
 
 mod catalog;
 #[cfg(test)]
@@ -66,8 +170,7 @@ pub use compatibility::{
     AssetChainEntry, CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily,
     FiniteValue, LogicalBounds, Measurement, MetadataComponent, MetadataOperation, NestedPath,
     NestedPathSegment, NestedSegmentKind, Recovery, ReferenceProfileIdentity, Renderer,
-    ResourceMeasurement, ResourceValue, SvgFontSubsetStage, UnsupportedRevisionError, ValueKind,
-    DEFAULT_COMPATIBILITY_REVISION,
+    ResourceMeasurement, ResourceValue, SvgFontSubsetStage, ValueKind,
 };
 pub use frame::{
     FrameBatchError, FrameBatchErrorKind, FrameKind, FrameRef, FrameRefs, FrameRenderCursor,
@@ -364,4 +467,25 @@ pub mod wasm_tests {
 /// Returns the complete package-wide license and attribution bundle.
 pub const fn license_bundle() -> &'static str {
     include_str!("../LICENSE-BUNDLE.txt")
+}
+
+/// The environment variable that admits the release-mode qualification set.
+#[cfg(test)]
+const RELEASE_QUALIFICATION_ENV: &str = "EXCALIDRAW_RENDER_RELEASE_QUALIFICATION";
+
+/// Whether this test run executes the release-mode qualification set: the
+/// corpus-driven and generated-property tests that take minutes even
+/// optimized. They run only when [`RELEASE_QUALIFICATION_ENV`] is `1`, which
+/// the release-mode workflows set for an unfiltered `cargo test --release
+/// --lib`; otherwise they return at once, so the push gate and a plain
+/// `cargo test` stay fast. Any other value than unset, empty, `0` or `1`
+/// fails the test rather than silently skipping it.
+#[cfg(test)]
+pub(crate) fn release_qualification_enabled() -> bool {
+    match std::env::var(RELEASE_QUALIFICATION_ENV) {
+        Err(std::env::VarError::NotPresent) => false,
+        Ok(value) if value.is_empty() || value == "0" => false,
+        Ok(value) if value == "1" => true,
+        other => panic!("{RELEASE_QUALIFICATION_ENV} must be unset, 0 or 1, got {other:?}"),
+    }
 }

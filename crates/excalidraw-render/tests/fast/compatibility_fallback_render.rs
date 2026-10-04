@@ -57,6 +57,7 @@ pub(super) fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
         Some(ErrorDetails::Compatibility {
             recovery: Recovery::Placeholder,
             recipe_id: Some(recipe),
+            ..
         }) if recipe == "renderer.unknown-element.v1"
     ));
 
@@ -139,6 +140,7 @@ fn bounded_fallback_and_unbounded_omission_succeed_in_every_format() {
             Some(ErrorDetails::Compatibility {
                 recovery: Recovery::Omitted,
                 recipe_id: None,
+                ..
             })
         ));
 
@@ -742,6 +744,7 @@ fn generated_labels_report_controlled_font_substitution_and_missing_glyphs() {
         Some(ErrorDetails::MissingGlyph {
             codepoint: 0x1f600,
             recovery: Recovery::Substituted,
+            ..
         })
     ));
 }
@@ -853,6 +856,7 @@ fn scene_text_reports_missing_glyphs_and_emoji_substitution_in_every_format() {
                     Some(ErrorDetails::MissingGlyph {
                         codepoint: reported,
                         recovery: Recovery::Substituted,
+                        ..
                     }) if *reported == codepoint
                 ),
                 "unmapped scene codepoint {codepoint:#x} is substituted for {format:?}"

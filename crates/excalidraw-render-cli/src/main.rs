@@ -11,7 +11,6 @@ use excalidraw_render::{
     license_bundle, ColorMode, CompatibilityDiagnostic, CompatibilityRevision, ErrorDescriptor,
     FrameOptions, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, RenderRequest,
     Renderer, ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
-    DEFAULT_COMPATIBILITY_REVISION,
 };
 use serde::{Serialize, Serializer};
 use sha2::{Digest, Sha256};
@@ -641,13 +640,12 @@ fn run_standalone(cli: &Cli) -> u8 {
         );
     }
 
+    let profile = Renderer::new().profile_identity();
     if cli.version {
-        let profile = Renderer::profile_identity(DEFAULT_COMPATIBILITY_REVISION)
-            .expect("default revision is supported");
         let text = format!(
             "excalidraw-render {}\ncompatibility revision {}\nExcalidraw {}\nreference profile {}\n",
             env!("CARGO_PKG_VERSION"),
-            DEFAULT_COMPATIBILITY_REVISION,
+            profile.compatibility_revision(),
             profile.excalidraw_release(),
             profile.profile_digest()
         );
@@ -657,19 +655,13 @@ fn run_standalone(cli: &Cli) -> u8 {
         return write_stdout(license_bundle().as_bytes());
     }
 
-    let revisions = Renderer::supported_revisions()
-        .iter()
-        .map(|&revision| {
-            let profile =
-                Renderer::profile_identity(revision).expect("listed revision is supported");
-            RevisionEntry {
-                compatibility_revision: revision,
-                excalidraw_release: profile.excalidraw_release(),
-                reference_profile_digest: profile.profile_digest(),
-                default: revision == DEFAULT_COMPATIBILITY_REVISION,
-            }
-        })
-        .collect::<Vec<_>>();
+    // The renderer implements exactly one revision, which is also the default.
+    let revisions = vec![RevisionEntry {
+        compatibility_revision: profile.compatibility_revision(),
+        excalidraw_release: profile.excalidraw_release(),
+        reference_profile_digest: profile.profile_digest(),
+        default: true,
+    }];
     let bytes = match cli.report_format {
         ReportFormat::Human => revisions
             .iter()
@@ -769,25 +761,10 @@ fn run_render(
         .with_hint("pass -o FILE, or -o - with --format to write standard output")
     })?;
 
-    let revision = match &cli.compatibility_revision {
-        Some(value) => value.parse::<CompatibilityRevision>().map_err(|_| {
-            Failure::cli(
-                "cli.invalid-arguments",
-                "compatibility revision must be a nonnegative integer",
-                Some(CliDetails::CliArgument {
-                    argument: "--compatibility-revision".to_owned(),
-                    value: Some(value.clone()),
-                }),
-                EXIT_USAGE,
-            )
-        })?,
-        None => DEFAULT_COMPATIBILITY_REVISION,
-    };
-    let renderer = Renderer::for_revision(revision)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
-    let profile = renderer.selected_profile_identity();
+    let renderer = select_renderer(cli.compatibility_revision.as_deref())?;
+    let profile = renderer.profile_identity();
     *identity = Some(SelectedIdentity {
-        revision,
+        revision: profile.compatibility_revision(),
         release: profile.excalidraw_release(),
         digest: profile.profile_digest(),
     });
@@ -851,6 +828,41 @@ fn run_render(
     Ok((artifact.into_bytes(), report.diagnostics().to_vec()))
 }
 
+/// The renderer for `--compatibility-revision`, which accepts only the one
+/// revision the library implements; absent, it selects that revision.
+fn select_renderer(requested: Option<&str>) -> Result<Renderer, Failure> {
+    let renderer = Renderer::new();
+    let Some(value) = requested else {
+        return Ok(renderer);
+    };
+    let argument = || {
+        Some(CliDetails::CliArgument {
+            argument: "--compatibility-revision".to_owned(),
+            value: Some(value.to_owned()),
+        })
+    };
+    let revision = value.parse::<u64>().map_err(|_| {
+        Failure::cli(
+            "cli.invalid-arguments",
+            "compatibility revision must be a nonnegative integer",
+            argument(),
+            EXIT_USAGE,
+        )
+    })?;
+    let supported = renderer.profile_identity().compatibility_revision();
+    if revision != supported.get() {
+        return Err(Failure::cli(
+            "revision.unsupported",
+            format!(
+                "compatibility revision {revision} is not supported; this renderer implements revision {supported}"
+            ),
+            argument(),
+            EXIT_USAGE,
+        ));
+    }
+    Ok(renderer)
+}
+
 fn build_request(
     cli: &Cli,
     format: OutputFormat,
@@ -869,17 +881,19 @@ fn build_request(
         } else {
             ColorMode::Light
         })
-        .frame_options(FrameOptions::new(
-            !cli.no_frame_rendering,
-            !cli.no_frame_clipping,
-            !cli.no_frame_names,
-            !cli.no_frame_outlines,
-        ))
-        .metadata_options(MetadataOptions::new(
-            cli.embed_scene,
-            cli.embed_provenance,
-            cli.embed_diagnostics,
-        ))
+        .frame_options(
+            FrameOptions::default()
+                .with_enabled(!cli.no_frame_rendering)
+                .with_clip(!cli.no_frame_clipping)
+                .with_name(!cli.no_frame_names)
+                .with_outline(!cli.no_frame_outlines),
+        )
+        .metadata_options(
+            MetadataOptions::default()
+                .with_embedded_scene(cli.embed_scene)
+                .with_provenance(cli.embed_provenance)
+                .with_diagnostic_summary(cli.embed_diagnostics),
+        )
         .supplemental_assets(assets)
         .resource_limits(ResourceLimits::default());
     if let Some(fallback) = cli.pdf_raster_fallback {

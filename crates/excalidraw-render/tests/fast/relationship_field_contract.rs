@@ -61,7 +61,7 @@ fn assert_contract(source: &Value, clean: &Value, format: OutputFormat, rows: Va
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     assert_eq!(first.report(), second.report());
     let metadata = RenderRequest::builder(format)
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .build()
         .unwrap();
     let embedded = renderer.render(&document, &metadata).unwrap();
@@ -354,7 +354,7 @@ fn image_and_frame_grouping_recovery() {
                 };
                 for format in FORMATS {
                     let request = RenderRequest::builder(format)
-                        .metadata_options(MetadataOptions::new(true, false, false))
+                        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                         .build()
                         .unwrap();
                     let document = parse(&source);

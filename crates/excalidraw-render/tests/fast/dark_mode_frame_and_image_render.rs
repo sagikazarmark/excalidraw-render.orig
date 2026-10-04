@@ -553,7 +553,7 @@ fn frame_outline<'a>(svg: &'a str, id: &str) -> &'a str {
 fn request(format: OutputFormat, mode: ColorMode) -> RenderRequest {
     RenderRequest::builder(format)
         .color_mode(mode)
-        .frame_options(FrameOptions::new(true, true, false, true))
+        .frame_options(FrameOptions::default().with_name(false))
         .build()
         .expect("request is valid")
 }

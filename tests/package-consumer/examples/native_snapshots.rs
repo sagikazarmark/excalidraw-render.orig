@@ -374,7 +374,7 @@ fn map_request(key: &Value, options: &Value) -> Result<Request, String> {
     } else {
         ColorMode::Light
     };
-    let metadata = MetadataOptions::new(boolean("exportEmbedScene")?, false, false);
+    let metadata = MetadataOptions::default().with_embedded_scene(boolean("exportEmbedScene")?);
     if let Some(ordinal) = frame {
         // Frame API fixes padding at zero and ignores scene frame chrome controls.
         return FrameRenderRequest::builder(format)
@@ -405,12 +405,13 @@ fn map_request(key: &Value, options: &Value) -> Result<Request, String> {
         .sizing(sizing)
         .color_mode(color)
         .metadata_options(metadata)
-        .frame_options(FrameOptions::new(
-            control("enabled")?,
-            control("clip")?,
-            control("name")?,
-            control("outline")?,
-        ))
+        .frame_options(
+            FrameOptions::default()
+                .with_enabled(control("enabled")?)
+                .with_clip(control("clip")?)
+                .with_name(control("name")?)
+                .with_outline(control("outline")?),
+        )
         .build()
         .map(Request::Scene)
         .map_err(|e| e.to_string())

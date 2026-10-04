@@ -17,9 +17,9 @@
 # `ci-fast`.
 #
 # The two release-mode qualification tests are not a tier of their own: the
-# frame batch property test and the SVG font subset qualification corpus are
-# both #[ignore]d unless the `release-qualification` feature is on, so no
-# profile needs to name them. The packaged-facade workflow runs both in
+# frame batch property test and the SVG font subset qualification corpus both
+# return at once unless EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1, so no profile
+# needs to name them. The packaged-facade workflow sets it and runs both in
 # `--release` through `cargo test`.
 #
 # nextest does not run doc tests; the workflows keep a `cargo test --doc` step.

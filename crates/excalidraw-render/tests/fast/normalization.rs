@@ -221,8 +221,8 @@ fn disabled_frame_names_suppress_name_value_diagnostics() {
     let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"frame","type":"frame","width":10,"height":10,"name":3,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
     let scene = SceneDocument::parse(source).expect("disabled frame-name vector is admitted");
     for frame_options in [
-        FrameOptions::new(true, true, false, true),
-        FrameOptions::new(false, true, true, true),
+        FrameOptions::default().with_name(false),
+        FrameOptions::default().with_enabled(false),
     ] {
         let request = RenderRequest::builder(OutputFormat::Svg)
             .frame_options(frame_options)
