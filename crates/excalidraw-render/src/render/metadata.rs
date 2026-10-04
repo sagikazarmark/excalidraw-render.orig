@@ -237,6 +237,9 @@ impl ArtifactMetadata {
         self.scene.as_ref().map(|scene| scene.wrapper.as_slice())
     }
 
+    /// The estimate `estimate` must reproduce; only the debug assertion in
+    /// `build` and the estimate tests compare against it.
+    #[cfg(any(debug_assertions, test))]
     pub(super) fn scratch_bytes(&self) -> u64 {
         let scene = self.scene.as_ref().map_or(0_u64, |scene| {
             aligned(u64::try_from(scene.canonical.len()).unwrap_or(u64::MAX)).saturating_add(
@@ -250,6 +253,7 @@ impl ArtifactMetadata {
         )
     }
 
+    #[cfg(any(debug_assertions, test))]
     pub(super) fn generation_work(&self) -> u64 {
         self.scene
             .as_ref()
