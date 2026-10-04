@@ -3,7 +3,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use clap::Parser;
+use clap::Args;
 use excalidraw_render::{
     ColorMode, CompatibilityDiagnostic, CompatibilityRevision, FrameBatchErrorKind,
     FrameRenderRequest, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, Renderer,
@@ -13,73 +13,132 @@ use regex::Regex;
 use serde::{Serialize, Serializer};
 use unicode_normalization::UnicodeNormalization as _;
 
+use crate::human::{self, HumanReport};
 use crate::{
-    deliver_report_bytes, emergency_report_failure, emit_failure, json_line,
-    parse_asset_declarations, path_conflict, path_entry_exists, read_bounded_asset,
-    read_scene_bounded, report_output, same_path, sha256, stage_report_file, validate_paths,
-    validate_report_options, write_stream, ArtifactDescriptor, Cli, CliDetails, CliError,
-    CliOperation, DeliveryRole, DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError,
-    ReportFormat, SelectedIdentity, StagedFile, EXIT_OPERATIONAL, EXIT_USAGE, MAX_SCENE_BYTES,
+    deliver_report_bytes, destination_exists, emergency_report_failure, emit_failure, json_line,
+    parse_asset_declarations, path_conflict, path_entry_exists, read_bounded_asset, read_scene,
+    report_output, same_path, sha256, stage_report_file, validate_paths, validate_report_options,
+    write_stream, ArtifactDescriptor, Cli, CliDetails, CliError, CliOperation, DeliveryError,
+    DeliveryRole, DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError, ReportFormat,
+    SelectedIdentity, StagedFile, ASSETS, EXIT_OPERATIONAL, EXIT_USAGE, METADATA, OUTPUT,
+    RENDERING, REPORTING,
 };
 
-#[derive(Parser)]
-#[command(
-    name = "excalidraw-render frames",
-    disable_version_flag = true,
-    about = "Render each selected Excalidraw frame to a separate artifact"
-)]
+pub(crate) const LONG_ABOUT: &str = "\
+Render each selected frame of an Excalidraw scene to its own file in a
+directory.
+
+Every live frame and magic frame is exported with zero padding, named after the
+frame (or frame-N for unnamed frames). By default nothing is written unless
+every frame succeeds; use --list to preview the selection and file names.";
+
+pub(crate) const EXAMPLES: &str = "\
+Examples:
+  excalidraw-render frames drawing.excalidraw --list
+  excalidraw-render frames drawing.excalidraw -o frames --format png
+  excalidraw-render frames drawing.excalidraw -o slides --format pdf --name-regex '^Slide'";
+
+const SELECTION: &str = "Frame selection";
+
+/// The `frames` subcommand.
+#[derive(Args)]
 pub(crate) struct FramesCli {
-    /// Input Excalidraw scene document, or - for stdin.
-    #[arg(allow_hyphen_values = true)]
+    /// Excalidraw scene file (.excalidraw JSON), or - to read standard input
     input: String,
-    /// Output directory. Not required in `--list` mode, which writes nothing.
+    /// Directory to write the frame files to (created if missing; required
+    /// unless --list)
     #[arg(
         short,
         long,
+        value_name = "DIRECTORY",
         allow_hyphen_values = true,
-        required_unless_present = "list"
+        required_unless_present = "list",
+        help_heading = OUTPUT
     )]
     output: Option<String>,
-    #[arg(short, long, value_enum, required_unless_present = "list")]
+    /// Format of every frame file (required unless --list: a directory has
+    /// no extension to infer it from)
+    #[arg(
+        short,
+        long,
+        value_enum,
+        required_unless_present = "list",
+        help_heading = OUTPUT
+    )]
     format: Option<FormatArg>,
-    #[arg(long)]
-    compatibility_revision: Option<String>,
-    #[arg(long)]
-    no_background: bool,
-    #[arg(long, conflicts_with = "max_dimension")]
-    scale: Option<f64>,
-    #[arg(long)]
-    max_dimension: Option<f64>,
-    #[arg(long)]
-    dark_mode: bool,
-    #[arg(long)]
-    embed_scene: bool,
-    #[arg(long)]
-    embed_provenance: bool,
-    #[arg(long)]
-    embed_diagnostics: bool,
-    #[arg(long, value_name = "FILE_ID=PATH")]
-    asset: Vec<String>,
-    #[arg(long, value_name = "FILE_ID=MEDIA_TYPE")]
-    asset_mime: Vec<String>,
-    #[arg(long, value_enum)]
-    pdf_raster_fallback: Option<PdfFallbackArg>,
-    #[arg(long, value_enum, default_value_t)]
-    report_format: ReportFormat,
-    #[arg(long)]
-    report_output: Option<String>,
-    #[arg(long)]
+    /// Replace existing frame files and the report file
+    #[arg(long, help_heading = OUTPUT)]
     force: bool,
-    #[arg(long)]
-    name_regex: Option<String>,
-    #[arg(long, default_value_t = 256)]
-    max_frames: u32,
-    #[arg(long)]
+    /// Write the frames that succeeded even when others fail (still exits 1)
+    #[arg(long, help_heading = OUTPUT)]
     allow_partial: bool,
-    /// Report the frames this selection would export without rendering or
-    /// writing anything.
-    #[arg(long)]
+
+    /// Only export frames whose name matches this Rust regular expression
+    #[arg(long, value_name = "REGEX", help_heading = SELECTION)]
+    name_regex: Option<String>,
+    /// Fail when more than N frames are selected (at most 16384)
+    #[arg(long, value_name = "N", default_value_t = 256, help_heading = SELECTION)]
+    max_frames: u32,
+    /// Print the frames and file names the selection would export, without
+    /// rendering or writing anything
+    #[arg(long, help_heading = SELECTION)]
     list: bool,
+
+    /// Multiply the output size by FACTOR [default: 1]
+    #[arg(
+        long,
+        value_name = "FACTOR",
+        conflicts_with = "max_dimension",
+        help_heading = RENDERING
+    )]
+    scale: Option<f64>,
+    /// Shrink PNG and PDF output so its longer side is at most PX pixels
+    /// (never enlarges; SVG keeps its size)
+    #[arg(long, value_name = "PX", help_heading = RENDERING)]
+    max_dimension: Option<f64>,
+    /// Use a transparent background instead of the scene's background color
+    #[arg(long, help_heading = RENDERING)]
+    no_background: bool,
+    /// Render with Excalidraw's dark theme
+    #[arg(long, help_heading = RENDERING)]
+    dark_mode: bool,
+    /// Whether PDF output may rasterize isolated content that vector PDF cannot
+    /// express [default: allow-isolated]
+    #[arg(long, value_enum, value_name = "MODE", help_heading = RENDERING)]
+    pdf_raster_fallback: Option<PdfFallbackArg>,
+    /// Compatibility revision to render with [default: 1; see
+    /// --list-revisions]
+    #[arg(long, value_name = "N", help_heading = RENDERING)]
+    compatibility_revision: Option<String>,
+
+    /// Embed the scene so Excalidraw can reopen each exported file for editing
+    #[arg(long, help_heading = METADATA)]
+    embed_scene: bool,
+    /// Embed the renderer version and compatibility profile
+    #[arg(long, help_heading = METADATA)]
+    embed_provenance: bool,
+    /// Embed a summary of the compatibility diagnostics
+    #[arg(long, help_heading = METADATA)]
+    embed_diagnostics: bool,
+
+    /// Supply the bytes of image FILE_ID from PATH when the scene does not
+    /// embed them (repeatable)
+    #[arg(long, value_name = "FILE_ID=PATH", help_heading = ASSETS)]
+    asset: Vec<String>,
+    /// Declare the media type of a supplied --asset, e.g. logo=image/png
+    /// (repeatable)
+    #[arg(long, value_name = "FILE_ID=MEDIA_TYPE", help_heading = ASSETS)]
+    asset_mime: Vec<String>,
+
+    /// How to report diagnostics, errors, and --list output on stderr
+    #[arg(long, value_enum, default_value_t, help_heading = REPORTING)]
+    report_format: ReportFormat,
+    /// Write the report to PATH instead of stderr
+    #[arg(long, value_name = "PATH", help_heading = REPORTING)]
+    report_output: Option<String>,
+    /// Also print informational diagnostics in the human report
+    #[arg(short, long, help_heading = REPORTING)]
+    verbose: bool,
 }
 
 impl FramesCli {
@@ -119,6 +178,7 @@ impl FramesCli {
             report_format: self.report_format,
             report_output: self.report_output.clone(),
             force: self.force,
+            verbose: self.verbose,
             list_revisions: false,
             version: false,
             licenses: false,
@@ -219,7 +279,12 @@ fn run_frames_list(frames: &FramesCli) -> u8 {
     let cli = frames.report_cli();
     let mut identity = None;
     match prepare_frame_list(frames, &mut identity) {
-        Ok(entries) => deliver_frame_list(&cli, identity.as_ref(), &entries),
+        Ok(entries) => deliver_frame_list(
+            &cli,
+            identity.as_ref(),
+            &entries,
+            frames.name_regex.as_deref(),
+        ),
         Err(failure) => emit_failure(&cli, identity.as_ref(), None, failure),
     }
 }
@@ -244,22 +309,10 @@ fn prepare_frame_list(
         // overwriting the scene it is reporting on.
         validate_paths(&frames.input, "-", report_path, &BTreeMap::new())?;
         if path_entry_exists(Path::new(report_path)) && !frames.force {
-            return Err(Failure::cli(
-                "cli.destination-exists",
-                "report destination already exists",
-                Some(CliDetails::Delivery {
-                    role: DeliveryRole::Report,
-                    operation: CliOperation::Create,
-                    path: report_path.to_owned(),
-                    artifact_state: DeliveryState::None,
-                }),
-                EXIT_USAGE,
-            ));
+            return Err(destination_exists(DeliveryRole::Report, report_path));
         }
     }
-    let scene_bytes = read_scene_bounded(&frames.input, MAX_SCENE_BYTES)?;
-    let scene = SceneDocument::parse(&scene_bytes)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_OPERATIONAL))?;
+    let scene = read_scene(&frames.input)?;
     let selected = select_frames(&scene, regex.as_ref());
     if selected.len() > frames.max_frames as usize {
         return Err(frame_limit_exceeded(frames));
@@ -281,8 +334,16 @@ fn deliver_frame_list(
     cli: &Cli,
     identity: Option<&SelectedIdentity>,
     entries: &[FrameListEntry],
+    name_regex: Option<&str>,
 ) -> u8 {
     let bytes = match cli.report_format {
+        // An empty listing still succeeds, but says so rather than printing
+        // nothing.
+        ReportFormat::Human if entries.is_empty() => match name_regex {
+            Some(regex) => format!("note: no frames match --name-regex '{regex}'\n"),
+            None => "note: the scene has no frames\n".to_owned(),
+        }
+        .into_bytes(),
         ReportFormat::Human => entries
             .iter()
             .map(|entry| {
@@ -492,26 +553,17 @@ fn prepare_and_render_frames(
         ));
     }
     if report_path != "stderr" && path_entry_exists(Path::new(report_path)) && !frames.force {
-        return Err(Failure::cli(
-            "cli.destination-exists",
-            "report destination already exists",
-            Some(CliDetails::Delivery {
-                role: DeliveryRole::Report,
-                operation: CliOperation::Create,
-                path: report_path.to_owned(),
-                artifact_state: DeliveryState::None,
-            }),
-            EXIT_USAGE,
-        ));
+        return Err(destination_exists(DeliveryRole::Report, report_path));
     }
-    let scene_bytes = read_scene_bounded(&frames.input, MAX_SCENE_BYTES)?;
-    let scene = SceneDocument::parse(&scene_bytes)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_OPERATIONAL))?;
+    let scene = read_scene(&frames.input)?;
     let selected = select_frames(&scene, regex.as_ref());
     if selected.is_empty() {
         return Err(Failure::cli(
             "cli.frame-no-match",
-            "scene contains no frames matching the requested selection",
+            match &frames.name_regex {
+                Some(regex) => format!("no frames match --name-regex '{regex}'"),
+                None => "the scene has no frames".to_owned(),
+            },
             None,
             EXIT_OPERATIONAL,
         ));
@@ -556,7 +608,10 @@ fn prepare_and_render_frames(
                     .zip(&destination_collisions)
                     .find_map(|(destination, collision)| collision.then_some(destination))
                 {
-                    return Err(destination_exists(destination));
+                    return Err(destination_exists(
+                        DeliveryRole::Output,
+                        &destination.to_string_lossy(),
+                    ));
                 }
                 return Err(error);
             }
@@ -581,7 +636,10 @@ fn prepare_and_render_frames(
                 .zip(&destination_collisions)
                 .find_map(|(destination, collision)| collision.then_some(destination))
             {
-                return Err(destination_exists(destination));
+                return Err(destination_exists(
+                    DeliveryRole::Output,
+                    &destination.to_string_lossy(),
+                ));
             }
             return Err(
                 if error.kind() == FrameBatchErrorKind::SharedPreparationFailed {
@@ -642,18 +700,9 @@ fn prepare_and_render_frames(
                 }
                 match StagedFile::new_at(staging_parent, destination, bytes, frames.force) {
                     Ok(staged) => entries.push((entry, Some(staged))),
-                    Err(operation) => {
+                    Err(error) => {
                         had_failure = true;
-                        entry.error = Some(frame_cli_error(
-                            "cli.output-write-failed",
-                            "failed to stage frame artifact",
-                            CliDetails::Delivery {
-                                role: DeliveryRole::Output,
-                                operation,
-                                path: destination.to_string_lossy().into_owned(),
-                                artifact_state: DeliveryState::None,
-                            },
-                        ));
+                        entry.error = Some(frame_delivery_error(&error, &entry.output_path));
                         entries.push((entry, None));
                     }
                 }
@@ -677,28 +726,19 @@ fn prepare_and_render_frames(
     })
 }
 
-fn destination_exists(destination: &Path) -> Failure {
-    Failure::cli(
-        "cli.destination-exists",
-        "output destination already exists",
-        Some(CliDetails::Delivery {
-            role: DeliveryRole::Output,
-            operation: CliOperation::Create,
-            path: destination.to_string_lossy().into_owned(),
-            artifact_state: DeliveryState::None,
-        }),
-        EXIT_USAGE,
-    )
+fn frame_destination_error(destination: &Path) -> ReportError {
+    *destination_exists(DeliveryRole::Output, &destination.to_string_lossy()).error
 }
 
-fn frame_destination_error(destination: &Path) -> ReportError {
+/// `cli.output-write-failed` for a frame file that `error` kept from `path`.
+fn frame_delivery_error(error: &DeliveryError, path: &str) -> ReportError {
     frame_cli_error(
-        "cli.destination-exists",
-        "output destination already exists",
+        "cli.output-write-failed",
+        error.message(&format!("output '{path}'")),
         CliDetails::Delivery {
             role: DeliveryRole::Output,
-            operation: CliOperation::Create,
-            path: destination.to_string_lossy().into_owned(),
+            operation: error.operation,
+            path: path.to_owned(),
             artifact_state: DeliveryState::None,
         },
     )
@@ -907,15 +947,16 @@ fn deliver_frame_batch(
         status,
         &global_diagnostics,
         &entries,
+        HumanReport::new(cli.verbose, cli.max_dimension, Some(format)),
     );
     let mut staged_report = match stage_report_file(cli, &report_bytes) {
         Ok(staged) => staged,
-        Err(operation) => {
+        Err(error) => {
             return emergency_report_failure(
                 cli,
                 identity,
                 format,
-                operation,
+                &error,
                 DeliveryState::None,
                 frame_batch_diagnostics(&global_diagnostics, &entries),
             )
@@ -932,13 +973,20 @@ fn deliver_frame_batch(
 
     if publish_artifacts {
         let output = Path::new(cli.output.as_deref().expect("frame output validated"));
-        if !output.is_dir() && fs::create_dir(output).is_err() {
+        let created = if output.is_dir() {
+            Ok(())
+        } else {
+            fs::create_dir(output)
+        };
+        if let Err(error) = created {
+            let error = DeliveryError::new(CliOperation::Create, &error);
+            let message = error.message(&format!("output directory '{}'", output.display()));
             for (entry, staged) in &mut entries {
                 if staged.take().is_some() {
                     entry.delivery_state = DeliveryState::None;
                     entry.error = Some(frame_cli_error(
                         "cli.output-write-failed",
-                        "failed to create frame output directory",
+                        message.clone(),
                         CliDetails::Delivery {
                             role: DeliveryRole::Output,
                             operation: CliOperation::Create,
@@ -975,19 +1023,10 @@ fn deliver_frame_batch(
                 }
                 match staged.deliver() {
                     Ok(()) => entry.delivery_state = DeliveryState::Complete,
-                    Err(operation) => {
+                    Err(error) => {
                         had_failure = true;
                         entry.delivery_state = DeliveryState::None;
-                        entry.error = Some(frame_cli_error(
-                            "cli.output-write-failed",
-                            "failed to deliver frame artifact",
-                            CliDetails::Delivery {
-                                role: DeliveryRole::Output,
-                                operation,
-                                path: entry.output_path.clone(),
-                                artifact_state: DeliveryState::None,
-                            },
-                        ));
+                        entry.error = Some(frame_delivery_error(&error, &entry.output_path));
                         if !allow_partial {
                             commit_failed = true;
                         }
@@ -1010,18 +1049,19 @@ fn deliver_frame_batch(
         status,
         &global_diagnostics,
         &entries,
+        HumanReport::new(cli.verbose, cli.max_dimension, Some(format)),
     );
     if final_report_bytes != report_bytes {
         staged_report.take();
         report_bytes = final_report_bytes;
         staged_report = match stage_report_file(cli, &report_bytes) {
             Ok(staged) => staged,
-            Err(operation) => {
+            Err(error) => {
                 return emergency_report_failure(
                     cli,
                     identity,
                     format,
-                    operation,
+                    &error,
                     artifact_state,
                     frame_batch_diagnostics(&global_diagnostics, &entries),
                 )
@@ -1099,34 +1139,39 @@ fn frame_batch_report_bytes(
     status: &str,
     global_diagnostics: &[CompatibilityDiagnostic],
     entries: &[(FrameCliEntry, Option<StagedFile>)],
+    human: HumanReport,
 ) -> Vec<u8> {
     match mode {
         ReportFormat::None if status == "success" => Vec::new(),
         ReportFormat::None => frame_batch_error_line(entries),
         ReportFormat::Human => {
-            let mut text = String::new();
-            for diagnostic in global_diagnostics.iter().chain(
-                entries
-                    .iter()
-                    .flat_map(|(entry, _)| entry.diagnostics.iter()),
-            ) {
-                text.push_str(&format!(
-                    "{}: {}\n",
-                    diagnostic.code(),
-                    diagnostic.message()
-                ));
-            }
+            let diagnostics = frame_batch_diagnostics(global_diagnostics, entries);
+            let mut text = format!(
+                "{}{}",
+                human.notes(),
+                human::diagnostics(&diagnostics, human.verbose)
+            );
+            let mut codes = Vec::new();
             for (entry, _) in entries {
                 if let Some(error) = &entry.error {
-                    let (family, code, message) = error.human_parts();
-                    text.push_str(&format!(
-                        "{family} {code}: frame {} ({}): {message}\n",
-                        entry.ordinal, entry.output_path
+                    text.push_str(&human::error_line(
+                        &frame_error_message(entry, error),
+                        error.code(),
                     ));
+                    if !codes.contains(&error.code()) {
+                        codes.push(error.code());
+                    }
                 }
             }
-            if status != "success" && entries.iter().all(|(entry, _)| entry.error.is_none()) {
-                text.push_str("cli cli.output-write-failed: frame batch delivery failed\n");
+            if status != "success" && codes.is_empty() {
+                text.push_str(&human::error_line(
+                    "frame batch delivery failed",
+                    "cli.output-write-failed",
+                ));
+            }
+            // Each fix once, however many frames it applies to.
+            for code in codes {
+                text.push_str(&human::hint_lines(code, std::iter::empty()));
             }
             text.into_bytes()
         }
@@ -1148,17 +1193,29 @@ fn frame_batch_report_bytes(
     }
 }
 
+/// The `frame N` prefix of a frame's error; CLI messages already name the
+/// path, library ones get it here.
+fn frame_error_message(entry: &FrameCliEntry, error: &ReportError) -> String {
+    match error {
+        ReportError::Cli(_) => format!("frame {}: {}", entry.ordinal, error.human_message()),
+        ReportError::Library(_) => format!(
+            "frame {} ({}): {}",
+            entry.ordinal,
+            entry.output_path,
+            error.human_message()
+        ),
+    }
+}
+
 fn frame_batch_error_line(entries: &[(FrameCliEntry, Option<StagedFile>)]) -> Vec<u8> {
     entries
         .iter()
-        .find_map(|(entry, _)| entry.error.as_ref())
+        .find_map(|(entry, _)| Some((entry, entry.error.as_ref()?)))
         .map_or_else(
-            || b"cli cli.output-write-failed: frame batch delivery failed\n".to_vec(),
-            |error| {
-                let (family, code, message) = error.human_parts();
-                format!("{family} {code}: {message}\n").into_bytes()
-            },
+            || human::error_line("frame batch delivery failed", "cli.output-write-failed"),
+            |(entry, error)| human::error_line(&frame_error_message(entry, error), error.code()),
         )
+        .into_bytes()
 }
 
 fn deliver_frame_report(
@@ -1174,14 +1231,9 @@ fn deliver_frame_report(
     if let Some(staged) = staged_report {
         return match staged.deliver() {
             Ok(()) => 0,
-            Err(operation) => emergency_report_failure(
-                cli,
-                identity,
-                format,
-                operation,
-                artifact_state,
-                diagnostics,
-            ),
+            Err(error) => {
+                emergency_report_failure(cli, identity, format, &error, artifact_state, diagnostics)
+            }
         };
     }
     debug_assert_eq!(report, "stderr");
@@ -1304,6 +1356,7 @@ mod tests {
                 "partial",
                 &diagnostics,
                 &entries,
+                crate::human::HumanReport::PLAIN,
             )),
             [
                 r#"{"schema_version":1,"status":"partial","renderer_version":""#,
