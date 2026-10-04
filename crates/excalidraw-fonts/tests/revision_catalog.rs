@@ -57,7 +57,8 @@ fn payloads_keep_whole_chunks_in_the_approved_family_and_declaration_order() {
         if assets[0].1.family == "Xiaolai" {
             for pair in assets.windows(2) {
                 let order = |asset: &excalidraw_render_fonts::AssetRecord| {
-                    excalidraw_render_fonts::font_face_order(asset.family, asset.upstream_path).unwrap()
+                    excalidraw_render_fonts::font_face_order(asset.family, asset.upstream_path)
+                        .unwrap()
                 };
                 assert!(order(pair[0].1) < order(pair[1].1));
             }
@@ -289,8 +290,8 @@ fn predecoded_excalifont_basic_latin_sfnt_is_checked_in_and_digest_verified() {
 
 #[test]
 fn noto_emoji_3003_fallback_is_digest_verified_and_parseable() {
-    let asset =
-        excalidraw_render_fonts::load_noto_emoji_sfnt().expect("approved Noto Emoji fallback verifies");
+    let asset = excalidraw_render_fonts::load_noto_emoji_sfnt()
+        .expect("approved Noto Emoji fallback verifies");
     assert_eq!(asset.bytes().len(), 862_680);
     let face = ttf_parser::Face::parse(asset.bytes(), 0).expect("Noto Emoji is valid SFNT");
     assert_eq!(face.units_per_em(), 1_000);
@@ -331,8 +332,9 @@ fn every_official_face_has_a_unique_pinned_family_order() {
 fn every_official_face_exposes_its_pinned_declared_unicode_ranges() {
     let catalog = excalidraw_render_fonts::revision_1();
     for asset in catalog.assets {
-        let ranges = excalidraw_render_fonts::font_face_unicode_ranges(asset.family, asset.upstream_path)
-            .unwrap_or_else(|| panic!("{} has declared ranges", asset.upstream_path));
+        let ranges =
+            excalidraw_render_fonts::font_face_unicode_ranges(asset.family, asset.upstream_path)
+                .unwrap_or_else(|| panic!("{} has declared ranges", asset.upstream_path));
         assert!(!ranges.is_empty());
         assert!(ranges.iter().all(|(start, end)| start <= end));
     }
