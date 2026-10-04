@@ -61,6 +61,14 @@ type ExcalidrawRender {
   }
 
   """
+  The Linux x86-64 (glibc) CLI release archive and its SHA-256 file. Pass the
+  released version, e.g. `dagger call release-archive --version 0.1.0 export --path dist`.
+  """
+  releaseArchive(version: String!): Directory! {
+    self.builds.cliArchive(version)
+  }
+
+  """
   The packaged crates and the public facade a downstream consumer compiles against.
   """
   packaging: Packaging! {
