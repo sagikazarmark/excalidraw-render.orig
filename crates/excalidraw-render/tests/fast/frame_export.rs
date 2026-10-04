@@ -44,7 +44,12 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
     let scene = SceneDocument::parse(FRAME_SCENE).expect("frame scene is admitted");
     let frame = scene.frames().next().expect("named frame exists");
     let request = FrameRenderRequest::builder(OutputFormat::Svg)
-        .metadata_options(MetadataOptions::new(true, true, true))
+        .metadata_options(
+            MetadataOptions::default()
+                .with_embedded_scene(true)
+                .with_provenance(true)
+                .with_diagnostic_summary(true),
+        )
         .build()
         .expect("frame metadata request is valid");
     let renderer = Renderer::new();
@@ -82,7 +87,12 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
         .render_frame(
             frame,
             &FrameRenderRequest::builder(OutputFormat::Png)
-                .metadata_options(MetadataOptions::new(true, true, true))
+                .metadata_options(
+                    MetadataOptions::default()
+                        .with_embedded_scene(true)
+                        .with_provenance(true)
+                        .with_diagnostic_summary(true),
+                )
                 .build()
                 .expect("PNG frame metadata request is valid"),
         )
@@ -101,7 +111,12 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
         .render_frame(
             frame,
             &FrameRenderRequest::builder(OutputFormat::Pdf)
-                .metadata_options(MetadataOptions::new(true, true, true))
+                .metadata_options(
+                    MetadataOptions::default()
+                        .with_embedded_scene(true)
+                        .with_provenance(true)
+                        .with_diagnostic_summary(true),
+                )
                 .build()
                 .expect("PDF frame metadata request is valid"),
         )
@@ -421,7 +436,10 @@ fn frame_asset_census_excludes_unreferenced_supplements() {
 
 #[test]
 fn frame_requests_retain_only_controls_that_apply_to_frame_exports() {
-    let metadata = MetadataOptions::new(true, true, true);
+    let metadata = MetadataOptions::default()
+        .with_embedded_scene(true)
+        .with_provenance(true)
+        .with_diagnostic_summary(true);
     let assets = SupplementalAssets::builder()
         .asset("image", vec![1, 2, 3])
         .build()

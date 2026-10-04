@@ -736,17 +736,19 @@ fn build_request(
         } else {
             ColorMode::Light
         })
-        .frame_options(FrameOptions::new(
-            !cli.no_frame_rendering,
-            !cli.no_frame_clipping,
-            !cli.no_frame_names,
-            !cli.no_frame_outlines,
-        ))
-        .metadata_options(MetadataOptions::new(
-            cli.embed_scene,
-            cli.embed_provenance,
-            cli.embed_diagnostics,
-        ))
+        .frame_options(
+            FrameOptions::default()
+                .with_enabled(!cli.no_frame_rendering)
+                .with_clip(!cli.no_frame_clipping)
+                .with_name(!cli.no_frame_names)
+                .with_outline(!cli.no_frame_outlines),
+        )
+        .metadata_options(
+            MetadataOptions::default()
+                .with_embedded_scene(cli.embed_scene)
+                .with_provenance(cli.embed_provenance)
+                .with_diagnostic_summary(cli.embed_diagnostics),
+        )
         .supplemental_assets(assets)
         .resource_limits(ResourceLimits::default());
     if let Some(fallback) = cli.pdf_raster_fallback {

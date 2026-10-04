@@ -155,6 +155,19 @@ pub enum ColorMode {
 }
 
 /// Whole-scene frame rendering controls.
+///
+/// The default renders frames the way the reference export does: frames are
+/// enabled, their contents are clipped, and their names and outlines are
+/// drawn. Start from [`FrameOptions::default`] and turn individual controls
+/// off with the `with_*` setters:
+///
+/// ```
+/// use excalidraw_render::FrameOptions;
+///
+/// let options = FrameOptions::default().with_name(false).with_outline(false);
+/// assert!(options.enabled() && options.clip());
+/// assert!(!options.name() && !options.outline());
+/// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FrameOptions {
     enabled: bool,
@@ -164,14 +177,32 @@ pub struct FrameOptions {
 }
 
 impl FrameOptions {
-    /// Creates a complete set of frame controls.
-    pub const fn new(enabled: bool, clip: bool, name: bool, outline: bool) -> Self {
-        Self {
-            enabled,
-            clip,
-            name,
-            outline,
-        }
+    /// Selects whether frames are rendered at all (default `true`).
+    #[must_use]
+    pub const fn with_enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+
+    /// Selects whether frame contents are clipped to the frame (default `true`).
+    #[must_use]
+    pub const fn with_clip(mut self, clip: bool) -> Self {
+        self.clip = clip;
+        self
+    }
+
+    /// Selects whether frame names are rendered (default `true`).
+    #[must_use]
+    pub const fn with_name(mut self, name: bool) -> Self {
+        self.name = name;
+        self
+    }
+
+    /// Selects whether frame outlines are rendered (default `true`).
+    #[must_use]
+    pub const fn with_outline(mut self, outline: bool) -> Self {
+        self.outline = outline;
+        self
     }
 
     /// Returns whether frames are rendered.
@@ -196,12 +227,31 @@ impl FrameOptions {
 }
 
 impl Default for FrameOptions {
+    /// Every frame control on: rendered, clipped, named and outlined.
     fn default() -> Self {
-        Self::new(true, true, true, true)
+        Self {
+            enabled: true,
+            clip: true,
+            name: true,
+            outline: true,
+        }
     }
 }
 
 /// Optional artifact metadata controls.
+///
+/// The default embeds no optional metadata. Opt in to each component with the
+/// `with_*` setters:
+///
+/// ```
+/// use excalidraw_render::MetadataOptions;
+///
+/// let options = MetadataOptions::default()
+///     .with_embedded_scene(true)
+///     .with_provenance(true);
+/// assert!(options.embedded_scene() && options.provenance());
+/// assert!(!options.diagnostic_summary());
+/// ```
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct MetadataOptions {
     embedded_scene: bool,
@@ -210,13 +260,27 @@ pub struct MetadataOptions {
 }
 
 impl MetadataOptions {
-    /// Creates a complete set of optional metadata controls.
-    pub const fn new(embedded_scene: bool, provenance: bool, diagnostic_summary: bool) -> Self {
-        Self {
-            embedded_scene,
-            provenance,
-            diagnostic_summary,
-        }
+    /// Selects whether the canonicalized original scene document is embedded
+    /// (default `false`).
+    #[must_use]
+    pub const fn with_embedded_scene(mut self, embedded_scene: bool) -> Self {
+        self.embedded_scene = embedded_scene;
+        self
+    }
+
+    /// Selects whether renderer provenance is embedded (default `false`).
+    #[must_use]
+    pub const fn with_provenance(mut self, provenance: bool) -> Self {
+        self.provenance = provenance;
+        self
+    }
+
+    /// Selects whether the pre-metadata diagnostic summary is embedded
+    /// (default `false`).
+    #[must_use]
+    pub const fn with_diagnostic_summary(mut self, diagnostic_summary: bool) -> Self {
+        self.diagnostic_summary = diagnostic_summary;
+        self
     }
 
     /// Returns whether the canonicalized original scene document is embedded.
@@ -511,7 +575,7 @@ impl FrameRenderRequest {
         FrameRenderRequestBuilder {
             inner: RenderRequest::builder(format)
                 .padding(0.0)
-                .frame_options(FrameOptions::new(true, true, false, false)),
+                .frame_options(FrameOptions::default().with_name(false).with_outline(false)),
         }
     }
 

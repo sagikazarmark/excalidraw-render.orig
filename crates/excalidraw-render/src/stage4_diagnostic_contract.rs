@@ -37,7 +37,7 @@ fn mixed_normalization_render_resource_metadata_preserve_source_order() {
             let request = RenderRequest::builder(format)
                 .padding(0.0)
                 .resource_limits(limits.clone())
-                .metadata_options(MetadataOptions::new(false, true, false))
+                .metadata_options(MetadataOptions::default().with_provenance(true))
                 .build()
                 .unwrap();
             let render = || {

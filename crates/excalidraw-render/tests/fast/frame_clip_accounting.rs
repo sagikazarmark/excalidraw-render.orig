@@ -164,7 +164,7 @@ fn total_rasterized_limit(total: u64) -> ResourceLimits {
 
 fn render_png(scene: &SceneDocument, limits: ResourceLimits) -> Result<RenderOutcome, RenderError> {
     let request = RenderRequest::builder(OutputFormat::Png)
-        .frame_options(FrameOptions::new(true, true, false, false))
+        .frame_options(FrameOptions::default().with_name(false).with_outline(false))
         .resource_limits(limits)
         .build()
         .expect("PNG request is valid");

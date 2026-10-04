@@ -66,7 +66,7 @@ fn assert_contract(source: &Value, clean: &Value, format: OutputFormat, rows: Va
         serde_json::to_vec(second.report()).unwrap()
     );
     let metadata = RenderRequest::builder(format)
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .build()
         .unwrap();
     let embedded = Renderer::new().render(&document, &metadata).unwrap();
@@ -326,9 +326,13 @@ fn alignment_and_container_positions_have_independent_oracles() {
         aligned["elements"][1]["textAlign"] = json!(align);
         for format in FORMATS {
             let request = RenderRequest::builder(format)
-                .frame_options(excalidraw_render::FrameOptions::new(
-                    false, false, false, false,
-                ))
+                .frame_options(
+                    excalidraw_render::FrameOptions::default()
+                        .with_enabled(false)
+                        .with_clip(false)
+                        .with_name(false)
+                        .with_outline(false),
+                )
                 .build()
                 .unwrap();
             let actual = Renderer::new().render(&parse(&aligned), &request).unwrap();

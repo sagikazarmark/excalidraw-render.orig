@@ -38,9 +38,66 @@ fn one_format_requests_have_the_revision_1_defaults() {
 }
 
 #[test]
+fn frame_and_metadata_options_start_from_documented_defaults() {
+    let frames = FrameOptions::default();
+    assert!(frames.enabled() && frames.clip() && frames.name() && frames.outline());
+    let metadata = MetadataOptions::default();
+    assert!(!metadata.embedded_scene() && !metadata.provenance() && !metadata.diagnostic_summary());
+
+    let frames = FrameOptions::default()
+        .with_enabled(false)
+        .with_clip(false)
+        .with_name(true)
+        .with_outline(false);
+    assert_eq!(
+        (
+            frames.enabled(),
+            frames.clip(),
+            frames.name(),
+            frames.outline()
+        ),
+        (false, false, true, false)
+    );
+    for (options, expected) in [
+        (
+            MetadataOptions::default().with_embedded_scene(true),
+            (true, false, false),
+        ),
+        (
+            MetadataOptions::default().with_provenance(true),
+            (false, true, false),
+        ),
+        (
+            MetadataOptions::default().with_diagnostic_summary(true),
+            (false, false, true),
+        ),
+    ] {
+        assert_eq!(
+            (
+                options.embedded_scene(),
+                options.provenance(),
+                options.diagnostic_summary()
+            ),
+            expected
+        );
+    }
+    // A setter replaces its own control, so the last call wins.
+    assert_eq!(
+        FrameOptions::default().with_clip(false).with_clip(true),
+        FrameOptions::default()
+    );
+}
+
+#[test]
 fn approved_request_controls_are_retained() {
-    let frame_options = FrameOptions::new(false, false, true, false);
-    let metadata_options = MetadataOptions::new(true, true, true);
+    let frame_options = FrameOptions::default()
+        .with_enabled(false)
+        .with_clip(false)
+        .with_outline(false);
+    let metadata_options = MetadataOptions::default()
+        .with_embedded_scene(true)
+        .with_provenance(true)
+        .with_diagnostic_summary(true);
     let request = RenderRequest::builder(OutputFormat::Png)
         .include_background(false)
         .padding(2.5)

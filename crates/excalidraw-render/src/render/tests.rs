@@ -962,7 +962,11 @@ fn png_frame_clip_masks_are_charged_once_per_frame_and_owned_by_no_child() {
     }"##)
     .expect("two-frame scene is admitted");
     let request = RenderRequest::builder(OutputFormat::Png)
-        .frame_options(crate::FrameOptions::new(true, true, false, false))
+        .frame_options(
+            crate::FrameOptions::default()
+                .with_name(false)
+                .with_outline(false),
+        )
         .build()
         .expect("request is valid");
     let profile =
@@ -2086,7 +2090,7 @@ fn optional_metadata_stage_rejection_keeps_only_committed_work() {
     let profile = crate::catalog::REVISION_1.profile();
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let request = RenderRequest::builder(format)
-            .metadata_options(crate::MetadataOptions::new(true, false, false))
+            .metadata_options(crate::MetadataOptions::default().with_embedded_scene(true))
             .build()
             .unwrap();
         let (full, trace) = render_with_trace(profile, &scene, &request);
@@ -2108,7 +2112,7 @@ fn optional_metadata_stage_rejection_keeps_only_committed_work() {
         ] {
             let ceiling = before + (stage + 1) * g - 1;
             let request = RenderRequest::builder(format)
-                .metadata_options(crate::MetadataOptions::new(true, false, false))
+                .metadata_options(crate::MetadataOptions::default().with_embedded_scene(true))
                 .resource_limits(
                     crate::ResourceLimits::builder()
                         .max_element_work_units(1)
@@ -2410,7 +2414,12 @@ fn allocation_refusal_preserves_the_committed_trace_and_report_prefix() {
 #[test]
 fn scene_carrier_failure_omits_only_the_scene_component() {
     let request = RenderRequest::builder(OutputFormat::Svg)
-        .metadata_options(crate::MetadataOptions::new(true, true, true))
+        .metadata_options(
+            crate::MetadataOptions::default()
+                .with_embedded_scene(true)
+                .with_provenance(true)
+                .with_diagnostic_summary(true),
+        )
         .build()
         .expect("request is valid");
     let profile =
@@ -2455,7 +2464,7 @@ fn scene_carrier_failure_omits_only_the_scene_component() {
 #[test]
 fn manifest_carrier_failure_without_notices_drops_all_optional_metadata() {
     let request = RenderRequest::builder(OutputFormat::Svg)
-        .metadata_options(crate::MetadataOptions::new(false, true, false))
+        .metadata_options(crate::MetadataOptions::default().with_provenance(true))
         .build()
         .expect("request is valid");
     let profile =
@@ -2502,7 +2511,10 @@ fn metadata_retention_rejection_preserves_measurement_work_in_the_trace() {
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
     let profile =
         Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
-    let metadata = crate::MetadataOptions::new(true, true, true);
+    let metadata = crate::MetadataOptions::default()
+        .with_embedded_scene(true)
+        .with_provenance(true)
+        .with_diagnostic_summary(true);
     let unlimited_request = RenderRequest::builder(OutputFormat::Svg)
         .metadata_options(metadata.clone())
         .build()

@@ -96,17 +96,19 @@ fn request(case: &Case, format: OutputFormat, output: Option<u64>) -> RenderRequ
         } else {
             Sizing::MaxDimension(96.0)
         })
-        .frame_options(FrameOptions::new(
-            bits & 512 == 0,
-            bits & 1024 == 0,
-            bits & 2048 == 0,
-            bits & 4096 == 0,
-        ))
-        .metadata_options(MetadataOptions::new(
-            bits & 1 != 0,
-            bits & 2 != 0,
-            bits & 4 != 0,
-        ))
+        .frame_options(
+            FrameOptions::default()
+                .with_enabled(bits & 512 == 0)
+                .with_clip(bits & 1024 == 0)
+                .with_name(bits & 2048 == 0)
+                .with_outline(bits & 4096 == 0),
+        )
+        .metadata_options(
+            MetadataOptions::default()
+                .with_embedded_scene(bits & 1 != 0)
+                .with_provenance(bits & 2 != 0)
+                .with_diagnostic_summary(bits & 4 != 0),
+        )
         .resource_limits(limits(case.limit_mode, output));
     if bits & 8192 != 0 {
         builder = builder.supplemental_assets(

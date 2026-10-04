@@ -721,11 +721,12 @@ fn build_frame_request(
         } else {
             ColorMode::Light
         })
-        .metadata_options(MetadataOptions::new(
-            frames.embed_scene,
-            frames.embed_provenance,
-            frames.embed_diagnostics,
-        ))
+        .metadata_options(
+            MetadataOptions::default()
+                .with_embedded_scene(frames.embed_scene)
+                .with_provenance(frames.embed_provenance)
+                .with_diagnostic_summary(frames.embed_diagnostics),
+        )
         .supplemental_assets(assets)
         .resource_limits(ResourceLimits::default());
     if let Some(fallback) = frames.pdf_raster_fallback {

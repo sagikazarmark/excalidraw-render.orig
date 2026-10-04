@@ -262,7 +262,7 @@ fn editor_state_is_silent_preserved_and_independent_of_scene_and_frame_exports()
 fn assert_preservation_and_frames(baseline: &Value, changed: &Value, format: OutputFormat) {
     let scene = parse(changed);
     let request = RenderRequest::builder(format)
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .build()
         .unwrap();
     let first = Renderer::new().render(&scene, &request).unwrap();
@@ -569,7 +569,7 @@ fn assert_invalid_preservation_and_frames(
 ) {
     let scene = parse(changed);
     let request = RenderRequest::builder(format)
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .build()
         .unwrap();
     let rendered = Renderer::new().render(&scene, &request).unwrap();

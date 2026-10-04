@@ -63,7 +63,7 @@ fn assert_scene(
     assert_eq!(first.report(), second.report());
     let metadata = RenderRequest::builder(format)
         .frame_options(options)
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .build()
         .unwrap();
     let result = Renderer::new().render(&document, &metadata).unwrap();
@@ -95,7 +95,7 @@ fn assert_frames(source: &Value, clean: &Value, format: OutputFormat, rows: Valu
         assert_eq!(direct.report(), entry.result().as_ref().unwrap().report());
         assert_report(&direct, format, rows.clone());
         let metadata = FrameRenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(true, false, false))
+            .metadata_options(MetadataOptions::default().with_embedded_scene(true))
             .build()
             .unwrap();
         let embedded = renderer.render_frame(*frame, &metadata).unwrap();
@@ -130,7 +130,11 @@ fn frame_rendering_container_and_members_have_global_exact_recovery() {
             &empty,
             &clean,
             format,
-            FrameOptions::new(false, false, false, false),
+            FrameOptions::default()
+                .with_enabled(false)
+                .with_clip(false)
+                .with_name(false)
+                .with_outline(false),
             json!([repair("/appState/frameRendering/clip", Value::Null)]),
         );
     }
@@ -217,7 +221,13 @@ fn frame_controls_combine_with_requests_and_frame_exports_force_their_scope() {
                 // Persisted false gates the corresponding request control;
                 // request false can independently disable persisted true.
                 let request = RenderRequest::builder(format)
-                    .frame_options(FrameOptions::new(flags[0], flags[1], flags[2], flags[3]))
+                    .frame_options(
+                        FrameOptions::default()
+                            .with_enabled(flags[0])
+                            .with_clip(flags[1])
+                            .with_name(flags[2])
+                            .with_outline(flags[3]),
+                    )
                     .build()
                     .unwrap();
                 let explicit = Renderer::new().render(&parse(&original), &request).unwrap();
@@ -236,21 +246,23 @@ fn frame_controls_combine_with_requests_and_frame_exports_force_their_scope() {
                     [false, true, true, true],
                 ] {
                     let mixed = RenderRequest::builder(format)
-                        .frame_options(FrameOptions::new(
-                            request_flags[0],
-                            request_flags[1],
-                            request_flags[2],
-                            request_flags[3],
-                        ))
+                        .frame_options(
+                            FrameOptions::default()
+                                .with_enabled(request_flags[0])
+                                .with_clip(request_flags[1])
+                                .with_name(request_flags[2])
+                                .with_outline(request_flags[3]),
+                        )
                         .build()
                         .unwrap();
                     let combined = RenderRequest::builder(format)
-                        .frame_options(FrameOptions::new(
-                            flags[0] && request_flags[0],
-                            flags[1] && request_flags[1],
-                            flags[2] && request_flags[2],
-                            flags[3] && request_flags[3],
-                        ))
+                        .frame_options(
+                            FrameOptions::default()
+                                .with_enabled(flags[0] && request_flags[0])
+                                .with_clip(flags[1] && request_flags[1])
+                                .with_name(flags[2] && request_flags[2])
+                                .with_outline(flags[3] && request_flags[3]),
+                        )
                         .build()
                         .unwrap();
                     let mixed_result = Renderer::new().render(&parse(&source), &mixed).unwrap();
@@ -310,8 +322,8 @@ fn frame_names_validate_only_when_painted_and_preserve_source_metadata() {
                     json!([repair("/elements/0/name", json!("frame"))]),
                 );
                 for options in [
-                    FrameOptions::new(false, true, true, true),
-                    FrameOptions::new(true, true, false, true),
+                    FrameOptions::default().with_enabled(false),
+                    FrameOptions::default().with_name(false),
                 ] {
                     assert_scene(&source, &clean, format, options, json!([]));
                 }

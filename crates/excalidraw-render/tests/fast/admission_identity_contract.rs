@@ -129,7 +129,7 @@ fn envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_value
                 let document = parse(&source);
                 for format in FORMATS {
                     let request = RenderRequest::builder(format)
-                        .metadata_options(MetadataOptions::new(true, false, false))
+                        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                         .build()
                         .unwrap();
                     let first = Renderer::new().render(&document, &request).unwrap();
@@ -207,7 +207,7 @@ fn envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_value
     let document = SceneDocument::parse(&spaced).unwrap();
     for format in FORMATS {
         let request = RenderRequest::builder(format)
-            .metadata_options(MetadataOptions::new(true, false, false))
+            .metadata_options(MetadataOptions::default().with_embedded_scene(true))
             .build()
             .unwrap();
         let rendered = Renderer::new().render(&document, &request).unwrap();
@@ -279,7 +279,7 @@ fn assert_scene(source: &Value, clean: &Value, format: OutputFormat, expected: V
     );
     assert_report(&first, format, expected.clone());
     let request = RenderRequest::builder(format)
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .build()
         .unwrap();
     let embedded = Renderer::new().render(&document, &request).unwrap();
@@ -468,7 +468,7 @@ fn file_timestamps_repair_once_per_authoritative_participating_record() {
         for format in FORMATS {
             let document = parse(&source);
             let request = RenderRequest::builder(format)
-                .metadata_options(MetadataOptions::new(true, false, false))
+                .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                 .build()
                 .unwrap();
             let outcome = Renderer::new().render(&document, &request).unwrap();
@@ -709,7 +709,7 @@ fn generated_identity_vectors_and_duplicate_collisions_are_stable() {
                 serde_json::to_vec(second.report()).unwrap()
             );
             let metadata = RenderRequest::builder(format)
-                .metadata_options(MetadataOptions::new(true, false, false))
+                .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                 .build()
                 .unwrap();
             let result = Renderer::new().render(&document, &metadata).unwrap();
@@ -760,7 +760,7 @@ fn assert_nonparticipating_identity_boundaries() {
             malformed["effects"] = json!(["visual"]);
             let document = parse(&source);
             let request = RenderRequest::builder(format)
-                .metadata_options(MetadataOptions::new(true, false, false))
+                .metadata_options(MetadataOptions::default().with_embedded_scene(true))
                 .build()
                 .unwrap();
             let outcome = Renderer::new().render(&document, &request).unwrap();

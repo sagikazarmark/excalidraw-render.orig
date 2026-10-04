@@ -161,7 +161,7 @@ fn assert_contract(
     );
     let metadata = RenderRequest::builder(format)
         .supplemental_assets(assets.clone())
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .build()
         .unwrap();
     let embedded = Renderer::new().render(&document, &metadata).unwrap();

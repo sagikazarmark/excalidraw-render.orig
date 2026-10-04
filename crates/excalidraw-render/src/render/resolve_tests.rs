@@ -535,7 +535,7 @@ fn frame_controls_are_independent() {
 
     let unclipped = resolve_with(
         &scene,
-        &frame_request(FrameOptions::new(true, false, true, true)),
+        &frame_request(FrameOptions::default().with_clip(false)),
     );
     assert!(frame_clips(&unclipped)
         .iter()
@@ -543,10 +543,7 @@ fn frame_controls_are_independent() {
     let outer = frame(&unclipped, "outer");
     assert!(outer.outline.is_some() && outer.name.is_some());
 
-    let clipped = resolve_with(
-        &scene,
-        &frame_request(FrameOptions::new(true, true, true, true)),
-    );
+    let clipped = resolve_with(&scene, &frame_request(FrameOptions::default()));
     assert!(
         unclipped.logical_width > clipped.logical_width,
         "the unclipped child overflow widens the scene"
@@ -572,7 +569,7 @@ fn frame_controls_are_independent() {
 
     let no_decorations = resolve_with(
         &scene,
-        &frame_request(FrameOptions::new(true, true, false, false)),
+        &frame_request(FrameOptions::default().with_name(false).with_outline(false)),
     );
     assert!(!frame_clips(&no_decorations)[2].1.is_empty());
     let outer = frame(&no_decorations, "outer");
@@ -580,7 +577,7 @@ fn frame_controls_are_independent() {
 
     let disabled = resolve_with(
         &scene,
-        &frame_request(FrameOptions::new(false, true, true, true)),
+        &frame_request(FrameOptions::default().with_enabled(false)),
     );
     assert_eq!(
         paint_order(&disabled),

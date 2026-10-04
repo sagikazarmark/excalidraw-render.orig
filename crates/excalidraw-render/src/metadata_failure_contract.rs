@@ -120,11 +120,10 @@ const CASES: [Case; 8] = [
     },
 ];
 fn options(parts: Parts) -> MetadataOptions {
-    MetadataOptions::new(
-        parts.embedded_scene,
-        parts.provenance,
-        parts.diagnostic_summary,
-    )
+    MetadataOptions::default()
+        .with_embedded_scene(parts.embedded_scene)
+        .with_provenance(parts.provenance)
+        .with_diagnostic_summary(parts.diagnostic_summary)
 }
 fn request(format: OutputFormat, parts: Parts) -> RenderRequest {
     RenderRequest::builder(format)

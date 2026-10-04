@@ -96,7 +96,7 @@ fn png_nested_frames_each_own_a_clip_mask_only_when_clipping_is_on() {
     );
 
     let unclipped = RenderRequest::builder(OutputFormat::Png)
-        .frame_options(FrameOptions::new(true, false, true, true))
+        .frame_options(FrameOptions::default().with_clip(false))
         .build()
         .expect("unclipped request is valid");
     let plan = png_plan(&nested, &unclipped);

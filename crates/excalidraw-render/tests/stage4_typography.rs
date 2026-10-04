@@ -15,7 +15,7 @@ fn rotated_canvas_glyph_origins_match_the_reference_typography_crop() {
     let request = RenderRequest::builder(OutputFormat::Png)
         .padding(0.0)
         .include_background(false)
-        .frame_options(FrameOptions::new(true, true, false, false))
+        .frame_options(FrameOptions::default().with_name(false).with_outline(false))
         .build()
         .unwrap();
     let result = Renderer::new().render(&scene, &request).unwrap();
@@ -104,7 +104,7 @@ fn phase_control_scaled(font_size: f64, angle: f64, scale: f64, origin: [f64; 2]
         .padding(0.0)
         .include_background(false)
         .sizing(Sizing::Scale(scale))
-        .frame_options(FrameOptions::new(true, true, false, false))
+        .frame_options(FrameOptions::default().with_name(false).with_outline(false))
         .build()
         .unwrap();
     let result = Renderer::new().render(&scene, &request).unwrap();

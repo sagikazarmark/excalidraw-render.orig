@@ -211,11 +211,9 @@ pub fn variant_request(format: OutputFormat, options: &Value, context: &str) -> 
         // The reference's `exportEmbedScene` embeds the serialized scene; the
         // renderer's counterpart is the canonicalized original scene document,
         // with no provenance or diagnostic summary beside it.
-        .metadata_options(MetadataOptions::new(
-            boolean("exportEmbedScene"),
-            false,
-            false,
-        ));
+        .metadata_options(
+            MetadataOptions::default().with_embedded_scene(boolean("exportEmbedScene")),
+        );
     if boolean("exportWithDarkMode") {
         builder = builder.color_mode(ColorMode::Dark);
     }

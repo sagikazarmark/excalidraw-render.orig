@@ -2442,7 +2442,7 @@ fn frame_missing_glyph_reports_follow_visible_names() {
         );
         assert_frame_reports(&source, format, &[json!([])]);
         let hidden = RenderRequest::builder(format)
-            .frame_options(FrameOptions::new(true, true, false, true))
+            .frame_options(FrameOptions::default().with_name(false))
             .build()
             .unwrap();
         assert_report_with_request(&source, &hidden, json!([]));
@@ -2586,7 +2586,13 @@ fn mixed_reciprocal_cycles_and_fallbacks_have_exact_reports() {
         assert_report(&source, format, diagnostics.clone());
         assert_frame_reports(&source, format, std::slice::from_ref(&diagnostics));
         let disabled = RenderRequest::builder(format)
-            .frame_options(FrameOptions::new(false, false, false, false))
+            .frame_options(
+                FrameOptions::default()
+                    .with_enabled(false)
+                    .with_clip(false)
+                    .with_name(false)
+                    .with_outline(false),
+            )
             .build()
             .unwrap();
         let mut disabled_diagnostics = diagnostics.clone();
@@ -2632,7 +2638,13 @@ fn frame_opacity_cycle_affects_output_even_when_clipping_is_disabled() {
     ]));
     for format in FORMATS {
         let request = RenderRequest::builder(format)
-            .frame_options(FrameOptions::new(false, false, false, false))
+            .frame_options(
+                FrameOptions::default()
+                    .with_enabled(false)
+                    .with_clip(false)
+                    .with_name(false)
+                    .with_outline(false),
+            )
             .build()
             .unwrap();
         let effects = if format == OutputFormat::Png {
@@ -2791,8 +2803,8 @@ fn disabled_frame_cycle_repairs_input_without_claiming_output_effects() {
     element["frameId"] = json!("self");
     for format in FORMATS {
         for options in [
-            FrameOptions::new(false, true, true, true),
-            FrameOptions::new(true, false, true, true),
+            FrameOptions::default().with_enabled(false),
+            FrameOptions::default().with_clip(false),
         ] {
             let request = RenderRequest::builder(format)
                 .frame_options(options)
