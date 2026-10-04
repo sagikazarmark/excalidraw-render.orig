@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use excalidraw_fonts::{
+use excalidraw_render_fonts::{
     excalifont_basic_latin_sfnt_transformation, find_asset, load_asset,
     load_excalifont_basic_latin_sfnt, revision_1, verify_reviewed_decode, FontLicense,
     FontSubsetTableAction, CJK_SCALAR_COUNT_V1, CJK_SCALAR_RANGES_V1, CJK_SCALAR_TABLE_BYTES_V1,
@@ -56,8 +56,9 @@ fn payloads_keep_whole_chunks_in_the_approved_family_and_declaration_order() {
         assert_eq!(end, length);
         if assets[0].1.family == "Xiaolai" {
             for pair in assets.windows(2) {
-                let order = |asset: &excalidraw_fonts::AssetRecord| {
-                    excalidraw_fonts::font_face_order(asset.family, asset.upstream_path).unwrap()
+                let order = |asset: &excalidraw_render_fonts::AssetRecord| {
+                    excalidraw_render_fonts::font_face_order(asset.family, asset.upstream_path)
+                        .unwrap()
                 };
                 assert!(order(pair[0].1) < order(pair[1].1));
             }
@@ -117,7 +118,7 @@ fn every_catalog_asset_reassembles_and_verifies_before_use() {
             .provenance_identities
             .contains(&asset.provenance_identity));
         assert_eq!(
-            excalidraw_fonts::font_face_decoded_length(asset.upstream_path),
+            excalidraw_render_fonts::font_face_decoded_length(asset.upstream_path),
             Some(asset.decoded_length)
         );
         assert_eq!(
@@ -137,7 +138,7 @@ fn every_catalog_asset_reassembles_and_verifies_before_use() {
         assert_eq!(verified.bytes().len(), asset.complete_length);
         assert_eq!(&verified.bytes()[..4], b"wOF2");
         assert!(
-            excalidraw_fonts::font_face_decoded_length(asset.upstream_path)
+            excalidraw_render_fonts::font_face_decoded_length(asset.upstream_path)
                 .is_some_and(|length| length > 0)
         );
         assert_eq!(asset.bytes.unwrap(), verified.bytes());
@@ -289,8 +290,8 @@ fn predecoded_excalifont_basic_latin_sfnt_is_checked_in_and_digest_verified() {
 
 #[test]
 fn noto_emoji_3003_fallback_is_digest_verified_and_parseable() {
-    let asset =
-        excalidraw_fonts::load_noto_emoji_sfnt().expect("approved Noto Emoji fallback verifies");
+    let asset = excalidraw_render_fonts::load_noto_emoji_sfnt()
+        .expect("approved Noto Emoji fallback verifies");
     assert_eq!(asset.bytes().len(), 862_680);
     let face = ttf_parser::Face::parse(asset.bytes(), 0).expect("Noto Emoji is valid SFNT");
     assert_eq!(face.units_per_em(), 1_000);
@@ -304,7 +305,7 @@ fn noto_emoji_3003_fallback_is_digest_verified_and_parseable() {
 
 #[test]
 fn every_official_face_has_a_unique_pinned_family_order() {
-    let catalog = excalidraw_fonts::revision_1();
+    let catalog = excalidraw_render_fonts::revision_1();
     for family in [
         "Cascadia",
         "ComicShanns",
@@ -317,7 +318,7 @@ fn every_official_face_has_a_unique_pinned_family_order() {
     ] {
         let mut orders = Vec::new();
         for asset in catalog.assets.iter().filter(|asset| asset.family == family) {
-            let order = excalidraw_fonts::font_face_order(family, asset.upstream_path)
+            let order = excalidraw_render_fonts::font_face_order(family, asset.upstream_path)
                 .unwrap_or_else(|| panic!("{family} face {} has an order", asset.upstream_path));
             assert!(!orders.contains(&order), "{family} order {order} is unique");
             orders.push(order);
@@ -329,15 +330,16 @@ fn every_official_face_has_a_unique_pinned_family_order() {
 
 #[test]
 fn every_official_face_exposes_its_pinned_declared_unicode_ranges() {
-    let catalog = excalidraw_fonts::revision_1();
+    let catalog = excalidraw_render_fonts::revision_1();
     for asset in catalog.assets {
-        let ranges = excalidraw_fonts::font_face_unicode_ranges(asset.family, asset.upstream_path)
-            .unwrap_or_else(|| panic!("{} has declared ranges", asset.upstream_path));
+        let ranges =
+            excalidraw_render_fonts::font_face_unicode_ranges(asset.family, asset.upstream_path)
+                .unwrap_or_else(|| panic!("{} has declared ranges", asset.upstream_path));
         assert!(!ranges.is_empty());
         assert!(ranges.iter().all(|(start, end)| start <= end));
     }
 
-    let latin = excalidraw_fonts::font_face_unicode_ranges(
+    let latin = excalidraw_render_fonts::font_face_unicode_ranges(
         "Excalifont",
         "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
     )
@@ -356,9 +358,9 @@ fn every_official_face_exposes_its_pinned_declared_unicode_ranges() {
 fn xiaolai_chunks_follow_the_pinned_face_order_and_declared_ranges_of_the_index() {
     let face = |file_name: &str| {
         let upstream_path = format!("fonts/Xiaolai/{file_name}");
-        let order = excalidraw_fonts::font_face_order("Xiaolai", &upstream_path)
+        let order = excalidraw_render_fonts::font_face_order("Xiaolai", &upstream_path)
             .unwrap_or_else(|| panic!("{file_name} has a pinned order"));
-        let ranges = excalidraw_fonts::font_face_unicode_ranges("Xiaolai", &upstream_path)
+        let ranges = excalidraw_render_fonts::font_face_unicode_ranges("Xiaolai", &upstream_path)
             .unwrap_or_else(|| panic!("{file_name} has declared ranges"));
         (order, ranges)
     };
@@ -388,7 +390,7 @@ fn xiaolai_chunks_follow_the_pinned_face_order_and_declared_ranges_of_the_index(
     assert_eq!(ranges.last(), Some(&(0x7f3b, 0x7f3b)));
 
     assert_eq!(
-        excalidraw_fonts::font_face_order(
+        excalidraw_render_fonts::font_face_order(
             "Xiaolai",
             "fonts/Xiaolai/Xiaolai-Regular-0000000000000000000000000000000.woff2",
         ),
@@ -403,10 +405,10 @@ fn nunito_latin_chunk_declares_the_upstream_google_fonts_latin_subset() {
     let upstream_path =
         "fonts/Nunito/Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTQ3j6zbXWjgeg.woff2";
     assert_eq!(
-        excalidraw_fonts::font_face_order("Nunito", upstream_path),
+        excalidraw_render_fonts::font_face_order("Nunito", upstream_path),
         Some(4)
     );
-    let ranges = excalidraw_fonts::font_face_unicode_ranges("Nunito", upstream_path)
+    let ranges = excalidraw_render_fonts::font_face_unicode_ranges("Nunito", upstream_path)
         .expect("Nunito latin ranges");
     assert_eq!(ranges.len(), 20);
     assert_eq!(ranges.first(), Some(&(0x0000, 0x00ff)));
@@ -427,7 +429,7 @@ fn svg_font_subset_profile_classifies_each_table_once() {
     assert_eq!(tags.len(), FONT_SUBSET_TABLE_RULES_V1.len());
     assert!(FONT_SUBSET_PROFILE_SETTINGS_V1
         .starts_with(b"excalidraw-render:svg-font-subset-profile:v1\n"));
-    let digest = excalidraw_fonts::font_subset_profile_digest_v1()
+    let digest = excalidraw_render_fonts::font_subset_profile_digest_v1()
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect::<String>();
@@ -467,10 +469,10 @@ fn chromium_149_cjk_scalar_table_bytes_and_classes_are_frozen() {
         0x31350,
         0x33479,
     ] {
-        assert!(excalidraw_fonts::is_cjk_scalar_v1(scalar));
+        assert!(excalidraw_render_fonts::is_cjk_scalar_v1(scalar));
     }
     for scalar in [u32::from('A'), 0x2ff0, 0xd800, 0x10ffff] {
-        assert!(!excalidraw_fonts::is_cjk_scalar_v1(scalar));
+        assert!(!excalidraw_render_fonts::is_cjk_scalar_v1(scalar));
     }
 }
 

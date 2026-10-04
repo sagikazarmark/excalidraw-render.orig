@@ -17,6 +17,7 @@
 mod canvas_image;
 mod coverage;
 mod encoder;
+mod guard;
 mod paint;
 
 pub(super) use encoder::PngIdatStream;
@@ -32,6 +33,7 @@ use coverage::{
     frame_clip_coverage_area, frame_clip_coverage_bounds, label_mask_coverage_area,
 };
 use encoder::png_size_error;
+use guard::{GuardedDraw, GuardedMask};
 use paint::{
     apply_theme_filter, composite_unmasked_raster_blocks, downsample_rgba, fallback_paths,
     finite_f32, label_path, paint_rough_drawing, solid_paint, svg_path, tiny_skia_freedraw_path,
@@ -772,11 +774,9 @@ impl PngTransform {
                 "PNG image transform f",
             )?,
         );
-        if !transform.is_valid() {
-            return Err(FormatEncodeError::Encoding(
-                "PNG image transform is not invertible".to_owned(),
-            ));
-        }
+        // An image scaled to nothing has a singular transform; the canvas draws
+        // nothing for it, and so do tiny-skia's fills. Only resvg needs the
+        // check, which its caller makes.
         Ok(transform)
     }
 }
@@ -1123,7 +1123,7 @@ impl PngPlan {
                                 else {
                                     continue;
                                 };
-                                surface.fill_path(
+                                surface.guarded_fill_path(
                                     &path,
                                     &paint,
                                     FillRule::Winding,
@@ -1154,7 +1154,7 @@ impl PngPlan {
                             let path = tiny_skia_path(&fill.path)?;
                             let paint = solid_paint(*background_color, *opacity)?;
                             match fill.kind {
-                                FillKind::Solid => surface.fill_path(
+                                FillKind::Solid => surface.guarded_fill_path(
                                     &path,
                                     &paint,
                                     FillRule::EvenOdd,
@@ -1172,7 +1172,7 @@ impl PngPlan {
                                         line_join: LineJoin::Round,
                                         dash: None,
                                     };
-                                    surface.stroke_path(
+                                    surface.guarded_stroke_path(
                                         &path,
                                         &paint,
                                         &stroke,
@@ -1187,7 +1187,7 @@ impl PngPlan {
                         }
                         let path = tiny_skia_freedraw_path(path)?;
                         let paint = solid_paint(*color, *opacity)?;
-                        surface.fill_path(
+                        surface.guarded_fill_path(
                             &path,
                             &paint,
                             FillRule::Winding,
@@ -1218,7 +1218,7 @@ impl PngPlan {
                                 line_join: LineJoin::Round,
                                 dash: None,
                             };
-                            surface.stroke_path(
+                            surface.guarded_stroke_path(
                                 &path,
                                 &paint,
                                 &stroke,
@@ -1233,7 +1233,7 @@ impl PngPlan {
                                 SUBPIXEL_SCALE,
                             )? {
                                 let paint = solid_paint(name.color, 1.0)?;
-                                surface.fill_path(
+                                surface.guarded_fill_path(
                                     &path,
                                     &paint,
                                     FillRule::Winding,
@@ -1261,7 +1261,7 @@ impl PngPlan {
                             else {
                                 continue;
                             };
-                            surface.fill_path(
+                            surface.guarded_fill_path(
                                 &path,
                                 &paint,
                                 FillRule::Winding,
@@ -1359,12 +1359,52 @@ impl PngPlan {
                                 left,
                                 top,
                             )?;
+                            if !raster_transform.is_valid() {
+                                continue;
+                            }
                             let mut layer = Pixmap::new(layer_width, layer_height).ok_or(
                                 FormatEncodeError::MemoryUnavailable {
                                     subject_kind: "raster_surface",
                                     subject: "png_nested_svg_surface",
                                 },
                             )?;
+                            // resvg paints through tiny-skia with no device-range
+                            // guard; refuse a document whose painted extent would
+                            // reach the range where its scan converter panics.
+                            let root = tree.root();
+                            let stroke_bounds = root.abs_stroke_bounding_box();
+                            let layer_bounds = root.abs_layer_bounding_box();
+                            let in_range = [
+                                (
+                                    stroke_bounds.left(),
+                                    stroke_bounds.top(),
+                                    stroke_bounds.right(),
+                                    stroke_bounds.bottom(),
+                                ),
+                                (
+                                    layer_bounds.left(),
+                                    layer_bounds.top(),
+                                    layer_bounds.right(),
+                                    layer_bounds.bottom(),
+                                ),
+                            ]
+                            .into_iter()
+                            .all(|(left, top, right, bottom)| {
+                                guard::within_device_bounds(
+                                    left,
+                                    top,
+                                    right,
+                                    bottom,
+                                    0.0,
+                                    raster_transform,
+                                )
+                            });
+                            if !in_range {
+                                return Err(FormatEncodeError::Encoding(
+                                    "a nested SVG image paints beyond the PNG rasterizer's coordinate range"
+                                        .to_owned(),
+                                ));
+                            }
                             resvg::render(tree, raster_transform, &mut layer.as_mut());
                             if *dark_mode_filter == Some(DarkModeImageFilter::NestedSvgImage) {
                                 // The reference canvas keeps its theme filter
@@ -1398,7 +1438,7 @@ impl PngPlan {
                                     SUBPIXEL_SCALE,
                                 );
                             }
-                            surface.draw_pixmap(
+                            surface.guarded_draw_pixmap(
                                 i32::try_from(left).map_err(|_| png_size_error())?,
                                 i32::try_from(top).map_err(|_| png_size_error())?,
                                 layer.as_ref(),
@@ -1499,7 +1539,7 @@ impl PngPlan {
                                 .ok_or_else(png_size_error)?;
                                 let block_scale =
                                     finite_f32(f64::from(SUBPIXEL_SCALE), "PNG image block scale")?;
-                                surface.fill_rect(
+                                surface.guarded_fill_rect(
                                     destination,
                                     &tiny_skia::Paint {
                                         shader: tiny_skia::Pattern::new(
@@ -1565,7 +1605,7 @@ impl PngPlan {
                                                     "PNG image level scale",
                                                 )?,
                                             );
-                                        surface.draw_pixmap(
+                                        surface.guarded_draw_pixmap(
                                             0,
                                             0,
                                             pixmap,
@@ -1581,7 +1621,7 @@ impl PngPlan {
                                             asset.height,
                                         )
                                         .ok_or_else(png_size_error)?;
-                                        surface.draw_pixmap(
+                                        surface.guarded_draw_pixmap(
                                             0,
                                             0,
                                             pixmap,
@@ -1607,7 +1647,7 @@ impl PngPlan {
                             finite_f32(*height, "PNG image fallback height")?,
                         )
                         .ok_or_else(png_size_error)?;
-                        surface.fill_path(
+                        surface.guarded_fill_path(
                             &PathBuilder::from_rect(rect),
                             &solid_paint(self.image_fallback_background, *opacity)?,
                             FillRule::Winding,
@@ -1631,7 +1671,7 @@ impl PngPlan {
                                     finite_f32(size / 668.0, "PNG error icon scale")?,
                                 );
                                 let image = svg_path(OFFICIAL_IMAGE_ERROR_PATH)?;
-                                surface.fill_path(
+                                surface.guarded_fill_path(
                                     &image,
                                     &icon_paint,
                                     FillRule::Winding,
@@ -1641,7 +1681,7 @@ impl PngPlan {
                                     paint_mask,
                                 );
                                 let ban = svg_path(OFFICIAL_IMAGE_ERROR_BAN_PATH)?;
-                                surface.fill_path(
+                                surface.guarded_fill_path(
                                     &ban,
                                     &icon_paint,
                                     FillRule::Winding,
@@ -1653,7 +1693,7 @@ impl PngPlan {
                             }
                             NormalizedImageStatus::Pending | NormalizedImageStatus::Saved => {
                                 let icon = svg_path(OFFICIAL_IMAGE_PATH)?;
-                                surface.fill_path(
+                                surface.guarded_fill_path(
                                     &icon,
                                     &icon_paint,
                                     FillRule::Winding,
@@ -1725,10 +1765,10 @@ impl PngPlan {
                                 "PNG fallback clip dimensions are invalid".to_owned(),
                             )
                         })?;
-                        clip.fill_path(&bounds, FillRule::Winding, true, transform);
+                        clip.guarded_fill_path(&bounds, FillRule::Winding, true, transform);
                         for frame_clip in frame_clips {
                             let frame_bounds = tiny_skia_path(&frame_clip.path)?;
-                            clip.intersect_path(
+                            clip.guarded_intersect_path(
                                 &frame_bounds,
                                 FillRule::Winding,
                                 true,
@@ -1760,7 +1800,13 @@ impl PngPlan {
                                 .ok_or_else(png_size_error)?;
 
                         let fill = solid_paint(self.fallback_colors.fill, 1.0)?;
-                        layer.fill_path(&bounds, &fill, FillRule::Winding, transform, Some(&clip));
+                        layer.guarded_fill_path(
+                            &bounds,
+                            &fill,
+                            FillRule::Winding,
+                            transform,
+                            Some(&clip),
+                        );
                         if *width >= 2.0 && *height >= 2.0 {
                             let stroke_paint = solid_paint(self.fallback_colors.stroke, 1.0)?;
                             let dashed_stroke = Stroke {
@@ -1770,7 +1816,7 @@ impl PngPlan {
                                 line_join: LineJoin::Miter,
                                 dash: StrokeDash::new(vec![6.0, 4.0], 0.0),
                             };
-                            layer.stroke_path(
+                            layer.guarded_stroke_path(
                                 &bounds,
                                 &stroke_paint,
                                 &dashed_stroke,
@@ -1784,7 +1830,7 @@ impl PngPlan {
                                 line_join: LineJoin::Miter,
                                 dash: None,
                             };
-                            layer.stroke_path(
+                            layer.guarded_stroke_path(
                                 &cross,
                                 &stroke_paint,
                                 &cross_stroke,
@@ -1795,7 +1841,7 @@ impl PngPlan {
                         if let Some(label) = label {
                             if let Some(label_path) = label_path(&label.path)? {
                                 let label_paint = solid_paint(self.fallback_colors.label, 1.0)?;
-                                layer.fill_path(
+                                layer.guarded_fill_path(
                                     &label_path,
                                     &label_paint,
                                     FillRule::Winding,
@@ -1808,7 +1854,7 @@ impl PngPlan {
                             opacity: finite_f32(*opacity, "PNG fallback opacity")?,
                             ..PixmapPaint::default()
                         };
-                        surface.draw_pixmap(
+                        surface.guarded_draw_pixmap(
                             i32::try_from(layer_x).map_err(|_| png_size_error())?,
                             i32::try_from(layer_y).map_err(|_| png_size_error())?,
                             layer.as_ref(),
@@ -2138,8 +2184,13 @@ impl PngPlan {
     }
 }
 
+/// A canvas side in whole pixels. A side past `u32` (an enormous scale)
+/// saturates, so the raster surface limit rejects it as a resource crossing.
 fn pixel_dimension(value: f64) -> Result<u32, FormatEncodeError> {
-    if !value.is_finite() || value < 1.0 || value >= (u32::MAX as f64) + 1.0 {
+    if value >= (u32::MAX as f64) + 1.0 {
+        return Ok(u32::MAX);
+    }
+    if !value.is_finite() || value < 1.0 {
         return Err(FormatEncodeError::Encoding(
             "PNG dimensions must be finite positive 32-bit values".to_owned(),
         ));

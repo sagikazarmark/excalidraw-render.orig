@@ -270,7 +270,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d045de693cb712d0b22c6a64be5b953f67b3ce00ab5ad3dd5d8b441886ab8e1a"
 dependencies = [
  "quote",
- "syn 2.0.119",
+ "syn 3.0.6",
 ]
 
 [[package]]
@@ -321,23 +321,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "excalidraw-fonts"
-version = "0.1.0+excalidraw.0.18.1"
-dependencies = [
- "excalidraw-fonts-xiaolai",
- "excalidraw-fonts-xiaolai-extended",
- "sha2",
-]
-
-[[package]]
-name = "excalidraw-fonts-xiaolai"
-version = "0.1.0+excalidraw.0.18.1"
-
-[[package]]
-name = "excalidraw-fonts-xiaolai-extended"
-version = "0.1.0+excalidraw.0.18.1"
-
-[[package]]
 name = "excalidraw-render"
 version = "0.1.0"
 dependencies = [
@@ -346,7 +329,7 @@ dependencies = [
  "csscolorparser",
  "cssparser",
  "cssparser-color",
- "excalidraw-fonts",
+ "excalidraw-render-fonts",
  "gif",
  "harfrust 0.13.3",
  "image-webp",
@@ -372,6 +355,23 @@ dependencies = [
  "wuff",
  "zune-jpeg",
 ]
+
+[[package]]
+name = "excalidraw-render-fonts"
+version = "0.1.0+excalidraw.0.18.1"
+dependencies = [
+ "excalidraw-render-fonts-xiaolai",
+ "excalidraw-render-fonts-xiaolai-extended",
+ "sha2",
+]
+
+[[package]]
+name = "excalidraw-render-fonts-xiaolai"
+version = "0.1.0+excalidraw.0.18.1"
+
+[[package]]
+name = "excalidraw-render-fonts-xiaolai-extended"
+version = "0.1.0+excalidraw.0.18.1"
 
 [[package]]
 name = "excalidraw-render-package-consumer"

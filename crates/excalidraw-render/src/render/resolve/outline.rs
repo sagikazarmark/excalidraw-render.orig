@@ -157,6 +157,12 @@ pub(super) fn resolve_embeddable_label(
             line_height: EMBEDDABLE_LABEL_LINE_HEIGHT,
             text_align: "center",
             font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
+            outline_limit: u64::from(
+                context
+                    .request
+                    .resource_limits()
+                    .max_geometry_segments_per_element(),
+            ),
         },
         context.cjk_subset_trigger,
         loader,

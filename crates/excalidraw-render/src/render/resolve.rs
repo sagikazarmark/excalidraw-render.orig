@@ -247,6 +247,13 @@ pub(super) enum ResolveSceneError {
     InvalidMandatoryNotice,
     InvalidColor,
     UnboundedGeometry,
+    /// The glyph outlines laid out so far, once they exceed the total
+    /// geometry limit, and the element whose layout crossed it.
+    TextOutlines {
+        geometry_segments: u64,
+        element_id: String,
+        json_pointer: String,
+    },
 }
 
 pub(super) fn format_error_code(format: OutputFormat) -> ErrorCode {
@@ -521,6 +528,25 @@ impl ResolvedScene {
         let mut labels = PreparedLabels::default();
         labels.embeddables.try_reserve(outlines.len())?;
         labels.fallbacks.try_reserve(fallbacks.len())?;
+        // Every text keeps its glyph outlines from layout until accounting,
+        // which charges them to the total geometry limit unless it omits the
+        // text. Text over the per-element limit keeps none
+        // (`TextLayout::outline_limit`); once the kept outlines pass the total
+        // limit, layout stops instead of holding more of them.
+        let outline_ceiling = request.resource_limits().max_total_geometry_segments();
+        let mut kept_outlines = 0_u64;
+        let mut keep_outlines = |text: &ResolvedText, source: &NormalizedElementSource| {
+            kept_outlines = kept_outlines.saturating_add(text.kept_outline_segments());
+            if kept_outlines > outline_ceiling {
+                Err(ResolveSceneError::TextOutlines {
+                    geometry_segments: kept_outlines,
+                    element_id: try_owned(source.id())?,
+                    json_pointer: try_owned(source.pointer())?,
+                })
+            } else {
+                Ok(())
+            }
+        };
         for (source, geometry) in &outlines {
             if matches!(source.kind, NormalizedElementKind::Text(_)) {
                 let membership = source_context.frame_membership(source.source.source_index())?;
@@ -531,6 +557,7 @@ impl ResolvedScene {
                     membership,
                     &mut font_loader,
                 )? {
+                    keep_outlines(&text.text, &text.source)?;
                     texts.push(text);
                 }
             }
@@ -539,16 +566,17 @@ impl ResolvedScene {
                     && (request.format() != OutputFormat::Png
                         || source.width != 0.0 && source.height != 0.0)
                 {
-                    labels.embeddables.push((
-                        source.source.source_index(),
-                        outline::resolve_embeddable_label(
-                            source,
-                            label,
-                            &source_context,
-                            &mut official_fonts,
-                            &mut font_loader,
-                        )?,
-                    ));
+                    let label = outline::resolve_embeddable_label(
+                        source,
+                        label,
+                        &source_context,
+                        &mut official_fonts,
+                        &mut font_loader,
+                    )?;
+                    keep_outlines(&label.0, &source.source)?;
+                    labels
+                        .embeddables
+                        .push((source.source.source_index(), label));
                 }
             }
         }

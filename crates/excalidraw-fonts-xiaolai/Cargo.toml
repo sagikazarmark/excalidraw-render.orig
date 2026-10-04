@@ -1,5 +1,5 @@
 [package]
-name = "excalidraw-fonts-xiaolai"
+name = "excalidraw-render-fonts-xiaolai"
 version = "0.1.0+excalidraw.0.18.1"
 edition.workspace = true
 rust-version.workspace = true
@@ -8,7 +8,6 @@ description = "Xiaolai CJK font chunks (common blocks) for excalidraw-render (in
 # LICENSE-BUNDLE.txt carries every license and notice.
 license = "(MIT OR Apache-2.0) AND OFL-1.1"
 repository.workspace = true
-homepage.workspace = true
 readme = "README.md"
 keywords = ["excalidraw", "fonts", "cjk"]
 categories = ["graphics"]

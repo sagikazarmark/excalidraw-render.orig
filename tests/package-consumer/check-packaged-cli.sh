@@ -15,9 +15,9 @@ cd "${REPO_ROOT}"
 for stem in \
   excalidraw-render-cli-0.1.0 \
   excalidraw-render-0.1.0 \
-  excalidraw-fonts-0.1.0+excalidraw.0.18.1 \
-  excalidraw-fonts-xiaolai-0.1.0+excalidraw.0.18.1 \
-  excalidraw-fonts-xiaolai-extended-0.1.0+excalidraw.0.18.1
+  excalidraw-render-fonts-0.1.0+excalidraw.0.18.1 \
+  excalidraw-render-fonts-xiaolai-0.1.0+excalidraw.0.18.1 \
+  excalidraw-render-fonts-xiaolai-extended-0.1.0+excalidraw.0.18.1
 do
   package="${stem%-0.1.0*}"
   archive="target/package/${stem}.crate"
@@ -29,7 +29,7 @@ do
   # that package exceeds the usual 9.5 MB archive budget; it must remain below
   # the stricter decimal 10 MB ceiling (also below the registry's 10 MiB).
   ceiling=9500000
-  if [[ "${package}" == excalidraw-fonts-xiaolai ]]; then
+  if [[ "${package}" == excalidraw-render-fonts-xiaolai ]]; then
     ceiling=10000000
   fi
   if (( $(wc -c < "${archive}") >= ceiling )); then
@@ -43,6 +43,6 @@ cargo check \
   --target "${TARGET}" \
   --manifest-path target/package/excalidraw-render-cli-0.1.0/Cargo.toml \
   --config 'patch.crates-io.excalidraw-render.path="target/package/excalidraw-render-0.1.0"' \
-  --config 'patch.crates-io.excalidraw-fonts.path="target/package/excalidraw-fonts-0.1.0+excalidraw.0.18.1"' \
-  --config 'patch.crates-io.excalidraw-fonts-xiaolai.path="target/package/excalidraw-fonts-xiaolai-0.1.0+excalidraw.0.18.1"' \
-  --config 'patch.crates-io.excalidraw-fonts-xiaolai-extended.path="target/package/excalidraw-fonts-xiaolai-extended-0.1.0+excalidraw.0.18.1"'
+  --config 'patch.crates-io.excalidraw-render-fonts.path="target/package/excalidraw-render-fonts-0.1.0+excalidraw.0.18.1"' \
+  --config 'patch.crates-io.excalidraw-render-fonts-xiaolai.path="target/package/excalidraw-render-fonts-xiaolai-0.1.0+excalidraw.0.18.1"' \
+  --config 'patch.crates-io.excalidraw-render-fonts-xiaolai-extended.path="target/package/excalidraw-render-fonts-xiaolai-extended-0.1.0+excalidraw.0.18.1"'

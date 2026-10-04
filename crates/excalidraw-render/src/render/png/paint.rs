@@ -19,6 +19,7 @@ use super::super::text::{LabelPath, LabelPathOperation};
 use super::super::{freedraw, FormatEncodeError};
 use super::coverage::frame_clip_coverage_bounds;
 use super::encoder::png_size_error;
+use super::guard::{GuardedDraw, GuardedMask};
 use super::{frame_clip_set_key, PngElement, PngFrameClip, PngLabelMask};
 
 /// The canvas's unmasked N32 image blit: the already-resampled device pixel
@@ -146,6 +147,15 @@ pub(super) fn apply_theme_filter(layer: &mut Pixmap) {
 }
 
 pub(super) fn tiny_skia_path(path: &Path) -> Result<tiny_skia::Path, FormatEncodeError> {
+    drawable_path(path)?.ok_or_else(|| {
+        FormatEncodeError::Encoding("PNG path contains no drawable operations".to_owned())
+    })
+}
+
+/// `path` for tiny-skia, or `None` when it has no extent to draw: generated
+/// geometry of a degenerate element, such as a fill pattern that places no
+/// marks in a sliver-thin shape. The canvas draws nothing for such a path.
+pub(super) fn drawable_path(path: &Path) -> Result<Option<tiny_skia::Path>, FormatEncodeError> {
     let points = path
         .operations
         .len()
@@ -176,9 +186,7 @@ pub(super) fn tiny_skia_path(path: &Path) -> Result<tiny_skia::Path, FormatEncod
             ),
         }
     }
-    builder.finish().ok_or_else(|| {
-        FormatEncodeError::Encoding("PNG path contains no drawable operations".to_owned())
-    })
+    Ok(builder.finish())
 }
 
 pub(super) fn tiny_skia_freedraw_path(
@@ -318,11 +326,16 @@ pub(super) fn paint_rough_drawing(
     opacity: f64,
     mask: Option<&Mask>,
 ) -> Result<(), FormatEncodeError> {
-    if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
-        let path = tiny_skia_path(&fill.path)?;
+    let fill = match (&drawing.fill, fill_color) {
+        (Some(fill), Some(fill_color)) => {
+            drawable_path(&fill.path)?.map(|path| (fill, fill_color, path))
+        }
+        _ => None,
+    };
+    if let Some((fill, fill_color, path)) = fill {
         let paint = solid_paint(fill_color, opacity)?;
         match fill.kind {
-            FillKind::Solid => surface.fill_path(
+            FillKind::Solid => surface.guarded_fill_path(
                 &path,
                 &paint,
                 if drawing.shape.canvas_uses_even_odd_fill() {
@@ -341,11 +354,13 @@ pub(super) fn paint_rough_drawing(
                     line_join: LineJoin::Round,
                     dash: None,
                 };
-                surface.stroke_path(&path, &paint, &stroke, transform, mask);
+                surface.guarded_stroke_path(&path, &paint, &stroke, transform, mask);
             }
         }
     }
-    let path = tiny_skia_path(&drawing.outline)?;
+    let Some(path) = drawable_path(&drawing.outline)? else {
+        return Ok(());
+    };
     let paint = solid_paint(stroke_color, opacity)?;
     let stroke = Stroke {
         width: finite_f32(stroke_width, "PNG stroke width")?,
@@ -364,6 +379,13 @@ pub(super) fn paint_rough_drawing(
             ),
         },
     };
+    // A positive width below f32's range narrows to zero, which the canvas
+    // (Skia) draws as a hairline. tiny-skia's stroker has no outline for it;
+    // its painter draws the hairline.
+    if stroke.width == 0.0 {
+        surface.guarded_stroke_path(&path, &paint, &stroke, transform, mask);
+        return Ok(());
+    }
     let resolution_scale = PathStroker::compute_resolution_scale(&transform);
     // `Stroke::dash` is inert for the low-level stroker: tiny-skia applies it by
     // dashing the path first, exactly as its own painter does. Stroking without
@@ -393,7 +415,7 @@ pub(super) fn paint_rough_drawing(
             "PNG raster adapter produced empty stroked bounds".to_owned(),
         ));
     }
-    surface.fill_path(
+    surface.guarded_fill_path(
         &path,
         &paint,
         FillRule::Winding,
@@ -479,7 +501,7 @@ impl PaintMasks {
         if let Some(clip) = image_clip {
             let raster_transform = clip.transform.raster_transform(self.multiplier)?;
             match clip.corner_clip {
-                Some(path) => mask.intersect_path(
+                Some(path) => mask.guarded_intersect_path(
                     &tiny_skia_path(path)?,
                     FillRule::Winding,
                     true,
@@ -493,7 +515,7 @@ impl PaintMasks {
                         finite_f32(clip.height, "PNG image clip height")?,
                     )
                     .ok_or_else(png_size_error)?;
-                    mask.intersect_path(
+                    mask.guarded_intersect_path(
                         &PathBuilder::from_rect(rect),
                         FillRule::Winding,
                         true,
@@ -561,9 +583,9 @@ impl PaintMasks {
             let path = tiny_skia_path(&clip.path)?;
             let transform = clip.transform.raster_transform(self.multiplier)?;
             if index == 0 {
-                mask.fill_path(&path, FillRule::Winding, true, transform);
+                mask.guarded_fill_path(&path, FillRule::Winding, true, transform);
             } else {
-                mask.intersect_path(&path, FillRule::Winding, true, transform);
+                mask.guarded_intersect_path(&path, FillRule::Winding, true, transform);
             }
         }
         let memory = |_| FormatEncodeError::MemoryUnavailable {

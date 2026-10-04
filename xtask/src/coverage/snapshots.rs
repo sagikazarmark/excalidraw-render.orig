@@ -7,10 +7,10 @@ use std::path::Path;
 /// packages' versions carry the Excalidraw release as build metadata.
 const SNAPSHOT_PACKAGES: [(&str, &str); 4] = [
     ("excalidraw-render", "0.1.0"),
-    ("excalidraw-fonts", "0.1.0+excalidraw.0.18.1"),
-    ("excalidraw-fonts-xiaolai", "0.1.0+excalidraw.0.18.1"),
+    ("excalidraw-render-fonts", "0.1.0+excalidraw.0.18.1"),
+    ("excalidraw-render-fonts-xiaolai", "0.1.0+excalidraw.0.18.1"),
     (
-        "excalidraw-fonts-xiaolai-extended",
+        "excalidraw-render-fonts-xiaolai-extended",
         "0.1.0+excalidraw.0.18.1",
     ),
 ];

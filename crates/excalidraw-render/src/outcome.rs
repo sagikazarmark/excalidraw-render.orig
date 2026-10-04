@@ -559,6 +559,22 @@ impl CompatibilityDiagnostic {
     }
 }
 
+impl fmt::Display for CompatibilityDiagnostic {
+    /// One line for a person: `warning: MESSAGE [CODE] (element ID)`, the
+    /// element part only when the diagnostic names one.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let severity = match self.severity {
+            DiagnosticSeverity::Info => "info",
+            DiagnosticSeverity::Warning => "warning",
+        };
+        write!(formatter, "{severity}: {} [{}]", self.message, self.code)?;
+        if let Some(element_id) = &self.element_id {
+            write!(formatter, " (element {element_id})")?;
+        }
+        Ok(())
+    }
+}
+
 /// Complete ordered compatibility diagnostics for one render transaction.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct CompatibilityReport {

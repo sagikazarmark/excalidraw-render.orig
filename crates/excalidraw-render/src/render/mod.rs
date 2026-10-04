@@ -977,13 +977,18 @@ impl RenderSession {
                         "",
                     )
                 })?;
-                let attempted = FiniteValue::new(attempted).ok_or_else(|| {
-                    self.internal_failure(
-                        request.format(),
-                        "attempted SVG dimension is not finite",
-                        "",
-                    )
-                })?;
+                // A scale large enough to overflow has no finite attempted value;
+                // the crossing reports the finite lower bound instead.
+                let measurement = match FiniteValue::new(attempted) {
+                    Some(attempted) => Measurement::Attempted {
+                        value: ResourceValue::Finite(attempted),
+                    },
+                    None => Measurement::AtLeast {
+                        value: ResourceValue::Finite(
+                            FiniteValue::new(limit.next_up()).unwrap_or(configured),
+                        ),
+                    },
+                };
                 return Err(RenderError {
                     category: RenderErrorCategory::ResourceLimit,
                     code: ErrorCode::RESOURCE_SVG_DIMENSIONS_EXCEEDED,
@@ -995,9 +1000,7 @@ impl RenderSession {
                         field: "max_svg_dimension",
                         configured: ResourceValue::Finite(configured),
                         value_kind: ValueKind::Dimension,
-                        measurement: Measurement::Attempted {
-                            value: ResourceValue::Finite(attempted),
-                        },
+                        measurement,
                         recovery: None,
                     })),
                     report: self.take_report(),
@@ -1162,7 +1165,12 @@ impl RenderSession {
         RenderError {
             category: RenderErrorCategory::Capability,
             code: ErrorCode::RENDER_FONT_UNAVAILABLE,
-            message: Box::from("a required bundled font is unavailable in this build"),
+            // Xiaolai is the one optional font: the default `cjk` feature bundles it.
+            message: Box::from(if font.resolved_family == "Xiaolai" {
+                "the Xiaolai CJK font this text needs is not in this build; enable the `cjk` feature of excalidraw-render"
+            } else {
+                "a required bundled font is unavailable in this build"
+            }),
             format,
             element_id: None,
             json_pointer: Box::from(""),

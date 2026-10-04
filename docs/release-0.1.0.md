@@ -1,9 +1,9 @@
 # 0.1.0 release policy
 
 Status: accepted scope; [release preparation verified](release-preparation.md). No publication is
-implied by this document. The code will move to
-[`sagikazarmark/excalidraw`](https://github.com/sagikazarmark/excalidraw) before
-publication.
+implied by this document. The code is published at
+[`sagikazarmark/excalidraw-render`](https://github.com/sagikazarmark/excalidraw-render)
+before the crates are.
 
 This policy implements [ADR-0016](adr/0016-release-0.1.0-with-a-version-scoped-contract.md).
 It takes precedence over the original revision-1 specification's publication,
@@ -22,7 +22,10 @@ this release does not claim to have completed every requirement in it.
   Exact byte identity with native output is not a 0.1.0 guarantee. No browser
   bindings, npm package, or raw WASM binary are part of this release.
 - Deterministic artifact/report output for the same renderer release, input,
-  options, and supported environment. Dependencies and build inputs are pinned.
+  options, supported environment and dependency versions. The repository
+  `Cargo.lock` and build inputs are pinned; the library's dependency
+  requirements are semver ranges, so applications pin exact bytes with their
+  own lockfile.
 - Future 0.x releases may intentionally change output and diagnostics after
   review and release-note documentation. Revision 1 remains an evolving profile;
   package publication does not make it a retained historical implementation.

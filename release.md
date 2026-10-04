@@ -6,8 +6,8 @@ promises. The [preparation record](docs/release-preparation.md) is historical;
 this runbook is the current procedure.
 
 The workspace publishes five crates in lockstep, in this dependency order:
-`excalidraw-fonts-xiaolai`, `excalidraw-fonts-xiaolai-extended`,
-`excalidraw-fonts`, `excalidraw-render`, `excalidraw-render-cli`. The font
+`excalidraw-render-fonts-xiaolai`, `excalidraw-render-fonts-xiaolai-extended`,
+`excalidraw-render-fonts`, `excalidraw-render`, `excalidraw-render-cli`. The font
 crates carry the Excalidraw release as build metadata
 (`0.1.0+excalidraw.0.18.1`). crates.io ignores build metadata when comparing
 versions, so a font refresh for a new Excalidraw release needs a new version
@@ -15,11 +15,15 @@ number, not only new metadata.
 
 ## Before the first release
 
-- Settle the public repository, push the code there, and point `repository`
-  and `homepage` in the root `Cargo.toml` at it. crates.io keeps both per
-  published version and resolves README links against `repository`.
-- Map the historical issue references in
-  [known limitations](docs/known-limitations.md) to public issues.
+- Publish the full history at `github.com/sagikazarmark/excalidraw-render`,
+  the `repository` in the root `Cargo.toml`. crates.io keeps it per published
+  version and resolves README links against it, so the code must be there,
+  with this layout, before `cargo publish`. Renaming the development
+  repository (`excalidraw-render.orig`) and making it public keeps the issue
+  numbers that commits, ADRs and docs cite; a new repository starts its own
+  numbering, and those `#N` references then point at unrelated issues.
+- The [known limitations](docs/known-limitations.md) cite no issue numbers.
+  Open public issues for the follow-ups worth tracking there.
 
 ## 1. Prepare the candidate
 

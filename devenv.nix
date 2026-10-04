@@ -41,6 +41,9 @@
     rust = {
       enable = true;
       channel = "stable";
+      # The toolchain `dagger.toml` pins for the gates, so local lints and
+      # tests match CI. A newer Clippy adds lints the pinned gates do not run.
+      version = "1.97.1";
       # targets = [ "wasm32-unknown-unknown" ];
     };
     javascript = {

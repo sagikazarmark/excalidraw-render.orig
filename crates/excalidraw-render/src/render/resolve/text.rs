@@ -98,6 +98,7 @@ pub(super) fn layout_official_text(
         line_height: layout.line_height,
         text_align: layout.text_align,
         font_family: layout.font_family,
+        outline_limit: layout.outline_limit,
     };
     let mut laid_out = official_fonts[font_index]
         .layout(text, layout)
@@ -163,6 +164,12 @@ pub(super) fn resolve_text(
             line_height: text_source.line_height,
             text_align: &text_source.text_align,
             font_family: text_source.font_family,
+            outline_limit: u64::from(
+                context
+                    .request
+                    .resource_limits()
+                    .max_geometry_segments_per_element(),
+            ),
         },
         context.cjk_subset_trigger,
         loader,

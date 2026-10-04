@@ -18,10 +18,10 @@ use crate::{
     deliver_report_bytes, destination_exists, emergency_report_failure, emit_failure, json_line,
     parse_asset_declarations, path_conflict, path_entry_exists, read_bounded_asset, read_scene,
     report_output, same_path, select_renderer, sha256, stage_report_file, validate_paths,
-    validate_report_options, write_stream, ArtifactDescriptor, Cli, CliDetails, CliError,
-    CliOperation, DeliveryError, DeliveryRole, DeliveryState, Failure, FormatArg, PdfFallbackArg,
-    ReportError, ReportFormat, SelectedIdentity, StagedFile, ASSETS, EXIT_OPERATIONAL, EXIT_USAGE,
-    METADATA, OUTPUT, RENDERING, REPORTING,
+    validate_report_options, write_stdout, write_stream, ArtifactDescriptor, Cli, CliDetails,
+    CliError, CliOperation, DeliveryError, DeliveryRole, DeliveryState, Failure, FormatArg,
+    PdfFallbackArg, ReportError, ReportFormat, SelectedIdentity, StagedFile, ASSETS,
+    EXIT_OPERATIONAL, EXIT_USAGE, METADATA, OUTPUT, RENDERING, REPORTING,
 };
 
 pub(crate) const LONG_ABOUT: &str = "\
@@ -88,13 +88,19 @@ pub(crate) struct FramesCli {
     #[arg(
         long,
         value_name = "FACTOR",
+        allow_negative_numbers = true,
         conflicts_with = "max_dimension",
         help_heading = RENDERING
     )]
     scale: Option<f64>,
     /// Shrink PNG and PDF output so its longer side is at most PX pixels
-    /// (never enlarges; SVG keeps its size)
-    #[arg(long, value_name = "PX", help_heading = RENDERING)]
+    /// (never enlarges; SVG keeps its size; replaces --scale)
+    #[arg(
+        long,
+        value_name = "PX",
+        allow_negative_numbers = true,
+        help_heading = RENDERING
+    )]
     max_dimension: Option<f64>,
     /// Use a transparent background instead of the scene's background color
     #[arg(long, help_heading = RENDERING)]
@@ -130,10 +136,11 @@ pub(crate) struct FramesCli {
     #[arg(long, value_name = "FILE_ID=MEDIA_TYPE", help_heading = ASSETS)]
     asset_mime: Vec<String>,
 
-    /// How to report diagnostics, errors, and --list output on stderr
+    /// How to report diagnostics and errors on stderr, and the --list output
+    /// on stdout
     #[arg(long, value_enum, default_value_t, help_heading = REPORTING)]
     report_format: ReportFormat,
-    /// Write the report to PATH instead of stderr
+    /// Write the report, or the --list output, to PATH instead
     #[arg(long, value_name = "PATH", help_heading = REPORTING)]
     report_output: Option<String>,
     /// Also print informational diagnostics in the human report
@@ -337,13 +344,15 @@ fn deliver_frame_list(
     name_regex: Option<&str>,
 ) -> u8 {
     let bytes = match cli.report_format {
-        // An empty listing still succeeds, but says so rather than printing
-        // nothing.
-        ReportFormat::Human if entries.is_empty() => match name_regex {
-            Some(regex) => format!("note: no frames match --name-regex '{regex}'\n"),
-            None => "note: the scene has no frames\n".to_owned(),
+        // An empty listing still succeeds, but says so on stderr rather than
+        // printing nothing.
+        ReportFormat::Human if entries.is_empty() => {
+            let note = match name_regex {
+                Some(regex) => format!("note: no frames match --name-regex '{regex}'\n"),
+                None => "note: the scene has no frames\n".to_owned(),
+            };
+            return deliver_report_bytes(cli, note.as_bytes(), DeliveryState::None);
         }
-        .into_bytes(),
         ReportFormat::Human => entries
             .iter()
             .map(|entry| {
@@ -362,7 +371,13 @@ fn deliver_frame_list(
         // a report format.
         ReportFormat::None => Vec::new(),
     };
-    deliver_report_bytes(cli, &bytes, DeliveryState::None)
+    // The listing is the command's output, so it goes to stdout where it can
+    // be piped, unless --report-output names a file for it.
+    if report_output(cli) == "stderr" {
+        write_stdout(&bytes)
+    } else {
+        deliver_report_bytes(cli, &bytes, DeliveryState::None)
+    }
 }
 
 fn frame_list_json_line(

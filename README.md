@@ -36,7 +36,9 @@ excalidraw-render frames drawing.excalidraw -o frames --format png
 The output extension selects the format, or use `--format`. Input and output
 may be `-` for standard input and output. An existing output is kept unless you
 pass `--force`. For large drawings, `--max-dimension 4096` bounds the PNG/PDF
-size. `--report-format json` prints a machine-readable compatibility report.
+size; it replaces `--scale`, so pass one or the other. `frames --list` prints
+the frames and the file names an export would write to standard output.
+`--report-format json` prints a machine-readable compatibility report.
 See `excalidraw-render --help` for every option.
 
 ## Rust library

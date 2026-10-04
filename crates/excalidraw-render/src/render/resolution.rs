@@ -1404,6 +1404,7 @@ impl RenderSession {
                 )),
                 Err(
                     ResolveSceneError::Memory
+                    | ResolveSceneError::TextOutlines { .. }
                     | ResolveSceneError::FontUnavailable(_)
                     | ResolveSceneError::InvalidFallbackFont
                     | ResolveSceneError::InvalidMandatoryNotice,
@@ -1462,6 +1463,33 @@ impl RenderSession {
                 )),
                 Err(ResolveSceneError::UnboundedGeometry) => {
                     Err(self.unbounded_geometry_failure(request.format()))
+                }
+                Err(ResolveSceneError::TextOutlines {
+                    geometry_segments,
+                    element_id,
+                    json_pointer,
+                }) => {
+                    // The kept outlines alone exceed the total geometry limit,
+                    // so charging them crosses it with its ordinary failure.
+                    self.transact(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::SharedSemanticResolution,
+                            "text_outline_preflight",
+                            &json_pointer,
+                        )
+                        .with_element_id(Some(&element_id))
+                        .with_local_owner(Some(&element_id)),
+                        ResourceDelta {
+                            geometry_segments,
+                            ..ResourceDelta::default()
+                        },
+                    )?;
+                    Err(self.internal_failure(
+                        request.format(),
+                        "text outlines past the total geometry limit were admitted",
+                        "/elements",
+                    ))
                 }
             }
         }

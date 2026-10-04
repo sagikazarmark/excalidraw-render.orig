@@ -180,16 +180,20 @@ impl FrameBatchError {
         self.preparation_subject
     }
 
-    /// Returns this failure's stable serializable descriptor.
-    pub fn descriptor(&self) -> ErrorDescriptor {
-        let code = match self.kind {
+    /// Returns the stable machine-readable error code.
+    pub const fn code(&self) -> ErrorCode {
+        match self.kind {
             FrameBatchErrorKind::ForeignTarget => ErrorCode::FRAME_BATCH_FOREIGN_TARGET,
             FrameBatchErrorKind::DuplicateTarget => ErrorCode::FRAME_BATCH_DUPLICATE_TARGET,
             FrameBatchErrorKind::SharedPreparationFailed => {
                 ErrorCode::FRAME_BATCH_SHARED_PREPARATION_FAILED
             }
-        };
-        ErrorDescriptor::frame_batch(code, self.to_string())
+        }
+    }
+
+    /// Returns this failure's stable serializable descriptor.
+    pub fn descriptor(&self) -> ErrorDescriptor {
+        ErrorDescriptor::frame_batch(self.code(), self.to_string())
     }
 }
 

@@ -1,4 +1,4 @@
-# excalidraw-fonts
+# excalidraw-render-fonts
 
 Font payloads and the font catalog used by
 [`excalidraw-render`](https://crates.io/crates/excalidraw-render): Excalifont,
@@ -10,7 +10,7 @@ This crate is an implementation detail of `excalidraw-render`, which pins it
 exactly. Its API carries no stability guarantee for other consumers.
 
 The default `cjk` feature adds the Xiaolai CJK fallback through
-`excalidraw-fonts-xiaolai` and `excalidraw-fonts-xiaolai-extended`.
+`excalidraw-render-fonts-xiaolai` and `excalidraw-render-fonts-xiaolai-extended`.
 
 ## License
 
