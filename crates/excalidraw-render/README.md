@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let outcome = Renderer::new().render(&scene, &request)?;
     for diagnostic in outcome.report().diagnostics() {
-        eprintln!("{diagnostic:?}");
+        eprintln!("{diagnostic}");
     }
     std::fs::write("drawing.png", outcome.artifact().bytes())?;
     Ok(())
@@ -50,6 +50,35 @@ code. `ResourceLimits` bounds the work a scene can request, and
 `Sizing::MaxDimension` bounds raster size, but there is no deadline or
 cancellation: run renders in a separate process when you need a hard time or
 memory ceiling.
+
+The defaults admit large drawings rather than protect a shared server:
+
+- A PNG render holds a 4× supersampled canvas, about 65 bytes per output
+  pixel. At the default `max_raster_surface_pixels` (33,554,432) one render can
+  need over 2 GiB; a limit of 4,194,304 (2048 × 2048) keeps it near 300 MB.
+- `SceneDocument::parse` accepts up to 64 MiB of JSON whatever the request's
+  `max_scene_bytes`, which is checked when rendering. Reject larger request
+  bodies before parsing when you need a lower ceiling.
+- `ResourceLimits` apply to each render. `render_frames` renders every selected
+  frame, so bound the frame count, or render frames one at a time with
+  `FrameRenderRequest`, when the scene is untrusted.
+
+```rust,no_run
+use excalidraw_render::{OutputFormat, RenderRequest, ResourceLimits, Sizing};
+
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
+let limits = ResourceLimits::builder()
+    .max_raster_surface_pixels(4_194_304)
+    .max_total_rasterized_pixels(8_388_608)
+    .build()?;
+let request = RenderRequest::builder(OutputFormat::Png)
+    .sizing(Sizing::MaxDimension(2048.0))
+    .resource_limits(limits)
+    .build()?;
+# let _ = request;
+# Ok(())
+# }
+```
 
 Unoptimized builds render roughly 50× slower. In development, optimize the
 renderer even in debug builds:

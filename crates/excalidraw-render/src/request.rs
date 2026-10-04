@@ -318,7 +318,7 @@ pub struct PdfOptions {
 
 impl PdfOptions {
     /// Creates PDF options with the selected raster-fallback policy.
-    pub const fn new(raster_fallback: PdfRasterFallback) -> Self {
+    pub fn new(raster_fallback: PdfRasterFallback) -> Self {
         Self { raster_fallback }
     }
 

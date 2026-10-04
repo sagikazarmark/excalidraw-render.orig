@@ -83,7 +83,7 @@ pub struct Renderer {
 
 impl Renderer {
     /// Constructs a renderer for [`CompatibilityRevision::REVISION_1`].
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             catalog: &crate::catalog::REVISION_1,
         }

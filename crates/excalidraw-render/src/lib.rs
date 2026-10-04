@@ -66,10 +66,11 @@
 //! # }
 //! ```
 //!
-//! Each failure type ([`SceneParseError`], [`RequestError`], [`RenderError`])
-//! carries a stable [`ErrorCode`] and typed details; `descriptor()` gives the
-//! serializable form. [`Renderer::render_frames`] renders a frame batch that
-//! shares scene preparation across frames.
+//! Each failure type ([`SceneParseError`], [`RequestError`], [`RenderError`],
+//! [`FrameBatchError`]) carries a stable [`ErrorCode`], and `descriptor()` gives
+//! its serializable form; the first three also carry typed details.
+//! [`Renderer::render_frames`] renders a frame batch that shares scene
+//! preparation across frames.
 //!
 //! # Serving untrusted input
 //!
@@ -96,17 +97,26 @@
 //! - **`max_working_bytes` is not a memory cap.** It budgets the renderer's
 //!   deterministic, logical working set so that the same input fails the same
 //!   way on every machine; it does not measure or limit allocator usage.
-//!   Actual peak memory is higher, dominated by raster surfaces: a PNG render
-//!   of a scene around 2800×3900 pixels peaks near 1.4 GB of resident memory.
-//!   Size worker memory (or a container limit) for your raster ceilings and
-//!   concurrency.
+//!   Actual peak memory is higher, dominated by raster surfaces: PNG
+//!   rasterizes a 4× supersampled canvas, about 65 bytes per output pixel, so
+//!   the default `max_raster_surface_pixels` (33,554,432) admits renders that
+//!   need over 2 GiB. A ceiling of 4,194,304 pixels (2048 × 2048) keeps one
+//!   render near 300 MB. Size worker memory (or a container limit) for your
+//!   raster ceilings and concurrency.
+//! - **Parsing has its own ceilings.** [`SceneDocument::parse`] accepts up to
+//!   64 MiB of JSON whatever `max_scene_bytes` says; that limit is checked
+//!   when rendering. Bound request bodies before parsing for a lower ceiling.
+//! - **Limits apply per render.** [`Renderer::render_frames`] renders every
+//!   selected frame within its own limits, so bound the frame count of an
+//!   untrusted batch.
 //! - **Build with optimizations.** Unoptimized builds are roughly 50 times
 //!   slower, which turns ordinary scenes into multi-second renders and makes
-//!   resource limits much easier to exhaust in wall-clock terms. In a debug
-//!   build of your service, optimize at least this crate:
+//!   resource limits much easier to exhaust in wall-clock terms. Most of the
+//!   time goes to dependencies (rasterization, compression, font decoding), so
+//!   in a debug build of your service optimize every dependency:
 //!
 //!   ```toml
-//!   [profile.dev.package.excalidraw-render]
+//!   [profile.dev.package."*"]
 //!   opt-level = 2
 //!   ```
 
