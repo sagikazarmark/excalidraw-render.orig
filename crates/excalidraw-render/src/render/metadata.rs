@@ -752,8 +752,7 @@ pub(super) fn test_fixture() -> (
 ) {
     const SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"rect","type":"rectangle","x":0,"y":0,"width":40,"height":30,"updated":1}],"appState":{},"files":{}}"#;
     let scene = SceneDocument::parse(SCENE).expect("metadata fixture scene is admitted");
-    let profile = crate::Renderer::profile_identity(crate::CompatibilityRevision::REVISION_1)
-        .expect("revision 1 exists");
+    let profile = crate::Renderer::new().profile_identity();
     let request = RenderRequest::builder(crate::OutputFormat::Svg)
         .build()
         .expect("metadata fixture request is valid");

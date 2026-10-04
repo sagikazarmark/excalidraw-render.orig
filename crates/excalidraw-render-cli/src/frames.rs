@@ -7,7 +7,7 @@ use clap::Parser;
 use excalidraw_render::{
     ColorMode, CompatibilityDiagnostic, CompatibilityRevision, FrameBatchErrorKind,
     FrameRenderRequest, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, Renderer,
-    ResourceLimits, SceneDocument, Sizing, SupplementalAssets, DEFAULT_COMPATIBILITY_REVISION,
+    ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
 };
 use regex::Regex;
 use serde::{Serialize, Serializer};
@@ -16,10 +16,11 @@ use unicode_normalization::UnicodeNormalization as _;
 use crate::{
     deliver_report_bytes, emergency_report_failure, emit_failure, json_line,
     parse_asset_declarations, path_conflict, path_entry_exists, read_bounded_asset,
-    read_scene_bounded, report_output, same_path, sha256, stage_report_file, validate_paths,
-    validate_report_options, write_stream, ArtifactDescriptor, Cli, CliDetails, CliError,
-    CliOperation, DeliveryRole, DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError,
-    ReportFormat, SelectedIdentity, StagedFile, EXIT_OPERATIONAL, EXIT_USAGE, MAX_SCENE_BYTES,
+    read_scene_bounded, report_output, same_path, select_renderer, sha256, stage_report_file,
+    validate_paths, validate_report_options, write_stream, ArtifactDescriptor, Cli, CliDetails,
+    CliError, CliOperation, DeliveryRole, DeliveryState, Failure, FormatArg, PdfFallbackArg,
+    ReportError, ReportFormat, SelectedIdentity, StagedFile, EXIT_OPERATIONAL, EXIT_USAGE,
+    MAX_SCENE_BYTES,
 };
 
 #[derive(Parser)]
@@ -373,12 +374,10 @@ fn prepare_frame_preamble(
     validate_report_options(&frames.report_cli())?;
     validate_frame_limit(frames)?;
     let regex = frame_name_regex(frames)?;
-    let revision = frame_revision(frames)?;
-    let renderer = Renderer::for_revision(revision)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
-    let profile = renderer.selected_frame_profile_identity();
+    let renderer = select_renderer(frames.compatibility_revision.as_deref())?;
+    let profile = renderer.frame_profile_identity();
     *identity = Some(SelectedIdentity {
-        revision,
+        revision: profile.compatibility_revision(),
         release: profile.excalidraw_release(),
         digest: profile.profile_digest(),
     });
@@ -408,23 +407,6 @@ fn prepare_frame_preamble(
         asset_paths,
         asset_mimes,
     })
-}
-
-fn frame_revision(frames: &FramesCli) -> Result<CompatibilityRevision, Failure> {
-    match &frames.compatibility_revision {
-        Some(value) => value.parse::<CompatibilityRevision>().map_err(|_| {
-            Failure::cli(
-                "cli.invalid-arguments",
-                "compatibility revision must be a nonnegative integer",
-                Some(CliDetails::CliArgument {
-                    argument: "--compatibility-revision".to_owned(),
-                    value: Some(value.clone()),
-                }),
-                EXIT_USAGE,
-            )
-        }),
-        None => Ok(DEFAULT_COMPATIBILITY_REVISION),
-    }
 }
 
 fn select_frames<'scene>(

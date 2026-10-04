@@ -66,8 +66,7 @@ pub use compatibility::{
     AssetChainEntry, CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily,
     FiniteValue, LogicalBounds, Measurement, MetadataComponent, MetadataOperation, NestedPath,
     NestedPathSegment, NestedSegmentKind, Recovery, ReferenceProfileIdentity, Renderer,
-    ResourceMeasurement, ResourceValue, SvgFontSubsetStage, UnsupportedRevisionError, ValueKind,
-    DEFAULT_COMPATIBILITY_REVISION,
+    ResourceMeasurement, ResourceValue, SvgFontSubsetStage, ValueKind,
 };
 pub use frame::{
     FrameBatchError, FrameBatchErrorKind, FrameKind, FrameRef, FrameRefs, FrameRenderCursor,

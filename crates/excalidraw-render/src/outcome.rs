@@ -5,10 +5,7 @@ use std::fmt;
 use serde::Serialize;
 
 use crate::diagnostic_registry::DiagnosticKind;
-use crate::{
-    CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, OutputFormat,
-    ReferenceProfileIdentity,
-};
+use crate::{ErrorCode, ErrorDescriptor, ErrorDetails, OutputFormat, ReferenceProfileIdentity};
 
 /// String-backed stable compatibility diagnostic code.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
@@ -658,19 +655,10 @@ impl RenderOutcome {
         (self.artifact, self.report)
     }
 
-    /// Returns the selected compatibility revision.
-    pub const fn compatibility_revision(&self) -> CompatibilityRevision {
-        self.profile.compatibility_revision()
-    }
-
-    /// Returns the pinned Excalidraw release.
-    pub const fn excalidraw_release(&self) -> &'static str {
-        self.profile.excalidraw_release()
-    }
-
-    /// Returns the canonical reference-profile digest.
-    pub const fn profile_digest(&self) -> &'static str {
-        self.profile.profile_digest()
+    /// Returns the reference profile the artifact reproduces: the scene profile
+    /// for a scene export, the frame profile for a frame export.
+    pub const fn profile_identity(&self) -> &'static ReferenceProfileIdentity {
+        self.profile
     }
 }
 
@@ -811,8 +799,7 @@ mod tests {
             schema_version: 1,
             diagnostics: vec![diagnostic],
         };
-        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
-            .expect("revision 1 profile exists");
+        let profile = Renderer::new().profile_identity();
         let outcome = RenderOutcome {
             artifact: Artifact {
                 format: OutputFormat::Svg,
@@ -825,12 +812,7 @@ mod tests {
         assert_eq!(outcome.artifact().bytes(), b"<svg/>");
         assert_eq!(outcome.artifact().media_type(), "image/svg+xml");
         assert_eq!(outcome.report(), &report);
-        assert_eq!(
-            outcome.compatibility_revision(),
-            CompatibilityRevision::REVISION_1
-        );
-        assert_eq!(outcome.excalidraw_release(), "v0.18.1");
-        assert_eq!(outcome.profile_digest(), profile.profile_digest());
+        assert!(std::ptr::eq(outcome.profile_identity(), profile));
         assert_eq!(
             serde_json::to_string(outcome.report()).expect("serialize diagnosed report"),
             concat!(

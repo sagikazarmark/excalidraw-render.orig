@@ -50,9 +50,7 @@ pub(crate) static REVISION_1: RevisionCatalog = RevisionCatalog {
     scene_surface: &crate::scene_surface::SCENE_SURFACE_POLICY,
 };
 
-pub(crate) const SUPPORTED_REVISIONS: &[CompatibilityRevision] =
-    &[CompatibilityRevision::REVISION_1];
-
+#[cfg(test)]
 pub(crate) fn for_revision(revision: CompatibilityRevision) -> Option<&'static RevisionCatalog> {
     match revision {
         CompatibilityRevision::REVISION_1 => Some(&REVISION_1),

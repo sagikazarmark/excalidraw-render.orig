@@ -1,8 +1,8 @@
 use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
-    ColorMode, CompatibilityRevision, ErrorCode, ErrorFamily, FrameBatchErrorKind, FrameKind,
-    FrameRenderRequest, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, Renderer,
-    ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
+    ColorMode, ErrorCode, ErrorFamily, FrameBatchErrorKind, FrameKind, FrameRenderRequest,
+    MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, Renderer, ResourceLimits,
+    SceneDocument, Sizing, SupplementalAssets,
 };
 use sha2::{Digest, Sha256};
 
@@ -54,8 +54,7 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
         .expect("frame metadata request is valid");
     let renderer = Renderer::new();
 
-    let frame_profile = Renderer::frame_profile_identity(CompatibilityRevision::REVISION_1)
-        .expect("frame profile exists");
+    let frame_profile = renderer.frame_profile_identity();
     let profile_path =
         repository_root().join("tests/oracle/reference-profiles/revision-1-frame.json");
     let profile_bytes = std::fs::read(profile_path).expect("frame profile is checked");
@@ -63,19 +62,18 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
         frame_profile.profile_digest(),
         format!("sha256:{}", lower_hex(&Sha256::digest(profile_bytes)))
     );
-    assert_eq!(
-        renderer.selected_frame_profile_identity().profile_digest(),
-        frame_profile.profile_digest()
-    );
     assert_ne!(
         frame_profile.profile_digest(),
-        renderer.selected_profile_identity().profile_digest()
+        renderer.profile_identity().profile_digest()
     );
 
     let outcome = renderer
         .render_frame(frame, &request)
         .expect("frame with metadata renders");
-    assert_eq!(outcome.profile_digest(), frame_profile.profile_digest());
+    assert_eq!(
+        outcome.profile_identity().profile_digest(),
+        frame_profile.profile_digest()
+    );
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains("urn:excalidraw-render:artifact-manifest:1"));
     assert!(svg.contains("{\"schema_version\":2,"));
@@ -97,7 +95,10 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
                 .expect("PNG frame metadata request is valid"),
         )
         .expect("frame with metadata renders to PNG");
-    assert_eq!(png.profile_digest(), frame_profile.profile_digest());
+    assert_eq!(
+        png.profile_identity().profile_digest(),
+        frame_profile.profile_digest()
+    );
     assert!(contains_bytes(
         png.artifact().bytes(),
         b"\"schema_version\":2,"
@@ -121,7 +122,10 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
                 .expect("PDF frame metadata request is valid"),
         )
         .expect("frame with metadata renders to PDF");
-    assert_eq!(pdf.profile_digest(), frame_profile.profile_digest());
+    assert_eq!(
+        pdf.profile_identity().profile_digest(),
+        frame_profile.profile_digest()
+    );
     let pdf = pdf_text(pdf.artifact().bytes());
     // The manifest is the `artifact-manifest.json` attachment (ADR-0021).
     assert!(pdf.contains("/F (artifact-manifest.json)\n"));

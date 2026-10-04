@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use excalidraw_render::{CompatibilityRevision, Renderer};
+use excalidraw_render::Renderer;
 use tempfile::TempDir;
 
 #[test]
@@ -760,9 +760,7 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
     assert_eq!(report["compatibility_revision"], 1);
     assert_eq!(
         report["reference_profile_digest"],
-        Renderer::frame_profile_identity(CompatibilityRevision::REVISION_1)
-            .expect("frame profile")
-            .profile_digest()
+        Renderer::new().frame_profile_identity().profile_digest()
     );
     assert_eq!(report["frames"].as_array().map(Vec::len), Some(3));
     assert_eq!(report["frames"][0]["ordinal"], 1);
@@ -922,9 +920,7 @@ fn frames_command_filters_names_and_writes_one_deterministically_named_artifact_
     );
     assert_eq!(
         report["reference_profile_digest"],
-        Renderer::frame_profile_identity(CompatibilityRevision::REVISION_1)
-            .expect("frame profile")
-            .profile_digest()
+        Renderer::new().frame_profile_identity().profile_digest()
     );
 
     let no_match_output = temp.join("no-match");

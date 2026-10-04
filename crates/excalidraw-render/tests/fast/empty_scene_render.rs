@@ -103,12 +103,13 @@ fn render_empty_scene(format: OutputFormat) -> RenderOutcome {
 fn assert_outcome_contract(outcome: &RenderOutcome, format: OutputFormat) {
     assert_eq!(outcome.artifact().format(), format);
     assert_eq!(outcome.artifact().media_type(), format.media_type());
+    let profile = outcome.profile_identity();
     assert_eq!(
-        outcome.compatibility_revision(),
+        profile.compatibility_revision(),
         CompatibilityRevision::REVISION_1
     );
-    assert_eq!(outcome.excalidraw_release(), "v0.18.1");
-    assert_eq!(outcome.profile_digest(), PROFILE_DIGEST);
+    assert_eq!(profile.excalidraw_release(), "v0.18.1");
+    assert_eq!(profile.profile_digest(), PROFILE_DIGEST);
     assert!(outcome.report().is_empty());
 }
 

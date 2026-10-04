@@ -233,11 +233,11 @@ fn full_intersection_svg_font_subset_does_not_grow_against_complete_chunk_contro
     assert_eq!(candidate.artifact().bytes(), repeated.artifact().bytes());
     assert_eq!(candidate.report(), control.report());
     assert_eq!(
-        candidate.compatibility_revision(),
+        candidate.profile_identity().compatibility_revision(),
         CompatibilityRevision::REVISION_1
     );
     assert_eq!(
-        control.compatibility_revision(),
+        control.profile_identity().compatibility_revision(),
         CompatibilityRevision::REVISION_1
     );
     let candidate_svg = std::str::from_utf8(candidate.artifact().bytes()).expect("SVG is UTF-8");
@@ -337,11 +337,11 @@ fn font_subset_representative_direct_svg_corpus_does_not_grow_against_complete_c
 
 fn assert_focused_svg_font_savings(candidate: &RenderOutcome, control: &RenderOutcome) {
     assert_eq!(
-        candidate.compatibility_revision(),
+        candidate.profile_identity().compatibility_revision(),
         CompatibilityRevision::REVISION_1
     );
     assert_eq!(
-        control.compatibility_revision(),
+        control.profile_identity().compatibility_revision(),
         CompatibilityRevision::REVISION_1
     );
     let candidate_len = candidate.artifact().bytes().len();
@@ -396,8 +396,7 @@ fn diagnostic_transaction_uses_fatal_precedence_and_never_appends_a_rejection() 
             .resource_limits(limits)
             .build()
             .expect("diagnostic request is valid");
-        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
-            .expect("revision 1 exists");
+        let profile = Renderer::new().profile_identity();
         let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
         let mut session = RenderSession::new(
             profile,
@@ -446,8 +445,7 @@ fn later_output_exhaustion_preserves_the_accumulated_report() {
         .build()
         .expect("request is valid");
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let mut session = RenderSession::new(
         profile,
         crate::catalog::REVISION_1.scene_surface(),
@@ -484,8 +482,7 @@ fn diagnostic_trace_uses_the_callers_canonical_phase() {
         .build()
         .expect("request is valid");
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let mut session = RenderSession::new_with_trace(
         profile,
         crate::catalog::REVISION_1.scene_surface(),
@@ -527,8 +524,7 @@ fn local_recovery_trace_commits_only_the_aggregate_observation() {
         .resource_limits(limits)
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     let (result, trace) = render_with_trace(profile, &scene, &request);
     result.expect("local text exhaustion is recoverable");
@@ -557,8 +553,7 @@ fn canonical_resource_trace_is_uncharged_stable_and_semantic() {
         let request = RenderRequest::builder(format)
             .build()
             .expect("request is valid");
-        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
-            .expect("revision 1 exists");
+        let profile = Renderer::new().profile_identity();
         let ordinary = Renderer::new()
             .render(&scene, &request)
             .expect("ordinary render succeeds");
@@ -623,8 +618,7 @@ fn direct_svg_font_subset_trace_follows_semantic_selection_and_derivation_order(
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("SVG request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     let (result, trace) = render_with_trace(profile, &scene, &request);
     result.expect("font subset render succeeds");
@@ -969,8 +963,7 @@ fn png_frame_clip_masks_are_charged_once_per_frame_and_owned_by_no_child() {
         )
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     let (result, trace) = render_with_trace(profile, &scene, &request);
     result.expect("two-frame PNG renders");
@@ -2062,8 +2055,7 @@ fn required_raster_trace_precedes_projection_work() {
     let request = RenderRequest::builder(OutputFormat::Png)
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     let (result, trace) = render_with_trace(profile, &scene, &request);
     result.expect("empty PNG renders");
@@ -2149,8 +2141,7 @@ fn normalization_resource_events_repeat_with_generated_identity_and_source_order
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     let (first_result, first_trace) = render_with_trace(profile, &scene, &request);
     let (second_result, second_trace) = render_with_trace(profile, &scene, &request);
@@ -2207,8 +2198,7 @@ fn format_plan_and_semantic_records_keep_each_rectangle_owner() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     let (result, trace) = render_with_trace(profile, &scene, &request);
     result.expect("multi-rectangle vector renders");
@@ -2246,8 +2236,7 @@ fn rejected_trace_entry_is_exact_and_does_not_commit_partial_output() {
         .resource_limits(limits)
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     let (result, trace_bytes) = render_with_trace(profile, &scene, &request);
     let error = result.expect_err("output exhaustion returns no artifact");
@@ -2286,8 +2275,7 @@ fn rejected_output_measurement_never_runs_the_emission_pass() {
         .resource_limits(limits)
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
     let mut session = RenderSession::new(
         profile,
@@ -2314,8 +2302,7 @@ fn emission_must_match_the_measured_artifact_bytes() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
     let mut session = RenderSession::new(
         profile,
@@ -2343,8 +2330,7 @@ fn allocation_refusal_preserves_the_committed_trace_and_report_prefix() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
     let mut successful = RenderSession::new_with_trace(
         profile,
@@ -2422,8 +2408,7 @@ fn scene_carrier_failure_omits_only_the_scene_component() {
         )
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
     let mut session = RenderSession::new(
         profile,
@@ -2467,8 +2452,7 @@ fn manifest_carrier_failure_without_notices_drops_all_optional_metadata() {
         .metadata_options(crate::MetadataOptions::default().with_provenance(true))
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
     let mut session = RenderSession::new(
         profile,
@@ -2509,8 +2493,7 @@ fn manifest_carrier_failure_without_notices_drops_all_optional_metadata() {
 #[test]
 fn metadata_retention_rejection_preserves_measurement_work_in_the_trace() {
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let metadata = crate::MetadataOptions::default()
         .with_embedded_scene(true)
         .with_provenance(true)
@@ -2561,8 +2544,7 @@ fn diagnosed_unbounded_omission_has_its_own_semantic_transaction() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     let (result, trace) = render_with_trace(profile, &scene, &request);
     result.expect("diagnosed omission retains a meaningful artifact");
@@ -2860,8 +2842,7 @@ fn a_rounded_image_charges_its_corner_clip_geometry_once_per_target_and_replays(
         "files":{"asset":{"id":"asset","mimeType":"image/png","dataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=","created":1}}
     }"##)
     .expect("rounded image scene is admitted");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let request = RenderRequest::builder(format)
@@ -4197,8 +4178,7 @@ fn an_elbow_arrow_charges_its_extent_shape_as_generated_geometry() {
         let request = RenderRequest::builder(format)
             .build()
             .expect("request is valid");
-        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
-            .expect("revision 1 exists");
+        let profile = Renderer::new().profile_identity();
         let (first_result, first_trace) = render_with_trace(profile, &scene, &request);
         let (second_result, second_trace) = render_with_trace(profile, &scene, &request);
         first_result.expect("traced render succeeds");

@@ -1,7 +1,4 @@
-use std::error::Error;
 use std::fmt;
-use std::num::ParseIntError;
-use std::str::FromStr;
 
 use serde::ser::SerializeStruct;
 use serde::Serialize;
@@ -10,9 +7,14 @@ use crate::outcome::{RenderError, RenderErrorCategory, RenderOutcome};
 use crate::request::{OutputFormat, RenderRequest};
 use crate::scene::SceneDocument;
 
-/// Identifies a static-export profile available in this renderer release.
-/// During 0.x, a profile may evolve between releases; pin the package version
-/// and dependency lockfile when historical output bytes are required.
+/// Identifies the static-export profile a renderer release implements.
+///
+/// This release implements exactly one revision, [`REVISION_1`]. During 0.x a
+/// revision may evolve between reviewed releases and no historical revision is
+/// retained; pin the package version and dependency lockfile when historical
+/// output bytes are required.
+///
+/// [`REVISION_1`]: CompatibilityRevision::REVISION_1
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(transparent)]
 pub struct CompatibilityRevision(u64);
@@ -21,28 +23,9 @@ impl CompatibilityRevision {
     /// Compatibility revision 1, bound to Excalidraw v0.18.1.
     pub const REVISION_1: Self = Self(1);
 
-    /// Creates a compatibility revision identifier.
-    pub const fn new(revision: u64) -> Self {
-        Self(revision)
-    }
-
     /// Returns the numeric compatibility revision.
     pub const fn get(self) -> u64 {
         self.0
-    }
-}
-
-impl From<u64> for CompatibilityRevision {
-    fn from(revision: u64) -> Self {
-        Self::new(revision)
-    }
-}
-
-impl FromStr for CompatibilityRevision {
-    type Err = ParseIntError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        value.parse().map(Self::new)
     }
 }
 
@@ -52,10 +35,7 @@ impl fmt::Display for CompatibilityRevision {
     }
 }
 
-/// The compatibility revision selected by [`Renderer::new`].
-pub const DEFAULT_COMPATIBILITY_REVISION: CompatibilityRevision = CompatibilityRevision::REVISION_1;
-
-/// Immutable identity of the reference profile used by a compatibility revision.
+/// Immutable identity of the reference profile a renderer reproduces.
 #[derive(Debug, Serialize)]
 pub struct ReferenceProfileIdentity {
     compatibility_revision: CompatibilityRevision,
@@ -92,57 +72,31 @@ impl ReferenceProfileIdentity {
     }
 }
 
-/// Immutable renderer configured for one compatibility revision.
+/// Immutable renderer for this release's compatibility revision.
+///
+/// A renderer holds no per-render state: it is cheap to construct, `Clone`,
+/// `Send` and `Sync`, and one instance can serve concurrent renders.
 #[derive(Clone, Debug)]
 pub struct Renderer {
     catalog: &'static crate::catalog::RevisionCatalog,
 }
 
 impl Renderer {
-    /// Constructs a renderer for [`DEFAULT_COMPATIBILITY_REVISION`].
+    /// Constructs a renderer for [`CompatibilityRevision::REVISION_1`].
     pub const fn new() -> Self {
         Self {
             catalog: &crate::catalog::REVISION_1,
         }
     }
 
-    /// Constructs a renderer for an available compatibility revision.
-    pub fn for_revision(revision: CompatibilityRevision) -> Result<Self, UnsupportedRevisionError> {
-        crate::catalog::for_revision(revision)
-            .map(|catalog| Self { catalog })
-            .ok_or(UnsupportedRevisionError { revision })
-    }
-
-    /// Returns available compatibility revisions in increasing order.
-    pub const fn supported_revisions() -> &'static [CompatibilityRevision] {
-        crate::catalog::SUPPORTED_REVISIONS
-    }
-
-    /// Returns the reference profile identity for an available revision.
-    pub fn profile_identity(
-        revision: CompatibilityRevision,
-    ) -> Result<&'static ReferenceProfileIdentity, UnsupportedRevisionError> {
-        crate::catalog::for_revision(revision)
-            .map(crate::catalog::RevisionCatalog::profile)
-            .ok_or(UnsupportedRevisionError { revision })
-    }
-
-    /// Returns the frame-export reference profile for an available revision.
-    pub fn frame_profile_identity(
-        revision: CompatibilityRevision,
-    ) -> Result<&'static ReferenceProfileIdentity, UnsupportedRevisionError> {
-        crate::catalog::for_revision(revision)
-            .map(crate::catalog::RevisionCatalog::frame_profile)
-            .ok_or(UnsupportedRevisionError { revision })
-    }
-
-    /// Returns this renderer's selected reference profile identity.
-    pub const fn selected_profile_identity(&self) -> &'static ReferenceProfileIdentity {
+    /// Returns the reference profile scene exports reproduce.
+    pub const fn profile_identity(&self) -> &'static ReferenceProfileIdentity {
         self.catalog.profile()
     }
 
-    /// Returns this renderer's frame-export reference profile identity.
-    pub const fn selected_frame_profile_identity(&self) -> &'static ReferenceProfileIdentity {
+    /// Returns the reference profile frame exports reproduce. It shares the
+    /// scene profile's revision and release but has its own digest.
+    pub const fn frame_profile_identity(&self) -> &'static ReferenceProfileIdentity {
         self.catalog.frame_profile()
     }
 
@@ -181,49 +135,6 @@ impl Default for Renderer {
     }
 }
 
-/// Indicates that a requested compatibility revision is not available.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct UnsupportedRevisionError {
-    revision: CompatibilityRevision,
-}
-
-impl UnsupportedRevisionError {
-    /// Returns the unsupported revision requested by the caller.
-    pub const fn requested_revision(&self) -> CompatibilityRevision {
-        self.revision
-    }
-}
-
-impl fmt::Display for UnsupportedRevisionError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            formatter,
-            "compatibility revision {} is not supported",
-            self.revision
-        )
-    }
-}
-
-impl Error for UnsupportedRevisionError {}
-
-impl UnsupportedRevisionError {
-    /// Returns this failure's stable serializable descriptor.
-    pub fn descriptor(&self) -> ErrorDescriptor {
-        ErrorDescriptor {
-            family: ErrorFamily::UnsupportedRevision,
-            category: None,
-            code: ErrorCode::REVISION_UNSUPPORTED,
-            message: self.to_string(),
-            format: None,
-            element_id: None,
-            json_pointer: None,
-            details: Some(ErrorDetails::Revision {
-                requested: self.revision,
-            }),
-        }
-    }
-}
-
 /// Stable family of a typed renderer failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[non_exhaustive]
@@ -237,8 +148,6 @@ pub enum ErrorFamily {
     Render,
     /// A lazy frame batch could not be constructed.
     FrameBatch,
-    /// A requested compatibility revision is not available.
-    UnsupportedRevision,
 }
 
 impl ErrorFamily {
@@ -249,7 +158,6 @@ impl ErrorFamily {
             Self::Request => "request",
             Self::Render => "render",
             Self::FrameBatch => "frame_batch",
-            Self::UnsupportedRevision => "unsupported_revision",
         }
     }
 }
@@ -396,9 +304,6 @@ impl ErrorCode {
     /// Canonical parser live bytes exceed the fixed parser memory ceiling.
     pub const SCENE_PARSE_MEMORY_EXCEEDED: Self = Self("scene.parse-memory-exceeded");
 
-    /// The requested compatibility revision is not available.
-    pub const REVISION_UNSUPPORTED: Self = Self("revision.unsupported");
-
     /// Returns the stable serialized spelling.
     pub const fn as_str(self) -> &'static str {
         self.0
@@ -427,12 +332,6 @@ pub enum ErrorDetails {
         value_kind: ValueKind,
         /// The measured attempted or lower-bound value.
         measurement: Measurement,
-    },
-    /// Identifies a requested compatibility revision.
-    #[non_exhaustive]
-    Revision {
-        /// The revision supplied by the caller.
-        requested: CompatibilityRevision,
     },
     /// Identifies the rejected request field and any applicable asset or option.
     #[non_exhaustive]
@@ -602,7 +501,6 @@ impl ErrorDetails {
                 *recovery
             }
             Self::ParseLimit { .. }
-            | Self::Revision { .. }
             | Self::RequestValue { .. }
             | Self::MemoryUnavailable { .. }
             | Self::FontUnavailable { .. }
@@ -618,7 +516,6 @@ impl ErrorDetails {
             | Self::Asset { recipe_id, .. }
             | Self::NestedResourceLimit { recipe_id, .. } => recipe_id.as_deref(),
             Self::ParseLimit { .. }
-            | Self::Revision { .. }
             | Self::RequestValue { .. }
             | Self::ResourceLimit { .. }
             | Self::MemoryUnavailable { .. }
