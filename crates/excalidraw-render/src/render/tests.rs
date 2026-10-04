@@ -1409,6 +1409,24 @@ fn fallback_layout(font_family: i32, source: &str) -> text::ResolvedText {
 }
 
 /// The one line of `source` laid out with fallbacks for `font_family`.
+#[test]
+fn glyphs_of_one_long_cluster_share_its_text() {
+    // A base and its joiners shape as one cluster with a glyph per scalar.
+    // Each glyph carries the whole cluster text for PDF `ToUnicode`; copying
+    // it into every glyph took time and memory quadratic in the cluster.
+    for family in [1, 5] {
+        let source = format!("a{}", "\u{200d}".repeat(20_000));
+        let line = fallback_line(family, &source);
+        assert_eq!(line.glyphs.len(), 20_001);
+        let first = &line.glyphs[0].unicode;
+        assert_eq!(**first, utf16(&source));
+        assert!(line
+            .glyphs
+            .iter()
+            .all(|glyph| std::sync::Arc::ptr_eq(&glyph.unicode, first)));
+    }
+}
+
 fn fallback_line(font_family: i32, source: &str) -> text::ResolvedLabel {
     let mut laid_out = fallback_layout(font_family, source);
     assert_eq!(laid_out.lines.len(), 1, "{source:?} is one line");
@@ -1761,7 +1779,7 @@ fn a_default_ignorable_code_point_is_hidden_and_never_a_missing_codepoint() {
             let b_x = |line: &text::ResolvedLabel| {
                 line.glyphs
                     .iter()
-                    .find(|glyph| glyph.unicode == utf16("b"))
+                    .find(|glyph| *glyph.unicode == utf16("b"))
                     .expect("b has a glyph")
                     .x
             };
@@ -1796,7 +1814,7 @@ fn a_default_ignorable_code_point_is_hidden_and_never_a_missing_codepoint() {
     let visible = |line: &text::ResolvedLabel| {
         line.glyphs
             .iter()
-            .filter(|glyph| glyph.unicode != utf16("\u{200f}"))
+            .filter(|glyph| *glyph.unicode != utf16("\u{200f}"))
             .map(|glyph| (glyph.id, glyph.x, glyph.y))
             .collect::<Vec<_>>()
     };
@@ -1812,7 +1830,7 @@ fn a_default_ignorable_code_point_is_hidden_and_never_a_missing_codepoint() {
     let mark = marked
         .glyphs
         .iter()
-        .find(|glyph| glyph.unicode == utf16("\u{200f}"))
+        .find(|glyph| *glyph.unicode == utf16("\u{200f}"))
         .expect("the mark has a glyph");
     let m_of_mark = marked.glyphs[marked.runs[2].glyph_start].x;
     assert!(

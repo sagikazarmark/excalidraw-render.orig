@@ -174,7 +174,9 @@ pub(super) struct ResolvedGlyph {
     pub(super) x: f64,
     pub(super) y: f64,
     pub(super) advance_1000: u16,
-    pub(super) unicode: Vec<u16>,
+    /// The UTF-16 text of this glyph's whole cluster, shared by every glyph
+    /// of the cluster.
+    pub(super) unicode: Arc<Vec<u16>>,
     /// The byte offset in the shaped display text where this glyph's cluster
     /// starts.
     pub(super) cluster: usize,
@@ -541,6 +543,7 @@ fn build_label(
     let mut resolved_glyphs = Vec::new();
     resolved_glyphs.try_reserve_exact(glyphs.glyph_infos().len())?;
     let cluster_starts = ClusterStarts::of(glyphs)?;
+    let mut previous_unicode = None;
     for (info, position) in glyphs.glyph_infos().iter().zip(glyphs.glyph_positions()) {
         let outline_start = operations.len();
         let mut builder = GlyphOutlineBuilder {
@@ -558,9 +561,7 @@ fn build_label(
         if glyph_id == 0 {
             return Err(LabelError::InvalidFont);
         }
-        let mut unicode = Vec::new();
-        unicode.try_reserve_exact(cluster_text.encode_utf16().count())?;
-        unicode.extend(cluster_text.encode_utf16());
+        let unicode = cluster_unicode(&mut previous_unicode, cluster, cluster_text)?;
         let advance = face
             .glyph_hor_advance(GlyphId(glyph_id))
             .unwrap_or_default();
@@ -1617,6 +1618,7 @@ fn shape_official_line(
     let mut pen_x = 0_i64;
     let mut pen_y = 0_i64;
     let cluster_starts = ClusterStarts::of(&glyphs)?;
+    let mut previous_unicode = None;
     for (info, position) in glyphs.glyph_infos().iter().zip(glyphs.glyph_positions()) {
         let glyph_id = u16::try_from(info.glyph_id).map_err(|_| LabelError::InvalidFont)?;
         let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
@@ -1627,9 +1629,7 @@ fn shape_official_line(
                 missing_codepoints.push(codepoint);
             }
         }
-        let mut unicode = Vec::new();
-        unicode.try_reserve_exact(cluster_text.encode_utf16().count())?;
-        unicode.extend(cluster_text.encode_utf16());
+        let unicode = cluster_unicode(&mut previous_unicode, cluster, cluster_text)?;
         let advance = face.glyph_hor_advance(GlyphId(glyph_id));
         let advance_units = advance.unwrap_or_default();
         let units_per_em = u64::from(face.units_per_em());
@@ -1736,6 +1736,27 @@ fn try_owned(value: &str) -> Result<String, LabelError> {
     owned.try_reserve_exact(value.len())?;
     owned.push_str(value);
     Ok(owned)
+}
+
+/// The UTF-16 text of the cluster at `cluster`, shared with the previous
+/// glyph's when that glyph is of the same cluster: a cluster of many glyphs
+/// would otherwise hold its whole text once per glyph.
+fn cluster_unicode(
+    previous: &mut Option<(usize, Arc<Vec<u16>>)>,
+    cluster: usize,
+    cluster_text: &str,
+) -> Result<Arc<Vec<u16>>, LabelError> {
+    if let Some((previous_cluster, unicode)) = previous {
+        if *previous_cluster == cluster {
+            return Ok(Arc::clone(unicode));
+        }
+    }
+    let mut unicode = Vec::new();
+    unicode.try_reserve_exact(cluster_text.encode_utf16().count())?;
+    unicode.extend(cluster_text.encode_utf16());
+    let unicode = Arc::new(unicode);
+    *previous = Some((cluster, Arc::clone(&unicode)));
+    Ok(unicode)
 }
 
 /// The distinct cluster starts of one shaped run, ascending whatever the run's
