@@ -36,7 +36,7 @@ rust-version = "1.90"
 # `writer` feature (implied by `text`) brings 0.23 as a second copy (#209);
 # move to 0.23 with a Krilla release that accepts it.
 base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
-clap = { version = "=4.6.7", features = ["derive"] }
+clap = { version = "=4.6.7", features = ["derive", "wrap_help"] }
 excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
 excalidraw-fonts = { path = "crates/excalidraw-fonts", version = "=0.1.0", default-features = false }
 excalidraw-fonts-xiaolai = { path = "crates/excalidraw-fonts-xiaolai", version = "=0.1.0" }
