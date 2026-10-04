@@ -689,6 +689,32 @@ impl RenderSession {
             )?;
             image_resource_working.push((rgb_bytes, alpha_bytes));
         }
+        // Krilla reads and compares the whole cluster text once per glyph of a
+        // cluster shaped to several glyphs; charge that before it runs.
+        for index in 0..plan.source_count() {
+            let repeated = plan.repeated_cluster_text(index);
+            if repeated == 0 {
+                continue;
+            }
+            let (element_id, json_pointer) = plan.source(index).ok_or_else(|| {
+                self.internal_failure(
+                    request.format(),
+                    "PDF source operation is missing",
+                    "/elements",
+                )
+            })?;
+            self.charge_work(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::FormatPlanning,
+                    "pdf_repeated_cluster_text",
+                    json_pointer,
+                )
+                .with_element_id(element_id)
+                .with_local_owner(element_id),
+                repeated,
+            )?;
+        }
         let workspace = ResourceContext::new(
             ResourcePhase::EncodingAndOutcomeAssembly,
             "pdf_stream_workspace",

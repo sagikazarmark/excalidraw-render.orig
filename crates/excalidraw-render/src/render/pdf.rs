@@ -480,6 +480,32 @@ impl PdfPlan {
         self.elements.len()
     }
 
+    /// The cluster text the element at `index` repeats per glyph across every
+    /// label it draws (spec 13.2), charged before Krilla compares it.
+    pub(super) fn repeated_cluster_text(&self, index: usize) -> u64 {
+        let text = |text: &ResolvedText| {
+            text.lines
+                .iter()
+                .map(ResolvedLabel::repeated_cluster_text)
+                .fold(0, u64::saturating_add)
+        };
+        self.elements
+            .get(index)
+            .map_or(0, |element| match &element.kind {
+                PdfElementKind::Text { text: label, .. } => text(label),
+                PdfElementKind::RoughOutline {
+                    generated_label, ..
+                } => generated_label.as_ref().map_or(0, text),
+                PdfElementKind::Frame { name, .. } => name
+                    .as_ref()
+                    .map_or(0, |name| name.label.repeated_cluster_text()),
+                PdfElementKind::Fallback { label, .. } => label
+                    .as_ref()
+                    .map_or(0, ResolvedLabel::repeated_cluster_text),
+                PdfElementKind::Freedraw { .. } | PdfElementKind::Image { .. } => 0,
+            })
+    }
+
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match &element.kind {
             PdfElementKind::RoughOutline { source, .. }

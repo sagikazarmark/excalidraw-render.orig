@@ -153,6 +153,32 @@ pub(super) struct ResolvedLabel {
     pub(super) runs: Vec<ResolvedTextRun>,
 }
 
+impl ResolvedLabel {
+    /// The UTF-16 code units of cluster text this label's glyphs repeat: each
+    /// glyph of a cluster shaped to several glyphs carries the cluster's whole
+    /// text, which PDF hands Krilla to read and compare once per glyph.
+    pub(super) fn repeated_cluster_text(&self) -> u64 {
+        let shares = |left: &ResolvedGlyph, right: &ResolvedGlyph| {
+            !left.unicode.is_empty() && Arc::ptr_eq(&left.unicode, &right.unicode)
+        };
+        self.glyphs
+            .iter()
+            .enumerate()
+            .filter(|(index, glyph)| {
+                index
+                    .checked_sub(1)
+                    .and_then(|previous| self.glyphs.get(previous))
+                    .is_some_and(|previous| shares(previous, glyph))
+                    || self
+                        .glyphs
+                        .get(index + 1)
+                        .is_some_and(|next| shares(glyph, next))
+            })
+            .map(|(_, glyph)| u64::try_from(glyph.unicode.len()).unwrap_or(u64::MAX))
+            .fold(0, u64::saturating_add)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct ResolvedTextRun {
     pub(super) font_index: usize,
