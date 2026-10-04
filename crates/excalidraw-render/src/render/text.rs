@@ -67,6 +67,10 @@ pub(super) struct ResolvedText {
     fallback_resources: u64,
     pub(super) prepaid_glyphs: u64,
     pub(super) prepaid_line_break_steps: u64,
+    /// Outline segments counted but not kept: every one, once the text passed
+    /// its [`TextLayout::outline_limit`]. Such text exceeds the per-element
+    /// geometry limit, so accounting omits it before any encoder reads a path.
+    pub(super) discarded_outline_segments: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -95,6 +99,10 @@ pub(super) struct TextLayout<'a> {
     /// element's own family, not the loaded font's: Helvetica and Liberation
     /// Sans share one font and must not share a baseline.
     pub(super) font_family: i32,
+    /// Outline operations kept before the text is known to exceed the
+    /// per-element geometry limit; the rest are only counted, so a text the
+    /// limit rejects never holds all of its glyph outlines at once.
+    pub(super) outline_limit: u64,
 }
 
 impl TextLayout<'_> {
@@ -105,6 +113,49 @@ impl TextLayout<'_> {
         let metrics =
             FamilyMetrics::for_source_family(self.font_family).ok_or(LabelError::InvalidFont)?;
         Ok(metrics.first_baseline(self.font_size, self.font_size * self.line_height))
+    }
+}
+
+/// The outline operations one text element may keep, and how many it produced.
+struct OutlineBudget {
+    limit: u64,
+    counted: u64,
+}
+
+impl OutlineBudget {
+    fn new(limit: u64) -> Self {
+        Self { limit, counted: 0 }
+    }
+
+    fn unlimited() -> Self {
+        Self::new(u64::MAX)
+    }
+
+    fn exceeded(&self) -> bool {
+        self.counted > self.limit
+    }
+
+    /// The reservation for `glyphs` more glyphs' outlines, within the limit.
+    fn reservation(&self, glyphs: usize) -> usize {
+        let remaining = self.limit.saturating_sub(self.counted);
+        glyphs
+            .saturating_mul(32)
+            .min(usize::try_from(remaining).unwrap_or(usize::MAX))
+    }
+
+    /// Drops `lines`' outlines once the limit is exceeded and returns the
+    /// segments that were counted but are no longer kept.
+    fn settle(&self, lines: &mut [ResolvedLabel]) -> u64 {
+        if !self.exceeded() {
+            return 0;
+        }
+        for line in lines {
+            line.path.operations = Vec::new();
+            for glyph in &mut line.glyphs {
+                glyph.outline = 0..0;
+            }
+        }
+        self.counted
     }
 }
 
@@ -564,6 +615,7 @@ fn build_label(
     let mut operations = Vec::new();
     let estimated_operations = glyphs.glyph_infos().len().saturating_mul(32);
     operations.try_reserve(estimated_operations)?;
+    let mut budget = OutlineBudget::unlimited();
     let mut pen_x = 0_i64;
     let mut pen_y = 0_i64;
     let mut resolved_glyphs = Vec::new();
@@ -574,6 +626,7 @@ fn build_label(
         let outline_start = operations.len();
         let mut builder = GlyphOutlineBuilder {
             operations: &mut operations,
+            budget: &mut budget,
             failed: false,
             origin_x,
             baseline,
@@ -709,6 +762,7 @@ impl OfficialFont {
         let first_baseline = layout.first_baseline()?;
         let mut lines = Vec::new();
         lines.try_reserve_exact(stored_lines.len())?;
+        let mut budget = OutlineBudget::new(layout.outline_limit);
         for (index, line) in stored_lines.into_iter().enumerate() {
             let baseline = first_baseline + index as f64 * line_step;
             lines.push(shape_official_line(
@@ -720,8 +774,10 @@ impl OfficialFont {
                 baseline,
                 text_align,
                 ShapeDirection::Guessed,
+                &mut budget,
             )?);
         }
+        let discarded_outline_segments = budget.settle(&mut lines);
         Ok(ResolvedText {
             font_index: 0,
             font_family: self.family.display_name(),
@@ -736,6 +792,7 @@ impl OfficialFont {
             fallback_resources: 0,
             prepaid_glyphs: prospective_glyph_count(text),
             prepaid_line_break_steps: line_count(text),
+            discarded_outline_segments,
         })
     }
 
@@ -879,6 +936,7 @@ pub(super) fn layout_with_loader(
     let mut used_noto = false;
     let mut fallback_probes = 0_u64;
     let mut resolved_characters = Vec::<(char, usize, char, bool, bool, u64)>::new();
+    let mut budget = OutlineBudget::new(layout.outline_limit);
 
     for (line_index, line) in source_lines(text).enumerate() {
         let source_content = line.content;
@@ -1005,6 +1063,7 @@ pub(super) fn layout_with_loader(
                 baseline,
                 ResolvedTextAlign::Left,
                 direction,
+                &mut budget,
             )?;
             shift_label_x(&mut run, pen_x);
             let glyph_start = glyphs.len();
@@ -1045,6 +1104,7 @@ pub(super) fn layout_with_loader(
             runs,
         });
     }
+    let discarded_outline_segments = budget.settle(&mut lines);
     let line_break_steps = u64::try_from(lines.len()).unwrap_or(u64::MAX);
     let mut fallback_indexes = Vec::new();
     for run in lines.iter().flat_map(|line| &line.runs) {
@@ -1071,6 +1131,7 @@ pub(super) fn layout_with_loader(
             fallback_resources: u64::try_from(fallback_indexes.len()).unwrap_or(u64::MAX),
             prepaid_glyphs: prospective_glyph_count(text),
             prepaid_line_break_steps: line_count(text),
+            discarded_outline_segments,
         },
         used_noto,
     ))
@@ -1552,10 +1613,19 @@ impl ResolvedText {
             .fold(0_u64, |total, line| total.saturating_add(line.glyph_count))
     }
 
-    pub(super) fn outline_segments(&self) -> u64 {
+    /// The outline operations this text holds, without the discarded ones.
+    pub(super) fn kept_outline_segments(&self) -> u64 {
         self.lines.iter().fold(0_u64, |total, line| {
             total.saturating_add(u64::try_from(line.path.operations.len()).unwrap_or(u64::MAX))
         })
+    }
+
+    pub(super) fn outline_segments(&self) -> u64 {
+        self.lines
+            .iter()
+            .fold(self.discarded_outline_segments, |total, line| {
+                total.saturating_add(u64::try_from(line.path.operations.len()).unwrap_or(u64::MAX))
+            })
     }
 
     pub(super) fn run_count(&self) -> u64 {
@@ -1621,6 +1691,7 @@ fn shape_official_line(
     baseline: f64,
     text_align: ResolvedTextAlign,
     direction: ShapeDirection,
+    budget: &mut OutlineBudget,
 ) -> Result<ResolvedLabel, LabelError> {
     let glyphs = shape_text(face, display_text, direction);
     let scale = font_size / f64::from(face.units_per_em());
@@ -1637,7 +1708,7 @@ fn shape_official_line(
         ResolvedTextAlign::Left => 0.0,
     };
     let mut operations = Vec::new();
-    operations.try_reserve(glyphs.glyph_infos().len().saturating_mul(32))?;
+    operations.try_reserve(budget.reservation(glyphs.glyph_infos().len()))?;
     let mut missing_codepoints = Vec::new();
     let mut resolved_glyphs = Vec::new();
     resolved_glyphs.try_reserve_exact(glyphs.glyph_infos().len())?;
@@ -1665,6 +1736,7 @@ fn shape_official_line(
         let outline_start = operations.len();
         let mut builder = GlyphOutlineBuilder {
             operations: &mut operations,
+            budget,
             failed: false,
             origin_x,
             baseline,
@@ -1868,6 +1940,7 @@ mod optional_font_tests {
 
 struct GlyphOutlineBuilder<'a> {
     operations: &'a mut Vec<LabelPathOperation>,
+    budget: &'a mut OutlineBudget,
     failed: bool,
     origin_x: f64,
     baseline: f64,
@@ -1886,6 +1959,10 @@ impl GlyphOutlineBuilder<'_> {
 
     fn push(&mut self, operation: LabelPathOperation) {
         if self.failed {
+            return;
+        }
+        self.budget.counted = self.budget.counted.saturating_add(1);
+        if self.budget.exceeded() {
             return;
         }
         if self.operations.try_reserve(1).is_err() {

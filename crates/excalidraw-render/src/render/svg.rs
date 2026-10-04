@@ -51,11 +51,22 @@ impl SvgTransform {
         Self {
             translation_x: transform.translation_x,
             translation_y: transform.translation_y,
-            rotation_degrees: 180.0 * transform.angle_radians / std::f64::consts::PI,
+            rotation_degrees: rotation_degrees(transform.angle_radians),
             center_x: transform.center_x,
             center_y: transform.center_y,
         }
     }
+}
+
+/// `radians` in degrees. An angle so large that the product overflows is the
+/// same turn as its reduction into (-π, π], which the canvas draws for it.
+fn rotation_degrees(radians: f64) -> f64 {
+    let degrees = 180.0 * radians / std::f64::consts::PI;
+    if degrees.is_finite() || !radians.is_finite() {
+        return degrees;
+    }
+    let (sin, cos) = crate::portable_math::sin_cos(radians);
+    180.0 * crate::portable_math::atan2(sin, cos) / std::f64::consts::PI
 }
 
 #[derive(Debug)]

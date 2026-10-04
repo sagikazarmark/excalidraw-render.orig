@@ -791,6 +791,7 @@ fn cascadia_calt_ligatures_lay_out_through_their_empty_spacer_glyphs() {
                 text_value,
                 text::TextLayout {
                     font_family: 3,
+                    outline_limit: u64::MAX,
                     ..excalifont_layout()
                 },
             )
@@ -852,6 +853,7 @@ fn fallback_probes_with(fonts: &mut Vec<text::OfficialFont>, font_family: i32, t
     let trigger = text::CjkSubsetTrigger::evaluate([text]);
     let layout = text::TextLayout {
         font_family,
+        outline_limit: u64::MAX,
         ..excalifont_layout()
     };
     let (laid_out, _) = text::layout_with_fallbacks(0, fonts, text, layout, trigger)
@@ -1098,6 +1100,7 @@ fn excalifont_layout() -> text::TextLayout<'static> {
         line_height: 1.25,
         text_align: "left",
         font_family: 5,
+        outline_limit: u64::MAX,
     }
 }
 
@@ -1285,6 +1288,7 @@ fn layout_in_family(
                 line_height,
                 text_align: "center",
                 font_family: layout_family,
+                outline_limit: u64::MAX,
             },
         )
         .ok()
@@ -1396,6 +1400,7 @@ fn fallback_layout(font_family: i32, source: &str) -> text::ResolvedText {
         .unwrap_or_else(|| panic!("family {font_family} loads for {source:?}"))];
     let layout = text::TextLayout {
         font_family,
+        outline_limit: u64::MAX,
         ..excalifont_layout()
     };
     let trigger = text::CjkSubsetTrigger::evaluate([source]);
