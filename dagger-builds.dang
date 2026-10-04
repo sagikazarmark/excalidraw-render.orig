@@ -158,9 +158,10 @@ type Builds {
   }
 
   let nativeReleaseBuilt: Container! {
-    self.nativeSlim.withExec(["cargo", "test", "--locked", "--release",
-      "--target", hostTarget, "-p", "excalidraw-render", "--lib",
-      "--features", "release-qualification", "--no-run"])
+    # The qualification run sets the same variable, so it reuses this build.
+    self.nativeSlim.withExec(["env", "EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1",
+      "cargo", "test", "--locked", "--release",
+      "--target", hostTarget, "-p", "excalidraw-render", "--lib", "--no-run"])
   }
 
   let nativeTraceBuilt: Container! {
@@ -253,6 +254,19 @@ type Builds {
   }
 
   """
+  The release-qualified CLI archive for x86_64-unknown-linux-gnu: the stripped
+  binary with the README and every license, as a reproducible tarball plus its
+  SHA-256 checksum file.
+  """
+  cliArchive(version: String!): Directory! {
+    let name = "excalidraw-render-" + version + "-" + hostTarget
+    self.cliDependencies
+      .withExec(["cargo", "build", "--locked", "--release", "-p", "excalidraw-render-cli"])
+      .withExec(["bash", "-eu", "-c", cliArchiveScript, "archive", name])
+      .directory("/dist")
+  }
+
+  """
   Platform-independent package archives are prepared once for native and WASM.
   Keep their real paths inside the checkout for the collector's path boundary;
   compilation output remains in /target.
@@ -287,3 +301,9 @@ let compileFixtures: [String!]! = [
   "tests/conformance/cases/focused/bound-text-containers/scene.excalidraw",
   "tools/pdf-harness/pdfium-rust/sources.json",
 ]
+
+"""
+Stage `$1` (the archive's base name) from the release build and the checkout
+root: fixed owner, mode, order and timestamps, and gzip without a name or time.
+"""
+let cliArchiveScript: String! = "set -o pipefail; stage=/dist/$1; mkdir -p \"$stage\"; cp /target/release/excalidraw-render README.md LICENSE-MIT LICENSE-APACHE crates/excalidraw-render-cli/LICENSE-BUNDLE.txt \"$stage/\"; tar -C /dist --sort=name --owner=0 --group=0 --numeric-owner --mode=u+rwX,go+rX,go-w --mtime=@0 -cf - \"$1\" | gzip -9n > \"/dist/$1.tar.gz\"; rm -rf \"$stage\"; cd /dist; sha256sum \"$1.tar.gz\" > \"$1.tar.gz.sha256\""

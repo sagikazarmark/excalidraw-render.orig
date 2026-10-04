@@ -16,7 +16,7 @@ fn request(format: OutputFormat, limits: ResourceLimits) -> RenderRequest {
     RenderRequest::builder(format)
         .padding(0.)
         .include_background(false)
-        .frame_options(FrameOptions::new(true, true, false, false))
+        .frame_options(FrameOptions::default().with_name(false).with_outline(false))
         .resource_limits(limits)
         .build()
         .unwrap()
@@ -73,7 +73,7 @@ pub(crate) fn profile_limits(selected_mask: Option<usize>) {
         ),
         (
             include_bytes!("render/test_support.rs").as_slice(),
-            "5cb3a3f790adf08c7b7cc0b6e6ebdba7a9a8784e8dd0b4b64e27654e3ed18447",
+            "06bce1eef4418d0b7016dc6b44455d4a54a23f3a9cfb90ba8344888ffa7a434e",
         ),
     ] {
         assert_eq!(lower_hex(&Sha256::digest(bytes)), expected);

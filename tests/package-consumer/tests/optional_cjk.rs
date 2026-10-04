@@ -65,7 +65,7 @@ fn svg_semantic_demand_is_independent_of_glyph_font_demand() {
             assert_eq!(error.category(), RenderErrorCategory::Capability);
             assert!(
                 matches!(error.details(), Some(ErrorDetails::FontUnavailable {
-                resolved_family, asset_identity
+                resolved_family, asset_identity, ..
             }) if resolved_family == "Xiaolai" && asset_identity.starts_with("fonts/Xiaolai/"))
             );
         } else {
@@ -152,6 +152,7 @@ fn demanded_xiaolai_obeys_the_packaged_feature_in_every_format() {
             let Some(ErrorDetails::FontUnavailable {
                 resolved_family,
                 asset_identity,
+                ..
             }) = error.details()
             else {
                 panic!("expected structured unavailable-font details: {error:?}");

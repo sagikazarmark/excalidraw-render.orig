@@ -695,10 +695,10 @@ impl SceneParseError {
         )
     }
 
-    fn invalid_envelope(json_pointer: &str) -> Self {
+    fn invalid_envelope(json_pointer: &str, message: impl Into<String>) -> Self {
         Self::new(
             ErrorCode::SCENE_INVALID_ENVELOPE,
-            "scene document does not have the required version-2 envelope",
+            message,
             Some(json_pointer.to_owned()),
             None,
         )
@@ -737,7 +737,7 @@ impl SceneParseError {
     pub fn descriptor(&self) -> ErrorDescriptor {
         ErrorDescriptor::scene_parse(
             self.code,
-            self.message.clone(),
+            self.to_string(),
             self.json_pointer.clone(),
             self.details.as_deref().cloned(),
         )
@@ -745,39 +745,143 @@ impl SceneParseError {
 }
 
 impl fmt::Display for SceneParseError {
+    /// The failure's message; a parser-limit crossing appends the measured
+    /// value, the limit field and its fixed ceiling.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.message)
+        formatter.write_str(&self.message)?;
+        if let Some(crossing) = self.details().and_then(ErrorDetails::limit_crossing) {
+            write!(formatter, ": {crossing}")?;
+        }
+        Ok(())
     }
 }
 
 impl Error for SceneParseError {}
 
+/// Admits the version-2 envelope (spec section 4.1). Every rejection is
+/// `scene.invalid-envelope` at the offending or expected member; the message
+/// says what is wrong, and names the library and clipboard payloads that are
+/// most often mistaken for scene documents.
 fn validate_envelope(root: &JsonValue) -> Result<(), SceneParseError> {
     let JsonValue::Object(members) = root else {
-        return Err(SceneParseError::invalid_envelope(""));
+        return Err(SceneParseError::invalid_envelope(
+            "",
+            format!(
+                "scene document must be a JSON object, not {}",
+                json_kind_phrase(root)
+            ),
+        ));
     };
 
-    if !matches!(member_value(members, "type"), Some(JsonValue::String(value)) if &**value == "excalidraw")
-    {
-        return Err(SceneParseError::invalid_envelope("/type"));
+    match member_value(members, "type") {
+        Some(JsonValue::String(value)) if &**value == "excalidraw" => {}
+        Some(JsonValue::String(value)) if &**value == "excalidrawlib" => {
+            return Err(SceneParseError::invalid_envelope(
+                "/type",
+                "this is an Excalidraw library (type \"excalidrawlib\"), not a scene document; \
+                 render a scene saved as an .excalidraw file instead",
+            ));
+        }
+        Some(JsonValue::String(value)) if &**value == "excalidraw/clipboard" => {
+            return Err(SceneParseError::invalid_envelope(
+                "/type",
+                "this is an Excalidraw clipboard payload (type \"excalidraw/clipboard\"), \
+                 not a scene document; paste it into Excalidraw and save the scene instead",
+            ));
+        }
+        Some(JsonValue::String(value)) => {
+            return Err(SceneParseError::invalid_envelope(
+                "/type",
+                format!("scene document type must be \"excalidraw\", not {value:?}"),
+            ));
+        }
+        Some(other) => {
+            return Err(SceneParseError::invalid_envelope(
+                "/type",
+                format!(
+                    "scene document type must be the string \"excalidraw\", not {}",
+                    json_kind_phrase(other)
+                ),
+            ));
+        }
+        None => {
+            return Err(SceneParseError::invalid_envelope(
+                "/type",
+                "scene document has no \"type\" member; expected \"excalidraw\"",
+            ));
+        }
     }
-    if !matches!(member_value(members, "version"), Some(JsonValue::Number(value)) if &**value == "2")
-    {
-        return Err(SceneParseError::invalid_envelope("/version"));
+    match member_value(members, "version") {
+        Some(JsonValue::Number(value)) if &**value == "2" => {}
+        Some(JsonValue::Number(value)) => {
+            return Err(SceneParseError::invalid_envelope(
+                "/version",
+                format!("scene envelope version {value} is not supported; only version 2 is"),
+            ));
+        }
+        Some(other) => {
+            return Err(SceneParseError::invalid_envelope(
+                "/version",
+                format!(
+                    "scene envelope version must be the number 2, not {}",
+                    json_kind_phrase(other)
+                ),
+            ));
+        }
+        None => {
+            return Err(SceneParseError::invalid_envelope(
+                "/version",
+                "scene document has no \"version\" member; expected envelope version 2",
+            ));
+        }
     }
-    if !matches!(member_value(members, "elements"), Some(JsonValue::Array(_))) {
-        return Err(SceneParseError::invalid_envelope("/elements"));
-    }
-    if !matches!(
-        member_value(members, "appState"),
-        Some(JsonValue::Object(_))
-    ) {
-        return Err(SceneParseError::invalid_envelope("/appState"));
-    }
-    if !matches!(member_value(members, "files"), Some(JsonValue::Object(_))) {
-        return Err(SceneParseError::invalid_envelope("/files"));
-    }
+    require_container(members, "elements", "/elements", "an array", |value| {
+        matches!(value, JsonValue::Array(_))
+    })?;
+    require_container(members, "appState", "/appState", "an object", |value| {
+        matches!(value, JsonValue::Object(_))
+    })?;
+    require_container(members, "files", "/files", "an object", |value| {
+        matches!(value, JsonValue::Object(_))
+    })?;
     Ok(())
+}
+
+/// Requires the root member `key` to be present and of the expected container
+/// kind, which `expected` names for the message.
+fn require_container(
+    members: &[JsonMember],
+    key: &str,
+    pointer: &str,
+    expected: &str,
+    accepts: impl FnOnce(&JsonValue) -> bool,
+) -> Result<(), SceneParseError> {
+    match member_value(members, key) {
+        Some(value) if accepts(value) => Ok(()),
+        Some(value) => Err(SceneParseError::invalid_envelope(
+            pointer,
+            format!(
+                "scene document {key:?} must be {expected}, not {}",
+                json_kind_phrase(value)
+            ),
+        )),
+        None => Err(SceneParseError::invalid_envelope(
+            pointer,
+            format!("scene document has no {key:?} member; expected {expected}"),
+        )),
+    }
+}
+
+/// The JSON kind of `value` as a message phrase: `an array`, `null`.
+fn json_kind_phrase(value: &JsonValue) -> &'static str {
+    match value {
+        JsonValue::Null => "null",
+        JsonValue::Bool(_) => "a boolean",
+        JsonValue::Number(_) => "a number",
+        JsonValue::String(_) => "a string",
+        JsonValue::Array(_) => "an array",
+        JsonValue::Object(_) => "an object",
+    }
 }
 
 fn source_field<'a, T>(

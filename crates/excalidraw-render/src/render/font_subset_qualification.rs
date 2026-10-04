@@ -1699,13 +1699,15 @@ fn layout_probe_detects_horizontal_advance_only_gpos() {
 
 /// The release-mode qualification set (#138, #141): every cell of the corpus
 /// derives, matches its pinned bytes and replays its canonical trace. It takes
-/// minutes even optimized, so the push gate leaves it `#[ignore]`d and the
-/// packaged-facade workflow lifts the gate with the `release-qualification`
-/// feature and no name filter, so a rename cannot drop it out of the run.
+/// minutes even optimized, so the push gate skips it and the packaged-facade
+/// workflow lifts the gate with `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`
+/// and no name filter, so a rename cannot drop it out of the run. Target
+/// evidence also requires the measurement it prints, so a skipped run cannot
+/// pass for a qualified one.
 #[test]
 #[cfg_attr(
-    not(feature = "release-qualification"),
-    ignore = "release-mode qualification set; run with `--features release-qualification`"
+    not(release_qualification),
+    ignore = "release-mode qualification set; run with EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1"
 )]
 fn complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces() {
     assert_complete_font_subset_qualification_corpus();

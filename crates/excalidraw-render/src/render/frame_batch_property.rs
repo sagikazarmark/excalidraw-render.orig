@@ -662,15 +662,15 @@ fn push_element(elements: &mut String, element: &str) {
 
 /// Every generated case renders each frame, in each format, once cold and once
 /// through a shared batch preparation across a ladder of resource limits: several
-/// hundred renders that take minutes unoptimized. The push gate therefore leaves
-/// it ignored; the packaged-facade workflow's native leg and the Dagger
-/// `packaging:qualification` check run it in `--release` with the
-/// `release-qualification` feature and no name filter, so a rename cannot drop
-/// it silently.
+/// hundred renders that take minutes unoptimized. The push gate therefore skips
+/// it; the packaged-facade workflow's native leg and the Dagger
+/// `packaging:qualification` check run it in `--release` with
+/// `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1` and no name filter, so a rename
+/// cannot drop it silently.
 #[test]
 #[cfg_attr(
-    not(feature = "release-qualification"),
-    ignore = "release-mode qualification set; run with `--features release-qualification`"
+    not(release_qualification),
+    ignore = "release-mode qualification set; run with EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1"
 )]
 fn frame_batch_rendering_matches_standalone_around_resource_limits() {
     assert_generated_cases(FIXED_SEED, RELEASE_CASES);

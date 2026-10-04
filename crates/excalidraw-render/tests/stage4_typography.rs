@@ -15,7 +15,7 @@ fn rotated_canvas_glyph_origins_match_the_reference_typography_crop() {
     let request = RenderRequest::builder(OutputFormat::Png)
         .padding(0.0)
         .include_background(false)
-        .frame_options(FrameOptions::new(true, true, false, false))
+        .frame_options(FrameOptions::default().with_name(false).with_outline(false))
         .build()
         .unwrap();
     let result = Renderer::new().render(&scene, &request).unwrap();
@@ -104,7 +104,7 @@ fn phase_control_scaled(font_size: f64, angle: f64, scale: f64, origin: [f64; 2]
         .padding(0.0)
         .include_background(false)
         .sizing(Sizing::Scale(scale))
-        .frame_options(FrameOptions::new(true, true, false, false))
+        .frame_options(FrameOptions::default().with_name(false).with_outline(false))
         .build()
         .unwrap();
     let result = Renderer::new().render(&scene, &request).unwrap();
@@ -116,7 +116,7 @@ fn phase_control_scaled(font_size: f64, angle: f64, scale: f64, origin: [f64; 2]
     assert_eq!((info.width, info.height), (512, 512));
     assert_eq!(info.color_type, png::ColorType::Rgba);
     rgba.truncate(info.buffer_size());
-    assert!(rgba.chunks_exact(4).any(|pixel| pixel[3] != 0));
+    assert!(rgba.as_chunks::<4>().0.iter().any(|pixel| pixel[3] != 0));
     rgba
 }
 
@@ -160,8 +160,10 @@ fn assert_phase_axis(font_size: f64, angle: f64, scale: f64, identical: [bool; 2
     for (axis, origin) in [[50.35, 300.1], [50.1, 300.35]].into_iter().enumerate() {
         let shifted = phase_control_scaled(font_size, angle, scale, origin);
         let changed = first
-            .chunks_exact(4)
-            .zip(shifted.chunks_exact(4))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(shifted.as_chunks::<4>().0.iter())
             .filter(|(left, right)| left != right)
             .count();
         assert_eq!(

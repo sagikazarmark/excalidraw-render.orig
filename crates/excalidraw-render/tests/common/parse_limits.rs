@@ -20,6 +20,7 @@ pub fn assert_parse_limit(
             configured,
             value_kind,
             measurement,
+            ..
         }) => {
             assert_eq!(*field, expected_field);
             assert_eq!(*configured, expected_configured);

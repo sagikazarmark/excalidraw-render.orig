@@ -251,7 +251,7 @@ fn packaged_public_facade_renders_discovered_frames_directly_and_lazily() {
             assert_eq!(entry.frame().ordinal(), expected_frame.ordinal());
             assert_eq!(direct.artifact().bytes(), lazy.artifact().bytes());
             assert_eq!(direct.report(), lazy.report());
-            assert_eq!(direct.profile_digest(), lazy.profile_digest());
+            assert_eq!(direct.profile_identity().profile_digest(), lazy.profile_identity().profile_digest());
         }
         assert!(cursor.next().is_none());
     }

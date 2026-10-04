@@ -378,13 +378,15 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
     let pixels = match info.color_type {
         png::ColorType::Rgba => bytes,
         png::ColorType::Rgb => bytes
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .flat_map(|p| [p[0], p[1], p[2], 255])
             .collect(),
         _ => panic!("reference PNG type"),
     };
     let image = CanonicalRgba8::new(info.width, info.height, pixels).unwrap();
-    assert!(image.rgba().chunks_exact(4).all(|p| p[3] == 255));
+    assert!(image.rgba().as_chunks::<4>().0.iter().all(|p| p[3] == 255));
     image
 }
 fn extent(image: &CanonicalRgba8) -> (u32, u32) {
@@ -519,7 +521,7 @@ fn pdf_extent(bytes: &[u8], (w, h): (u32, u32)) {
 fn pdf_pixels(bytes: &[u8], (w, h): (u32, u32)) -> CanonicalRgba8 {
     // The helper verifies the bound image's native dimensions and sample count.
     let rgba = super::png_profile_contract::pdf_rgba(bytes, w as usize, h as usize);
-    assert!(rgba.chunks_exact(4).all(|p| p[3] == 255));
+    assert!(rgba.as_chunks::<4>().0.iter().all(|p| p[3] == 255));
     CanonicalRgba8::new(w, h, rgba).unwrap()
 }
 fn render(scene: &Value, format: OutputFormat) -> Vec<u8> {
@@ -556,7 +558,7 @@ fn check(row: &Value, rows: &[Value], inputs: &Value) {
                 super::png_profile_contract::assert_untagged_png(&bytes);
                 let actual = crate::common::raster::decode_png(&bytes).into_canonical();
                 assert_eq!(extent(&actual), expected_dims, "{id}: PNG layout");
-                assert!(actual.rgba().chunks_exact(4).all(|p| p[3] == 255));
+                assert!(actual.rgba().as_chunks::<4>().0.iter().all(|p| p[3] == 255));
                 for key in ["png", "svg_png"] {
                     let expected = raster(&decode(&row["reference"][key]));
                     let result = comparison(&expected, &actual).unwrap();

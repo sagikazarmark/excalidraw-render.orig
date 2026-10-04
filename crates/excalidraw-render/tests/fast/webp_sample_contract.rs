@@ -447,7 +447,11 @@ fn build(first: &[u8], later: &[u8], alpha: &str, codec: &str, config: usize) ->
 fn sample(v: &Value) -> Vec<u8> {
     let rgba = decode(&v["rgba_base64"]);
     assert_eq!(rgba.len(), n(&v["width"]) * n(&v["height"]) * 4);
-    assert!(rgba.chunks_exact(4).all(|p| p[3] != 0 || p[..3] == [0; 3]));
+    assert!(rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .all(|p| p[3] != 0 || p[..3] == [0; 3]));
     let decoded = crate::common::raster::decode_png(&decode(&v["png"]));
     assert_eq!(
         (decoded.width as usize, decoded.height as usize),
@@ -457,7 +461,7 @@ fn sample(v: &Value) -> Vec<u8> {
     if let Some(composites) = v.get("composites") {
         for bg in ["black", "white"] {
             let opaque = sample(&composites[bg]);
-            assert!(opaque.chunks_exact(4).all(|p| p[3] == 255));
+            assert!(opaque.as_chunks::<4>().0.iter().all(|p| p[3] == 255));
         }
     }
     rgba
@@ -465,8 +469,10 @@ fn sample(v: &Value) -> Vec<u8> {
 fn exact_alpha(actual: &[u8], expected: &[u8]) -> bool {
     actual.len() == expected.len()
         && actual
-            .chunks_exact(4)
-            .zip(expected.chunks_exact(4))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(expected.as_chunks::<4>().0.iter())
             .all(|(a, b)| a[3] == b[3] && (a[3] != 0 || a[..3] == [0; 3]))
 }
 fn canonical(b: &[u8]) -> CanonicalRgba8 {
@@ -499,7 +505,12 @@ fn differences(expected: &[u8], actual: &[u8]) -> String {
     let mut alpha = 0;
     let mut rgb = 0;
     let mut maximum = 0;
-    for (a, b) in expected.chunks_exact(4).zip(actual.chunks_exact(4)) {
+    for (a, b) in expected
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(actual.as_chunks::<4>().0.iter())
+    {
         alpha += usize::from(a[3] != b[3]);
         rgb += usize::from(a[..3] != b[..3] && (a[3] != 0 || b[3] != 0));
         for c in 0..3 {
@@ -630,7 +641,12 @@ fn evidence() -> (Value, Value) {
             &compose(&original, f["shape"] == "subrect", [0; 4], false)
         ));
         if f["codec"] == "lossless" {
-            for (a, b) in straight.chunks_exact(4).zip(original.chunks_exact(4)) {
+            for (a, b) in straight
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(original.as_chunks::<4>().0.iter())
+            {
                 if b[3] != 0 {
                     assert_eq!(a, b);
                 }
@@ -1028,7 +1044,12 @@ fn measured_view(name: &str, expected: &[u8], actual: &[u8], exact: bool) -> Val
     let mut changed = 0;
     let mut visible = 0;
     let mut maximum = 0;
-    for (a, b) in expected.chunks_exact(4).zip(actual.chunks_exact(4)) {
+    for (a, b) in expected
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(actual.as_chunks::<4>().0.iter())
+    {
         changed += usize::from(a != b);
         visible += usize::from(a[..3] != b[..3] && (a[3] != 0 || b[3] != 0));
         for c in 0..3 {
@@ -1076,12 +1097,18 @@ fn measurement(
         super::png_profile_contract::pdf_rgba(bytes, 9, 7)
     };
     let authored = packed(&row["expected_first_transparent"]);
-    let alpha = |b: &[u8]| b.chunks_exact(4).map(|p| p[3]).collect::<Vec<_>>();
+    let alpha = |b: &[u8]| {
+        b.as_chunks::<4>()
+            .0
+            .iter()
+            .map(|p| p[3])
+            .collect::<Vec<_>>()
+    };
     let (expected_alpha, actual_alpha) = (alpha(&authored), alpha(&actual));
     measured["actual_rgba_sha256"] = json!(hash(&actual));
     measured["alpha"] = json!({"expected_sha256":hash(&expected_alpha),"actual_sha256":hash(&actual_alpha),
         "mismatched_pixels":expected_alpha.iter().zip(&actual_alpha).filter(|(a,b)|a!=b).count(),
-        "nonzero_invisible_pixels":actual.chunks_exact(4).filter(|p|p[3]==0 && p[..3]!=[0;3]).count(),
+        "nonzero_invisible_pixels":actual.as_chunks::<4>().0.iter().filter(|p|p[3]==0 && p[..3]!=[0;3]).count(),
         "passed":exact_alpha(&actual,&authored)});
     let mut views = if format == OutputFormat::Png {
         let reference = crate::common::raster::decode_png(&decode(&row["reference"]["png"]));
@@ -1605,8 +1632,10 @@ fn negative_helpers(record: &Value) {
     });
     rejects(|| {
         super::png_profile_contract::pdf_rgba(&replace(&pdf, "/SMask ", "/Dummy "), 9, 7)
-            .chunks_exact(4)
-            .zip(expected.chunks_exact(4))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(expected.as_chunks::<4>().0.iter())
             .for_each(|(a, b)| assert_eq!(a[3], b[3]));
     });
     rejects(|| {

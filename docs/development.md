@@ -36,17 +36,24 @@ release their fonts come from as semver build metadata, e.g.
 comparing versions, so a new Excalidraw release still needs a version bump, and
 dependency requirements name only the part before the `+`.
 
-Every dependency is pinned to an exact version (`=x.y.z`), because artifact
-bytes are the product and any transitive bump can change them. For a project
-that depends on the library this has consequences. Cargo resolves one version
-per semver-compatible range, so within each such range the pins decide which
-version of a shared crate (`serde`, `png`, `resvg`, ...) your whole build uses:
-a requirement of yours in the same range that the pinned version cannot satisfy
+Dependencies whose code computes artifact bytes (decoders, shaping,
+subsetting, rasterization, PDF writing, compression, number formatting) are
+pinned to exact versions (`=x.y.z`), because any bump can change output. For a
+project that depends on the library, Cargo resolves one version per
+semver-compatible range, so within each such range those pins decide which
+version of a shared crate (`png`, `resvg`, ...) your whole build uses: a
+requirement of yours in the same range that the pinned version cannot satisfy
 fails to resolve, while one in a different range builds a second copy alongside
 it. A patch release of a pinned crate only reaches you through an
 `excalidraw-render` release that moves the pin and re-verifies the artifact
-bytes. The workspace and its published crates also declare `rust-version`, the
-toolchain the release gates build with; older compilers are not exercised.
+bytes. Crates that cannot change output (`serde`, `base64`, digests, CRC) take
+caret requirements so they do not constrain applications, and `serde_json` is
+a test-only dependency of the library; `Cargo.lock` still fixes every version
+the gates test.
+
+The published crates declare `rust-version = "1.92"`, the oldest compiler they
+support; the `lint:msrv` Dagger check compiles the renderer and CLI with it.
+The gates otherwise build with the toolchain pinned in `dagger.toml` (1.97.1).
 
 ## Run
 
@@ -60,7 +67,9 @@ For scene export, `INPUT` and `OUTPUT` may be `-` for standard input and artifac
 standard output. Frame batches accept standard input but require an output
 directory. The scene output format is inferred from a recognized path extension
 or selected with `--format`; the default padding is 10 logical pixels. Run
-`excalidraw-render --help` for the complete request and reporting controls.
+`excalidraw-render --help` and `excalidraw-render help frames` for the complete
+request and reporting controls. `--max-dimension` applies to PNG and PDF only;
+SVG output ignores it with a warning.
 For large scenes, prefer `--max-dimension <value>` for PNG and PDF output;
 the default scale of 1 preserves the full logical dimensions and may exceed the
 raster-surface or PDF page-size limits.
@@ -73,8 +82,17 @@ publication is stage-all by default; `--allow-partial` publishes independent
 successes while retaining a nonzero exit status for any failed frame.
 
 `--list` is a dry run: it reports the ordinal, kind, name, and derived basename
-of every frame the same selection would export, and writes nothing. `--output`
-and `--format` are required only outside `--list`.
+of every frame the same selection would export, and writes nothing. An empty
+selection succeeds, with a `note:` line in human mode. `--output` and `--format`
+are required only outside `--list`: the output is a directory, so there is no
+extension to infer the format from.
+
+The human report (the default, on stderr) prints one line per distinct
+diagnostic, `warning: MESSAGE [CODE] (N occurrences; elements ...)`, and hides
+informational ones unless `-v, --verbose` is given. A failure prints
+`error: MESSAGE [CODE]` with the path and operating-system reason where one
+applies, followed by `hint:` lines suggesting a fix. Use `--report-format json`
+for every diagnostic occurrence in a stable, machine-readable form.
 
 ```sh
 target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.svg
@@ -252,16 +270,19 @@ and the frame batch property test
 (`render::frame_batch_property::frame_batch_rendering_matches_standalone_around_resource_limits`).
 The `Packaged public facade` workflow's native leg and the
 `packaging:qualification` Dagger check run the complete renderer unit target in
-`--release` with the feature that lifts their `#[ignore]`, without a name
+`--release` with the environment variable that admits them, without a name
 filter, so a renamed test cannot drop out silently:
 
 ```sh
-cargo test --locked --release -p excalidraw-render --features release-qualification --lib
+EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1 cargo test --locked --release -p excalidraw-render --lib
 ```
 
-Both tests are `#[ignore]`d unless `release-qualification` is enabled, so a
-plain `cargo test` or `cargo nextest run` leaves them to the release-mode run
-without naming them.
+Both tests are `#[ignore]`d unless `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`,
+so a plain `cargo test` or `cargo nextest run` leaves them to the release-mode
+run without naming them. The renderer's build script turns the variable into the
+`release_qualification` cfg, so changing it rebuilds only the renderer; it is
+not a Cargo feature, so it stays out of the published interface. Any value other
+than unset, empty, `0` or `1` fails the build.
 
 ## Canonical CI and evidence generation
 

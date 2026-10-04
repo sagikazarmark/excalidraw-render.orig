@@ -3,17 +3,24 @@ name = "excalidraw-fonts"
 version = "0.1.0+excalidraw.0.18.1"
 edition.workspace = true
 rust-version.workspace = true
-description = "Pinned Excalidraw fonts and complete font catalog with optional CJK payloads"
-license.workspace = true
+description = "Font payloads and catalog for excalidraw-render (internal; no stability guarantees outside it)"
+# The crate's code is MIT OR Apache-2.0; the bundled fonts are OFL-1.1 except
+# Comic Shanns (MIT). LICENSE-BUNDLE.txt carries every license and notice.
+license = "(MIT OR Apache-2.0) AND OFL-1.1 AND MIT"
 repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/excalidraw-fonts"
+readme = "README.md"
+keywords = ["excalidraw", "fonts"]
+categories = ["graphics"]
 include = [
     "/src/",
-    "/tests/",
     "/catalog/",
     "/fonts/",
     "/license-parts/",
     "/LICENSE-BUNDLE.txt",
     "/LICENSE-BUNDLE.sha256",
+    "/README.md",
 ]
 
 [lints]

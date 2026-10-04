@@ -147,7 +147,7 @@ fn assert_equivalent(source: &Value, clean: &Value, format: OutputFormat, rows: 
         serde_json::to_vec(second.report()).unwrap()
     );
     let metadata = RenderRequest::builder(format)
-        .metadata_options(MetadataOptions::new(true, false, false))
+        .metadata_options(MetadataOptions::default().with_embedded_scene(true))
         .build()
         .unwrap();
     let embedded = Renderer::new().render(&document, &metadata).unwrap();

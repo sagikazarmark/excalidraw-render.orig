@@ -150,7 +150,7 @@ fn check(groups: &[&str], formats: &[OutputFormat], judge: Judge) -> usize {
             };
             match judge {
                 Judge::Alpha => assert!(
-                    actual.rgba().chunks_exact(4).all(|p| p[3] == 255),
+                    actual.rgba().as_chunks::<4>().0.iter().all(|p| p[3] == 255),
                     "{id} {format:?}: JPEG is opaque"
                 ),
                 Judge::Views => {

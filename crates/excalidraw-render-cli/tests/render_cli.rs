@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use excalidraw_render::{CompatibilityRevision, Renderer};
+use excalidraw_render::Renderer;
 use tempfile::TempDir;
 
 #[test]
@@ -23,6 +23,363 @@ fn help_is_successful_stdout_for_scene_and_frame_commands() {
         assert!(String::from_utf8_lossy(&output.stdout).contains("Usage:"));
         assert!(output.stderr.is_empty(), "{args:?}: {output:?}");
     }
+}
+
+#[test]
+fn help_describes_the_commands_with_examples() {
+    let scene = cli(&["--help"]);
+    assert!(scene.status.success());
+    let scene = String::from_utf8(scene.stdout).expect("help is UTF-8");
+    assert!(scene.contains("Usage: excalidraw-render [OPTIONS] [INPUT]"));
+    assert!(scene.contains("frames"), "{scene}");
+    assert!(scene.contains("Examples:"), "{scene}");
+    assert!(scene.contains("excalidraw-render drawing.excalidraw -o drawing.png --scale 2"));
+
+    for args in [vec!["help", "frames"], vec!["frames", "--help"]] {
+        let frames = cli(&args);
+        assert!(frames.status.success(), "{args:?}: {frames:?}");
+        let frames = String::from_utf8(frames.stdout).expect("help is UTF-8");
+        assert!(
+            frames.contains("Usage: excalidraw-render frames [OPTIONS]"),
+            "{args:?}: {frames}"
+        );
+        assert!(frames.contains("--name-regex"), "{frames}");
+        assert!(frames.contains("Examples:"), "{frames}");
+    }
+
+    let bare_help = cli(&["help"]);
+    assert!(bare_help.status.success());
+    assert!(String::from_utf8_lossy(&bare_help.stdout).contains("Usage:"));
+
+    // No arguments at all is a usage error that shows the help.
+    let nothing = cli(&[]);
+    assert_eq!(nothing.status.code(), Some(2));
+    assert!(nothing.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&nothing.stderr).contains("Usage:"));
+}
+
+#[test]
+fn unknown_options_and_short_version_use_the_command_grammar() {
+    let version = cli(&["-V"]);
+    assert!(version.status.success(), "{version:?}");
+    assert!(
+        String::from_utf8_lossy(&version.stdout).starts_with(&format!(
+            "excalidraw-render {}\n",
+            env!("CARGO_PKG_VERSION")
+        ))
+    );
+
+    for args in [vec!["--bogus"], vec!["scene.excalidraw", "--bogus"]] {
+        let bogus = cli(&args);
+        assert_eq!(bogus.status.code(), Some(2), "{args:?}");
+        let stderr = String::from_utf8_lossy(&bogus.stderr);
+        assert!(
+            stderr.starts_with(
+                "error: unexpected argument '--bogus' found [cli.invalid-arguments]\n"
+            ),
+            "{args:?}: {stderr}"
+        );
+        assert!(stderr.contains("Usage:"), "{stderr}");
+    }
+
+    let frames_bogus = cli(&["frames", "scene.excalidraw", "--padding", "3"]);
+    assert_eq!(frames_bogus.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&frames_bogus.stderr)
+        .starts_with("error: unexpected argument '--padding' found [cli.invalid-arguments]\n"));
+}
+
+#[test]
+fn a_scene_file_named_like_the_subcommand_stays_addressable() {
+    let scratch = temp_directory_named("frames-named-scene");
+    let temp = scratch.path();
+    fs::copy(corpus_scene("basic-shapes.excalidraw"), temp.join("frames"))
+        .expect("copy scene named frames");
+    for (args, output) in [
+        (vec!["./frames", "-o", "dot.svg"], "dot.svg"),
+        (vec!["-o", "dashes.svg", "--", "frames"], "dashes.svg"),
+    ] {
+        let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+            .current_dir(temp)
+            .args(&args)
+            .output()
+            .expect("render the scene named frames");
+        assert!(result.status.success(), "{args:?}: {result:?}");
+        assert!(temp.join(output).is_file(), "{args:?}");
+    }
+}
+
+#[test]
+fn human_errors_name_the_path_the_reason_and_the_fix() {
+    let scratch = temp_directory_named("human-errors");
+    let temp = scratch.path();
+
+    let missing = temp.join("missing.excalidraw");
+    let reason = fs::File::open(&missing).expect_err("the input is missing");
+    let result = cli(&[missing.to_str().unwrap(), "-o", "x.svg"]);
+    assert_eq!(result.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: cannot open input '{}': {reason} [cli.input-read-failed]\n",
+            missing.display()
+        )
+    );
+
+    let existing = temp.join("existing.svg");
+    fs::write(&existing, b"old").expect("create existing output");
+    let result = render_command(&existing)
+        .output()
+        .expect("render over output");
+    assert_eq!(result.status.code(), Some(2));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: output '{}' already exists [cli.destination-exists]\nhint: use --force to overwrite it\n",
+            existing.display()
+        )
+    );
+
+    let nested = temp.join("no-such-directory").join("out.svg");
+    let result = render_command(&nested)
+        .output()
+        .expect("render into a missing directory");
+    assert_eq!(result.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains(&format!(
+            "\nerror: cannot create output '{}': ",
+            nested.display()
+        )),
+        "{stderr}"
+    );
+    assert!(stderr.contains("[cli.output-write-failed]\n"), "{stderr}");
+    assert!(
+        stderr.contains(&format!(
+            "hint: directory '{}' does not exist",
+            temp.join("no-such-directory").display()
+        )),
+        "{stderr}"
+    );
+
+    let broken = temp.join("broken.excalidraw");
+    fs::write(
+        &broken,
+        b"{\"type\":\"excalidraw\",\n  \"version\":2,\n  \"elements\":[1,,]}",
+    )
+    .expect("write broken JSON");
+    let result = cli(&[broken.to_str().unwrap(), "-o", "-", "-f", "svg"]);
+    assert_eq!(result.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: cannot parse '{}': scene document is not valid JSON at line 3, column 17 [scene.invalid-json]\n",
+            broken.display()
+        )
+    );
+
+    let no_files = temp.join("no-files.excalidraw");
+    fs::write(
+        &no_files,
+        br#"{"type":"excalidraw","version":2,"elements":[],"appState":{}}"#,
+    )
+    .expect("write a scene without a files map");
+    let result = cli(&[no_files.to_str().unwrap(), "-o", "-", "-f", "svg"]);
+    assert_eq!(result.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("[scene.invalid-envelope]\nhint: ")
+            && stderr.contains("add \"files\": {} to the scene"),
+        "{stderr}"
+    );
+
+    let huge = temp.join("huge.png");
+    let result = render_command(&huge)
+        .args(["--scale", "20"])
+        .output()
+        .expect("render an oversized PNG");
+    assert_eq!(result.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("\nerror: ") && stderr.contains("[resource.raster-surface-exceeded]\n"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("hint: use --max-dimension"), "{stderr}");
+
+    // `none` keeps failures to one line, without hints.
+    let result = render_command(&existing)
+        .args(["--report-format", "none"])
+        .output()
+        .expect("render over output without a report");
+    assert_eq!(result.status.code(), Some(2));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: output '{}' already exists [cli.destination-exists]\n",
+            existing.display()
+        )
+    );
+}
+
+#[test]
+fn image_inputs_are_recognized_and_explained() {
+    let scratch = temp_directory_named("image-inputs");
+    let temp = scratch.path();
+    let png = temp.join("embedded.png");
+    let svg = temp.join("plain.svg");
+    render_command(&png)
+        .arg("--embed-scene")
+        .output()
+        .expect("render a PNG with an embedded scene");
+    render_command(&svg).output().expect("render an SVG");
+
+    for (image, kind, code) in [
+        (&png, "PNG", "scene.invalid-utf8"),
+        (&svg, "SVG", "scene.invalid-json"),
+    ] {
+        let result = cli(&[image.to_str().unwrap(), "-o", "-", "-f", "svg"]);
+        assert_eq!(result.status.code(), Some(1), "{kind}");
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(
+            stderr.starts_with(&format!(
+                "error: cannot parse '{}': it is {} {kind} image, not an Excalidraw scene [{code}]\n",
+                image.display(),
+                if kind == "SVG" { "an" } else { "a" }
+            )),
+            "{stderr}"
+        );
+        assert!(
+            stderr.contains("hint: PNG and SVG input is not supported"),
+            "{stderr}"
+        );
+
+        // The machine-readable report keeps the library's error.
+        let json = cli(&[
+            image.to_str().unwrap(),
+            "-o",
+            "-",
+            "-f",
+            "svg",
+            "--report-format",
+            "json",
+        ]);
+        let report: serde_json::Value =
+            serde_json::from_slice(&json.stderr).expect("JSON failure report");
+        assert_eq!(report["error"]["code"], code);
+    }
+}
+
+#[test]
+fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
+    let scratch = temp_directory_named("grouped-diagnostics");
+    let temp = scratch.path();
+    let input = temp.join("diagnosed.excalidraw");
+    fs::write(
+        &input,
+        r#"{"type":"excalidraw","version":2,"elements":[
+            {"id":"ar","type":"text","x":0,"y":0,"width":100,"height":35,"text":"مرحبا بالعالم","originalText":"مرحبا بالعالم","fontSize":28,"fontFamily":5,"lineHeight":1.25,"updated":1},
+            {"id":"helvetica","type":"text","x":0,"y":50,"width":100,"height":35,"text":"Hello","originalText":"Hello","fontSize":28,"fontFamily":2,"lineHeight":1.25,"updated":1},
+            {"id":"a","type":"rectangle","x":0,"y":100,"width":10,"height":10},
+            {"id":"b","type":"rectangle","x":20,"y":100,"width":10,"height":10},
+            {"id":"c","type":"rectangle","x":40,"y":100,"width":10,"height":10},
+            {"id":"d","type":"rectangle","x":60,"y":100,"width":10,"height":10},
+            {"id":"e","type":"rectangle","x":80,"y":100,"width":10,"height":10}
+        ],"appState":{},"files":{}}"#,
+    )
+    .expect("write diagnosed scene");
+
+    let result = cli(&[input.to_str().unwrap(), "-o", "-", "-f", "svg"]);
+    assert!(result.status.success(), "{result:?}");
+    let stderr = String::from_utf8(result.stderr).expect("report is UTF-8");
+    let lines = stderr.lines().collect::<Vec<_>>();
+    assert_eq!(lines.len(), 2, "{stderr}");
+    assert!(
+        lines.iter().any(|line| line.starts_with("warning: ")
+            && line.contains(
+                "[font.missing-glyph] (12 occurrences; element ar; characters U+0645, U+0631, "
+            )
+            && line.ends_with(" more)")),
+        "{stderr}"
+    );
+    assert!(
+        lines.iter().any(|line| line.starts_with("warning: ")
+            && line.ends_with(
+                "[normalization.missing-timestamp] (5 occurrences; elements a, b, c and 2 more)"
+            )),
+        "{stderr}"
+    );
+    assert!(
+        !stderr.contains("font.liberation-sans-substituted"),
+        "{stderr}"
+    );
+
+    let verbose = cli(&[input.to_str().unwrap(), "-o", "-", "-f", "svg", "--verbose"]);
+    let verbose = String::from_utf8(verbose.stderr).expect("report is UTF-8");
+    assert!(
+        verbose.lines().any(|line| line.starts_with("info: ")
+            && line.ends_with("[font.liberation-sans-substituted] (element helvetica)")),
+        "{verbose}"
+    );
+
+    // JSON keeps every occurrence.
+    let json = cli(&[
+        input.to_str().unwrap(),
+        "-o",
+        "-",
+        "-f",
+        "svg",
+        "--report-format",
+        "json",
+    ]);
+    let report: serde_json::Value = serde_json::from_slice(&json.stderr).expect("JSON report");
+    assert_eq!(report["diagnostics"].as_array().map(Vec::len), Some(18));
+}
+
+#[test]
+fn max_dimension_on_svg_output_is_reported_as_ignored() {
+    let result = cli(&[
+        corpus_scene("basic-shapes.excalidraw").to_str().unwrap(),
+        "-o",
+        "-",
+        "-f",
+        "svg",
+        "--max-dimension",
+        "100",
+    ]);
+    assert!(result.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr).lines().next(),
+        Some("warning: --max-dimension applies only to PNG and PDF output and was ignored; use --scale to resize SVG")
+    );
+
+    for args in [
+        vec!["-f", "png"],
+        vec!["-f", "svg", "--report-format", "json"],
+    ] {
+        let result = cli(&[
+            &[
+                corpus_scene("basic-shapes.excalidraw").to_str().unwrap(),
+                "-o",
+                "-",
+                "--max-dimension",
+                "100",
+            ][..],
+            &args,
+        ]
+        .concat());
+        assert!(result.status.success());
+        assert!(
+            !String::from_utf8_lossy(&result.stderr).contains("--max-dimension"),
+            "{args:?}"
+        );
+    }
+}
+
+/// Runs the CLI with `args` and captures its output.
+fn cli(args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(args)
+        .output()
+        .expect("run excalidraw-render")
 }
 
 #[test]
@@ -141,7 +498,7 @@ fn validation_uses_normative_failure_order_and_stable_exit_statuses() {
         .output()
         .expect("run invalid none-mode command");
     assert_eq!(invalid_none.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&invalid_none.stderr).contains("cli cli.invalid-arguments:"));
+    assert!(String::from_utf8_lossy(&invalid_none.stderr).contains("[cli.invalid-arguments]"));
     assert_failure(
         &[
             fixture.to_str().unwrap(),
@@ -305,7 +662,7 @@ fn validation_uses_normative_failure_order_and_stable_exit_statuses() {
         .expect("run none-mode failure");
     assert_eq!(none.status.code(), Some(1));
     assert!(serde_json::from_slice::<serde_json::Value>(&none.stderr).is_err());
-    assert!(String::from_utf8_lossy(&none.stderr).contains("cli cli.input-read-failed:"));
+    assert!(String::from_utf8_lossy(&none.stderr).contains("[cli.input-read-failed]"));
 }
 
 #[test]
@@ -760,9 +1117,7 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
     assert_eq!(report["compatibility_revision"], 1);
     assert_eq!(
         report["reference_profile_digest"],
-        Renderer::frame_profile_identity(CompatibilityRevision::REVISION_1)
-            .expect("frame profile")
-            .profile_digest()
+        Renderer::new().frame_profile_identity().profile_digest()
     );
     assert_eq!(report["frames"].as_array().map(Vec::len), Some(3));
     assert_eq!(report["frames"][0]["ordinal"], 1);
@@ -813,6 +1168,32 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
     let empty_report: serde_json::Value =
         serde_json::from_slice(&empty.stderr).expect("empty frame list JSON report");
     assert_eq!(empty_report["frames"].as_array().map(Vec::len), Some(0));
+
+    // A human listing says so explicitly instead of printing nothing.
+    let empty_human = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .args(["--list", "--name-regex", "^Missing$"])
+        .output()
+        .expect("run empty human frame listing");
+    assert!(empty_human.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&empty_human.stderr),
+        "note: no frames match --name-regex '^Missing$'\n"
+    );
+    let frameless = temp.join("frameless.excalidraw");
+    fs::copy(corpus_scene("basic-shapes.excalidraw"), &frameless).expect("copy frameless scene");
+    let frameless = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&frameless)
+        .arg("--list")
+        .output()
+        .expect("run frameless listing");
+    assert!(frameless.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&frameless.stderr),
+        "note: the scene has no frames\n"
+    );
 
     let suppressed = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .arg("frames")
@@ -922,9 +1303,7 @@ fn frames_command_filters_names_and_writes_one_deterministically_named_artifact_
     );
     assert_eq!(
         report["reference_profile_digest"],
-        Renderer::frame_profile_identity(CompatibilityRevision::REVISION_1)
-            .expect("frame profile")
-            .profile_digest()
+        Renderer::new().frame_profile_identity().profile_digest()
     );
 
     let no_match_output = temp.join("no-match");
@@ -1028,7 +1407,16 @@ fn frame_batches_are_stage_all_by_default_and_partial_only_when_requested() {
         .expect("run human collision report");
     assert_eq!(human.status.code(), Some(1));
     let human = String::from_utf8(human.stderr).expect("human report is UTF-8");
-    assert!(human.contains("cli cli.destination-exists: frame 1 ("));
+    assert!(human.contains("error: frame 1: output '"), "{human}");
+    assert!(
+        human.contains("already exists [cli.destination-exists]\n"),
+        "{human}"
+    );
+    assert_eq!(
+        human.matches("hint: use --force to overwrite").count(),
+        1,
+        "{human}"
+    );
     assert!(!human.contains("frame-batch-"));
 
     let none = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
@@ -1041,7 +1429,11 @@ fn frame_batches_are_stage_all_by_default_and_partial_only_when_requested() {
         .expect("run suppressed collision report");
     assert_eq!(none.status.code(), Some(1));
     let none = String::from_utf8(none.stderr).expect("none report is UTF-8");
-    assert!(none.contains("cli cli.destination-exists: output destination already exists"));
+    assert!(
+        none.contains("already exists [cli.destination-exists]\n"),
+        "{none}"
+    );
+    assert_eq!(none.lines().count(), 1, "{none}");
     assert!(!none.contains("frame-batch-"));
 
     let missing_asset = temp.join("missing-asset.bin");

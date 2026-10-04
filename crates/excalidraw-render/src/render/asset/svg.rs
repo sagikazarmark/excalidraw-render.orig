@@ -90,8 +90,9 @@ pub(super) enum NestedAdmission {
 #[derive(Default)]
 struct NestedAccounting {
     admissions: Vec<NestedAdmission>,
-    // Recovery depends on remaining recursion depth, unlike source identity.
-    sanitized_svgs: BTreeMap<([u8; 32], u32), Arc<SanitizedSvg>>,
+    // Recovery depends on remaining recursion depth and element nesting,
+    // unlike source identity.
+    sanitized_svgs: BTreeMap<([u8; 32], u32, usize), Arc<SanitizedSvg>>,
     charged_validation_work: Vec<[u8; 32]>,
     asset_entries: u64,
     asset_bytes: u64,
@@ -121,6 +122,7 @@ pub(super) fn sanitize(
         revision,
         format,
         0,
+        MAX_ELEMENT_DEPTH + 1,
         shared_rasters,
         pending_rasters,
         transact,
@@ -137,6 +139,7 @@ fn sanitize_at(
     revision: CompatibilityRevision,
     format: OutputFormat,
     depth: u32,
+    max_open_elements: usize,
     shared_rasters: &BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
     pending_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
     transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
@@ -148,7 +151,7 @@ fn sanitize_at(
         text,
         mut removals,
         source_nodes,
-    } = remove_dtd_and_entities(&text)?;
+    } = remove_dtd_and_entities(&text, max_open_elements)?;
     let mut failures = Vec::new();
     let mut media_claims = Vec::new();
     let document = roxmltree::Document::parse(&text).map_err(|_| ResolveError::SvgDecodeFailed)?;
@@ -297,6 +300,7 @@ fn sanitize_at(
         revision,
         format,
         depth,
+        max_open_elements,
         shared_rasters,
         pending_rasters,
         transact,
@@ -538,6 +542,16 @@ fn allowed_static_style_property(property: &str) -> bool {
     )
 }
 
+/// Deepest admitted element nesting below the outermost nested root, counted
+/// on through nested data SVGs: a nested image's root sits one level below its
+/// image element. The XML parser, the sanitizer's walks and the viewer's
+/// (whose own 1,024-level ceiling skips text content and restarts in each
+/// nested image) all recurse per level, so this ceiling is what bounds their
+/// combined stack. It keeps the deepest admitted chain, nested text included,
+/// well inside a spawned thread's default 2 MiB stack. A linear scan checks it
+/// before any of them runs.
+const MAX_ELEMENT_DEPTH: usize = 256;
+
 struct SvgSource {
     text: String,
     removals: Vec<Removal>,
@@ -555,7 +569,12 @@ struct SourceNode {
 /// look) are removed. They become one temporary space solely in a location document,
 /// so even an entity-only text node keeps its source ordinal. A second, clean
 /// document drives semantic operations; no marker is ever serialized or painted.
-fn remove_dtd_and_entities(text: &str) -> Result<SvgSource, ResolveError> {
+/// More than `max_open_elements` elements open at once, the root included,
+/// reject the document before anything parses it recursively.
+fn remove_dtd_and_entities(
+    text: &str,
+    max_open_elements: usize,
+) -> Result<SvgSource, ResolveError> {
     let mut located = String::new();
     located
         .try_reserve_exact(text.len())
@@ -563,6 +582,8 @@ fn remove_dtd_and_entities(text: &str) -> Result<SvgSource, ResolveError> {
     let mut removals = Vec::new();
     let mut entities = Vec::new();
     let (mut cursor, mut in_tag, mut quote) = (0, false, None);
+    // Open elements, the root included, and the last character copied.
+    let (mut open_elements, mut previous) = (0_usize, '\0');
     while cursor < text.len() {
         let rest = &text[cursor..];
         if !in_tag {
@@ -635,10 +656,22 @@ fn remove_dtd_and_entities(text: &str) -> Result<SvgSource, ResolveError> {
                 quote = Some(ch);
             } else if quote.is_none() && ch == '>' {
                 in_tag = false;
+                if previous == '/' {
+                    open_elements = open_elements.saturating_sub(1);
+                }
             }
         } else if ch == '<' {
             in_tag = true;
+            if rest[1..].starts_with('/') {
+                open_elements = open_elements.saturating_sub(1);
+            } else {
+                open_elements += 1;
+                if open_elements > max_open_elements {
+                    return Err(ResolveError::SvgDecodeFailed);
+                }
+            }
         }
+        previous = ch;
         located.push(ch);
         cursor += ch.len_utf8();
     }
@@ -809,6 +842,7 @@ fn serialize_node(
     revision: CompatibilityRevision,
     format: OutputFormat,
     depth: u32,
+    max_open_elements: usize,
     shared_rasters: &BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
     pending_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
     transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
@@ -975,6 +1009,9 @@ fn serialize_node(
                 revision,
                 format,
                 depth,
+                // The nested root opens below every element open at its slot.
+                max_open_elements
+                    .saturating_sub(node.ancestors().filter(roxmltree::Node::is_element).count()),
                 ordinal,
                 u64::try_from(attribute_ordinal).unwrap_or(u64::MAX),
                 shared_rasters,
@@ -1104,6 +1141,7 @@ fn serialize_node(
                 revision,
                 format,
                 depth,
+                max_open_elements,
                 shared_rasters,
                 pending_rasters,
                 transact,
@@ -1450,6 +1488,7 @@ fn sanitize_nested_data_image(
     revision: CompatibilityRevision,
     format: OutputFormat,
     depth: u32,
+    max_open_elements: usize,
     slot_node_ordinal: u64,
     slot_attribute_ordinal: u64,
     shared_rasters: &BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
@@ -1520,7 +1559,7 @@ fn sanitize_nested_data_image(
     };
     let (media_type, canonical_bytes) = if looks_like_svg(&bytes) {
         let identity = super::semantic_identity(revision, super::MediaKind::Svg, &bytes);
-        let cache_key = (identity, attempted_depth);
+        let cache_key = (identity, attempted_depth, max_open_elements);
         let cached = nested_accounting.sanitized_svgs.get(&cache_key).cloned();
         let (nested, shared) = if let Some(nested) = cached {
             for admission in &nested.nested_admissions {
@@ -1545,6 +1584,7 @@ fn sanitize_nested_data_image(
                 revision,
                 format,
                 attempted_depth,
+                max_open_elements,
                 shared_rasters,
                 pending_rasters,
                 transact,
@@ -2722,6 +2762,61 @@ mod tests {
         )
         .expect("the default depth admits two levels");
         assert!(permitted.failures.is_empty());
+    }
+
+    /// A document whose deepest element is `levels` below its root.
+    fn svg_with_element_levels(levels: usize, filler: &str) -> String {
+        let groups = levels - 1;
+        format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10">{}{filler}<rect width="20" height="10"/>{}</svg>"#,
+            "<g>".repeat(groups),
+            "</g>".repeat(groups)
+        )
+    }
+
+    #[test]
+    fn the_element_depth_ceiling_refuses_the_document_before_parsing() {
+        let deepest = svg_with_element_levels(MAX_ELEMENT_DEPTH, "");
+        sanitize_default(deepest.as_bytes());
+        let deeper = svg_with_element_levels(MAX_ELEMENT_DEPTH + 1, "");
+        assert_eq!(
+            asset_error(sanitize_with(
+                deeper.as_bytes(),
+                &ResourceLimits::default(),
+                OutputFormat::Svg
+            )),
+            ResolveError::SvgDecodeFailed
+        );
+        // Closed, empty and commented-out elements, markup characters in
+        // attribute values and character data do not stay open.
+        let filler = concat!(
+            r#"<g></g><g/><g id="a>"/><g id='/>'></g><rect width="1" height="1" />"#,
+            "<!-- <g> --><![CDATA[<g>]]><?pi <g>?>&lt;g&gt;"
+        )
+        .repeat(MAX_ELEMENT_DEPTH);
+        sanitize_default(svg_with_element_levels(MAX_ELEMENT_DEPTH, &filler).as_bytes());
+    }
+
+    #[test]
+    fn the_element_depth_ceiling_spans_nested_data_svgs() {
+        // The image sits one level below the parent root and the nested root
+        // one level below the image, so the child keeps two levels fewer.
+        for (levels, admitted) in [
+            (MAX_ELEMENT_DEPTH - 2, true),
+            (MAX_ELEMENT_DEPTH - 1, false),
+        ] {
+            let child = svg_with_element_levels(levels, "");
+            let parent = svg_with_nested_data_image(child.as_bytes());
+            let sanitized = sanitize_default(parent.as_bytes());
+            if admitted {
+                assert!(sanitized.failures.is_empty(), "{levels} levels fit");
+            } else {
+                let [failure] = sanitized.failures.as_slice() else {
+                    panic!("one nesting failure: {:#?}", sanitized.failures);
+                };
+                assert_eq!(failure.error, ResolveError::SvgDecodeFailed);
+            }
+        }
     }
 
     #[test]

@@ -26,7 +26,9 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
     let rgba = match info.color_type {
         png::ColorType::Rgba => bytes,
         png::ColorType::Rgb => bytes
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .flat_map(|p| [p[0], p[1], p[2], 255])
             .collect(),
         _ => panic!("unexpected reference PNG color type"),
@@ -147,7 +149,7 @@ fn jpeg_headers_independently_confirm_color_sampling_and_scan_axes() {
                 assert_eq!(segment[5], components);
                 let factor = ((row["sampling"][0].as_u64().unwrap() << 4)
                     | row["sampling"][1].as_u64().unwrap()) as u8;
-                for (i, c) in segment[6..].chunks_exact(3).enumerate() {
+                for (i, c) in segment[6..].as_chunks::<3>().0.iter().enumerate() {
                     assert_eq!(c[0], if model == "rgb" { b"RGB"[i] } else { i as u8 });
                     assert_eq!(
                         c[1],
@@ -395,8 +397,13 @@ fn check(row: &Value) -> usize {
         ));
         assert_eq!((pixels.width(), pixels.height()), (width, height));
         assert_eq!((expected.width(), expected.height()), (width, height));
-        assert!(pixels.rgba().chunks_exact(4).all(|p| p[3] == 255));
-        assert!(expected.rgba().chunks_exact(4).all(|p| p[3] == 255));
+        assert!(pixels.rgba().as_chunks::<4>().0.iter().all(|p| p[3] == 255));
+        assert!(expected
+            .rgba()
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|p| p[3] == 255));
         let result = compare(
             &expected,
             &pixels,
@@ -484,7 +491,9 @@ pub(super) fn cmyk_component_probe_isolates_reference_truncation_from_decoder_ro
         let expected = raster(&decode(&row["reference"]["png"]));
         for rounding in [false, true] {
             let pixels = raw
-                .chunks_exact(4)
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .flat_map(|p| {
                     let f = |c| {
                         ((u32::from(c) * u32::from(p[3]) + if rounding { 127 } else { 0 }) / 255)
@@ -534,7 +543,9 @@ pub(super) fn ycck_unconverted_components_with_integer_color_conversion_match_re
         let raw = decoder.decode().unwrap();
         let expected = raster(&decode(&row["reference"]["png"]));
         let rgba = raw
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .flat_map(|p| {
                 let y = i32::from(p[0]);
                 let cb = i32::from(p[1]) - 128;
@@ -669,8 +680,10 @@ fn issue_187_minimized_noninterleaved_neutral_image_still_exposes_missing_rows()
                     )
                 };
                 let wrong = actual
-                    .chunks_exact(4)
-                    .filter(|p| *p != [96, 96, 96, 255])
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .filter(|p| **p != [96, 96, 96, 255])
                     .count();
                 let expected_wrong = match width {
                     1 => 0,

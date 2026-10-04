@@ -33,7 +33,9 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
     let rgba = match info.color_type {
         png::ColorType::Rgba => bytes,
         png::ColorType::Rgb => bytes
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .flat_map(|p| [p[0], p[1], p[2], 255])
             .collect(),
         _ => panic!("reference PNG layout"),
@@ -239,7 +241,12 @@ fn reconstruct_contract(record: &Value) {
                 row["height"].as_u64().unwrap()
             );
             assert!(
-                reference.rgba().chunks_exact(4).all(|p| p[3] == 255),
+                reference
+                    .rgba()
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .all(|p| p[3] == 255),
                 "{id}: {key} opacity"
             );
         }
@@ -412,7 +419,7 @@ fn check(row: &Value) {
             pdf_pixels(output.artifact().bytes(), width, height)
         };
         assert_eq!((actual.width(), actual.height()), (width, height));
-        assert!(actual.rgba().chunks_exact(4).all(|p| p[3] == 255));
+        assert!(actual.rgba().as_chunks::<4>().0.iter().all(|p| p[3] == 255));
         let reference = raster(&decode(
             &row["reference"][if format == OutputFormat::Png {
                 "png"
@@ -421,7 +428,12 @@ fn check(row: &Value) {
             }],
         ));
         assert_eq!((reference.width(), reference.height()), (width, height));
-        assert!(reference.rgba().chunks_exact(4).all(|p| p[3] == 255));
+        assert!(reference
+            .rgba()
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|p| p[3] == 255));
         if linear_gray(row) || (row["source_model"] == "gray" && row["signal"] == "opposite-model")
         {
             // Exact neutral anchors read from the pinned browser rasters, not
@@ -507,7 +519,9 @@ fn gray_precision_probe_discriminates_8bit_from_16bit() {
             let actual = CanonicalRgba8::new(
                 expected.width(),
                 expected.height(),
-                rgb.chunks_exact(3)
+                rgb.as_chunks::<3>()
+                    .0
+                    .iter()
                     .flat_map(|p| [p[0], p[1], p[2], 255])
                     .collect(),
             )
@@ -626,7 +640,13 @@ fn gray_profile_precision_handles_small_extents_and_scratch_boundaries() {
                     (actual.width(), actual.height()),
                     (u32::from(width), u32::from(height))
                 );
-                for (i, (pixel, &gray)) in actual.rgba().chunks_exact(4).zip(&expected).enumerate()
+                for (i, (pixel, &gray)) in actual
+                    .rgba()
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .zip(&expected)
+                    .enumerate()
                 {
                     assert_eq!(pixel[3], 255);
                     assert!(
@@ -1019,7 +1039,9 @@ fn recovery_gates_reject_changed_extents_and_non_rgba_png() {
                     let pixels = if color == png::ColorType::Rgb {
                         original
                             .rgba
-                            .chunks_exact(4)
+                            .as_chunks::<4>()
+                            .0
+                            .iter()
                             .flat_map(|p| p[..3].iter().copied())
                             .collect()
                     } else {

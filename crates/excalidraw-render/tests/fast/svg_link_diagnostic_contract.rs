@@ -211,10 +211,10 @@ fn forbidden_resource_contract_in_every_format() {
             json!({"outer":file("https://example.invalid/image.png")}),
         );
         let request = RenderRequest::builder(format)
-            .frame_options(excalidraw_render::FrameOptions::new(
-                true, true, false, true,
-            ))
-            .metadata_options(excalidraw_render::MetadataOptions::new(true, false, false))
+            .frame_options(excalidraw_render::FrameOptions::default().with_name(false))
+            .metadata_options(
+                excalidraw_render::MetadataOptions::default().with_embedded_scene(true),
+            )
             .build()
             .unwrap();
         let actual = checked(
@@ -241,7 +241,9 @@ fn forbidden_resource_contract_in_every_format() {
                 json!({"outer":file("https://example.invalid/image.png")}),
             );
             let request = RenderRequest::builder(format)
-                .metadata_options(excalidraw_render::MetadataOptions::new(true, false, false))
+                .metadata_options(
+                    excalidraw_render::MetadataOptions::default().with_embedded_scene(true),
+                )
                 .build()
                 .unwrap();
             let actual = checked(
@@ -853,7 +855,9 @@ fn unsafe_svg_artifact_oracles() {
             let clean = checked(&oracle, &request, json!([]));
             same_image(&actual, &clean);
             let metadata = RenderRequest::builder(format)
-                .metadata_options(excalidraw_render::MetadataOptions::new(true, false, false))
+                .metadata_options(
+                    excalidraw_render::MetadataOptions::default().with_embedded_scene(true),
+                )
                 .build()
                 .unwrap();
             let embedded = checked(&source, &metadata, json!([expected_row]));
@@ -915,9 +919,7 @@ fn unsafe_svg_owners_frames_and_prefixes() {
             }).collect();
             let request = RenderRequest::builder(format)
                 .supplemental_assets(assets.clone())
-                .frame_options(excalidraw_render::FrameOptions::new(
-                    true, true, false, true,
-                ))
+                .frame_options(excalidraw_render::FrameOptions::default().with_name(false))
                 .build()
                 .unwrap();
             let first = Renderer::new().render(&source, &request).unwrap();
@@ -1035,9 +1037,7 @@ fn linked_source(kind: &str, link: Value) -> Value {
 }
 fn link_request(format: OutputFormat) -> RenderRequest {
     RenderRequest::builder(format)
-        .frame_options(excalidraw_render::FrameOptions::new(
-            true, true, false, true,
-        ))
+        .frame_options(excalidraw_render::FrameOptions::default().with_name(false))
         .build()
         .unwrap()
 }
@@ -1249,7 +1249,9 @@ fn link_value_order_and_silence_contract() {
             report(error.report(), format, json!([link_row("z", 0)]));
         }
         let request = RenderRequest::builder(format)
-            .metadata_options(excalidraw_render::MetadataOptions::new(true, false, false))
+            .metadata_options(
+                excalidraw_render::MetadataOptions::default().with_embedded_scene(true),
+            )
             .build()
             .unwrap();
         let actual = checked(

@@ -130,7 +130,9 @@ impl PreparedSvg {
             usages.insert(id.clone(), usage.to_owned());
             // Move only the filter to an inner group. References to an original
             // group ID continue to refer to its unchanged outer native group.
-            let filter = node.attribute_node("filter").unwrap();
+            let filter = node
+                .attribute_node("filter")
+                .ok_or_else(|| invalid("missing SVG group filter"))?;
             let range = node.range();
             let open_end = range.start
                 + xml[range.clone()]
@@ -170,7 +172,9 @@ impl PreparedSvg {
                 && n.attribute("id")
                     .is_some_and(|id| self.usages.contains_key(id))
         }) {
-            let id = node.attribute("id").unwrap();
+            let id = node
+                .attribute("id")
+                .ok_or_else(|| invalid("missing prepared SVG group ID"))?;
             let replacement =
                 if let Some(closure) = closures.iter().find(|c| c.raster.node_id == id) {
                     self.render(closure)?
@@ -366,7 +370,10 @@ fn occurrence_resources(xml: &str) -> Result<String, FormatEncodeError> {
                 let mut changes = Vec::new();
                 changes.try_reserve(1).map_err(|_| memory())?;
                 changes.push((
-                    resource.attribute_node("id").unwrap().range(),
+                    resource
+                        .attribute_node("id")
+                        .ok_or_else(|| invalid("missing SVG resource ID"))?
+                        .range(),
                     format!("id=\"{unique}\""),
                 ));
                 for child in resource.descendants().filter(|n| n.is_element()) {
@@ -533,6 +540,9 @@ pub(super) fn namespace(
     }
     Ok(format!(
         "{base}{}_",
-        occupied.iter().position(|taken| !taken).unwrap()
+        occupied
+            .iter()
+            .position(|taken| !taken)
+            .ok_or_else(|| invalid("no free SVG ID namespace"))?
     ))
 }

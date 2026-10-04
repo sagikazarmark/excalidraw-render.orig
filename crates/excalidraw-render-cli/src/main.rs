@@ -6,24 +6,81 @@ use std::io::{self, Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
 
-use clap::{Parser, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use excalidraw_render::{
     license_bundle, ColorMode, CompatibilityDiagnostic, CompatibilityRevision, ErrorDescriptor,
     FrameOptions, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, RenderRequest,
     Renderer, ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
-    DEFAULT_COMPATIBILITY_REVISION,
 };
 use serde::{Serialize, Serializer};
 use sha2::{Digest, Sha256};
 use tempfile::TempPath;
 
 mod frames;
+mod human;
 
 use frames::{run_frames, FramesCli};
+use human::HumanReport;
 
 const EXIT_OPERATIONAL: u8 = 1;
 const EXIT_USAGE: u8 = 2;
 const MAX_SCENE_BYTES: u64 = 67_108_864;
+
+const LONG_ABOUT: &str = "\
+Render an Excalidraw scene document (.excalidraw JSON) to SVG, PNG, or PDF.
+
+Rendering needs no browser, Node.js, network access, or installed fonts. The
+output extension selects the format; use --format for standard output or other
+names. Compatibility diagnostics describing substitutions, omissions, and
+fallbacks are printed to stderr; use --report-format json for a machine-readable
+report.";
+
+const EXAMPLES: &str = "\
+Examples:
+  excalidraw-render drawing.excalidraw -o drawing.svg
+  excalidraw-render drawing.excalidraw -o drawing.png --scale 2
+  excalidraw-render drawing.excalidraw -o drawing.pdf --max-dimension 4096
+  excalidraw-render - -o - --format svg < drawing.excalidraw > drawing.svg
+  excalidraw-render frames drawing.excalidraw --list
+  excalidraw-render frames drawing.excalidraw -o frames --format png";
+
+const EXIT_STATUS: &str = "\
+Exit status:
+  0  the artifact was delivered (diagnostics may still have been reported)
+  1  reading, parsing, rendering, or writing failed
+  2  the command line or a request value is invalid";
+
+/// The whole command line: the default scene render, or a subcommand.
+#[derive(Parser)]
+#[command(
+    name = "excalidraw-render",
+    about = "Render Excalidraw scene documents to SVG, PNG, or PDF",
+    long_about = LONG_ABOUT,
+    after_help = EXAMPLES,
+    after_long_help = format!("{EXAMPLES}\n\n{EXIT_STATUS}"),
+    disable_version_flag = true,
+    args_conflicts_with_subcommands = true,
+    arg_required_else_help = true,
+    subcommand_value_name = "COMMAND",
+    subcommand_help_heading = "Commands"
+)]
+struct Invocation {
+    #[command(subcommand)]
+    command: Option<CliCommand>,
+    #[command(flatten)]
+    render: Cli,
+}
+
+#[derive(Subcommand)]
+enum CliCommand {
+    /// Render each selected frame to its own file in a directory
+    #[command(
+        long_about = frames::LONG_ABOUT,
+        after_help = frames::EXAMPLES,
+        disable_version_flag = true
+    )]
+    Frames(FramesCli),
+}
 
 #[derive(Clone, Copy, ValueEnum)]
 enum FormatArg {
@@ -44,79 +101,136 @@ impl From<FormatArg> for OutputFormat {
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, ValueEnum)]
 enum ReportFormat {
+    /// Readable diagnostics and errors
     #[default]
     Human,
+    /// One JSON report document
     Json,
+    /// Nothing on success; one error line on failure
     None,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
 enum PdfFallbackArg {
+    /// Rasterize content PDF cannot express as an isolated image
     AllowIsolated,
+    /// Fail instead of rasterizing
     Forbid,
 }
 
-#[derive(Parser)]
-#[command(
-    name = "excalidraw-render",
-    disable_version_flag = true,
-    about = "Render Excalidraw scene documents to SVG, PNG, or PDF",
-    after_help = "Use `excalidraw-render frames --help` to export each selected frame to a directory."
-)]
+const OUTPUT: &str = "Output";
+const RENDERING: &str = "Rendering";
+const FRAMES: &str = "Frames";
+const METADATA: &str = "Embedded metadata";
+const ASSETS: &str = "Image assets";
+const REPORTING: &str = "Reporting";
+const INFORMATION: &str = "Information";
+
+/// The default scene render and the standalone information commands.
+#[derive(Args)]
 struct Cli {
-    /// Input Excalidraw scene document, or - for stdin.
-    #[arg(allow_hyphen_values = true)]
+    /// Excalidraw scene file (.excalidraw JSON), or - to read standard input
     input: Option<String>,
 
-    /// Output path, or - for stdout.
-    #[arg(short, long, allow_hyphen_values = true)]
+    /// Output file, or - for standard output; a .svg, .png, or .pdf extension
+    /// selects the format
+    #[arg(
+        short,
+        long,
+        value_name = "FILE",
+        allow_hyphen_values = true,
+        help_heading = OUTPUT
+    )]
     output: Option<String>,
-
-    #[arg(short, long, value_enum)]
+    /// Output format; required for standard output or an unrecognized
+    /// extension
+    #[arg(short, long, value_enum, help_heading = OUTPUT)]
     format: Option<FormatArg>,
-    #[arg(long)]
-    compatibility_revision: Option<String>,
-    #[arg(long)]
-    no_background: bool,
-    #[arg(long)]
-    padding: Option<f64>,
-    #[arg(long, conflicts_with = "max_dimension")]
-    scale: Option<f64>,
-    #[arg(long)]
-    max_dimension: Option<f64>,
-    #[arg(long)]
-    dark_mode: bool,
-    #[arg(long)]
-    embed_scene: bool,
-    #[arg(long)]
-    embed_provenance: bool,
-    #[arg(long)]
-    embed_diagnostics: bool,
-    #[arg(long)]
-    no_frame_rendering: bool,
-    #[arg(long)]
-    no_frame_clipping: bool,
-    #[arg(long)]
-    no_frame_names: bool,
-    #[arg(long)]
-    no_frame_outlines: bool,
-    #[arg(long, value_name = "FILE_ID=PATH")]
-    asset: Vec<String>,
-    #[arg(long, value_name = "FILE_ID=MEDIA_TYPE")]
-    asset_mime: Vec<String>,
-    #[arg(long, value_enum)]
-    pdf_raster_fallback: Option<PdfFallbackArg>,
-    #[arg(long, value_enum, default_value_t)]
-    report_format: ReportFormat,
-    #[arg(long)]
-    report_output: Option<String>,
-    #[arg(long)]
+    /// Replace existing output and report files
+    #[arg(long, help_heading = OUTPUT)]
     force: bool,
-    #[arg(long)]
+
+    /// Space around the drawing, in scene pixels [default: 10]
+    #[arg(long, value_name = "PX", help_heading = RENDERING)]
+    padding: Option<f64>,
+    /// Multiply the output size by FACTOR [default: 1]
+    #[arg(
+        long,
+        value_name = "FACTOR",
+        conflicts_with = "max_dimension",
+        help_heading = RENDERING
+    )]
+    scale: Option<f64>,
+    /// Shrink PNG and PDF output so its longer side is at most PX pixels
+    /// (never enlarges; SVG keeps its size)
+    #[arg(long, value_name = "PX", help_heading = RENDERING)]
+    max_dimension: Option<f64>,
+    /// Use a transparent background instead of the scene's background color
+    #[arg(long, help_heading = RENDERING)]
+    no_background: bool,
+    /// Render with Excalidraw's dark theme
+    #[arg(long, help_heading = RENDERING)]
+    dark_mode: bool,
+    /// Whether PDF output may rasterize isolated content that vector PDF cannot
+    /// express [default: allow-isolated]
+    #[arg(long, value_enum, value_name = "MODE", help_heading = RENDERING)]
+    pdf_raster_fallback: Option<PdfFallbackArg>,
+    /// Compatibility revision to render with [default: 1; see
+    /// --list-revisions]
+    #[arg(long, value_name = "N", help_heading = RENDERING)]
+    compatibility_revision: Option<String>,
+
+    /// Turn frame rendering off: no frame clipping, names, or outlines
+    #[arg(long, help_heading = FRAMES)]
+    no_frame_rendering: bool,
+    /// Do not clip frame content to the frame
+    #[arg(long, help_heading = FRAMES)]
+    no_frame_clipping: bool,
+    /// Do not draw frame names
+    #[arg(long, help_heading = FRAMES)]
+    no_frame_names: bool,
+    /// Do not draw frame outlines
+    #[arg(long, help_heading = FRAMES)]
+    no_frame_outlines: bool,
+
+    /// Embed the scene so Excalidraw can reopen the exported file for editing
+    #[arg(long, help_heading = METADATA)]
+    embed_scene: bool,
+    /// Embed the renderer version and compatibility profile
+    #[arg(long, help_heading = METADATA)]
+    embed_provenance: bool,
+    /// Embed a summary of the compatibility diagnostics
+    #[arg(long, help_heading = METADATA)]
+    embed_diagnostics: bool,
+
+    /// Supply the bytes of image FILE_ID from PATH when the scene does not
+    /// embed them (repeatable)
+    #[arg(long, value_name = "FILE_ID=PATH", help_heading = ASSETS)]
+    asset: Vec<String>,
+    /// Declare the media type of a supplied --asset, e.g. logo=image/png
+    /// (repeatable)
+    #[arg(long, value_name = "FILE_ID=MEDIA_TYPE", help_heading = ASSETS)]
+    asset_mime: Vec<String>,
+
+    /// How to report diagnostics and errors on stderr
+    #[arg(long, value_enum, default_value_t, help_heading = REPORTING)]
+    report_format: ReportFormat,
+    /// Write the report to PATH instead of stderr
+    #[arg(long, value_name = "PATH", help_heading = REPORTING)]
+    report_output: Option<String>,
+    /// Also print informational diagnostics in the human report
+    #[arg(short, long, help_heading = REPORTING)]
+    verbose: bool,
+
+    /// List the supported compatibility revisions and exit
+    #[arg(long, help_heading = INFORMATION)]
     list_revisions: bool,
-    #[arg(long)]
+    /// Print the version, compatibility revision, and reference profile, then
+    /// exit
+    #[arg(short = 'V', long, help_heading = INFORMATION)]
     version: bool,
-    #[arg(long)]
+    /// Print the bundled third-party license notices, then exit
+    #[arg(long, help_heading = INFORMATION)]
     licenses: bool,
 }
 
@@ -135,14 +249,22 @@ enum ReportError {
 }
 
 impl ReportError {
-    fn human_parts(&self) -> (&str, &str, &str) {
+    fn code(&self) -> &str {
         match self {
-            Self::Library(error) => (
-                error.family().as_str(),
-                error.code().as_str(),
-                error.message(),
-            ),
-            Self::Cli(error) => (error.family, error.code, &error.message),
+            Self::Library(error) => error.code().as_str(),
+            Self::Cli(error) => error.code,
+        }
+    }
+
+    /// The message a person reads: the report message, with the element a
+    /// library failure names.
+    fn human_message(&self) -> String {
+        match self {
+            Self::Library(error) => match error.element_id() {
+                Some(element) => format!("{} (element {element})", error.message()),
+                None => error.message().to_owned(),
+            },
+            Self::Cli(error) => error.message.clone(),
         }
     }
 }
@@ -332,6 +454,11 @@ struct Failure {
     error: Box<ReportError>,
     exit: u8,
     diagnostics: Vec<CompatibilityDiagnostic>,
+    /// Human-report wording that replaces the report message, when the CLI
+    /// knows more context (the input path, a JSON line and column).
+    human_message: Option<String>,
+    /// Human-report advice beyond what the error code implies.
+    hints: Vec<String>,
 }
 
 impl Failure {
@@ -358,6 +485,8 @@ impl Failure {
             })),
             exit,
             diagnostics: Vec::new(),
+            human_message: None,
+            hints: Vec::new(),
         }
     }
 
@@ -366,59 +495,63 @@ impl Failure {
             error: Box::new(ReportError::Library(descriptor)),
             exit,
             diagnostics: Vec::new(),
+            human_message: None,
+            hints: Vec::new(),
         }
+    }
+
+    fn with_hint(mut self, hint: impl Into<String>) -> Self {
+        self.hints.push(hint.into());
+        self
     }
 }
 
 fn main() -> ExitCode {
     let args: Vec<OsString> = env::args_os().collect();
     let preparse_json = preparse_json_mode(&args);
-    if args.get(1).is_some_and(|value| value == "frames") {
-        let mut frame_args = args.clone();
-        frame_args.remove(1);
-        let frames = match FramesCli::try_parse_from(&frame_args) {
-            Ok(frames) => frames,
-            Err(error) if error.kind() == clap::error::ErrorKind::DisplayHelp => {
-                return print_help(error);
+    match Invocation::try_parse_from(&args) {
+        Ok(Invocation {
+            command: Some(CliCommand::Frames(frames)),
+            ..
+        }) => ExitCode::from(run_frames(frames)),
+        Ok(Invocation { render, .. }) => ExitCode::from(run(render)),
+        Err(error) => command_line_error(&error, preparse_json),
+    }
+}
+
+/// Prints requested help, or reports a command-line grammar error the way the
+/// preparsed report mode asks for.
+fn command_line_error(error: &clap::Error, preparse_json: bool) -> ExitCode {
+    use clap::error::ErrorKind;
+    match error.kind() {
+        ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
+            if error.print().is_ok() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(EXIT_OPERATIONAL)
             }
-            Err(error) => {
+        }
+        // A bare invocation shows the help on stderr as a usage error.
+        ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => {
+            let _ = error.print();
+            ExitCode::from(EXIT_USAGE)
+        }
+        _ => {
+            let rendered = error.to_string();
+            let bytes = if preparse_json {
                 let failure = Failure::cli(
                     "cli.invalid-arguments",
-                    error.to_string().trim().to_owned(),
+                    rendered.trim().to_owned(),
                     None,
                     EXIT_USAGE,
                 );
-                emit_early_failure(failure, preparse_json);
-                return ExitCode::from(EXIT_USAGE);
-            }
-        };
-        return ExitCode::from(run_frames(frames));
-    }
-    let cli = match Cli::try_parse_from(&args) {
-        Ok(cli) => cli,
-        Err(error) if error.kind() == clap::error::ErrorKind::DisplayHelp => {
-            return print_help(error);
+                failure_report_bytes(ReportFormat::Json, None, None, failure, HumanReport::PLAIN)
+            } else {
+                human::clap_error(&rendered, "cli.invalid-arguments").into_bytes()
+            };
+            let _ = write_stream(&mut io::stderr().lock(), &bytes);
+            ExitCode::from(EXIT_USAGE)
         }
-        Err(error) => {
-            let failure = Failure::cli(
-                "cli.invalid-arguments",
-                error.to_string().trim().to_owned(),
-                None,
-                EXIT_USAGE,
-            );
-            emit_early_failure(failure, preparse_json);
-            return ExitCode::from(EXIT_USAGE);
-        }
-    };
-
-    ExitCode::from(run(cli))
-}
-
-fn print_help(help: clap::Error) -> ExitCode {
-    if help.print().is_ok() {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(EXIT_OPERATIONAL)
     }
 }
 
@@ -507,13 +640,12 @@ fn run_standalone(cli: &Cli) -> u8 {
         );
     }
 
+    let profile = Renderer::new().profile_identity();
     if cli.version {
-        let profile = Renderer::profile_identity(DEFAULT_COMPATIBILITY_REVISION)
-            .expect("default revision is supported");
         let text = format!(
             "excalidraw-render {}\ncompatibility revision {}\nExcalidraw {}\nreference profile {}\n",
             env!("CARGO_PKG_VERSION"),
-            DEFAULT_COMPATIBILITY_REVISION,
+            profile.compatibility_revision(),
             profile.excalidraw_release(),
             profile.profile_digest()
         );
@@ -523,19 +655,13 @@ fn run_standalone(cli: &Cli) -> u8 {
         return write_stdout(license_bundle().as_bytes());
     }
 
-    let revisions = Renderer::supported_revisions()
-        .iter()
-        .map(|&revision| {
-            let profile =
-                Renderer::profile_identity(revision).expect("listed revision is supported");
-            RevisionEntry {
-                compatibility_revision: revision,
-                excalidraw_release: profile.excalidraw_release(),
-                reference_profile_digest: profile.profile_digest(),
-                default: revision == DEFAULT_COMPATIBILITY_REVISION,
-            }
-        })
-        .collect::<Vec<_>>();
+    // The renderer implements exactly one revision, which is also the default.
+    let revisions = vec![RevisionEntry {
+        compatibility_revision: profile.compatibility_revision(),
+        excalidraw_release: profile.excalidraw_release(),
+        reference_profile_digest: profile.profile_digest(),
+        default: true,
+    }];
     let bytes = match cli.report_format {
         ReportFormat::Human => revisions
             .iter()
@@ -632,27 +758,13 @@ fn run_render(
             None,
             EXIT_USAGE,
         )
+        .with_hint("pass -o FILE, or -o - with --format to write standard output")
     })?;
 
-    let revision = match &cli.compatibility_revision {
-        Some(value) => value.parse::<CompatibilityRevision>().map_err(|_| {
-            Failure::cli(
-                "cli.invalid-arguments",
-                "compatibility revision must be a nonnegative integer",
-                Some(CliDetails::CliArgument {
-                    argument: "--compatibility-revision".to_owned(),
-                    value: Some(value.clone()),
-                }),
-                EXIT_USAGE,
-            )
-        })?,
-        None => DEFAULT_COMPATIBILITY_REVISION,
-    };
-    let renderer = Renderer::for_revision(revision)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
-    let profile = renderer.selected_profile_identity();
+    let renderer = select_renderer(cli.compatibility_revision.as_deref())?;
+    let profile = renderer.profile_identity();
     *identity = Some(SelectedIdentity {
-        revision,
+        revision: profile.compatibility_revision(),
         release: profile.excalidraw_release(),
         digest: profile.profile_digest(),
     });
@@ -677,9 +789,7 @@ fn run_render(
     validate_paths(input, output, report_output(cli), &asset_paths)?;
     check_destinations(output, report_output(cli), cli.force)?;
 
-    let scene_bytes = read_scene_bounded(input, MAX_SCENE_BYTES)?;
-    let scene = SceneDocument::parse(&scene_bytes)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_OPERATIONAL))?;
+    let scene = read_scene(input)?;
 
     let limits = ResourceLimits::default();
     let mut assets_builder = SupplementalAssets::builder();
@@ -718,6 +828,41 @@ fn run_render(
     Ok((artifact.into_bytes(), report.diagnostics().to_vec()))
 }
 
+/// The renderer for `--compatibility-revision`, which accepts only the one
+/// revision the library implements; absent, it selects that revision.
+fn select_renderer(requested: Option<&str>) -> Result<Renderer, Failure> {
+    let renderer = Renderer::new();
+    let Some(value) = requested else {
+        return Ok(renderer);
+    };
+    let argument = || {
+        Some(CliDetails::CliArgument {
+            argument: "--compatibility-revision".to_owned(),
+            value: Some(value.to_owned()),
+        })
+    };
+    let revision = value.parse::<u64>().map_err(|_| {
+        Failure::cli(
+            "cli.invalid-arguments",
+            "compatibility revision must be a nonnegative integer",
+            argument(),
+            EXIT_USAGE,
+        )
+    })?;
+    let supported = renderer.profile_identity().compatibility_revision();
+    if revision != supported.get() {
+        return Err(Failure::cli(
+            "revision.unsupported",
+            format!(
+                "compatibility revision {revision} is not supported; this renderer implements revision {supported}"
+            ),
+            argument(),
+            EXIT_USAGE,
+        ));
+    }
+    Ok(renderer)
+}
+
 fn build_request(
     cli: &Cli,
     format: OutputFormat,
@@ -736,17 +881,19 @@ fn build_request(
         } else {
             ColorMode::Light
         })
-        .frame_options(FrameOptions::new(
-            !cli.no_frame_rendering,
-            !cli.no_frame_clipping,
-            !cli.no_frame_names,
-            !cli.no_frame_outlines,
-        ))
-        .metadata_options(MetadataOptions::new(
-            cli.embed_scene,
-            cli.embed_provenance,
-            cli.embed_diagnostics,
-        ))
+        .frame_options(
+            FrameOptions::default()
+                .with_enabled(!cli.no_frame_rendering)
+                .with_clip(!cli.no_frame_clipping)
+                .with_name(!cli.no_frame_names)
+                .with_outline(!cli.no_frame_outlines),
+        )
+        .metadata_options(
+            MetadataOptions::default()
+                .with_embedded_scene(cli.embed_scene)
+                .with_provenance(cli.embed_provenance)
+                .with_diagnostic_summary(cli.embed_diagnostics),
+        )
         .supplemental_assets(assets)
         .resource_limits(ResourceLimits::default());
     if let Some(fallback) = cli.pdf_raster_fallback {
@@ -777,7 +924,10 @@ fn select_format(explicit: Option<FormatArg>, output: &str) -> Result<OutputForm
     match (explicit.map(OutputFormat::from), inferred) {
         (Some(format), Some(inferred)) if format != inferred => Err(Failure::cli(
             "cli.format-mismatch",
-            "explicit format does not match the output extension",
+            format!(
+                "--format {} does not match the extension of output '{output}'",
+                format.as_str()
+            ),
             Some(CliDetails::CliArgument {
                 argument: "--format".to_owned(),
                 value: Some(format.as_str().to_owned()),
@@ -908,9 +1058,19 @@ fn validate_paths(
 }
 
 fn path_conflict<const N: usize>(entries: [(&'static str, Option<&str>, &str); N]) -> Failure {
+    let named = entries
+        .iter()
+        .map(|(role, asset_id, path)| match asset_id {
+            Some(asset_id) => format!("{role} {asset_id} '{path}'"),
+            None => format!("{role} '{path}'"),
+        })
+        .collect::<Vec<_>>();
     Failure::cli(
         "cli.path-conflict",
-        "input, asset, output, and report paths must not alias",
+        format!(
+            "{} are the same file; input, asset, output, and report paths must differ",
+            named.join(" and ")
+        ),
         Some(CliDetails::CliPath {
             entries: entries
                 .into_iter()
@@ -982,43 +1142,65 @@ fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Fai
             continue;
         }
         if path_entry_exists(Path::new(path)) && !force {
-            return Err(Failure::cli(
-                "cli.destination-exists",
-                format!("{} destination already exists", role.as_str()),
-                Some(CliDetails::Delivery {
-                    role,
-                    operation: CliOperation::Create,
-                    path: path.to_owned(),
-                    artifact_state: DeliveryState::None,
-                }),
-                EXIT_USAGE,
-            ));
+            return Err(destination_exists(role, path));
         }
     }
     Ok(())
 }
 
+/// `cli.destination-exists` for an existing `role` destination at `path`.
+fn destination_exists(role: DeliveryRole, path: &str) -> Failure {
+    Failure::cli(
+        "cli.destination-exists",
+        format!("{} '{path}' already exists", role.as_str()),
+        Some(CliDetails::Delivery {
+            role,
+            operation: CliOperation::Create,
+            path: path.to_owned(),
+            artifact_state: DeliveryState::None,
+        }),
+        EXIT_USAGE,
+    )
+}
+
+/// Reads and parses the scene at `path` (`-` for stdin).
+fn read_scene(path: &str) -> Result<SceneDocument, Failure> {
+    let bytes = read_scene_bounded(path, MAX_SCENE_BYTES)?;
+    SceneDocument::parse(&bytes).map_err(|error| {
+        let descriptor = error.descriptor();
+        let (message, hints) = human::scene_parse_context(path, &bytes, &descriptor);
+        let mut failure = Failure::library(descriptor, EXIT_OPERATIONAL);
+        failure.human_message = Some(message);
+        failure.hints = hints;
+        failure
+    })
+}
+
 fn read_scene_bounded(path: &str, limit: u64) -> Result<Vec<u8>, Failure> {
-    let mut reader: Box<dyn Read> = if path == "-" {
-        Box::new(io::stdin().lock())
-    } else {
-        Box::new(
-            File::open(path)
-                .map_err(|_| io_failure(IoRole::Input, None, CliOperation::Open, path))?,
-        )
-    };
+    let mut reader: Box<dyn Read> =
+        if path == "-" {
+            Box::new(io::stdin().lock())
+        } else {
+            Box::new(File::open(path).map_err(|error| {
+                io_failure(IoRole::Input, None, CliOperation::Open, path, &error)
+            })?)
+        };
     let capacity = usize::try_from(limit.min(1024 * 1024)).unwrap_or(1024 * 1024);
     let mut bytes = Vec::with_capacity(capacity);
     reader
         .by_ref()
         .take(limit.saturating_add(1))
         .read_to_end(&mut bytes)
-        .map_err(|_| io_failure(IoRole::Input, None, CliOperation::Read, path))?;
+        .map_err(|error| io_failure(IoRole::Input, None, CliOperation::Read, path, &error))?;
     let measured = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
     if measured > limit {
         return Err(Failure::cli(
             "scene.input-too-large",
-            "scene input exceeds the fixed parser transport ceiling",
+            format!(
+                "scene input {} exceeds the {} MiB limit",
+                human::input_name(path),
+                limit / (1024 * 1024)
+            ),
             Some(CliDetails::ParseLimit {
                 field: "max_input_bytes",
                 configured: limit,
@@ -1038,14 +1220,29 @@ fn read_bounded_asset(
     aggregate_limit: u64,
     aggregate_remaining: u64,
 ) -> Result<Vec<u8>, Failure> {
-    let file = File::open(path)
-        .map_err(|_| io_failure(IoRole::Asset, Some(asset_id), CliOperation::Open, path))?;
+    let file = File::open(path).map_err(|error| {
+        io_failure(
+            IoRole::Asset,
+            Some(asset_id),
+            CliOperation::Open,
+            path,
+            &error,
+        )
+    })?;
     let stream_limit = per_asset_limit.min(aggregate_remaining);
     let capacity = usize::try_from(stream_limit.min(1024 * 1024)).unwrap_or(1024 * 1024);
     let mut bytes = Vec::with_capacity(capacity);
     file.take(stream_limit.saturating_add(1))
         .read_to_end(&mut bytes)
-        .map_err(|_| io_failure(IoRole::Asset, Some(asset_id), CliOperation::Read, path))?;
+        .map_err(|error| {
+            io_failure(
+                IoRole::Asset,
+                Some(asset_id),
+                CliOperation::Read,
+                path,
+                &error,
+            )
+        })?;
     let measured = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
     if measured > aggregate_remaining {
         return Err(transport_limit_failure(
@@ -1094,22 +1291,23 @@ fn io_failure(
     asset_id: Option<&str>,
     operation: CliOperation,
     path: &str,
+    error: &io::Error,
 ) -> Failure {
-    let code = if role == IoRole::Input {
-        "cli.input-read-failed"
-    } else {
-        "cli.asset-read-failed"
+    let (code, subject) = match (role, asset_id) {
+        (IoRole::Input, _) if path == "-" => ("cli.input-read-failed", "standard input".to_owned()),
+        (IoRole::Input, _) => ("cli.input-read-failed", format!("input '{path}'")),
+        (IoRole::Asset, Some(asset_id)) => (
+            "cli.asset-read-failed",
+            format!("asset {asset_id} '{path}'"),
+        ),
+        (IoRole::Asset, None) => ("cli.asset-read-failed", format!("asset '{path}'")),
     };
     Failure::cli(
         code,
         format!(
-            "failed to {} {}",
+            "cannot {} {subject}: {}",
             operation.as_str(),
-            if role == IoRole::Input {
-                "input"
-            } else {
-                "asset"
-            }
+            human::os_reason(error)
         ),
         Some(CliDetails::CliIo {
             role,
@@ -1145,7 +1343,12 @@ fn deliver_success(
         error: None,
         diagnostics: &diagnostics,
     };
-    let report_bytes = success_report_bytes(cli.report_format, &report, &diagnostics);
+    let report_bytes = success_report_bytes(
+        cli.report_format,
+        &report,
+        &diagnostics,
+        HumanReport::new(cli.verbose, cli.max_dimension, Some(format)),
+    );
 
     let output = cli.output.as_deref().expect("output validated");
     let mut staged_output = if output == "-" {
@@ -1153,14 +1356,14 @@ fn deliver_success(
     } else {
         match StagedFile::new(Path::new(output), &artifact, cli.force) {
             Ok(staged) => Some(staged),
-            Err(operation) => {
+            Err(error) => {
                 return emit_failure(
                     cli,
                     Some(identity),
                     Some(format),
                     delivery_failure(
                         DeliveryRole::Output,
-                        operation,
+                        &error,
                         output,
                         DeliveryState::None,
                         diagnostics.clone(),
@@ -1175,14 +1378,14 @@ fn deliver_success(
     } else {
         match StagedFile::new(Path::new(report_output), &report_bytes, cli.force) {
             Ok(staged) => Some(staged),
-            Err(operation) => {
+            Err(error) => {
                 return emit_failure(
                     cli,
                     Some(identity),
                     Some(format),
                     delivery_failure(
                         DeliveryRole::Report,
-                        operation,
+                        &error,
                         report_output,
                         DeliveryState::None,
                         diagnostics.clone(),
@@ -1193,21 +1396,21 @@ fn deliver_success(
     };
 
     if let Some(staged) = staged_output.take() {
-        if let Err(operation) = staged.deliver() {
+        if let Err(error) = staged.deliver() {
             return emit_failure(
                 cli,
                 Some(identity),
                 Some(format),
                 delivery_failure(
                     DeliveryRole::Output,
-                    operation,
+                    &error,
                     output,
                     DeliveryState::None,
                     diagnostics.clone(),
                 ),
             );
         }
-    } else if let Err((operation, artifact_state)) =
+    } else if let Err((error, artifact_state)) =
         write_stream_tracked(&mut io::stdout().lock(), &artifact)
     {
         return emit_failure(
@@ -1216,7 +1419,7 @@ fn deliver_success(
             Some(format),
             delivery_failure(
                 DeliveryRole::Output,
-                operation,
+                &error,
                 output,
                 artifact_state,
                 diagnostics.clone(),
@@ -1225,12 +1428,12 @@ fn deliver_success(
     }
 
     if let Some(staged) = staged_report.take() {
-        if let Err(operation) = staged.deliver() {
+        if let Err(error) = staged.deliver() {
             return emergency_report_failure(
                 cli,
                 identity,
                 format,
-                operation,
+                &error,
                 DeliveryState::Complete,
                 diagnostics,
             );
@@ -1243,7 +1446,7 @@ fn deliver_success(
     0
 }
 
-fn stage_report_file(cli: &Cli, bytes: &[u8]) -> Result<Option<StagedFile>, CliOperation> {
+fn stage_report_file(cli: &Cli, bytes: &[u8]) -> Result<Option<StagedFile>, DeliveryError> {
     let report = report_output(cli);
     if report == "stderr" {
         Ok(None)
@@ -1256,14 +1459,16 @@ fn success_report_bytes(
     mode: ReportFormat,
     report: &RenderReport<'_>,
     diagnostics: &[CompatibilityDiagnostic],
+    human: HumanReport,
 ) -> Vec<u8> {
     match mode {
         ReportFormat::Json => json_line(report),
-        ReportFormat::Human => diagnostics
-            .iter()
-            .map(|diagnostic| format!("{}: {}\n", diagnostic.code(), diagnostic.message()))
-            .collect::<String>()
-            .into_bytes(),
+        ReportFormat::Human => format!(
+            "{}{}",
+            human.notes(),
+            human::diagnostics(diagnostics, human.verbose)
+        )
+        .into_bytes(),
         ReportFormat::None => Vec::new(),
     }
 }
@@ -1276,19 +1481,20 @@ fn emit_failure(
 ) -> u8 {
     let exit = failure.exit;
     let diagnostics = failure.diagnostics.clone();
-    let bytes = failure_report_bytes(cli.report_format, identity, format, failure);
+    let human = HumanReport::new(cli.verbose, None, format);
+    let bytes = failure_report_bytes(cli.report_format, identity, format, failure, human);
     let report_output = report_output(cli);
     if report_output == "stderr"
         || cli.report_format == ReportFormat::None
         || !report_destination_is_safe(cli)
     {
         let _ = write_stream(&mut io::stderr().lock(), &bytes);
-    } else if let Err(operation) =
+    } else if let Err(error) =
         StagedFile::new(Path::new(report_output), &bytes, cli.force).and_then(StagedFile::deliver)
     {
         let fallback = delivery_failure(
             DeliveryRole::Report,
-            operation,
+            &error,
             report_output,
             DeliveryState::None,
             diagnostics,
@@ -1298,6 +1504,7 @@ fn emit_failure(
             identity,
             format,
             fallback,
+            human,
         );
         let _ = write_stream(&mut io::stderr().lock(), &emergency);
         return EXIT_OPERATIONAL;
@@ -1343,25 +1550,32 @@ fn report_destination_is_safe(cli: &Cli) -> bool {
     })
 }
 
+/// The failure report: one JSON document, or for people the grouped
+/// diagnostics, an error line, and its hints (`none` keeps only the line).
 fn failure_report_bytes(
     mode: ReportFormat,
     identity: Option<&SelectedIdentity>,
     format: Option<OutputFormat>,
     failure: Failure,
+    human: HumanReport,
 ) -> Vec<u8> {
     if mode != ReportFormat::Json {
-        let (family, code, message) = failure.error.human_parts();
+        let code = failure.error.code();
+        let message = failure
+            .human_message
+            .clone()
+            .unwrap_or_else(|| failure.error.human_message());
         let mut text = String::new();
         if mode == ReportFormat::Human {
-            for diagnostic in &failure.diagnostics {
-                text.push_str(&format!(
-                    "{}: {}\n",
-                    diagnostic.code(),
-                    diagnostic.message()
-                ));
-            }
+            text.push_str(&human::diagnostics(&failure.diagnostics, human.verbose));
         }
-        text.push_str(&format!("{} {}: {}\n", family, code, message));
+        text.push_str(&human::error_line(&message, code));
+        if mode == ReportFormat::Human {
+            text.push_str(&human::hint_lines(
+                code,
+                failure.hints.iter().map(String::as_str),
+            ));
+        }
         return text.into_bytes();
     }
     json_line(&RenderReport {
@@ -1378,43 +1592,83 @@ fn failure_report_bytes(
     })
 }
 
-fn emit_early_failure(failure: Failure, json: bool) {
-    let bytes = failure_report_bytes(
-        if json {
-            ReportFormat::Json
-        } else {
-            ReportFormat::Human
-        },
-        None,
-        None,
-        failure,
-    );
-    let _ = write_stream(&mut io::stderr().lock(), &bytes);
+/// Why writing a destination failed: the step and the operating system's
+/// reason.
+struct DeliveryError {
+    operation: CliOperation,
+    kind: io::ErrorKind,
+    reason: String,
+}
+
+impl DeliveryError {
+    fn new(operation: CliOperation, error: &io::Error) -> Self {
+        Self {
+            operation,
+            kind: error.kind(),
+            reason: human::os_reason(error),
+        }
+    }
+
+    /// The message for failing to deliver `subject` (for example
+    /// `output 'a.svg'`).
+    fn message(&self, subject: &str) -> String {
+        format!(
+            "cannot {} {subject}: {}",
+            self.operation.as_str(),
+            self.reason
+        )
+    }
+
+    /// Advice for delivering to `path`: name a missing parent directory, or
+    /// the flag that replaces a destination created meanwhile.
+    fn hint(&self, path: &Path) -> Option<String> {
+        match self.kind {
+            io::ErrorKind::AlreadyExists => Some("use --force to overwrite it".to_owned()),
+            io::ErrorKind::NotFound => path
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty() && !parent.is_dir())
+                .map(|parent| {
+                    format!(
+                        "directory '{}' does not exist; create it first",
+                        parent.display()
+                    )
+                }),
+            _ => None,
+        }
+    }
 }
 
 fn delivery_failure(
     role: DeliveryRole,
-    operation: CliOperation,
+    error: &DeliveryError,
     path: &str,
     artifact_state: DeliveryState,
     diagnostics: Vec<CompatibilityDiagnostic>,
 ) -> Failure {
+    let subject = if role == DeliveryRole::Output && path == "-" {
+        "output to standard output".to_owned()
+    } else {
+        format!("{} '{path}'", role.as_str())
+    };
     let mut failure = Failure::cli(
         if role == DeliveryRole::Output {
             "cli.output-write-failed"
         } else {
             "cli.report-write-failed"
         },
-        format!("failed to deliver {}", role.as_str()),
+        error.message(&subject),
         Some(CliDetails::Delivery {
             role,
-            operation,
+            operation: error.operation,
             path: path.to_owned(),
             artifact_state,
         }),
         EXIT_OPERATIONAL,
     );
     failure.diagnostics = diagnostics;
+    if path != "-" {
+        failure.hints.extend(error.hint(Path::new(path)));
+    }
     failure
 }
 
@@ -1422,13 +1676,13 @@ fn emergency_report_failure(
     cli: &Cli,
     identity: &SelectedIdentity,
     format: OutputFormat,
-    operation: CliOperation,
+    error: &DeliveryError,
     artifact_state: DeliveryState,
     diagnostics: Vec<CompatibilityDiagnostic>,
 ) -> u8 {
     let failure = delivery_failure(
         DeliveryRole::Report,
-        operation,
+        error,
         report_output(cli),
         artifact_state,
         diagnostics,
@@ -1438,6 +1692,7 @@ fn emergency_report_failure(
         Some(identity),
         Some(format),
         failure,
+        HumanReport::PLAIN,
     );
     let _ = write_stream(&mut io::stderr().lock(), &bytes);
     EXIT_OPERATIONAL
@@ -1454,15 +1709,16 @@ fn deliver_report_bytes(cli: &Cli, bytes: &[u8], artifact_state: DeliveryState) 
     }
     match StagedFile::new(Path::new(report_output), bytes, false).and_then(StagedFile::deliver) {
         Ok(()) => 0,
-        Err(operation) => {
+        Err(error) => {
             let failure = delivery_failure(
                 DeliveryRole::Report,
-                operation,
+                &error,
                 report_output,
                 artifact_state,
                 Vec::new(),
             );
-            let bytes = failure_report_bytes(cli.report_format, None, None, failure);
+            let bytes =
+                failure_report_bytes(cli.report_format, None, None, failure, HumanReport::PLAIN);
             let _ = write_stream(&mut io::stderr().lock(), &bytes);
             EXIT_OPERATIONAL
         }
@@ -1477,14 +1733,14 @@ fn write_stdout(bytes: &[u8]) -> u8 {
     }
 }
 
-fn write_stream(writer: &mut impl Write, bytes: &[u8]) -> Result<(), CliOperation> {
-    write_stream_tracked(writer, bytes).map_err(|(operation, _)| operation)
+fn write_stream(writer: &mut impl Write, bytes: &[u8]) -> Result<(), DeliveryError> {
+    write_stream_tracked(writer, bytes).map_err(|(error, _)| error)
 }
 
 fn write_stream_tracked(
     writer: &mut impl Write,
     mut bytes: &[u8],
-) -> Result<(), (CliOperation, DeliveryState)> {
+) -> Result<(), (DeliveryError, DeliveryState)> {
     let mut wrote_bytes = false;
     let state = |wrote_bytes| {
         if wrote_bytes {
@@ -1496,15 +1752,22 @@ fn write_stream_tracked(
     while !bytes.is_empty() {
         match writer.write(bytes) {
             Ok(0) => {
-                return Err((CliOperation::Write, state(wrote_bytes)));
+                let error = io::Error::from(io::ErrorKind::WriteZero);
+                return Err((
+                    DeliveryError::new(CliOperation::Write, &error),
+                    state(wrote_bytes),
+                ));
             }
             Ok(written) => {
                 wrote_bytes = true;
                 bytes = &bytes[written..];
             }
             Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
-            Err(_) => {
-                return Err((CliOperation::Write, state(wrote_bytes)));
+            Err(error) => {
+                return Err((
+                    DeliveryError::new(CliOperation::Write, &error),
+                    state(wrote_bytes),
+                ));
             }
         }
     }
@@ -1512,7 +1775,12 @@ fn write_stream_tracked(
         match writer.flush() {
             Ok(()) => return Ok(()),
             Err(error) if error.kind() == io::ErrorKind::Interrupted => {}
-            Err(_) => return Err((CliOperation::Flush, state(wrote_bytes))),
+            Err(error) => {
+                return Err((
+                    DeliveryError::new(CliOperation::Flush, &error),
+                    state(wrote_bytes),
+                ))
+            }
         }
     }
 }
@@ -1526,7 +1794,7 @@ struct StagedFile {
 }
 
 impl StagedFile {
-    fn new(destination: &Path, bytes: &[u8], replace: bool) -> Result<Self, CliOperation> {
+    fn new(destination: &Path, bytes: &[u8], replace: bool) -> Result<Self, DeliveryError> {
         let parent = destination
             .parent()
             .filter(|path| !path.as_os_str().is_empty())
@@ -1539,7 +1807,7 @@ impl StagedFile {
         destination: &Path,
         bytes: &[u8],
         replace: bool,
-    ) -> Result<Self, CliOperation> {
+    ) -> Result<Self, DeliveryError> {
         let name = destination
             .file_name()
             .and_then(|name| name.to_str())
@@ -1552,11 +1820,12 @@ impl StagedFile {
         builder.permissions(std::os::unix::fs::PermissionsExt::from_mode(0o666));
         let mut file = builder
             .tempfile_in(staging_parent)
-            .map_err(|_| CliOperation::Create)?;
-        file.write_all(bytes).map_err(|_| CliOperation::Write)?;
+            .map_err(|error| DeliveryError::new(CliOperation::Create, &error))?;
+        file.write_all(bytes)
+            .map_err(|error| DeliveryError::new(CliOperation::Write, &error))?;
         file.flush()
             .and_then(|()| file.as_file().sync_all())
-            .map_err(|_| CliOperation::Flush)?;
+            .map_err(|error| DeliveryError::new(CliOperation::Flush, &error))?;
         Ok(Self {
             temporary: file.into_temp_path(),
             destination: destination.to_path_buf(),
@@ -1566,15 +1835,15 @@ impl StagedFile {
 
     /// Atomically publishes the staged file; without `replace` an existing
     /// destination, even one created after staging, is never overwritten.
-    fn deliver(self) -> Result<(), CliOperation> {
+    fn deliver(self) -> Result<(), DeliveryError> {
         if self.replace {
             self.temporary
                 .persist(&self.destination)
-                .map_err(|_| CliOperation::Replace)
+                .map_err(|error| DeliveryError::new(CliOperation::Replace, &error.error))
         } else {
             self.temporary
                 .persist_noclobber(&self.destination)
-                .map_err(|_| CliOperation::Create)
+                .map_err(|error| DeliveryError::new(CliOperation::Create, &error.error))
         }
     }
 }
@@ -1632,10 +1901,37 @@ mod tests {
     use super::{
         json_line, lexical_absolute, parse_asset_declarations, preparse_json_mode, same_path,
         select_format, sha256, split_asset_option, ArtifactDescriptor, CliDetails, CliError,
-        CliMeasurement, CliOperation, CliPathEntry, DeliveryRole, DeliveryState, Failure,
-        FormatArg, IoRole, RenderReport, ReportError, RevisionEntry, RevisionReport, StagedFile,
-        EXIT_USAGE,
+        CliMeasurement, CliOperation, CliPathEntry, DeliveryError, DeliveryRole, DeliveryState,
+        Failure, FormatArg, IoRole, RenderReport, ReportError, RevisionEntry, RevisionReport,
+        StagedFile, EXIT_USAGE,
     };
+
+    /// `--help` describes every argument of every command.
+    #[test]
+    fn every_command_and_argument_is_described() {
+        fn check(command: &clap::Command) {
+            for argument in command.get_arguments() {
+                assert!(
+                    argument.get_help().is_some(),
+                    "{} {} has no help",
+                    command.get_name(),
+                    argument.get_id()
+                );
+            }
+            for subcommand in command.get_subcommands() {
+                assert!(
+                    subcommand.get_about().is_some(),
+                    "{}",
+                    subcommand.get_name()
+                );
+                check(subcommand);
+            }
+        }
+        let mut command = <super::Invocation as clap::CommandFactory>::command();
+        command.build();
+        check(&command);
+        command.debug_assert();
+    }
 
     /// Artifact digests are the `sha256:`-prefixed lowercase hex of the FIPS
     /// 180-4 SHA-256 digest, checked against its published test vectors.
@@ -1899,7 +2195,7 @@ mod tests {
         let scratch = tempfile::tempdir().expect("the scratch directory is created");
         let destination = scratch.path().join("result.svg");
         let staged = StagedFile::new(&destination, b"artifact", false)
-            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+            .unwrap_or_else(|error| panic!("{}", error.message("the stage")));
         let [temporary] = entries(scratch.path()).try_into().expect("one staged file");
         assert!(
             temporary.starts_with(".result.svg.") && temporary.ends_with(".tmp"),
@@ -1925,10 +2221,16 @@ mod tests {
         let scratch = tempfile::tempdir().expect("the scratch directory is created");
         let destination = scratch.path().join("result.svg");
         let staged = StagedFile::new(&destination, b"artifact", false)
-            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+            .unwrap_or_else(|error| panic!("{}", error.message("the stage")));
         fs::write(&destination, b"late").expect("a racing writer creates the destination");
 
-        assert!(matches!(staged.deliver(), Err(CliOperation::Create)));
+        assert!(matches!(
+            staged.deliver(),
+            Err(DeliveryError {
+                operation: CliOperation::Create,
+                ..
+            })
+        ));
         assert_eq!(fs::read(&destination).expect("kept"), b"late");
         assert_eq!(
             entries(scratch.path()),
@@ -1942,7 +2244,7 @@ mod tests {
         let scratch = tempfile::tempdir().expect("the scratch directory is created");
         let destination = scratch.path().join("result.svg");
         let staged = StagedFile::new(&destination, b"artifact", true)
-            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+            .unwrap_or_else(|error| panic!("{}", error.message("the stage")));
         fs::write(&destination, b"late").expect("a racing writer creates the destination");
 
         assert!(staged.deliver().is_ok());
@@ -1956,11 +2258,14 @@ mod tests {
         let missing = scratch.path().join("missing").join("result.svg");
         assert!(matches!(
             StagedFile::new(&missing, b"artifact", false),
-            Err(CliOperation::Create)
+            Err(DeliveryError {
+                operation: CliOperation::Create,
+                ..
+            })
         ));
 
         let staged = StagedFile::new(&scratch.path().join("result.svg"), b"artifact", false)
-            .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()));
+            .unwrap_or_else(|error| panic!("{}", error.message("the stage")));
         drop(staged);
         assert!(
             entries(scratch.path()).is_empty(),
@@ -1983,7 +2288,13 @@ mod tests {
         let staged = (0..256)
             .map(|index| {
                 StagedFile::new(&scratch.path().join(format!("{index}.svg")), b"a", false)
-                    .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()))
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "staging failed at {}: {}",
+                            error.operation.as_str(),
+                            error.reason
+                        )
+                    })
             })
             .collect::<Vec<_>>();
         // Other test threads may open a few descriptors meanwhile.

@@ -18,6 +18,14 @@ each one at runtime.
 - Later 0.x releases may change rendering. Pin the renderer version, dependencies,
   and build environment when preserving exact output is important.
 
+## Scene input
+
+- A version-2 scene must carry a `files` map, even an empty one. Excalidraw
+  treats a missing map as empty; this renderer rejects the scene with
+  `scene.invalid-envelope`, and the CLI suggests adding `"files": {}`.
+- Only `.excalidraw` JSON is read. PNG and SVG exports with an embedded scene,
+  library files, and clipboard data are recognized and rejected.
+
 ## Images and rendering
 
 - AVIF is unsupported (#68) and follows unsupported-image recovery.
@@ -34,6 +42,8 @@ each one at runtime.
 - Fractional PNG stroke coverage has remaining browser differences (#194).
 - A lossless WebP with bitstream alpha, a clear VP8X alpha flag, and a transforming
   ICC profile has a known color mismatch (#197).
+- Emoji render as monochrome Noto Emoji outlines, not the colour emoji a
+  browser draws from system fonts (#233 tracks an opt-in colour face).
 - Bundled font substitution and glyph fallback differ from ambient browser fonts.
   These are diagnosed. SVG/PDF viewer antialiasing can differ within reviewed
   visual budgets or case-specific exceptions.

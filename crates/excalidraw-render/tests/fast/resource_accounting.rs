@@ -193,6 +193,14 @@ fn required_png_surface_is_admitted_before_projection_and_fallbacks() {
         "pixels",
         "",
     );
+    // The human message carries what the details carry: the field, the
+    // attempted value and the configured ceiling.
+    let message = format!(
+        "required PNG raster surface exceeds its configured limit: \
+         needs {required_pixels} pixels, but max_raster_surface_pixels is {configured}"
+    );
+    assert_eq!(error.to_string(), message);
+    assert_eq!(error.descriptor().message(), message);
 }
 
 #[test]

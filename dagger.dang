@@ -61,6 +61,14 @@ type ExcalidrawRender {
   }
 
   """
+  The Linux x86-64 (glibc) CLI release archive and its SHA-256 file. Pass the
+  released version, e.g. `dagger call release-archive --version 0.1.0 export --path dist`.
+  """
+  releaseArchive(version: String!): Directory! {
+    self.builds.cliArchive(version)
+  }
+
+  """
   The packaged crates and the public facade a downstream consumer compiles against.
   """
   packaging: Packaging! {
@@ -229,6 +237,23 @@ type Lint {
     ])
   }
 
+  """
+  Compile the published crates with the workspace `rust-version`, so the
+  declared minimum supported Rust version stays true. Keep the image tag in
+  step with `rust-version` in the root `Cargo.toml`.
+  """
+  msrv: String! @check {
+    Dagger.container(platform: "linux/amd64").from("rust:1.92.0-slim-trixie")
+      .withDirectory("/src", self.builds.inputs("code"))
+      .withWorkdir("/src")
+      .withEnvVariable("CARGO_BUILD_JOBS", "2")
+      .withExec([
+        "cargo", "check", "--locked",
+        "-p", "excalidraw-render", "-p", "excalidraw-render-cli",
+      ])
+      .combinedOutput
+  }
+
   let run(args: [String!]!): String! {
     self.builds.nativeSlim.withExec(args).combinedOutput
   }
@@ -344,8 +369,8 @@ second compile. nextest runs no doc tests, so `doc` runs them through cargo.
 The test profile in the root Cargo.toml is optimized, and the two corpus-driven
 tests the push gate does not carry are held back the way the workflow holds
 them: the frame batch property test and the SVG font subset qualification
-corpus are both `#[ignore]`d unless the `release-qualification` feature is on
-(off here). `packaging:qualification` runs both in `--release`.
+corpus are both ignored unless `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`
+(unset here). `packaging:qualification` runs both in `--release`.
 """
 type Test {
   let container: Container!
@@ -464,8 +489,8 @@ type Packaging {
   """
   Execute the release-mode qualification set.
 
-  The complete renderer unit target in `--release` with the
-  `release-qualification` feature, the way the workflow's native leg runs it
+  The complete renderer unit target in `--release` with
+  `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`, the way the workflow's native leg runs it
   before materializing target evidence: the SVG font subset qualification
   corpus and the frame batch property test, which the `test` checks leave out,
   execute here. No name filter, so a renamed test cannot drop out of the run.

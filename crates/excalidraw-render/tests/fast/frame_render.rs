@@ -172,7 +172,7 @@ pub(super) fn frame_clipping_uses_the_rounded_frame_boundary() {
     let outcome = render(
         &scene,
         OutputFormat::Png,
-        FrameOptions::new(true, true, false, false),
+        FrameOptions::default().with_name(false).with_outline(false),
     );
     let decoded = decode_png(outcome.artifact().bytes());
     assert_eq!(decoded.pixel(11, 11), [255, 255, 255, 255]);

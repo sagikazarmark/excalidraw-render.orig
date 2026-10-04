@@ -91,8 +91,10 @@ fn check(groups: &[&str]) -> usize {
         } else if actual.rgba != expected.rgba {
             let differing = actual
                 .rgba
-                .chunks_exact(4)
-                .zip(expected.rgba.chunks_exact(4))
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(expected.rgba.as_chunks::<4>().0.iter())
                 .filter(|(a, b)| a != b)
                 .count();
             failures.push(format!("{id}: {differing} differing pixels"));

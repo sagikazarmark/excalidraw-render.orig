@@ -487,7 +487,7 @@ fn qualify_row(record: &Value, v: Vector<'_>) {
     );
     assert_eq!(row["expectation_basis"],"GIF89a scope hypothesis; duplicate GCE uses complete last-GCE replacement (non-normative); transparent initial canvas");
     let p = palette(v.pattern);
-    let triples = |p: &[u8]| json!(p.chunks_exact(3).collect::<Vec<_>>());
+    let triples = |p: &[u8]| json!(p.as_chunks::<3>().0.iter().collect::<Vec<_>>());
     assert_eq!(row["palette"], triples(&p));
     assert_eq!(row["global_palette"], triples(&v.global()));
     let bytes = v.wire();
@@ -515,7 +515,12 @@ fn qualify_row(record: &Value, v: Vector<'_>) {
         assert_eq!(audited["palette_sha256"], hash(&p));
         assert_eq!(audited["effective_transparent"], json!(transparent));
         if frame == 1 {
-            for (dst, src) in display.chunks_exact_mut(4).zip(patch.chunks_exact(4)) {
+            for (dst, src) in display
+                .as_chunks_mut::<4>()
+                .0
+                .iter_mut()
+                .zip(patch.as_chunks::<4>().0.iter())
+            {
                 if src[3] != 0 {
                     dst.copy_from_slice(src);
                 }
@@ -559,8 +564,10 @@ fn qualify_row(record: &Value, v: Vector<'_>) {
     assert_eq!((n(&reference["width"]), n(&reference["height"])), (9, 7));
     svg_check(reference["svg"].as_str().unwrap(), Some(&bytes));
     let changed = first
-        .chunks_exact(4)
-        .zip(actual.chunks_exact(4))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(actual.as_chunks::<4>().0.iter())
         .filter(|(a, b)| a != b)
         .count();
     assert_eq!(
@@ -888,7 +895,9 @@ fn svg_check(svg: &str, source: Option<&[u8]>) {
 fn canonical(samples: &[u8]) {
     assert_eq!(samples.len(), 9 * 7 * 4);
     assert!(samples
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .all(|p| matches!(p[3], 0 | 255) && (p[3] != 0 || p[..3] == [0; 3])));
 }
 fn png_pixels(bytes: &[u8], expected: &[u8], native: bool) {
@@ -1106,7 +1115,9 @@ fn negative_helpers(record: &Value) {
         match mutation {
             "rgb" => {
                 samples = samples
-                    .chunks_exact(4)
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
                     .flat_map(|p| p[..3].iter().copied())
                     .collect()
             }
@@ -1188,7 +1199,7 @@ fn negative_helpers(record: &Value) {
         "/SMask 99999 0 R",
     );
     masked.extend(b"\n99999 0 obj\n<< /Type /XObject /Subtype /Image /Width 9 /Height 7 /BitsPerComponent 8 /ColorSpace /DeviceGray /Length 63 >>\nstream\n");
-    let mut alpha: Vec<_> = expected.chunks_exact(4).map(|p| p[3]).collect();
+    let mut alpha: Vec<_> = expected.as_chunks::<4>().0.iter().map(|p| p[3]).collect();
     alpha[1] = 254;
     masked.extend(alpha);
     masked.extend(b"\nendstream\nendobj\n");

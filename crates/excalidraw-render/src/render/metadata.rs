@@ -237,6 +237,9 @@ impl ArtifactMetadata {
         self.scene.as_ref().map(|scene| scene.wrapper.as_slice())
     }
 
+    /// The estimate `estimate` must reproduce; only the debug assertion in
+    /// `build` and the estimate tests compare against it.
+    #[cfg(any(debug_assertions, test))]
     pub(super) fn scratch_bytes(&self) -> u64 {
         let scene = self.scene.as_ref().map_or(0_u64, |scene| {
             aligned(u64::try_from(scene.canonical.len()).unwrap_or(u64::MAX)).saturating_add(
@@ -250,6 +253,7 @@ impl ArtifactMetadata {
         )
     }
 
+    #[cfg(any(debug_assertions, test))]
     pub(super) fn generation_work(&self) -> u64 {
         self.scene
             .as_ref()
@@ -748,8 +752,7 @@ pub(super) fn test_fixture() -> (
 ) {
     const SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"rect","type":"rectangle","x":0,"y":0,"width":40,"height":30,"updated":1}],"appState":{},"files":{}}"#;
     let scene = SceneDocument::parse(SCENE).expect("metadata fixture scene is admitted");
-    let profile = crate::Renderer::profile_identity(crate::CompatibilityRevision::REVISION_1)
-        .expect("revision 1 exists");
+    let profile = crate::Renderer::new().profile_identity();
     let request = RenderRequest::builder(crate::OutputFormat::Svg)
         .build()
         .expect("metadata fixture request is valid");

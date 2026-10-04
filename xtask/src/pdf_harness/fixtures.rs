@@ -99,7 +99,7 @@ fn reference_raster() -> Result<Vec<u8>, String> {
     if data.len() != 200 * 120 * 4 {
         return Err("canonical Chromium rectangle raster has invalid length".into());
     }
-    if data.chunks_exact(4).any(|pixel| pixel[3] != 255) {
+    if data.as_chunks::<4>().0.iter().any(|pixel| pixel[3] != 255) {
         return Err("calibration control requires an opaque reference raster".into());
     }
     Ok(data)

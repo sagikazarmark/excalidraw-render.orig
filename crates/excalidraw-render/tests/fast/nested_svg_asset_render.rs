@@ -127,6 +127,139 @@ fn nested_svg_node_ceiling_recovers_before_viewer_parsing() {
     assert!(!recovered.contains("#00ff00"));
 }
 
+/// The default stack of a spawned `std::thread`: a library user rendering off
+/// the main thread has no more than this.
+const SPAWNED_THREAD_STACK: usize = 2 << 20;
+
+fn on_spawned_thread_stack(test: impl FnOnce() + Send + 'static) {
+    std::thread::Builder::new()
+        .stack_size(SPAWNED_THREAD_STACK)
+        .spawn(test)
+        .expect("test thread spawns")
+        .join()
+        .expect("test thread completes");
+}
+
+/// A nested SVG whose drawing sits under `depth` nested `open`/`close` pairs.
+fn deeply_nested_svg(depth: usize, open: &str, close: &str, leaf: &str) -> Vec<u8> {
+    let mut svg =
+        String::from(r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10">"#);
+    svg.push_str(&open.repeat(depth));
+    svg.push_str(leaf);
+    svg.push_str(&close.repeat(depth));
+    svg.push_str("</svg>");
+    svg.into_bytes()
+}
+
+#[test]
+fn excessive_nested_svg_element_depth_recovers_without_exhausting_the_stack() {
+    on_spawned_thread_stack(|| {
+        let groups = deeply_nested_svg(80_000, "<g>", "</g>", r#"<rect width="20" height="10"/>"#);
+        let spans = deeply_nested_svg(17_000, "<tspan>", "</tspan>", "x");
+        let spans = String::from_utf8(spans)
+            .expect("fixture is UTF-8")
+            .replacen("<tspan>", "<text y=\"10\"><tspan>", 1)
+            .replacen("</svg>", "</text></svg>", 1);
+        for nested in [groups, spans.into_bytes()] {
+            let scene = nested_svg_scene(&nested, 20, 10);
+            for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+                let request = RenderRequest::builder(format)
+                    .build()
+                    .expect("request is valid");
+                let outcome = Renderer::new()
+                    .render(&scene, &request)
+                    .expect("excessive nesting has local recovery");
+                let [diagnostic] = outcome.report().diagnostics() else {
+                    panic!("one nesting diagnostic in {format:?}");
+                };
+                assert_eq!(diagnostic.code(), DiagnosticCode::IMAGE_DECODE_FAILED);
+            }
+        }
+    });
+}
+
+#[test]
+fn nested_svg_at_the_element_depth_ceiling_draws_on_a_spawned_thread_stack() {
+    // 256 element levels, counted from the outermost nested root through every
+    // nested data image: a root sits at level 0, and a nested image's root one
+    // level below its image element.
+    const LEVELS: usize = 256;
+    on_spawned_thread_stack(|| {
+        let images = usize::try_from(ResourceLimits::default().max_nested_asset_depth())
+            .expect("depth fits usize");
+        // Every document holding an image spends its groups, the image and the
+        // nested root below it.
+        let groups = 40;
+        let leaf = r##"<rect width="20" height="10" fill="#00ff00"/>"##;
+        let mut chain = deeply_nested_svg(LEVELS - images * (groups + 2) - 1, "<g>", "</g>", leaf);
+        for _ in 0..images {
+            let child = base64::engine::general_purpose::STANDARD.encode(&chain);
+            let image = format!(
+                r#"<image width="20" height="10" href="data:image/svg+xml;base64,{child}"/>"#
+            );
+            chain = deeply_nested_svg(groups, "<g>", "</g>", &image);
+        }
+        let text = |id: &str, spans: usize| {
+            format!(
+                r#"<text{id} y="10">{}x{}</text>"#,
+                "<tspan>".repeat(spans),
+                "</tspan>".repeat(spans)
+            )
+        };
+        let spans = deeply_nested_svg(0, "", "", &text("", LEVELS - 1));
+        // The viewer instantiates a `use` in place, so it walks the deep text
+        // again below the deep reference.
+        let reused = deeply_nested_svg(LEVELS - 1, "<g>", "</g>", r##"<use href="#t"/>"##);
+        let reused = String::from_utf8(reused)
+            .expect("fixture is UTF-8")
+            .replacen(
+                "<g>",
+                &format!("<defs>{}</defs><g>", text(r#" id="t""#, LEVELS - 2)),
+                1,
+            );
+        // PDF lowers a filtered group through its own raster walk.
+        let filtered = deeply_nested_svg(
+            LEVELS - 1,
+            "<g>",
+            "</g>",
+            r##"<rect width="20" height="10" fill="#00ff00" filter="url(#f)"/>"##,
+        );
+        let filtered = String::from_utf8(filtered)
+            .expect("fixture is UTF-8")
+            .replacen(
+                "<g>",
+                r#"<defs><filter id="f"><feGaussianBlur stdDeviation="1"/></filter></defs><g>"#,
+                1,
+            );
+        for (nested, effect) in [
+            (chain, false),
+            (spans, false),
+            (reused.into_bytes(), false),
+            (filtered.into_bytes(), true),
+        ] {
+            let scene = nested_svg_scene(&nested, 20, 10);
+            for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+                let request = RenderRequest::builder(format)
+                    .build()
+                    .expect("request is valid");
+                let outcome = Renderer::new()
+                    .render(&scene, &request)
+                    .expect("nesting at the ceiling renders");
+                assert!(
+                    outcome
+                        .report()
+                        .diagnostics()
+                        .iter()
+                        .all(|diagnostic| effect
+                            && diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK),
+                    "nesting at the ceiling draws in {format:?}: {:?}",
+                    outcome.report().diagnostics()
+                );
+            }
+        }
+    });
+}
+
 #[test]
 fn nested_data_svg_depth_ceiling_stops_recursive_resolution() {
     let leaf = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
@@ -579,6 +712,7 @@ fn pdf_rasterizes_an_isolated_effect_closure_with_exact_diagnostics() {
         pixel_width: Some(20),
         pixel_height: Some(10),
         causes,
+        ..
     }) = diagnostic.details()
     else {
         panic!("fallback diagnostic has exact typed details");
@@ -614,6 +748,7 @@ fn pdf_forbid_rejects_the_first_effect_closure_without_a_fallback_warning() {
             pixel_width: Some(20),
             pixel_height: Some(10),
             causes,
+            ..
         }) if !causes.is_empty()
     ));
 }

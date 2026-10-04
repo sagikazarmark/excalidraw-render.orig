@@ -421,7 +421,9 @@ fn animation_occurrences() {
                         let actual = crate::common::raster::decode_png(first.artifact().bytes());
                         assert_eq!((actual.width, actual.height), (active * 3, 2));
                         let expected: Vec<_> = vectors::PIXELS
-                            .chunks_exact(3)
+                            .as_chunks::<3>()
+                            .0
+                            .iter()
                             .flat_map(|pixels| {
                                 (0..active).flat_map(move |_| pixels.as_flattened().iter().copied())
                             })
@@ -542,7 +544,7 @@ fn check_evidence(evidence: serde_json::Value, group: &str, count: usize) {
     for row in rows {
         if group == "composition" {
             let r = reference::png(&reference::base64(&row["reference"]["png"]));
-            let alpha: Vec<_> = r.rgba().chunks_exact(4).map(|p| p[3]).collect();
+            let alpha: Vec<_> = r.rgba().as_chunks::<4>().0.iter().map(|p| p[3]).collect();
             assert_eq!(json!(alpha), row["alpha"], "{} reference alpha", row["id"]);
         }
         let scene = SceneDocument::parse(&serde_json::to_vec(&row["scene"]).unwrap()).unwrap();

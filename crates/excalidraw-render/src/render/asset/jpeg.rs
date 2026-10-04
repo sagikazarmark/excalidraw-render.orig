@@ -637,7 +637,7 @@ pub(super) fn decode_static_jpeg(
                 rgb[i * 3..i * 3 + 3].copy_from_slice(&p);
             }
         } else {
-            for p in rgb.chunks_exact_mut(3) {
+            for p in rgb.as_chunks_mut::<3>().0.iter_mut() {
                 let output = lut.pixel([p[0], p[1], p[2]])?;
                 p.copy_from_slice(&output);
             }

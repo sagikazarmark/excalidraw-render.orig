@@ -5,7 +5,7 @@
 //! compared by `xtask conformance aggregate-svg-font-subset-targets`.
 
 use super::*;
-use crate::{CompatibilityRevision, Renderer, ResourceLimits};
+use crate::{Renderer, ResourceLimits};
 
 pub(crate) fn assert_font_subset_resource_trace_matrix() {
     assert_scene_trace_replay();
@@ -64,8 +64,7 @@ fn assert_scene_trace_replay() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("SVG request is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
 
     let cache = new_font_subset_cache();
     let (cold_result, cold_trace) =
@@ -97,8 +96,8 @@ fn assert_scene_trace_replay() {
         .iter()
         .find(|entry| entry["event"] == "svg_font_dependency_envelope")
         .expect("font dependency envelope is traced");
-    assert_eq!(envelope["deltas"]["working_bytes"], 28_628_224);
-    assert_eq!(envelope["deltas"]["total_work_units"], 52_456_060);
+    assert_eq!(envelope["deltas"]["working_bytes"], 13_942_016);
+    assert_eq!(envelope["deltas"]["total_work_units"], 8_397_412);
 }
 
 fn assert_frame_batch_trace_replay() {
@@ -199,8 +198,7 @@ fn assert_failure_trace_replay() {
         br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":80,"height":30,"fontSize":20,"fontFamily":5,"text":"A","updated":1}],"appState":{},"files":{}}"#,
     )
     .expect("font subset failure scene is valid");
-    let profile =
-        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+    let profile = Renderer::new().profile_identity();
     let default_request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("default SVG request is valid");

@@ -195,7 +195,10 @@ members:
 all other root members are permitted and preserved. Bare arrays, scalars, null,
 partial envelopes, clipboard or library payloads, another type, another envelope
 version, or a wrong required container type MUST fail with
-`scene.invalid-envelope`. Duplicate object members MUST be rejected.
+`scene.invalid-envelope`. Its message names the offending or missing member and
+what was found there, and says when the document is an Excalidraw library
+(`"excalidrawlib"`) or clipboard (`"excalidraw/clipboard"`) payload rather
+than a scene document. Duplicate object members MUST be rejected.
 
 After the envelope passes, parsing MUST remain compatibility-revision-neutral.
 It MUST retain every occurrence, including scalar element entries, malformed
@@ -299,12 +302,8 @@ The supported facade MUST have this topology:
 SceneDocument::parse(&[u8]) -> Result<SceneDocument, SceneParseError>
 
 Renderer::new() -> Renderer
-Renderer::for_revision(CompatibilityRevision)
-    -> Result<Renderer, UnsupportedRevisionError>
-Renderer::supported_revisions() -> &'static [CompatibilityRevision]
-Renderer::profile_identity(CompatibilityRevision)
-    -> Result<&'static ReferenceProfileIdentity, UnsupportedRevisionError>
-Renderer::selected_profile_identity(&self) -> &'static ReferenceProfileIdentity
+Renderer::profile_identity(&self) -> &'static ReferenceProfileIdentity
+Renderer::frame_profile_identity(&self) -> &'static ReferenceProfileIdentity
 Renderer::render(&self, &SceneDocument, &RenderRequest)
     -> Result<RenderOutcome, RenderError>
 Renderer::render_frame(&self, FrameRef, &FrameRenderRequest)
@@ -324,20 +323,20 @@ fresh request-scoped session. Public structs have private fields and read-only
 accessors. Evolvable enums and string-backed code enums are non-exhaustive.
 Requests are constructible only through validated builders.
 
-Every `Renderer` exposes its selected `ReferenceProfileIdentity` through a
-read-only accessor. A successful outcome exposes read-only access to its
-artifact, immutable ordered report, selected revision, Excalidraw release, and
-profile digest. `RenderError` exposes the complete ordered report accumulated
+Every `Renderer` exposes its scene and frame `ReferenceProfileIdentity`
+through read-only accessors. A successful outcome exposes read-only access to its
+artifact, immutable ordered report, and the `ReferenceProfileIdentity` it
+reproduces (the frame profile for a frame export). `RenderError` exposes the complete ordered report accumulated
 before failure; pre-render typed failures expose no report.
 
-`CompatibilityRevision` is a public string/number-parseable newtype with named
-constants. `ReferenceProfileIdentity` exposes compatibility revision,
-Excalidraw release, and canonical profile digest. `Renderer::new()` selects the
-documented package default, which is compatibility revision `1` in the first
-release. A named package-default constant is public and callers do not infer it
-from list order. Every revision retained in the semver-major line
-remains selectable. Exact reproduction requires both package release and
-compatibility revision; a profile digest is discoverable but not a selector.
+`CompatibilityRevision` is a public read-only newtype with a named constant for
+each revision. `ReferenceProfileIdentity` exposes compatibility revision,
+Excalidraw release, and canonical profile digest. A renderer release implements
+exactly one compatibility revision, which `Renderer::new()` selects; revision
+`1` in the 0.x releases. There is no revision selector: per ADR-0016 no
+historical revision is retained, so callers pin the package release and
+dependency lockfile for exact reproduction. A profile digest is discoverable but
+not a selector.
 
 One target request produces exactly one `OutputFormat`: `Svg`, `Png`, or `Pdf`, spelled
 `svg`, `png`, and `pdf` in serialized forms.
@@ -455,11 +454,11 @@ basename is reported as a stem. An empty selection is a valid answer and exits
 `0`, unlike an export, which fails `cli.frame-no-match`. Exceeding
 `--max-frames` still fails `cli.frame-limit-exceeded`. `--list` does not accept
 `--report-format none`. The listing is delivered on the report channel: human
-mode emits one tab-separated line per frame; JSON mode emits one schema-1
-document whose top-level member order is `schema_version`, `status`,
-`renderer_version`, `compatibility_revision`, `excalidraw_release`,
-`reference_profile_digest`, `mode`, `frames`, with `mode` fixed to `list` and
-each entry ordered `ordinal`, `kind`, `name`, `output_basename`.
+mode emits one tab-separated line per frame, or one `note:` line for an empty
+selection; JSON mode emits one schema-1 document whose top-level member order
+is `schema_version`, `status`, `renderer_version`, `compatibility_revision`,
+`excalidraw_release`, `reference_profile_digest`, `mode`, `frames`, with `mode`
+fixed to `list` and each entry ordered `ordinal`, `kind`, `name`, `output_basename`.
 
 The optional name regex uses Unicode-aware linear-time Rust regex search,
 case-sensitive by default. It is applied only to nonempty source string names.
@@ -530,9 +529,13 @@ also fails, exit 1 without claiming successful reporting or trying another
 channel. The failure envelope has top-level `artifact: null`; delivery details
 record whether artifact bytes were already delivered.
 
-Human mode prints all diagnostics for a diagnosed success and nothing for clean
-success. JSON mode always emits one report document. `none` suppresses successful
-reporting and emits one non-JSON family/code/message line on failure.
+Human mode prints the diagnostics of a diagnosed success and nothing for clean
+success. It folds occurrences with the same code and message into one line with
+their count and element IDs, and lists informational diagnostics only with
+`-v, --verbose`; a failure is an `error: MESSAGE [CODE]` line, optionally
+followed by `hint:` lines. JSON mode always emits one report document with every
+occurrence. `none` suppresses successful reporting and emits one non-JSON
+`error: MESSAGE [CODE]` line on failure.
 
 | Exit | Meaning |
 | ---: | --- |
@@ -541,7 +544,7 @@ reporting and emits one non-JSON family/code/message line on failure.
 | `2` | Grammar, request, format, duplicate-ID, or unsupported-revision usage error |
 
 `--list-revisions` accepts only human or JSON report controls and lists revisions
-in increasing order. `--version` is human-only standalone stdout and prints
+in increasing order. `-V, --version` is human-only standalone stdout and prints
 package version, default revision, Excalidraw release, and profile digest.
 
 ## 8. Rendering Semantics
@@ -754,6 +757,11 @@ What remains draws as the pinned reference draws an SVG image:
     declaration, or an expansion beyond the documented bound rejects the image
     with the usual decode-failed recovery.
   - External entities expand to nothing.
+- Nesting: an element more than 256 levels below the outermost nested root
+  rejects its document with the usual decode-failed recovery, before any
+  recursive parse. Levels count on through nested data SVGs, whose root sits
+  one level below its image element; a nested image that crosses fails locally
+  like any other nested image failure.
 - External references:
   - A non-fragment `url()` resolves as a missing fragment, so its fallback
     paint applies.
@@ -2110,8 +2118,8 @@ Excalidraw release, and profile digest. Recoverable repair, replacement,
 omission, local loss, or optional-metadata failure returns that outcome.
 `RenderError` never contains partial artifact bytes.
 
-The five typed library failures are `SceneParseError`, `RequestError`,
-`FrameBatchError`, `UnsupportedRevisionError`, and `RenderError`. They implement
+The four typed library failures are `SceneParseError`, `RequestError`,
+`FrameBatchError`, and `RenderError`. They implement
 `std::error::Error`, typed accessors, and `descriptor() -> ErrorDescriptor`.
 Descriptors, diagnostics, reports, compatibility identity, and stable views
 implement `serde::Serialize`. Opaque scene documents, artifacts, outcomes,
@@ -2139,7 +2147,7 @@ Schema-1 errors have this exact member order and explicit nulls:
 
 ```json
 {
-  "family": "scene_parse | request | frame_batch | unsupported_revision | render | cli",
+  "family": "scene_parse | request | frame_batch | render | cli",
   "category": "input | resource_limit | no_meaningful_artifact | encoding | internal | null",
   "code": "stable.code",
   "message": "human explanation",
@@ -2170,7 +2178,7 @@ Parse pointer rules are:
 | `scene.object-key-too-large` | Expected member, containing object, or null in decreasing reliability |
 | `scene.duplicate-object-key` | Expected path of the later duplicate member |
 
-Malformed syntax never causes an invented path. Request, unsupported-revision,
+Malformed syntax never causes an invented path. Request,
 CLI grammar/path/transport/delivery, and supplemental transport failures use
 null. CLI-preserved library errors preserve the library pointer.
 
@@ -2306,7 +2314,7 @@ Detail bindings are fixed, not producer-selected:
 | `scene.number-token-too-large` | `parse_limit`, `max_number_token_bytes`, bytes |
 | `scene.parse-memory-exceeded` | `parse_limit`, `max_parse_working_bytes`, bytes |
 | Every `request.*` | `request_value`; canonical rejected field and applicable asset/option |
-| `revision.unsupported` | `revision` with parsed requested revision |
+| `revision.unsupported` (CLI only) | family `cli`, `cli_argument` with the rejected `--compatibility-revision` value |
 | `scene.unbounded-geometry`, encoder/internal failures other than `encode.svg-font-subset-failed` | null |
 | `encode.svg-font-subset-failed` | `svg_font_subset_failure`; first failed stage, resolved family, source asset identity |
 | Fatal PDF fallback | `pdf_raster_fallback`, null recovery, first closure |
@@ -2384,7 +2392,7 @@ scene.duplicate-object-key
 scene.parse-memory-exceeded
 ```
 
-Request and revision codes are:
+Request codes, and the CLI-only revision code, are:
 
 ```text
 request.invalid-padding
@@ -2970,6 +2978,13 @@ whole-text face is fixed, the faces already serving the target change neither
 their count nor their order, and neither the whole-text face's initial `cmap`
 test nor a declared-range test is a probe.
 
+PDF hands each glyph its whole cluster's text for `ToUnicode` and
+`ActualText`, so a cluster shaped to several glyphs repeats its text once per
+glyph. Before encoding, each element pays one work unit per UTF-16 code unit
+of cluster text that every glyph of such a cluster carries, in the
+`pdf_repeated_cluster_text` event; an element that repeats nothing has no
+event. SVG and PNG repeat nothing and pay nothing.
+
 Direct SVG font subsetting adds these canonical events for each target. First,
 all family-scalar-set events occur in resolved family order. Then each candidate
 face produces one considered event in pinned face order and, when selected, an
@@ -3001,8 +3016,11 @@ mandatory. Pinned dependencies that do not expose incremental budget hooks run
 under one revision-defined conservative dependency envelope. For a selected
 chunk, let `S` be its exact compressed byte length, `D` its manifested decoded
 sfnt length, `U` the family scalar count, `T = D / 16`, `G = 65,535`,
-`F = 256 * D`, `W = 2 * D`, and `E = 8 MiB`. `F` is the maximum
-adapter-produced sfnt and adapter workspace, `W` is the maximum generated WOFF2,
+`F = 2 * D + 1 MiB`, `W = 2 * D`, and `E = 8 MiB`. `F` is the maximum
+adapter-produced sfnt and adapter workspace: a subset keeping every glyph,
+with its widened `loca` and rewritten names, stays within twice its source. An
+earlier draft's `F = 256 * D` charged a few emoji and CJK chunks past the
+default total work ceiling. `W` is the maximum generated WOFF2,
 `E` is the quality-11 encoder workspace, `T` is the sfnt table-record ceiling,
 and `G` is the TrueType glyph ceiling. The per-chunk work envelope is:
 

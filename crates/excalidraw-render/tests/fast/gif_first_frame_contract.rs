@@ -292,9 +292,9 @@ impl<'a> Reader<'a> {
         }
         Ok(self
             .take(3 * (2 << (packed & 7)))?
-            .chunks_exact(3)
-            .map(|p| p.try_into().unwrap())
-            .collect())
+            .as_chunks::<3>()
+            .0
+            .to_vec())
     }
 }
 
@@ -859,7 +859,9 @@ fn png_pixels(bytes: &[u8], expected: &[u8], untagged: bool) {
     assert_eq!(actual.rgba, expected);
     assert!(actual
         .rgba
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .all(|p| matches!(p[3], 0 | 255) && (p[3] != 0 || p[..3] == [0; 3])));
 }
 fn pdf_extent(bytes: &[u8]) {
@@ -1007,7 +1009,9 @@ fn negative_oracles(record: &Value) {
         (
             png::ColorType::Rgb,
             expected
-                .chunks_exact(4)
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .flat_map(|p| p[..3].iter().copied())
                 .collect(),
         ),
