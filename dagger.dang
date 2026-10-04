@@ -214,9 +214,9 @@ type Lint {
       "--package", "excalidraw-render",
       "--package", "excalidraw-render-cli",
       "--package", "excalidraw-render-compare",
-      "--package", "excalidraw-fonts",
-      "--package", "excalidraw-fonts-xiaolai",
-      "--package", "excalidraw-fonts-xiaolai-extended",
+      "--package", "excalidraw-render-fonts",
+      "--package", "excalidraw-render-fonts-xiaolai",
+      "--package", "excalidraw-render-fonts-xiaolai-extended",
       "--package", "xtask",
     ]).combinedOutput
   }

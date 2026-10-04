@@ -1,4 +1,4 @@
-//! 44 byte-exact Xiaolai chunks for extended CJK blocks, for `excalidraw-fonts`.
+//! 44 byte-exact Xiaolai chunks for extended CJK blocks, for `excalidraw-render-fonts`.
 
 #![doc(hidden)]
 

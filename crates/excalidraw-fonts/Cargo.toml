@@ -1,5 +1,5 @@
 [package]
-name = "excalidraw-fonts"
+name = "excalidraw-render-fonts"
 version = "0.1.0+excalidraw.0.18.1"
 edition.workspace = true
 rust-version.workspace = true
@@ -8,8 +8,7 @@ description = "Font payloads and catalog for excalidraw-render (internal; no sta
 # Comic Shanns (MIT). LICENSE-BUNDLE.txt carries every license and notice.
 license = "(MIT OR Apache-2.0) AND OFL-1.1 AND MIT"
 repository.workspace = true
-homepage.workspace = true
-documentation = "https://docs.rs/excalidraw-fonts"
+documentation = "https://docs.rs/excalidraw-render-fonts"
 readme = "README.md"
 keywords = ["excalidraw", "fonts"]
 categories = ["graphics"]

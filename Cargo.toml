@@ -14,8 +14,7 @@ resolver = "2"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/sagikazarmark/excalidraw"
-homepage = "https://github.com/sagikazarmark/excalidraw"
+repository = "https://github.com/sagikazarmark/excalidraw-render"
 # The oldest compiler the published crates support; the `lint:msrv` Dagger check
 # compiles the renderer and CLI with it. Krilla 0.8.2 declares 1.92.
 # The gates themselves build with the toolchain
@@ -40,9 +39,11 @@ rust-version = "1.92"
 base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
 clap = { version = "=4.6.7", features = ["derive", "wrap_help"] }
 excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
-excalidraw-fonts = { path = "crates/excalidraw-fonts", version = "=0.1.0", default-features = false }
-excalidraw-fonts-xiaolai = { path = "crates/excalidraw-fonts-xiaolai", version = "=0.1.0" }
-excalidraw-fonts-xiaolai-extended = { path = "crates/excalidraw-fonts-xiaolai-extended", version = "=0.1.0" }
+# The font packages publish as `excalidraw-render-fonts*`; the keys keep the
+# shorter names the code and the generated catalog use.
+excalidraw-fonts = { package = "excalidraw-render-fonts", path = "crates/excalidraw-fonts", version = "=0.1.0", default-features = false }
+excalidraw-fonts-xiaolai = { package = "excalidraw-render-fonts-xiaolai", path = "crates/excalidraw-fonts-xiaolai", version = "=0.1.0" }
+excalidraw-fonts-xiaolai-extended = { package = "excalidraw-render-fonts-xiaolai-extended", path = "crates/excalidraw-fonts-xiaolai-extended", version = "=0.1.0" }
 csscolorparser = "0.9.0"
 cssparser = "0.38.0"
 cssparser-color = "0.6.0"

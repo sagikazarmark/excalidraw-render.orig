@@ -14,7 +14,7 @@ cd "${SCRIPT_DIR}"
 graph="$(cargo tree --locked --target "${TARGET}" --no-default-features \
   --edges normal,build,dev --prefix none --format '{p}')"
 while IFS= read -r package; do
-  if [[ "${package}" == excalidraw-fonts-xiaolai\ * || "${package}" == excalidraw-fonts-xiaolai-extended\ * ]]; then
+  if [[ "${package}" == excalidraw-render-fonts-xiaolai\ * || "${package}" == excalidraw-render-fonts-xiaolai-extended\ * ]]; then
     echo "no-CJK consumer unexpectedly depends on ${package}" >&2
     exit 1
   fi

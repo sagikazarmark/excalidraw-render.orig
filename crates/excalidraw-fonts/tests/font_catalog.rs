@@ -1,5 +1,5 @@
-use excalidraw_fonts::fonts::{find_face, Container, FamilyId};
-use excalidraw_fonts::{font_face_order, font_face_unicode_ranges, revision_1};
+use excalidraw_render_fonts::fonts::{find_face, Container, FamilyId};
+use excalidraw_render_fonts::{font_face_order, font_face_unicode_ranges, revision_1};
 
 #[test]
 fn ordered_families_cover_the_catalog_without_changing_declarations() {

@@ -1,9 +1,9 @@
 # 0.1.0 release policy
 
 Status: accepted scope; [release preparation verified](release-preparation.md). No publication is
-implied by this document. The code will move to
-[`sagikazarmark/excalidraw`](https://github.com/sagikazarmark/excalidraw) before
-publication.
+implied by this document. The code is published at
+[`sagikazarmark/excalidraw-render`](https://github.com/sagikazarmark/excalidraw-render)
+before the crates are.
 
 This policy implements [ADR-0016](adr/0016-release-0.1.0-with-a-version-scoped-contract.md).
 It takes precedence over the original revision-1 specification's publication,
