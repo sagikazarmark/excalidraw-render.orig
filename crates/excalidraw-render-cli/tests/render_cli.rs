@@ -253,6 +253,112 @@ fn image_inputs_are_recognized_and_explained() {
     }
 }
 
+#[test]
+fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
+    let scratch = temp_directory_named("grouped-diagnostics");
+    let temp = scratch.path();
+    let input = temp.join("diagnosed.excalidraw");
+    fs::write(
+        &input,
+        r#"{"type":"excalidraw","version":2,"elements":[
+            {"id":"ar","type":"text","x":0,"y":0,"width":100,"height":35,"text":"مرحبا بالعالم","originalText":"مرحبا بالعالم","fontSize":28,"fontFamily":5,"lineHeight":1.25,"updated":1},
+            {"id":"helvetica","type":"text","x":0,"y":50,"width":100,"height":35,"text":"Hello","originalText":"Hello","fontSize":28,"fontFamily":2,"lineHeight":1.25,"updated":1},
+            {"id":"a","type":"rectangle","x":0,"y":100,"width":10,"height":10},
+            {"id":"b","type":"rectangle","x":20,"y":100,"width":10,"height":10},
+            {"id":"c","type":"rectangle","x":40,"y":100,"width":10,"height":10},
+            {"id":"d","type":"rectangle","x":60,"y":100,"width":10,"height":10},
+            {"id":"e","type":"rectangle","x":80,"y":100,"width":10,"height":10}
+        ],"appState":{},"files":{}}"#,
+    )
+    .expect("write diagnosed scene");
+
+    let result = cli(&[input.to_str().unwrap(), "-o", "-", "-f", "svg"]);
+    assert!(result.status.success(), "{result:?}");
+    let stderr = String::from_utf8(result.stderr).expect("report is UTF-8");
+    let lines = stderr.lines().collect::<Vec<_>>();
+    assert_eq!(lines.len(), 2, "{stderr}");
+    assert!(
+        lines.iter().any(|line| line.starts_with("warning: ")
+            && line.contains(
+                "[font.missing-glyph] (12 occurrences; element ar; characters U+0645, U+0631, "
+            )
+            && line.ends_with(" more)")),
+        "{stderr}"
+    );
+    assert!(
+        lines.iter().any(|line| line.starts_with("warning: ")
+            && line.ends_with(
+                "[normalization.missing-timestamp] (5 occurrences; elements a, b, c and 2 more)"
+            )),
+        "{stderr}"
+    );
+    assert!(
+        !stderr.contains("font.liberation-sans-substituted"),
+        "{stderr}"
+    );
+
+    let verbose = cli(&[input.to_str().unwrap(), "-o", "-", "-f", "svg", "--verbose"]);
+    let verbose = String::from_utf8(verbose.stderr).expect("report is UTF-8");
+    assert!(
+        verbose.lines().any(|line| line.starts_with("info: ")
+            && line.ends_with("[font.liberation-sans-substituted] (element helvetica)")),
+        "{verbose}"
+    );
+
+    // JSON keeps every occurrence.
+    let json = cli(&[
+        input.to_str().unwrap(),
+        "-o",
+        "-",
+        "-f",
+        "svg",
+        "--report-format",
+        "json",
+    ]);
+    let report: serde_json::Value = serde_json::from_slice(&json.stderr).expect("JSON report");
+    assert_eq!(report["diagnostics"].as_array().map(Vec::len), Some(18));
+}
+
+#[test]
+fn max_dimension_on_svg_output_is_reported_as_ignored() {
+    let result = cli(&[
+        corpus_scene("basic-shapes.excalidraw").to_str().unwrap(),
+        "-o",
+        "-",
+        "-f",
+        "svg",
+        "--max-dimension",
+        "100",
+    ]);
+    assert!(result.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr).lines().next(),
+        Some("warning: --max-dimension applies only to PNG and PDF output and was ignored; use --scale to resize SVG")
+    );
+
+    for args in [
+        vec!["-f", "png"],
+        vec!["-f", "svg", "--report-format", "json"],
+    ] {
+        let result = cli(&[
+            &[
+                corpus_scene("basic-shapes.excalidraw").to_str().unwrap(),
+                "-o",
+                "-",
+                "--max-dimension",
+                "100",
+            ][..],
+            &args,
+        ]
+        .concat());
+        assert!(result.status.success());
+        assert!(
+            !String::from_utf8_lossy(&result.stderr).contains("--max-dimension"),
+            "{args:?}"
+        );
+    }
+}
+
 /// Runs the CLI with `args` and captures its output.
 fn cli(args: &[&str]) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))

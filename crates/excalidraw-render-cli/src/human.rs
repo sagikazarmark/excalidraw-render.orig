@@ -5,9 +5,52 @@
 use std::fmt::Write as _;
 use std::io;
 
-use excalidraw_render::{CompatibilityDiagnostic, ErrorDescriptor};
+use excalidraw_render::{
+    CompatibilityDiagnostic, DiagnosticSeverity, ErrorDescriptor, ErrorDetails, OutputFormat,
+};
 use serde::de::IgnoredAny;
 use serde::Deserialize;
+
+/// How many element IDs and characters a grouped diagnostic names before it
+/// summarizes the rest.
+const SHOWN_ELEMENTS: usize = 3;
+const SHOWN_CHARACTERS: usize = 5;
+
+/// Human-report choices that do not change the JSON report.
+#[derive(Clone, Copy)]
+pub(crate) struct HumanReport {
+    /// Print informational diagnostics too.
+    pub(crate) verbose: bool,
+    /// `--max-dimension` was given for SVG output, where it does nothing.
+    pub(crate) ignored_max_dimension: bool,
+}
+
+impl HumanReport {
+    pub(crate) const PLAIN: Self = Self {
+        verbose: false,
+        ignored_max_dimension: false,
+    };
+
+    pub(crate) fn new(
+        verbose: bool,
+        max_dimension: Option<f64>,
+        format: Option<OutputFormat>,
+    ) -> Self {
+        Self {
+            verbose,
+            ignored_max_dimension: max_dimension.is_some() && format == Some(OutputFormat::Svg),
+        }
+    }
+
+    /// Warnings about the command line itself, printed before diagnostics.
+    pub(crate) fn notes(self) -> &'static str {
+        if self.ignored_max_dimension {
+            "warning: --max-dimension applies only to PNG and PDF output and was ignored; use --scale to resize SVG\n"
+        } else {
+            ""
+        }
+    }
+}
 
 /// One `error: MESSAGE [CODE]` line.
 pub(crate) fn error_line(message: &str, code: &str) -> String {
@@ -177,18 +220,115 @@ fn envelope_hint(bytes: &[u8]) -> &'static str {
     }
 }
 
-/// One `CODE: MESSAGE` line per diagnostic.
-pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic]) -> String {
-    diagnostics
+/// Diagnostics with identical code and message folded into one line each, in
+/// first-occurrence order. Informational ones are left out unless `verbose`.
+pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool) -> String {
+    struct Group<'a> {
+        first: &'a CompatibilityDiagnostic,
+        count: usize,
+        elements: Vec<&'a str>,
+        characters: Vec<u32>,
+    }
+    let mut groups: Vec<Group<'_>> = Vec::new();
+    for diagnostic in diagnostics {
+        if diagnostic.severity() == DiagnosticSeverity::Info && !verbose {
+            continue;
+        }
+        let index = groups
+            .iter()
+            .position(|group| {
+                group.first.code() == diagnostic.code()
+                    && group.first.message() == diagnostic.message()
+            })
+            .unwrap_or_else(|| {
+                groups.push(Group {
+                    first: diagnostic,
+                    count: 0,
+                    elements: Vec::new(),
+                    characters: Vec::new(),
+                });
+                groups.len() - 1
+            });
+        let group = &mut groups[index];
+        group.count += 1;
+        if let Some(element) = diagnostic.element_id() {
+            if !group.elements.contains(&element) {
+                group.elements.push(element);
+            }
+        }
+        if let Some(ErrorDetails::MissingGlyph { codepoint, .. }) = diagnostic.details() {
+            if !group.characters.contains(codepoint) {
+                group.characters.push(*codepoint);
+            }
+        }
+    }
+
+    let mut text = String::new();
+    for group in groups {
+        let severity = match group.first.severity() {
+            DiagnosticSeverity::Warning => "warning",
+            DiagnosticSeverity::Info => "info",
+            _ => "note",
+        };
+        let mut facts = Vec::new();
+        if group.count > 1 {
+            facts.push(format!("{} occurrences", group.count));
+        }
+        match group.elements.as_slice() {
+            [] => {}
+            [element] => facts.push(format!("element {element}")),
+            elements => facts.push(format!("elements {}", listed(elements, SHOWN_ELEMENTS))),
+        }
+        if !group.characters.is_empty() {
+            let characters = group
+                .characters
+                .iter()
+                .map(|codepoint| format!("U+{codepoint:04X}"))
+                .collect::<Vec<_>>();
+            facts.push(format!(
+                "characters {}",
+                listed(&characters, SHOWN_CHARACTERS)
+            ));
+        }
+        let _ = write!(
+            text,
+            "{severity}: {} [{}]",
+            group.first.message(),
+            group.first.code()
+        );
+        if !facts.is_empty() {
+            let _ = write!(text, " ({})", facts.join("; "));
+        }
+        text.push('\n');
+    }
+    text
+}
+
+/// `a, b, c and 2 more`, naming at most `shown` items.
+fn listed(items: &[impl AsRef<str>], shown: usize) -> String {
+    let named = items
         .iter()
-        .map(|diagnostic| format!("{}: {}\n", diagnostic.code(), diagnostic.message()))
-        .collect()
+        .take(shown)
+        .map(AsRef::as_ref)
+        .collect::<Vec<_>>()
+        .join(", ");
+    match items.len().saturating_sub(shown) {
+        0 => named,
+        rest => format!("{named} and {rest} more"),
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{clap_error, os_reason};
+    use super::{clap_error, listed, os_reason};
     use std::io;
+
+    #[test]
+    fn a_list_names_a_few_items_and_counts_the_rest() {
+        assert_eq!(listed(&["a"], 3), "a");
+        assert_eq!(listed(&["a", "b", "c"], 3), "a, b, c");
+        assert_eq!(listed(&["a", "b", "c", "d", "e"], 3), "a, b, c and 2 more");
+    }
 
     #[test]
     fn a_clap_error_carries_the_code_after_the_error_paragraph() {

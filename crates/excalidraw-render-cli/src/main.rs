@@ -21,6 +21,7 @@ mod frames;
 mod human;
 
 use frames::{run_frames, FramesCli};
+use human::HumanReport;
 
 const EXIT_OPERATIONAL: u8 = 1;
 const EXIT_USAGE: u8 = 2;
@@ -218,6 +219,9 @@ struct Cli {
     /// Write the report to PATH instead of stderr
     #[arg(long, value_name = "PATH", help_heading = REPORTING)]
     report_output: Option<String>,
+    /// Also print informational diagnostics in the human report
+    #[arg(short, long, help_heading = REPORTING)]
+    verbose: bool,
 
     /// List the supported compatibility revisions and exit
     #[arg(long, help_heading = INFORMATION)]
@@ -542,7 +546,7 @@ fn command_line_error(error: &clap::Error, preparse_json: bool) -> ExitCode {
                     None,
                     EXIT_USAGE,
                 );
-                failure_report_bytes(ReportFormat::Json, None, None, failure)
+                failure_report_bytes(ReportFormat::Json, None, None, failure, HumanReport::PLAIN)
             } else {
                 human::clap_error(&rendered, "cli.invalid-arguments").into_bytes()
             };
@@ -1325,7 +1329,12 @@ fn deliver_success(
         error: None,
         diagnostics: &diagnostics,
     };
-    let report_bytes = success_report_bytes(cli.report_format, &report, &diagnostics);
+    let report_bytes = success_report_bytes(
+        cli.report_format,
+        &report,
+        &diagnostics,
+        HumanReport::new(cli.verbose, cli.max_dimension, Some(format)),
+    );
 
     let output = cli.output.as_deref().expect("output validated");
     let mut staged_output = if output == "-" {
@@ -1436,10 +1445,16 @@ fn success_report_bytes(
     mode: ReportFormat,
     report: &RenderReport<'_>,
     diagnostics: &[CompatibilityDiagnostic],
+    human: HumanReport,
 ) -> Vec<u8> {
     match mode {
         ReportFormat::Json => json_line(report),
-        ReportFormat::Human => human::diagnostics(diagnostics).into_bytes(),
+        ReportFormat::Human => format!(
+            "{}{}",
+            human.notes(),
+            human::diagnostics(diagnostics, human.verbose)
+        )
+        .into_bytes(),
         ReportFormat::None => Vec::new(),
     }
 }
@@ -1452,7 +1467,8 @@ fn emit_failure(
 ) -> u8 {
     let exit = failure.exit;
     let diagnostics = failure.diagnostics.clone();
-    let bytes = failure_report_bytes(cli.report_format, identity, format, failure);
+    let human = HumanReport::new(cli.verbose, None, format);
+    let bytes = failure_report_bytes(cli.report_format, identity, format, failure, human);
     let report_output = report_output(cli);
     if report_output == "stderr"
         || cli.report_format == ReportFormat::None
@@ -1474,6 +1490,7 @@ fn emit_failure(
             identity,
             format,
             fallback,
+            human,
         );
         let _ = write_stream(&mut io::stderr().lock(), &emergency);
         return EXIT_OPERATIONAL;
@@ -1526,6 +1543,7 @@ fn failure_report_bytes(
     identity: Option<&SelectedIdentity>,
     format: Option<OutputFormat>,
     failure: Failure,
+    human: HumanReport,
 ) -> Vec<u8> {
     if mode != ReportFormat::Json {
         let code = failure.error.code();
@@ -1535,7 +1553,7 @@ fn failure_report_bytes(
             .unwrap_or_else(|| failure.error.human_message());
         let mut text = String::new();
         if mode == ReportFormat::Human {
-            text.push_str(&human::diagnostics(&failure.diagnostics));
+            text.push_str(&human::diagnostics(&failure.diagnostics, human.verbose));
         }
         text.push_str(&human::error_line(&message, code));
         if mode == ReportFormat::Human {
@@ -1660,6 +1678,7 @@ fn emergency_report_failure(
         Some(identity),
         Some(format),
         failure,
+        HumanReport::PLAIN,
     );
     let _ = write_stream(&mut io::stderr().lock(), &bytes);
     EXIT_OPERATIONAL
@@ -1684,7 +1703,8 @@ fn deliver_report_bytes(cli: &Cli, bytes: &[u8], artifact_state: DeliveryState) 
                 artifact_state,
                 Vec::new(),
             );
-            let bytes = failure_report_bytes(cli.report_format, None, None, failure);
+            let bytes =
+                failure_report_bytes(cli.report_format, None, None, failure, HumanReport::PLAIN);
             let _ = write_stream(&mut io::stderr().lock(), &bytes);
             EXIT_OPERATIONAL
         }

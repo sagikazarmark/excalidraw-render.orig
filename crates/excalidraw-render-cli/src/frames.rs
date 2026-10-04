@@ -13,7 +13,7 @@ use regex::Regex;
 use serde::{Serialize, Serializer};
 use unicode_normalization::UnicodeNormalization as _;
 
-use crate::human;
+use crate::human::{self, HumanReport};
 use crate::{
     deliver_report_bytes, destination_exists, emergency_report_failure, emit_failure, json_line,
     parse_asset_declarations, path_conflict, path_entry_exists, read_bounded_asset, read_scene,
@@ -136,6 +136,9 @@ pub(crate) struct FramesCli {
     /// Write the report to PATH instead of stderr
     #[arg(long, value_name = "PATH", help_heading = REPORTING)]
     report_output: Option<String>,
+    /// Also print informational diagnostics in the human report
+    #[arg(short, long, help_heading = REPORTING)]
+    verbose: bool,
 }
 
 impl FramesCli {
@@ -175,6 +178,7 @@ impl FramesCli {
             report_format: self.report_format,
             report_output: self.report_output.clone(),
             force: self.force,
+            verbose: self.verbose,
             list_revisions: false,
             version: false,
             licenses: false,
@@ -930,6 +934,7 @@ fn deliver_frame_batch(
         status,
         &global_diagnostics,
         &entries,
+        HumanReport::new(cli.verbose, cli.max_dimension, Some(format)),
     );
     let mut staged_report = match stage_report_file(cli, &report_bytes) {
         Ok(staged) => staged,
@@ -1031,6 +1036,7 @@ fn deliver_frame_batch(
         status,
         &global_diagnostics,
         &entries,
+        HumanReport::new(cli.verbose, cli.max_dimension, Some(format)),
     );
     if final_report_bytes != report_bytes {
         staged_report.take();
@@ -1120,13 +1126,18 @@ fn frame_batch_report_bytes(
     status: &str,
     global_diagnostics: &[CompatibilityDiagnostic],
     entries: &[(FrameCliEntry, Option<StagedFile>)],
+    human: HumanReport,
 ) -> Vec<u8> {
     match mode {
         ReportFormat::None if status == "success" => Vec::new(),
         ReportFormat::None => frame_batch_error_line(entries),
         ReportFormat::Human => {
             let diagnostics = frame_batch_diagnostics(global_diagnostics, entries);
-            let mut text = human::diagnostics(&diagnostics);
+            let mut text = format!(
+                "{}{}",
+                human.notes(),
+                human::diagnostics(&diagnostics, human.verbose)
+            );
             let mut codes = Vec::new();
             for (entry, _) in entries {
                 if let Some(error) = &entry.error {
@@ -1332,6 +1343,7 @@ mod tests {
                 "partial",
                 &diagnostics,
                 &entries,
+                crate::human::HumanReport::PLAIN,
             )),
             [
                 r#"{"schema_version":1,"status":"partial","renderer_version":""#,
