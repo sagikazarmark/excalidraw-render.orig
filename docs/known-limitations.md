@@ -34,6 +34,8 @@ each one at runtime.
 - Fractional PNG stroke coverage has remaining browser differences (#194).
 - A lossless WebP with bitstream alpha, a clear VP8X alpha flag, and a transforming
   ICC profile has a known color mismatch (#197).
+- Emoji render as monochrome Noto Emoji outlines, not the colour emoji a
+  browser draws from system fonts (#233 tracks an opt-in colour face).
 - Bundled font substitution and glyph fallback differ from ambient browser fonts.
   These are diagnosed. SVG/PDF viewer antialiasing can differ within reviewed
   visual budgets or case-specific exceptions.
