@@ -3,7 +3,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use clap::Parser;
+use clap::Args;
 use excalidraw_render::{
     ColorMode, CompatibilityDiagnostic, CompatibilityRevision, FrameBatchErrorKind,
     FrameRenderRequest, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, Renderer,
@@ -19,67 +19,122 @@ use crate::{
     read_scene_bounded, report_output, same_path, sha256, stage_report_file, validate_paths,
     validate_report_options, write_stream, ArtifactDescriptor, Cli, CliDetails, CliError,
     CliOperation, DeliveryRole, DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError,
-    ReportFormat, SelectedIdentity, StagedFile, EXIT_OPERATIONAL, EXIT_USAGE, MAX_SCENE_BYTES,
+    ReportFormat, SelectedIdentity, StagedFile, ASSETS, EXIT_OPERATIONAL, EXIT_USAGE,
+    MAX_SCENE_BYTES, METADATA, OUTPUT, RENDERING, REPORTING,
 };
 
-#[derive(Parser)]
-#[command(
-    name = "excalidraw-render frames",
-    disable_version_flag = true,
-    about = "Render each selected Excalidraw frame to a separate artifact"
-)]
+pub(crate) const LONG_ABOUT: &str = "\
+Render each selected frame of an Excalidraw scene to its own file in a
+directory.
+
+Every live frame and magic frame is exported with zero padding, named after the
+frame (or frame-N for unnamed frames). By default nothing is written unless
+every frame succeeds; use --list to preview the selection and file names.";
+
+pub(crate) const EXAMPLES: &str = "\
+Examples:
+  excalidraw-render frames drawing.excalidraw --list
+  excalidraw-render frames drawing.excalidraw -o frames --format png
+  excalidraw-render frames drawing.excalidraw -o slides --format pdf --name-regex '^Slide'";
+
+const SELECTION: &str = "Frame selection";
+
+/// The `frames` subcommand.
+#[derive(Args)]
 pub(crate) struct FramesCli {
-    /// Input Excalidraw scene document, or - for stdin.
-    #[arg(allow_hyphen_values = true)]
+    /// Excalidraw scene file (.excalidraw JSON), or - to read standard input
     input: String,
-    /// Output directory. Not required in `--list` mode, which writes nothing.
+    /// Directory to write the frame files to (created if missing; required
+    /// unless --list)
     #[arg(
         short,
         long,
+        value_name = "DIRECTORY",
         allow_hyphen_values = true,
-        required_unless_present = "list"
+        required_unless_present = "list",
+        help_heading = OUTPUT
     )]
     output: Option<String>,
-    #[arg(short, long, value_enum, required_unless_present = "list")]
+    /// Format of every frame file (required unless --list: a directory has
+    /// no extension to infer it from)
+    #[arg(
+        short,
+        long,
+        value_enum,
+        required_unless_present = "list",
+        help_heading = OUTPUT
+    )]
     format: Option<FormatArg>,
-    #[arg(long)]
-    compatibility_revision: Option<String>,
-    #[arg(long)]
-    no_background: bool,
-    #[arg(long, conflicts_with = "max_dimension")]
-    scale: Option<f64>,
-    #[arg(long)]
-    max_dimension: Option<f64>,
-    #[arg(long)]
-    dark_mode: bool,
-    #[arg(long)]
-    embed_scene: bool,
-    #[arg(long)]
-    embed_provenance: bool,
-    #[arg(long)]
-    embed_diagnostics: bool,
-    #[arg(long, value_name = "FILE_ID=PATH")]
-    asset: Vec<String>,
-    #[arg(long, value_name = "FILE_ID=MEDIA_TYPE")]
-    asset_mime: Vec<String>,
-    #[arg(long, value_enum)]
-    pdf_raster_fallback: Option<PdfFallbackArg>,
-    #[arg(long, value_enum, default_value_t)]
-    report_format: ReportFormat,
-    #[arg(long)]
-    report_output: Option<String>,
-    #[arg(long)]
+    /// Replace existing frame files and the report file
+    #[arg(long, help_heading = OUTPUT)]
     force: bool,
-    #[arg(long)]
-    name_regex: Option<String>,
-    #[arg(long, default_value_t = 256)]
-    max_frames: u32,
-    #[arg(long)]
+    /// Write the frames that succeeded even when others fail (still exits 1)
+    #[arg(long, help_heading = OUTPUT)]
     allow_partial: bool,
-    /// Report the frames this selection would export without rendering or
-    /// writing anything.
-    #[arg(long)]
+
+    /// Only export frames whose name matches this Rust regular expression
+    #[arg(long, value_name = "REGEX", help_heading = SELECTION)]
+    name_regex: Option<String>,
+    /// Fail when more than N frames are selected (at most 16384)
+    #[arg(long, value_name = "N", default_value_t = 256, help_heading = SELECTION)]
+    max_frames: u32,
+    /// Print the frames and file names the selection would export, without
+    /// rendering or writing anything
+    #[arg(long, help_heading = SELECTION)]
     list: bool,
+
+    /// Multiply the output size by FACTOR [default: 1]
+    #[arg(
+        long,
+        value_name = "FACTOR",
+        conflicts_with = "max_dimension",
+        help_heading = RENDERING
+    )]
+    scale: Option<f64>,
+    /// Shrink PNG and PDF output so its longer side is at most PX pixels
+    /// (never enlarges; SVG keeps its size)
+    #[arg(long, value_name = "PX", help_heading = RENDERING)]
+    max_dimension: Option<f64>,
+    /// Use a transparent background instead of the scene's background color
+    #[arg(long, help_heading = RENDERING)]
+    no_background: bool,
+    /// Render with Excalidraw's dark theme
+    #[arg(long, help_heading = RENDERING)]
+    dark_mode: bool,
+    /// Whether PDF output may rasterize isolated content that vector PDF cannot
+    /// express [default: allow-isolated]
+    #[arg(long, value_enum, value_name = "MODE", help_heading = RENDERING)]
+    pdf_raster_fallback: Option<PdfFallbackArg>,
+    /// Compatibility revision to render with [default: 1; see
+    /// --list-revisions]
+    #[arg(long, value_name = "N", help_heading = RENDERING)]
+    compatibility_revision: Option<String>,
+
+    /// Embed the scene so Excalidraw can reopen each exported file for editing
+    #[arg(long, help_heading = METADATA)]
+    embed_scene: bool,
+    /// Embed the renderer version and compatibility profile
+    #[arg(long, help_heading = METADATA)]
+    embed_provenance: bool,
+    /// Embed a summary of the compatibility diagnostics
+    #[arg(long, help_heading = METADATA)]
+    embed_diagnostics: bool,
+
+    /// Supply the bytes of image FILE_ID from PATH when the scene does not
+    /// embed them (repeatable)
+    #[arg(long, value_name = "FILE_ID=PATH", help_heading = ASSETS)]
+    asset: Vec<String>,
+    /// Declare the media type of a supplied --asset, e.g. logo=image/png
+    /// (repeatable)
+    #[arg(long, value_name = "FILE_ID=MEDIA_TYPE", help_heading = ASSETS)]
+    asset_mime: Vec<String>,
+
+    /// How to report diagnostics, errors, and --list output on stderr
+    #[arg(long, value_enum, default_value_t, help_heading = REPORTING)]
+    report_format: ReportFormat,
+    /// Write the report to PATH instead of stderr
+    #[arg(long, value_name = "PATH", help_heading = REPORTING)]
+    report_output: Option<String>,
 }
 
 impl FramesCli {

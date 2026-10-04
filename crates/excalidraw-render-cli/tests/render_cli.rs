@@ -26,6 +26,95 @@ fn help_is_successful_stdout_for_scene_and_frame_commands() {
 }
 
 #[test]
+fn help_describes_the_commands_with_examples() {
+    let scene = cli(&["--help"]);
+    assert!(scene.status.success());
+    let scene = String::from_utf8(scene.stdout).expect("help is UTF-8");
+    assert!(scene.contains("Usage: excalidraw-render [OPTIONS] [INPUT]"));
+    assert!(scene.contains("frames"), "{scene}");
+    assert!(scene.contains("Examples:"), "{scene}");
+    assert!(scene.contains("excalidraw-render drawing.excalidraw -o drawing.png --scale 2"));
+
+    for args in [vec!["help", "frames"], vec!["frames", "--help"]] {
+        let frames = cli(&args);
+        assert!(frames.status.success(), "{args:?}: {frames:?}");
+        let frames = String::from_utf8(frames.stdout).expect("help is UTF-8");
+        assert!(
+            frames.contains("Usage: excalidraw-render frames [OPTIONS]"),
+            "{args:?}: {frames}"
+        );
+        assert!(frames.contains("--name-regex"), "{frames}");
+        assert!(frames.contains("Examples:"), "{frames}");
+    }
+
+    let bare_help = cli(&["help"]);
+    assert!(bare_help.status.success());
+    assert!(String::from_utf8_lossy(&bare_help.stdout).contains("Usage:"));
+
+    // No arguments at all is a usage error that shows the help.
+    let nothing = cli(&[]);
+    assert_eq!(nothing.status.code(), Some(2));
+    assert!(nothing.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&nothing.stderr).contains("Usage:"));
+}
+
+#[test]
+fn unknown_options_and_short_version_use_the_command_grammar() {
+    let version = cli(&["-V"]);
+    assert!(version.status.success(), "{version:?}");
+    assert!(
+        String::from_utf8_lossy(&version.stdout).starts_with(&format!(
+            "excalidraw-render {}\n",
+            env!("CARGO_PKG_VERSION")
+        ))
+    );
+
+    for args in [vec!["--bogus"], vec!["scene.excalidraw", "--bogus"]] {
+        let bogus = cli(&args);
+        assert_eq!(bogus.status.code(), Some(2), "{args:?}");
+        let stderr = String::from_utf8_lossy(&bogus.stderr);
+        assert!(
+            stderr.contains("error: unexpected argument '--bogus' found"),
+            "{args:?}: {stderr}"
+        );
+        assert!(stderr.contains("Usage:"), "{stderr}");
+    }
+
+    let frames_bogus = cli(&["frames", "scene.excalidraw", "--padding", "3"]);
+    assert_eq!(frames_bogus.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&frames_bogus.stderr)
+        .contains("error: unexpected argument '--padding' found"));
+}
+
+#[test]
+fn a_scene_file_named_like_the_subcommand_stays_addressable() {
+    let scratch = temp_directory_named("frames-named-scene");
+    let temp = scratch.path();
+    fs::copy(corpus_scene("basic-shapes.excalidraw"), temp.join("frames"))
+        .expect("copy scene named frames");
+    for (args, output) in [
+        (vec!["./frames", "-o", "dot.svg"], "dot.svg"),
+        (vec!["-o", "dashes.svg", "--", "frames"], "dashes.svg"),
+    ] {
+        let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+            .current_dir(temp)
+            .args(&args)
+            .output()
+            .expect("render the scene named frames");
+        assert!(result.status.success(), "{args:?}: {result:?}");
+        assert!(temp.join(output).is_file(), "{args:?}");
+    }
+}
+
+/// Runs the CLI with `args` and captures its output.
+fn cli(args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(args)
+        .output()
+        .expect("run excalidraw-render")
+}
+
+#[test]
 fn standalone_commands_expose_revision_identity_and_exact_licenses() {
     let revisions = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .args(["--list-revisions", "--report-format", "json"])

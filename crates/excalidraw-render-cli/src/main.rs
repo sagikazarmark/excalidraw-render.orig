@@ -6,7 +6,7 @@ use std::io::{self, Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
 
-use clap::{Parser, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use excalidraw_render::{
     license_bundle, ColorMode, CompatibilityDiagnostic, CompatibilityRevision, ErrorDescriptor,
     FrameOptions, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, RenderRequest,
@@ -24,6 +24,62 @@ use frames::{run_frames, FramesCli};
 const EXIT_OPERATIONAL: u8 = 1;
 const EXIT_USAGE: u8 = 2;
 const MAX_SCENE_BYTES: u64 = 67_108_864;
+
+const LONG_ABOUT: &str = "\
+Render an Excalidraw scene document (.excalidraw JSON) to SVG, PNG, or PDF.
+
+Rendering needs no browser, Node.js, network access, or installed fonts. The
+output extension selects the format; use --format for standard output or other
+names. Compatibility diagnostics describing substitutions, omissions, and
+fallbacks are printed to stderr; use --report-format json for a machine-readable
+report.";
+
+const EXAMPLES: &str = "\
+Examples:
+  excalidraw-render drawing.excalidraw -o drawing.svg
+  excalidraw-render drawing.excalidraw -o drawing.png --scale 2
+  excalidraw-render drawing.excalidraw -o drawing.pdf --max-dimension 4096
+  excalidraw-render - -o - --format svg < drawing.excalidraw > drawing.svg
+  excalidraw-render frames drawing.excalidraw --list
+  excalidraw-render frames drawing.excalidraw -o frames --format png";
+
+const EXIT_STATUS: &str = "\
+Exit status:
+  0  the artifact was delivered (diagnostics may still have been reported)
+  1  reading, parsing, rendering, or writing failed
+  2  the command line or a request value is invalid";
+
+/// The whole command line: the default scene render, or a subcommand.
+#[derive(Parser)]
+#[command(
+    name = "excalidraw-render",
+    about = "Render Excalidraw scene documents to SVG, PNG, or PDF",
+    long_about = LONG_ABOUT,
+    after_help = EXAMPLES,
+    after_long_help = format!("{EXAMPLES}\n\n{EXIT_STATUS}"),
+    disable_version_flag = true,
+    args_conflicts_with_subcommands = true,
+    arg_required_else_help = true,
+    subcommand_value_name = "COMMAND",
+    subcommand_help_heading = "Commands"
+)]
+struct Invocation {
+    #[command(subcommand)]
+    command: Option<CliCommand>,
+    #[command(flatten)]
+    render: Cli,
+}
+
+#[derive(Subcommand)]
+enum CliCommand {
+    /// Render each selected frame to its own file in a directory
+    #[command(
+        long_about = frames::LONG_ABOUT,
+        after_help = frames::EXAMPLES,
+        disable_version_flag = true
+    )]
+    Frames(FramesCli),
+}
 
 #[derive(Clone, Copy, ValueEnum)]
 enum FormatArg {
@@ -44,79 +100,133 @@ impl From<FormatArg> for OutputFormat {
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, ValueEnum)]
 enum ReportFormat {
+    /// Readable diagnostics and errors
     #[default]
     Human,
+    /// One JSON report document
     Json,
+    /// Nothing on success; one error line on failure
     None,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
 enum PdfFallbackArg {
+    /// Rasterize content PDF cannot express as an isolated image
     AllowIsolated,
+    /// Fail instead of rasterizing
     Forbid,
 }
 
-#[derive(Parser)]
-#[command(
-    name = "excalidraw-render",
-    disable_version_flag = true,
-    about = "Render Excalidraw scene documents to SVG, PNG, or PDF",
-    after_help = "Use `excalidraw-render frames --help` to export each selected frame to a directory."
-)]
+const OUTPUT: &str = "Output";
+const RENDERING: &str = "Rendering";
+const FRAMES: &str = "Frames";
+const METADATA: &str = "Embedded metadata";
+const ASSETS: &str = "Image assets";
+const REPORTING: &str = "Reporting";
+const INFORMATION: &str = "Information";
+
+/// The default scene render and the standalone information commands.
+#[derive(Args)]
 struct Cli {
-    /// Input Excalidraw scene document, or - for stdin.
-    #[arg(allow_hyphen_values = true)]
+    /// Excalidraw scene file (.excalidraw JSON), or - to read standard input
     input: Option<String>,
 
-    /// Output path, or - for stdout.
-    #[arg(short, long, allow_hyphen_values = true)]
+    /// Output file, or - for standard output; a .svg, .png, or .pdf extension
+    /// selects the format
+    #[arg(
+        short,
+        long,
+        value_name = "FILE",
+        allow_hyphen_values = true,
+        help_heading = OUTPUT
+    )]
     output: Option<String>,
-
-    #[arg(short, long, value_enum)]
+    /// Output format; required for standard output or an unrecognized
+    /// extension
+    #[arg(short, long, value_enum, help_heading = OUTPUT)]
     format: Option<FormatArg>,
-    #[arg(long)]
-    compatibility_revision: Option<String>,
-    #[arg(long)]
-    no_background: bool,
-    #[arg(long)]
-    padding: Option<f64>,
-    #[arg(long, conflicts_with = "max_dimension")]
-    scale: Option<f64>,
-    #[arg(long)]
-    max_dimension: Option<f64>,
-    #[arg(long)]
-    dark_mode: bool,
-    #[arg(long)]
-    embed_scene: bool,
-    #[arg(long)]
-    embed_provenance: bool,
-    #[arg(long)]
-    embed_diagnostics: bool,
-    #[arg(long)]
-    no_frame_rendering: bool,
-    #[arg(long)]
-    no_frame_clipping: bool,
-    #[arg(long)]
-    no_frame_names: bool,
-    #[arg(long)]
-    no_frame_outlines: bool,
-    #[arg(long, value_name = "FILE_ID=PATH")]
-    asset: Vec<String>,
-    #[arg(long, value_name = "FILE_ID=MEDIA_TYPE")]
-    asset_mime: Vec<String>,
-    #[arg(long, value_enum)]
-    pdf_raster_fallback: Option<PdfFallbackArg>,
-    #[arg(long, value_enum, default_value_t)]
-    report_format: ReportFormat,
-    #[arg(long)]
-    report_output: Option<String>,
-    #[arg(long)]
+    /// Replace existing output and report files
+    #[arg(long, help_heading = OUTPUT)]
     force: bool,
-    #[arg(long)]
+
+    /// Space around the drawing, in scene pixels [default: 10]
+    #[arg(long, value_name = "PX", help_heading = RENDERING)]
+    padding: Option<f64>,
+    /// Multiply the output size by FACTOR [default: 1]
+    #[arg(
+        long,
+        value_name = "FACTOR",
+        conflicts_with = "max_dimension",
+        help_heading = RENDERING
+    )]
+    scale: Option<f64>,
+    /// Shrink PNG and PDF output so its longer side is at most PX pixels
+    /// (never enlarges; SVG keeps its size)
+    #[arg(long, value_name = "PX", help_heading = RENDERING)]
+    max_dimension: Option<f64>,
+    /// Use a transparent background instead of the scene's background color
+    #[arg(long, help_heading = RENDERING)]
+    no_background: bool,
+    /// Render with Excalidraw's dark theme
+    #[arg(long, help_heading = RENDERING)]
+    dark_mode: bool,
+    /// Whether PDF output may rasterize isolated content that vector PDF cannot
+    /// express [default: allow-isolated]
+    #[arg(long, value_enum, value_name = "MODE", help_heading = RENDERING)]
+    pdf_raster_fallback: Option<PdfFallbackArg>,
+    /// Compatibility revision to render with [default: 1; see
+    /// --list-revisions]
+    #[arg(long, value_name = "N", help_heading = RENDERING)]
+    compatibility_revision: Option<String>,
+
+    /// Turn frame rendering off: no frame clipping, names, or outlines
+    #[arg(long, help_heading = FRAMES)]
+    no_frame_rendering: bool,
+    /// Do not clip frame content to the frame
+    #[arg(long, help_heading = FRAMES)]
+    no_frame_clipping: bool,
+    /// Do not draw frame names
+    #[arg(long, help_heading = FRAMES)]
+    no_frame_names: bool,
+    /// Do not draw frame outlines
+    #[arg(long, help_heading = FRAMES)]
+    no_frame_outlines: bool,
+
+    /// Embed the scene so Excalidraw can reopen the exported file for editing
+    #[arg(long, help_heading = METADATA)]
+    embed_scene: bool,
+    /// Embed the renderer version and compatibility profile
+    #[arg(long, help_heading = METADATA)]
+    embed_provenance: bool,
+    /// Embed a summary of the compatibility diagnostics
+    #[arg(long, help_heading = METADATA)]
+    embed_diagnostics: bool,
+
+    /// Supply the bytes of image FILE_ID from PATH when the scene does not
+    /// embed them (repeatable)
+    #[arg(long, value_name = "FILE_ID=PATH", help_heading = ASSETS)]
+    asset: Vec<String>,
+    /// Declare the media type of a supplied --asset, e.g. logo=image/png
+    /// (repeatable)
+    #[arg(long, value_name = "FILE_ID=MEDIA_TYPE", help_heading = ASSETS)]
+    asset_mime: Vec<String>,
+
+    /// How to report diagnostics and errors on stderr
+    #[arg(long, value_enum, default_value_t, help_heading = REPORTING)]
+    report_format: ReportFormat,
+    /// Write the report to PATH instead of stderr
+    #[arg(long, value_name = "PATH", help_heading = REPORTING)]
+    report_output: Option<String>,
+
+    /// List the supported compatibility revisions and exit
+    #[arg(long, help_heading = INFORMATION)]
     list_revisions: bool,
-    #[arg(long)]
+    /// Print the version, compatibility revision, and reference profile, then
+    /// exit
+    #[arg(short = 'V', long, help_heading = INFORMATION)]
     version: bool,
-    #[arg(long)]
+    /// Print the bundled third-party license notices, then exit
+    #[arg(long, help_heading = INFORMATION)]
     licenses: bool,
 }
 
@@ -373,33 +483,34 @@ impl Failure {
 fn main() -> ExitCode {
     let args: Vec<OsString> = env::args_os().collect();
     let preparse_json = preparse_json_mode(&args);
-    if args.get(1).is_some_and(|value| value == "frames") {
-        let mut frame_args = args.clone();
-        frame_args.remove(1);
-        let frames = match FramesCli::try_parse_from(&frame_args) {
-            Ok(frames) => frames,
-            Err(error) if error.kind() == clap::error::ErrorKind::DisplayHelp => {
-                return print_help(error);
-            }
-            Err(error) => {
-                let failure = Failure::cli(
-                    "cli.invalid-arguments",
-                    error.to_string().trim().to_owned(),
-                    None,
-                    EXIT_USAGE,
-                );
-                emit_early_failure(failure, preparse_json);
-                return ExitCode::from(EXIT_USAGE);
-            }
-        };
-        return ExitCode::from(run_frames(frames));
+    match Invocation::try_parse_from(&args) {
+        Ok(Invocation {
+            command: Some(CliCommand::Frames(frames)),
+            ..
+        }) => ExitCode::from(run_frames(frames)),
+        Ok(Invocation { render, .. }) => ExitCode::from(run(render)),
+        Err(error) => command_line_error(&error, preparse_json),
     }
-    let cli = match Cli::try_parse_from(&args) {
-        Ok(cli) => cli,
-        Err(error) if error.kind() == clap::error::ErrorKind::DisplayHelp => {
-            return print_help(error);
+}
+
+/// Prints requested help, or reports a command-line grammar error the way the
+/// preparsed report mode asks for.
+fn command_line_error(error: &clap::Error, preparse_json: bool) -> ExitCode {
+    use clap::error::ErrorKind;
+    match error.kind() {
+        ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
+            if error.print().is_ok() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(EXIT_OPERATIONAL)
+            }
         }
-        Err(error) => {
+        // A bare invocation shows the help on stderr as a usage error.
+        ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => {
+            let _ = error.print();
+            ExitCode::from(EXIT_USAGE)
+        }
+        _ => {
             let failure = Failure::cli(
                 "cli.invalid-arguments",
                 error.to_string().trim().to_owned(),
@@ -407,18 +518,8 @@ fn main() -> ExitCode {
                 EXIT_USAGE,
             );
             emit_early_failure(failure, preparse_json);
-            return ExitCode::from(EXIT_USAGE);
+            ExitCode::from(EXIT_USAGE)
         }
-    };
-
-    ExitCode::from(run(cli))
-}
-
-fn print_help(help: clap::Error) -> ExitCode {
-    if help.print().is_ok() {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::from(EXIT_OPERATIONAL)
     }
 }
 
@@ -1636,6 +1737,33 @@ mod tests {
         FormatArg, IoRole, RenderReport, ReportError, RevisionEntry, RevisionReport, StagedFile,
         EXIT_USAGE,
     };
+
+    /// `--help` describes every argument of every command.
+    #[test]
+    fn every_command_and_argument_is_described() {
+        fn check(command: &clap::Command) {
+            for argument in command.get_arguments() {
+                assert!(
+                    argument.get_help().is_some(),
+                    "{} {} has no help",
+                    command.get_name(),
+                    argument.get_id()
+                );
+            }
+            for subcommand in command.get_subcommands() {
+                assert!(
+                    subcommand.get_about().is_some(),
+                    "{}",
+                    subcommand.get_name()
+                );
+                check(subcommand);
+            }
+        }
+        let mut command = <super::Invocation as clap::CommandFactory>::command();
+        command.build();
+        check(&command);
+        command.debug_assert();
+    }
 
     /// Artifact digests are the `sha256:`-prefixed lowercase hex of the FIPS
     /// 180-4 SHA-256 digest, checked against its published test vectors.
