@@ -23,15 +23,17 @@ homepage = "https://github.com/sagikazarmark/excalidraw"
 rust-version = "1.92"
 
 [workspace.dependencies]
-# Pinning policy. A published library's exact requirements bind every
-# application that depends on it, so the renderer's `=` requirements are
-# reserved for crates whose code computes artifact bytes: decoders, shaping,
-# subsetting, rasterization, PDF writing, compression and number formatting. A
-# patch release of one of those can change output, so it is adopted
-# deliberately. Crates that cannot change output (serde's derive, base64,
-# digests, CRC) take caret requirements. Host-only and binary-only pins (CLI,
-# xtask, dev) bind nothing downstream. This repository's `Cargo.lock` still
-# fixes every version its gates test.
+# Pinning policy. The renderer's requirements are caret ranges: a published
+# library's exact requirements bind every application that depends on it, and
+# Cargo holds one version per semver-compatible range, so an `=` pin on a crate
+# the ecosystem shares (png, gif, libm, miniz_oxide, tiny-skia, ...) makes the
+# renderer unresolvable beside any crate that needs a later patch. Crates whose
+# code computes artifact bytes (decoders, shaping, subsetting, rasterization,
+# PDF writing, compression, number formatting) can change output in a patch
+# release, so this repository's `Cargo.lock` fixes every version its gates
+# test, and a bump is adopted deliberately by updating the lock. Applications
+# that need the exact bytes of a release commit their lockfile. Host-only and
+# binary-only pins (CLI, xtask, dev) bind nothing downstream and stay exact.
 # Held at 0.22 (#208) with Krilla 0.8.2, which requires `^0.22.1`. usvg 0.48's
 # `writer` feature (implied by `text`) brings 0.23 as a second copy (#209);
 # move to 0.23 with a Krilla release that accepts it.
@@ -41,64 +43,64 @@ excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
 excalidraw-fonts = { path = "crates/excalidraw-fonts", version = "=0.1.0", default-features = false }
 excalidraw-fonts-xiaolai = { path = "crates/excalidraw-fonts-xiaolai", version = "=0.1.0" }
 excalidraw-fonts-xiaolai-extended = { path = "crates/excalidraw-fonts-xiaolai-extended", version = "=0.1.0" }
-csscolorparser = "=0.9.0"
-cssparser = "=0.38.0"
-cssparser-color = "=0.6.0"
+csscolorparser = "0.9.0"
+cssparser = "0.38.0"
+cssparser-color = "0.6.0"
 crc32fast = "1.5.2"
-gif = { version = "=0.14.2", default-features = false, features = ["std"] }
-image-webp = "=0.2.4"
+gif = { version = "0.14.2", default-features = false, features = ["std"] }
+image-webp = "0.2.4"
 # Turns on serde_json's `float_roundtrip` in every build that includes xtask or
 # the comparator's tests. The renderer parses scene numbers itself, and xtask's
 # `arbitrary_precision` keeps each `Value` number's source token, so only typed
 # float deserialization would see the correctly rounded parse; nothing here does.
 jsonschema = { version = "=0.58.3", default-features = false }
-# The PDF writer (ADR-0021). Pinned exactly: a Krilla bump is a byte-affecting
-# change for every PDF, as svg2pdf's was. Krilla shapes nothing (every glyph
+# The PDF writer (ADR-0021). A Krilla bump is a byte-affecting change for every
+# PDF, as svg2pdf's was, so the lock moves it deliberately. Krilla shapes nothing (every glyph
 # arrives positioned). `raster-images` only compiles its image module: every
 # image arrives as sample planes, so Krilla decodes nothing, and the
 # `zune-jpeg` default features it enables are the ones `resvg`'s
 # `raster-images` already enables. krilla-svg is ported as
 # `render/pdf/svg_draw.rs` instead of depended on, because its `tiny-skia` and
 # `resvg` default features would reach the PNG rasterizer.
-krilla = { version = "=0.8.2", default-features = false, features = ["raster-images"] }
+krilla = { version = "0.8.2", default-features = false, features = ["raster-images"] }
 # Rendering math calls every transcendental function through this crate
 # (`crates/excalidraw-render/src/portable_math.rs`, ADR-0007) so that both
 # supported targets compute the same doubles. It is already in the lock through
 # `ttf-parser -> core_maths` (the `no-std-float` feature); the direct edge adds
 # no package.
-libm = "=0.2.16"
+libm = "0.2.16"
 # Held at 0.8 (#208): png 0.18.1 requires `^0.8`, so 0.9 would not remove
 # 0.8.9, and moving the IDAT compressor changes every PNG (ADR-0004).
 # Revisit when png moves to miniz_oxide 0.9.
-miniz_oxide = "=0.8.9"
-moxcms = { version = "=0.9.1", default-features = false }
-png = "=0.18.1"
+miniz_oxide = "0.8.9"
+moxcms = { version = "0.9.1", default-features = false }
+png = "0.18.1"
 jpeg-encoder = "=0.7.1"
-resvg = { version = "=0.48.1", default-features = false, features = ["raster-images"] }
-roxmltree = "=0.21.1"
+resvg = { version = "0.48.1", default-features = false, features = ["raster-images"] }
+roxmltree = "0.21.1"
 regex = "=1.13.1"
 serde = { version = "1.0.229", features = ["derive"] }
 # Formats floats through zmij: positive exponents are signed (`1e+20`), the
 # spelling spec 11.1 requires (#211). Only the CLI and tests serialize JSON;
 # the renderer's dependency on it is test-only.
 serde_json = "=1.0.151"
-simplecss = "=0.2.2"
+simplecss = "0.2.2"
 sha1 = "=0.11.0"
 sha2 = "0.11.0"
 # The upstream malformed-name fix replaces the safety adapter. The frozen
 # profile token stays at 0.5.1 until ADR-0003's single evidence refresh.
-skera = { version = "=0.7.0", default-features = false }
+skera = { version = "0.7.0", default-features = false }
 # Shaping only (#202). Parsing and measurement stay on ttf-parser; HarfRust
 # 0.13 builds on read-fonts 0.43, which doesn't share types with write-fonts'
 # 0.44, so a parser move waits until they share a read-fonts line.
-harfrust = { version = "=0.13.3", default-features = false, features = ["std"] }
+harfrust = { version = "0.13.3", default-features = false, features = ["std"] }
 # The version and features rustybuzz 0.20.1 used, minus its layout tables.
-ttf-parser = { version = "=0.25.1", default-features = false, features = ["std", "variable-fonts", "glyph-names", "no-std-float"] }
-ryu-js = { version = "=1.0.3", default-features = false }
-unicode-bidi = "=0.3.18"
+ttf-parser = { version = "0.25.1", default-features = false, features = ["std", "variable-fonts", "glyph-names", "no-std-float"] }
+ryu-js = { version = "1.0.3", default-features = false }
+unicode-bidi = "0.3.18"
 unicode-normalization = "=0.1.25"
 unicase = "=2.9.0"
-svgtypes = "=0.16.1"
+svgtypes = "0.16.1"
 # Host-only: CLI delivery staging and xtask scratch directories. Never a
 # renderer dependency, so random temporary names cannot reach output bytes.
 tempfile = "=3.27.0"
@@ -106,21 +108,21 @@ tempfile = "=3.27.0"
 # syscall, since slim images ship no `kill` executable. Already in the lock
 # through tempfile; `process` adds no package.
 rustix = { version = "=1.1.5", features = ["process"] }
-tiny-skia = { version = "=0.12.0", default-features = false, features = ["png-format", "std"] }
+tiny-skia = { version = "0.12.0", default-features = false, features = ["png-format", "std"] }
 # `default-features = false` drops upstream's `cli` feature (and `clap`);
 # `portable-float` passes through to `brotli/portable-float`, which is what keeps
 # quality-11 WOFF2 bytes identical between native and wasm32 (ADR-0003). The
 # identity token in `excalidraw-fonts` still names the retired
 # fork until the single evidence refresh ADR-0003 schedules.
-ttf2woff2 = { version = "=0.13.3", default-features = false, features = ["portable-float"] }
-usvg = { version = "=0.48.1", default-features = false, features = ["text"] }
-wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
+ttf2woff2 = { version = "0.13.3", default-features = false, features = ["portable-float"] }
+usvg = { version = "0.48.1", default-features = false, features = ["text"] }
+wuff = { version = "0.2.8", default-features = false, features = ["brotli"] }
 # `write_fonts::read` is the renderer's only font parser: read-fonts 0.44,
 # the version skera plans over. Name handling and the typed layout validator
 # (ADR-0020) read subsets through it, so the workspace has no direct read-fonts
 # dependency.
-write-fonts = { version = "=0.53.0", default-features = false, features = ["read", "tables"] }
-zune-jpeg = { version = "=0.5.15", default-features = false, features = ["std"] }
+write-fonts = { version = "0.53.0", default-features = false, features = ["read", "tables"] }
+zune-jpeg = { version = "0.5.15", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

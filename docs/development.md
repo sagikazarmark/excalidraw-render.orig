@@ -36,20 +36,18 @@ release their fonts come from as semver build metadata, e.g.
 comparing versions, so a new Excalidraw release still needs a version bump, and
 dependency requirements name only the part before the `+`.
 
-Dependencies whose code computes artifact bytes (decoders, shaping,
-subsetting, rasterization, PDF writing, compression, number formatting) are
-pinned to exact versions (`=x.y.z`), because any bump can change output. For a
-project that depends on the library, Cargo resolves one version per
-semver-compatible range, so within each such range those pins decide which
-version of a shared crate (`png`, `resvg`, ...) your whole build uses: a
-requirement of yours in the same range that the pinned version cannot satisfy
-fails to resolve, while one in a different range builds a second copy alongside
-it. A patch release of a pinned crate only reaches you through an
-`excalidraw-render` release that moves the pin and re-verifies the artifact
-bytes. Crates that cannot change output (`serde`, `base64`, digests, CRC) take
-caret requirements so they do not constrain applications, and `serde_json` is
-a test-only dependency of the library; `Cargo.lock` still fixes every version
-the gates test.
+The library's dependencies take caret requirements. Cargo resolves one version
+per semver-compatible range, so an exact `=x.y.z` requirement on a crate the
+ecosystem shares (`png`, `libm`, `tiny-skia`, ...) would make the renderer
+unresolvable beside any other crate that needs a later patch of it. Crates
+whose code computes artifact bytes (decoders, shaping, subsetting,
+rasterization, PDF writing, compression, number formatting) can still change
+output in a patch release, so `Cargo.lock` fixes every version the gates test,
+and moving one of them is a deliberate, reviewed lock update: run the evidence
+checks, not only the unit tests. Applications that need a release's exact
+bytes commit their own lockfile. The CLI, xtask and dev-only requirements stay
+exact; they bind nothing downstream, and `cargo install --locked` uses the
+published lock. `serde_json` is a test-only dependency of the library.
 
 The published crates declare `rust-version = "1.92"`, the oldest compiler they
 support; the `lint:msrv` Dagger check compiles the renderer and CLI with it.

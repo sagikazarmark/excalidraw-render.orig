@@ -101,8 +101,10 @@ opt-level = 2
 ## Reproducibility
 
 Output is deterministic for a given renderer release, input, options, and
-dependency versions. Dependencies that compute output bytes are pinned exactly;
-later 0.x releases may intentionally change rendering. When exact output bytes
+dependency versions. Dependencies take ordinary semver ranges, so a patch
+release of a decoder, rasterizer or compressor can change output bytes; the
+release's gates test the versions in its repository `Cargo.lock`. Later 0.x
+releases may also intentionally change rendering. When exact output bytes
 matter, pin the renderer (`=0.1.0`) and commit your `Cargo.lock`.
 
 Linux x86-64 (glibc) is the release-qualified platform. Other native platforms

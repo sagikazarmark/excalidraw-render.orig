@@ -24,9 +24,10 @@ Initial release of the pure-Rust Excalidraw rendering library
   (`0.1.0+excalidraw.0.18.1`).
 - Requires Rust 1.92 or newer. Linux x86-64 (glibc) is release-qualified;
   other native platforms are unqualified and browser WASM is experimental.
-- Dependencies that compute output bytes are pinned exactly; others take caret
-  requirements. Rendering and diagnostics may change in later 0.x releases:
-  pin the version and keep your lockfile when exact output bytes matter.
+- Dependencies take caret requirements so the renderer resolves beside other
+  crates; the gates test the versions in the repository `Cargo.lock`.
+  Rendering and diagnostics may change in later 0.x releases: pin the version
+  and keep your lockfile when exact output bytes matter.
 - Exhaustive conformance and exact native/WASM equality are follow-up goals;
   this release does not claim their completion.
 
