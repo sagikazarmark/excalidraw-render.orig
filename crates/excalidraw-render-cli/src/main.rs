@@ -2288,7 +2288,13 @@ mod tests {
         let staged = (0..256)
             .map(|index| {
                 StagedFile::new(&scratch.path().join(format!("{index}.svg")), b"a", false)
-                    .unwrap_or_else(|operation| panic!("staging failed at {}", operation.as_str()))
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "staging failed at {}: {}",
+                            error.operation.as_str(),
+                            error.reason
+                        )
+                    })
             })
             .collect::<Vec<_>>();
         // Other test threads may open a few descriptors meanwhile.
