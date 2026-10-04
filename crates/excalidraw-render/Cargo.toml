@@ -8,9 +8,11 @@ license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation = "https://docs.rs/excalidraw-render"
-readme = "../../README.md"
+readme = "README.md"
 keywords = ["excalidraw", "rendering", "svg", "png", "pdf"]
 categories = ["graphics", "rendering"]
+# Integration tests read workspace evidence, so they run from the repository.
+include = ["/src/", "/LICENSES/", "/LICENSE-BUNDLE.txt", "/README.md"]
 
 [lints]
 workspace = true
@@ -39,7 +41,6 @@ libm.workspace = true
 miniz_oxide.workspace = true
 moxcms.workspace = true
 serde.workspace = true
-serde_json.workspace = true
 simplecss.workspace = true
 sha2.workspace = true
 skera.workspace = true
@@ -62,6 +63,9 @@ zune-jpeg.workspace = true
 [dev-dependencies]
 excalidraw-render-compare = { path = "../excalidraw-render-compare" }
 jpeg-encoder.workspace = true
+# Test-only: reports reach applications through `serde::Serialize`, so each
+# application chooses its own serde_json.
+serde_json.workspace = true
 unicode-normalization.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
