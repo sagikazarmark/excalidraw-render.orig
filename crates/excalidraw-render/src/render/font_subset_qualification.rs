@@ -1705,13 +1705,11 @@ fn layout_probe_detects_horizontal_advance_only_gpos() {
 /// evidence also requires the measurement it prints, so a skipped run cannot
 /// pass for a qualified one.
 #[test]
+#[cfg_attr(
+    not(release_qualification),
+    ignore = "release-mode qualification set; run with EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1"
+)]
 fn complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces() {
-    if !crate::release_qualification_enabled() {
-        eprintln!(
-            "release-mode qualification set; run with EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1"
-        );
-        return;
-    }
     assert_complete_font_subset_qualification_corpus();
 }
 

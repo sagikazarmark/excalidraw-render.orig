@@ -474,24 +474,3 @@ pub mod wasm_tests {
 pub const fn license_bundle() -> &'static str {
     include_str!("../LICENSE-BUNDLE.txt")
 }
-
-/// The environment variable that admits the release-mode qualification set.
-#[cfg(test)]
-const RELEASE_QUALIFICATION_ENV: &str = "EXCALIDRAW_RENDER_RELEASE_QUALIFICATION";
-
-/// Whether this test run executes the release-mode qualification set: the
-/// corpus-driven and generated-property tests that take minutes even
-/// optimized. They run only when [`RELEASE_QUALIFICATION_ENV`] is `1`, which
-/// the release-mode workflows set for an unfiltered `cargo test --release
-/// --lib`; otherwise they return at once, so the push gate and a plain
-/// `cargo test` stay fast. Any other value than unset, empty, `0` or `1`
-/// fails the test rather than silently skipping it.
-#[cfg(test)]
-pub(crate) fn release_qualification_enabled() -> bool {
-    match std::env::var(RELEASE_QUALIFICATION_ENV) {
-        Err(std::env::VarError::NotPresent) => false,
-        Ok(value) if value.is_empty() || value == "0" => false,
-        Ok(value) if value == "1" => true,
-        other => panic!("{RELEASE_QUALIFICATION_ENV} must be unset, 0 or 1, got {other:?}"),
-    }
-}

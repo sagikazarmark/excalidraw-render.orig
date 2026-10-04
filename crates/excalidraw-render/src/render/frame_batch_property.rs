@@ -668,13 +668,11 @@ fn push_element(elements: &mut String, element: &str) {
 /// `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1` and no name filter, so a rename
 /// cannot drop it silently.
 #[test]
+#[cfg_attr(
+    not(release_qualification),
+    ignore = "release-mode qualification set; run with EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1"
+)]
 fn frame_batch_rendering_matches_standalone_around_resource_limits() {
-    if !crate::release_qualification_enabled() {
-        eprintln!(
-            "release-mode qualification set; run with EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1"
-        );
-        return;
-    }
     assert_generated_cases(FIXED_SEED, RELEASE_CASES);
 }
 

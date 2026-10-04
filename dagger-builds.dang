@@ -158,7 +158,9 @@ type Builds {
   }
 
   let nativeReleaseBuilt: Container! {
-    self.nativeSlim.withExec(["cargo", "test", "--locked", "--release",
+    # The qualification run sets the same variable, so it reuses this build.
+    self.nativeSlim.withExec(["env", "EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1",
+      "cargo", "test", "--locked", "--release",
       "--target", hostTarget, "-p", "excalidraw-render", "--lib", "--no-run"])
   }
 

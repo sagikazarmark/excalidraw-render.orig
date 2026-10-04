@@ -277,11 +277,12 @@ filter, so a renamed test cannot drop out silently:
 EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1 cargo test --locked --release -p excalidraw-render --lib
 ```
 
-Both tests return at once unless `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`,
+Both tests are `#[ignore]`d unless `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1`,
 so a plain `cargo test` or `cargo nextest run` leaves them to the release-mode
-run without naming them. The variable is read when the tests run, so it needs
-no rebuild and no Cargo feature; any value other than unset, empty, `0` or `1`
-fails them.
+run without naming them. The renderer's build script turns the variable into the
+`release_qualification` cfg, so changing it rebuilds only the renderer; it is
+not a Cargo feature, so it stays out of the published interface. Any value other
+than unset, empty, `0` or `1` fails the build.
 
 ## Canonical CI and evidence generation
 
