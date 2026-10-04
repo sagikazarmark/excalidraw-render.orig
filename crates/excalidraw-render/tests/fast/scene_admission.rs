@@ -73,13 +73,13 @@ fn noncanonical_scene_envelopes_are_rejected_at_the_offending_or_expected_member
             br#"{"type":"excalidrawlib","version":2,"source":"https://excalidraw.com","libraryItems":[]}"#,
             "/type",
             "this is an Excalidraw library (type \"excalidrawlib\"), not a scene document; \
-             open it in Excalidraw and export the scene instead",
+             render a scene saved as an .excalidraw file instead",
         ),
         (
             br#"{"type":"excalidraw/clipboard","elements":[],"files":{}}"#,
             "/type",
             "this is an Excalidraw clipboard payload (type \"excalidraw/clipboard\"), \
-             not a scene document; paste it into Excalidraw and export the scene instead",
+             not a scene document; paste it into Excalidraw and save the scene instead",
         ),
         (
             br#"{"type":"excalidraw","elements":[],"appState":{},"files":{}}"#,

@@ -779,14 +779,14 @@ fn validate_envelope(root: &JsonValue) -> Result<(), SceneParseError> {
             return Err(SceneParseError::invalid_envelope(
                 "/type",
                 "this is an Excalidraw library (type \"excalidrawlib\"), not a scene document; \
-                 open it in Excalidraw and export the scene instead",
+                 render a scene saved as an .excalidraw file instead",
             ));
         }
         Some(JsonValue::String(value)) if &**value == "excalidraw/clipboard" => {
             return Err(SceneParseError::invalid_envelope(
                 "/type",
                 "this is an Excalidraw clipboard payload (type \"excalidraw/clipboard\"), \
-                 not a scene document; paste it into Excalidraw and export the scene instead",
+                 not a scene document; paste it into Excalidraw and save the scene instead",
             ));
         }
         Some(JsonValue::String(value)) => {
