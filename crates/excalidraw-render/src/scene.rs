@@ -737,7 +737,7 @@ impl SceneParseError {
     pub fn descriptor(&self) -> ErrorDescriptor {
         ErrorDescriptor::scene_parse(
             self.code,
-            self.message.clone(),
+            self.to_string(),
             self.json_pointer.clone(),
             self.details.as_deref().cloned(),
         )
@@ -745,8 +745,14 @@ impl SceneParseError {
 }
 
 impl fmt::Display for SceneParseError {
+    /// The failure's message; a parser-limit crossing appends the measured
+    /// value, the limit field and its fixed ceiling.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.message)
+        formatter.write_str(&self.message)?;
+        if let Some(crossing) = self.details().and_then(ErrorDetails::limit_crossing) {
+            write!(formatter, ": {crossing}")?;
+        }
+        Ok(())
     }
 }
 

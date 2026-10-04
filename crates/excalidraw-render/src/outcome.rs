@@ -749,7 +749,7 @@ impl RenderError {
         ErrorDescriptor::render(
             self.category,
             self.code,
-            self.message.to_string(),
+            self.to_string(),
             self.format,
             self.element_id.clone(),
             self.json_pointer.to_string(),
@@ -759,8 +759,14 @@ impl RenderError {
 }
 
 impl fmt::Display for RenderError {
+    /// The failure's message; a limit crossing appends the measured value,
+    /// the limit field and its configured ceiling.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.message)
+        formatter.write_str(&self.message)?;
+        if let Some(crossing) = self.details().and_then(ErrorDetails::limit_crossing) {
+            write!(formatter, ": {crossing}")?;
+        }
+        Ok(())
     }
 }
 
@@ -859,7 +865,8 @@ mod tests {
                 "{\"family\":\"render\",",
                 "\"category\":\"resource_limit\",",
                 "\"code\":\"resource.output-bytes-exceeded\",",
-                "\"message\":\"output byte limit exceeded\",",
+                "\"message\":\"output byte limit exceeded: needs 134217729 bytes, ",
+                "but max_output_bytes is 134217728\",",
                 "\"format\":\"svg\",",
                 "\"element_id\":null,",
                 "\"json_pointer\":\"\",",

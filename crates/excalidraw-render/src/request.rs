@@ -11,17 +11,17 @@ use crate::{ErrorCode, ErrorDescriptor, ErrorDetails, ResourceLimits};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RequestError {
     code: ErrorCode,
-    message: &'static str,
+    message: Box<str>,
     field: &'static str,
     asset_id: Option<String>,
     option: Option<&'static str>,
 }
 
 impl RequestError {
-    pub(crate) fn new(code: ErrorCode, message: &'static str, field: &'static str) -> Self {
+    pub(crate) fn new(code: ErrorCode, message: impl Into<Box<str>>, field: &'static str) -> Self {
         Self {
             code,
-            message,
+            message: message.into(),
             field,
             asset_id: None,
             option: None,
@@ -30,13 +30,13 @@ impl RequestError {
 
     fn for_option(
         code: ErrorCode,
-        message: &'static str,
+        message: impl Into<Box<str>>,
         field: &'static str,
         option: &'static str,
     ) -> Self {
         Self {
             code,
-            message,
+            message: message.into(),
             field,
             asset_id: None,
             option: Some(option),
@@ -45,13 +45,13 @@ impl RequestError {
 
     fn for_asset(
         code: ErrorCode,
-        message: &'static str,
+        message: impl Into<Box<str>>,
         asset_id: String,
         option: Option<&'static str>,
     ) -> Self {
         Self {
             code,
-            message,
+            message: message.into(),
             field: "supplemental_assets",
             asset_id: Some(asset_id),
             option,
@@ -94,7 +94,7 @@ impl RequestError {
 
 impl fmt::Display for RequestError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.message)
+        formatter.write_str(&self.message)
     }
 }
 
@@ -433,19 +433,19 @@ impl SupplementalAssetsBuilder {
             if entries.contains_key(&file_id) {
                 return Err(RequestError::for_asset(
                     ErrorCode::REQUEST_DUPLICATE_ASSET_ID,
-                    "supplemental asset ID occurs more than once",
+                    format!("supplemental asset ID {file_id:?} occurs more than once"),
                     file_id,
                     None,
                 ));
             }
-            if asset
+            if let Some(media_type) = asset
                 .advisory_media_type
                 .as_deref()
-                .is_some_and(|media_type| !is_valid_media_type(media_type))
+                .filter(|media_type| !is_valid_media_type(media_type))
             {
                 return Err(RequestError::for_asset(
                     ErrorCode::REQUEST_INVALID_ASSET_MEDIA_TYPE,
-                    "supplemental asset media type is invalid",
+                    format!("supplemental asset {file_id:?} media type {media_type:?} is invalid"),
                     file_id,
                     Some("media_type"),
                 ));
@@ -740,7 +740,10 @@ impl RenderRequestBuilder {
         if !self.request.padding.is_finite() || self.request.padding < 0.0 {
             return Err(RequestError::new(
                 ErrorCode::REQUEST_INVALID_PADDING,
-                "padding must be finite and nonnegative",
+                format!(
+                    "padding must be finite and nonnegative, got {}",
+                    self.request.padding
+                ),
                 "padding",
             ));
         }
@@ -749,14 +752,14 @@ impl RenderRequestBuilder {
             Sizing::Scale(scale) if !scale.is_finite() || scale <= 0.0 => {
                 return Err(RequestError::new(
                     ErrorCode::REQUEST_INVALID_SCALE,
-                    "scale must be finite and positive",
+                    format!("scale must be finite and positive, got {scale}"),
                     "scale",
                 ));
             }
             Sizing::MaxDimension(dimension) if !dimension.is_finite() || dimension <= 0.0 => {
                 return Err(RequestError::new(
                     ErrorCode::REQUEST_INVALID_MAX_DIMENSION,
-                    "maximum dimension must be finite and positive",
+                    format!("maximum dimension must be finite and positive, got {dimension}"),
                     "max_dimension",
                 ));
             }
@@ -766,7 +769,10 @@ impl RenderRequestBuilder {
         if self.pdf_options_supplied && self.request.format != OutputFormat::Pdf {
             return Err(RequestError::for_option(
                 ErrorCode::REQUEST_INCOMPATIBLE_FORMAT_OPTIONS,
-                "PDF options require PDF output",
+                format!(
+                    "PDF options require PDF output, but the request format is {}",
+                    self.request.format.as_str()
+                ),
                 "pdf_options",
                 "raster_fallback",
             ));

@@ -62,7 +62,14 @@ macro_rules! define_resource_limits {
                         if self.limits.$name == 0
                             || self.limits.$name > ABSOLUTE_MAXIMA.$name
                         {
-                            return Err(invalid_limit(stringify!($name)));
+                            return Err(invalid_limit(
+                                stringify!($name),
+                                format!(
+                                    "must be between 1 and {}, got {}",
+                                    ABSOLUTE_MAXIMA.$name,
+                                    self.limits.$name,
+                                ),
+                            ));
                         }
                     };
                     (finite, $name:ident) => {
@@ -70,7 +77,14 @@ macro_rules! define_resource_limits {
                             || self.limits.$name <= 0.0
                             || self.limits.$name > ABSOLUTE_MAXIMA.$name
                         {
-                            return Err(invalid_limit(stringify!($name)));
+                            return Err(invalid_limit(
+                                stringify!($name),
+                                format!(
+                                    "must be finite, positive and at most {}, got {}",
+                                    ABSOLUTE_MAXIMA.$name,
+                                    self.limits.$name,
+                                ),
+                            ));
                         }
                     };
                 }
@@ -116,41 +130,70 @@ impl ResourceLimitsBuilder {
     pub fn build(self) -> Result<ResourceLimits, RequestError> {
         self.validate_individual_limits()?;
 
-        let inconsistent_field = if self.limits.max_asset_bytes > self.limits.max_total_asset_bytes
-        {
-            Some("max_asset_bytes")
-        } else if self.limits.max_geometry_segments_per_element as u64
-            > self.limits.max_total_geometry_segments
-        {
-            Some("max_geometry_segments_per_element")
-        } else if self.limits.max_text_scalars_per_element as u64
-            > self.limits.max_total_text_scalars
-        {
-            Some("max_text_scalars_per_element")
-        } else if self.limits.max_decoded_pixels_per_asset > self.limits.max_total_decoded_pixels {
-            Some("max_decoded_pixels_per_asset")
-        } else if self.limits.max_raster_surface_pixels > self.limits.max_total_rasterized_pixels {
-            Some("max_raster_surface_pixels")
-        } else if self.limits.max_element_work_units > self.limits.max_total_work_units {
-            Some("max_element_work_units")
-        } else if self.limits.max_asset_work_units > self.limits.max_total_work_units {
-            Some("max_asset_work_units")
-        } else {
-            None
-        };
-
-        if let Some(field) = inconsistent_field {
-            return Err(invalid_limit(field));
+        // Each per-item ceiling must fit inside the aggregate it contributes to.
+        let limits = &self.limits;
+        for (field, value, total_field, total) in [
+            (
+                "max_asset_bytes",
+                limits.max_asset_bytes,
+                "max_total_asset_bytes",
+                limits.max_total_asset_bytes,
+            ),
+            (
+                "max_geometry_segments_per_element",
+                u64::from(limits.max_geometry_segments_per_element),
+                "max_total_geometry_segments",
+                limits.max_total_geometry_segments,
+            ),
+            (
+                "max_text_scalars_per_element",
+                u64::from(limits.max_text_scalars_per_element),
+                "max_total_text_scalars",
+                limits.max_total_text_scalars,
+            ),
+            (
+                "max_decoded_pixels_per_asset",
+                limits.max_decoded_pixels_per_asset,
+                "max_total_decoded_pixels",
+                limits.max_total_decoded_pixels,
+            ),
+            (
+                "max_raster_surface_pixels",
+                limits.max_raster_surface_pixels,
+                "max_total_rasterized_pixels",
+                limits.max_total_rasterized_pixels,
+            ),
+            (
+                "max_element_work_units",
+                limits.max_element_work_units,
+                "max_total_work_units",
+                limits.max_total_work_units,
+            ),
+            (
+                "max_asset_work_units",
+                limits.max_asset_work_units,
+                "max_total_work_units",
+                limits.max_total_work_units,
+            ),
+        ] {
+            if value > total {
+                return Err(invalid_limit(
+                    field,
+                    format!("({value}) must not exceed {total_field} ({total})"),
+                ));
+            }
         }
 
         Ok(self.limits)
     }
 }
 
-fn invalid_limit(field: &'static str) -> RequestError {
+/// A `request.invalid-resource-limit` failure naming the rejected field and
+/// why: `reason` follows the field name in the message.
+fn invalid_limit(field: &'static str, reason: String) -> RequestError {
     RequestError::new(
         ErrorCode::REQUEST_INVALID_RESOURCE_LIMIT,
-        "semantic resource limit is invalid",
+        format!("resource limit {field} {reason}"),
         field,
     )
 }

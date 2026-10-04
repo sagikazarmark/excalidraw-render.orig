@@ -188,7 +188,7 @@ fn numeric_request_values_are_validated_before_rendering() {
             "{\"family\":\"request\",",
             "\"category\":null,",
             "\"code\":\"request.invalid-padding\",",
-            "\"message\":\"padding must be finite and nonnegative\",",
+            "\"message\":\"padding must be finite and nonnegative, got -inf\",",
             "\"format\":null,",
             "\"element_id\":null,",
             "\"json_pointer\":null,",
@@ -404,7 +404,7 @@ fn invalid_and_inconsistent_resource_limits_return_the_exact_request_failure() {
             "{\"family\":\"request\",",
             "\"category\":null,",
             "\"code\":\"request.invalid-resource-limit\",",
-            "\"message\":\"semantic resource limit is invalid\",",
+            "\"message\":\"resource limit max_scene_bytes must be between 1 and 67108864, got 0\",",
             "\"format\":null,",
             "\"element_id\":null,",
             "\"json_pointer\":null,",
@@ -415,50 +415,58 @@ fn invalid_and_inconsistent_resource_limits_return_the_exact_request_failure() {
         )
     );
 
-    for (builder, expected_field) in [
+    for (builder, expected_field, expected_message) in [
         (
             ResourceLimits::builder().max_coordinate_magnitude(f64::INFINITY),
             "max_coordinate_magnitude",
+            "resource limit max_coordinate_magnitude must be finite, positive and at most 1000000000000, got inf",
         ),
         (
             ResourceLimits::builder().max_pdf_page_points(14_401.0),
             "max_pdf_page_points",
+            "resource limit max_pdf_page_points must be finite, positive and at most 14400, got 14401",
         ),
         (
             ResourceLimits::builder()
                 .max_asset_bytes(20)
                 .max_total_asset_bytes(10),
             "max_asset_bytes",
+            "resource limit max_asset_bytes (20) must not exceed max_total_asset_bytes (10)",
         ),
         (
             ResourceLimits::builder()
                 .max_geometry_segments_per_element(20)
                 .max_total_geometry_segments(10),
             "max_geometry_segments_per_element",
+            "resource limit max_geometry_segments_per_element (20) must not exceed max_total_geometry_segments (10)",
         ),
         (
             ResourceLimits::builder()
                 .max_text_scalars_per_element(20)
                 .max_total_text_scalars(10),
             "max_text_scalars_per_element",
+            "resource limit max_text_scalars_per_element (20) must not exceed max_total_text_scalars (10)",
         ),
         (
             ResourceLimits::builder()
                 .max_decoded_pixels_per_asset(20)
                 .max_total_decoded_pixels(10),
             "max_decoded_pixels_per_asset",
+            "resource limit max_decoded_pixels_per_asset (20) must not exceed max_total_decoded_pixels (10)",
         ),
         (
             ResourceLimits::builder()
                 .max_raster_surface_pixels(20)
                 .max_total_rasterized_pixels(10),
             "max_raster_surface_pixels",
+            "resource limit max_raster_surface_pixels (20) must not exceed max_total_rasterized_pixels (10)",
         ),
         (
             ResourceLimits::builder()
                 .max_element_work_units(20)
                 .max_total_work_units(10),
             "max_element_work_units",
+            "resource limit max_element_work_units (20) must not exceed max_total_work_units (10)",
         ),
         (
             ResourceLimits::builder()
@@ -466,6 +474,7 @@ fn invalid_and_inconsistent_resource_limits_return_the_exact_request_failure() {
                 .max_asset_work_units(20)
                 .max_total_work_units(10),
             "max_asset_work_units",
+            "resource limit max_asset_work_units (20) must not exceed max_total_work_units (10)",
         ),
     ] {
         let error = builder
@@ -473,5 +482,7 @@ fn invalid_and_inconsistent_resource_limits_return_the_exact_request_failure() {
             .expect_err("inconsistent limits are rejected");
         assert_eq!(error.code(), ErrorCode::REQUEST_INVALID_RESOURCE_LIMIT);
         assert_eq!(error.field(), expected_field);
+        assert_eq!(error.to_string(), expected_message);
+        assert_eq!(error.descriptor().message(), expected_message);
     }
 }

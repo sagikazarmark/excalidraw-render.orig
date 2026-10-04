@@ -508,6 +508,53 @@ impl ErrorDetails {
         }
     }
 
+    /// The measured value and configured ceiling of a parser or resource limit
+    /// crossing, which a failure's human message appends so that it says what
+    /// its details say.
+    pub(crate) fn limit_crossing(&self) -> Option<LimitCrossing> {
+        let (field, configured, value_kind, measurement) = match self {
+            Self::ParseLimit {
+                field,
+                configured,
+                value_kind,
+                measurement,
+            } => (
+                *field,
+                ResourceValue::Integer(*configured),
+                *value_kind,
+                match *measurement {
+                    Measurement::Attempted { value } => Measurement::Attempted {
+                        value: ResourceValue::Integer(value),
+                    },
+                    Measurement::AtLeast { value } => Measurement::AtLeast {
+                        value: ResourceValue::Integer(value),
+                    },
+                },
+            ),
+            Self::ResourceLimit {
+                field,
+                configured,
+                value_kind,
+                measurement,
+                ..
+            }
+            | Self::NestedResourceLimit {
+                field,
+                configured,
+                value_kind,
+                measurement,
+                ..
+            } => (*field, *configured, *value_kind, *measurement),
+            _ => return None,
+        };
+        Some(LimitCrossing {
+            field,
+            configured,
+            value_kind,
+            measurement,
+        })
+    }
+
     /// The fallback recipe identity the details name, when the compatibility
     /// or asset recovery painted a placeholder.
     pub(crate) fn recipe_id(&self) -> Option<&str> {
@@ -586,6 +633,49 @@ impl Recovery {
             "rasterized" => Some(Self::Rasterized),
             "metadata_omitted" => Some(Self::MetadataOmitted),
             _ => None,
+        }
+    }
+}
+
+/// One limit crossing in human form: `needs 400 pixels, but
+/// max_raster_surface_pixels is 399`.
+pub(crate) struct LimitCrossing {
+    field: &'static str,
+    configured: ResourceValue,
+    value_kind: ValueKind,
+    measurement: ResourceMeasurement,
+}
+
+impl fmt::Display for LimitCrossing {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (bound, value) = match self.measurement {
+            Measurement::Attempted { value } => ("", value),
+            Measurement::AtLeast { value } => ("at least ", value),
+        };
+        let unit = match self.value_kind {
+            ValueKind::Bytes => " bytes",
+            ValueKind::Pixels => " pixels",
+            ValueKind::WorkUnits => " work units",
+            ValueKind::Depth => " levels",
+            ValueKind::Count | ValueKind::Dimension | ValueKind::Coordinate => "",
+        };
+        write!(
+            formatter,
+            "needs {bound}{}{unit}, but {} is {}",
+            HumanValue(value),
+            self.field,
+            HumanValue(self.configured)
+        )
+    }
+}
+
+struct HumanValue(ResourceValue);
+
+impl fmt::Display for HumanValue {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            ResourceValue::Integer(value) => value.fmt(formatter),
+            ResourceValue::Finite(value) => value.get().fmt(formatter),
         }
     }
 }
