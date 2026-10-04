@@ -22,7 +22,7 @@ Initial release of the pure-Rust Excalidraw rendering library
 - Targets Excalidraw 0.18.1, with [known limitations](docs/known-limitations.md).
 - The font crates name that release in their version's build metadata
   (`0.1.0+excalidraw.0.18.1`).
-- Requires Rust 1.90 or newer. Linux x86-64 (glibc) is release-qualified;
+- Requires Rust 1.92 or newer. Linux x86-64 (glibc) is release-qualified;
   other native platforms are unqualified and browser WASM is experimental.
 - Dependencies that compute output bytes are pinned exactly; others take caret
   requirements. Rendering and diagnostics may change in later 0.x releases:

@@ -17,10 +17,10 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/sagikazarmark/excalidraw"
 homepage = "https://github.com/sagikazarmark/excalidraw"
 # The oldest compiler the published crates support; the `lint:msrv` Dagger check
-# compiles the renderer and CLI with it. Krilla 0.8 needs 1.89 (`LazyCell`
-# mutable access). The gates themselves build with the toolchain
+# compiles the renderer and CLI with it. Krilla 0.8.2 declares 1.92.
+# The gates themselves build with the toolchain
 # `tests/package-consumer/tool-manifest.json` and `dagger.toml` pin.
-rust-version = "1.90"
+rust-version = "1.92"
 
 [workspace.dependencies]
 # Pinning policy. A published library's exact requirements bind every

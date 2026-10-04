@@ -22,7 +22,7 @@ pixel-identical with, the browser exporter; see the
 cargo install --locked excalidraw-render-cli
 ```
 
-This installs the `excalidraw-render` binary and needs Rust 1.90 or newer.
+This installs the `excalidraw-render` binary and needs Rust 1.92 or newer.
 GitHub releases also carry a prebuilt Linux x86-64 (glibc) archive.
 
 ```sh

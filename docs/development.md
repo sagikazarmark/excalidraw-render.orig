@@ -51,7 +51,7 @@ caret requirements so they do not constrain applications, and `serde_json` is
 a test-only dependency of the library; `Cargo.lock` still fixes every version
 the gates test.
 
-The published crates declare `rust-version = "1.90"`, the oldest compiler they
+The published crates declare `rust-version = "1.92"`, the oldest compiler they
 support; the `lint:msrv` Dagger check compiles the renderer and CLI with it.
 The gates otherwise build with the toolchain pinned in `dagger.toml` (1.97.1).
 

@@ -243,7 +243,7 @@ type Lint {
   step with `rust-version` in the root `Cargo.toml`.
   """
   msrv: String! @check {
-    Dagger.container(platform: "linux/amd64").from("rust:1.90.0-slim-trixie")
+    Dagger.container(platform: "linux/amd64").from("rust:1.92.0-slim-trixie")
       .withDirectory("/src", self.builds.inputs("code"))
       .withWorkdir("/src")
       .withEnvVariable("CARGO_BUILD_JOBS", "2")

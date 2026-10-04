@@ -15,7 +15,7 @@ pixel-identical with, the browser exporter; see the
 cargo install --locked excalidraw-render-cli
 ```
 
-This installs the `excalidraw-render` binary (Rust 1.90 or newer). Each GitHub
+This installs the `excalidraw-render` binary (Rust 1.92 or newer). Each GitHub
 release also carries a prebuilt Linux x86-64 (glibc) archive with a SHA-256
 checksum.
 
