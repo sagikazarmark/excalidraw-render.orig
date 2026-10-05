@@ -40,7 +40,7 @@ mod optional_font_tests {
         assert_eq!(error.category(), RenderErrorCategory::Capability);
         assert_eq!(error.category().as_str(), "capability");
         assert_eq!(error.format(), format);
-        let Some(ErrorDetails::FontUnavailable {
+        let Some(DiagnosticDetails::FontUnavailable {
             resolved_family,
             asset_identity,
         }) = error.details()

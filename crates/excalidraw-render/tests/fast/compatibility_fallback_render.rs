@@ -1,6 +1,6 @@
 use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
-    DiagnosticCode, DiagnosticEffect, ErrorCode, ErrorDetails, OutputFormat, Recovery,
+    DiagnosticCode, DiagnosticDetails, DiagnosticEffect, ErrorCode, OutputFormat, Recovery,
     RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
 
@@ -54,7 +54,7 @@ pub(super) fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
     assert_eq!(diagnostic.json_pointer(), "/elements/0");
     assert!(matches!(
         diagnostic.details(),
-        Some(ErrorDetails::Compatibility {
+        Some(DiagnosticDetails::Compatibility {
             recovery: Recovery::Placeholder,
             recipe_id: Some(recipe),
             ..
@@ -137,7 +137,7 @@ fn bounded_fallback_and_unbounded_omission_succeed_in_every_format() {
         );
         assert!(matches!(
             boundary_diagnostics(&first)[1].details(),
-            Some(ErrorDetails::Compatibility {
+            Some(DiagnosticDetails::Compatibility {
                 recovery: Recovery::Omitted,
                 recipe_id: None,
                 ..
@@ -741,7 +741,7 @@ fn generated_labels_report_controlled_font_substitution_and_missing_glyphs() {
         .expect("unsupported emoji uses the controlled replacement glyph");
     assert!(matches!(
         missing.details(),
-        Some(ErrorDetails::MissingGlyph {
+        Some(DiagnosticDetails::MissingGlyph {
             codepoint: 0x1f600,
             recovery: Recovery::Substituted,
             ..
@@ -793,7 +793,7 @@ fn resource_specific_omission_never_uses_the_generic_known_element_box() {
             diagnostic.code() == DiagnosticCode::IMAGE_MISSING_FILE
                 && matches!(
                     diagnostic.details(),
-                    Some(ErrorDetails::Asset {
+                    Some(DiagnosticDetails::Asset {
                         recovery: Recovery::Omitted,
                         ..
                     })
@@ -853,7 +853,7 @@ fn scene_text_reports_missing_glyphs_and_emoji_substitution_in_every_format() {
             assert!(
                 matches!(
                     diagnostic.details(),
-                    Some(ErrorDetails::MissingGlyph {
+                    Some(DiagnosticDetails::MissingGlyph {
                         codepoint: reported,
                         recovery: Recovery::Substituted,
                         ..

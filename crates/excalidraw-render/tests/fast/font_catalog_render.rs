@@ -1,6 +1,6 @@
 use base64::Engine as _;
 use excalidraw_render::{
-    DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, Renderer, ResourceLimits,
+    DiagnosticCode, DiagnosticDetails, OutputFormat, RenderRequest, Renderer, ResourceLimits,
     SceneDocument,
 };
 
@@ -508,7 +508,7 @@ fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
         .map(|diagnostic| {
             assert_eq!(diagnostic.code(), DiagnosticCode::FONT_MISSING_GLYPH);
             match diagnostic.details() {
-                Some(ErrorDetails::MissingGlyph { codepoint, .. }) => *codepoint,
+                Some(DiagnosticDetails::MissingGlyph { codepoint, .. }) => *codepoint,
                 other => panic!("missing-glyph details, got {other:?}"),
             }
         })
@@ -650,7 +650,7 @@ fn a_paragraph_separator_inside_a_source_line_keeps_the_text_after_it() {
         .map(|diagnostic| {
             assert_eq!(diagnostic.code(), DiagnosticCode::FONT_MISSING_GLYPH);
             match diagnostic.details() {
-                Some(ErrorDetails::MissingGlyph { codepoint, .. }) => *codepoint,
+                Some(DiagnosticDetails::MissingGlyph { codepoint, .. }) => *codepoint,
                 other => panic!("missing-glyph details, got {other:?}"),
             }
         })

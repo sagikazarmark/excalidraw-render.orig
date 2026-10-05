@@ -8,7 +8,7 @@ use crate::resource_accounting::{
     ResourceContext, ResourceDelta, ResourcePhase, ResourceRecordKind,
 };
 use crate::{
-    ErrorCode, ErrorDetails, Measurement, PdfRasterFallback, RenderError, RenderErrorCategory,
+    DiagnosticDetails, ErrorCode, Measurement, PdfRasterFallback, RenderError, RenderErrorCategory,
     RenderRequest, ResourceValue, ValueKind,
 };
 
@@ -151,7 +151,7 @@ impl RenderSession {
             format: request.format(),
             element_id: Some(closure.element_id.clone()),
             json_pointer: closure.json_pointer.clone().into_boxed_str(),
-            details: Some(Box::new(ErrorDetails::ResourceLimit {
+            details: Some(Box::new(DiagnosticDetails::ResourceLimit {
                 field,
                 configured: ResourceValue::Integer(configured),
                 value_kind,
@@ -178,7 +178,7 @@ impl RenderSession {
             format: request.format(),
             element_id: Some(closure.element_id.clone()),
             json_pointer: closure.json_pointer.clone().into_boxed_str(),
-            details: Some(Box::new(ErrorDetails::PdfRasterFallback {
+            details: Some(Box::new(DiagnosticDetails::PdfRasterFallback {
                 recovery: None,
                 logical_bounds: Some(closure.logical_bounds),
                 pixel_width: Some(closure.pixel_width),

@@ -153,7 +153,7 @@ fn exercise(input: &[u8], mode: usize, forbid: bool, valid: bool) {
             .include_background(false)
             .resource_limits(limits.clone());
         if format == OutputFormat::Pdf {
-            builder = builder.pdf_options(PdfOptions::new(if forbid {
+            builder = builder.pdf_options(PdfOptions::default().with_raster_fallback(if forbid {
                 PdfRasterFallback::Forbid
             } else {
                 PdfRasterFallback::AllowIsolated
@@ -231,11 +231,13 @@ fn exercise(input: &[u8], mode: usize, forbid: bool, valid: bool) {
                         .include_background(false)
                         .resource_limits(self::limits(0));
                     if format == OutputFormat::Pdf {
-                        relaxed = relaxed.pdf_options(PdfOptions::new(if forbid {
-                            PdfRasterFallback::Forbid
-                        } else {
-                            PdfRasterFallback::AllowIsolated
-                        }));
+                        relaxed = relaxed.pdf_options(PdfOptions::default().with_raster_fallback(
+                            if forbid {
+                                PdfRasterFallback::Forbid
+                            } else {
+                                PdfRasterFallback::AllowIsolated
+                            },
+                        ));
                     }
                     let restored = Renderer::new().render(&scene, &relaxed.build().unwrap());
                     assert!(
@@ -718,7 +720,7 @@ fn pdf_effect_seed_exercises_allowed_and_forbidden_fallback() {
         .any(|d| d.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
     let forbidden = RenderRequest::builder(OutputFormat::Pdf)
         .resource_limits(limits(0))
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .unwrap();
     assert_eq!(

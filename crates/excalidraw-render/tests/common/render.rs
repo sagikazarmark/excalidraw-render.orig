@@ -3,7 +3,7 @@
 //! non-default request builds it and hands it to [`render_with_request`].
 
 use excalidraw_render::{
-    ErrorCode, ErrorDetails, OutputFormat, RenderOutcome, RenderRequest, RenderRequestBuilder,
+    DiagnosticDetails, ErrorCode, OutputFormat, RenderOutcome, RenderRequest, RenderRequestBuilder,
     Renderer, ResourceLimits, ResourceMeasurement, ResourceValue, SceneDocument,
 };
 
@@ -96,7 +96,7 @@ pub fn total_work_boundary(
         .expect_err("one unit below the total-work boundary is fatal");
     assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_WORK_EXCEEDED);
     match error.details() {
-        Some(ErrorDetails::ResourceLimit {
+        Some(DiagnosticDetails::ResourceLimit {
             field,
             measurement:
                 ResourceMeasurement::Attempted {
@@ -139,7 +139,7 @@ pub fn trailing_work_charges(
             .render(scene, &work_probe_request(request_builder(), total))
             .err()?;
         let attempted = match error.details() {
-            Some(ErrorDetails::ResourceLimit {
+            Some(DiagnosticDetails::ResourceLimit {
                 field: "max_total_work_units",
                 measurement:
                     ResourceMeasurement::Attempted {

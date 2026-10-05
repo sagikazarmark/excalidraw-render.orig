@@ -5,10 +5,13 @@ use std::fmt;
 use serde::Serialize;
 
 use crate::color::ColorLowering;
-use crate::{ErrorCode, ErrorDescriptor, ErrorDetails, ResourceLimits};
+use crate::{DiagnosticDetails, ErrorCode, ErrorDescriptor, ResourceLimits};
 
 /// Indicates that a render request could not be validated.
-#[derive(Clone, Debug, Eq, PartialEq)]
+///
+/// [`Error::source`] is always `None`: validation has no underlying cause
+/// beyond the stable code and message.
+#[derive(Clone, Debug)]
 pub struct RequestError {
     code: ErrorCode,
     message: Box<str>,
@@ -83,7 +86,7 @@ impl RequestError {
         ErrorDescriptor::request(
             self.code,
             self.to_string(),
-            ErrorDetails::RequestValue {
+            DiagnosticDetails::RequestValue {
                 field: self.field,
                 asset_id: self.asset_id.clone(),
                 option: self.option,
@@ -311,15 +314,27 @@ pub enum PdfRasterFallback {
 }
 
 /// PDF-specific request controls.
+///
+/// The default allows isolated raster fallback:
+///
+/// ```
+/// use excalidraw_render::{PdfOptions, PdfRasterFallback};
+///
+/// let options = PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid);
+/// assert_eq!(options.raster_fallback(), PdfRasterFallback::Forbid);
+/// ```
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct PdfOptions {
     raster_fallback: PdfRasterFallback,
 }
 
 impl PdfOptions {
-    /// Creates PDF options with the selected raster-fallback policy.
-    pub fn new(raster_fallback: PdfRasterFallback) -> Self {
-        Self { raster_fallback }
+    /// Selects the isolated raster-fallback policy (default
+    /// [`PdfRasterFallback::AllowIsolated`]).
+    #[must_use]
+    pub const fn with_raster_fallback(mut self, raster_fallback: PdfRasterFallback) -> Self {
+        self.raster_fallback = raster_fallback;
+        self
     }
 
     /// Returns the isolated raster-fallback policy.
@@ -383,6 +398,7 @@ impl SupplementalAssets {
 }
 
 /// Builder for an owned deterministic supplemental-asset mapping.
+#[must_use]
 #[derive(Clone, Debug, Default)]
 pub struct SupplementalAssetsBuilder {
     entries: Vec<(String, SupplementalAsset)>,
@@ -557,6 +573,7 @@ impl RenderRequest {
 }
 
 /// Builder for a validated one-format render request.
+#[must_use]
 #[derive(Clone, Debug)]
 pub struct RenderRequestBuilder {
     request: RenderRequest,
@@ -625,6 +642,7 @@ impl FrameRenderRequest {
 }
 
 /// Builder for a validated one-format frame render request.
+#[must_use]
 #[derive(Clone, Debug)]
 pub struct FrameRenderRequestBuilder {
     inner: RenderRequestBuilder,

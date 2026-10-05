@@ -254,7 +254,7 @@ fn nested_resource_recovery_replays_cached_descendants_and_frame_traces() {
         for diagnostic in outcome.report().diagnostics() {
             assert!(matches!(
                 diagnostic.details(),
-                Some(crate::ErrorDetails::NestedResourceLimit {
+                Some(crate::DiagnosticDetails::NestedResourceLimit {
                     recovery: crate::Recovery::Placeholder,
                     ..
                 })
@@ -389,7 +389,7 @@ fn forbidden_nested_recovery_replays_cached_descendant_work() {
             for diagnostic in outcome.report().diagnostics() {
                 assert_eq!(diagnostic.code().as_str(), "image.forbidden-resource");
                 assert!(
-                    matches!(diagnostic.details(),Some(crate::ErrorDetails::NestedSource {recovery,..}) if *recovery==if work==8192 {crate::Recovery::Placeholder}else{crate::Recovery::Omitted})
+                    matches!(diagnostic.details(),Some(crate::DiagnosticDetails::NestedSource {recovery,..}) if *recovery==if work==8192 {crate::Recovery::Placeholder}else{crate::Recovery::Omitted})
                 );
             }
             let trace: serde_json::Value = serde_json::from_slice(&trace).unwrap();

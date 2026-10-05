@@ -49,12 +49,21 @@ excalidraw-render = "0.1"
 ```
 
 ```rust,no_run
-use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument, Sizing};
 
-let scene = SceneDocument::parse(&std::fs::read("drawing.excalidraw")?)?;
-let request = RenderRequest::builder(OutputFormat::Svg).build()?;
-let outcome = Renderer::new().render(&scene, &request)?;
-std::fs::write("drawing.svg", outcome.artifact().bytes())?;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let scene = SceneDocument::parse(&std::fs::read("drawing.excalidraw")?)?;
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .sizing(Sizing::Scale(2.0))
+        .build()?;
+
+    let outcome = Renderer::new().render(&scene, &request)?;
+    for diagnostic in outcome.report().diagnostics() {
+        eprintln!("{diagnostic}");
+    }
+    std::fs::write("drawing.png", outcome.artifact().bytes())?;
+    Ok(())
+}
 ```
 
 The [library README](crates/excalidraw-render/README.md) covers frame export,

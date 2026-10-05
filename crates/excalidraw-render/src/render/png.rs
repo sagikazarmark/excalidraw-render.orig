@@ -66,6 +66,8 @@ use super::{freedraw, FormatEncodeError, SvgTreeCache};
 pub(super) struct PngPlan {
     width: u32,
     height: u32,
+    /// A side past `u32` saturated, so `width * height` is only a lower bound.
+    saturated: bool,
     background: Option<[u8; 4]>,
     fallback_colors: FallbackColors,
     /// `drawImagePlaceholder`'s `#E7E7E7` rectangle, for the color mode.
@@ -775,8 +777,11 @@ impl PngPlan {
         svg_trees: &SvgTreeCache,
     ) -> Result<Self, FormatEncodeError> {
         let scale = scene.raster_or_pdf_scale(request.sizing());
-        let width = pixel_dimension(scene.logical_width * scale)?;
-        let height = pixel_dimension(scene.logical_height * scale)?;
+        let width = pixel_dimension(scene.logical_width * scale, "width")?;
+        let height = pixel_dimension(scene.logical_height * scale, "height")?;
+        let saturated = width.is_none() || height.is_none();
+        let width = width.unwrap_or(u32::MAX);
+        let height = height.unwrap_or(u32::MAX);
         let background = scene
             .include_background
             .then(|| scene.background_color.rgba8());
@@ -930,6 +935,7 @@ impl PngPlan {
         Ok(Self {
             width,
             height,
+            saturated,
             background,
             svg_trees: svg_trees.clone(),
             fallback_colors: scene.fallback_colors,
@@ -2098,21 +2104,40 @@ impl PngPlan {
         self.width
     }
 
+    #[cfg(test)]
     pub(super) const fn height(&self) -> u32 {
         self.height
     }
+
+    /// The canvas area in pixels, or `None` when a side saturated and the
+    /// area is known only to exceed every admissible surface.
+    pub(super) const fn surface_pixels(&self) -> Option<u64> {
+        if self.saturated {
+            None
+        } else {
+            Some(self.width as u64 * self.height as u64)
+        }
+    }
 }
 
-/// A canvas side in whole pixels. A side past `u32` (an enormous scale)
-/// saturates, so the raster surface limit rejects it as a resource crossing.
-fn pixel_dimension(value: f64) -> Result<u32, FormatEncodeError> {
+/// A canvas side in whole pixels, or `None` for a side past `u32` (an
+/// enormous scale), which the raster surface limit rejects as a resource
+/// crossing. A side that truncates to zero (a tiny scale or maximum
+/// dimension) is an encoding failure: the smallest valid sizing depends on
+/// the scene, so the request cannot reject it.
+fn pixel_dimension(value: f64, side: &str) -> Result<Option<u32>, FormatEncodeError> {
     if value >= (u32::MAX as f64) + 1.0 {
-        return Ok(u32::MAX);
+        return Ok(None);
     }
-    if !value.is_finite() || value < 1.0 {
+    if !value.is_finite() || value < 0.0 {
         return Err(FormatEncodeError::Encoding(
             "PNG dimensions must be finite positive 32-bit values".to_owned(),
         ));
     }
-    Ok(value.trunc() as u32)
+    if value < 1.0 {
+        return Err(FormatEncodeError::Encoding(format!(
+            "PNG {side} rounds to zero pixels at the requested size"
+        )));
+    }
+    Ok(Some(value.trunc() as u32))
 }

@@ -766,7 +766,7 @@ fn build_frame_request(
         .supplemental_assets(assets)
         .resource_limits(ResourceLimits::default());
     if let Some(fallback) = frames.pdf_raster_fallback {
-        builder = builder.pdf_options(PdfOptions::new(match fallback {
+        builder = builder.pdf_options(PdfOptions::default().with_raster_fallback(match fallback {
             PdfFallbackArg::AllowIsolated => PdfRasterFallback::AllowIsolated,
             PdfFallbackArg::Forbid => PdfRasterFallback::Forbid,
         }));
@@ -1149,6 +1149,7 @@ fn frame_batch_report_bytes(
                 human::diagnostics(&diagnostics, human.verbose)
             );
             let mut codes = Vec::new();
+            let mut hints = Vec::new();
             for (entry, _) in entries {
                 if let Some(error) = &entry.error {
                     text.push_str(&human::error_line(
@@ -1157,6 +1158,11 @@ fn frame_batch_report_bytes(
                     ));
                     if !codes.contains(&error.code()) {
                         codes.push(error.code());
+                    }
+                    if let Some(hint) = error.sizing_hint() {
+                        if !hints.contains(&hint) {
+                            hints.push(hint);
+                        }
                     }
                 }
             }
@@ -1167,6 +1173,9 @@ fn frame_batch_report_bytes(
                 ));
             }
             // Each fix once, however many frames it applies to.
+            for hint in hints {
+                text.push_str(&format!("hint: {hint}\n"));
+            }
             for code in codes {
                 text.push_str(&human::hint_lines(code, std::iter::empty()));
             }

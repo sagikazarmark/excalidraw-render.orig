@@ -22,7 +22,7 @@ use std::error::Error;
 use std::fmt;
 use std::sync::Arc;
 
-use crate::{ErrorCode, ErrorDescriptor, ErrorDetails, Measurement};
+use crate::{DiagnosticDetails, ErrorCode, ErrorDescriptor, Measurement};
 
 /// An admitted Excalidraw scene document.
 #[derive(Clone)]
@@ -663,12 +663,15 @@ impl fmt::Debug for SceneDocument {
 }
 
 /// Indicates that scene-document bytes could not be admitted.
-#[derive(Clone, Debug, PartialEq)]
+///
+/// [`Error::source`] is always `None`: JSON decoder failures are flattened
+/// into the stable code and message.
+#[derive(Clone, Debug)]
 pub struct SceneParseError {
     code: ErrorCode,
     message: String,
     json_pointer: Option<String>,
-    details: Option<Box<ErrorDetails>>,
+    details: Option<Box<DiagnosticDetails>>,
 }
 
 impl SceneParseError {
@@ -676,7 +679,7 @@ impl SceneParseError {
         code: ErrorCode,
         message: impl Into<String>,
         json_pointer: Option<String>,
-        details: Option<ErrorDetails>,
+        details: Option<DiagnosticDetails>,
     ) -> Self {
         Self {
             code,
@@ -709,7 +712,7 @@ impl SceneParseError {
             limit.code,
             limit.message,
             json_pointer,
-            Some(ErrorDetails::ParseLimit {
+            Some(DiagnosticDetails::ParseLimit {
                 field: limit.field,
                 configured: limit.configured,
                 value_kind: limit.value_kind,
@@ -729,7 +732,7 @@ impl SceneParseError {
     }
 
     /// Returns typed details required by this failure's stable code.
-    pub fn details(&self) -> Option<&ErrorDetails> {
+    pub fn details(&self) -> Option<&DiagnosticDetails> {
         self.details.as_deref()
     }
 
@@ -749,7 +752,7 @@ impl fmt::Display for SceneParseError {
     /// value, the limit field and its fixed ceiling.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(&self.message)?;
-        if let Some(crossing) = self.details().and_then(ErrorDetails::limit_crossing) {
+        if let Some(crossing) = self.details().and_then(DiagnosticDetails::limit_crossing) {
             write!(formatter, ": {crossing}")?;
         }
         Ok(())

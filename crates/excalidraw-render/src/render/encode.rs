@@ -220,12 +220,14 @@ impl RenderSession {
         let plan = PngPlan::new(resolved, request, &self.svg_trees)
             .map_err(|error| self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error))?;
         self.release_semantic_working(request, semantic_working, false)?;
-        let pixels = u64::from(plan.width()).saturating_mul(u64::from(plan.height()));
-        let rgba_bytes = pixels.saturating_mul(4);
         let surface_limit = request.resource_limits().max_raster_surface_pixels();
-        if pixels > surface_limit {
-            return Err(self.required_raster_surface_failure(request, surface_limit, pixels));
-        }
+        let pixels = match plan.surface_pixels() {
+            Some(pixels) if pixels <= surface_limit => pixels,
+            attempted => {
+                return Err(self.required_raster_surface_failure(request, surface_limit, attempted))
+            }
+        };
+        let rgba_bytes = pixels.saturating_mul(4);
         self.transact(
             request,
             ResourceContext::new(

@@ -124,7 +124,7 @@ impl RenderSession {
         let nested_notices = if self.report.diagnostics().iter().any(|d| {
             matches!(
                 d.details(),
-                Some(crate::ErrorDetails::NestedResourceLimit {
+                Some(crate::DiagnosticDetails::NestedResourceLimit {
                     recovery: crate::Recovery::Placeholder,
                     ..
                 })
@@ -132,10 +132,10 @@ impl RenderSession {
                 && matches!(
                     d.details(),
                     Some(
-                        crate::ErrorDetails::Asset {
+                        crate::DiagnosticDetails::Asset {
                             recovery: crate::Recovery::Placeholder,
                             ..
-                        } | crate::ErrorDetails::NestedSource {
+                        } | crate::DiagnosticDetails::NestedSource {
                             recovery: crate::Recovery::Placeholder,
                             ..
                         }

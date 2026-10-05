@@ -1,7 +1,7 @@
 //! The shape of one parser-limit rejection, asserted the same way by the scene
 //! admission tests and by the limits tier that builds ceiling-sized scenes.
 
-use excalidraw_render::{ErrorCode, ErrorDetails, Measurement, SceneParseError, ValueKind};
+use excalidraw_render::{DiagnosticDetails, ErrorCode, Measurement, SceneParseError, ValueKind};
 
 pub fn assert_parse_limit(
     error: SceneParseError,
@@ -15,7 +15,7 @@ pub fn assert_parse_limit(
     assert_eq!(error.code(), expected_code);
     assert_eq!(error.json_pointer(), expected_pointer);
     match error.details() {
-        Some(ErrorDetails::ParseLimit {
+        Some(DiagnosticDetails::ParseLimit {
             field,
             configured,
             value_kind,

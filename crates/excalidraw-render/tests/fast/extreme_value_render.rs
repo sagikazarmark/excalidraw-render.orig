@@ -115,6 +115,66 @@ fn an_overflowing_scale_is_a_resource_crossing() {
     }
 }
 
+#[test]
+fn a_saturated_png_surface_reports_a_lower_bound() {
+    // Both sides saturate at u32::MAX; their product is not the attempted area,
+    // so the crossing is the checked-overflow lower bound, limit + 1.
+    let scene = scene(&rectangle(""), "");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .sizing(Sizing::Scale(1e300))
+        .build()
+        .expect("request");
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("the scale is rejected");
+    assert_eq!(error.code(), ErrorCode::RESOURCE_RASTER_SURFACE_EXCEEDED);
+    let details = serde_json::to_value(error.details()).expect("details serialize");
+    assert_eq!(
+        details["measurement"],
+        serde_json::json!({"kind": "at_least", "value": 33_554_433})
+    );
+    assert!(
+        error.to_string().contains("needs at least 33554433 pixels"),
+        "{error}"
+    );
+}
+
+#[test]
+fn a_sizing_that_rounds_the_output_to_nothing_says_so() {
+    let scene = scene(&rectangle(""), "");
+    for (format, sizing, code, message) in [
+        (
+            OutputFormat::Png,
+            Sizing::Scale(1e-300),
+            ErrorCode::ENCODE_PNG_FAILED,
+            "PNG width rounds to zero pixels at the requested size",
+        ),
+        // A maximum dimension under one pixel: 30 x 30 logical becomes 0.5 x 0.5.
+        (
+            OutputFormat::Png,
+            Sizing::MaxDimension(0.5),
+            ErrorCode::ENCODE_PNG_FAILED,
+            "PNG width rounds to zero pixels at the requested size",
+        ),
+        (
+            OutputFormat::Pdf,
+            Sizing::Scale(1e-300),
+            ErrorCode::ENCODE_PDF_FAILED,
+            "PDF page rounds to zero points at the requested size",
+        ),
+    ] {
+        let request = RenderRequest::builder(format)
+            .sizing(sizing)
+            .build()
+            .expect("the request is valid; the scene decides the size");
+        let error = Renderer::new()
+            .render(&scene, &request)
+            .expect_err("the artifact has no size");
+        assert_eq!(error.code(), code, "{sizing:?}: {error}");
+        assert_eq!(error.descriptor().message(), message, "{sizing:?}");
+    }
+}
+
 fn dragons(id: &str, y: u32, count: usize) -> String {
     let text = "🐉".repeat(count);
     format!(

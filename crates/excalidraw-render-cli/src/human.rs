@@ -6,7 +6,7 @@ use std::fmt::Write as _;
 use std::io;
 
 use excalidraw_render::{
-    CompatibilityDiagnostic, DiagnosticSeverity, ErrorDescriptor, ErrorDetails, OutputFormat,
+    CompatibilityDiagnostic, DiagnosticDetails, DiagnosticSeverity, ErrorDescriptor, OutputFormat,
 };
 use serde::de::IgnoredAny;
 use serde::Deserialize;
@@ -88,6 +88,15 @@ pub(crate) fn code_hint(code: &str) -> Option<&'static str> {
         "revision.unsupported" => "run `excalidraw-render --list-revisions` to see the supported revisions",
         _ => return None,
     })
+}
+
+/// The fix for a PNG or PDF whose sizing rounds a side to zero. The smallest
+/// valid sizing depends on the scene, so the library reports it as an
+/// encoding failure that only its message distinguishes.
+pub(crate) fn sizing_hint(code: &str, message: &str) -> Option<&'static str> {
+    (matches!(code, "encode.png-failed" | "encode.pdf-failed")
+        && message.contains("rounds to zero"))
+    .then_some("use a larger --scale or --max-dimension")
 }
 
 /// A clap grammar error with `code` closing its first paragraph, the error
@@ -300,7 +309,7 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
                 group.elements.push(element);
             }
         }
-        if let Some(ErrorDetails::MissingGlyph { codepoint, .. }) = diagnostic.details() {
+        if let Some(DiagnosticDetails::MissingGlyph { codepoint, .. }) = diagnostic.details() {
             if !group.characters.contains(codepoint) {
                 group.characters.push(*codepoint);
             }

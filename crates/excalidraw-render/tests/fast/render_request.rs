@@ -1,6 +1,7 @@
 use excalidraw_render::{
-    ColorMode, ErrorCode, ErrorDetails, ErrorFamily, FrameOptions, MetadataOptions, OutputFormat,
-    PdfOptions, PdfRasterFallback, RenderRequest, ResourceLimits, Sizing, SupplementalAssets,
+    ColorMode, DiagnosticDetails, ErrorCode, ErrorFamily, FrameOptions, MetadataOptions,
+    OutputFormat, PdfOptions, PdfRasterFallback, RenderRequest, ResourceLimits, Sizing,
+    SupplementalAssets,
 };
 
 #[test]
@@ -169,7 +170,7 @@ fn numeric_request_values_are_validated_before_rendering() {
         assert_eq!(error.descriptor().json_pointer(), None);
         assert!(matches!(
             error.descriptor().details(),
-            Some(ErrorDetails::RequestValue {
+            Some(DiagnosticDetails::RequestValue {
                 field,
                 asset_id: None,
                 option: None,
@@ -204,7 +205,7 @@ fn numeric_request_values_are_validated_before_rendering() {
 fn pdf_options_are_rejected_for_other_formats() {
     for format in [OutputFormat::Svg, OutputFormat::Png] {
         let error = RenderRequest::builder(format)
-            .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+            .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
             .build()
             .expect_err("PDF options cannot configure another format");
 
@@ -214,7 +215,7 @@ fn pdf_options_are_rejected_for_other_formats() {
     }
 
     let request = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .expect("PDF options configure a PDF request");
     assert_eq!(

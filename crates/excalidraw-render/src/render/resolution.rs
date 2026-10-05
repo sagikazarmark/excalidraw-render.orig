@@ -924,7 +924,7 @@ impl RenderSession {
                 )
                 .map_err(|_| self.memory_failure(request, "frame_selection", "coordinate_pointer"))?
                 .into_boxed_str(),
-            details: Some(Box::new(crate::ErrorDetails::ResourceLimit {
+            details: Some(Box::new(crate::DiagnosticDetails::ResourceLimit {
                 field: "max_coordinate_magnitude",
                 configured: crossing.configured,
                 value_kind: crate::ValueKind::Coordinate,

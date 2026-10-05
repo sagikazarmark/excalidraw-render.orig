@@ -5,7 +5,9 @@ use std::fmt;
 use serde::Serialize;
 
 use crate::diagnostic_registry::DiagnosticKind;
-use crate::{ErrorCode, ErrorDescriptor, ErrorDetails, OutputFormat, ReferenceProfileIdentity};
+use crate::{
+    DiagnosticDetails, ErrorCode, ErrorDescriptor, OutputFormat, ReferenceProfileIdentity,
+};
 
 /// String-backed stable compatibility diagnostic code.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
@@ -230,7 +232,7 @@ pub(crate) struct PendingDiagnostic {
     element_id: Option<String>,
     json_pointer: String,
     message: String,
-    details: Option<Box<ErrorDetails>>,
+    details: Option<Box<DiagnosticDetails>>,
 }
 
 fn set_identity_effects(
@@ -256,7 +258,7 @@ impl PendingDiagnostic {
             return Ok(());
         }
         if let Some(details) = self.details.as_deref_mut() {
-            if matches!(details, ErrorDetails::Compatibility { recovery:crate::Recovery::Placeholder, recipe_id:Some(recipe) }
+            if matches!(details, DiagnosticDetails::Compatibility { recovery:crate::Recovery::Placeholder, recipe_id:Some(recipe) }
                 if recipe==crate::diagnostic_registry::FallbackRecipe::KnownElementUnavailable.id())
             {
                 *details = DiagnosticKind::UnsupportedPropertyValue {
@@ -318,7 +320,7 @@ impl PendingDiagnostic {
         if self.code != DiagnosticCode::ASSET_MALFORMED_FILE_RECORD {
             return Ok(());
         }
-        if let Some(ErrorDetails::Asset { asset_id, .. }) = self.details.as_deref() {
+        if let Some(DiagnosticDetails::Asset { asset_id, .. }) = self.details.as_deref() {
             let kind = DiagnosticKind::ImageUnavailable {
                 failure: crate::diagnostic_registry::ImageFailure::MalformedFileRecord,
                 asset_id,
@@ -340,7 +342,7 @@ impl PendingDiagnostic {
             return Ok(());
         }
         if let Some(details) = self.details.as_deref_mut() {
-            if let ErrorDetails::Asset { asset_id, .. } = details {
+            if let DiagnosticDetails::Asset { asset_id, .. } = details {
                 let kind = DiagnosticKind::ForbiddenResource {
                     asset_id,
                     recovery: crate::diagnostic_registry::LocalRecovery::placeholder_if(
@@ -359,7 +361,7 @@ impl PendingDiagnostic {
     }
 
     #[cfg(test)]
-    pub(crate) fn details(&self) -> Option<&ErrorDetails> {
+    pub(crate) fn details(&self) -> Option<&DiagnosticDetails> {
         self.details.as_deref()
     }
 
@@ -402,7 +404,7 @@ pub struct CompatibilityDiagnostic {
     element_id: Option<String>,
     json_pointer: String,
     message: String,
-    details: Option<Box<ErrorDetails>>,
+    details: Option<Box<DiagnosticDetails>>,
     #[serde(skip)]
     order: DiagnosticOrder,
 }
@@ -450,7 +452,7 @@ impl DiagnosticOrder {
 impl CompatibilityDiagnostic {
     /// A rejected parent frame removes this placeholder and its surviving link.
     pub(crate) fn omit_surface_fallback(&mut self, has_link: bool) -> Result<(), TryReserveError> {
-        if let Some(ErrorDetails::Compatibility {
+        if let Some(DiagnosticDetails::Compatibility {
             recovery,
             recipe_id,
         }) = self.details.as_deref_mut()
@@ -476,7 +478,7 @@ impl CompatibilityDiagnostic {
     ) -> Result<(), TryReserveError> {
         if self.code == DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE {
             if let Some(details) = self.details.as_deref_mut() {
-                if let ErrorDetails::Asset { asset_id, .. } = details {
+                if let DiagnosticDetails::Asset { asset_id, .. } = details {
                     *details = DiagnosticKind::ForbiddenResource {
                         asset_id,
                         recovery: crate::diagnostic_registry::LocalRecovery::placeholder_if(paints),
@@ -526,14 +528,14 @@ impl CompatibilityDiagnostic {
     }
 
     /// Returns typed details required by the diagnostic code.
-    pub fn details(&self) -> Option<&ErrorDetails> {
+    pub fn details(&self) -> Option<&DiagnosticDetails> {
         self.details.as_deref()
     }
 
     /// The details, for the one recovery the session revises after
     /// retention: a resource placeholder it later cannot paint becomes an
     /// omission.
-    pub(crate) fn details_mut(&mut self) -> Option<&mut ErrorDetails> {
+    pub(crate) fn details_mut(&mut self) -> Option<&mut DiagnosticDetails> {
         self.details.as_deref_mut()
     }
 
@@ -553,7 +555,7 @@ impl CompatibilityDiagnostic {
     pub(crate) fn replaces_occurrence(&self) -> bool {
         self.effects.contains(&DiagnosticEffect::Visual)
             && matches!(
-                self.details().and_then(ErrorDetails::recovery),
+                self.details().and_then(DiagnosticDetails::recovery),
                 Some(crate::Recovery::Placeholder | crate::Recovery::Omitted)
             )
     }
@@ -712,7 +714,10 @@ impl RenderErrorCategory {
 }
 
 /// Fatal render failure with the complete report accumulated before failure.
-#[derive(Debug, PartialEq)]
+///
+/// [`Error::source`] is always `None`: dependency failures (decoders,
+/// encoders, font tooling) are flattened into the stable code and message.
+#[derive(Debug)]
 pub struct RenderError {
     pub(crate) category: RenderErrorCategory,
     pub(crate) code: ErrorCode,
@@ -720,7 +725,7 @@ pub struct RenderError {
     pub(crate) format: OutputFormat,
     pub(crate) element_id: Option<String>,
     pub(crate) json_pointer: Box<str>,
-    pub(crate) details: Option<Box<ErrorDetails>>,
+    pub(crate) details: Option<Box<DiagnosticDetails>>,
     pub(crate) report: CompatibilityReport,
 }
 
@@ -751,7 +756,7 @@ impl RenderError {
     }
 
     /// Returns typed details required by the stable error code.
-    pub fn details(&self) -> Option<&ErrorDetails> {
+    pub fn details(&self) -> Option<&DiagnosticDetails> {
         self.details.as_deref()
     }
 
@@ -779,7 +784,7 @@ impl fmt::Display for RenderError {
     /// the limit field and its configured ceiling.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(&self.message)?;
-        if let Some(crossing) = self.details().and_then(ErrorDetails::limit_crossing) {
+        if let Some(crossing) = self.details().and_then(DiagnosticDetails::limit_crossing) {
             write!(formatter, ": {crossing}")?;
         }
         Ok(())
@@ -862,7 +867,7 @@ mod tests {
             format: OutputFormat::Svg,
             element_id: None,
             json_pointer: Box::from(""),
-            details: Some(Box::new(ErrorDetails::ResourceLimit {
+            details: Some(Box::new(DiagnosticDetails::ResourceLimit {
                 field: "max_output_bytes",
                 configured: ResourceValue::Integer(134_217_728),
                 value_kind: ValueKind::Bytes,

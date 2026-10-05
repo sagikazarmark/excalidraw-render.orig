@@ -1,7 +1,7 @@
 //! Run in this isolated workspace against archives, with and without `cjk`.
 //! Workspace-wide renderer tests can otherwise unify the optional payload back in.
 use excalidraw_render::{
-    DiagnosticCode, ErrorCode, ErrorDetails, OutputFormat, RenderErrorCategory, RenderRequest,
+    DiagnosticCode, ErrorCode, DiagnosticDetails, OutputFormat, RenderErrorCategory, RenderRequest,
     Renderer, SceneDocument,
 };
 use serde_json::json;
@@ -64,7 +64,7 @@ fn svg_semantic_demand_is_independent_of_glyph_font_demand() {
             assert_eq!(error.code(), ErrorCode::RENDER_FONT_UNAVAILABLE);
             assert_eq!(error.category(), RenderErrorCategory::Capability);
             assert!(
-                matches!(error.details(), Some(ErrorDetails::FontUnavailable {
+                matches!(error.details(), Some(DiagnosticDetails::FontUnavailable {
                 resolved_family, asset_identity, ..
             }) if resolved_family == "Xiaolai" && asset_identity.starts_with("fonts/Xiaolai/"))
             );
@@ -149,7 +149,7 @@ fn demanded_xiaolai_obeys_the_packaged_feature_in_every_format() {
             assert_eq!(error.code().as_str(), "render.font-unavailable");
             assert_eq!(error.category(), RenderErrorCategory::Capability);
             assert_eq!(error.format(), format);
-            let Some(ErrorDetails::FontUnavailable {
+            let Some(DiagnosticDetails::FontUnavailable {
                 resolved_family,
                 asset_identity,
                 ..

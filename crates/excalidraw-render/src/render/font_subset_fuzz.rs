@@ -335,7 +335,7 @@ fn public_facade_outcome(payload: &[u8]) -> Outcome {
             Outcome::Valid(Sha256::digest(outcome.artifact().bytes()).into())
         }
         Err(error) => match error.details() {
-            Some(crate::ErrorDetails::SvgFontSubsetFailure { stage, .. }) => {
+            Some(crate::DiagnosticDetails::SvgFontSubsetFailure { stage, .. }) => {
                 Outcome::Failure(*stage)
             }
             details => {

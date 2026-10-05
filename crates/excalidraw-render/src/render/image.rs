@@ -15,7 +15,7 @@
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
 use crate::{
-    DiagnosticCode, ErrorDetails, OutputFormat, RenderError, RenderRequest, SceneDocument,
+    DiagnosticCode, DiagnosticDetails, OutputFormat, RenderError, RenderRequest, SceneDocument,
 };
 
 use super::diagnostics::{
@@ -374,7 +374,7 @@ impl ImageResolver {
                             .position(|(id, _)| id == file_id);
                         let paints = failure.placeholder
                             || existing.is_some_and(|i| self.forbidden_owners[i].1);
-                        let update=if let Some(diagnostic) = session.report.diagnostics.iter_mut().find(|d| d.code() == DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE && matches!(d.details(),Some(ErrorDetails::Asset {asset_id,..}) if asset_id == file_id)) {
+                        let update=if let Some(diagnostic) = session.report.diagnostics.iter_mut().find(|d| d.code() == DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE && matches!(d.details(),Some(DiagnosticDetails::Asset {asset_id,..}) if asset_id == file_id)) {
                             diagnostic.set_forbidden_resource_recovery(paints)
                         }else{Ok(())};
                         update.map_err(|_| {
@@ -502,7 +502,7 @@ impl ImageResolver {
                         {
                             continue;
                         }
-                        if matches!(diagnostic.details(), Some(ErrorDetails::Asset { asset_id, validated_media_type: None, .. }) if asset_id == file_id)
+                        if matches!(diagnostic.details(), Some(DiagnosticDetails::Asset { asset_id, validated_media_type: None, .. }) if asset_id == file_id)
                         {
                             let validated = try_owned(media_type).map_err(|_| {
                                 session.memory_failure(
@@ -511,7 +511,7 @@ impl ImageResolver {
                                     "validated_media_type",
                                 )
                             })?;
-                            if let Some(ErrorDetails::Asset {
+                            if let Some(DiagnosticDetails::Asset {
                                 validated_media_type,
                                 ..
                             }) = session.report.diagnostics[index].details_mut()
@@ -552,7 +552,7 @@ impl ImageResolver {
                     if session.report.diagnostics.iter().any(|diagnostic| {
                         diagnostic.code() == DiagnosticCode::ASSET_MEDIA_TYPE_MISMATCH
                             && diagnostic.json_pointer() == json_pointer
-                            && matches!(diagnostic.details(), Some(ErrorDetails::Asset {
+                            && matches!(diagnostic.details(), Some(DiagnosticDetails::Asset {
                                 asset_id, claimed_media_type, validated_media_type, ..
                             }) if asset_id == file_id
                                 && claimed_media_type.as_deref() == Some(claim)
@@ -730,7 +730,7 @@ impl ImageResolver {
                     && !session.report.diagnostics.iter().any(|diagnostic| {
                         (matches!(
                             diagnostic.details(),
-                            Some(ErrorDetails::Asset { asset_id, .. })
+                            Some(DiagnosticDetails::Asset { asset_id, .. })
                                 if asset_id == file_id
                         ) && diagnostic.replaces_occurrence())
                             || image_payload_field_recovery(&source, diagnostic)

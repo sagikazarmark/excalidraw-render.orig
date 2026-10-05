@@ -3,6 +3,7 @@ use std::env;
 use std::ffi::OsString;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
+use std::num::IntErrorKind;
 use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
 
@@ -47,7 +48,7 @@ Examples:
 const EXIT_STATUS: &str = "\
 Exit status:
   0  the artifact was delivered (diagnostics may still have been reported)
-  1  reading, parsing, rendering, or writing failed
+  1  reading, parsing, rendering, or writing failed, or an output already exists
   2  the command line or a request value is invalid";
 
 /// The whole command line: the default scene render, or a subcommand.
@@ -264,6 +265,15 @@ impl ReportError {
         match self {
             Self::Library(error) => error.code().as_str(),
             Self::Cli(error) => error.code,
+        }
+    }
+
+    /// Advice the code alone does not imply: only the message tells a PNG or
+    /// PDF the sizing shrank to nothing from other encoding failures.
+    fn sizing_hint(&self) -> Option<&'static str> {
+        match self {
+            Self::Library(error) => human::sizing_hint(error.code().as_str(), error.message()),
+            Self::Cli(_) => None,
         }
     }
 
@@ -720,7 +730,7 @@ fn run_standalone(cli: &Cli) -> u8 {
                     path: report_output(cli).to_owned(),
                     artifact_state: DeliveryState::None,
                 }),
-                EXIT_USAGE,
+                EXIT_OPERATIONAL,
             ),
         );
     }
@@ -852,16 +862,23 @@ fn select_renderer(requested: Option<&str>) -> Result<Renderer, Failure> {
             value: Some(value.to_owned()),
         })
     };
-    let revision = value.parse::<u64>().map_err(|_| {
-        Failure::cli(
-            "cli.invalid-arguments",
-            "compatibility revision must be a nonnegative integer",
-            argument(),
-            EXIT_USAGE,
-        )
-    })?;
+    let parsed = match value.parse::<u64>() {
+        Ok(revision) => Some(revision),
+        // Too large for u64 is still a well-formed revision, just not one
+        // this renderer implements.
+        Err(error) if *error.kind() == IntErrorKind::PosOverflow => None,
+        Err(_) => {
+            return Err(Failure::cli(
+                "cli.invalid-arguments",
+                "compatibility revision must be a nonnegative integer",
+                argument(),
+                EXIT_USAGE,
+            ))
+        }
+    };
     let supported = renderer.profile_identity().compatibility_revision();
-    if revision != supported.get() {
+    if parsed != Some(supported.get()) {
+        let revision = parsed.map_or_else(|| value.to_owned(), |revision| revision.to_string());
         return Err(Failure::cli(
             "revision.unsupported",
             format!(
@@ -908,7 +925,7 @@ fn build_request(
         .supplemental_assets(assets)
         .resource_limits(ResourceLimits::default());
     if let Some(fallback) = cli.pdf_raster_fallback {
-        builder = builder.pdf_options(PdfOptions::new(match fallback {
+        builder = builder.pdf_options(PdfOptions::default().with_raster_fallback(match fallback {
             PdfFallbackArg::AllowIsolated => PdfRasterFallback::AllowIsolated,
             PdfFallbackArg::Forbid => PdfRasterFallback::Forbid,
         }));
@@ -1170,7 +1187,7 @@ fn destination_exists(role: DeliveryRole, path: &str) -> Failure {
             path: path.to_owned(),
             artifact_state: DeliveryState::None,
         }),
-        EXIT_USAGE,
+        EXIT_OPERATIONAL,
     )
 }
 
@@ -1584,7 +1601,11 @@ fn failure_report_bytes(
         if mode == ReportFormat::Human {
             text.push_str(&human::hint_lines(
                 code,
-                failure.hints.iter().map(String::as_str),
+                failure
+                    .hints
+                    .iter()
+                    .map(String::as_str)
+                    .chain(failure.error.sizing_hint()),
             ));
         }
         return text.into_bytes();

@@ -124,11 +124,13 @@ fn request(case: &Case, format: OutputFormat, output: Option<u64>) -> RenderRequ
         );
     }
     if format == OutputFormat::Pdf {
-        builder = builder.pdf_options(PdfOptions::new(if bits & 16384 == 0 {
-            PdfRasterFallback::AllowIsolated
-        } else {
-            PdfRasterFallback::Forbid
-        }));
+        builder = builder.pdf_options(PdfOptions::default().with_raster_fallback(
+            if bits & 16384 == 0 {
+                PdfRasterFallback::AllowIsolated
+            } else {
+                PdfRasterFallback::Forbid
+            },
+        ));
     }
     builder.build().unwrap()
 }

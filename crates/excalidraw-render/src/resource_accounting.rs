@@ -1,5 +1,5 @@
 use crate::{
-    ErrorCode, ErrorDetails, Measurement, OutputFormat, Recovery, ResourceLimits,
+    DiagnosticDetails, ErrorCode, Measurement, OutputFormat, Recovery, ResourceLimits,
     ResourceMeasurement, ResourceValue, ValueKind,
 };
 #[cfg(test)]
@@ -780,7 +780,7 @@ pub(crate) struct ResourceCrossing {
 }
 
 impl ResourceCrossing {
-    fn details(&self, limits: &ResourceLimits) -> ErrorDetails {
+    fn details(&self, limits: &ResourceLimits) -> DiagnosticDetails {
         let measurement: ResourceMeasurement = match self.measurement {
             Measurement::Attempted { value } => Measurement::Attempted {
                 value: ResourceValue::Integer(value),
@@ -789,7 +789,7 @@ impl ResourceCrossing {
                 value: ResourceValue::Integer(value),
             },
         };
-        ErrorDetails::ResourceLimit {
+        DiagnosticDetails::ResourceLimit {
             field: self.kind.field(),
             configured: ResourceValue::Integer(self.kind.configured(limits)),
             value_kind: self.kind.value_kind(),
@@ -807,7 +807,7 @@ impl ResourceCrossing {
         &'static str,
         Option<String>,
         String,
-        ErrorDetails,
+        DiagnosticDetails,
     ) {
         let details = self.details(limits);
         (
@@ -1145,7 +1145,7 @@ mod tests {
 
         assert_eq!(code, ErrorCode::RESOURCE_TOTAL_WORK_EXCEEDED);
         match details {
-            ErrorDetails::ResourceLimit {
+            DiagnosticDetails::ResourceLimit {
                 measurement:
                     Measurement::AtLeast {
                         value: ResourceValue::Integer(value),

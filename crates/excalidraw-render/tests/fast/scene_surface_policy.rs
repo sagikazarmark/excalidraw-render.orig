@@ -60,7 +60,8 @@ fn revision_1_element_policy_uses_exact_kind_and_record_boundaries() {
         diagnostics
             .iter()
             .map(|diagnostic| match diagnostic.details() {
-                Some(excalidraw_render::ErrorDetails::Compatibility { recovery, .. }) => *recovery,
+                Some(excalidraw_render::DiagnosticDetails::Compatibility { recovery, .. }) =>
+                    *recovery,
                 details => panic!("unexpected compatibility details: {details:?}"),
             })
             .collect::<Vec<_>>(),

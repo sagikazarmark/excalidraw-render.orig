@@ -92,9 +92,10 @@ use crate::resource_accounting::{
 };
 use crate::scene::OriginalJsonVisitError;
 use crate::{
-    Artifact, CompatibilityDiagnostic, CompatibilityReport, ErrorCode, ErrorDetails, FiniteValue,
-    Measurement, OutputFormat, ReferenceProfileIdentity, RenderError, RenderErrorCategory,
-    RenderOutcome, RenderRequest, ResourceValue, SceneDocument, Sizing, ValueKind,
+    Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticDetails, ErrorCode,
+    FiniteValue, Measurement, OutputFormat, ReferenceProfileIdentity, RenderError,
+    RenderErrorCategory, RenderOutcome, RenderRequest, ResourceValue, SceneDocument, Sizing,
+    ValueKind,
 };
 
 use self::frame_target::FrameTarget;
@@ -519,12 +520,24 @@ impl RenderSession {
         })
     }
 
+    /// The main PNG surface's crossing. `attempted` is `None` when a side
+    /// saturated: the area is then reported as the checked-overflow lower
+    /// bound `configured + 1` (spec sections 11.1 and 13.2), not the
+    /// saturated product.
     fn required_raster_surface_failure(
         &mut self,
         request: &RenderRequest,
         configured: u64,
-        attempted: u64,
+        attempted: Option<u64>,
     ) -> RenderError {
+        let measurement = match attempted {
+            Some(attempted) => Measurement::Attempted {
+                value: ResourceValue::Integer(attempted),
+            },
+            None => Measurement::AtLeast {
+                value: ResourceValue::Integer(configured.saturating_add(1)),
+            },
+        };
         RenderError {
             category: RenderErrorCategory::ResourceLimit,
             code: ErrorCode::RESOURCE_RASTER_SURFACE_EXCEEDED,
@@ -532,13 +545,11 @@ impl RenderSession {
             format: request.format(),
             element_id: None,
             json_pointer: Box::from(""),
-            details: Some(Box::new(ErrorDetails::ResourceLimit {
+            details: Some(Box::new(DiagnosticDetails::ResourceLimit {
                 field: "max_raster_surface_pixels",
                 configured: ResourceValue::Integer(configured),
                 value_kind: ValueKind::Pixels,
-                measurement: Measurement::Attempted {
-                    value: ResourceValue::Integer(attempted),
-                },
+                measurement,
                 recovery: None,
             })),
             report: self.take_report(),
@@ -979,7 +990,7 @@ impl RenderSession {
                     format: request.format(),
                     element_id: None,
                     json_pointer: Box::from(""),
-                    details: Some(Box::new(ErrorDetails::ResourceLimit {
+                    details: Some(Box::new(DiagnosticDetails::ResourceLimit {
                         field: "max_svg_dimension",
                         configured: ResourceValue::Finite(configured),
                         value_kind: ValueKind::Dimension,
@@ -1033,7 +1044,7 @@ impl RenderSession {
                     format: request.format(),
                     element_id: None,
                     json_pointer: Box::from(""),
-                    details: Some(Box::new(ErrorDetails::ResourceLimit {
+                    details: Some(Box::new(DiagnosticDetails::ResourceLimit {
                         field: "max_pdf_page_points",
                         configured: ResourceValue::Finite(configured),
                         value_kind: ValueKind::Dimension,
@@ -1076,7 +1087,7 @@ impl RenderSession {
                 format: request.format(),
                 element_id: None,
                 json_pointer: Box::from(""),
-                details: Some(Box::new(ErrorDetails::SvgFontSubsetFailure {
+                details: Some(Box::new(DiagnosticDetails::SvgFontSubsetFailure {
                     stage,
                     resolved_family: resolved_family.to_owned(),
                     asset_identity: asset_identity.to_owned(),
@@ -1114,7 +1125,7 @@ impl RenderSession {
             format: request.format(),
             element_id,
             json_pointer: json_pointer.into_boxed_str(),
-            details: Some(Box::new(ErrorDetails::MemoryUnavailable {
+            details: Some(Box::new(DiagnosticDetails::MemoryUnavailable {
                 subject_kind: subject_kind.to_owned(),
                 subject: subject.to_owned(),
             })),
@@ -1157,7 +1168,7 @@ impl RenderSession {
             format,
             element_id: None,
             json_pointer: Box::from(""),
-            details: Some(Box::new(ErrorDetails::FontUnavailable {
+            details: Some(Box::new(DiagnosticDetails::FontUnavailable {
                 resolved_family: font.resolved_family.to_owned(),
                 asset_identity: font.asset_identity.to_owned(),
             })),

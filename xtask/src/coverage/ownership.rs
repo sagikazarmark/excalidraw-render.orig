@@ -1525,6 +1525,11 @@ mod tests {
         }
         let source = "//! doc\nmod common;\nuse std::fs;\n#[test]\nfn example() {}";
         crate_root_test(source, "example").unwrap();
+        crate_root_test(
+            "#![warn(missing_docs)]\n#[test]\nfn example() {}",
+            "example",
+        )
+        .unwrap();
         for source in [
             "#![cfg(any())]\n#[test]\nfn example() {}",
             "#[ignore]\n#[test]\nfn example() {}",
