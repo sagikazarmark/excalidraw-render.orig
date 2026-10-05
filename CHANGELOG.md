@@ -19,14 +19,11 @@ Initial release of the pure-Rust Excalidraw rendering library
 
 ### Resource limits
 
-- `max_total_work_units` defaults to 4,294,967,296 and accepts up to
-  17,179,869,184; Rough (hand-drawn) generation work counts against it.
-- PNG raster work counts against the total work limit only, so PNG no longer
-  omits large elements (over about 2048×2048 device pixels) that SVG and PDF
-  draw.
-- Hachure and cross-hatch fills of huge elements no longer buffer every
-  hatch line before the work limits stop them, which cost hundreds of
-  megabytes per element.
+- Every render's work is bounded: `max_total_work_units` defaults to
+  4,294,967,296 and accepts up to 17,179,869,184, and it covers Rough
+  (hand-drawn) generation as well as rasterization.
+- PNG draws elements of any size its raster surface admits, as SVG and PDF
+  do; their raster work counts against the total work limit.
 
 ### Compatibility
 
