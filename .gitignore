@@ -8,6 +8,8 @@
 /tools/reference-oracle/node_modules/
 /tools/pdf-harness/pdfjs/node_modules/
 **/__pycache__/
+/tmp/
+.DS_Store
 
 
 # Devenv
