@@ -1,12 +1,13 @@
 use std::fs;
 
 use excalidraw_render::{
-    OutputFormat, RenderOutcome, RenderRequest, Renderer, ResourceLimits, SceneDocument,
+    DiagnosticCode, OutputFormat, RenderOutcome, RenderRequest, RenderRequestBuilder, Renderer,
+    ResourceLimits, SceneDocument,
 };
 
 use crate::common::approved_scenes::rectangle_outline_scene;
 use crate::common::raster::decode_png;
-use crate::common::render::{render, render_without_background};
+use crate::common::render::{render, render_without_background, trailing_work_charges, WorkCharge};
 use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
@@ -86,7 +87,10 @@ fn transparent_rectangle_png_uses_canonical_straight_alpha() {
 }
 
 #[test]
-fn png_vector_coverage_obeys_the_rectangle_element_work_limit() {
+fn png_vector_coverage_is_charged_to_total_work_not_the_rectangle_element_limit() {
+    // The approved rectangle's semantic work fits 640 units; its PNG coverage
+    // samples do not, and still never omit it: they are charged to total work
+    // only, so the render is the unconstrained one.
     let limits = ResourceLimits::builder()
         .max_element_work_units(640)
         .build()
@@ -97,28 +101,30 @@ fn png_vector_coverage_obeys_the_rectangle_element_work_limit() {
         .expect("resource-limited PNG request is valid");
     let outcome = Renderer::new()
         .render(&rectangle_outline_scene(), &request)
-        .expect("local PNG coverage exhaustion retains a meaningful background");
-    let decoded = decode_png(outcome.artifact().bytes());
+        .expect("the element work limit leaves the rectangle's raster samples alone");
+    let unconstrained = render_approved_png();
+    assert_eq!(outcome.report(), unconstrained.report());
+    assert_eq!(outcome.artifact().bytes(), unconstrained.artifact().bytes());
 
-    assert!(decoded
-        .rgba
-        .as_chunks::<4>()
-        .0
+    // A roughness-0 80x60 rectangle covers its 82x62 stroked box at 16
+    // samples per pixel. The charge is the rectangle's own total-work event,
+    // after which only the canvas-wide encoding events follow, and crossing
+    // it is the fatal total-work failure attributed to the rectangle.
+    let scene = rectangles_scene(&[("large", 0, 80, 60)]);
+    let charges = trailing_work_charges(&scene, png_request, 3);
+    assert!(charges[..2]
         .iter()
-        .all(|pixel| *pixel == [255, 255, 255, 255]));
-    let [diagnostic] = outcome.report().diagnostics() else {
-        panic!("local coverage crossing retains exactly one diagnostic");
-    };
-    assert_eq!(diagnostic.code().as_str(), "resource.element-work-exceeded");
-    let descriptor = serde_json::to_value(diagnostic).expect("diagnostic serializes");
-    assert_eq!(descriptor["details"]["field"], "max_element_work_units");
-    assert_eq!(descriptor["details"]["recovery"], "omitted");
+        .all(|charge| charge.element_id.is_none() && charge.json_pointer.is_empty()));
+    assert_eq!(
+        charges[2],
+        element_charge("large", "/elements/0", 16 * 82 * 62)
+    );
+    assert!(charges[2].units > 640);
 }
 
 #[test]
-fn png_vector_coverage_is_charged_and_recovered_per_rectangle() {
-    let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"small","type":"rectangle","x":0,"width":10,"height":10,"seed":1,"updated":1},{"id":"large","type":"rectangle","x":30,"width":80,"height":60,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
-    let scene = SceneDocument::parse(source).expect("multi-rectangle scene is admitted");
+fn png_vector_coverage_is_charged_per_rectangle_without_local_omission() {
+    let scene = rectangles_scene(&[("small", 0, 10, 10), ("large", 30, 80, 60)]);
     let limits = ResourceLimits::builder()
         .max_element_work_units(5_000)
         .build()
@@ -129,20 +135,60 @@ fn png_vector_coverage_is_charged_and_recovered_per_rectangle() {
         .expect("resource-limited PNG request is valid");
     let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect("one local PNG recovery retains the other rectangle");
-    let decoded = decode_png(outcome.artifact().bytes());
+        .expect("PNG coverage never crosses the element limit");
+    let unconstrained = render(&scene, OutputFormat::Png);
+    assert!(outcome.report().is_empty());
+    assert_eq!(outcome.artifact().bytes(), unconstrained.artifact().bytes());
 
-    assert!(decoded
-        .rgba
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .any(|pixel| *pixel != [255, 255, 255, 255]));
-    let [diagnostic] = outcome.report().diagnostics() else {
-        panic!("only the large rectangle exceeds its local work limit");
-    };
-    assert_eq!(diagnostic.element_id(), Some("large"));
-    assert_eq!(diagnostic.json_pointer(), "/elements/1");
+    // Each rectangle's coverage is its own total-work event, owned by it:
+    // the large one's 82x62 box exceeds the 5,000-unit element limit above.
+    let charges = trailing_work_charges(&scene, png_request, 4);
+    assert_eq!(
+        charges[2],
+        element_charge("large", "/elements/1", 16 * 82 * 62)
+    );
+    assert_eq!(
+        charges[3],
+        element_charge("small", "/elements/0", 16 * 12 * 12)
+    );
+}
+
+/// A rectangle larger than the default element work limit can price in PNG
+/// coverage samples (16 x 3002 x 2002 > 67,108,864) paints in full: the
+/// canvas the raster surface limit admitted bounds its samples.
+#[test]
+fn png_paints_a_large_solid_rectangle_under_default_limits() {
+    let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"large","type":"rectangle","x":0,"y":0,"width":3000,"height":2000,"strokeColor":"#1e66f5","backgroundColor":"#1e66f5","fillStyle":"solid","roughness":0,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
+    let scene = SceneDocument::parse(source).expect("large rectangle scene is admitted");
+    assert!(16 * 3002 * 2002 > ResourceLimits::default().max_element_work_units());
+    let outcome = render(&scene, OutputFormat::Png);
+
+    assert!(
+        !outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .any(|diagnostic| diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED),
+        "the large rectangle is not omitted: {:?}",
+        outcome.report().diagnostics()
+    );
+    assert!(outcome.report().is_empty());
+    let decoded = decode_png(outcome.artifact().bytes());
+    assert_eq!((decoded.width, decoded.height), (3020, 2020));
+    for (x, y) in [
+        (1510, 1010),
+        (500, 500),
+        (2500, 1500),
+        (20, 20),
+        (2999, 2009),
+    ] {
+        let offset = 4 * (y * decoded.width as usize + x);
+        assert_eq!(
+            decoded.rgba[offset..offset + 4],
+            [0x1e, 0x66, 0xf5, 0xff],
+            "pixel ({x}, {y}) is the fill"
+        );
+    }
 }
 
 fn pixel_delta_summary(reference: &[u8], candidate: &[u8]) -> std::collections::BTreeMap<i16, u64> {
@@ -180,4 +226,33 @@ fn png_chunk_types(bytes: &[u8]) -> Vec<[u8; 4]> {
     }
     assert_eq!(offset, bytes.len());
     chunks
+}
+
+/// A scene of roughness-0 rectangles, `(id, x, width, height)` each at `y = 0`.
+fn rectangles_scene(rectangles: &[(&str, u32, u32, u32)]) -> SceneDocument {
+    let elements = rectangles
+        .iter()
+        .map(|(id, x, width, height)| {
+            format!(
+                r#"{{"id":"{id}","type":"rectangle","x":{x},"y":0,"width":{width},"height":{height},"roughness":0,"seed":1,"updated":1}}"#
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let source = format!(
+        r#"{{"type":"excalidraw","version":2,"elements":[{elements}],"appState":{{}},"files":{{}}}}"#
+    );
+    SceneDocument::parse(source.as_bytes()).expect("rectangle scene is admitted")
+}
+
+fn png_request() -> RenderRequestBuilder {
+    RenderRequest::builder(OutputFormat::Png)
+}
+
+fn element_charge(element_id: &str, json_pointer: &str, units: u64) -> WorkCharge {
+    WorkCharge {
+        units,
+        element_id: Some(element_id.to_owned()),
+        json_pointer: json_pointer.to_owned(),
+    }
 }

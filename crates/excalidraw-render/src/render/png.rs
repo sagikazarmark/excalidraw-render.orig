@@ -2,9 +2,8 @@
 //! paint-ordered `PngElement`s in device space, `rasterize` paints them with
 //! tiny-skia at a fixed 4x supersample and box-filters the result down, and
 //! `compress` hands the straight-alpha raster to the owned encoder. The
-//! per-index area queries and `omit_element` exist so the session can charge
-//! the §13.2 raster ledger from the plan and drop what it cannot afford before
-//! painting.
+//! per-index area queries exist so the session can charge the §13.2 raster
+//! ledger from the plan before painting.
 //!
 //! `encoder` is the owned PNG encoder ADR-0004 describes — scanline filtering,
 //! deflate, chunk assembly and the size-error vocabulary — with no dependency
@@ -84,15 +83,10 @@ pub(super) struct PngPlan {
 const IMAGE_FALLBACK_BACKGROUND: CanonicalColor = CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7);
 const IMAGE_FALLBACK_ICON_COLOR: CanonicalColor = CanonicalColor::from_rgb8(0x88, 0x88, 0x88);
 
-/// One PNG plan element: the shared header in device space, the kind, and
-/// whether the session still paints it.
+/// One PNG plan element: the shared header in device space and the kind.
 #[derive(Debug)]
 struct PngElement {
     planned: PlannedElement<PngTransform, PngFrameClip, PngElementKind>,
-    /// Cleared by `omit_element` for an element the session cannot afford
-    /// after planning. An omitted element keeps its plan, so the shared
-    /// frame-clip masks and the per-index area queries still see it.
-    render: bool,
 }
 
 /// What differs per element kind in the PNG plan; everything else an element
@@ -113,7 +107,6 @@ enum PngElementKind {
         generated_label: Option<ResolvedText>,
         generated_label_color: Option<CanonicalColor>,
         generated_label_offset_y: f64,
-        base_element_work_units: u64,
     },
     Freedraw {
         source: NormalizedElementSource,
@@ -122,7 +115,6 @@ enum PngElementKind {
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
-        base_element_work_units: u64,
     },
     Frame {
         source: NormalizedElementSource,
@@ -133,7 +125,6 @@ enum PngElementKind {
         source: NormalizedElementSource,
         text: ResolvedText,
         color: CanonicalColor,
-        base_element_work_units: u64,
     },
     Image {
         source: NormalizedElementSource,
@@ -155,7 +146,6 @@ enum PngElementKind {
     Fallback {
         source: FallbackSource,
         label: Option<ResolvedLabel>,
-        base_element_work_units: u64,
     },
 }
 
@@ -228,12 +218,9 @@ fn same_frame_clip_set(left: &[PngFrameClip], right: &[PngFrameClip]) -> bool {
 }
 
 impl PngElement {
-    /// A freshly planned element, painted unless the session omits it.
+    /// A freshly planned element.
     const fn planned(planned: PlannedElement<PngTransform, PngFrameClip, PngElementKind>) -> Self {
-        Self {
-            planned,
-            render: true,
-        }
+        Self { planned }
     }
 
     fn painted_font_awesome_status(
@@ -253,7 +240,7 @@ impl PngElement {
         else {
             return None;
         };
-        if !(self.render && *width > 0.0 && *height > 0.0 && *opacity > 0.0) {
+        if !(*width > 0.0 && *height > 0.0 && *opacity > 0.0) {
             return None;
         }
         let (left, top, right, bottom) =
@@ -834,7 +821,6 @@ impl PngPlan {
                             generated_label: outline.generated_label,
                             generated_label_color: outline.generated_label_color,
                             generated_label_offset_y: outline.generated_label_offset_y,
-                            base_element_work_units: outline.base_element_work_units,
                         },
                     }));
                 }
@@ -853,7 +839,6 @@ impl PngPlan {
                             color: freedraw.color,
                             background_color: freedraw.background_color,
                             source_stroke_width: freedraw.source_stroke_width,
-                            base_element_work_units: freedraw.base_element_work_units,
                         },
                     }));
                 }
@@ -888,7 +873,6 @@ impl PngPlan {
                             source: text.source,
                             text: text.text,
                             color: text.color,
-                            base_element_work_units: text.base_element_work_units,
                         },
                     }));
                 }
@@ -928,21 +912,6 @@ impl PngPlan {
                     }));
                 }
                 ResolvedElement::Fallback(fallback) => {
-                    let visual_commands: u64 = if fallback.width >= 2.0 && fallback.height >= 2.0 {
-                        9
-                    } else {
-                        5
-                    };
-                    let label_work = fallback.label.as_ref().map_or(0, |label| {
-                        u64::try_from(label.text.chars().count())
-                            .unwrap_or(u64::MAX)
-                            .saturating_mul(32)
-                            .saturating_add(
-                                u64::try_from(label.path.operations.len())
-                                    .unwrap_or(u64::MAX)
-                                    .saturating_mul(32),
-                            )
-                    });
                     elements.push(PngElement::planned(PlannedElement {
                         frame_clips: project_frame_clips(fallback.frame_clips, scale)?,
                         transform: PngTransform::new(&fallback.transform, scale),
@@ -953,7 +922,6 @@ impl PngPlan {
                         kind: PngElementKind::Fallback {
                             source: fallback.source,
                             label: fallback.label,
-                            base_element_work_units: visual_commands * 32 + 8 + label_work,
                         },
                     }));
                 }
@@ -1043,9 +1011,6 @@ impl PngPlan {
             let image_levels = self.plan_image_levels()?;
             let mut decode_cache = DecodeCache::default();
             for (index, element) in self.elements.iter().enumerate() {
-                if !element.render {
-                    continue;
-                }
                 let paint_mask = masks.paint_mask(element)?;
                 let PlannedElement {
                     frame_clips,
@@ -1070,7 +1035,6 @@ impl PngPlan {
                         generated_label,
                         generated_label_color,
                         generated_label_offset_y,
-                        base_element_work_units: _,
                     } => {
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
@@ -1140,7 +1104,6 @@ impl PngPlan {
                         color,
                         background_color,
                         source_stroke_width,
-                        base_element_work_units: _,
                     } => {
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
@@ -1247,7 +1210,6 @@ impl PngPlan {
                         source,
                         text,
                         color,
-                        base_element_work_units: _,
                     } => {
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
@@ -1706,11 +1668,7 @@ impl PngPlan {
                             }
                         }
                     }
-                    PngElementKind::Fallback {
-                        source,
-                        label,
-                        base_element_work_units: _,
-                    } => {
+                    PngElementKind::Fallback { source, label } => {
                         if source.pointer.is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG fallback lost its source location".to_owned(),
@@ -1942,8 +1900,7 @@ impl PngPlan {
         for element in &self.elements {
             let planned = match &element.planned.kind {
                 PngElementKind::Image { asset, .. }
-                    if element.render
-                        && element.planned.width != 0.0
+                    if element.planned.width != 0.0
                         && element.planned.height != 0.0
                         && !self.svg_trees.contains_key(&asset.identity)
                         && !element.misses_canvas(self.width, self.height) =>
@@ -2010,32 +1967,6 @@ impl PngPlan {
             .map(|element| match &element.planned.kind {
                 PngElementKind::Image { .. } => Some(self.element_rect_coverage_area(element)),
                 _ => None,
-            })
-    }
-
-    pub(super) fn base_element_work_units(&self, index: usize) -> Option<u64> {
-        self.elements
-            .get(index)
-            .map(|element| match &element.planned.kind {
-                PngElementKind::RoughOutline {
-                    base_element_work_units,
-                    ..
-                }
-                | PngElementKind::Freedraw {
-                    base_element_work_units,
-                    ..
-                }
-                | PngElementKind::Fallback {
-                    base_element_work_units,
-                    ..
-                } => *base_element_work_units,
-                PngElementKind::Frame { .. }
-                | PngElementKind::Image { .. }
-                | PngElementKind::ImageFallback { .. } => 8,
-                PngElementKind::Text {
-                    base_element_work_units,
-                    ..
-                } => base_element_work_units.saturating_add(8),
             })
     }
 
@@ -2157,18 +2088,6 @@ impl PngPlan {
                     (source.id.as_deref(), source.pointer.as_str())
                 }
             })
-    }
-
-    /// Stops painting the element at `index`, keeping its plan. `false` when
-    /// there is no such element.
-    pub(super) fn omit_element(&mut self, index: usize) -> bool {
-        match self.elements.get_mut(index) {
-            Some(element) => {
-                element.render = false;
-                true
-            }
-            None => false,
-        }
     }
 
     pub(super) const fn includes_background(&self) -> bool {

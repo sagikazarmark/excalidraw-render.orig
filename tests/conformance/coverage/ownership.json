@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "95e400abcaa77ee16aac3a6670d774d5c19251d84a081a35e2214b2d6c147c48",
+  "catalog_sha256": "26406ad6d30da9a10680ce0913348b87012cbeba54a99b8bc28bd01b4bd50b2a",
   "approval": null,
   "assignments": [
     {
@@ -49223,7 +49223,7 @@
             "--exact"
           ]
         },
-        "rationale": "Complete ordered reports for normalization/generation, text preflight/glyph shaping, compatibility-placeholder and PNG projection work; independently derived work/coverage boundaries, phase-specific placeholder then omission reports, empty-content effects, repeated source order, required-report prefixes, frame scope/replay and admitted-boundary silence."
+        "rationale": "Complete ordered reports for normalization/generation, text preflight/glyph shaping and compatibility-placeholder work; PNG projection and coverage samples as the element's own total-work events, never against its element limit; independently derived work/coverage boundaries, phase-specific placeholder then omission reports, empty-content effects, repeated source order, required-report prefixes, frame scope/replay and admitted-boundary silence."
       }
     },
     {
@@ -49252,7 +49252,7 @@
             "--exact"
           ]
         },
-        "rationale": "Complete ordered reports for normalization/generation, text preflight/glyph shaping, compatibility-placeholder and PNG projection work; independently derived work/coverage boundaries, phase-specific placeholder then omission reports, empty-content effects, repeated source order, required-report prefixes, frame scope/replay and admitted-boundary silence."
+        "rationale": "Complete ordered reports for normalization/generation, text preflight/glyph shaping and compatibility-placeholder work; PNG projection and coverage samples as the element's own total-work events, never against its element limit; independently derived work/coverage boundaries, phase-specific placeholder then omission reports, empty-content effects, repeated source order, required-report prefixes, frame scope/replay and admitted-boundary silence."
       }
     },
     {
@@ -49281,7 +49281,7 @@
             "--exact"
           ]
         },
-        "rationale": "Complete ordered reports for normalization/generation, text preflight/glyph shaping, compatibility-placeholder and PNG projection work; independently derived work/coverage boundaries, phase-specific placeholder then omission reports, empty-content effects, repeated source order, required-report prefixes, frame scope/replay and admitted-boundary silence."
+        "rationale": "Complete ordered reports for normalization/generation, text preflight/glyph shaping and compatibility-placeholder work; PNG projection and coverage samples as the element's own total-work events, never against its element limit; independently derived work/coverage boundaries, phase-specific placeholder then omission reports, empty-content effects, repeated source order, required-report prefixes, frame scope/replay and admitted-boundary silence."
       }
     },
     {
