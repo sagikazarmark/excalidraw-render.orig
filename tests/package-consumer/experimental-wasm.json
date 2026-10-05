@@ -2,8 +2,8 @@
   "schema": "excalidraw-render/experimental-wasm-differences/v1",
   "issue": 178,
   "measurement": {
-    "trace_url": "https://dagger.cloud/sagikazarmark/traces/55516242ed8c124d7209abf0cc7a5966",
-    "source": "working-tree preparation based on c5fec02; not a clean-tag attestation",
+    "trace_url": "https://dagger.cloud/sagikazarmark/traces/df09b2eb17a438ceb8b1eca20dcf64a3",
+    "source": "local-engine full-results on dce66204, traces re-measured for the rough_generation_guard event; PNG pairs unchanged; not a clean-tag attestation",
     "scope": "four exact PNG pairs and three trace pairs; reports, sessions and process orders agree"
   },
   "cases": [
@@ -12,8 +12,8 @@
       "native": {"sha256": "9d5d54c00b7f92fc5b2025d4f21191ff1e5739ac48fd92a4b10cbcd3c954704c", "byte_length": 16105},
       "wasm": {"sha256": "69ae229351705237cd1963bb43d82674216b1a62000af654ff1ca99b2a37f830", "byte_length": 16108},
       "traces": {
-        "native": {"sha256": "987f763cdba217e62d60028b608f549889ebbe15ecd128479054992d9c72cc14", "byte_length": 364994},
-        "wasm": {"sha256": "d3da4ad068fa36d8ab7891bf4c2a6ca2cf7bc856718a7f032c46663188176d20", "byte_length": 364994}
+        "native": {"sha256": "4b7b642a3e657b87156b784a11fa53b269c017d6f776f84411bd9b1d95589a83", "byte_length": 368593},
+        "wasm": {"sha256": "bbe1fba3759948e20b119efbbfec460cee82d0fcc3609053d01fd6036e40e348", "byte_length": 368593}
       }
     },
     {
@@ -21,8 +21,8 @@
       "native": {"sha256": "100c69709a72631280bfccb661dbd36bd6e660e3594b132177cdd96968dc4fd3", "byte_length": 21988},
       "wasm": {"sha256": "9266cc16deeb3b7a363677bfbcf5f700c932972da6170271842cd7f07fe549af", "byte_length": 21987},
       "traces": {
-        "native": {"sha256": "80e279bfa0326f8d05c6c3ff56dd03776422697a524f735ff63a5ff4605b58e7", "byte_length": 843387},
-        "wasm": {"sha256": "4fa991041a97dd6c57d08ea88243ff54641589a5fd96a6b3a7e30d803cda8a73", "byte_length": 843387}
+        "native": {"sha256": "78c64218bfb30c050679fa84249446cdf5bbe096f4876661504de13662c48f80", "byte_length": 852392},
+        "wasm": {"sha256": "1bd82a9b4d9862804f7b1f1b4ea176af70511e92bc45ee1932a6e83a25850213", "byte_length": 852392}
       }
     },
     {
@@ -35,8 +35,8 @@
       "native": {"sha256": "4126e39c241e9ba287b1f6be1aec89ade8db8bdfcde94020f7b59042c3023877", "byte_length": 118390},
       "wasm": {"sha256": "997bde1e89d4f0923d2d012303488b715d494007c98660a8ac686a63b3d92f61", "byte_length": 118395},
       "traces": {
-        "native": {"sha256": "001b2984ab40d9deef240376d2f2e05f1337556fe998935f1d1f470026d49aeb", "byte_length": 1765065},
-        "wasm": {"sha256": "494f196c85fdbfee2e1add64e44a9f00fcde52571ecb9b7ffe0b3d41ace33986", "byte_length": 1765065}
+        "native": {"sha256": "a8207f6f5c0beb64717fd786d00738cb3632c05e85c5df0bfc8b54fb9b0678af", "byte_length": 1794971},
+        "wasm": {"sha256": "2633a723d2cc506c5883432824c77ed8a178a0b491e197d2ba853d138941d11b", "byte_length": 1794971}
       }
     }
   ]
