@@ -405,7 +405,11 @@ impl PdfPlan {
             finite_f32(self.page_width, "PDF page width")?,
             finite_f32(self.page_height, "PDF page height")?,
         )
-        .ok_or_else(|| FormatEncodeError::Encoding("PDF page has no drawable size".to_owned()))?;
+        .ok_or_else(|| {
+            FormatEncodeError::Encoding(
+                "PDF page rounds to zero points at the requested size".to_owned(),
+            )
+        })?;
         let raster = self
             .image_resources()?
             .iter()

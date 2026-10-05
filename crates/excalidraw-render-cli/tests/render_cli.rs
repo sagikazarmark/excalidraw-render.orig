@@ -218,6 +218,28 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
     );
     assert!(stderr.contains("hint: use --max-dimension"), "{stderr}");
 
+    // A sizing that rounds the output to nothing names the cause and the fix.
+    for (name, sizing, unit) in [
+        ("tiny.png", ["--scale", "1e-300"], "pixels"),
+        ("tiny-max.png", ["--max-dimension", "0.5"], "pixels"),
+        ("tiny.pdf", ["--scale", "1e-300"], "points"),
+    ] {
+        let result = render_command(&temp.join(name))
+            .args(sizing)
+            .output()
+            .expect("render a zero-size artifact");
+        assert_eq!(result.status.code(), Some(1));
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(
+            stderr.contains(&format!("rounds to zero {unit} at the requested size")),
+            "{stderr}"
+        );
+        assert!(
+            stderr.contains("hint: use a larger --scale or --max-dimension\n"),
+            "{stderr}"
+        );
+    }
+
     // `none` keeps failures to one line, without hints.
     let result = render_command(&existing)
         .args(["--report-format", "none"])
@@ -479,6 +501,31 @@ fn validation_uses_normative_failure_order_and_stable_exit_statuses() {
         ],
         2,
         "revision.unsupported",
+    );
+    // A revision past u64 is unsupported too, not malformed.
+    assert_failure(
+        &[
+            fixture.to_str().unwrap(),
+            "-o",
+            "-",
+            "--compatibility-revision",
+            "99999999999999999999",
+            "--report-format=json",
+        ],
+        2,
+        "revision.unsupported",
+    );
+    assert_failure(
+        &[
+            fixture.to_str().unwrap(),
+            "-o",
+            "-",
+            "--compatibility-revision",
+            "1x",
+            "--report-format=json",
+        ],
+        2,
+        "cli.invalid-arguments",
     );
     assert_failure(
         &[

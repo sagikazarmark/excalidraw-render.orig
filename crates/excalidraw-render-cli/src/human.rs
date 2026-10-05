@@ -90,6 +90,15 @@ pub(crate) fn code_hint(code: &str) -> Option<&'static str> {
     })
 }
 
+/// The fix for a PNG or PDF whose sizing rounds a side to zero. The smallest
+/// valid sizing depends on the scene, so the library reports it as an
+/// encoding failure that only its message distinguishes.
+pub(crate) fn sizing_hint(code: &str, message: &str) -> Option<&'static str> {
+    (matches!(code, "encode.png-failed" | "encode.pdf-failed")
+        && message.contains("rounds to zero"))
+    .then_some("use a larger --scale or --max-dimension")
+}
+
 /// A clap grammar error with `code` closing its first paragraph, the error
 /// itself.
 pub(crate) fn clap_error(rendered: &str, code: &str) -> String {
