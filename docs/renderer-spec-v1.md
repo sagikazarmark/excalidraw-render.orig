@@ -540,7 +540,7 @@ occurrence. `none` suppresses successful reporting and emits one non-JSON
 | Exit | Meaning |
 | ---: | --- |
 | `0` | Complete artifact delivered, including diagnosed or metadata-omitted success |
-| `1` | I/O, bounded-read, parse, fatal render/resource, allocation, or delivery failure |
+| `1` | I/O, bounded-read, parse, fatal render/resource, allocation, existing-destination, or delivery failure |
 | `2` | Grammar, request, format, duplicate-ID, or unsupported-revision usage error |
 
 `--list-revisions` accepts only human or JSON report controls and lists revisions

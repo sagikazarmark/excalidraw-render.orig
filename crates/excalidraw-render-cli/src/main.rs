@@ -47,7 +47,7 @@ Examples:
 const EXIT_STATUS: &str = "\
 Exit status:
   0  the artifact was delivered (diagnostics may still have been reported)
-  1  reading, parsing, rendering, or writing failed
+  1  reading, parsing, rendering, or writing failed, or an output already exists
   2  the command line or a request value is invalid";
 
 /// The whole command line: the default scene render, or a subcommand.
@@ -720,7 +720,7 @@ fn run_standalone(cli: &Cli) -> u8 {
                     path: report_output(cli).to_owned(),
                     artifact_state: DeliveryState::None,
                 }),
-                EXIT_USAGE,
+                EXIT_OPERATIONAL,
             ),
         );
     }
@@ -1170,7 +1170,7 @@ fn destination_exists(role: DeliveryRole, path: &str) -> Failure {
             path: path.to_owned(),
             artifact_state: DeliveryState::None,
         }),
-        EXIT_USAGE,
+        EXIT_OPERATIONAL,
     )
 }
 

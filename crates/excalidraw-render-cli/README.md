@@ -40,6 +40,11 @@ Warnings describe substitutions, omissions, and fallbacks the renderer made;
 `excalidraw-render --help` and `excalidraw-render frames --help` for every
 option.
 
+The command exits 0 when the artifact was delivered, even with warnings; 1
+when reading, parsing, rendering, or writing failed, or an output already
+exists without `--force`; and 2 when the command line or a request value is
+invalid.
+
 ## License
 
 Code is licensed under either of [MIT](../../LICENSE-MIT) or

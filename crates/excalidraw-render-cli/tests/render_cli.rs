@@ -130,7 +130,7 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
     let result = render_command(&existing)
         .output()
         .expect("render over output");
-    assert_eq!(result.status.code(), Some(2));
+    assert_eq!(result.status.code(), Some(1));
     assert_eq!(
         String::from_utf8_lossy(&result.stderr),
         format!(
@@ -223,7 +223,7 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
         .args(["--report-format", "none"])
         .output()
         .expect("render over output without a report");
-    assert_eq!(result.status.code(), Some(2));
+    assert_eq!(result.status.code(), Some(1));
     assert_eq!(
         String::from_utf8_lossy(&result.stderr),
         format!(
@@ -585,7 +585,7 @@ fn validation_uses_normative_failure_order_and_stable_exit_statuses() {
             output.to_str().unwrap(),
             "--report-format=json",
         ],
-        2,
+        1,
         "cli.destination-exists",
     );
     assert_failure(
@@ -750,7 +750,7 @@ fn treats_dangling_symlink_destinations_as_existing_paths() {
             output.to_str().unwrap(),
             "--report-format=json",
         ],
-        2,
+        1,
         "cli.destination-exists",
     );
 }
@@ -1456,7 +1456,7 @@ fn frame_batches_are_stage_all_by_default_and_partial_only_when_requested() {
         .arg(format!("missing={}", missing_asset.display()))
         .output()
         .expect("run collision and missing asset");
-    assert_eq!(precedence.status.code(), Some(2));
+    assert_eq!(precedence.status.code(), Some(1));
     let precedence: serde_json::Value =
         serde_json::from_slice(&precedence.stderr).expect("precedence report is JSON");
     assert_eq!(precedence["error"]["code"], "cli.destination-exists");
