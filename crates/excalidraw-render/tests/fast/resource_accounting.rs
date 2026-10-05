@@ -1,5 +1,5 @@
 use excalidraw_render::{
-    ErrorCode, ErrorDetails, OutputFormat, RenderError, RenderErrorCategory, RenderRequest,
+    DiagnosticDetails, ErrorCode, OutputFormat, RenderError, RenderErrorCategory, RenderRequest,
     Renderer, ResourceLimits, ResourceMeasurement, ResourceValue, SceneDocument,
 };
 use serde_json::json;
@@ -670,7 +670,7 @@ fn attempted_at_local_crossing(
         .iter()
         .filter(|diagnostic| diagnostic.element_id() == Some(element_id))
         .find_map(|diagnostic| match diagnostic.details() {
-            Some(ErrorDetails::ResourceLimit {
+            Some(DiagnosticDetails::ResourceLimit {
                 field: crossed,
                 measurement:
                     ResourceMeasurement::Attempted {

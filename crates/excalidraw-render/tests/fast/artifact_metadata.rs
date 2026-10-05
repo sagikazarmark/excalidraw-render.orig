@@ -1,6 +1,6 @@
 use base64::Engine as _;
 use excalidraw_render::{
-    DiagnosticCode, ErrorCode, ErrorDetails, MetadataOptions, OutputFormat, Recovery,
+    DiagnosticCode, DiagnosticDetails, ErrorCode, MetadataOptions, OutputFormat, Recovery,
     RenderRequest, Renderer, ResourceLimits, SceneDocument, SupplementalAssets,
 };
 use sha2::{Digest, Sha256};
@@ -125,7 +125,7 @@ fn output_exhaustion_omits_only_the_crossing_optional_component() {
             .expect("crossing metadata component is diagnosed");
         assert!(matches!(
             omission.details(),
-            Some(ErrorDetails::ResourceLimit {
+            Some(DiagnosticDetails::ResourceLimit {
                 field: "max_output_bytes",
                 recovery: Some(Recovery::MetadataOmitted),
                 ..
@@ -186,7 +186,7 @@ fn svg_one_byte_below_mandatory_notice_output_reports_the_resource_crossing() {
     assert_eq!(error.code(), ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED);
     assert!(matches!(
         error.details(),
-        Some(ErrorDetails::ResourceLimit {
+        Some(DiagnosticDetails::ResourceLimit {
             field: "max_output_bytes",
             ..
         })

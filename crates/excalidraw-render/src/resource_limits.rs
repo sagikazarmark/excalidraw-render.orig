@@ -72,6 +72,7 @@ macro_rules! define_resource_limits {
         }
 
         /// Builder for validated semantic resource ceilings.
+        #[must_use]
         #[derive(Clone, Debug, Default)]
         pub struct ResourceLimitsBuilder {
             limits: ResourceLimits,

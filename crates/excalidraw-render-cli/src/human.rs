@@ -6,7 +6,7 @@ use std::fmt::Write as _;
 use std::io;
 
 use excalidraw_render::{
-    CompatibilityDiagnostic, DiagnosticSeverity, ErrorDescriptor, ErrorDetails, OutputFormat,
+    CompatibilityDiagnostic, DiagnosticDetails, DiagnosticSeverity, ErrorDescriptor, OutputFormat,
 };
 use serde::de::IgnoredAny;
 use serde::Deserialize;
@@ -300,7 +300,7 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
                 group.elements.push(element);
             }
         }
-        if let Some(ErrorDetails::MissingGlyph { codepoint, .. }) = diagnostic.details() {
+        if let Some(DiagnosticDetails::MissingGlyph { codepoint, .. }) = diagnostic.details() {
             if !group.characters.contains(codepoint) {
                 group.characters.push(*codepoint);
             }

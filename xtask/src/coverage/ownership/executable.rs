@@ -310,6 +310,14 @@ fn unconditional_function(items: &[syn::Item], function: &str) -> Result<(), Str
     Ok(())
 }
 
+/// A lint level such as the library's `#![warn(missing_docs)]` changes
+/// diagnostics, never which items compile, so a crate root may carry one.
+fn lint_level(attr: &syn::Attribute) -> bool {
+    ["allow", "warn", "deny", "forbid", "expect"]
+        .iter()
+        .any(|level| attr.path().is_ident(level))
+}
+
 /// Resolve `module` from `root` and require `function` to be an
 /// unconditional test there. Returns the file holding the final module, which
 /// is the owner's source location.
@@ -326,7 +334,11 @@ pub(super) fn resolve(
     let segments = module_segments(module)?;
     let text = read(root).ok_or("test owner crate root is missing")?;
     let file = syn::parse_file(&text).map_err(|e| format!("invalid test binary source: {e}"))?;
-    if file.attrs.iter().any(|attr| !attr.path().is_ident("doc")) {
+    if file
+        .attrs
+        .iter()
+        .any(|attr| !attr.path().is_ident("doc") && !lint_level(attr))
+    {
         return Err("test binary contains conditional attributes".into());
     }
     let mut stack = vec![Scope {

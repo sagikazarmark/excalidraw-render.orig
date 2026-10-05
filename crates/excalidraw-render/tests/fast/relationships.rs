@@ -32,7 +32,7 @@ fn canonical_cycle_closing_edge_is_removed_with_its_source_pointer() {
         assert_eq!(cycle.json_pointer(), "/elements/1/frameId");
         assert!(matches!(
             cycle.details(),
-            Some(excalidraw_render::ErrorDetails::Compatibility {
+            Some(excalidraw_render::DiagnosticDetails::Compatibility {
                 recovery: Recovery::Removed,
                 recipe_id: None,
                 ..

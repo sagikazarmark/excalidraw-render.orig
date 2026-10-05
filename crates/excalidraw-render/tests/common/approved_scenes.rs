@@ -55,7 +55,7 @@ pub fn render_rectangle_outline_svg() -> RenderOutcome {
 /// The approved rectangle as a PDF that may not fall back to raster.
 pub fn render_rectangle_outline_pdf() -> RenderOutcome {
     let request = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .expect("default PDF request is valid");
     Renderer::new()
@@ -96,7 +96,7 @@ fn render_without_fallback(
     let scene = SceneDocument::parse(scene)
         .unwrap_or_else(|error| panic!("the {name} qualification scene is admitted: {error:?}"));
     let request = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .expect("qualification request is valid");
     Renderer::new().render(&scene, &request)

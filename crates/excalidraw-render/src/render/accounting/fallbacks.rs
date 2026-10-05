@@ -7,7 +7,9 @@
 
 use crate::diagnostic_registry::LocalLimit;
 use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
-use crate::{DiagnosticCode, ErrorDetails, Recovery, RenderError, RenderRequest, ResourceValue};
+use crate::{
+    DiagnosticCode, DiagnosticDetails, Recovery, RenderError, RenderRequest, ResourceValue,
+};
 
 use super::super::diagnostics::{
     fallback_font_diagnostic, official_missing_glyph_diagnostic, FontFallback,
@@ -463,14 +465,14 @@ impl RenderSession {
                 && diagnostic.json_pointer() == recovery.pointer
             {
                 match diagnostic.details_mut() {
-                    Some(ErrorDetails::Compatibility {
+                    Some(DiagnosticDetails::Compatibility {
                         recovery,
                         recipe_id,
                     }) if *recovery == Recovery::Placeholder => {
                         *recovery = Recovery::Omitted;
                         *recipe_id = None;
                     }
-                    Some(ErrorDetails::ResourceLimit {
+                    Some(DiagnosticDetails::ResourceLimit {
                         recovery: Some(recovery),
                         ..
                     }) if *recovery == Recovery::Placeholder => {
@@ -570,7 +572,7 @@ impl RenderSession {
                 )
                 && matches!(
                     diagnostic.details(),
-                    Some(ErrorDetails::ResourceLimit {
+                    Some(DiagnosticDetails::ResourceLimit {
                         recovery: Some(Recovery::Placeholder),
                         ..
                     })
@@ -579,7 +581,7 @@ impl RenderSession {
         let Some(original) = original else {
             return false;
         };
-        let Some(ErrorDetails::ResourceLimit { recovery, .. }) = original.details_mut() else {
+        let Some(DiagnosticDetails::ResourceLimit { recovery, .. }) = original.details_mut() else {
             return false;
         };
         *recovery = Some(Recovery::Omitted);
@@ -598,7 +600,7 @@ impl RenderSession {
                 )
                 && matches!(
                     diagnostic.details(),
-                    Some(ErrorDetails::ResourceLimit {
+                    Some(DiagnosticDetails::ResourceLimit {
                         recovery: Some(Recovery::Placeholder),
                         ..
                     })
@@ -620,7 +622,7 @@ impl RenderSession {
                         | DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
                 ) || !matches!(
                     diagnostic.details(),
-                    Some(ErrorDetails::Compatibility {
+                    Some(DiagnosticDetails::Compatibility {
                         recovery: Recovery::Omitted,
                         ..
                     })

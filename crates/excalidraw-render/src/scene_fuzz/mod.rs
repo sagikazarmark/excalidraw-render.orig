@@ -52,7 +52,7 @@ use crate::normalization::{
 };
 use crate::scene::{member_value, JsonKind, JsonValue};
 use crate::{
-    CompatibilityDiagnostic, CompatibilityRevision, ErrorCode, ErrorDetails, Measurement,
+    CompatibilityDiagnostic, CompatibilityRevision, DiagnosticDetails, ErrorCode, Measurement,
     OutputFormat, RenderRequest, Renderer, SceneDocument, SceneParseError,
 };
 
@@ -442,7 +442,7 @@ fn assert_rejection_contract(error: &SceneParseError) {
         .iter()
         .any(|(ceiling_code, _, _)| *ceiling_code == code);
     match error.details() {
-        Some(ErrorDetails::ParseLimit {
+        Some(DiagnosticDetails::ParseLimit {
             field,
             configured,
             measurement,

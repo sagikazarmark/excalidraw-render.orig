@@ -7,7 +7,7 @@
 
 use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
-    DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, ResourceLimits,
+    DiagnosticCode, DiagnosticDetails, OutputFormat, RenderRequest, ResourceLimits,
 };
 
 use crate::common::codec_fixtures::{bmp24, bmp32, bmp_rle8};
@@ -67,7 +67,7 @@ fn malformed_bmp_uses_typed_decode_recovery() {
     assert_eq!(diagnostic.code(), DiagnosticCode::IMAGE_DECODE_FAILED);
     assert!(matches!(
         diagnostic.details(),
-        Some(ErrorDetails::Asset { validated_media_type: Some(media_type), .. })
+        Some(DiagnosticDetails::Asset { validated_media_type: Some(media_type), .. })
             if media_type == "image/bmp"
     ));
 }

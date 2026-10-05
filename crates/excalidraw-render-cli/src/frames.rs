@@ -766,7 +766,7 @@ fn build_frame_request(
         .supplemental_assets(assets)
         .resource_limits(ResourceLimits::default());
     if let Some(fallback) = frames.pdf_raster_fallback {
-        builder = builder.pdf_options(PdfOptions::new(match fallback {
+        builder = builder.pdf_options(PdfOptions::default().with_raster_fallback(match fallback {
             PdfFallbackArg::AllowIsolated => PdfRasterFallback::AllowIsolated,
             PdfFallbackArg::Forbid => PdfRasterFallback::Forbid,
         }));

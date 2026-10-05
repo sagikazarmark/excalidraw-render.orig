@@ -137,7 +137,10 @@ pub enum FrameBatchErrorKind {
 }
 
 /// Failure to construct a lazy multi-frame render operation.
-#[derive(Clone, Debug, Eq, PartialEq)]
+///
+/// [`Error::source`] is always `None`: a shared-preparation failure is
+/// flattened into its kind and subject.
+#[derive(Clone, Debug)]
 pub struct FrameBatchError {
     kind: FrameBatchErrorKind,
     ordinal: Option<u32>,

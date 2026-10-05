@@ -8,8 +8,8 @@
 use crate::common::pdf_inspect::pdf_text;
 use base64::Engine as _;
 use excalidraw_render::{
-    DiagnosticCode, ErrorCode, ErrorDetails, OutputFormat, PdfOptions, PdfRasterFallback, Recovery,
-    RenderRequest, Renderer, ResourceLimits, SceneDocument,
+    DiagnosticCode, DiagnosticDetails, ErrorCode, OutputFormat, PdfOptions, PdfRasterFallback,
+    Recovery, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
 
 use crate::common::image_scene::image_scene;
@@ -91,7 +91,7 @@ fn unsafe_nested_svg_boundaries_are_removed_before_embedding() {
             && diagnostic.json_pointer() == "/files/asset/dataURL"
             && matches!(
                 diagnostic.details(),
-                Some(ErrorDetails::NestedSource {
+                Some(DiagnosticDetails::NestedSource {
                     recovery: Recovery::Removed | Recovery::Placeholder,
                     ..
                 })
@@ -302,7 +302,7 @@ fn malformed_nested_image_is_removed_without_discarding_valid_siblings() {
         panic!("one nested image diagnostic is retained");
     };
     assert_eq!(diagnostic.code(), DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT);
-    let Some(ErrorDetails::NestedSource {
+    let Some(DiagnosticDetails::NestedSource {
         paths, recovery, ..
     }) = diagnostic.details()
     else {
@@ -428,7 +428,7 @@ fn malformed_nested_svg_reports_its_validated_media_family() {
     assert_eq!(diagnostic.code(), DiagnosticCode::IMAGE_DECODE_FAILED);
     assert!(matches!(
         diagnostic.details(),
-        Some(ErrorDetails::Asset {
+        Some(DiagnosticDetails::Asset {
             validated_media_type: Some(media_type),
             recovery: Recovery::Omitted,
             ..
@@ -706,7 +706,7 @@ fn pdf_rasterizes_an_isolated_effect_closure_with_exact_diagnostics() {
     let diagnostic = &outcome.report().diagnostics()[0];
     assert_eq!(diagnostic.code(), DiagnosticCode::PDF_RASTER_FALLBACK);
     assert_eq!(diagnostic.json_pointer(), "/files/asset/dataURL");
-    let Some(ErrorDetails::PdfRasterFallback {
+    let Some(DiagnosticDetails::PdfRasterFallback {
         recovery: Some(Recovery::Rasterized),
         logical_bounds: Some(bounds),
         pixel_width: Some(20),
@@ -729,7 +729,7 @@ fn pdf_forbid_rejects_the_first_effect_closure_without_a_fallback_warning() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" fill="#00ff00" filter="url(#blur)"/></svg>"##;
     let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .expect("request is valid");
 
@@ -742,7 +742,7 @@ fn pdf_forbid_rejects_the_first_effect_closure_without_a_fallback_warning() {
     assert!(error.report().diagnostics().is_empty());
     assert!(matches!(
         error.details(),
-        Some(ErrorDetails::PdfRasterFallback {
+        Some(DiagnosticDetails::PdfRasterFallback {
             recovery: None,
             logical_bounds: Some(_),
             pixel_width: Some(20),
@@ -854,7 +854,7 @@ fn pdf_projects_nested_text_as_vector_outlines() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><text x="2" y="16" font-family="Excalifont" font-size="18">ABC</text></svg>"##;
     let scene = nested_svg_scene(nested, 40, 20);
     let request = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .expect("PDF request is valid");
     let outcome = Renderer::new()
@@ -899,7 +899,7 @@ fn closed_vector_native_families_remain_native_pdf_content() {
     </svg>"##;
     let scene = nested_svg_scene(nested, 80, 40);
     let request = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .expect("PDF request is valid");
     let outcome = Renderer::new()
@@ -952,7 +952,7 @@ fn every_native_blend_mode_remains_vector_pdf_content() {
         );
         let scene = nested_svg_scene(nested.as_bytes(), 20, 10);
         let request = RenderRequest::builder(OutputFormat::Pdf)
-            .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+            .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
             .build()
             .expect("PDF request is valid");
         let outcome = Renderer::new()
@@ -1129,7 +1129,7 @@ fn stylesheet_token_boundaries_preserve_admission_and_removal_sources() {
                     DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED
                 );
                 assert_eq!(diagnostic.json_pointer(), "/files/asset/dataURL");
-                let Some(ErrorDetails::NestedSource {
+                let Some(DiagnosticDetails::NestedSource {
                     paths, recovery, ..
                 }) = diagnostic.details()
                 else {
@@ -1220,7 +1220,7 @@ fn stylesheet_token_boundaries_retain_cascade_and_exact_effect_sources() {
     assert_eq!(serde_json::to_value(diagnostic.details()).unwrap(), details);
     assert!(pdf_text(outcome.artifact().bytes()).contains("/Subtype /Image"));
     let forbid = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .unwrap();
     let error = Renderer::new().render(&scene, &forbid).unwrap_err();

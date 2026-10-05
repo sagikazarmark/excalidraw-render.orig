@@ -6,7 +6,7 @@
 
 use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
-    DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, ResourceLimits,
+    DiagnosticCode, DiagnosticDetails, OutputFormat, RenderRequest, ResourceLimits,
 };
 
 use crate::common::codec_fixtures::{jpeg_rgb, JFIF_BLUE};
@@ -72,7 +72,7 @@ fn sniffed_jpeg_type_wins_over_jfif_and_png_claims() {
         assert_eq!(diagnostic.code(), DiagnosticCode::ASSET_MEDIA_TYPE_MISMATCH);
         assert!(matches!(
             diagnostic.details(),
-            Some(ErrorDetails::Asset {
+            Some(DiagnosticDetails::Asset {
                 validated_media_type: Some(validated),
                 ..
             }) if validated == "image/jpeg"

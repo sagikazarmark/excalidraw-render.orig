@@ -8,7 +8,7 @@
 
 use base64::Engine as _;
 use excalidraw_render::{
-    DiagnosticCode, ErrorCode, ErrorDetails, OutputFormat, Recovery, RenderRequest, Renderer,
+    DiagnosticCode, DiagnosticDetails, ErrorCode, OutputFormat, Recovery, RenderRequest, Renderer,
     ResourceLimits, SceneDocument, SupplementalAssets,
 };
 
@@ -87,7 +87,7 @@ fn apng_is_preserved_in_svg_and_flattened_to_frame_zero_in_png_and_pdf() {
         );
         assert!(matches!(
             outcome.report().diagnostics()[0].details(),
-            Some(ErrorDetails::Asset {
+            Some(DiagnosticDetails::Asset {
                 asset_id,
                 recovery: Recovery::Flattened,
                 recipe_id: None,
@@ -232,7 +232,7 @@ fn supplemental_asset_diagnostics_sort_by_file_id_not_reference_order() {
         .diagnostics()
         .iter()
         .filter_map(|diagnostic| match diagnostic.details() {
-            Some(ErrorDetails::Asset { asset_id, .. }) => Some(asset_id.as_str()),
+            Some(DiagnosticDetails::Asset { asset_id, .. }) => Some(asset_id.as_str()),
             _ => None,
         })
         .collect();
@@ -365,7 +365,7 @@ fn sniffed_png_type_wins_over_a_scene_media_claim() {
     assert_eq!(diagnostic.json_pointer(), "/files/asset/mimeType");
     assert!(matches!(
         diagnostic.details(),
-        Some(ErrorDetails::Asset {
+        Some(DiagnosticDetails::Asset {
             claimed_media_type: Some(claimed),
             validated_media_type: Some(validated),
             ..
@@ -415,7 +415,7 @@ fn identical_png_bytes_keep_each_occurrence_media_claim_and_owner() {
         .diagnostics()
         .iter()
         .map(|diagnostic| match diagnostic.details() {
-            Some(ErrorDetails::Asset {
+            Some(DiagnosticDetails::Asset {
                 claimed_media_type: Some(claim),
                 validated_media_type: Some(validated),
                 ..
@@ -760,7 +760,7 @@ fn missing_local_image_uses_the_format_specific_recovery() {
                 assert!(!svg.contains("<image "));
                 assert!(matches!(
                     outcome.report().diagnostics()[0].details(),
-                    Some(ErrorDetails::Asset {
+                    Some(DiagnosticDetails::Asset {
                         recovery: Recovery::Omitted,
                         recipe_id: None,
                         ..
@@ -770,7 +770,7 @@ fn missing_local_image_uses_the_format_specific_recovery() {
             OutputFormat::Png => {
                 assert!(matches!(
                     outcome.report().diagnostics()[0].details(),
-                    Some(ErrorDetails::Asset {
+                    Some(DiagnosticDetails::Asset {
                         recovery: Recovery::Placeholder,
                         recipe_id: Some(recipe),
                         ..
@@ -785,7 +785,7 @@ fn missing_local_image_uses_the_format_specific_recovery() {
                     .any(|window| window == b"/Subtype /Image"));
                 assert!(matches!(
                     outcome.report().diagnostics()[0].details(),
-                    Some(ErrorDetails::Asset {
+                    Some(DiagnosticDetails::Asset {
                         recovery: Recovery::Omitted,
                         recipe_id: None,
                         ..
@@ -821,7 +821,7 @@ fn avif_payload_is_not_accepted_in_revision_1_and_uses_the_unsupported_format_re
                 assert!(!svg.contains("<image "));
                 assert!(matches!(
                     diagnostic.details(),
-                    Some(ErrorDetails::Asset {
+                    Some(DiagnosticDetails::Asset {
                         recovery: Recovery::Omitted,
                         recipe_id: None,
                         ..
@@ -831,7 +831,7 @@ fn avif_payload_is_not_accepted_in_revision_1_and_uses_the_unsupported_format_re
             OutputFormat::Png => {
                 assert!(matches!(
                     diagnostic.details(),
-                    Some(ErrorDetails::Asset {
+                    Some(DiagnosticDetails::Asset {
                         recovery: Recovery::Placeholder,
                         recipe_id: Some(recipe),
                         ..
@@ -846,7 +846,7 @@ fn avif_payload_is_not_accepted_in_revision_1_and_uses_the_unsupported_format_re
                     .any(|window| window == b"/Subtype /Image"));
                 assert!(matches!(
                     diagnostic.details(),
-                    Some(ErrorDetails::Asset {
+                    Some(DiagnosticDetails::Asset {
                         recovery: Recovery::Omitted,
                         recipe_id: None,
                         ..

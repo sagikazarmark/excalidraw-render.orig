@@ -459,7 +459,7 @@ fn frame_requests_retain_only_controls_that_apply_to_frame_exports() {
         .metadata_options(metadata.clone())
         .supplemental_assets(assets)
         .resource_limits(limits.clone())
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .expect("frame request is valid");
 

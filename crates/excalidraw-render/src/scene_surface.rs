@@ -1578,7 +1578,7 @@ mod tests {
         codes_and_pointers, pointers, reported_diagnostics, NormalizedElementKind,
     };
     use crate::{
-        CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, ErrorDetails, OutputFormat,
+        CompatibilityDiagnostic, DiagnosticCode, DiagnosticDetails, DiagnosticEffect, OutputFormat,
         Recovery, SceneDocument, SupplementalAssets,
     };
 
@@ -1709,8 +1709,8 @@ mod tests {
     /// The recovery the diagnostic's compatibility or asset details declare.
     fn recovery_of(diagnostic: &CompatibilityDiagnostic) -> Recovery {
         match diagnostic.details() {
-            Some(ErrorDetails::Compatibility { recovery, .. })
-            | Some(ErrorDetails::Asset { recovery, .. }) => *recovery,
+            Some(DiagnosticDetails::Compatibility { recovery, .. })
+            | Some(DiagnosticDetails::Asset { recovery, .. }) => *recovery,
             details => panic!("unexpected details: {details:?}"),
         }
     }
@@ -1903,7 +1903,7 @@ mod tests {
         assert_eq!(diagnostic.json_pointer(), "/files/asset");
         assert!(matches!(
             diagnostic.details(),
-            Some(ErrorDetails::Asset {
+            Some(DiagnosticDetails::Asset {
                 asset_id,
                 recovery: Recovery::Omitted,
                 ..
@@ -1950,7 +1950,7 @@ mod tests {
         assert_eq!(diagnostic.json_pointer(), "/files/asset/$key");
         assert_eq!(
             diagnostic.details(),
-            Some(&ErrorDetails::Compatibility {
+            Some(&DiagnosticDetails::Compatibility {
                 recovery: Recovery::Ignored,
                 recipe_id: None,
             })
@@ -1984,7 +1984,7 @@ mod tests {
         };
         assert!(matches!(
             diagnostic.details(),
-            Some(ErrorDetails::Asset {
+            Some(DiagnosticDetails::Asset {
                 recovery: Recovery::Placeholder,
                 recipe_id: Some(recipe),
                 ..
@@ -2023,7 +2023,7 @@ mod tests {
         assert!(diagnostics.iter().all(|diagnostic| {
             matches!(
                 diagnostic.details(),
-                Some(ErrorDetails::Asset { asset_id, .. }) if asset_id == "asset"
+                Some(DiagnosticDetails::Asset { asset_id, .. }) if asset_id == "asset"
             )
         }));
     }

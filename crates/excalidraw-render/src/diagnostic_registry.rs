@@ -17,9 +17,9 @@
 use std::collections::TryReserveError;
 
 use crate::{
-    AssetChainEntry, DiagnosticCode, DiagnosticSeverity, ErrorDetails, LogicalBounds, Measurement,
-    MetadataComponent, MetadataOperation, NestedPath, OutputFormat, Recovery, ResourceValue,
-    ValueKind,
+    AssetChainEntry, DiagnosticCode, DiagnosticDetails, DiagnosticSeverity, LogicalBounds,
+    Measurement, MetadataComponent, MetadataOperation, NestedPath, OutputFormat, Recovery,
+    ResourceValue, ValueKind,
 };
 
 /// A fallback recipe a diagnostic may name as its `recipe_id`: the three
@@ -546,14 +546,14 @@ impl DiagnosticKind<'_> {
     }
 
     /// The typed details the code requires.
-    pub(crate) fn into_details(self) -> Result<ErrorDetails, TryReserveError> {
+    pub(crate) fn into_details(self) -> Result<DiagnosticDetails, TryReserveError> {
         Ok(match self {
             Self::NestedMediaTypeMismatch {
                 asset_chain,
                 paths,
                 claimed_media_type,
                 validated_media_type,
-            } => ErrorDetails::NestedAssetClaim {
+            } => DiagnosticDetails::NestedAssetClaim {
                 asset_chain,
                 paths,
                 claimed_media_type,
@@ -635,7 +635,7 @@ impl DiagnosticKind<'_> {
             Self::UnsafeSvgContentRemoved { asset_chain, paths }
             | Self::NestedImageRemoved {
                 asset_chain, paths, ..
-            } => ErrorDetails::NestedSource {
+            } => DiagnosticDetails::NestedSource {
                 asset_chain,
                 paths,
                 recovery: Recovery::Removed,
@@ -644,7 +644,7 @@ impl DiagnosticKind<'_> {
                 asset_chain,
                 paths,
                 recovery,
-            } => ErrorDetails::NestedSource {
+            } => DiagnosticDetails::NestedSource {
                 asset_chain,
                 paths,
                 recovery: recovery.recovery(),
@@ -656,7 +656,7 @@ impl DiagnosticKind<'_> {
                 asset_chain,
                 paths,
                 recovery,
-            } => ErrorDetails::NestedResourceLimit {
+            } => DiagnosticDetails::NestedResourceLimit {
                 field: limit.field(),
                 configured,
                 value_kind: limit.value_kind(),
@@ -678,7 +678,7 @@ impl DiagnosticKind<'_> {
                 Recovery::Substituted,
                 Some(FallbackRecipe::OfficialEmbeddableOffline),
             )?,
-            Self::MissingGlyph { codepoint } => ErrorDetails::MissingGlyph {
+            Self::MissingGlyph { codepoint } => DiagnosticDetails::MissingGlyph {
                 codepoint,
                 recovery: Recovery::Substituted,
             },
@@ -693,7 +693,7 @@ impl DiagnosticKind<'_> {
                 configured,
                 value_kind,
                 measurement,
-            } => ErrorDetails::ResourceLimit {
+            } => DiagnosticDetails::ResourceLimit {
                 field,
                 configured: ResourceValue::Integer(configured),
                 value_kind,
@@ -707,7 +707,7 @@ impl DiagnosticKind<'_> {
                 },
                 recovery: Some(Recovery::MetadataOmitted),
             },
-            Self::MetadataOmitted(failure) => ErrorDetails::Metadata {
+            Self::MetadataOmitted(failure) => DiagnosticDetails::Metadata {
                 component: failure.component(),
                 operation: failure.operation(),
                 recovery: Recovery::MetadataOmitted,
@@ -717,7 +717,7 @@ impl DiagnosticKind<'_> {
                 pixel_width,
                 pixel_height,
                 causes,
-            } => ErrorDetails::PdfRasterFallback {
+            } => DiagnosticDetails::PdfRasterFallback {
                 recovery: Some(Recovery::Rasterized),
                 logical_bounds: Some(logical_bounds),
                 pixel_width: Some(pixel_width),
@@ -731,8 +731,8 @@ impl DiagnosticKind<'_> {
 fn compatibility(
     recovery: Recovery,
     recipe: Option<FallbackRecipe>,
-) -> Result<ErrorDetails, TryReserveError> {
-    Ok(ErrorDetails::Compatibility {
+) -> Result<DiagnosticDetails, TryReserveError> {
+    Ok(DiagnosticDetails::Compatibility {
         recovery,
         recipe_id: recipe.map(|recipe| try_owned(recipe.id())).transpose()?,
     })
@@ -744,8 +744,8 @@ fn asset(
     validated_media_type: Option<&str>,
     recovery: Recovery,
     recipe: Option<FallbackRecipe>,
-) -> Result<ErrorDetails, TryReserveError> {
-    Ok(ErrorDetails::Asset {
+) -> Result<DiagnosticDetails, TryReserveError> {
+    Ok(DiagnosticDetails::Asset {
         asset_id: try_owned(asset_id)?,
         claimed_media_type: claimed_media_type.map(try_owned).transpose()?,
         validated_media_type: validated_media_type.map(try_owned).transpose()?,
@@ -759,8 +759,8 @@ fn resource_limit(
     configured: ResourceValue,
     attempted: crate::ResourceMeasurement,
     recovery: LocalRecovery,
-) -> ErrorDetails {
-    ErrorDetails::ResourceLimit {
+) -> DiagnosticDetails {
+    DiagnosticDetails::ResourceLimit {
         field: limit.field(),
         configured,
         value_kind: limit.value_kind(),
@@ -935,7 +935,7 @@ mod tests {
         let details = |kind: DiagnosticKind<'_>| kind.into_details().expect("details allocate");
         assert_eq!(
             details(DiagnosticKind::MissingElementId),
-            ErrorDetails::Compatibility {
+            DiagnosticDetails::Compatibility {
                 recovery: Recovery::Repaired,
                 recipe_id: None,
             }
@@ -948,7 +948,7 @@ mod tests {
             details(DiagnosticKind::KnownElementReplaced(
                 LocalRecovery::Placeholder
             )),
-            ErrorDetails::Compatibility {
+            DiagnosticDetails::Compatibility {
                 recovery: Recovery::Placeholder,
                 recipe_id: Some(FallbackRecipe::KnownElementUnavailable.id().to_owned()),
             }
@@ -957,7 +957,7 @@ mod tests {
             details(DiagnosticKind::UnsupportedElementType(
                 LocalRecovery::Omitted
             )),
-            ErrorDetails::Compatibility {
+            DiagnosticDetails::Compatibility {
                 recovery: Recovery::Omitted,
                 recipe_id: None,
             }
@@ -970,7 +970,7 @@ mod tests {
                 asset_id: "asset",
                 recovery: ImageRecovery::for_format(OutputFormat::Png, true),
             }),
-            ErrorDetails::Asset {
+            DiagnosticDetails::Asset {
                 asset_id: "asset".to_owned(),
                 claimed_media_type: None,
                 validated_media_type: Some("image/webp".to_owned()),
@@ -990,7 +990,7 @@ mod tests {
                 asset_id: "asset",
                 recovery: ImageRecovery::for_format(OutputFormat::Svg, true),
             }),
-            ErrorDetails::ResourceLimit {
+            DiagnosticDetails::ResourceLimit {
                 field: "max_asset_bytes",
                 configured: ResourceValue::Integer(10),
                 value_kind: ValueKind::Bytes,
@@ -1004,7 +1004,7 @@ mod tests {
             details(DiagnosticKind::MetadataOmitted(
                 MetadataFailure::SceneCompression
             )),
-            ErrorDetails::Metadata {
+            DiagnosticDetails::Metadata {
                 component: MetadataComponent::EmbeddedScene,
                 operation: MetadataOperation::Compression,
                 recovery: Recovery::MetadataOmitted,

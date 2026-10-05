@@ -120,6 +120,8 @@
 //!   opt-level = 2
 //!   ```
 
+#![warn(missing_docs)]
+
 mod catalog;
 #[cfg(test)]
 mod cms_failure_contract;
@@ -183,9 +185,9 @@ mod stage4_diagnostic_contract;
 struct ReadmeDoctests;
 
 pub use compatibility::{
-    AssetChainEntry, CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily,
-    FiniteValue, LogicalBounds, Measurement, MetadataComponent, MetadataOperation, NestedPath,
-    NestedPathSegment, NestedSegmentKind, Recovery, ReferenceProfileIdentity, Renderer,
+    AssetChainEntry, CompatibilityRevision, DiagnosticDetails, ErrorCode, ErrorDescriptor,
+    ErrorFamily, FiniteValue, LogicalBounds, Measurement, MetadataComponent, MetadataOperation,
+    NestedPath, NestedPathSegment, NestedSegmentKind, Recovery, ReferenceProfileIdentity, Renderer,
     ResourceMeasurement, ResourceValue, SvgFontSubsetStage, ValueKind,
 };
 pub use frame::{

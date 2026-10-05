@@ -199,7 +199,11 @@ fn failure(source: &Value, request: &RenderRequest, code: &str, first: &Value, p
     details["recovery"] = Value::Null;
     assert_eq!(serde_json::to_value(error.details()).unwrap(), details);
     report(error.report(), prefix);
-    assert_eq!(error, repeated);
+    assert_eq!(error.descriptor(), repeated.descriptor());
+    assert_eq!(
+        serde_json::to_value(error.report()).unwrap(),
+        serde_json::to_value(repeated.report()).unwrap()
+    );
 }
 
 #[test]
@@ -381,7 +385,7 @@ fn every_effect_family_has_an_exact_report_and_isolated_artifact() {
             "page must not be rasterized: {name}"
         );
         let forbid = RenderRequest::builder(OutputFormat::Pdf)
-            .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+            .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
             .build()
             .unwrap();
         failure(
@@ -462,7 +466,7 @@ fn occurrence_order_and_merged_causes_are_exact() {
 #[test]
 fn noops_and_native_content_are_silent_under_forbid() {
     let forbid = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .unwrap();
     for primitives in [
@@ -598,7 +602,7 @@ fn scaled_bounds_and_failure_preflight_are_exact() {
         json!([]),
     );
     let forbid = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .unwrap();
     failure(
@@ -897,7 +901,7 @@ fn stylesheet_effects_and_cascade_are_admitted_and_attributed() {
     let actual = checked(&source(styled), &request(), json!([expected]));
     isolated_pixels_match_source_effect(actual.artifact().bytes(), &svg(BLUR));
     let forbid = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .unwrap();
     failure(
@@ -1107,7 +1111,7 @@ fn cropped_repeating_patterns_keep_their_complete_tile() {
         crate::common::pdf_inspect::pdf_text(actual.artifact().bytes()).contains("/PatternType 1")
     );
     let forbid = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .unwrap();
     failure(
@@ -1168,7 +1172,7 @@ fn inline_filter_cascade_has_exact_provenance_without_a_stylesheet() {
     let actual = checked(&source(&inline), &request(), json!([expected]));
     isolated_pixels_match_source_effect(actual.artifact().bytes(), &original);
     let forbid = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
         .build()
         .unwrap();
     failure(

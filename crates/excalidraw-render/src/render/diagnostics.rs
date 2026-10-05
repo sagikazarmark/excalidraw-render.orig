@@ -5,7 +5,7 @@ use crate::diagnostic_registry::{
 use crate::normalization::{NormalizedElement, NormalizedElementKind, NormalizedImageStatus};
 use crate::outcome::PendingDiagnostic;
 use crate::{
-    CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, ErrorDetails, OutputFormat,
+    CompatibilityDiagnostic, DiagnosticCode, DiagnosticDetails, DiagnosticEffect, OutputFormat,
     ResourceLimits, ResourceValue,
 };
 
@@ -41,9 +41,9 @@ fn compare_nested_paths(
     fn paths(diagnostic: &CompatibilityDiagnostic) -> &[crate::NestedPath] {
         match diagnostic.details() {
             Some(
-                ErrorDetails::NestedSource { paths, .. }
-                | ErrorDetails::NestedAssetClaim { paths, .. }
-                | ErrorDetails::NestedResourceLimit { paths, .. },
+                DiagnosticDetails::NestedSource { paths, .. }
+                | DiagnosticDetails::NestedAssetClaim { paths, .. }
+                | DiagnosticDetails::NestedResourceLimit { paths, .. },
             ) => paths,
             _ => &[],
         }
@@ -86,7 +86,7 @@ pub(super) fn diagnostic_replaces_source(
             (&source.kind, diagnostic.details()),
             (
                 NormalizedElementKind::Image(image),
-                Some(ErrorDetails::Asset { asset_id, .. })
+                Some(DiagnosticDetails::Asset { asset_id, .. })
             ) if image.file_id.as_deref() == Some(asset_id.as_str())
         )
         || image_payload_field_recovery(source, diagnostic);
@@ -94,7 +94,8 @@ pub(super) fn diagnostic_replaces_source(
         return false;
     }
     if diagnostic.code() == DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
-        && diagnostic.details().and_then(ErrorDetails::recovery) == Some(crate::Recovery::Omitted)
+        && diagnostic.details().and_then(DiagnosticDetails::recovery)
+            == Some(crate::Recovery::Omitted)
     {
         // Invalid bindings/crop members omit a field, not its owner. Only the
         // points subtree can omit an unavailable linear/freehand element;
@@ -122,7 +123,7 @@ pub(super) fn diagnostic_uses_non_generic_recovery(
     }
     let recipe = diagnostic
         .details()
-        .and_then(ErrorDetails::recipe_id)
+        .and_then(DiagnosticDetails::recipe_id)
         .and_then(FallbackRecipe::from_id);
     recipe != Some(FallbackRecipe::KnownElementUnavailable)
 }
@@ -981,7 +982,7 @@ mod tests {
                 let Some(details) = diagnostic.details() else {
                     panic!("{failure:?} carries asset details");
                 };
-                let ErrorDetails::Asset {
+                let DiagnosticDetails::Asset {
                     asset_id,
                     claimed_media_type,
                     validated_media_type,
@@ -1036,7 +1037,7 @@ mod tests {
         assert_eq!(diagnostic.element_id(), None);
         assert!(matches!(
             diagnostic.details(),
-            Some(ErrorDetails::NestedResourceLimit {
+            Some(DiagnosticDetails::NestedResourceLimit {
                 recovery: Recovery::Omitted,
                 ..
             })

@@ -675,7 +675,7 @@ fn assert_failure_cells(failures: &[FailureQualification]) {
             public_error.code(),
             crate::ErrorCode::ENCODE_SVG_FONT_SUBSET_FAILED
         );
-        let crate::ErrorDetails::SvgFontSubsetFailure {
+        let crate::DiagnosticDetails::SvgFontSubsetFailure {
             stage: public_stage,
             ..
         } = public_error

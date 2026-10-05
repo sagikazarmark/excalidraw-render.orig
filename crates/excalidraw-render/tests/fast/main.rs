@@ -80,6 +80,7 @@ mod png_precision_contract;
 mod png_profile_contract;
 mod png_stage4_contract;
 mod point_stroke_contract;
+mod readme_examples;
 mod rectangle_pdf_render;
 mod rectangle_png_render;
 mod rectangle_svg_render;

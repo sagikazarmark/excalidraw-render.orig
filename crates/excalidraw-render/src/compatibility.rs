@@ -36,7 +36,7 @@ impl fmt::Display for CompatibilityRevision {
 }
 
 /// Immutable identity of the reference profile a renderer reproduces.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct ReferenceProfileIdentity {
     compatibility_revision: CompatibilityRevision,
     excalidraw_release: &'static str,
@@ -316,11 +316,15 @@ impl fmt::Display for ErrorCode {
     }
 }
 
-/// Typed details attached to an [`ErrorDescriptor`].
+/// Typed details attached to an [`ErrorDescriptor`] or a
+/// [`CompatibilityDiagnostic`](crate::CompatibilityDiagnostic).
+///
+/// Errors and diagnostics share one detail vocabulary; each code fixes
+/// which variant, if any, it carries.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[non_exhaustive]
 #[serde(tag = "kind", rename_all = "snake_case")]
-pub enum ErrorDetails {
+pub enum DiagnosticDetails {
     /// Identifies a fixed scene-parser ceiling crossing.
     #[non_exhaustive]
     ParseLimit {
@@ -483,7 +487,7 @@ pub enum ErrorDetails {
     },
 }
 
-impl ErrorDetails {
+impl DiagnosticDetails {
     /// The recovery the details carry: the fixed one of a compatibility,
     /// asset, missing-glyph, metadata or nested-source detail, the optional
     /// one of a resource limit or PDF raster fallback (null when fatal), and
@@ -938,7 +942,7 @@ pub struct ErrorDescriptor {
     format: Option<OutputFormat>,
     element_id: Option<String>,
     json_pointer: Option<String>,
-    details: Option<ErrorDetails>,
+    details: Option<DiagnosticDetails>,
 }
 
 impl ErrorDescriptor {
@@ -946,7 +950,7 @@ impl ErrorDescriptor {
         code: ErrorCode,
         message: String,
         json_pointer: Option<String>,
-        details: Option<ErrorDetails>,
+        details: Option<DiagnosticDetails>,
     ) -> Self {
         Self {
             family: ErrorFamily::SceneParse,
@@ -960,7 +964,7 @@ impl ErrorDescriptor {
         }
     }
 
-    pub(crate) fn request(code: ErrorCode, message: String, details: ErrorDetails) -> Self {
+    pub(crate) fn request(code: ErrorCode, message: String, details: DiagnosticDetails) -> Self {
         Self {
             family: ErrorFamily::Request,
             category: None,
@@ -980,7 +984,7 @@ impl ErrorDescriptor {
         format: OutputFormat,
         element_id: Option<String>,
         json_pointer: String,
-        details: Option<ErrorDetails>,
+        details: Option<DiagnosticDetails>,
     ) -> Self {
         Self {
             family: ErrorFamily::Render,
@@ -1043,7 +1047,7 @@ impl ErrorDescriptor {
     }
 
     /// Returns typed details required by the stable error code.
-    pub const fn details(&self) -> Option<&ErrorDetails> {
+    pub const fn details(&self) -> Option<&DiagnosticDetails> {
         self.details.as_ref()
     }
 }
@@ -1064,7 +1068,7 @@ mod tests {
         };
         let cases = [
             (
-                ErrorDetails::Asset {
+                DiagnosticDetails::Asset {
                     asset_id: "image-1".to_owned(),
                     claimed_media_type: Some("image/jpeg".to_owned()),
                     validated_media_type: Some("image/png".to_owned()),
@@ -1079,7 +1083,7 @@ mod tests {
                 ),
             ),
             (
-                ErrorDetails::ResourceLimit {
+                DiagnosticDetails::ResourceLimit {
                     field: "max_coordinate_magnitude",
                     configured: ResourceValue::Finite(finite(1e9)),
                     value_kind: ValueKind::Coordinate,
@@ -1097,7 +1101,7 @@ mod tests {
                 ),
             ),
             (
-                ErrorDetails::MemoryUnavailable {
+                DiagnosticDetails::MemoryUnavailable {
                     subject_kind: "output_buffer".to_owned(),
                     subject: "svg".to_owned(),
                 },
@@ -1107,7 +1111,7 @@ mod tests {
                 ),
             ),
             (
-                ErrorDetails::MissingGlyph {
+                DiagnosticDetails::MissingGlyph {
                     codepoint: 0x10ffff,
                     recovery: Recovery::Substituted,
                 },
@@ -1117,7 +1121,7 @@ mod tests {
                 ),
             ),
             (
-                ErrorDetails::SvgFontSubsetFailure {
+                DiagnosticDetails::SvgFontSubsetFailure {
                     stage: SvgFontSubsetStage::Validate,
                     resolved_family: "Excalifont".to_owned(),
                     asset_identity: "fonts/Excalifont/chunk.woff2@sha256:abc".to_owned(),
@@ -1129,7 +1133,7 @@ mod tests {
                 ),
             ),
             (
-                ErrorDetails::FontUnavailable {
+                DiagnosticDetails::FontUnavailable {
                     resolved_family: "Xiaolai".to_owned(),
                     asset_identity: "fonts/Xiaolai/chunk.woff2@sha256:abc".to_owned(),
                 },
@@ -1139,7 +1143,7 @@ mod tests {
                 ),
             ),
             (
-                ErrorDetails::Metadata {
+                DiagnosticDetails::Metadata {
                     component: MetadataComponent::EmbeddedScene,
                     operation: MetadataOperation::Compression,
                     recovery: Recovery::MetadataOmitted,
@@ -1151,7 +1155,7 @@ mod tests {
                 ),
             ),
             (
-                ErrorDetails::NestedSource {
+                DiagnosticDetails::NestedSource {
                     asset_chain: vec![AssetChainEntry {
                         asset_id: Some("image-1".to_owned()),
                         occurrence: 0,
@@ -1167,7 +1171,7 @@ mod tests {
                 ),
             ),
             (
-                ErrorDetails::PdfRasterFallback {
+                DiagnosticDetails::PdfRasterFallback {
                     recovery: None,
                     logical_bounds: Some(LogicalBounds {
                         x: finite(-0.0),
