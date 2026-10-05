@@ -2030,9 +2030,11 @@ Reassembly verifies the complete digest before parsing.
 
 The published virtual workspace exposes only `excalidraw-render` as supported
 Rust API and `excalidraw-render-cli` as the native CLI. Doc-hidden unsupported
-`excalidraw-fonts` carries the complete catalog and non-Xiaolai font payloads;
-`excalidraw-fonts-xiaolai` carries 165 common-coverage Xiaolai chunks and
-`excalidraw-fonts-xiaolai-extended` carries 44 extended-coverage chunks. Whole
+`excalidraw-render-fonts` carries the complete catalog and non-Xiaolai font payloads;
+`excalidraw-render-fonts-xiaolai` carries 165 common-coverage Xiaolai chunks and
+`excalidraw-render-fonts-xiaolai-extended` carries 44 extended-coverage chunks.
+Workspace code depends on them under the keys `excalidraw-fonts`,
+`excalidraw-fonts-xiaolai` and `excalidraw-fonts-xiaolai-extended`. Whole
 chunks are classified by their dominant mapped Unicode block using the pinned
 `excalidraw-image` 1.0.0 grouping: Extension A, Compatibility Ideographs,
 Extension B+, and its Other bucket select the extended package. Each package
@@ -3663,21 +3665,21 @@ the required fallback or release block.
 ## 16. Approval and Completion
 
 The original scene-export contract was approved through
-[Publish and approve the canonical renderer specification](https://github.com/sagikazarmark/excalidraw-render.orig/issues/26).
+[Publish and approve the canonical renderer specification](https://github.com/sagikazarmark/excalidraw-render/issues/26).
 The frame-export amendment is specified by
-[Export Excalidraw frames as separate artifacts](https://github.com/sagikazarmark/excalidraw-render.orig/issues/97).
+[Export Excalidraw frames as separate artifacts](https://github.com/sagikazarmark/excalidraw-render/issues/97).
 The direct-SVG font-subsetting amendment is specified by
-[Add Excalidraw-compatible per-glyph SVG font subsetting](https://github.com/sagikazarmark/excalidraw-render.orig/issues/96).
+[Add Excalidraw-compatible per-glyph SVG font subsetting](https://github.com/sagikazarmark/excalidraw-render/issues/96).
 The 8.3 clarifications of the CJK subset trigger's evaluation point, the font
 fallback probe, and bidirectional layout are specified by
-[Record the CJK subset trigger's evaluation point, the fallback probe, and bidi in spec 8.3 and CONTEXT.md](https://github.com/sagikazarmark/excalidraw-render.orig/issues/122);
+[Record the CJK subset trigger's evaluation point, the fallback probe, and bidi in spec 8.3 and CONTEXT.md](https://github.com/sagikazarmark/excalidraw-render/issues/122);
 its paragraph-separator clause by
-[Lay out every UAX #9 paragraph of a source line on the fallback text path](https://github.com/sagikazarmark/excalidraw-render.orig/issues/125)
+[Lay out every UAX #9 paragraph of a source line on the fallback text path](https://github.com/sagikazarmark/excalidraw-render/issues/125)
 and its run-direction and per-character SVG position clauses by
-[Shape RTL visual runs in their own direction and map SVG per-glyph x to logical characters](https://github.com/sagikazarmark/excalidraw-render.orig/issues/126).
+[Shape RTL visual runs in their own direction and map SVG per-glyph x to logical characters](https://github.com/sagikazarmark/excalidraw-render/issues/126).
 The 8.6 definition of the reviewed decode PDF embeds for every official font
 chunk is specified by
-[Decide how PDF satisfies "reviewed predecoded sfnt chunks" for the 229 runtime-decoded chunks](https://github.com/sagikazarmark/excalidraw-render.orig/issues/120).
+[Decide how PDF satisfies "reviewed predecoded sfnt chunks" for the 229 runtime-decoded chunks](https://github.com/sagikazarmark/excalidraw-render/issues/120).
 Changing these bytes invalidates the original adjacent approval subject; a new
 maintainer approval is required before release.
 
@@ -3699,31 +3701,31 @@ The specification is implementation-ready when all of these remain true:
 These linked ticket resolutions are the rationale incorporated by this
 specification. They do not override its normalized wording.
 
-- [Inventory official Excalidraw static-export behavior](https://github.com/sagikazarmark/excalidraw-render.orig/issues/6)
-- [Evaluate deterministic reference-oracle options](https://github.com/sagikazarmark/excalidraw-render.orig/issues/13)
-- [Survey pure-Rust and WASM parity paths](https://github.com/sagikazarmark/excalidraw-render.orig/issues/2)
-- [Audit required asset licensing and distribution](https://github.com/sagikazarmark/excalidraw-render.orig/issues/4)
-- [Choose the reference baseline and upgrade policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/9)
-- [Define the static-export compatibility contract](https://github.com/sagikazarmark/excalidraw-render.orig/issues/3)
-- [Choose the native rendering architecture](https://github.com/sagikazarmark/excalidraw-render.orig/issues/5)
-- [Define the public library and CLI contracts](https://github.com/sagikazarmark/excalidraw-render.orig/issues/14)
-- [Set platform, packaging, and dependency policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/10)
-- [Design the conformance and regression strategy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/15)
-- [Set performance budgets and benchmark method](https://github.com/sagikazarmark/excalidraw-render.orig/issues/11)
-- [Define vector-first PDF behavior](https://github.com/sagikazarmark/excalidraw-render.orig/issues/12)
-- [Set robustness and resource-limit policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/7)
-- [Confirm the implementation-ready rendering specification](https://github.com/sagikazarmark/excalidraw-render.orig/issues/8)
-- [Research reference raster-asset semantics](https://github.com/sagikazarmark/excalidraw-render.orig/issues/19)
-- [Define semantic resource accounting and CLI controls](https://github.com/sagikazarmark/excalidraw-render.orig/issues/17)
-- [Materialize compatibility revision 1 reference profile](https://github.com/sagikazarmark/excalidraw-render.orig/issues/22)
-- [Define scene admission and forward-compatibility boundaries](https://github.com/sagikazarmark/excalidraw-render.orig/issues/18)
-- [Approve the distributable font asset plan](https://github.com/sagikazarmark/excalidraw-render.orig/issues/23)
-- [Define canonical scene preservation and artifact metadata](https://github.com/sagikazarmark/excalidraw-render.orig/issues/20)
-- [Define the performance workload and statistics protocol](https://github.com/sagikazarmark/excalidraw-render.orig/issues/24)
-- [Clarify vector-first PDF conformance and fallback boundaries](https://github.com/sagikazarmark/excalidraw-render.orig/issues/25)
-- [Set the first-release WASM footprint policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/27)
-- [Choose compatibility revision 1 raster normalization and SVG passthrough policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/28)
-- [Define public outcomes and serialized contracts](https://github.com/sagikazarmark/excalidraw-render.orig/issues/16)
-- [Define the conformance comparison and approval protocol](https://github.com/sagikazarmark/excalidraw-render.orig/issues/21)
-- [Materialize the compatibility revision 1 scene-surface manifest](https://github.com/sagikazarmark/excalidraw-render.orig/issues/29)
-- [Add Excalidraw-compatible per-glyph SVG font subsetting](https://github.com/sagikazarmark/excalidraw-render.orig/issues/96)
+- [Inventory official Excalidraw static-export behavior](https://github.com/sagikazarmark/excalidraw-render/issues/6)
+- [Evaluate deterministic reference-oracle options](https://github.com/sagikazarmark/excalidraw-render/issues/13)
+- [Survey pure-Rust and WASM parity paths](https://github.com/sagikazarmark/excalidraw-render/issues/2)
+- [Audit required asset licensing and distribution](https://github.com/sagikazarmark/excalidraw-render/issues/4)
+- [Choose the reference baseline and upgrade policy](https://github.com/sagikazarmark/excalidraw-render/issues/9)
+- [Define the static-export compatibility contract](https://github.com/sagikazarmark/excalidraw-render/issues/3)
+- [Choose the native rendering architecture](https://github.com/sagikazarmark/excalidraw-render/issues/5)
+- [Define the public library and CLI contracts](https://github.com/sagikazarmark/excalidraw-render/issues/14)
+- [Set platform, packaging, and dependency policy](https://github.com/sagikazarmark/excalidraw-render/issues/10)
+- [Design the conformance and regression strategy](https://github.com/sagikazarmark/excalidraw-render/issues/15)
+- [Set performance budgets and benchmark method](https://github.com/sagikazarmark/excalidraw-render/issues/11)
+- [Define vector-first PDF behavior](https://github.com/sagikazarmark/excalidraw-render/issues/12)
+- [Set robustness and resource-limit policy](https://github.com/sagikazarmark/excalidraw-render/issues/7)
+- [Confirm the implementation-ready rendering specification](https://github.com/sagikazarmark/excalidraw-render/issues/8)
+- [Research reference raster-asset semantics](https://github.com/sagikazarmark/excalidraw-render/issues/19)
+- [Define semantic resource accounting and CLI controls](https://github.com/sagikazarmark/excalidraw-render/issues/17)
+- [Materialize compatibility revision 1 reference profile](https://github.com/sagikazarmark/excalidraw-render/issues/22)
+- [Define scene admission and forward-compatibility boundaries](https://github.com/sagikazarmark/excalidraw-render/issues/18)
+- [Approve the distributable font asset plan](https://github.com/sagikazarmark/excalidraw-render/issues/23)
+- [Define canonical scene preservation and artifact metadata](https://github.com/sagikazarmark/excalidraw-render/issues/20)
+- [Define the performance workload and statistics protocol](https://github.com/sagikazarmark/excalidraw-render/issues/24)
+- [Clarify vector-first PDF conformance and fallback boundaries](https://github.com/sagikazarmark/excalidraw-render/issues/25)
+- [Set the first-release WASM footprint policy](https://github.com/sagikazarmark/excalidraw-render/issues/27)
+- [Choose compatibility revision 1 raster normalization and SVG passthrough policy](https://github.com/sagikazarmark/excalidraw-render/issues/28)
+- [Define public outcomes and serialized contracts](https://github.com/sagikazarmark/excalidraw-render/issues/16)
+- [Define the conformance comparison and approval protocol](https://github.com/sagikazarmark/excalidraw-render/issues/21)
+- [Materialize the compatibility revision 1 scene-surface manifest](https://github.com/sagikazarmark/excalidraw-render/issues/29)
+- [Add Excalidraw-compatible per-glyph SVG font subsetting](https://github.com/sagikazarmark/excalidraw-render/issues/96)
