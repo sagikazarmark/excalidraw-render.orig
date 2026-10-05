@@ -97,19 +97,20 @@ work precedence, source ordering, diagnostic prefixes, and direct/prepared frame
 
 ### Element work
 
-Semantic and format-projection crossings are tested separately. The rectangle's
-semantic work is 128 base units plus 16 commands × 32 = 640. PNG additionally
-charges 16 samples over its 12×12 conservative stroked coverage box. A 10×10
-placeholder has 9×32+8 base work and 100×16 projection work. Tests retain the
-original semantic replacement warning and assert the later PNG omission warning
-when that separate projection transaction also crosses.
+Semantic crossings and format-projection charges are tested separately. The
+rectangle's semantic work is 128 base units plus 16 commands × 32 = 640. PNG
+additionally charges 16 samples over its 12×12 conservative stroked coverage
+box, and a 10×10 placeholder 100×16 projection samples, but to total work only:
+the element work boundary is the same in every format, and no PNG raster sample
+crossing omits an element the admitted canvas contains.
 
 Text tests cover pre-shaping work and complete glyph work. The pinned face's
 commands and control-point bounds determine the expected PNG coverage at the
 reference family's baseline; expectations are not learned from renderer reports.
-One-pixel image projection has its own N−1/N/N+1 probe. Compatibility fallbacks,
-empty text/geometry effects, source order, report prefixes and frame replay are
-also covered.
+That coverage and the one-pixel image's 24 projection, composite and mask
+samples are read back as the element's own total-work events through the
+public total-work ceiling. Compatibility fallbacks, empty text/geometry
+effects, source order, report prefixes and frame replay are also covered.
 
 ## Ledger and execution
 

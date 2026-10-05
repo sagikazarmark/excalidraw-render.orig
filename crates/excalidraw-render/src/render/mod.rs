@@ -593,6 +593,7 @@ impl RenderSession {
         )
     }
 
+    #[cfg(test)]
     fn retain_diagnostic(
         &mut self,
         request: &RenderRequest,
@@ -607,24 +608,6 @@ impl RenderSession {
             diagnostic,
             DiagnosticOwnership::default(),
         )
-    }
-
-    fn discard_pending_png_animation_diagnostic(
-        &mut self,
-        request: &RenderRequest,
-        element_id: Option<&str>,
-    ) -> Result<(), RenderError> {
-        if let Some(element_id) = element_id {
-            if let Some(index) = self
-                .pending_png_animation_diagnostics
-                .iter()
-                .position(|pending| pending.local_owner == element_id)
-            {
-                let pending = self.pending_png_animation_diagnostics.remove(index);
-                self.release_pending_png_animation_diagnostic(request, &pending)?;
-            }
-        }
-        Ok(())
     }
 
     fn flush_pending_png_animation_diagnostics(

@@ -6,6 +6,8 @@ use excalidraw_render::{
     ResourceLimits, SceneDocument, SupplementalAssets,
 };
 use serde_json::{json, Value};
+
+use crate::common::render::{trailing_work_charges, WorkCharge};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[derive(Clone, Copy)]
@@ -568,8 +570,6 @@ enum ExtraNestedOracle {
     Coordinate,
 }
 
-const PLACEHOLDER_PNG_WORK: u64 = 9 * 32 + 8 + 10 * 10 * 16;
-
 impl AssetLimit {
     fn contract(self) -> (&'static str, &'static str, &'static str) {
         match self {
@@ -1053,19 +1053,11 @@ fn element_outline_boundaries(limit: ElementLimit) {
     let (code, field, kind) = limit.contract();
     let n = limit.full_rectangle();
     for format in FORMATS {
-        // PNG also prices the stroked 12x12 coverage box at 16 samples
-        // per pixel. Its placeholder uses a 10x10 box and 9*32+8 base work.
-        let png_work = 640 + 12 * 12 * 16;
-        let final_n = if format == OutputFormat::Png && matches!(limit, ElementLimit::Work) {
-            png_work
-        } else {
-            n
-        };
-        let mut configurations = vec![1, n - 1, n, n + 1];
-        if final_n != n {
-            configurations.extend([final_n - 1, final_n, final_n + 1]);
-        }
-        for configured in configurations {
+        // PNG also prices the stroked 12x12 coverage box at 16 samples per
+        // pixel, but against total work only: the boundary at `n` is the
+        // same in every format and the rectangle (or its placeholder) paints
+        // although its raster samples exceed the element limit.
+        for configured in [1, n - 1, n, n + 1] {
             let source = element_scene("rectangle");
             let request = RenderRequest::builder(format)
                 .resource_limits(limit.limits(configured))
@@ -1097,38 +1089,17 @@ fn element_outline_boundaries(limit: ElementLimit) {
             if format != OutputFormat::Png {
                 row["effects"] = json!(["visual", "semantic"]);
             }
-            let mut rows = if configured < n { vec![row] } else { vec![] };
-            if format == OutputFormat::Png
-                && matches!(limit, ElementLimit::Work)
-                && configured != 1
-                && configured < final_n
-            {
-                rows.push(expected(
-                    code,
-                    field,
-                    json!(configured),
-                    json!(if configured < n {
-                        PLACEHOLDER_PNG_WORK
-                    } else {
-                        png_work
-                    }),
-                    kind,
-                    "/elements/0",
-                    "omitted",
-                ));
-            }
+            let rows = if configured < n { vec![row] } else { vec![] };
             let outcome = assert_repeat(&source, &request, json!(rows));
-            if configured < final_n {
-                let placeholder = configured != 1
-                    && !(format == OutputFormat::Png && matches!(limit, ElementLimit::Work));
+            if configured < n {
                 assert_eq!(
                     outcome.artifact().bytes(),
-                    box_oracle(format, 10, 10, 10.0, placeholder)
+                    box_oracle(format, 10, 10, 10.0, configured != 1)
                         .artifact()
                         .bytes()
                 );
             }
-            if configured >= final_n {
+            if configured >= n {
                 let baseline = Renderer::new()
                     .render(
                         &parse(&source),
@@ -1213,19 +1184,13 @@ fn element_outline_boundaries(limit: ElementLimit) {
             if format != OutputFormat::Png {
                 row["effects"] = json!(["visual", "semantic"]);
             }
-            let mut rows = vec![row];
-            if format == OutputFormat::Png {
-                rows.push(expected(
-                    "resource.element-work-exceeded",
-                    "max_element_work_units",
-                    json!(639),
-                    json!(PLACEHOLDER_PNG_WORK),
-                    "work_units",
-                    "/elements/0",
-                    "omitted",
-                ));
-            }
-            assert_repeat(&element_scene("rectangle"), &request, json!(rows));
+            // The placeholder's PNG raster samples go to total work only, so
+            // the geometry replacement is the element's one diagnostic.
+            let outcome = assert_repeat(&element_scene("rectangle"), &request, json!([row]));
+            assert_eq!(
+                outcome.artifact().bytes(),
+                box_oracle(format, 10, 10, 10.0, true).artifact().bytes()
+            );
         } else {
             let mut empty = element_scene("rectangle");
             empty["elements"][0]["width"] = json!(0);
@@ -1258,16 +1223,9 @@ fn element_fallback_boundaries(limit: ElementLimit) {
     };
     let source = element_scene("future");
     for format in FORMATS {
-        let final_n = if format == OutputFormat::Png && matches!(limit, ElementLimit::Work) {
-            PLACEHOLDER_PNG_WORK
-        } else {
-            n
-        };
-        let mut configurations = vec![n - 1, n, n + 1];
-        if final_n != n {
-            configurations.extend([final_n - 1, final_n, final_n + 1]);
-        }
-        for configured in configurations {
+        // The placeholder's PNG raster samples (its 10x10 box at 16 per
+        // pixel) go to total work only, so every format shares the boundary.
+        for configured in [n - 1, n, n + 1] {
             let request = RenderRequest::builder(format)
                 .resource_limits(limit.limits(configured))
                 .build()
@@ -1275,12 +1233,12 @@ fn element_fallback_boundaries(limit: ElementLimit) {
             let mut rows = vec![
                 json!({"code":"compatibility.unsupported-element-type","severity":"warning","effects":["visual","semantic"],"element_id":"image","json_pointer":"/elements/0","details":{"kind":"compatibility","recovery":"placeholder","recipe_id":"renderer.unknown-element.v1"}}),
             ];
-            if configured < final_n {
+            if configured < n {
                 let mut row = expected(
                     code,
                     field,
                     json!(configured),
-                    json!(if configured < n { n } else { final_n }),
+                    json!(n),
                     kind,
                     "/elements/0",
                     "omitted",
@@ -1293,7 +1251,7 @@ fn element_fallback_boundaries(limit: ElementLimit) {
             let actual = assert_repeat(&source, &request, json!(rows));
             assert_eq!(
                 actual.artifact().bytes(),
-                box_oracle(format, 10, 10, 10.0, configured >= final_n)
+                box_oracle(format, 10, 10, 10.0, configured >= n)
                     .artifact()
                     .bytes()
             );
@@ -1314,7 +1272,7 @@ fn element_reference_order_and_frames(limit: ElementLimit) {
         let rows: Vec<_> = ["z", "a"]
             .into_iter()
             .enumerate()
-            .flat_map(|(index, id)| {
+            .map(|(index, id)| {
                 let mut row = expected(
                     code,
                     field,
@@ -1328,21 +1286,7 @@ fn element_reference_order_and_frames(limit: ElementLimit) {
                 if format != OutputFormat::Png {
                     row["effects"] = json!(["visual", "semantic"]);
                 }
-                let mut rows = vec![row];
-                if format == OutputFormat::Png && matches!(limit, ElementLimit::Work) {
-                    let mut row = expected(
-                        code,
-                        field,
-                        json!(n - 1),
-                        json!(PLACEHOLDER_PNG_WORK),
-                        kind,
-                        &format!("/elements/{index}"),
-                        "omitted",
-                    );
-                    row["element_id"] = json!(id);
-                    rows.push(row);
-                }
-                rows
+                row
             })
             .collect();
         let request = RenderRequest::builder(format)
@@ -1628,17 +1572,23 @@ fn text_shaping_work_boundaries() {
     // One scalar, glyph and line, followed by the pinned face's commands.
     let (commands, pixel_area) = official_a_geometry();
     let n = (3 + commands) * 32;
-    for format in FORMATS {
-        let final_n = if format == OutputFormat::Png {
-            n + 8 + pixel_area * 16
-        } else {
-            n
-        };
-        let mut configurations = vec![95, n - 1, n, n + 1];
-        if final_n != n {
-            configurations.extend([final_n - 1, final_n, final_n + 1]);
+    // PNG's glyph coverage (16 samples per pixel of the glyph box) is the
+    // text's own total-work event, never part of its element work.
+    let charges = trailing_work_charges(
+        &parse(&text_scene("A", 10)),
+        || RenderRequest::builder(OutputFormat::Png),
+        3,
+    );
+    assert_eq!(
+        charges[2],
+        WorkCharge {
+            units: pixel_area * 16,
+            element_id: Some("image".to_owned()),
+            json_pointer: "/elements/0".to_owned(),
         }
-        for configured in configurations {
+    );
+    for format in FORMATS {
+        for configured in [95, n - 1, n, n + 1] {
             let request = RenderRequest::builder(format)
                 .resource_limits(ElementLimit::Work.limits(configured))
                 .build()
@@ -1647,13 +1597,7 @@ fn text_shaping_work_boundaries() {
                 "resource.element-work-exceeded",
                 "max_element_work_units",
                 json!(configured),
-                json!(if configured == 95 {
-                    96
-                } else if configured < n {
-                    n
-                } else {
-                    final_n
-                }),
+                json!(if configured == 95 { 96 } else { n }),
                 "work_units",
                 "/elements/0",
                 "omitted",
@@ -1664,13 +1608,13 @@ fn text_shaping_work_boundaries() {
             let actual = assert_repeat(
                 &text_scene("A", 10),
                 &request,
-                if configured < final_n {
+                if configured < n {
                     json!([row])
                 } else {
                     json!([])
                 },
             );
-            if configured < final_n {
+            if configured < n {
                 let expected = if configured == 95 {
                     let mut empty = text_scene("", 10);
                     empty["elements"] = json!([]);
@@ -1711,37 +1655,40 @@ fn png_projection_work_boundaries() {
     source["elements"][0]["width"] = json!(1);
     source["elements"][0]["height"] = json!(1);
     for format in FORMATS {
-        for configured in [31, 32, 33] {
+        let unconstrained = Renderer::new()
+            .render(
+                &parse(&source),
+                &RenderRequest::builder(format).build().unwrap(),
+            )
+            .unwrap();
+        // The one-pixel occurrence's PNG projection, composite and mask
+        // samples (24) never count against the element limit, however low.
+        for configured in [1, 23, 24, 25] {
             let request = RenderRequest::builder(format)
                 .resource_limits(ElementLimit::Work.limits(configured))
                 .build()
                 .unwrap();
-            let rejected = format == OutputFormat::Png && configured < 32;
-            let actual = assert_repeat(
-                &source,
-                &request,
-                if rejected {
-                    json!([expected(
-                        "resource.element-work-exceeded",
-                        "max_element_work_units",
-                        json!(configured),
-                        json!(32),
-                        "work_units",
-                        "/elements/0",
-                        "omitted"
-                    )])
-                } else {
-                    json!([])
-                },
-            );
-            if rejected {
-                assert_eq!(
-                    actual.artifact().bytes(),
-                    box_oracle(format, 1, 1, 10.0, false).artifact().bytes()
-                );
-            }
+            let actual = assert_repeat(&source, &request, json!([]));
+            assert_eq!(actual.artifact().bytes(), unconstrained.artifact().bytes());
         }
     }
+    // They are the occurrence's own total-work event instead: 12 bilinear
+    // projection, 4 composite and 8 paint-mask samples per occurrence pixel,
+    // followed only by the canvas-wide encoding events, and crossing them is
+    // the fatal total-work failure attributed to the image.
+    let charges = trailing_work_charges(
+        &parse(&source),
+        || RenderRequest::builder(OutputFormat::Png),
+        3,
+    );
+    assert_eq!(
+        charges[2],
+        WorkCharge {
+            units: 12 + 4 + 8,
+            element_id: Some("image".to_owned()),
+            json_pointer: "/elements/0".to_owned(),
+        }
+    );
 }
 
 #[test]

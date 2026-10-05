@@ -104,25 +104,32 @@ fn animation_validation_work_uses_additional_frame_rectangles() {
 }
 
 #[test]
-fn flattening_is_not_reported_when_png_local_recovery_omits_the_occurrence() {
+fn png_flattens_an_occurrence_whose_raster_samples_exceed_the_element_limit() {
     let gif = gif(&[
         gif_frame(&[0], 1, 1, &RED_BLUE_PALETTE, None),
         gif_frame(&[1], 1, 1, &RED_BLUE_PALETTE, None),
     ]);
+    // Below the one-pixel occurrence's 24 raster samples: they are charged
+    // to total work only, so the occurrence still paints and is flattened.
     let limits = ResourceLimits::builder()
-        .max_element_work_units(31)
+        .max_element_work_units(23)
         .build()
         .expect("element work limit is valid");
     let request = RenderRequest::builder(OutputFormat::Png)
         .resource_limits(limits)
         .build()
         .expect("PNG request is valid");
+    let scene = image_scene(&gif, "image/gif", 1, 1);
 
-    let outcome = render_with_request(&image_scene(&gif, "image/gif", 1, 1), &request);
+    let outcome = render_with_request(&scene, &request);
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
     assert_eq!(
         outcome.report().diagnostics()[0].code(),
-        DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
+        DiagnosticCode::IMAGE_ANIMATION_FLATTENED
+    );
+    assert_eq!(
+        outcome.artifact().bytes(),
+        render(&scene, OutputFormat::Png).artifact().bytes()
     );
 }

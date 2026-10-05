@@ -61,6 +61,18 @@ each one at runtime.
   can use diagnosed raster fallback. Multi-page, tagged, and archival PDF formats
   are outside the initial scope.
 
+## Resource limits
+
+- PNG work is charged from each element's device-space bounding box, not the
+  pixels it paints, so long diagonal arrows and lines cost far more than their
+  strokes take to draw. A large diagram of them at `--scale 2` can fail with
+  `resource.total-work-exceeded` under the default limits. Library callers can
+  raise `max_total_work_units` up to its absolute maximum; the CLI has no limit
+  options, so use a lower `--scale` or `--max-dimension`.
+- The default limits bound one render to a few seconds of CPU on a current
+  core for hostile input. Services that render untrusted scenes concurrently
+  should still apply their own timeout and concurrency limits.
+
 ## Coverage and issue references
 
 The test suite includes reference comparisons, exact snapshots, resource limits,

@@ -3,7 +3,7 @@ use std::fs;
 use crate::common::lower_hex;
 use crate::common::pdf_inspect::{declares_base_font, pdf_actual_text, pdf_text};
 use crate::common::raster::decode_png;
-use crate::common::render::{render, render_with_request};
+use crate::common::render::{render, render_with_request, trailing_work_charges};
 use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
 use crate::common::svg::{font_family_attribute, EXCALIFONT_FAMILIES};
@@ -316,35 +316,34 @@ fn basic_latin_svg_leaves_line_shaping_and_alignment_to_the_viewer() {
 fn png_text_coverage_uses_the_transformed_glyph_rectangle() {
     let scene = focused_scene();
     let unconstrained = render(&scene, OutputFormat::Png);
-    // PNG charges the glyph coverage raster on top of the shaping work every
-    // format shares, so its boundary sits above the SVG one.
-    let coverage_work = element_work_boundary(&scene, OutputFormat::Png);
-    assert!(coverage_work > element_work_boundary(&scene, OutputFormat::Svg));
+    // PNG charges the glyph coverage raster to total work only, so the
+    // element work boundary is the shaping work every format shares.
+    let shaping_work = element_work_boundary(&scene, OutputFormat::Png);
+    assert_eq!(
+        shaping_work,
+        element_work_boundary(&scene, OutputFormat::Svg)
+    );
 
-    let equality = render_with_work_limit(&scene, OutputFormat::Png, coverage_work);
+    let equality = render_with_work_limit(&scene, OutputFormat::Png, shaping_work);
     assert!(equality.report().is_empty());
     assert_eq!(
         equality.artifact().bytes(),
         unconstrained.artifact().bytes()
     );
 
-    let crossing = render_with_work_limit(&scene, OutputFormat::Png, coverage_work - 1);
-    let [diagnostic] = crossing.report().diagnostics() else {
-        panic!("PNG glyph coverage crossing has one diagnostic");
-    };
-    assert_eq!(
-        diagnostic.code(),
-        DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
-    );
-    let descriptor = serde_json::to_value(diagnostic).expect("coverage diagnostic serializes");
-    assert_eq!(descriptor["details"]["configured"], coverage_work - 1);
-    let attempted = descriptor["details"]["measurement"]["value"]
-        .as_u64()
-        .expect("coverage attempt is an integer");
-    assert_eq!(attempted, coverage_work);
+    // The coverage is the text's own total-work event, followed only by the
+    // canvas-wide encoding events, at 16 samples per pixel of the rotated
+    // glyph rectangle rather than of the whole surface.
+    let charges = trailing_work_charges(&scene, || RenderRequest::builder(OutputFormat::Png), 3);
+    let coverage = &charges[2];
+    assert_eq!(coverage.element_id.as_deref(), Some("text"));
+    assert_eq!(coverage.json_pointer, "/elements/0");
+    assert_eq!(coverage.units % 16, 0);
+    let decoded = decode_png(unconstrained.artifact().bytes());
+    assert_eq!((decoded.width, decoded.height), (118, 102));
     assert!(
-        attempted < 200_000,
-        "coverage must not charge the 118x102 full surface"
+        (1..118 * 102).contains(&(coverage.units / 16)),
+        "coverage must not charge the 118x102 full surface: {coverage:?}"
     );
 }
 
@@ -411,8 +410,9 @@ fn render_with_work_limit(
 }
 
 /// More probes than the pipeline has stages that meter element work (shared
-/// resolution, projection and the PNG raster), so a probe that keeps crossing
-/// is a metering change rather than a slow convergence.
+/// resolution and projection; PNG raster samples go to total work only), so a
+/// probe that keeps crossing is a metering change rather than a slow
+/// convergence.
 const WORK_PROBE_LIMIT: usize = 8;
 
 /// The text element's semantic work for `format`: the smallest

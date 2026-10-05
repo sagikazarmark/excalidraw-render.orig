@@ -254,7 +254,6 @@ fn resolve_freedraw(
     ResolvedFreedraw {
         source_order: source.source_order,
         source: source.source,
-        base_element_work_units: common.base_element_work_units,
         path: freedraw.path,
         background_fill: freedraw.background_fill,
         frame_clips: membership.clips,

@@ -78,6 +78,12 @@ impl GenerationBudget {
         }
     }
 
+    /// The guard work spent so far, apart from the base work and the
+    /// operations it bounds.
+    pub(super) const fn spent_work(&self) -> u64 {
+        self.work
+    }
+
     pub(super) fn work(&mut self, amount: u64) -> Result<(), GenerationError> {
         let work = self.work.saturating_add(amount);
         let attempted = self.base_work_units.saturating_add(work);
@@ -1693,115 +1699,154 @@ fn fill_polygon(
     polygon.try_reserve_exact(points.len())?;
     polygon.extend_from_slice(points);
     let mut operations = Vec::new();
+    // Each filler consumes the scan lines as the scan yields them, so a fill
+    // over the element's ceilings stops before its lines accumulate.
+    let fill_line = |start: Point,
+                     end: Point,
+                     random: &mut Random,
+                     operations: &mut Vec<PathOperation>,
+                     budget: &mut GenerationBudget| {
+        double_line_mode(
+            start,
+            end,
+            roughness,
+            preserve_vertices,
+            false,
+            true,
+            random,
+            operations,
+            budget,
+        )
+    };
     match style {
         FillStyle::Solid => unreachable!("solid fills return above"),
         FillStyle::Hachure => {
-            let lines = hachure_lines(&mut polygon, gap, 49.0, roughness, random, budget)?;
-            render_fill_lines(
-                lines,
+            hachure_lines(
+                &mut polygon,
+                gap,
+                49.0,
                 roughness,
-                preserve_vertices,
                 random,
-                &mut operations,
                 budget,
+                |start, end, random, budget| fill_line(start, end, random, &mut operations, budget),
             )?;
         }
         FillStyle::CrossHatch => {
-            let lines = hachure_lines(&mut polygon, gap, 49.0, roughness, random, budget)?;
-            render_fill_lines(
-                lines,
-                roughness,
-                preserve_vertices,
-                random,
-                &mut operations,
-                budget,
-            )?;
-            let second_lines = hachure_lines(&mut polygon, gap, 139.0, roughness, random, budget)?;
-            render_fill_lines(
-                second_lines,
-                roughness,
-                preserve_vertices,
-                random,
-                &mut operations,
-                budget,
-            )?;
+            for angle in [49.0, 139.0] {
+                hachure_lines(
+                    &mut polygon,
+                    gap,
+                    angle,
+                    roughness,
+                    random,
+                    budget,
+                    |start, end, random, budget| {
+                        fill_line(start, end, random, &mut operations, budget)
+                    },
+                )?;
+            }
         }
         FillStyle::Zigzag => {
-            let lines = hachure_lines(&mut polygon, gap, 49.0, roughness, random, budget)?;
             let angle = -41.0_f64.to_radians();
             let delta_x = gap * 0.5 * cos(angle);
             let delta_y = gap * 0.5 * sin(angle);
-            let mut zigzags = Vec::new();
-            for (start, end) in lines {
-                if hypot(end.x - start.x, end.y - start.y) != 0.0 {
-                    budget.work(2)?;
-                    zigzags.try_reserve(2)?;
-                    zigzags.push((
-                        Point {
-                            x: start.x - delta_x,
-                            y: start.y + delta_y,
-                        },
-                        end,
-                    ));
-                    zigzags.push((
-                        Point {
-                            x: start.x + delta_x,
-                            y: start.y - delta_y,
-                        },
-                        end,
-                    ));
-                }
-            }
-            render_fill_lines(
-                zigzags,
+            hachure_lines(
+                &mut polygon,
+                gap,
+                49.0,
                 roughness,
-                preserve_vertices,
                 random,
-                &mut operations,
                 budget,
+                |start, end, random, budget| {
+                    if hypot(end.x - start.x, end.y - start.y) == 0.0 {
+                        return Ok(());
+                    }
+                    budget.work(2)?;
+                    let first = Point {
+                        x: start.x - delta_x,
+                        y: start.y + delta_y,
+                    };
+                    fill_line(first, end, random, &mut operations, budget)?;
+                    let second = Point {
+                        x: start.x + delta_x,
+                        y: start.y - delta_y,
+                    };
+                    fill_line(second, end, random, &mut operations, budget)
+                },
             )?;
         }
         FillStyle::ZigzagLine => {
             // `ZigZagLineFiller`: `zigzagOffset` is unset, so it equals the
             // gap, and the scan runs at `hachureGap + zigzagOffset`.
             let zigzag_offset = hachure_gap;
-            let lines = hachure_lines(
+            hachure_lines(
                 &mut polygon,
                 (hachure_gap + zigzag_offset).max(0.1),
                 49.0,
                 roughness,
                 random,
                 budget,
-            )?;
-            zigzag_line_fill(
-                lines,
-                zigzag_offset,
-                roughness,
-                preserve_vertices,
-                random,
-                &mut operations,
-                budget,
+                |start, end, random, budget| {
+                    zigzag_line(
+                        start,
+                        end,
+                        zigzag_offset,
+                        roughness,
+                        preserve_vertices,
+                        random,
+                        &mut operations,
+                        budget,
+                    )
+                },
             )?;
         }
         FillStyle::Dots => {
             // `DotFiller`: the scan runs at `hachureAngle` 0, so its lines are
             // vertical.
-            let lines = hachure_lines(&mut polygon, gap, 90.0, roughness, random, budget)?;
-            dots_fill(lines, options, random, &mut operations, budget)?;
+            let mut scatter = Random::new(options.seed);
+            hachure_lines(
+                &mut polygon,
+                gap,
+                90.0,
+                roughness,
+                random,
+                budget,
+                |start, end, random, budget| {
+                    dots_on_line(
+                        start,
+                        end,
+                        options,
+                        &mut scatter,
+                        random,
+                        &mut operations,
+                        budget,
+                    )
+                },
+            )?;
         }
         FillStyle::Dashed => {
             // `DashedFiller`: `dashOffset` and `dashGap` are unset, so both
             // are the unclamped `hachureGap`.
-            let lines = hachure_lines(&mut polygon, gap, 49.0, roughness, random, budget)?;
-            dashed_fill(
-                lines,
-                hachure_gap,
-                hachure_gap,
+            hachure_lines(
+                &mut polygon,
+                gap,
+                49.0,
                 roughness,
-                preserve_vertices,
                 random,
-                &mut operations,
                 budget,
+                |start, end, random, budget| {
+                    dashed_line(
+                        start,
+                        end,
+                        hachure_gap,
+                        hachure_gap,
+                        roughness,
+                        preserve_vertices,
+                        random,
+                        &mut operations,
+                        budget,
+                    )
+                },
             )?;
         }
     }
@@ -1830,12 +1875,13 @@ fn ordered_line(start: Point, end: Point) -> (Point, f64) {
     (first, alpha)
 }
 
-/// `DashedFiller.dashedLine`: each scan line is cut into `count` dashes of
+/// `DashedFiller.dashedLine`: a scan line is cut into `count` dashes of
 /// `offset` length separated by `gap`, centred on the line, each drawn as a
 /// double fill line from its start to its end.
 #[allow(clippy::too_many_arguments)]
-fn dashed_fill(
-    lines: Vec<(Point, Point)>,
+fn dashed_line(
+    start: Point,
+    end: Point,
     offset: f64,
     gap: f64,
     roughness: f64,
@@ -1844,43 +1890,43 @@ fn dashed_fill(
     operations: &mut Vec<PathOperation>,
     budget: &mut GenerationBudget,
 ) -> Result<(), GenerationError> {
-    for (start, end) in lines {
-        let length = line_length(start, end);
-        let count = (length / (offset + gap)).floor();
-        let start_offset = (length + gap - count * (offset + gap)) / 2.0;
-        let (first, alpha) = ordered_line(start, end);
-        let cos_alpha = cos(alpha);
-        let sin_alpha = sin(alpha);
-        for index in 0..dash_count(count) {
-            budget.work(1)?;
-            let index = index as f64;
-            let dash_start = index * (offset + gap);
-            let dash_end = dash_start + offset;
-            let dash = |distance: f64| Point {
-                x: first.x + distance * cos_alpha + start_offset * cos_alpha,
-                y: first.y + distance * sin_alpha + start_offset * sin_alpha,
-            };
-            double_line_mode(
-                dash(dash_start),
-                dash(dash_end),
-                roughness,
-                preserve_vertices,
-                false,
-                true,
-                random,
-                operations,
-                budget,
-            )?;
-        }
+    let length = line_length(start, end);
+    let count = (length / (offset + gap)).floor();
+    let start_offset = (length + gap - count * (offset + gap)) / 2.0;
+    let (first, alpha) = ordered_line(start, end);
+    let cos_alpha = cos(alpha);
+    let sin_alpha = sin(alpha);
+    for index in 0..dash_count(count) {
+        budget.work(1)?;
+        let index = index as f64;
+        let dash_start = index * (offset + gap);
+        let dash_end = dash_start + offset;
+        let dash = |distance: f64| Point {
+            x: first.x + distance * cos_alpha + start_offset * cos_alpha,
+            y: first.y + distance * sin_alpha + start_offset * sin_alpha,
+        };
+        double_line_mode(
+            dash(dash_start),
+            dash(dash_end),
+            roughness,
+            preserve_vertices,
+            false,
+            true,
+            random,
+            operations,
+            budget,
+        )?;
     }
     Ok(())
 }
 
-/// `ZigZagLineFiller.zigzagLines`: each scan line is walked in steps of twice
+/// `ZigZagLineFiller.zigzagLines`: a scan line is walked in steps of twice
 /// the zigzag offset, `Math.round(length / (2 * zo))` of them, and each step
 /// draws two double fill lines through a middle point raised at 45 degrees.
-fn zigzag_line_fill(
-    lines: Vec<(Point, Point)>,
+#[allow(clippy::too_many_arguments)]
+fn zigzag_line(
+    start: Point,
+    end: Point,
     zigzag_offset: f64,
     roughness: f64,
     preserve_vertices: bool,
@@ -1888,55 +1934,53 @@ fn zigzag_line_fill(
     operations: &mut Vec<PathOperation>,
     budget: &mut GenerationBudget,
 ) -> Result<(), GenerationError> {
-    for (start, end) in lines {
-        let length = line_length(start, end);
-        let count = ecmascript_round(length / (2.0 * zigzag_offset));
-        let (first, alpha) = ordered_line(start, end);
-        let cos_alpha = cos(alpha);
-        let sin_alpha = sin(alpha);
-        let diagonal = (2.0 * square(zigzag_offset)).sqrt();
-        let raised = alpha + std::f64::consts::FRAC_PI_4;
-        let cos_raised = cos(raised);
-        let sin_raised = sin(raised);
-        for index in 0..dash_count(count) {
-            budget.work(1)?;
-            let step_start = (index * 2) as f64 * zigzag_offset;
-            let step_end = ((index + 1) * 2) as f64 * zigzag_offset;
-            let step = Point {
-                x: first.x + step_start * cos_alpha,
-                y: first.y + step_start * sin_alpha,
-            };
-            let step_end = Point {
-                x: first.x + step_end * cos_alpha,
-                y: first.y + step_end * sin_alpha,
-            };
-            let middle = Point {
-                x: step.x + diagonal * cos_raised,
-                y: step.y + diagonal * sin_raised,
-            };
-            double_line_mode(
-                step,
-                middle,
-                roughness,
-                preserve_vertices,
-                false,
-                true,
-                random,
-                operations,
-                budget,
-            )?;
-            double_line_mode(
-                middle,
-                step_end,
-                roughness,
-                preserve_vertices,
-                false,
-                true,
-                random,
-                operations,
-                budget,
-            )?;
-        }
+    let length = line_length(start, end);
+    let count = ecmascript_round(length / (2.0 * zigzag_offset));
+    let (first, alpha) = ordered_line(start, end);
+    let cos_alpha = cos(alpha);
+    let sin_alpha = sin(alpha);
+    let diagonal = (2.0 * square(zigzag_offset)).sqrt();
+    let raised = alpha + std::f64::consts::FRAC_PI_4;
+    let cos_raised = cos(raised);
+    let sin_raised = sin(raised);
+    for index in 0..dash_count(count) {
+        budget.work(1)?;
+        let step_start = (index * 2) as f64 * zigzag_offset;
+        let step_end = ((index + 1) * 2) as f64 * zigzag_offset;
+        let step = Point {
+            x: first.x + step_start * cos_alpha,
+            y: first.y + step_start * sin_alpha,
+        };
+        let step_end = Point {
+            x: first.x + step_end * cos_alpha,
+            y: first.y + step_end * sin_alpha,
+        };
+        let middle = Point {
+            x: step.x + diagonal * cos_raised,
+            y: step.y + diagonal * sin_raised,
+        };
+        double_line_mode(
+            step,
+            middle,
+            roughness,
+            preserve_vertices,
+            false,
+            true,
+            random,
+            operations,
+            budget,
+        )?;
+        double_line_mode(
+            middle,
+            step_end,
+            roughness,
+            preserve_vertices,
+            false,
+            true,
+            random,
+            operations,
+            budget,
+        )?;
     }
     Ok(())
 }
@@ -1951,7 +1995,7 @@ fn dash_count(count: f64) -> u64 {
     }
 }
 
-/// `DotFiller.dotsOnLines`: along each vertical scan line, `ceil(length /
+/// `DotFiller.dotsOnLines`: along one vertical scan line, `ceil(length /
 /// gap) - 1` dots a gap apart, centred on the line's remainder, each a Rough.js
 /// ellipse of `fillWeight` diameter whose centre is scattered by up to a
 /// quarter gap in each axis.
@@ -1963,9 +2007,11 @@ fn dash_count(count: f64) -> u64 {
 /// the stream the reference consumes for the dot ellipses is untouched, so the
 /// ellipses are the reference's own, and the centres are one deterministic
 /// sample of the reference's jitter (#137).
-fn dots_fill(
-    lines: Vec<(Point, Point)>,
+fn dots_on_line(
+    start: Point,
+    end: Point,
     options: FillOptions,
+    scatter: &mut Random,
     random: &mut Random,
     operations: &mut Vec<PathOperation>,
     budget: &mut GenerationBudget,
@@ -1973,22 +2019,19 @@ fn dots_fill(
     let gap = (options.source_stroke_width * 4.0).max(0.1);
     let fill_weight = options.source_stroke_width / 2.0;
     let radius = gap / 4.0;
-    let mut scatter = Random::new(options.seed);
-    for (start, end) in lines {
-        let length = line_length(start, end);
-        let count = (length / gap).ceil() - 1.0;
-        let offset = length - count * gap;
-        let x = (start.x + end.x) / 2.0 - gap / 4.0;
-        let min_y = start.y.min(end.y);
-        for index in 0..dash_count(count) {
-            budget.work(1)?;
-            let y = min_y + offset + index as f64 * gap;
-            let center = Point {
-                x: (x - radius) + scatter.next() * 2.0 * radius,
-                y: (y - radius) + scatter.next() * 2.0 * radius,
-            };
-            dot_ellipse(center, fill_weight, options, random, operations, budget)?;
-        }
+    let length = line_length(start, end);
+    let count = (length / gap).ceil() - 1.0;
+    let offset = length - count * gap;
+    let x = (start.x + end.x) / 2.0 - gap / 4.0;
+    let min_y = start.y.min(end.y);
+    for index in 0..dash_count(count) {
+        budget.work(1)?;
+        let y = min_y + offset + index as f64 * gap;
+        let center = Point {
+            x: (x - radius) + scatter.next() * 2.0 * radius,
+            y: (y - radius) + scatter.next() * 2.0 * radius,
+        };
+        dot_ellipse(center, fill_weight, options, random, operations, budget)?;
     }
     Ok(())
 }
@@ -2070,30 +2113,6 @@ fn dot_ellipse(
     Ok(())
 }
 
-fn render_fill_lines(
-    lines: Vec<(Point, Point)>,
-    roughness: f64,
-    preserve_vertices: bool,
-    random: &mut Random,
-    operations: &mut Vec<PathOperation>,
-    budget: &mut GenerationBudget,
-) -> Result<(), GenerationError> {
-    for (start, end) in lines {
-        double_line_mode(
-            start,
-            end,
-            roughness,
-            preserve_vertices,
-            false,
-            true,
-            random,
-            operations,
-            budget,
-        )?;
-    }
-    Ok(())
-}
-
 #[derive(Clone, Copy)]
 struct Edge {
     minimum_y: f64,
@@ -2109,7 +2128,13 @@ fn hachure_lines(
     roughness: f64,
     random: &mut Random,
     budget: &mut GenerationBudget,
-) -> Result<Vec<(Point, Point)>, GenerationError> {
+    mut line: impl FnMut(
+        Point,
+        Point,
+        &mut Random,
+        &mut GenerationBudget,
+    ) -> Result<(), GenerationError>,
+) -> Result<(), GenerationError> {
     budget.coordinate(gap)?;
     let radians = angle.to_radians();
     let (sin, cos) = sin_cos(radians);
@@ -2161,10 +2186,9 @@ fn hachure_lines(
             .then(first.x.total_cmp(&second.x))
             .then(first.maximum_y.total_cmp(&second.maximum_y))
     });
-    let mut lines = Vec::new();
     let Some(first_edge) = edges.first() else {
         rotate_points(points, -angle);
-        return Ok(lines);
+        return Ok(());
     };
     let mut y = first_edge.minimum_y;
     let step = if roughness >= 1.0 && random.next() > 0.7 {
@@ -2202,8 +2226,7 @@ fn hachure_lines(
                 budget.point(start)?;
                 budget.point(end)?;
                 budget.work(1)?;
-                lines.try_reserve(1)?;
-                lines.push((start, end));
+                line(start, end, random, budget)?;
             }
         }
         let next_y = y + step;
@@ -2226,7 +2249,7 @@ fn hachure_lines(
     }
     rotate_points(points, -angle);
     budget.points(points)?;
-    Ok(lines)
+    Ok(())
 }
 
 fn rotate_points(points: &mut [Point], degrees: f64) {

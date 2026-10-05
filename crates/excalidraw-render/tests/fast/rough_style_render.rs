@@ -1,5 +1,5 @@
 use excalidraw_render::{
-    DiagnosticCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
+    DiagnosticCode, ErrorCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
 use sha2::{Digest, Sha256};
 
@@ -259,4 +259,74 @@ fn rounded_solid_fill_geometry_budget_counts_only_retained_operations() {
     let descriptor = serde_json::to_value(diagnostic).unwrap();
     assert_eq!(descriptor["details"]["configured"], 40);
     assert_eq!(descriptor["details"]["measurement"]["value"], 41);
+}
+
+/// A cross-hatch rectangle that is cheap in geometry and expensive to scan: at
+/// roughness 0 the scan steps every scene unit of the rotated height but a
+/// sub-unit gap emits only its first line, so each pass makes about 130,000
+/// guard steps for two lines.
+fn scan_heavy_scene() -> SceneDocument {
+    SceneDocument::parse(
+        br##"{"type":"excalidraw","version":2,"elements":[{"id":"scan","type":"rectangle",
+        "x":0,"y":0,"width":100000,"height":100000,"strokeWidth":1e-9,"roughness":0,
+        "backgroundColor":"#1971c2","fillStyle":"cross-hatch","seed":5,"updated":1}],
+        "appState":{},"files":{}}"##,
+    )
+    .unwrap()
+}
+
+fn work_limited_svg(element: u64, total: u64) -> RenderRequest {
+    RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(
+            ResourceLimits::builder()
+                .max_element_work_units(element)
+                .max_asset_work_units(total)
+                .max_total_work_units(total)
+                .build()
+                .unwrap(),
+        )
+        .build()
+        .unwrap()
+}
+
+#[test]
+fn admitted_rough_generation_guard_work_is_charged_to_total_work() {
+    let scene = scan_heavy_scene();
+    let outcome = Renderer::new()
+        .render(
+            &scene,
+            &RenderRequest::builder(OutputFormat::Svg).build().unwrap(),
+        )
+        .unwrap();
+    assert!(outcome.report().is_empty());
+
+    // The outline's geometry, the scene and the artifact cost a few thousand
+    // units; the two scans' guard steps, at weight 8, cost millions.
+    let error = Renderer::new()
+        .render(&scene, &work_limited_svg(1_500_000, 1_500_000))
+        .expect_err("the scan's guard work exceeds total work");
+    assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_WORK_EXCEEDED);
+    assert_eq!(error.element_id(), Some("scan"));
+}
+
+#[test]
+fn rejected_rough_generation_guard_work_is_charged_to_total_work() {
+    let scene = scan_heavy_scene();
+    // The element ceiling stops the scan and replaces the outline, whose label
+    // costs millions in font subsetting; but the 100,000 guard units the scan
+    // spent before stopping cost 800,000 first, so a smaller total fails there.
+    let replaced = Renderer::new()
+        .render(&scene, &work_limited_svg(100_000, 20_000_000))
+        .unwrap();
+    assert!(replaced
+        .report()
+        .diagnostics()
+        .iter()
+        .any(|diagnostic| diagnostic.element_id() == Some("scan")));
+
+    let error = Renderer::new()
+        .render(&scene, &work_limited_svg(100_000, 700_000))
+        .expect_err("a rejected outline still pays its guard work");
+    assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_WORK_EXCEEDED);
+    assert_eq!(error.element_id(), Some("scan"));
 }

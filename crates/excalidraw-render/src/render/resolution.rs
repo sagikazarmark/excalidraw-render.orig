@@ -650,6 +650,7 @@ impl RenderSession {
             let mut local_crossing =
                 outline_local_crossing(&source, request, 0, base_element_work_units);
             let mut rejected_geometry_segments = 0;
+            let mut generation_work = 0;
             let geometry = if has_outline && local_crossing.is_none() {
                 let roughness = adjusted_roughness(&source);
                 let mut budget = rough::GenerationBudget::new(
@@ -690,6 +691,7 @@ impl RenderSession {
                     _ => generate_rough(&source, roughness, &mut budget)
                         .map(GeneratedGeometry::Rough),
                 };
+                generation_work = budget.spent_work();
                 match generated {
                     Ok(geometry) => Some(geometry),
                     Err(rough::GenerationError::Coordinate {
@@ -720,6 +722,22 @@ impl RenderSession {
             } else {
                 None
             };
+            // Generation guard work was performed whether or not the outline
+            // is admitted, so it commits to the aggregate either way: the
+            // element ceiling bounds one outline, total work bounds them all.
+            if generation_work != 0 {
+                self.charge_work(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::SharedSemanticResolution,
+                        "rough_generation_guard",
+                        source.source.pointer(),
+                    )
+                    .with_element_id(Some(source.source.id()))
+                    .with_local_owner(Some(source.source.id())),
+                    generation_work.saturating_mul(8),
+                )?;
+            }
             let geometry_segments = geometry
                 .as_ref()
                 .map_or(rejected_geometry_segments, |geometry| {

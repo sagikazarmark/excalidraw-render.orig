@@ -1168,7 +1168,6 @@ pub(super) struct ResolvedLabelMask {
 pub(super) struct ResolvedFreedraw {
     source_order: u64,
     pub(super) source: NormalizedElementSource,
-    pub(super) base_element_work_units: u64,
     pub(super) path: freedraw::Path,
     pub(super) background_fill: Option<rough::Fill>,
     pub(super) frame_clips: Vec<ResolvedClip>,

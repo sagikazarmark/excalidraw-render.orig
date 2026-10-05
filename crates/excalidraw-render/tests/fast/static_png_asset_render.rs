@@ -20,7 +20,7 @@ use crate::common::image_scene::{
 };
 use crate::common::pdf_inspect::pdf_text;
 use crate::common::raster::decode_png;
-use crate::common::render::{render, render_with_request};
+use crate::common::render::{render, render_with_request, trailing_work_charges, WorkCharge};
 use crate::common::svg::{image_symbol, image_use};
 
 const PNG_BASE64: &str =
@@ -166,33 +166,38 @@ fn apng_validation_charges_each_additional_frame_without_deriving_svg_pixels() {
 }
 
 #[test]
-fn png_bilinear_projection_charges_twelve_samples_per_occurrence_pixel() {
-    let scene = fixture_png_scene();
-    for (limit, expected_diagnostics) in [(32, 0), (31, 1)] {
-        let limits = ResourceLimits::builder()
-            .max_element_work_units(limit)
-            .build()
-            .expect("element-work limit is valid");
-        let request = RenderRequest::builder(OutputFormat::Png)
-            .resource_limits(limits)
-            .build()
-            .expect("PNG request is valid");
-        let outcome = render_with_request(&scene, &request);
-
-        assert_eq!(outcome.report().diagnostics().len(), expected_diagnostics);
-        if expected_diagnostics == 1 {
-            assert_eq!(
-                outcome.report().diagnostics()[0].code(),
-                DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
-            );
-        }
+fn png_image_raster_samples_charge_total_work_per_occurrence_pixel() {
+    // 12 bilinear projection, 4 composite and 8 paint-mask samples per
+    // occurrence pixel, as the occurrence's own total-work event: only the
+    // canvas-wide encoding events follow it, and crossing it is the fatal
+    // total-work failure attributed to the image.
+    for width in 1..=3 {
+        let scene = image_scene_from_data_url(
+            &format!("data:image/png;base64,{PNG_BASE64}"),
+            "image/png",
+            width,
+            1,
+        );
+        let charges =
+            trailing_work_charges(&scene, || RenderRequest::builder(OutputFormat::Png), 3);
+        assert_eq!(
+            charges[2],
+            WorkCharge {
+                units: u64::from(width) * (12 + 4 + 8),
+                element_id: Some("image".to_owned()),
+                json_pointer: "/elements/0".to_owned(),
+            }
+        );
     }
 }
 
 #[test]
-fn png_image_local_work_includes_projection_mask_and_composite_samples() {
+fn png_image_raster_samples_never_cross_the_element_work_limit() {
+    // The one-pixel occurrence's 24 raster samples are checked against the
+    // aggregate only, so even a one-unit element limit paints it.
     let scene = fixture_png_scene();
-    for (limit, expected_diagnostics) in [(32, 0), (31, 1)] {
+    let unconstrained = render(&scene, OutputFormat::Png);
+    for limit in [1, 23, 24] {
         let limits = ResourceLimits::builder()
             .max_element_work_units(limit)
             .build()
@@ -203,13 +208,8 @@ fn png_image_local_work_includes_projection_mask_and_composite_samples() {
             .expect("PNG request is valid");
         let outcome = render_with_request(&scene, &request);
 
-        assert_eq!(outcome.report().diagnostics().len(), expected_diagnostics);
-        if expected_diagnostics == 1 {
-            assert_eq!(
-                outcome.report().diagnostics()[0].code(),
-                DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
-            );
-        }
+        assert!(outcome.report().is_empty());
+        assert_eq!(outcome.artifact().bytes(), unconstrained.artifact().bytes());
     }
 }
 

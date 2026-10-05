@@ -2786,7 +2786,7 @@ or target-specific preset.
 | `max_output_bytes` | 128 MiB | 512 MiB |
 | `max_element_work_units` | 67,108,864 | 268,435,456 |
 | `max_asset_work_units` | 134,217,728 | 536,870,912 |
-| `max_total_work_units` | 1,073,741,824 | 4,294,967,296 |
+| `max_total_work_units` | 4,294,967,296 | 17,179,869,184 |
 
 MiB means 1,048,576 bytes. Equality is accepted. Checked `u64` arithmetic is
 mandatory; overflow is a crossing. Defaults and maxima remain invariant across
@@ -2940,7 +2940,9 @@ element; occurrence admission belongs to that occurrence's asset owner;
 intrinsic work belongs to the semantic identity; nested projection belongs to
 the parent identity; optional metadata is total-only. Scene-global/container
 and output work is total-only. Events matching several rows pay every row but
-retain one owner.
+retain one owner. An owner's local ceiling bounds only that owner's semantic
+work: PNG raster sample operations keep their element as owner for
+attribution but are checked against the aggregate alone (below).
 
 The revision-1 work ledger is:
 
@@ -2958,6 +2960,7 @@ The revision-1 work ledger is:
 | 8 | Each original JSON node/member |
 | 8 | Each generated normalized field |
 | 8 | Each format-plan operation |
+| 8 | Each Rough generation guard step: fill scanline, edge visit, scan line, dash, dot, zigzag step and polygon point |
 | 8 | Each retained diagnostic occurrence |
 | 16 | Each nested XML/CSS token |
 | 16 | Each nested SVG element/text node |
@@ -2971,6 +2974,14 @@ The revision-1 work ledger is:
 | 32 | Each line-break step |
 | 32 | Each font fallback probe |
 | 32 | Each glyph-outline command |
+
+Rough generation is bounded streaming: its guard steps stop one past the
+element work ceiling, so they are performed before the outline is admitted or
+rejected. Their weighted sum commits once per outline, after generation, in a
+`rough_generation_guard` event the element owns, whether the outline is
+admitted or locally rejected; a rejected outline therefore still pays the
+guard work it performed, which is how `max_total_work_units` bounds generation
+across elements.
 
 A font fallback probe is one face consultation of the per-scalar chain in
 8.3.1. Each shaped scalar occurrence pays its own probes; once the family's
@@ -3067,7 +3078,12 @@ Raster operations cumulatively charge `P`, `2P`, `4P`, `6P`, `8P`, `12P`,
 nearest projection, alpha-mask generation, bilinear projection, vector/glyph
 coverage, and bicubic projection respectively. `P` is the clipped conservative
 device-space integer bounding rectangle area using floor minima, ceil maxima,
-and surface clamping.
+and surface clamping. A PNG element's raster sample operations (vector/glyph
+coverage, image projection and composite, and its own paint mask) keep that
+element as local owner for attribution but are checked against
+`max_total_work_units` only, never `max_element_work_units`: `P` is clamped to
+a surface `max_raster_surface_pixels` already admitted, so a per-element
+ceiling would omit elements the admitted canvas contains.
 
 A PNG frame clip mask is generated once per distinct frame clip set in a target,
 in first-use element order and before any element projection. Its `P` is the
@@ -3162,7 +3178,9 @@ For jointly evaluated occurrence bytes, geometry, text, and decoded pixels,
 aggregate crossing wins and neither observation nor local admission commits. If
 only local crosses, the aggregate observation commits, local admission does not,
 and local recovery begins. If neither crosses, both commit. Rejected local work
-commits neither local nor aggregate work because it is not performed.
+commits neither local nor aggregate work because it is not performed; the
+Rough generation guard work it did perform commits as described in the work
+ledger.
 
 At one source point, fatal aggregate crossings beat local recovery. Fatal
 precedence is scene bytes, elements, asset entries, total asset bytes,

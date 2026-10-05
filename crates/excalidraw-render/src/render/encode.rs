@@ -6,11 +6,10 @@
 //! that plan implies. They stay `RenderSession` methods because charging the
 //! resource meter is the session's job, not the plan's.
 
-use crate::diagnostic_registry::LocalLimit;
 use crate::resource_accounting::{
     ResourceContext, ResourceDelta, ResourcePhase, ResourceRecordKind,
 };
-use crate::{ErrorCode, RenderError, RenderRequest, ResourceValue, SceneDocument};
+use crate::{ErrorCode, RenderError, RenderRequest, SceneDocument};
 
 use super::font_demand::{
     build_svg_font_bundle, release_svg_font_encoding_records, svg_font_demand,
@@ -18,7 +17,7 @@ use super::font_demand::{
 };
 use super::pdf::PdfPlan;
 use super::png::PngPlan;
-use super::resolve::{ElementLocalCrossing, ResolvedScene, SemanticWorkingRecord};
+use super::resolve::{ResolvedScene, SemanticWorkingRecord};
 use super::svg::SvgPlan;
 use super::{svg_fonts, RenderResourceAccount, RenderSession};
 
@@ -218,7 +217,7 @@ impl RenderSession {
         request: &RenderRequest,
         semantic_working: &[SemanticWorkingRecord],
     ) -> Result<(), RenderError> {
-        let mut plan = PngPlan::new(resolved, request, &self.svg_trees)
+        let plan = PngPlan::new(resolved, request, &self.svg_trees)
             .map_err(|error| self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error))?;
         self.release_semantic_working(request, semantic_working, false)?;
         let pixels = u64::from(plan.width()).saturating_mul(u64::from(plan.height()));
@@ -406,89 +405,40 @@ impl RenderSession {
                     "/elements",
                 ));
             }
-            let element_work = plan
-                .base_element_work_units(index)
-                .ok_or_else(|| {
-                    self.internal_failure(
-                        request.format(),
-                        "PNG element work source is missing",
-                        "/elements",
-                    )
-                })?
-                .saturating_add(raster_work);
-            let element_work_limit = request.resource_limits().max_element_work_units();
-            if element_work > element_work_limit {
-                let diagnostic = ElementLocalCrossing {
-                    limit: LocalLimit::ElementWorkUnits,
-                    configured: ResourceValue::Integer(element_work_limit),
-                    attempted: crate::Measurement::Attempted {
-                        value: ResourceValue::Integer(element_work),
-                    },
-                    pointer_field: None,
-                    message: "outline omitted because its semantic work exceeds its limit",
-                }
-                .diagnostic(request.format(), element_id, json_pointer)
-                .map_err(|_| {
-                    self.memory_failure(request, "compatibility_report", "local_recovery")
-                })?;
-                self.retain_diagnostic(
+            // Raster samples are checked against the aggregate only: `P` is
+            // clamped to the surface `max_raster_surface_pixels` admitted, so a
+            // per-element ceiling would omit elements that canvas admits.
+            if let Some(mask_pixels) = paint_mask_pixels {
+                self.transact(
                     request,
-                    ResourcePhase::ProjectionAndFallback,
-                    "outline_local_resource_recovery",
-                    diagnostic,
+                    ResourceContext::new(
+                        ResourcePhase::ProjectionAndFallback,
+                        "paint_mask_samples",
+                        json_pointer,
+                    )
+                    .with_element_id(element_id)
+                    .with_local_owner(element_id)
+                    .with_record(ResourceRecordKind::RasterMaskSurface),
+                    ResourceDelta {
+                        rasterized_pixels: mask_pixels,
+                        total_work_units: mask_work,
+                        ..ResourceDelta::default()
+                    },
                 )?;
+            }
+            self.charge_work(request, context, projection_work)?;
+            if composite_work != 0 {
                 self.charge_work(
                     request,
                     ResourceContext::new(
                         ResourcePhase::ProjectionAndFallback,
-                        "png_element_local_omission",
+                        "image_composite_samples",
                         json_pointer,
                     )
                     .with_element_id(element_id)
                     .with_local_owner(element_id),
-                    8,
+                    composite_work,
                 )?;
-                self.discard_pending_png_animation_diagnostic(request, element_id)?;
-                if !plan.omit_element(index) {
-                    return Err(self.internal_failure(
-                        request.format(),
-                        "PNG omitted source operation is missing",
-                        "/elements",
-                    ));
-                }
-            } else {
-                if let Some(mask_pixels) = paint_mask_pixels {
-                    self.transact(
-                        request,
-                        ResourceContext::new(
-                            ResourcePhase::ProjectionAndFallback,
-                            "paint_mask_samples",
-                            json_pointer,
-                        )
-                        .with_element_id(element_id)
-                        .with_local_owner(element_id)
-                        .with_record(ResourceRecordKind::RasterMaskSurface),
-                        ResourceDelta {
-                            rasterized_pixels: mask_pixels,
-                            total_work_units: mask_work,
-                            ..ResourceDelta::default()
-                        },
-                    )?;
-                }
-                self.charge_work(request, context, projection_work)?;
-                if composite_work != 0 {
-                    self.charge_work(
-                        request,
-                        ResourceContext::new(
-                            ResourcePhase::ProjectionAndFallback,
-                            "image_composite_samples",
-                            json_pointer,
-                        )
-                        .with_element_id(element_id)
-                        .with_local_owner(element_id),
-                        composite_work,
-                    )?;
-                }
             }
         }
 

@@ -1013,21 +1013,15 @@ fn animation_flattening_contract_in_every_format() {
                 )
                 .build()
                 .unwrap();
+            // PNG raster samples are charged to total work only, so a tiny
+            // element work limit still paints, and so flattens, the occurrence.
             let limited_rows = match format {
                 OutputFormat::Svg => json!([]),
-                OutputFormat::Pdf => json!([animation_expected(
+                OutputFormat::Pdf | OutputFormat::Png => json!([animation_expected(
                     "z-first",
                     "/elements/0/fileId",
                     "asset/~",
                     mime
-                )]),
-                OutputFormat::Png => json!([expected(
-                    "resource.element-work-exceeded",
-                    "warning",
-                    json!(["visual"]),
-                    json!("z-first"),
-                    "/elements/0",
-                    json!({"kind":"resource_limit","field":"max_element_work_units","configured":31,"value_kind":"work_units","measurement":{"kind":"attempted","value":28808},"recovery":"omitted"})
                 )]),
                 _ => unreachable!(),
             };
@@ -2328,12 +2322,9 @@ fn font_omission_and_zero_extent_contract() {
                     json!({"kind":"resource_limit","field":field,"configured":configured,"value_kind":kind,"measurement":{"kind":"attempted","value":value},"recovery":"omitted"}),
                 )
             };
-            let mut rows = vec![row(attempted)];
-            // PNG additionally rejects the remaining outline's pixel work.
-            if format == OutputFormat::Png && kind == "work_units" {
-                rows.push(row(1635904));
-            }
-            assert_report_with_request(&embedded, &request, json!(rows));
+            // The remaining outline still paints in PNG: its raster samples are
+            // charged to total work only, never against the element limit.
+            assert_report_with_request(&embedded, &request, json!([row(attempted)]));
         }
         let zero_width = scene(
             json!([{"id":"embed","type":"embeddable","link":"https://example.com/😀\u{10000}","width":0,"height":100,"seed":1,"updated":1,"roughness":0}]),

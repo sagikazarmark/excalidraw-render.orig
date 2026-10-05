@@ -343,8 +343,8 @@ fn semantic_resource_limits_expose_exact_defaults_and_absolute_maxima() {
     assert_eq!(maxima.max_element_work_units(), 268_435_456);
     assert_eq!(defaults.max_asset_work_units(), 134_217_728);
     assert_eq!(maxima.max_asset_work_units(), 536_870_912);
-    assert_eq!(defaults.max_total_work_units(), 1_073_741_824);
-    assert_eq!(maxima.max_total_work_units(), 4_294_967_296);
+    assert_eq!(defaults.max_total_work_units(), 4_294_967_296);
+    assert_eq!(maxima.max_total_work_units(), 17_179_869_184);
 }
 
 #[test]
