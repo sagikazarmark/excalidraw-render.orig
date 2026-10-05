@@ -22,8 +22,9 @@ number, not only new metadata.
   repository (`excalidraw-render.orig`) and making it public keeps the issue
   numbers that commits, ADRs and docs cite; a new repository starts its own
   numbering, and those `#N` references then point at unrelated issues.
-- The [known limitations](docs/known-limitations.md) cite no issue numbers.
-  Open public issues for the follow-ups worth tracking there.
+- The [known limitations](docs/known-limitations.md) link their tracking
+  issues by full URL under the new repository name, so they resolve only after
+  the rename. Check them once the repository is public.
 
 ## 1. Prepare the candidate
 

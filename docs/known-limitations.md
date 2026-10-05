@@ -11,7 +11,8 @@ each one at runtime.
 - Linux x86-64 GNU is the release-qualified native target. The prebuilt binary's
   glibc requirement follows the pinned release builder and is recorded with its archive.
 - Browser WASM is experimental. Four PNG cases differ from native by one channel
-  value in one or two pixels due to `tiny-skia-path` cubic-root math.
+  value in one or two pixels due to `tiny-skia-path` cubic-root math
+  ([#178](https://github.com/sagikazarmark/excalidraw-render/issues/178)).
   Tests retain exact known output measurements; this is not a general allowance
   for new differences. Output lengths also affect three resource traces.
 - Other operating systems and architectures are not release-qualified.
@@ -30,9 +31,12 @@ each one at runtime.
 
 ## Images and rendering
 
-- AVIF is unsupported and follows unsupported-image recovery.
+- AVIF is unsupported and follows unsupported-image recovery
+  ([#68](https://github.com/sagikazarmark/excalidraw-render/issues/68)).
 - Some less common JPEG sampling configurations and CMYK/YCCK conversions differ
-  from Chromium. HDR-base JPEG gain-map projection is incomplete.
+  from Chromium ([#187](https://github.com/sagikazarmark/excalidraw-render/issues/187)).
+  HDR-base JPEG gain-map projection is incomplete
+  ([#190](https://github.com/sagikazarmark/excalidraw-render/issues/190)).
 - The pinned JPEG decoder can accept truncated entropy before a retained scan
   marker even in strict mode. Such malformed JPEGs can produce incorrect
   pixels instead of decode-failure recovery. Marker/framing checks alone do not
@@ -40,12 +44,16 @@ each one at runtime.
   memory corruption. `jpeg_release_limitation` exercises the public API on a
   bounded 9×9 truncated-scan fixture in all three formats and requires repeatable
   output; it deliberately records the unresolved defect rather than claiming
-  malformed data decodes correctly.
-- Fractional PNG stroke coverage has remaining browser differences.
+  malformed data decodes correctly
+  ([#193](https://github.com/sagikazarmark/excalidraw-render/issues/193)).
+- Fractional PNG stroke coverage has remaining browser differences
+  ([#194](https://github.com/sagikazarmark/excalidraw-render/issues/194)).
 - A lossless WebP with bitstream alpha, a clear VP8X alpha flag, and a transforming
-  ICC profile has a known color mismatch.
+  ICC profile has a known color mismatch
+  ([#197](https://github.com/sagikazarmark/excalidraw-render/issues/197)).
 - Emoji render as monochrome Noto Emoji outlines, not the colour emoji a
-  browser draws from system fonts; an opt-in colour face is planned.
+  browser draws from system fonts; an opt-in colour face is planned
+  ([#233](https://github.com/sagikazarmark/excalidraw-render/issues/233)).
 - Text is drawn only with the bundled fonts. A browser falls back to system
   fonts; this renderer draws `?` for a character none of them covers and
   reports `font.missing-glyph`. The bundled fonts cover Latin, Greek and
