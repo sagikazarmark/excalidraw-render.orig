@@ -78,6 +78,12 @@ impl GenerationBudget {
         }
     }
 
+    /// The guard work spent so far, apart from the base work and the
+    /// operations it bounds.
+    pub(super) const fn spent_work(&self) -> u64 {
+        self.work
+    }
+
     pub(super) fn work(&mut self, amount: u64) -> Result<(), GenerationError> {
         let work = self.work.saturating_add(amount);
         let attempted = self.base_work_units.saturating_add(work);

@@ -184,7 +184,7 @@ define_resource_limits! {
     /// Deterministic work spent on any one asset.
     max_asset_work_units: u64 = 134_217_728, 536_870_912, integer, "work units";
     /// Deterministic work spent on the whole render; at least `max_element_work_units` and `max_asset_work_units`.
-    max_total_work_units: u64 = 1_073_741_824, 4_294_967_296, integer, "work units";
+    max_total_work_units: u64 = 4_294_967_296, 17_179_869_184, integer, "work units";
 }
 
 impl ResourceLimitsBuilder {
