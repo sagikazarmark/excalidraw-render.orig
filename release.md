@@ -22,8 +22,9 @@ number, not only new metadata.
   repository (`excalidraw-render.orig`) and making it public keeps the issue
   numbers that commits, ADRs and docs cite; a new repository starts its own
   numbering, and those `#N` references then point at unrelated issues.
-- The [known limitations](docs/known-limitations.md) cite no issue numbers.
-  Open public issues for the follow-ups worth tracking there.
+- The [known limitations](docs/known-limitations.md) link their tracking
+  issues by full URL under the new repository name, so they resolve only after
+  the rename. Check them once the repository is public.
 
 ## 1. Prepare the candidate
 
@@ -73,8 +74,11 @@ and its `.sha256` file. The archive holds the binary, README, and every license.
 
 ```sh
 gh release create vX.Y.Z dist/* --title "excalidraw-render X.Y.Z" \
-  --notes-file <(sed -n '/^## X.Y.Z/,/^## /p' CHANGELOG.md | sed '$d')
+  --notes-file <(awk '/^## /{p=($2=="X.Y.Z")} p' CHANGELOG.md | tail -n +2)
 ```
+
+The notes are the body of the `## X.Y.Z — <date>` section, without its
+heading, up to the next `## ` heading or the end of the file.
 
 ## 6. Smoke-test the published artifacts
 

@@ -86,7 +86,8 @@ and how expected output changes are reviewed.
 [Development operations](docs/development.md) cover building and running, and
 [release.md](release.md) is the release procedure. [CONTEXT.md](CONTEXT.md)
 defines the domain vocabulary, and [docs/adr](docs/adr) records design
-decisions.
+decisions. Report security vulnerabilities privately as described in
+[SECURITY.md](SECURITY.md).
 
 ## License
 

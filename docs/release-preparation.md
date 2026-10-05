@@ -35,6 +35,9 @@ The priorities are also recorded on historical issues
 [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5817235266), and
 [#86](https://github.com/sagikazarmark/excalidraw-render.orig/issues/86#issuecomment-5817235192).
 None of those original completion criteria are claimed complete.
+(The development repository, then `excalidraw-render.orig`, is renamed to
+`excalidraw-render` for release; GitHub redirects these links and the issue
+numbers are unchanged.)
 
 ## Verification completed
 

@@ -1,0 +1,65 @@
+name: Bug report
+description: A render that fails, crashes, or differs from Excalidraw's own export.
+labels: ["needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [known limitations](https://github.com/sagikazarmark/excalidraw-render/blob/main/docs/known-limitations.md) first.
+        Report security vulnerabilities privately as described in [SECURITY.md](https://github.com/sagikazarmark/excalidraw-render/blob/main/SECURITY.md), not here.
+  - type: input
+    id: version
+    attributes:
+      label: Renderer version
+      description: Output of `excalidraw-render --version`, or the `excalidraw-render` crate version from your Cargo.lock.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: invocation
+    attributes:
+      label: How you ran it
+      description: The full CLI command, or the library calls (request options and resource limits you set).
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: format
+    attributes:
+      label: Output format
+      multiple: true
+      options:
+        - SVG
+        - PNG
+        - PDF
+    validations:
+      required: true
+  - type: textarea
+    id: scene
+    attributes:
+      label: Scene
+      description: Attach the `.excalidraw` file, or paste a minimal scene JSON that reproduces the problem. Remove anything private first.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Report or error
+      description: The compatibility report from `--report-format json` (or the outcome's report in the library), or the full error message.
+      render: json
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Expected and actual result
+      description: What you expected and what you got. Screenshots of both the renderer's output and Excalidraw's own export help most.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: Operating system and architecture, Rust version for library use, or browser for WASM.
+      placeholder: "Linux x86-64, Rust 1.97.1"
+    validations:
+      required: true
