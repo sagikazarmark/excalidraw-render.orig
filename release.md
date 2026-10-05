@@ -73,8 +73,11 @@ and its `.sha256` file. The archive holds the binary, README, and every license.
 
 ```sh
 gh release create vX.Y.Z dist/* --title "excalidraw-render X.Y.Z" \
-  --notes-file <(sed -n '/^## X.Y.Z/,/^## /p' CHANGELOG.md | sed '$d')
+  --notes-file <(awk '/^## /{p=($2=="X.Y.Z")} p' CHANGELOG.md | tail -n +2)
 ```
+
+The notes are the body of the `## X.Y.Z — <date>` section, without its
+heading, up to the next `## ` heading or the end of the file.
 
 ## 6. Smoke-test the published artifacts
 
