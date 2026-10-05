@@ -92,7 +92,7 @@ Includes the refreshed corpus/profile and reports, qualification logging and
 digest constants, verifier constants, and sequential/deadline Chromium driver.
 The ordinary viewer profiles and pure-Rust driver are unchanged. Explicitly
 approved on 2026-09-11 and recorded in
-[#99](https://github.com/sagikazarmark/excalidraw-render.orig/issues/99#issuecomment-5638706817).
+[#99](https://github.com/sagikazarmark/excalidraw-render/issues/99#issuecomment-5638706817).
 
 ### #120 — reviewed decodes
 
@@ -101,7 +101,7 @@ Subject: `sha256:9193b0c743eb4b5c31bf695e7a7e572bcb1c61a47b887d6cb4bb0858d4290bd
 All 230 reviewed decoded fonts are unchanged. The sole non-approval field change
 is `qualificationCorpusSha256`, so the catalog generator correctly cleared the
 previous approval. Explicitly approved on 2026-09-11 and recorded in
-[#120](https://github.com/sagikazarmark/excalidraw-render.orig/issues/120#issuecomment-5638706797).
+[#120](https://github.com/sagikazarmark/excalidraw-render/issues/120#issuecomment-5638706797).
 
 ## Completion
 
@@ -120,7 +120,7 @@ measurement and approved viewer subject and is copied verbatim to
 - Aggregate SHA-256: `abfaea613fa702fc25b52f95b60e9f492df1082fd7f5509a1560d62e3370a4dc`.
 - Native report SHA-256: `e6ed241672583b6c43c366dfdc352b7fe7893e4808e1e5c5cd43a485a96bd520`.
 - WASM report SHA-256: `2c44701d46c2197bc436a911b46bae367b7c3ed2dc757bcc62766f499b7de622`.
-- [Run attestation](https://github.com/sagikazarmark/excalidraw-render.orig/issues/101#issuecomment-5639444844).
+- [Run attestation](https://github.com/sagikazarmark/excalidraw-render/issues/101#issuecomment-5639444844).
 
 The aggregate recording command ran through Dagger with Git ancestry validation,
 and moved the release manifest to `targetEvidence.status: aggregated`,

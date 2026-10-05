@@ -137,6 +137,11 @@ cargo run --locked -p xtask -- conformance record-svg-font-subset-target-aggrega
   https://github.com/sagikazarmark/excalidraw-render.orig/issues/ISSUE#issuecomment-COMMENT
 ```
 
+The recorder still accepts only URLs under the development repository's
+pre-rename name, `excalidraw-render.orig`, which the recorded aggregate's
+provenance uses; GitHub redirects those URLs to `excalidraw-render`. Use that
+spelling until the recorder learns the new name.
+
 This recording step also checks Git ancestry. Keep it in the checkout carrying
 the exported report and history. `pending_ci` is the existing manifest spelling
 for “awaiting a supported-target aggregate”; it does not mean “awaiting Actions”.

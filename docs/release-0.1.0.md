@@ -54,9 +54,10 @@ provenance must distinguish an edited working tree from a clean tagged candidate
 
 ## Follow-up work
 
-The historical issues below live in the private development tracker. Their
-numbers identify provenance; they are not assumed to exist with the same numbers
-in the destination repository. Migrate the actionable backlog when moving code.
+The issues below live in the development repository's tracker. The release
+renames that repository to `excalidraw-render` and makes it public (see
+[the runbook](../release.md)), so these numbers, and the `#N` references in
+commits, ADRs and docs, keep pointing at the same issues.
 
 | Work | 0.1.0 disposition |
 | --- | --- |
