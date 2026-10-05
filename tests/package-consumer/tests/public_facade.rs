@@ -292,7 +292,8 @@ fn packaged_public_facade_preserves_direct_and_lazy_frame_errors() {
             .expect_err("the lazy render crosses the element limit");
 
         assert_eq!(actual_ordinal, expected_frame.ordinal());
-        assert_eq!(direct, lazy);
+        assert_eq!(direct.descriptor(), lazy.descriptor());
+        assert_eq!(direct.report(), lazy.report());
     }
     assert!(cursor.next().is_none());
 }
