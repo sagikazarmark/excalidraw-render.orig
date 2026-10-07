@@ -82,15 +82,11 @@ pub(super) fn frame_participating_sources(
 
     let geometric = selected.clone();
     for source_index in geometric {
-        let Some(source_node) = relationships
-            .nodes
-            .iter()
-            .position(|node| node.source_index == source_index)
-        else {
+        let Some(source_node) = relationships.node_position(source_index) else {
             continue;
         };
-        for edge in &relationships.edges {
-            if edge.source != source_node || edge.kind != RelationshipKind::Binding {
+        for edge in relationships.outgoing_edges(source_node) {
+            if edge.kind != RelationshipKind::Binding {
                 continue;
             }
             let RelationshipTarget::Element(target_node) = edge.target else {

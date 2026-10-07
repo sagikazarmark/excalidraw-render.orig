@@ -1,4 +1,4 @@
-use std::collections::TryReserveError;
+use std::collections::{HashMap, TryReserveError};
 use std::sync::Arc;
 
 use crate::fonts::{Face, FaceId, FamilyId};
@@ -935,7 +935,7 @@ pub(super) fn layout_with_loader(
     let mut missing_codepoints = Vec::new();
     let mut used_noto = false;
     let mut fallback_probes = 0_u64;
-    let mut resolved_characters = Vec::<(char, usize, char, bool, bool, u64)>::new();
+    let mut resolved_characters = ResolvedCharacters::new();
     let mut budget = OutlineBudget::new(layout.outline_limit);
 
     for (line_index, line) in source_lines(text).enumerate() {
@@ -1283,18 +1283,23 @@ fn resolve_character_font(
     Ok((replacement, '?', false, true))
 }
 
+/// One element's settled scalar resolutions, keyed by scalar: the face index,
+/// the displayed scalar, whether Noto Emoji served it, whether it is missing,
+/// and the fallback probes its first resolution paid. The map is only ever
+/// looked up, never iterated, so its order cannot reach the output; the keyed
+/// lookup keeps a text of many distinct scalars linear rather than quadratic.
+type ResolvedCharacters = HashMap<char, (usize, char, bool, bool, u64)>;
+
 fn resolve_character_cached(
     primary_index: usize,
     fonts: &mut Vec<OfficialFont>,
     character: char,
     trigger: CjkSubsetTrigger,
-    cache: &mut Vec<(char, usize, char, bool, bool, u64)>,
+    cache: &mut ResolvedCharacters,
     fallback_probes: &mut u64,
     loader: &mut FontLoader,
 ) -> Result<(usize, char, bool, bool), LabelError> {
-    if let Some((_, font_index, display, noto, missing, probes)) =
-        cache.iter().find(|(cached, ..)| *cached == character)
-    {
+    if let Some((font_index, display, noto, missing, probes)) = cache.get(&character) {
         *fallback_probes = fallback_probes.saturating_add(*probes);
         return Ok((*font_index, *display, *noto, *missing));
     }
@@ -1309,9 +1314,10 @@ fn resolve_character_cached(
     )?;
     let probes = fallback_probes.saturating_sub(probes_before);
     cache.try_reserve(1)?;
-    cache.push((
-        character, resolved.0, resolved.1, resolved.2, resolved.3, probes,
-    ));
+    cache.insert(
+        character,
+        (resolved.0, resolved.1, resolved.2, resolved.3, probes),
+    );
     Ok(resolved)
 }
 

@@ -2,6 +2,7 @@
 //! diagnostics grouped for reading. The JSON report carries every occurrence;
 //! this view only arranges them.
 
+use std::collections::HashSet;
 use std::fmt::Write as _;
 use std::io;
 
@@ -281,6 +282,11 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
         count: usize,
         elements: Vec<&'a str>,
         characters: Vec<u32>,
+        // Membership only, never iterated: the lists above keep first-occurrence
+        // order, and these keep a report of many (long) ids from comparing each
+        // occurrence against every one already listed.
+        seen_elements: HashSet<&'a str>,
+        seen_characters: HashSet<u32>,
     }
     let mut groups: Vec<Group<'_>> = Vec::new();
     for diagnostic in diagnostics {
@@ -299,18 +305,20 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
                     count: 0,
                     elements: Vec::new(),
                     characters: Vec::new(),
+                    seen_elements: HashSet::new(),
+                    seen_characters: HashSet::new(),
                 });
                 groups.len() - 1
             });
         let group = &mut groups[index];
         group.count += 1;
         if let Some(element) = diagnostic.element_id() {
-            if !group.elements.contains(&element) {
+            if group.seen_elements.insert(element) {
                 group.elements.push(element);
             }
         }
         if let Some(DiagnosticDetails::MissingGlyph { codepoint, .. }) = diagnostic.details() {
-            if !group.characters.contains(codepoint) {
+            if group.seen_characters.insert(*codepoint) {
                 group.characters.push(*codepoint);
             }
         }

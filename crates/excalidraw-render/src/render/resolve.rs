@@ -42,7 +42,7 @@ use crate::{
 };
 
 use super::bound_text::{
-    resolve_bound_text_masks, resolve_bound_text_placements, BoundTextMaskSource,
+    resolve_bound_text_masks, resolve_bound_text_placements, BoundTextMaskSource, SourcePositions,
 };
 use super::font_demand::{prune_unused_official_fonts, ResolvedFont};
 use super::frame_target::{
@@ -221,22 +221,22 @@ pub(super) fn relationship_element_target(
     kind: crate::relationships::RelationshipKind,
     relationships: &crate::relationships::ResolvedRelationshipGraph,
 ) -> Option<usize> {
-    let node_index = relationships
-        .nodes
+    let node_index = relationships.node_position(source_index)?;
+    relationships
+        .outgoing_edges(node_index)
         .iter()
-        .position(|node| node.source_index == source_index)?;
-    relationships.edges.iter().find_map(|edge| {
-        if edge.source != node_index || edge.kind != kind {
-            return None;
-        }
-        let crate::relationships::RelationshipTarget::Element(target) = edge.target else {
-            return None;
-        };
-        relationships
-            .nodes
-            .get(target)
-            .map(|node| node.source_index)
-    })
+        .find_map(|edge| {
+            if edge.kind != kind {
+                return None;
+            }
+            let crate::relationships::RelationshipTarget::Element(target) = edge.target else {
+                return None;
+            };
+            relationships
+                .nodes
+                .get(target)
+                .map(|node| node.source_index)
+        })
 }
 
 #[derive(Debug)]
@@ -469,10 +469,15 @@ impl ResolvedScene {
         }
 
         let text_placements = resolve_bound_text_placements(&outlines, relationships)?;
+        let outline_positions = SourcePositions::new(
+            outlines
+                .iter()
+                .map(|(element, _)| element.source.source_index()),
+        )?;
         for placement in text_placements {
-            let Some((text, _)) = outlines
-                .iter_mut()
-                .find(|(candidate, _)| candidate.source.source_index() == placement.source_index)
+            let Some((text, _)) = outline_positions
+                .first(placement.source_index)
+                .and_then(|position| outlines.get_mut(position))
             else {
                 continue;
             };
@@ -639,6 +644,14 @@ impl ResolvedScene {
         let semantic_frames = semantic_frame_sources(&outlines)?;
         let fallback_frame_clips = fallback_frame_clip_sources(&fallbacks, frame_rendering)?;
         let mut has_label = false;
+        // Each text outline takes its laid-out text. Taking leaves an empty
+        // slot rather than shifting the rest, and the slots are keyed by
+        // source index, so neither the lookup nor the take scans the texts.
+        let text_positions =
+            SourcePositions::new(texts.iter().map(|text| text.source.source_index()))?;
+        let mut text_slots = Vec::new();
+        text_slots.try_reserve_exact(texts.len())?;
+        text_slots.extend(texts.into_iter().map(Some));
         let context = ResolveContext {
             request,
             relationships,
@@ -658,11 +671,10 @@ impl ResolvedScene {
                     resolve_frame(source, &context, membership, &mut frame_names)?
                         .map(ResolvedElement::Frame)
                 }
-                NormalizedElementKind::Text(_) => texts
-                    .iter()
-                    .position(|text| text.source.source_index() == source.source.source_index())
-                    .map(|index| {
-                        let mut text = texts.remove(index);
+                NormalizedElementKind::Text(_) => text_positions
+                    .all(source.source.source_index())
+                    .find_map(|position| text_slots.get_mut(position)?.take())
+                    .map(|mut text| {
                         text.transform = context.box_transform(&source);
                         text.frame_clips = membership.clips;
                         text.opacity = source.opacity / 100.0 * membership.opacity;
@@ -702,8 +714,9 @@ impl ResolvedScene {
         // Only rejected text remains. Accounting observes its geometry before
         // omitting it, preserving aggregate-fatal precedence and paint order.
         elements.extend(
-            texts
+            text_slots
                 .into_iter()
+                .flatten()
                 .filter(|text| text.coordinate_failure.is_some())
                 .map(ResolvedElement::Text),
         );
@@ -742,9 +755,14 @@ impl ResolvedScene {
                 }
             }
         }
+        // Membership only: sorted for a binary search per outline.
+        surviving_containers.sort_unstable();
         for element in &mut elements {
             if let ResolvedElement::Outline(outline) = element {
-                if !surviving_containers.contains(&outline.source_order) {
+                if surviving_containers
+                    .binary_search(&outline.source_order)
+                    .is_err()
+                {
                     outline.label_mask = None;
                 }
             }

@@ -201,6 +201,7 @@ pub(crate) fn classify(
         diagnostic_limit,
         &mut diagnostics,
     )?;
+    let participating_ids = ParticipatingElementIds::new(scene)?;
     for index in 0..scene.element_occurrence_count() {
         if diagnostics.len() >= diagnostic_limit {
             break;
@@ -284,7 +285,7 @@ pub(crate) fn classify(
                 }
             }
             classify_element_record(
-                scene,
+                &participating_ids,
                 policy,
                 element_policy,
                 members,
@@ -301,7 +302,7 @@ pub(crate) fn classify(
         }
         if kind == Some("draw") {
             classify_element_record(
-                scene,
+                &participating_ids,
                 policy,
                 &SceneElementPolicy {
                     kind: "draw",
@@ -690,7 +691,7 @@ fn manifested_field_diagnostic(
 
 #[allow(clippy::too_many_arguments)]
 fn classify_element_record(
-    scene: &SceneDocument,
+    participating_ids: &ParticipatingElementIds<'_>,
     policy: &'static SceneSurfacePolicy,
     element_policy: &SceneElementPolicy,
     members: &[JsonMember],
@@ -717,7 +718,7 @@ fn classify_element_record(
         if let Some(field) = field_policy(policy, element_policy.record_kind, &semantic_path) {
             if semantic_path == "/boundElements" {
                 classify_bound_elements(
-                    scene,
+                    participating_ids,
                     policy,
                     &member.value,
                     pointer,
@@ -970,7 +971,7 @@ fn unsafe_link_diagnostic(
 
 #[allow(clippy::too_many_arguments)]
 fn classify_bound_elements(
-    scene: &SceneDocument,
+    participating_ids: &ParticipatingElementIds<'_>,
     policy: &'static SceneSurfacePolicy,
     value: &JsonValue,
     element_pointer: &str,
@@ -1001,7 +1002,7 @@ fn classify_bound_elements(
             Some(JsonValue::String(id)) if !id.is_empty() => Some(id.as_ref()),
             _ => None,
         };
-        if target_id.is_some_and(|target| !participating_element_id_exists(scene, target)) {
+        if target_id.is_some_and(|target| !participating_ids.contains(target)) {
             continue;
         }
         let record_pointer =
@@ -1077,16 +1078,33 @@ fn classify_bound_elements(
     Ok(())
 }
 
-fn participating_element_id_exists(scene: &SceneDocument, expected: &str) -> bool {
-    (0..scene.element_occurrence_count()).any(|index| {
-        if scene.element_is_silent(index) {
-            return false;
+/// The source `id` of every participating (not deleted) element record,
+/// sorted, so each bound-element record checks its target by binary search
+/// instead of scanning the whole scene.
+struct ParticipatingElementIds<'a>(Vec<&'a str>);
+
+impl<'a> ParticipatingElementIds<'a> {
+    fn new(scene: &'a SceneDocument) -> Result<Self, TryReserveError> {
+        let mut ids = Vec::new();
+        ids.try_reserve_exact(scene.element_occurrence_count())?;
+        for index in 0..scene.element_occurrence_count() {
+            if scene.element_is_silent(index) {
+                continue;
+            }
+            let Some(JsonValue::Object(element)) = scene.element_value(index) else {
+                continue;
+            };
+            if let Some(JsonValue::String(id)) = member_value(element, "id") {
+                ids.push(&**id);
+            }
         }
-        let Some(JsonValue::Object(element)) = scene.element_value(index) else {
-            return false;
-        };
-        matches!(member_value(element, "id"), Some(JsonValue::String(id)) if &**id == expected)
-    })
+        ids.sort_unstable();
+        Ok(Self(ids))
+    }
+
+    fn contains(&self, expected: &str) -> bool {
+        self.0.binary_search(&expected).is_ok()
+    }
 }
 
 fn unsupported_property_diagnostic(

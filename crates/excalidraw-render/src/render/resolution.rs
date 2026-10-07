@@ -98,7 +98,50 @@ impl RenderSession {
         normalization: &NormalizationOutcome,
         relationships: &RelationshipOutcome,
     ) -> Result<(), RenderError> {
+        let duplicate = |code: crate::DiagnosticCode| {
+            code == crate::DiagnosticCode::NORMALIZATION_DUPLICATE_ELEMENT_ID
+        };
+        if !self
+            .report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| duplicate(diagnostic.code()))
+            && !self
+                .pending_frame_normalization_diagnostics
+                .iter()
+                .any(|pending| duplicate(pending.diagnostic.code()))
+        {
+            return Ok(());
+        }
         let frame_target = matches!(self.target, RenderTarget::Frame(_));
+        // Each graph node's source `id` with its node position, sorted, so a
+        // duplicate finds the first occurrence it duplicates by binary search
+        // instead of comparing its id against every earlier element. The nodes
+        // ascend by source index, so the first entry for an id is the earliest
+        // occurrence: the one a scan from the front would find.
+        let mut first_nodes = Vec::new();
+        if first_nodes
+            .try_reserve_exact(relationships.graph.nodes.len())
+            .is_err()
+        {
+            return Err(self.memory_failure(
+                request,
+                "compatibility_report",
+                "duplicate_identity_effects",
+            ));
+        }
+        for (position, node) in relationships.graph.nodes.iter().enumerate() {
+            if let Some(crate::scene::JsonValue::Object(members)) =
+                scene.element_value(node.source_index)
+            {
+                if let Some(crate::scene::JsonValue::String(id)) =
+                    scene::member_value(members, "id")
+                {
+                    first_nodes.push((&**id, position));
+                }
+            }
+        }
+        first_nodes.sort_unstable();
         let visual_for = |pointer: &str| {
             let Some(index) = element_owner_index(pointer).and_then(|i| usize::try_from(i).ok())
             else {
@@ -112,9 +155,12 @@ impl RenderSession {
             else {
                 return false;
             };
-            let first = relationships.graph.nodes.iter().find(|node| {
-                node.source_index < index && matches!(scene.element_value(node.source_index), Some(crate::scene::JsonValue::Object(members)) if matches!(scene::member_value(members,"id"),Some(crate::scene::JsonValue::String(id)) if id == original))
-            });
+            let at = first_nodes.partition_point(|(id, _)| *id < &**original);
+            let first = first_nodes
+                .get(at)
+                .filter(|(id, _)| *id == &**original)
+                .and_then(|(_, position)| relationships.graph.nodes.get(*position))
+                .filter(|node| node.source_index < index);
             let Some(first) = first else {
                 return false;
             };

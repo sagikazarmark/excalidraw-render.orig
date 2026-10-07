@@ -20,7 +20,7 @@ use planning::{
     GENERATED_ID_BYTES,
 };
 
-use std::collections::TryReserveError;
+use std::collections::{HashSet, TryReserveError};
 
 use sha2::{Digest, Sha256};
 
@@ -894,7 +894,11 @@ fn normalize_scene_impl<E>(
 
     let mut elements = Vec::new();
     elements.try_reserve_exact(pending.len())?;
-    let mut used_ids = Vec::<String>::new();
+    // The identities already committed, for duplicate detection and generated
+    // collision avoidance. It is only queried for membership, never iterated,
+    // so its order cannot reach the output; a set keeps a scene of many long
+    // identities linear rather than comparing each against every earlier one.
+    let mut used_ids = HashSet::<String>::new();
 
     for (pending, normalized_index) in pending.into_iter().zip(normalized_indices) {
         let index = pending.source_index;
@@ -920,9 +924,7 @@ fn normalize_scene_impl<E>(
 
         let identity_plan = match source.id {
             SourceField::Value("") | SourceField::Invalid => IdentityPlan::Invalid,
-            SourceField::Value(id) if used_ids.iter().any(|used| used == id) => {
-                IdentityPlan::Duplicate(id)
-            }
+            SourceField::Value(id) if used_ids.contains(id) => IdentityPlan::Duplicate(id),
             SourceField::Value(id) => IdentityPlan::Retained(id),
             SourceField::Missing => IdentityPlan::Missing,
         };
@@ -1116,7 +1118,7 @@ fn normalize_scene_impl<E>(
             },
         )?;
         memory_at_source!(used_ids.try_reserve(1));
-        used_ids.push(memory_at_source!(try_owned(&id)));
+        used_ids.insert(memory_at_source!(try_owned(&id)));
 
         if width == 0.0 || height == 0.0 {
             for (_, diagnostic) in &mut element_diagnostics {
@@ -1661,11 +1663,11 @@ fn unique_generated_id(
     mut candidate: String,
     revision: CompatibilityRevision,
     source_index: u64,
-    used_ids: &[String],
+    used_ids: &HashSet<String>,
 ) -> Result<String, TryReserveError> {
     let base = try_owned(&candidate)?;
     let mut collision_ordinal = 0_u64;
-    while used_ids.iter().any(|used| used == &candidate) {
+    while used_ids.contains(&candidate) {
         collision_ordinal = collision_ordinal.saturating_add(1);
         let mut hasher = Sha256::new();
         hasher.update(ID_COLLISION_DOMAIN);
