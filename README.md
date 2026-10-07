@@ -81,8 +81,8 @@ documentation is on [docs.rs](https://docs.rs/excalidraw-render).
 
 ## Contributing
 
-[CONTRIBUTING.md](CONTRIBUTING.md) explains the test tiers, reference evidence,
-and how expected output changes are reviewed.
+[CONTRIBUTING.md](CONTRIBUTING.md) explains the test tiers, the comparisons
+against Excalidraw's own exports, and how expected output changes are reviewed.
 [Development operations](docs/development.md) cover building and running, and
 [release.md](release.md) is the release procedure. [CONTEXT.md](CONTEXT.md)
 defines the domain vocabulary, and [docs/adr](docs/adr) records design

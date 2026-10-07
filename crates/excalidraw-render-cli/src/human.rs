@@ -2,6 +2,7 @@
 //! diagnostics grouped for reading. The JSON report carries every occurrence;
 //! this view only arranges them.
 
+use std::collections::HashSet;
 use std::fmt::Write as _;
 use std::io;
 
@@ -148,7 +149,10 @@ pub(crate) fn scene_parse_context(
     error: &ErrorDescriptor,
 ) -> (String, Vec<String>) {
     let subject = format!("cannot parse {}", input_name(input));
-    let image = if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+    let unsupported = error.code().as_str() == "scene.unsupported-input";
+    let image = if !unsupported {
+        None
+    } else if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
         Some("a PNG")
     } else if looks_like_svg(bytes) {
         Some("an SVG")
@@ -172,6 +176,7 @@ pub(crate) fn scene_parse_context(
     let mut message = format!("{subject}: {}", error.message());
     let mut hints = Vec::new();
     match error.code().as_str() {
+        "scene.unsupported-input" => hints.push(envelope_hint(bytes).to_owned()),
         "scene.invalid-json" => {
             if let Err(syntax) = serde_json::from_slice::<IgnoredAny>(bytes) {
                 if syntax.line() > 0 {
@@ -204,13 +209,11 @@ fn looks_like_svg(bytes: &[u8]) -> bool {
 }
 
 /// The members a version-2 scene document must have, with the empty value
-/// that satisfies each.
-const SCENE_MEMBERS: [(&str, &str); 5] = [
+/// that satisfies each. `appState` and `files` may be absent.
+const SCENE_MEMBERS: [(&str, &str); 3] = [
     ("type", "\"excalidraw\""),
     ("version", "2"),
     ("elements", "[]"),
-    ("appState", "{}"),
-    ("files", "{}"),
 ];
 
 /// Every scene member a would-be scene lacks, in one hint, so a hand-written
@@ -228,18 +231,14 @@ fn missing_members_hint(bytes: &[u8]) -> Option<String> {
         .filter(|(name, _)| !root.contains_key(*name))
         .map(|(name, value)| format!("\"{name}\": {value}"))
         .collect::<Vec<_>>();
-    let mut hint = match missing.as_slice() {
-        [] => return None,
-        [member] => format!("add the missing member {member} to the scene"),
-        members => format!(
+    match missing.as_slice() {
+        [] => None,
+        [member] => Some(format!("add the missing member {member} to the scene")),
+        members => Some(format!(
             "add the missing members {} to the scene",
             members.join(", ")
-        ),
-    };
-    if !root.contains_key("files") {
-        hint.push_str(" (this renderer requires the files map that Excalidraw treats as optional)");
+        )),
     }
-    Some(hint)
 }
 
 /// What a JSON document that is not a version-2 scene probably is.
@@ -281,6 +280,11 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
         count: usize,
         elements: Vec<&'a str>,
         characters: Vec<u32>,
+        // Membership only, never iterated: the lists above keep first-occurrence
+        // order, and these keep a report of many (long) ids from comparing each
+        // occurrence against every one already listed.
+        seen_elements: HashSet<&'a str>,
+        seen_characters: HashSet<u32>,
     }
     let mut groups: Vec<Group<'_>> = Vec::new();
     for diagnostic in diagnostics {
@@ -299,18 +303,20 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
                     count: 0,
                     elements: Vec::new(),
                     characters: Vec::new(),
+                    seen_elements: HashSet::new(),
+                    seen_characters: HashSet::new(),
                 });
                 groups.len() - 1
             });
         let group = &mut groups[index];
         group.count += 1;
         if let Some(element) = diagnostic.element_id() {
-            if !group.elements.contains(&element) {
+            if group.seen_elements.insert(element) {
                 group.elements.push(element);
             }
         }
         if let Some(DiagnosticDetails::MissingGlyph { codepoint, .. }) = diagnostic.details() {
-            if !group.characters.contains(codepoint) {
+            if group.seen_characters.insert(*codepoint) {
                 group.characters.push(*codepoint);
             }
         }
@@ -318,11 +324,7 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
 
     let mut text = String::new();
     for group in groups {
-        let severity = match group.first.severity() {
-            DiagnosticSeverity::Warning => "warning",
-            DiagnosticSeverity::Info => "info",
-            _ => "note",
-        };
+        let severity = group.first.severity();
         // The library's message names the mechanism; say what the reader sees.
         let replaced_characters = group.first.code().as_str() == "font.missing-glyph"
             && group.first.message() == OFFICIAL_MISSING_GLYPH;

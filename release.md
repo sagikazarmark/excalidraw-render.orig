@@ -25,11 +25,19 @@ number, not only new metadata.
 - The [known limitations](docs/known-limitations.md) link their tracking
   issues by full URL under the new repository name, so they resolve only after
   the rename. Check them once the repository is public.
+- Enable private vulnerability reporting (Settings → Security). It is the only
+  reporting route [SECURITY.md](SECURITY.md) names, and the Security tab offers
+  no "Report a vulnerability" button until it is on.
+- Publish the crates soon after the repository goes public: the five crate
+  names are free on crates.io until then, and the public repository names them.
+- The crates.io token needs the `publish-new` scope for the first publication,
+  since none of the crates exist yet.
 
 ## 1. Prepare the candidate
 
 1. Update `CHANGELOG.md`: replace "Unreleased" with the date and summarize the
-   release.
+   release. Step 5 publishes this section as the GitHub release notes, so link
+   repository files by full URL and leave no placeholder text in it.
 2. Bump `version` in `[workspace.package]`, every font crate's `version`
    (keeping its `+excalidraw.X.Y.Z` metadata), and the `=X.Y.Z` requirements in
    `[workspace.dependencies]`. Run `cargo update --workspace`.
@@ -60,14 +68,23 @@ cargo publish --workspace --locked
 crate to reach the index before publishing its dependents. If it stops part
 way, publish the remaining crates in order with `cargo publish -p <crate>`.
 
+After the first publication, add any co-owners with
+`cargo owner --add <login> <crate>` for each of the five crates, and check that
+[docs.rs](https://docs.rs/crate/excalidraw-render/latest/builds) built
+`excalidraw-render`.
+
 ## 4. Build the release archive
 
 ```sh
+git switch --detach vX.Y.Z
+git status --porcelain   # must print nothing
 dagger --engine cloud call release-archive --version X.Y.Z export --path dist
 ```
 
-This builds the Linux x86-64 (glibc) CLI with the pinned toolchain from the
-tagged tree, producing `excalidraw-render-X.Y.Z-x86_64-unknown-linux-gnu.tar.gz`
+Dagger builds whatever is checked out, so check out the tag in a clean tree
+first; the archive build refuses a `--version` that differs from the workspace
+version. It builds the Linux x86-64 (glibc) CLI with the pinned toolchain,
+producing `excalidraw-render-X.Y.Z-x86_64-unknown-linux-gnu.tar.gz`
 and its `.sha256` file. The archive holds the binary, README, and every license.
 
 ## 5. Create the GitHub release
@@ -88,5 +105,7 @@ excalidraw-render tests/conformance/cases/focused/bound-text-containers/scene.ex
 ```
 
 Also unpack the GitHub archive on Linux x86-64, verify its checksum, and run
-`excalidraw-render --version`. Record the release commit, crate checksums, and
-the Dagger trace in the changelog entry.
+`excalidraw-render --version`, which prints
+`excalidraw-render X.Y.Z (Excalidraw 0.18.1)`. Then record the release commit,
+crate checksums, and the Dagger trace in the changelog entry, in a follow-up
+commit on `main`: the tag and the GitHub release notes are already fixed.

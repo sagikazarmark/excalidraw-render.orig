@@ -235,7 +235,7 @@ by tier:
 |---|---|---|
 | `fast` (one module per former binary) and every other crate's targets | every unit, component and full-pipeline test | `ci-fast` |
 | `parity_registered_case_svg`, `parity_registered_case_png`, `parity_frame_export` | parity against official evidence: the registry-driven scene harnesses and the frame-export case | `ci-render` |
-| `limits_scene_admission` | fixed parser ceilings that build 64 MiB and million-entry scenes | `ci-render` |
+| `limits_scene_admission`, `limits_scene_scaling` | fixed parser ceilings that build 64 MiB and million-entry scenes, and scenes large enough that a quadratic per-element lookup would exceed a time ceiling | `ci-render` |
 | `harness_pdf_viewers`, `harness_svg_viewers` | `#[ignore]`d gates that need the pinned PDFium, PDF.js, qpdf and Chromium harnesses | `harness` |
 
 ```sh
@@ -283,7 +283,8 @@ so a plain `cargo test` or `cargo nextest run` leaves them to the release-mode
 run without naming them. The renderer's build script turns the variable into the
 `release_qualification` cfg, so changing it rebuilds only the renderer; it is
 not a Cargo feature, so it stays out of the published interface. Any value other
-than unset, empty, `0` or `1` fails the build.
+than unset, empty, `0` or `1` fails the build. The build script is not
+packaged: the published crate has no build script, so dependents never run it.
 
 ## Canonical CI and evidence generation
 

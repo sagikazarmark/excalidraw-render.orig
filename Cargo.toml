@@ -128,6 +128,15 @@ zune-jpeg = { version = "0.5.15", default-features = false, features = ["std"] }
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
+[workspace.lints.clippy]
+# Clippy 1.98 suggests `as_chunks` for constant-size `chunks_exact`. Every
+# site is in bytes that evidence pins by digest (the canonical comparator's
+# sources, bound by its profile, and the PNG test helpers the image contracts
+# hash), so rewriting them would re-pin that evidence for no change in
+# behavior. Clippy 1.97 does not know the lint and warns once per crate;
+# `unknown_lints` ignores `-D warnings`, so that warning does not fail it.
+chunks_exact_to_as_chunks = "allow"
+
 [profile.release]
 codegen-units = 1
 lto = true

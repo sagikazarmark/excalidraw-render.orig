@@ -3,7 +3,7 @@
 //! tiny-skia paths and paints here, the reference canvas's theme filter is
 //! applied to rasterized nested-SVG layers, the supersampled surface is
 //! box-filtered down, and `PaintMasks` keeps the shared frame-clip masks and
-//! the per-element scratch mask one rasterization reuses.
+//! the per-element label and image clip masks one rasterization reuses.
 
 use tiny_skia::{
     BlendMode, Color, ColorU8, FillRule, IntSize, LineCap, LineJoin, Mask, Paint, PathBuilder,
@@ -20,7 +20,7 @@ use super::super::{freedraw, FormatEncodeError};
 use super::coverage::frame_clip_coverage_bounds;
 use super::encoder::png_size_error;
 use super::guard::{GuardedDraw, GuardedMask};
-use super::{frame_clip_set_key, PngElement, PngFrameClip, PngLabelMask};
+use super::{frame_clip_set_key, PngElement, PngFrameClip, PngImageClip, PngLabelMask};
 
 /// The canvas's unmasked N32 image blit: the already-resampled device pixel
 /// fills one supersample block, using its byte source-over arithmetic. Keeping
@@ -427,15 +427,23 @@ pub(super) fn paint_rough_drawing(
 
 /// The alpha masks one PNG rasterization reuses across elements.
 ///
-/// Every element a frame clips paints through that frame's mask. tiny-skia
-/// composites a mask only when it matches the surface, so one full raster
-/// surface holds whichever frame clip mask the current element needs; each
-/// distinct frame clip set is rasterized once, its covered rows are kept as a
-/// stamp, and switching frames clears the previous stamp's rows and copies the
-/// next one in, so the work of a switch is bounded by the two frame areas
-/// rather than the canvas. An element that also excludes a bound label or clips
-/// to its own image rectangle paints through one scratch mask derived from the
-/// frame mask.
+/// tiny-skia composites a mask only when it matches the surface, so each mask
+/// here is one full raster surface, allocated once per rasterization; what an
+/// element does to them is bounded by the element, never the canvas, as the
+/// resource ledger charges it:
+///
+/// - Every element a frame clips paints through that frame's mask. Each
+///   distinct frame clip set is rasterized once, its covered rows are kept as a
+///   stamp, and switching frames clears the previous stamp's rows and copies
+///   the next one in, so a switch costs the two frame areas.
+/// - A bound-label exclusion is punched into the frame mask, or into an
+///   all-opaque mask when no frame clips the element, and the next element
+///   restores it, so it costs the label rectangle.
+/// - An image clip is rasterized into a mask that is clear outside the clip's
+///   bounds, multiplied by the frame mask there, and the next image clip clears
+///   those bounds again, so it costs the clip's bounds. The bytes are those of
+///   intersecting the clip into a copy of the frame (or opaque) mask: outside
+///   the bounds that intersection is zero, and inside it is the same product.
 pub(super) struct PaintMasks {
     width: u32,
     height: u32,
@@ -443,7 +451,45 @@ pub(super) struct PaintMasks {
     frame: Option<Mask>,
     stamps: Vec<FrameClipStamp>,
     current_stamp: Option<usize>,
-    element: Option<Mask>,
+    /// Opaque everywhere except a punched label rectangle.
+    open: Option<Mask>,
+    /// The label rectangle the previous element punched into a mask.
+    hole: Option<(HoleTarget, RasterRect)>,
+    /// Clear everywhere except `clip_bounds`.
+    clip: Option<Mask>,
+    clip_bounds: Option<RasterRect>,
+}
+
+/// The mask a label rectangle was punched into.
+#[derive(Clone, Copy)]
+enum HoleTarget {
+    Frame,
+    Open,
+}
+
+/// Raster pixels `left..right` by `top..bottom`, within the surface.
+#[derive(Clone, Copy)]
+struct RasterRect {
+    left: usize,
+    top: usize,
+    right: usize,
+    bottom: usize,
+}
+
+impl RasterRect {
+    fn rows(self, stride: usize) -> impl Iterator<Item = std::ops::Range<usize>> {
+        (self.top..self.bottom.max(self.top))
+            .map(move |row| row * stride + self.left..row * stride + self.right.max(self.left))
+    }
+
+    fn intersect(self, other: Self) -> Self {
+        Self {
+            left: self.left.max(other.left),
+            top: self.top.max(other.top),
+            right: self.right.min(other.right),
+            bottom: self.bottom.min(other.bottom),
+        }
+    }
 }
 
 /// The rows of one frame clip set's mask that its clip covers, at raster
@@ -466,16 +512,20 @@ impl PaintMasks {
             frame: None,
             stamps: Vec::new(),
             current_stamp: None,
-            element: None,
+            open: None,
+            hole: None,
+            clip: None,
+            clip_bounds: None,
         }
     }
 
-    /// The mask `element` paints through, if any: its frame clip mask, or a
-    /// scratch mask that also carries its bound-label exclusion or image clip.
+    /// The mask `element` paints through, if any: its frame clip mask, that or
+    /// an opaque mask with its bound label punched out, or its image clip.
     pub(super) fn paint_mask(
         &mut self,
         element: &PngElement,
     ) -> Result<Option<&Mask>, FormatEncodeError> {
+        self.restore_hole();
         let clips = element.frame_clips();
         let label_mask = element.label_mask();
         let image_clip =
@@ -484,47 +534,143 @@ impl PaintMasks {
             return Ok(None);
         }
         self.ensure_frame_mask(clips)?;
-        if label_mask.is_none() && image_clip.is_none() {
-            return Ok(self.frame.as_ref());
-        }
-        let mut mask = match self.element.take() {
-            Some(mask) => mask,
-            None => self.blank_mask("png_paint_mask")?,
-        };
-        match &self.frame {
-            Some(frame) if !clips.is_empty() => mask.data_mut().copy_from_slice(frame.data()),
-            _ => mask.data_mut().fill(255),
-        }
-        if let Some(label) = label_mask {
-            self.exclude_label(&mut mask, label)?;
-        }
+        let label = label_mask.map(|label| self.label_rect(label));
         if let Some(clip) = image_clip {
-            let raster_transform = clip.transform.raster_transform(self.multiplier)?;
-            match clip.corner_clip {
-                Some(path) => mask.guarded_intersect_path(
-                    &tiny_skia_path(path)?,
+            return self
+                .image_clip_mask(&clip, !clips.is_empty(), label)
+                .map(Some);
+        }
+        let Some(label) = label else {
+            return Ok(self.frame.as_ref());
+        };
+        let target = if clips.is_empty() {
+            if self.open.is_none() {
+                let mut open = self.blank_mask("png_paint_mask")?;
+                open.data_mut().fill(255);
+                self.open = Some(open);
+            }
+            HoleTarget::Open
+        } else {
+            HoleTarget::Frame
+        };
+        let stride = self.width as usize;
+        let mask = match target {
+            HoleTarget::Frame => self.frame.as_mut(),
+            HoleTarget::Open => self.open.as_mut(),
+        }
+        .ok_or_else(png_size_error)?;
+        for row in label.rows(stride) {
+            mask.data_mut()[row].fill(0);
+        }
+        self.hole = Some((target, label));
+        Ok(Some(mask))
+    }
+
+    /// Rasterizes `clip` into the clip mask, cleared from the previous one,
+    /// times the frame mask when `framed` and without the `label` rectangle.
+    fn image_clip_mask(
+        &mut self,
+        clip: &PngImageClip<'_>,
+        framed: bool,
+        label: Option<RasterRect>,
+    ) -> Result<&Mask, FormatEncodeError> {
+        if self.clip.is_none() {
+            self.clip = Some(self.blank_mask("png_paint_mask")?);
+        }
+        let stride = self.width as usize;
+        let mask = self.clip.as_mut().ok_or_else(png_size_error)?;
+        if let Some(previous) = self.clip_bounds.take() {
+            for row in previous.rows(stride) {
+                mask.data_mut()[row].fill(0);
+            }
+        }
+        let raster_transform = clip.transform.raster_transform(self.multiplier)?;
+        let filled = match clip.corner_clip {
+            Some(path) => mask.guarded_fill_path_bounds(
+                &tiny_skia_path(path)?,
+                FillRule::Winding,
+                true,
+                raster_transform,
+            ),
+            None => {
+                let rect = Rect::from_xywh(
+                    0.0,
+                    0.0,
+                    finite_f32(clip.width, "PNG image clip width")?,
+                    finite_f32(clip.height, "PNG image clip height")?,
+                )
+                .ok_or_else(png_size_error)?;
+                mask.guarded_fill_path_bounds(
+                    &PathBuilder::from_rect(rect),
                     FillRule::Winding,
                     true,
                     raster_transform,
-                ),
-                None => {
-                    let rect = Rect::from_xywh(
-                        0.0,
-                        0.0,
-                        finite_f32(clip.width, "PNG image clip width")?,
-                        finite_f32(clip.height, "PNG image clip height")?,
-                    )
-                    .ok_or_else(png_size_error)?;
-                    mask.guarded_intersect_path(
-                        &PathBuilder::from_rect(rect),
-                        FillRule::Winding,
-                        true,
-                        raster_transform,
-                    );
+                )
+            }
+        };
+        // The scan converter covers only the pixels the filled path's bounds
+        // round out to; one more pixel each side absorbs the f32 translation
+        // tiny-skia applies per tile on a surface wider than 8191 pixels.
+        let Some(bounds) = filled.map(|bounds| {
+            let clamp =
+                |value: f32, side: u32| f64::from(value).clamp(0.0, f64::from(side)) as usize;
+            RasterRect {
+                left: clamp(bounds.left().floor() - 1.0, self.width),
+                top: clamp(bounds.top().floor() - 1.0, self.height),
+                right: clamp(bounds.right().ceil() + 1.0, self.width),
+                bottom: clamp(bounds.bottom().ceil() + 1.0, self.height),
+            }
+        }) else {
+            return Ok(mask);
+        };
+        self.clip_bounds = Some(bounds);
+        if framed {
+            let frame = self.frame.as_ref().ok_or_else(png_size_error)?;
+            for row in bounds.rows(stride) {
+                for (coverage, frame) in mask.data_mut()[row.clone()]
+                    .iter_mut()
+                    .zip(&frame.data()[row])
+                {
+                    *coverage = premultiply_u8(*frame, *coverage);
                 }
             }
         }
-        Ok(Some(self.element.insert(mask)))
+        if let Some(label) = label {
+            for row in label.intersect(bounds).rows(stride) {
+                mask.data_mut()[row].fill(0);
+            }
+        }
+        Ok(mask)
+    }
+
+    /// Restores the label rectangle the previous element punched out: opaque
+    /// in the opaque mask, or the current frame stamp in the frame mask.
+    fn restore_hole(&mut self) {
+        let Some((target, hole)) = self.hole.take() else {
+            return;
+        };
+        let stride = self.width as usize;
+        match target {
+            HoleTarget::Open => {
+                if let Some(mask) = self.open.as_mut() {
+                    for row in hole.rows(stride) {
+                        mask.data_mut()[row].fill(255);
+                    }
+                }
+            }
+            HoleTarget::Frame => {
+                let Some(mask) = self.frame.as_mut() else {
+                    return;
+                };
+                let stamp = self.current_stamp.and_then(|index| self.stamps.get(index));
+                let data = mask.data_mut();
+                for y in hole.top..hole.bottom {
+                    for x in hole.left..hole.right {
+                        data[y * stride + x] = stamp.map_or(0, |stamp| stamp.value(x, y));
+                    }
+                }
+            }
+        }
     }
 
     /// Makes `self.frame` the mask of `clips`: the stamp of a frame clip set
@@ -658,7 +804,9 @@ impl PaintMasks {
         })
     }
 
-    fn exclude_label(&self, mask: &mut Mask, label: PngLabelMask) -> Result<(), FormatEncodeError> {
+    /// The raster pixels a bound-label exclusion clears: every pixel the label
+    /// box touches, clamped to the surface.
+    fn label_rect(&self, label: PngLabelMask) -> RasterRect {
         let multiplier = f64::from(self.multiplier);
         let left = (label.x * multiplier).floor().max(0.0) as u32;
         let top = (label.y * multiplier).floor().max(0.0) as u32;
@@ -668,21 +816,34 @@ impl PaintMasks {
         let bottom = ((label.y + label.height) * multiplier)
             .ceil()
             .clamp(0.0, f64::from(self.height)) as u32;
-        let data = mask.data_mut();
-        for y in top.min(self.height)..bottom {
-            let row = usize::try_from(y)
-                .ok()
-                .and_then(|value| value.checked_mul(usize::try_from(self.width).ok()?))
-                .ok_or_else(png_size_error)?;
-            for x in left.min(self.width)..right {
-                let index = row
-                    .checked_add(usize::try_from(x).map_err(|_| png_size_error())?)
-                    .ok_or_else(png_size_error)?;
-                data[index] = 0;
-            }
+        RasterRect {
+            left: left.min(self.width) as usize,
+            top: top.min(self.height) as usize,
+            right: right as usize,
+            bottom: bottom as usize,
         }
-        Ok(())
     }
+}
+
+impl FrameClipStamp {
+    /// The frame mask's value at raster pixel (`x`, `y`): the stamped value
+    /// inside the stamp, and clear outside it.
+    fn value(&self, x: usize, y: usize) -> u8 {
+        if (self.left..self.left + self.width).contains(&x)
+            && (self.top..self.top + self.height).contains(&y)
+        {
+            self.data[(y - self.top) * self.width + x - self.left]
+        } else {
+            0
+        }
+    }
+}
+
+/// `a * b / 255`, rounded: the product `Mask::intersect_path` applies when it
+/// intersects a coverage into a mask (tiny-skia's private `premultiply_u8`).
+fn premultiply_u8(a: u8, b: u8) -> u8 {
+    let product = u32::from(a) * u32::from(b) + 128;
+    ((product + (product >> 8)) >> 8) as u8
 }
 
 pub(super) const OFFICIAL_IMAGE_PATH: &str = "M464 448H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h416c26.51 0 48 21.49 48 48v288c0 26.51-21.49 48-48 48zM112 120c-30.928 0-56 25.072-56 56s25.072 56 56 56 56-25.072 56-56-25.072-56-56-56zM64 384h384V272l-87.515-87.515c-4.686-4.686-12.284-4.686-16.971 0L208 320l-55.515-55.515c-4.686-4.686-12.284-4.686-16.971 0L64 336v48z";

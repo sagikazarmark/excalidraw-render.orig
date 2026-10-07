@@ -262,7 +262,7 @@ type Builds {
     let name = "excalidraw-render-" + version + "-" + hostTarget
     self.cliDependencies
       .withExec(["cargo", "build", "--locked", "--release", "-p", "excalidraw-render-cli"])
-      .withExec(["bash", "-eu", "-c", cliArchiveScript, "archive", name])
+      .withExec(["bash", "-eu", "-c", cliArchiveScript, "archive", name, version])
       .directory("/dist")
   }
 
@@ -306,4 +306,4 @@ let compileFixtures: [String!]! = [
 Stage `$1` (the archive's base name) from the release build and the checkout
 root: fixed owner, mode, order and timestamps, and gzip without a name or time.
 """
-let cliArchiveScript: String! = "set -o pipefail; stage=/dist/$1; mkdir -p \"$stage\"; cp /target/release/excalidraw-render README.md LICENSE-MIT LICENSE-APACHE crates/excalidraw-render-cli/LICENSE-BUNDLE.txt \"$stage/\"; tar -C /dist --sort=name --owner=0 --group=0 --numeric-owner --mode=u+rwX,go+rX,go-w --mtime=@0 -cf - \"$1\" | gzip -9n > \"/dist/$1.tar.gz\"; rm -rf \"$stage\"; cd /dist; sha256sum \"$1.tar.gz\" > \"$1.tar.gz.sha256\""
+let cliArchiveScript: String! = "set -o pipefail; crate=$(awk -F'\"' '/^version = /{print $2; exit}' Cargo.toml); if [ \"$crate\" != \"$2\" ]; then echo \"archive version $2 does not match the workspace version $crate\" >&2; exit 1; fi; stage=/dist/$1; mkdir -p \"$stage\"; cp /target/release/excalidraw-render README.md LICENSE-MIT LICENSE-APACHE crates/excalidraw-render-cli/LICENSE-BUNDLE.txt \"$stage/\"; tar -C /dist --sort=name --owner=0 --group=0 --numeric-owner --mode=u+rwX,go+rX,go-w --mtime=@0 -cf - \"$1\" | gzip -9n > \"/dist/$1.tar.gz\"; rm -rf \"$stage\"; cd /dist; sha256sum \"$1.tar.gz\" > \"$1.tar.gz.sha256\""

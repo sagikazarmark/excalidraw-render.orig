@@ -379,6 +379,39 @@ fn is_allowed_svg_node(node: &roxmltree::Node<'_, '_>) -> bool {
         && (node.tag_name().name() != "style" || safe_static_style_node(*node))
 }
 
+/// Whether `namespace` holds only the metadata an authoring tool records
+/// about its document (Inkscape and Sodipodi editor state, RDF licensing,
+/// Illustrator and Sketch data). A browser neither renders nor acts on it,
+/// so its removal is silent rather than an unsafe-content diagnostic.
+fn is_inert_editor_namespace(namespace: Option<&str>) -> bool {
+    matches!(
+        namespace,
+        Some(
+            "http://www.inkscape.org/namespaces/inkscape"
+                | "http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+                | "http://inkscape.sourceforge.net/DTD/sodipodi-0.dtd"
+                | "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                | "http://creativecommons.org/ns#"
+                | "http://web.resource.org/cc/"
+                | "http://purl.org/dc/elements/1.1/"
+                | "http://ns.adobe.com/AdobeIllustrator/10.0/"
+                | "http://ns.adobe.com/Extensibility/1.0/"
+                | "http://ns.adobe.com/Graphs/1.0/"
+                | "http://ns.adobe.com/SaveForWeb/1.0/"
+                | "http://ns.adobe.com/Variables/1.0/"
+                | "http://www.bohemiancoding.com/sketch/ns"
+        )
+    )
+}
+
+/// Whether removing the disallowed `node` drops only inert editor metadata:
+/// it and every element below it are in an inert editor namespace.
+fn is_inert_editor_node(node: roxmltree::Node<'_, '_>) -> bool {
+    node.descendants()
+        .filter(roxmltree::Node::is_element)
+        .all(|element| is_inert_editor_namespace(element.tag_name().namespace()))
+}
+
 fn safe_static_style_node(node: roxmltree::Node<'_, '_>) -> bool {
     let mut text = None;
     for child in node.children() {
@@ -864,16 +897,18 @@ fn serialize_node(
     }
     let name = node.tag_name().name();
     if !is_allowed_svg_node(&node) {
-        removals
-            .try_reserve(1)
-            .map_err(|_| ResolutionFailure::Memory)?;
-        removals.push(Removal {
-            slots: Vec::new(),
-            node_ordinal: ordinal,
-            attribute_ordinal: None,
-            name: super::try_owned(name)?,
-            changes_appearance: name != "script",
-        });
+        if !is_inert_editor_node(node) {
+            removals
+                .try_reserve(1)
+                .map_err(|_| ResolutionFailure::Memory)?;
+            removals.push(Removal {
+                slots: Vec::new(),
+                node_ordinal: ordinal,
+                attribute_ordinal: None,
+                name: super::try_owned(name)?,
+                changes_appearance: name != "script",
+            });
+        }
         count_descendants(node, node_ordinal);
         return Ok(());
     }
@@ -974,6 +1009,14 @@ fn serialize_node(
                 if let Some(url) = replacement {
                     write_attribute(output, "href", &url)?;
                 }
+                continue;
+            }
+            // Editor metadata such as `sodipodi:docname` or
+            // `inkscape:export-xdpi` is dropped silently; an event-handler
+            // spelling is still reported whatever its namespace.
+            if is_inert_editor_namespace(attribute.namespace())
+                && !attribute_name.to_ascii_lowercase().starts_with("on")
+            {
                 continue;
             }
             removals
@@ -1908,6 +1951,13 @@ fn unsafe_attribute(element_name: &str, name: &str, namespace: Option<&str>, val
     ) {
         return !safe_href(element_name, value);
     }
+    if element_name == "feConvolveMatrix"
+        && name == "order"
+        && namespace.is_none()
+        && convolve_order_overflows(value)
+    {
+        return true;
+    }
     let lowercase = value.to_ascii_lowercase();
     lowercase.contains("@import")
         || lowercase.contains("javascript:")
@@ -1915,6 +1965,24 @@ fn unsafe_attribute(element_name: &str, name: &str, namespace: Option<&str>, val
         || lowercase.contains("-moz-binding")
         || lowercase.contains("behavior:")
         || contains_nonlocal_url(&lowercase)
+}
+
+/// Whether usvg 0.48's `convert_convolve_matrix` would multiply this `order`
+/// past `u32`, which panics where overflow checks are on (and wraps into a
+/// kernel resvg indexes out of bounds where they are off). It reads the
+/// value as usvg does: two numbers, each truncated to `i32`, the second
+/// defaulting to the first, either one non-positive leaving the 3x3 default.
+/// No kernel matrix an asset could carry has that many cells, so dropping
+/// such an `order` changes no kernel that could have been drawn.
+fn convolve_order_overflows(value: &str) -> bool {
+    let mut numbers = svgtypes::NumberListParser::from(value);
+    // `as` saturates, like usvg's own conversion.
+    let x = numbers.next().and_then(Result::ok).map_or(3, |n| n as i32);
+    let y = numbers.next().and_then(Result::ok).map_or(x, |n| n as i32);
+    match (u32::try_from(x), u32::try_from(y)) {
+        (Ok(x), Ok(y)) if x > 0 && y > 0 => x.checked_mul(y).is_none(),
+        _ => false,
+    }
 }
 
 fn discover_effects(
@@ -2479,6 +2547,28 @@ mod tests {
         // Attribute removals name their slot; element removals do not.
         assert!(sanitized.removals[0].attribute_ordinal.is_some());
         assert!(sanitized.removals[2].attribute_ordinal.is_none());
+    }
+
+    #[test]
+    fn inert_editor_metadata_is_removed_without_a_diagnostic() {
+        // An Inkscape export: Sodipodi and Inkscape state a browser ignores.
+        let sanitized = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" width="20" height="10" sodipodi:docname="d.svg" inkscape:version="1.3" inkscape:export-xdpi="96">
+            <sodipodi:namedview pagecolor="#ffffff"><inkscape:page x="0" y="0"/></sodipodi:namedview>
+            <metadata><rdf:RDF/></metadata>
+            <path d="M0 0H20" stroke="#000" sodipodi:nodetypes="cc" inkscape:onclick="x"/>
+            <sodipodi:guide><rect width="20" height="10"/></sodipodi:guide>
+        </svg>"##,
+        );
+
+        let text = sanitized_text(&sanitized);
+        for removed in ["sodipodi", "inkscape", "rdf"] {
+            assert!(!text.contains(removed), "removed {removed}: {text}");
+        }
+        assert!(text.contains("<path"));
+        // An `on*` spelling and editor markup wrapping SVG content stay
+        // reported, whatever their namespace.
+        assert_eq!(removal_names(&sanitized), ["onclick", "guide"]);
     }
 
     #[test]

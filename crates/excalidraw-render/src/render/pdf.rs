@@ -23,7 +23,7 @@ use content::PdfImages;
 use fonts::{finite_f32, PdfFonts};
 use nested_svg::{collect_raster_closures, svg_draw_trees};
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use krilla::action::{Action, LinkAction};
 use krilla::annotation::{Annotation, LinkAnnotation, Target};
@@ -49,6 +49,7 @@ use super::resolve::{
     ResolvedImageSourceRect, ResolvedLabelMask, ResolvedScene, ResolvedTransform, StrokeStyle,
 };
 use super::rough::{Drawing, Fill};
+use super::svg_filter_work::FilterWork;
 use super::text::{ResolvedLabel, ResolvedText};
 use super::{freedraw, FormatEncodeError, SvgTreeCache};
 
@@ -72,6 +73,9 @@ pub(super) struct PdfPlan {
     elements: Vec<PdfElement>,
     raster_closures: Vec<PdfRasterClosure>,
     svg_resources: Vec<PdfSvgResource>,
+    /// The nested-SVG trees `encode` draws, lowered on first use: they follow
+    /// from the closures and resources alone, which no later step changes.
+    svg_draw_trees: OnceLock<Vec<Arc<usvg::Tree>>>,
 }
 
 /// One raster image XObject: an asset embedded once however many elements
@@ -375,6 +379,7 @@ impl PdfPlan {
             elements,
             raster_closures: Vec::new(),
             svg_resources: Vec::new(),
+            svg_draw_trees: OnceLock::new(),
         };
         plan.svg_resources = plan.build_svg_resources()?;
         plan.raster_closures = collect_raster_closures(
@@ -389,6 +394,23 @@ impl PdfPlan {
 
     pub(super) fn raster_closures(&self) -> &[PdfRasterClosure] {
         &self.raster_closures
+    }
+
+    /// What resvg will spend on the filter effects of `closure` when it is
+    /// rasterized, in its input surface's device pixels. The walk stops past
+    /// `budget` work units.
+    pub(super) fn raster_closure_filter_work(
+        &self,
+        closure: &PdfRasterClosure,
+        budget: u64,
+    ) -> Result<FilterWork, FormatEncodeError> {
+        self.svg_resources
+            .iter()
+            .find(|resource| resource.source_index == closure.source_index)
+            .and_then(|resource| resource.prepared.as_ref())
+            .map_or(Ok(FilterWork::default()), |prepared| {
+                prepared.filter_work(closure, budget)
+            })
     }
 
     pub(super) fn take_mandatory_notices(&mut self) -> Option<MandatoryNotices> {
@@ -415,8 +437,15 @@ impl PdfPlan {
             .iter()
             .map(raster_image)
             .collect::<Result<Vec<_>, _>>()?;
-        let svg_trees =
-            svg_draw_trees(&self.svg_resources, &self.svg_trees, &self.raster_closures)?;
+        // Lowering rasterizes every closure, which the raster preflight
+        // charged once; the measured candidates and the emission share it.
+        let svg_trees = if let Some(trees) = self.svg_draw_trees.get() {
+            trees.clone()
+        } else {
+            let trees =
+                svg_draw_trees(&self.svg_resources, &self.svg_trees, &self.raster_closures)?;
+            self.svg_draw_trees.get_or_init(|| trees).clone()
+        };
         let annotations = self.link_annotations()?;
 
         let mut document = Document::new_with(serialize_settings()?);

@@ -141,11 +141,10 @@ pub(super) fn resolve_text(
         return Ok(None);
     };
     let container_source_order = container_source_index.and_then(|container| {
-        context
-            .relationships
-            .nodes
-            .iter()
-            .find(|node| node.source_index == container)
+        let relationships = context.relationships;
+        relationships
+            .node_position(container)
+            .and_then(|node| relationships.nodes.get(node))
             .map(|node| node.source_order)
     });
     let font_index = official_font_index(

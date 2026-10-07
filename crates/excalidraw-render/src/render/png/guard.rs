@@ -203,6 +203,17 @@ pub(super) trait GuardedMask {
         anti_alias: bool,
         transform: Transform,
     );
+
+    /// [`guarded_fill_path`](Self::guarded_fill_path), returning the device
+    /// bounds of the path it filled: the scan converter writes no coverage
+    /// outside them rounded out. `None` when nothing was filled.
+    fn guarded_fill_path_bounds(
+        &mut self,
+        path: &Path,
+        fill_rule: FillRule,
+        anti_alias: bool,
+        transform: Transform,
+    ) -> Option<Rect>;
 }
 
 impl GuardedMask for Mask {
@@ -237,6 +248,25 @@ impl GuardedMask for Mask {
             // Intersecting with a path that covers nothing empties the mask.
             self.clear();
         }
+    }
+
+    fn guarded_fill_path_bounds(
+        &mut self,
+        path: &Path,
+        fill_rule: FillRule,
+        anti_alias: bool,
+        transform: Transform,
+    ) -> Option<Rect> {
+        // `Mask::fill_path` maps a transformed path into device space itself
+        // and fills that with the identity, so filling the mapped path here is
+        // the same call, and its bounds are the ones the scan converter clips.
+        let device = if within_device_limit(path, 0.0, transform) {
+            path.clone().transform(transform)?
+        } else {
+            clip_to_surface(path, transform, self.width(), self.height())?
+        };
+        self.fill_path(&device, fill_rule, anti_alias, Transform::identity());
+        Some(device.bounds())
     }
 }
 

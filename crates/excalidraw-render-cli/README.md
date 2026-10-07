@@ -43,7 +43,13 @@ option.
 The command exits 0 when the artifact was delivered, even with warnings; 1
 when reading, parsing, rendering, or writing failed, or an output already
 exists without `--force`; and 2 when the command line or a request value is
-invalid.
+invalid, such as a directory given as the output file. When a reader closes
+standard output early (`| head`), the command exits 1 without printing an
+error.
+
+`excalidraw-render --version` prints the version and the Excalidraw release it
+matches; add `--verbose` for the exact compatibility revision and profile
+digest.
 
 ## License
 

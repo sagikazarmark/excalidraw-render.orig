@@ -16,7 +16,11 @@ fn request(format: OutputFormat, limits: ResourceLimits) -> RenderRequest {
     RenderRequest::builder(format)
         .padding(0.)
         .include_background(false)
-        .frame_options(FrameOptions::default().with_name(false).with_outline(false))
+        .frame_options(
+            FrameOptions::default()
+                .with_show_name(false)
+                .with_outline(false),
+        )
         .resource_limits(limits)
         .build()
         .unwrap()

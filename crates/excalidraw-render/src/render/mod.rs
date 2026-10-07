@@ -67,6 +67,7 @@ mod resolution;
 mod resolve;
 mod rough;
 mod svg;
+mod svg_filter_work;
 mod svg_fonts;
 #[cfg(test)]
 mod test_support;

@@ -32,9 +32,8 @@ Render an Excalidraw scene document (.excalidraw JSON) to SVG, PNG, or PDF.
 
 Rendering needs no browser, Node.js, network access, or installed fonts. The
 output extension selects the format; use --format for standard output or other
-names. Compatibility diagnostics describing substitutions, omissions, and
-fallbacks are printed to stderr; use --report-format json for a machine-readable
-report.";
+names. Warnings describing substitutions, omissions, and fallbacks are printed
+to stderr; use --report-format json for a machine-readable report.";
 
 const EXAMPLES: &str = "\
 Examples:
@@ -47,7 +46,7 @@ Examples:
 
 const EXIT_STATUS: &str = "\
 Exit status:
-  0  the artifact was delivered (diagnostics may still have been reported)
+  0  the artifact was delivered (warnings may still have been reported)
   1  reading, parsing, rendering, or writing failed, or an output already exists
   2  the command line or a request value is invalid";
 
@@ -102,7 +101,7 @@ impl From<FormatArg> for OutputFormat {
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, ValueEnum)]
 enum ReportFormat {
-    /// Readable diagnostics and errors
+    /// Readable warnings and errors
     #[default]
     Human,
     /// One JSON report document
@@ -187,9 +186,11 @@ struct Cli {
     /// express [default: allow-isolated]
     #[arg(long, value_enum, value_name = "MODE", help_heading = RENDERING)]
     pdf_raster_fallback: Option<PdfFallbackArg>,
+    // Hidden, like --list-revisions, while the renderer implements a single
+    // revision: there is nothing to choose between yet.
     /// Compatibility revision to render with [default: 1; see
     /// --list-revisions]
-    #[arg(long, value_name = "N", help_heading = RENDERING)]
+    #[arg(long, value_name = "N", hide = true, help_heading = RENDERING)]
     compatibility_revision: Option<String>,
 
     /// Turn frame rendering off: no frame clipping, names, or outlines
@@ -208,10 +209,10 @@ struct Cli {
     /// Embed the scene so Excalidraw can reopen the exported file for editing
     #[arg(long, help_heading = METADATA)]
     embed_scene: bool,
-    /// Embed the renderer version and compatibility profile
+    /// Embed the renderer version and the Excalidraw release it matches
     #[arg(long, help_heading = METADATA)]
     embed_provenance: bool,
-    /// Embed a summary of the compatibility diagnostics
+    /// Embed a summary of the rendering warnings
     #[arg(long, help_heading = METADATA)]
     embed_diagnostics: bool,
 
@@ -224,21 +225,21 @@ struct Cli {
     #[arg(long, value_name = "FILE_ID=MEDIA_TYPE", help_heading = ASSETS)]
     asset_mime: Vec<String>,
 
-    /// How to report diagnostics and errors on stderr
+    /// How to report warnings and errors on stderr
     #[arg(long, value_enum, default_value_t, help_heading = REPORTING)]
     report_format: ReportFormat,
     /// Write the report to PATH instead of stderr
     #[arg(long, value_name = "PATH", help_heading = REPORTING)]
     report_output: Option<String>,
-    /// Also print informational diagnostics in the human report
+    /// Also print informational messages in the human report
     #[arg(short, long, help_heading = REPORTING)]
     verbose: bool,
 
     /// List the supported compatibility revisions and exit
-    #[arg(long, help_heading = INFORMATION)]
+    #[arg(long, hide = true, help_heading = INFORMATION)]
     list_revisions: bool,
-    /// Print the version, compatibility revision, and reference profile, then
-    /// exit
+    /// Print the version and the Excalidraw release it matches, then exit
+    /// (add --verbose for the exact build identity to quote in bug reports)
     #[arg(short = 'V', long, help_heading = INFORMATION)]
     version: bool,
     /// Print the bundled third-party license notices, then exit
@@ -663,13 +664,21 @@ fn run_standalone(cli: &Cli) -> u8 {
 
     let profile = Renderer::new().profile_identity();
     if cli.version {
-        let text = format!(
-            "excalidraw-render {}\ncompatibility revision {}\nExcalidraw {}\nreference profile {}\n",
+        let release = profile.excalidraw_release();
+        let mut text = format!(
+            "excalidraw-render {} (Excalidraw {})\n",
             env!("CARGO_PKG_VERSION"),
-            profile.compatibility_revision(),
-            profile.excalidraw_release(),
-            profile.profile_digest()
+            release.strip_prefix('v').unwrap_or(release)
         );
+        // The exact identity a bug report or reproduction pins; JSON reports
+        // carry it too.
+        if cli.verbose {
+            text.push_str(&format!(
+                "compatibility revision {}\nreference profile {}\n",
+                profile.compatibility_revision(),
+                profile.profile_digest()
+            ));
+        }
         return write_stdout(text.as_bytes());
     }
     if cli.licenses {
@@ -913,7 +922,7 @@ fn build_request(
             FrameOptions::default()
                 .with_enabled(!cli.no_frame_rendering)
                 .with_clip(!cli.no_frame_clipping)
-                .with_name(!cli.no_frame_names)
+                .with_show_name(!cli.no_frame_names)
                 .with_outline(!cli.no_frame_outlines),
         )
         .metadata_options(
@@ -1160,6 +1169,9 @@ fn path_entry_exists(path: &Path) -> bool {
 }
 
 fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Failure> {
+    if output != "-" {
+        check_output_file_location(output)?;
+    }
     for (role, path) in [
         (DeliveryRole::Output, output),
         (DeliveryRole::Report, report),
@@ -1174,6 +1186,63 @@ fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Fai
         }
     }
     Ok(())
+}
+
+/// Rejects, before anything is rendered, an output file that could never be
+/// delivered: a directory (which even `--force` cannot replace) or a path
+/// whose directory is missing.
+fn check_output_file_location(output: &str) -> Result<(), Failure> {
+    let path = Path::new(output);
+    let directory = if path.is_dir() {
+        Some("is a directory")
+    } else if output.ends_with(std::path::is_separator) {
+        Some("names a directory")
+    } else {
+        None
+    };
+    if let Some(directory) = directory {
+        return Err(Failure::cli(
+            "cli.invalid-output-directory",
+            format!("output '{output}' {directory}"),
+            Some(CliDetails::CliArgument {
+                argument: "--output".to_owned(),
+                value: Some(output.to_owned()),
+            }),
+            EXIT_USAGE,
+        )
+        .with_hint(
+            "pass a file path to -o, or use `excalidraw-render frames INPUT -o DIRECTORY \
+             --format FORMAT` to write one file per frame",
+        ));
+    }
+    let Some(error) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .and_then(not_a_directory)
+    else {
+        return Ok(());
+    };
+    Err(delivery_failure(
+        DeliveryRole::Output,
+        &DeliveryError::new(CliOperation::Create, &error),
+        output,
+        DeliveryState::None,
+        Vec::new(),
+    ))
+}
+
+/// Why `path` cannot hold new files, as the operating system words it (a
+/// missing entry, or a file where a directory belongs); `None` for a
+/// directory.
+fn not_a_directory(path: &Path) -> Option<io::Error> {
+    if path.is_dir() {
+        return None;
+    }
+    Some(
+        fs::read_dir(path)
+            .err()
+            .unwrap_or_else(|| io::ErrorKind::NotADirectory.into()),
+    )
 }
 
 /// `cli.destination-exists` for an existing `role` destination at `path`.
@@ -1441,6 +1510,15 @@ fn deliver_success(
     } else if let Err((error, artifact_state)) =
         write_stream_tracked(&mut io::stdout().lock(), &artifact)
     {
+        // A reader that stopped early (`| head`) is not news to the person at
+        // the terminal: fail without a message, as pipeline tools do. A JSON
+        // or file report is still written, since a program asked for it.
+        if error.kind == io::ErrorKind::BrokenPipe
+            && cli.report_format != ReportFormat::Json
+            && report_output == "stderr"
+        {
+            return EXIT_OPERATIONAL;
+        }
         return emit_failure(
             cli,
             Some(identity),

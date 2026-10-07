@@ -2,9 +2,14 @@
 //!
 //! Scene and frame exports to SVG, PNG, and vector-first PDF are produced
 //! against a compatibility revision identifying the rendering profile.
-//! In 0.x, output and diagnostics may change between reviewed releases;
-//! pin the renderer version and dependency lockfile for reproducible output.
+//! In 0.x, any release may change output and diagnostics; pin the renderer
+//! version and dependency lockfile for reproducible output.
 //! Linux x86-64 GNU is release-qualified; browser WASM is experimental.
+//!
+//! Throughout this documentation, *reference* means Excalidraw's own exporter
+//! at the pinned release, v0.18.1: "reference frame-export semantics" and
+//! "reference dark-mode colors" describe what Excalidraw itself produces. An
+//! *admitted* scene is one [`SceneDocument::parse`] accepted.
 //!
 //! # Quick start
 //!
@@ -42,7 +47,7 @@
 //! let outcome = renderer.render(&scene, &request)?;
 //! for diagnostic in outcome.report().diagnostics() {
 //!     eprintln!(
-//!         "{:?} {} at {}: {}",
+//!         "{} {} at {}: {}",
 //!         diagnostic.severity(),
 //!         diagnostic.code(),
 //!         diagnostic.json_pointer(),
@@ -119,8 +124,18 @@
 //!   [profile.dev.package."*"]
 //!   opt-level = 2
 //!   ```
+//!
+//! # Features
+//!
+//! - **`cjk`** (default) bundles Xiaolai, Excalifont's Chinese, Japanese and
+//!   Korean fallback font (about 12 MiB). Without it, a render whose text
+//!   needs Xiaolai fails with [`ErrorCode::RENDER_FONT_UNAVAILABLE`]
+//!   (`render.font-unavailable`, a [`RenderErrorCategory::Capability`]
+//!   failure) rather than substituting another font. Every other font,
+//!   including Noto Emoji, is always bundled.
 
 #![warn(missing_docs)]
+#![warn(clippy::missing_errors_doc)]
 
 mod catalog;
 #[cfg(test)]

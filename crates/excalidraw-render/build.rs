@@ -4,6 +4,8 @@
 //! cfg, which lifts the `#[ignore]` from the corpus-driven tests the push gate
 //! skips. The library's own code never reads it; it is a build-time switch
 //! rather than a Cargo feature so it is not part of the published interface.
+//! The package's `include` list leaves this script out, so the published
+//! crate has no build script and dependents never run it.
 
 const VARIABLE: &str = "EXCALIDRAW_RENDER_RELEASE_QUALIFICATION";
 

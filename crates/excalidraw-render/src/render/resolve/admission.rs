@@ -1,6 +1,7 @@
 //! Admit layout before bounds become the export origin. Recovery is monotone:
 //! each retry removes at least one occurrence, including any dependent clips.
 
+use super::super::bound_text::SourcePositions;
 use super::super::coordinates::{self, CoordinateRange};
 use super::super::frame_target::{EffectiveFrameRendering, FrameViewport};
 use super::super::geometry::{resolved_frame_outline, resolved_frame_rect, GeneratedGeometry};
@@ -159,6 +160,9 @@ pub(super) fn admit_layout(
     labels: &mut PreparedLabels,
 ) -> Result<Option<(f64, f64, f64, f64)>, ResolveSceneError> {
     let range = CoordinateRange(request.resource_limits().max_coordinate_magnitude());
+    // Each outline looks up its own text. The texts keep their order here, so
+    // they are keyed once rather than scanned per outline.
+    let text_positions = SourcePositions::new(texts.iter().map(|text| text.source.source_index()))?;
     loop {
         let mut rejected = Vec::new();
         rejected.try_reserve(outlines.len().saturating_add(fallbacks.len()))?;
@@ -187,9 +191,9 @@ pub(super) fn admit_layout(
                         range.rect(rect.x, rect.y, rect.width, rect.height)?;
                     }
                 }
-                if let Some(text) = texts
-                    .iter()
-                    .find(|text| text.source.source_index() == source.source.source_index())
+                if let Some(text) = text_positions
+                    .first(source.source.source_index())
+                    .and_then(|position| texts.get(position))
                 {
                     range.text(&text.text, text.transform)?;
                 }
@@ -289,9 +293,9 @@ pub(super) fn admit_layout(
                     }
                 }
                 if check.is_ok() {
-                    if let Some(text) = texts
-                        .iter()
-                        .find(|text| text.source.source_index() == source.source.source_index())
+                    if let Some(text) = text_positions
+                        .first(source.source.source_index())
+                        .and_then(|position| texts.get(position))
                     {
                         check = range.text(&text.text, transform);
                     }
@@ -399,9 +403,9 @@ pub(super) fn admit_layout(
                 .find(|(i, _)| *i == outlines[index].0.source.source_index())
             {
                 let (source, geometry) = outlines.remove(index);
-                if let Some(text) = texts
-                    .iter_mut()
-                    .find(|text| text.source.source_index() == source.source.source_index())
+                if let Some(text) = text_positions
+                    .first(source.source.source_index())
+                    .and_then(|position| texts.get_mut(position))
                 {
                     if let Some(value) = value {
                         text.coordinate_failure = Some(*value);
@@ -439,9 +443,9 @@ pub(super) fn admit_layout(
                     source.source_order,
                     0,
                 );
-                if let Some(text) = texts
-                    .iter()
-                    .find(|text| text.source.source_index() == source.source.source_index())
+                if let Some(text) = text_positions
+                    .first(source.source.source_index())
+                    .and_then(|position| texts.get(position))
                 {
                     observation.paint_order = text
                         .container_source_order

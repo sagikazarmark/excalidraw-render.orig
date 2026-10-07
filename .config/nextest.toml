@@ -8,7 +8,8 @@
 #               (one binary; each former file is a module)
 #   parity_*    parity against official evidence: the registry-driven scene
 #               harnesses and the frame-export case
-#   limits_*    fixed parser ceilings that build 64 MiB and 1M-entry scenes
+#   limits_*    fixed parser ceilings that build 64 MiB and 1M-entry scenes,
+#               and scene-scaling guards against quadratic per-element lookups
 #   harness_*   #[ignore]d gates that need the pinned Chromium, PDFium, PDF.js
 #               and qpdf harnesses; a harness binary holds nothing else
 #

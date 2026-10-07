@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Kind of live frame occurrence discovered in a scene document.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub enum FrameKind {
     /// An ordinary Excalidraw frame.
@@ -27,6 +27,12 @@ impl FrameKind {
     }
 }
 
+impl fmt::Display for FrameKind {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.as_str())
+    }
+}
+
 /// Borrowed identity and display metadata for one live frame occurrence.
 #[derive(Clone, Copy)]
 pub struct FrameRef<'scene> {
@@ -34,6 +40,7 @@ pub struct FrameRef<'scene> {
     pub(crate) source_index: usize,
     ordinal: u32,
     kind: FrameKind,
+    id: Option<&'scene str>,
     name: Option<&'scene str>,
 }
 
@@ -54,6 +61,16 @@ impl FrameRef<'_> {
 }
 
 impl<'scene> FrameRef<'scene> {
+    /// Returns the source element ID when it is a non-empty string.
+    ///
+    /// Excalidraw gives every element a unique ID, but a hand-edited or
+    /// damaged scene can omit or repeat one; the renderer repairs such IDs
+    /// when it renders, and the [ordinal](Self::ordinal) always identifies
+    /// the occurrence.
+    pub const fn id(self) -> Option<&'scene str> {
+        self.id
+    }
+
     /// Returns the source display name when it was a string.
     pub const fn name(self) -> Option<&'scene str> {
         self.name
@@ -66,6 +83,7 @@ impl fmt::Debug for FrameRef<'_> {
             .debug_struct("FrameRef")
             .field("ordinal", &self.ordinal)
             .field("kind", &self.kind)
+            .field("id", &self.id)
             .field("name", &self.name)
             .finish_non_exhaustive()
     }
@@ -108,6 +126,10 @@ impl<'scene> Iterator for FrameRefs<'scene> {
                 _ => continue,
             };
             self.ordinal = self.ordinal.saturating_add(1);
+            let id = match source.id {
+                SourceField::Value(id) if !id.is_empty() => Some(id),
+                SourceField::Value(_) | SourceField::Missing | SourceField::Invalid => None,
+            };
             let name = match source.name {
                 SourceField::Value(name) => name,
                 SourceField::Missing | SourceField::Invalid => None,
@@ -117,6 +139,7 @@ impl<'scene> Iterator for FrameRefs<'scene> {
                 source_index,
                 ordinal: self.ordinal,
                 kind,
+                id,
                 name,
             });
         }
@@ -253,6 +276,11 @@ impl<'scene> FrameRenderEntry<'scene> {
     }
 
     /// Consumes the entry and returns its complete target result.
+    ///
+    /// # Errors
+    ///
+    /// Returns this frame's [`RenderError`] when it could not be rendered,
+    /// as [`Renderer::render_frame`](crate::Renderer::render_frame) would.
     pub fn into_result(self) -> Result<RenderOutcome, RenderError> {
         self.result
     }

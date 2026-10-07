@@ -5,6 +5,7 @@ use std::fmt::Write;
 
 use base64::Engine;
 
+use super::super::svg_filter_work::{self, FilterWork};
 use super::super::{try_owned, FormatEncodeError};
 use super::PdfRasterClosure;
 
@@ -211,33 +212,23 @@ impl PreparedSvg {
         }
         Ok(result)
     }
+    /// What resvg will spend on the filter effects of `closure`, measured
+    /// with the input grid and transform `render_node` paints it with. The
+    /// walk stops past `budget` work units.
+    pub(super) fn filter_work(
+        &self,
+        closure: &PdfRasterClosure,
+        budget: u64,
+    ) -> Result<FilterWork, FormatEncodeError> {
+        with_node(self.tree.root(), &closure.raster.node_id, &mut |node| {
+            let (width, height, transform) = input_grid(closure, node)?;
+            Ok(svg_filter_work::measure_node(
+                node, transform, width, height, budget,
+            ))
+        })
+        .ok_or_else(|| invalid("PDF raster closure lost its node"))?
+    }
     fn render(&self, closure: &PdfRasterClosure) -> Result<String, FormatEncodeError> {
-        fn with_node<T>(
-            group: &usvg::Group,
-            id: &str,
-            render: &mut impl FnMut(&usvg::Node) -> Result<T, FormatEncodeError>,
-        ) -> Option<Result<T, FormatEncodeError>> {
-            for node in group.children() {
-                if node.id() == id {
-                    return Some(render(node));
-                }
-                if let usvg::Node::Group(group) = node {
-                    if let Some(result) = with_node(group, id, render) {
-                        return Some(result);
-                    }
-                }
-                let mut result = None;
-                node.subroots(|group| {
-                    if result.is_none() {
-                        result = with_node(group, id, render);
-                    }
-                });
-                if result.is_some() {
-                    return result;
-                }
-            }
-            None
-        }
         with_node(self.tree.root(), &closure.raster.node_id, &mut |node| {
             self.render_node(closure, node)
         })
@@ -249,17 +240,11 @@ impl PreparedSvg {
         node: &usvg::Node,
     ) -> Result<String, FormatEncodeError> {
         let placement = &closure.raster;
-        let bbox = node
-            .abs_layer_bounding_box()
-            .ok_or_else(|| invalid("PDF raster closure lost its bounds"))?;
+        let (width, height, transform) = input_grid(closure, node)?;
+        let mut input = pixmap(width, height)?;
         let size = |value| {
             u32::try_from(value).map_err(|_| invalid("PDF raster surface exceeds address space"))
         };
-        let mut input = pixmap(size(placement.input_width)?, size(placement.input_height)?)?;
-        let transform = Matrix::translate(-placement.input_x, -placement.input_y)
-            .concat(placement.parent_to_device)
-            .concat(Matrix::translate(f64::from(bbox.x()), f64::from(bbox.y())))
-            .skia()?;
         resvg::render_node(node, transform, &mut input.as_mut())
             .ok_or_else(|| invalid("PDF raster closure could not be painted"))?;
         let mut output = if closure.shares_input_grid() {
@@ -304,6 +289,56 @@ impl PreparedSvg {
         write!(image,"<image width=\"{}\" height=\"{}\" preserveAspectRatio=\"none\" transform=\"matrix({a} {b} {c} {d} {e} {f})\" href=\"data:image/png;base64,{data}\"/>",closure.pixel_width,closure.pixel_height).map_err(|_|memory())?;
         Ok(image)
     }
+}
+/// Calls `render` with the node whose ID is `id`, searching resource subroots too.
+fn with_node<T>(
+    group: &usvg::Group,
+    id: &str,
+    render: &mut impl FnMut(&usvg::Node) -> Result<T, FormatEncodeError>,
+) -> Option<Result<T, FormatEncodeError>> {
+    for node in group.children() {
+        if node.id() == id {
+            return Some(render(node));
+        }
+        if let usvg::Node::Group(group) = node {
+            if let Some(result) = with_node(group, id, render) {
+                return Some(result);
+            }
+        }
+        let mut result = None;
+        node.subroots(|group| {
+            if result.is_none() {
+                result = with_node(group, id, render);
+            }
+        });
+        if result.is_some() {
+            return result;
+        }
+    }
+    None
+}
+/// The input surface a closure's node is painted into, and the transform
+/// `resvg::render_node` receives for it.
+fn input_grid(
+    closure: &PdfRasterClosure,
+    node: &usvg::Node,
+) -> Result<(u32, u32, tiny_skia::Transform), FormatEncodeError> {
+    let placement = &closure.raster;
+    let bbox = node
+        .abs_layer_bounding_box()
+        .ok_or_else(|| invalid("PDF raster closure lost its bounds"))?;
+    let size = |value| {
+        u32::try_from(value).map_err(|_| invalid("PDF raster surface exceeds address space"))
+    };
+    let transform = Matrix::translate(-placement.input_x, -placement.input_y)
+        .concat(placement.parent_to_device)
+        .concat(Matrix::translate(f64::from(bbox.x()), f64::from(bbox.y())))
+        .skia()?;
+    Ok((
+        size(placement.input_width)?,
+        size(placement.input_height)?,
+        transform,
+    ))
 }
 fn pixmap(width: u32, height: u32) -> Result<tiny_skia::Pixmap, FormatEncodeError> {
     let size = tiny_skia::IntSize::from_wh(width, height)

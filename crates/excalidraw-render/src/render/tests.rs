@@ -960,7 +960,7 @@ fn png_frame_clip_masks_are_charged_once_per_frame_and_owned_by_no_child() {
     let request = RenderRequest::builder(OutputFormat::Png)
         .frame_options(
             crate::FrameOptions::default()
-                .with_name(false)
+                .with_show_name(false)
                 .with_outline(false),
         )
         .build()

@@ -859,9 +859,12 @@ fn normalize_binding(
             return Ok(None);
         }
     };
+    // Excalidraw's restore keeps a binding without `gap`, which later
+    // releases no longer persist, as it keeps one without `focus`.
     let gap = match source.gap() {
+        SourceField::Missing => 0.0,
         SourceField::Value(gap) => gap,
-        SourceField::Missing | SourceField::Invalid => {
+        SourceField::Invalid => {
             context.unsupported_nested(
                 field,
                 "gap",

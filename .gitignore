@@ -25,3 +25,6 @@ devenv.local.yaml
 
 target/
 .env
+
+# Claude Code
+/.claude/

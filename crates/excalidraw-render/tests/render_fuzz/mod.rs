@@ -100,7 +100,7 @@ fn request(case: &Case, format: OutputFormat, output: Option<u64>) -> RenderRequ
             FrameOptions::default()
                 .with_enabled(bits & 512 == 0)
                 .with_clip(bits & 1024 == 0)
-                .with_name(bits & 2048 == 0)
+                .with_show_name(bits & 2048 == 0)
                 .with_outline(bits & 4096 == 0),
         )
         .metadata_options(

@@ -2433,7 +2433,7 @@ fn frame_missing_glyph_reports_follow_visible_names() {
         );
         assert_frame_reports(&source, format, &[json!([])]);
         let hidden = RenderRequest::builder(format)
-            .frame_options(FrameOptions::default().with_name(false))
+            .frame_options(FrameOptions::default().with_show_name(false))
             .build()
             .unwrap();
         assert_report_with_request(&source, &hidden, json!([]));
@@ -2581,7 +2581,7 @@ fn mixed_reciprocal_cycles_and_fallbacks_have_exact_reports() {
                 FrameOptions::default()
                     .with_enabled(false)
                     .with_clip(false)
-                    .with_name(false)
+                    .with_show_name(false)
                     .with_outline(false),
             )
             .build()
@@ -2633,7 +2633,7 @@ fn frame_opacity_cycle_affects_output_even_when_clipping_is_disabled() {
                 FrameOptions::default()
                     .with_enabled(false)
                     .with_clip(false)
-                    .with_name(false)
+                    .with_show_name(false)
                     .with_outline(false),
             )
             .build()
@@ -3068,7 +3068,7 @@ fn missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_sile
             json!([
                 expected(
                     "normalization.missing-timestamp",
-                    "warning",
+                    "info",
                     json!(["input_repair"]),
                     json!("first"),
                     "/elements/0/updated",
@@ -3076,7 +3076,7 @@ fn missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_sile
                 ),
                 expected(
                     "normalization.missing-timestamp",
-                    "warning",
+                    "info",
                     json!(["input_repair"]),
                     json!("second"),
                     "/elements/2/updated",
@@ -3097,7 +3097,7 @@ fn missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_sile
             json!([
                 expected(
                     "normalization.missing-timestamp",
-                    "warning",
+                    "info",
                     json!(["input_repair"]),
                     Value::Null,
                     "/files/z/created",
@@ -3105,7 +3105,7 @@ fn missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_sile
                 ),
                 expected(
                     "normalization.missing-timestamp",
-                    "warning",
+                    "info",
                     json!(["input_repair"]),
                     Value::Null,
                     "/files/a/created",

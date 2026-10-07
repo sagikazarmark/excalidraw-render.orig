@@ -113,13 +113,17 @@ fn envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_value
     for field in ["type", "version", "elements", "appState", "files"] {
         for value in std::iter::once(None).chain(values().into_iter().map(Some)) {
             let mut source = baseline.clone();
-            let valid = value.as_ref().is_some_and(|v| match field {
-                "type" => v == "excalidraw",
-                "version" => v.as_u64() == Some(2),
-                "elements" => v.is_array(),
-                "appState" | "files" => v.is_object(),
-                _ => unreachable!(),
-            });
+            // Excalidraw restores an absent appState or files member.
+            let valid =
+                value
+                    .as_ref()
+                    .map_or(matches!(field, "appState" | "files"), |v| match field {
+                        "type" => v == "excalidraw",
+                        "version" => v.as_u64() == Some(2),
+                        "elements" => v.is_array(),
+                        "appState" | "files" => v.is_object(),
+                        _ => unreachable!(),
+                    });
             if let Some(value) = value {
                 source[field] = value;
             } else {
@@ -239,7 +243,12 @@ fn envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_value
 }
 
 fn diagnostic(code: &str, id: Value, pointer: &str, recovery: &str) -> Value {
-    json!({"code":code,"severity":"warning","effects":["input_repair"],
+    let severity = if code == "normalization.missing-timestamp" {
+        "info"
+    } else {
+        "warning"
+    };
+    json!({"code":code,"severity":severity,"effects":["input_repair"],
         "element_id":id,"json_pointer":pointer,
         "details":{"kind":"compatibility","recovery":recovery,"recipe_id":null}})
 }

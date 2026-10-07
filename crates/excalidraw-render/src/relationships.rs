@@ -68,6 +68,35 @@ pub(crate) struct ResolvedRelationshipGraph {
     pub(crate) edges: Vec<RelationshipEdge>,
 }
 
+impl ResolvedRelationshipGraph {
+    /// The node of the source element at `source_index`, if it has one.
+    ///
+    /// `resolve` builds the nodes in ascending source index, one per element,
+    /// so a binary search finds the same node a scan from the front would,
+    /// without making every per-element lookup linear in the scene.
+    pub(crate) fn node_position(&self, source_index: usize) -> Option<usize> {
+        self.nodes
+            .binary_search_by_key(&source_index, |node| node.source_index)
+            .ok()
+    }
+
+    /// The edges owned by node `node`, in graph order.
+    ///
+    /// `resolve` orders the edges by their owner's source order, which ascends
+    /// with the owner's node index, so each node's edges are one contiguous run
+    /// and the first matching edge of the run is the first in the whole graph.
+    pub(crate) fn outgoing_edges(&self, node: usize) -> &[RelationshipEdge] {
+        let start = self.edges.partition_point(|edge| edge.source < node);
+        let end = start.saturating_add(
+            self.edges
+                .get(start..)
+                .unwrap_or_default()
+                .partition_point(|edge| edge.source == node),
+        );
+        self.edges.get(start..end).unwrap_or_default()
+    }
+}
+
 pub(crate) struct RelationshipTraversal<'a> {
     pub(crate) element_id: &'a str,
     pub(crate) local_owner: &'a str,
@@ -156,12 +185,25 @@ pub(crate) fn resolve<E>(
 ) -> Result<RelationshipOutcome, RelationshipError<E>> {
     let source_count = scene.element_occurrence_count();
     let mut normalized_ids = try_filled_vec(source_count, None)?;
-    for element in elements {
+    // The first normalized element of each source occurrence, so a node finds
+    // its element without scanning every element.
+    let mut first_elements = try_filled_vec(source_count, None)?;
+    for (position, element) in elements.iter().enumerate() {
         let Some(slot) = normalized_ids.get_mut(element.source.source_index()) else {
             return Err(RelationshipError::MemoryUnavailable);
         };
         *slot = Some(element.source.id());
+        if let Some(first @ None) = first_elements.get_mut(element.source.source_index()) {
+            *first = Some(position);
+        }
     }
+    let element_at = |source_index: usize| {
+        first_elements
+            .get(source_index)
+            .copied()
+            .flatten()
+            .and_then(|position| elements.get(position))
+    };
 
     let mut nodes = Vec::new();
     nodes.try_reserve_exact(source_count)?;
@@ -186,7 +228,8 @@ pub(crate) fn resolve<E>(
             source_order: scene.source_owner_order("elements", source_index),
             paint_order: u64::try_from(source_index).unwrap_or(u64::MAX),
             json_pointer: pointer_index("/elements", source_index)?,
-            hit_bounds: normalized_hit_bounds(source_index, elements),
+            hit_bounds: element_at(source_index)
+                .map(|element| [element.x, element.y, element.width, element.height]),
         });
     }
 
@@ -238,10 +281,7 @@ pub(crate) fn resolve<E>(
         )?;
         // Rendering and frame selection must use the same admitted bindings.
         // Raw source retains malformed records for embedding, not graph edges.
-        if let Some(element) = elements
-            .iter()
-            .find(|e| e.source.source_index() == node.source_index)
-        {
+        if let Some(element) = element_at(node.source_index) {
             if let crate::normalization::NormalizedElementKind::Linear(linear) = &element.kind {
                 let mut at = candidate_start;
                 while at < candidates.len() {
@@ -400,6 +440,13 @@ pub(crate) fn resolve<E>(
     });
     removed_cycles.dedup_by(|left, right| left.json_pointer == right.json_pointer);
 
+    // The keyed lookups (`node_position`, `outgoing_edges`) rely on this order.
+    debug_assert!(nodes
+        .windows(2)
+        .all(|pair| pair[0].source_index < pair[1].source_index));
+    debug_assert!(edges
+        .windows(2)
+        .all(|pair| pair[0].source <= pair[1].source));
     Ok(RelationshipOutcome {
         graph: ResolvedRelationshipGraph { nodes, edges },
         removed_cycles,
@@ -882,13 +929,6 @@ fn try_filled_vec<T: Clone>(length: usize, value: T) -> Result<Vec<T>, TryReserv
     values.try_reserve_exact(length)?;
     values.resize(length, value);
     Ok(values)
-}
-
-fn normalized_hit_bounds(source_index: usize, elements: &[NormalizedElement]) -> Option<[f64; 4]> {
-    elements
-        .iter()
-        .find(|element| element.source.source_index() == source_index)
-        .map(|element| [element.x, element.y, element.width, element.height])
 }
 
 fn format_pointer(parent: &str, relative: &str) -> Result<String, TryReserveError> {

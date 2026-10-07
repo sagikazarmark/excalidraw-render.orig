@@ -330,7 +330,7 @@ fn alignment_and_container_positions_have_independent_oracles() {
                     excalidraw_render::FrameOptions::default()
                         .with_enabled(false)
                         .with_clip(false)
-                        .with_name(false)
+                        .with_show_name(false)
                         .with_outline(false),
                 )
                 .build()

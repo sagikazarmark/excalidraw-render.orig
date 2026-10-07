@@ -20,7 +20,7 @@ use planning::{
     GENERATED_ID_BYTES,
 };
 
-use std::collections::TryReserveError;
+use std::collections::{HashSet, TryReserveError};
 
 use sha2::{Digest, Sha256};
 
@@ -510,17 +510,17 @@ impl ElementDiagnosticContext<'_, '_> {
             return Ok(());
         }
         let pointer = pointer_child(&pointer_child(self.element_pointer, field)?, nested_field)?;
-        let diagnostic = PendingDiagnostic::new(
-            DiagnosticKind::UnsupportedProperty,
+        let editor_only = matches!(field, "startBinding" | "endBinding")
+            && crate::scene_surface::is_editor_only_property(
+                crate::scene_surface::PropertyOwner::Binding,
+                &pointer_child("", nested_field)?,
+            );
+        let diagnostic = crate::scene_surface::unrecognized_property_diagnostic(
             self.format,
-            &[
-                DiagnosticEffect::Visual,
-                DiagnosticEffect::Semantic,
-                DiagnosticEffect::Metadata,
-            ],
             Some(self.element_id),
             &pointer,
-            "unmatched nested property was ignored by the revision-1 scene-surface policy",
+            editor_only,
+            "unrecognized nested property was ignored",
         )?;
         self.diagnostics.try_reserve(1)?;
         self.diagnostics.push((
@@ -542,17 +542,12 @@ impl ElementDiagnosticContext<'_, '_> {
         if !self.can_retain() {
             return Ok(());
         }
-        let diagnostic = PendingDiagnostic::new(
-            DiagnosticKind::UnsupportedProperty,
+        let diagnostic = crate::scene_surface::unrecognized_property_diagnostic(
             self.format,
-            &[
-                DiagnosticEffect::Visual,
-                DiagnosticEffect::Semantic,
-                DiagnosticEffect::Metadata,
-            ],
             Some(self.element_id),
             pointer,
-            "unmatched nested property was ignored by the revision-1 scene-surface policy",
+            false,
+            "unrecognized nested property was ignored",
         )?;
         self.diagnostics.try_reserve(1)?;
         self.diagnostics.push((
@@ -894,7 +889,11 @@ fn normalize_scene_impl<E>(
 
     let mut elements = Vec::new();
     elements.try_reserve_exact(pending.len())?;
-    let mut used_ids = Vec::<String>::new();
+    // The identities already committed, for duplicate detection and generated
+    // collision avoidance. It is only queried for membership, never iterated,
+    // so its order cannot reach the output; a set keeps a scene of many long
+    // identities linear rather than comparing each against every earlier one.
+    let mut used_ids = HashSet::<String>::new();
 
     for (pending, normalized_index) in pending.into_iter().zip(normalized_indices) {
         let index = pending.source_index;
@@ -920,9 +919,7 @@ fn normalize_scene_impl<E>(
 
         let identity_plan = match source.id {
             SourceField::Value("") | SourceField::Invalid => IdentityPlan::Invalid,
-            SourceField::Value(id) if used_ids.iter().any(|used| used == id) => {
-                IdentityPlan::Duplicate(id)
-            }
+            SourceField::Value(id) if used_ids.contains(id) => IdentityPlan::Duplicate(id),
             SourceField::Value(id) => IdentityPlan::Retained(id),
             SourceField::Missing => IdentityPlan::Missing,
         };
@@ -1116,7 +1113,7 @@ fn normalize_scene_impl<E>(
             },
         )?;
         memory_at_source!(used_ids.try_reserve(1));
-        used_ids.push(memory_at_source!(try_owned(&id)));
+        used_ids.insert(memory_at_source!(try_owned(&id)));
 
         if width == 0.0 || height == 0.0 {
             for (_, diagnostic) in &mut element_diagnostics {
@@ -1560,22 +1557,14 @@ fn normalize_frame_rendering(
         }
         diagnostics.try_reserve(1)?;
         diagnostics.push((
-            SourceDiagnosticPosition::nested(
-                app_state_position.unwrap_or(usize::MAX),
-                position,
-            )
-            .as_u64(),
-            PendingDiagnostic::new(
-                DiagnosticKind::UnsupportedProperty,
+            SourceDiagnosticPosition::nested(app_state_position.unwrap_or(usize::MAX), position)
+                .as_u64(),
+            crate::scene_surface::unrecognized_property_diagnostic(
                 format,
-                &[
-                    DiagnosticEffect::Visual,
-                    DiagnosticEffect::Semantic,
-                    DiagnosticEffect::Metadata,
-                ],
                 None,
                 &pointer_child("/appState/frameRendering", &member.key)?,
-                "unmatched frame-rendering property was ignored by the revision-1 scene-surface policy",
+                false,
+                "unrecognized frame-rendering property was ignored",
             )?,
         ));
     }
@@ -1661,11 +1650,11 @@ fn unique_generated_id(
     mut candidate: String,
     revision: CompatibilityRevision,
     source_index: u64,
-    used_ids: &[String],
+    used_ids: &HashSet<String>,
 ) -> Result<String, TryReserveError> {
     let base = try_owned(&candidate)?;
     let mut collision_ordinal = 0_u64;
-    while used_ids.iter().any(|used| used == &candidate) {
+    while used_ids.contains(&candidate) {
         collision_ordinal = collision_ordinal.saturating_add(1);
         let mut hasher = Sha256::new();
         hasher.update(ID_COLLISION_DOMAIN);

@@ -201,6 +201,7 @@ pub(crate) fn classify(
         diagnostic_limit,
         &mut diagnostics,
     )?;
+    let participating_ids = ParticipatingElementIds::new(scene)?;
     for index in 0..scene.element_occurrence_count() {
         if diagnostics.len() >= diagnostic_limit {
             break;
@@ -284,7 +285,7 @@ pub(crate) fn classify(
                 }
             }
             classify_element_record(
-                scene,
+                &participating_ids,
                 policy,
                 element_policy,
                 members,
@@ -301,7 +302,7 @@ pub(crate) fn classify(
         }
         if kind == Some("draw") {
             classify_element_record(
-                scene,
+                &participating_ids,
                 policy,
                 &SceneElementPolicy {
                     kind: "draw",
@@ -450,11 +451,12 @@ fn classify_record(
             source_order: scene.source_owner_order(owner.unwrap_or(&member.key), 0),
             source_position: member_source_position(position),
             local_owner: None,
-            diagnostic: unsupported_property_diagnostic(
+            diagnostic: unrecognized_property_diagnostic(
                 format,
                 None,
                 &pointer_child(pointer, &member.key)?,
-                "unmatched property was ignored by the revision-1 scene-surface policy",
+                is_editor_only_property(PropertyOwner::Record(record_kind), &semantic_path),
+                "unrecognized property was ignored",
             )?,
         });
     }
@@ -690,7 +692,7 @@ fn manifested_field_diagnostic(
 
 #[allow(clippy::too_many_arguments)]
 fn classify_element_record(
-    scene: &SceneDocument,
+    participating_ids: &ParticipatingElementIds<'_>,
     policy: &'static SceneSurfacePolicy,
     element_policy: &SceneElementPolicy,
     members: &[JsonMember],
@@ -717,7 +719,7 @@ fn classify_element_record(
         if let Some(field) = field_policy(policy, element_policy.record_kind, &semantic_path) {
             if semantic_path == "/boundElements" {
                 classify_bound_elements(
-                    scene,
+                    participating_ids,
                     policy,
                     &member.value,
                     pointer,
@@ -808,11 +810,12 @@ fn classify_element_record(
                 .unwrap_or(u64::MAX)
                 .saturating_mul(u64::from(u32::MAX) + 1),
             local_owner: element_id.map(try_owned).transpose()?,
-            diagnostic: unsupported_property_diagnostic(
+            diagnostic: unrecognized_property_diagnostic(
                 format,
                 element_id,
                 &pointer_child(pointer, &member.key)?,
-                "unmatched element property was ignored by the revision-1 scene-surface policy",
+                is_editor_only_property(PropertyOwner::Element, &semantic_path),
+                "unrecognized element property was ignored",
             )?,
         });
     }
@@ -970,7 +973,7 @@ fn unsafe_link_diagnostic(
 
 #[allow(clippy::too_many_arguments)]
 fn classify_bound_elements(
-    scene: &SceneDocument,
+    participating_ids: &ParticipatingElementIds<'_>,
     policy: &'static SceneSurfacePolicy,
     value: &JsonValue,
     element_pointer: &str,
@@ -1001,7 +1004,7 @@ fn classify_bound_elements(
             Some(JsonValue::String(id)) if !id.is_empty() => Some(id.as_ref()),
             _ => None,
         };
-        if target_id.is_some_and(|target| !participating_element_id_exists(scene, target)) {
+        if target_id.is_some_and(|target| !participating_ids.contains(target)) {
             continue;
         }
         let record_pointer =
@@ -1045,11 +1048,12 @@ fn classify_bound_elements(
                     manifested_field_diagnostic(&field.invalid, format, &pointer, element_id)?
                 }
                 Some(_) => None,
-                None => Some(unsupported_property_diagnostic(
+                None => Some(unrecognized_property_diagnostic(
                     format,
                     element_id,
                     &pointer,
-                    "unmatched bound-element property was ignored",
+                    false,
+                    "unrecognized bound-element property was ignored",
                 )?),
             };
             let Some(diagnostic) = diagnostic else {
@@ -1077,24 +1081,80 @@ fn classify_bound_elements(
     Ok(())
 }
 
-fn participating_element_id_exists(scene: &SceneDocument, expected: &str) -> bool {
-    (0..scene.element_occurrence_count()).any(|index| {
-        if scene.element_is_silent(index) {
-            return false;
+/// The source `id` of every participating (not deleted) element record,
+/// sorted, so each bound-element record checks its target by binary search
+/// instead of scanning the whole scene.
+struct ParticipatingElementIds<'a>(Vec<&'a str>);
+
+impl<'a> ParticipatingElementIds<'a> {
+    fn new(scene: &'a SceneDocument) -> Result<Self, TryReserveError> {
+        let mut ids = Vec::new();
+        ids.try_reserve_exact(scene.element_occurrence_count())?;
+        for index in 0..scene.element_occurrence_count() {
+            if scene.element_is_silent(index) {
+                continue;
+            }
+            let Some(JsonValue::Object(element)) = scene.element_value(index) else {
+                continue;
+            };
+            if let Some(JsonValue::String(id)) = member_value(element, "id") {
+                ids.push(&**id);
+            }
         }
-        let Some(JsonValue::Object(element)) = scene.element_value(index) else {
-            return false;
-        };
-        matches!(member_value(element, "id"), Some(JsonValue::String(id)) if &**id == expected)
-    })
+        ids.sort_unstable();
+        Ok(Self(ids))
+    }
+
+    fn contains(&self, expected: &str) -> bool {
+        self.0.binary_search(&expected).is_ok()
+    }
 }
 
-fn unsupported_property_diagnostic(
+/// What owns an unrecognized property, for [`is_editor_only_property`].
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum PropertyOwner<'a> {
+    /// A root record of the scene surface: `scene` or `app_state`.
+    Record(&'a str),
+    /// An element of any kind.
+    Element,
+    /// A linear element's `startBinding` or `endBinding`.
+    Binding,
+}
+
+/// Whether the unrecognized `path` under `owner` is editing state that an
+/// Excalidraw release after 0.18.1 persists and that no static export reads:
+/// locked multi-selections, a line's polygon toggle (the fill still follows
+/// the closed path), midpoint dragging, and the binding mode and fixed point
+/// of a non-elbow arrow. Ignoring one changes nothing in the artifact. Any
+/// other unrecognized property may carry appearance a later release renders.
+pub(crate) fn is_editor_only_property(owner: PropertyOwner<'_>, path: &str) -> bool {
+    match owner {
+        PropertyOwner::Record(record) => record == "app_state" && path == "/lockedMultiSelections",
+        PropertyOwner::Element => matches!(path, "/polygon" | "/moveMidPointsWithElement"),
+        PropertyOwner::Binding => matches!(path, "/mode" | "/fixedPoint"),
+    }
+}
+
+/// An ignored unrecognized property: a warning that appearance, semantics or
+/// metadata may differ, or, for editor-only state, an informational input
+/// repair.
+pub(crate) fn unrecognized_property_diagnostic(
     format: OutputFormat,
     element_id: Option<&str>,
     json_pointer: &str,
+    editor_only: bool,
     message: &str,
 ) -> Result<PendingDiagnostic, TryReserveError> {
+    if editor_only {
+        return PendingDiagnostic::new(
+            DiagnosticKind::EditorPropertyIgnored,
+            format,
+            &[DiagnosticEffect::InputRepair],
+            element_id,
+            json_pointer,
+            "editor-only property was ignored",
+        );
+    }
     PendingDiagnostic::new(
         DiagnosticKind::UnsupportedProperty,
         format,
@@ -1240,11 +1300,12 @@ pub(crate) fn classify_referenced_files(
                 source_order,
                 source_position: u64::try_from(position).unwrap_or(u64::MAX),
                 local_owner: Some(try_owned(file.key())?),
-                diagnostic: unsupported_property_diagnostic(
+                diagnostic: unrecognized_property_diagnostic(
                     format,
                     None,
                     &pointer_child(&pointer, &member.key)?,
-                    "unmatched file property was ignored by the revision-1 scene-surface policy",
+                    false,
+                    "unrecognized file property was ignored",
                 )?,
             });
         }

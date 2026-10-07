@@ -70,18 +70,6 @@ fn noncanonical_scene_envelopes_are_rejected_at_the_offending_or_expected_member
             "scene document type must be the string \"excalidraw\", not a number",
         ),
         (
-            br#"{"type":"excalidrawlib","version":2,"source":"https://excalidraw.com","libraryItems":[]}"#,
-            "/type",
-            "this is an Excalidraw library (type \"excalidrawlib\"), not a scene document; \
-             render a scene saved as an .excalidraw file instead",
-        ),
-        (
-            br#"{"type":"excalidraw/clipboard","elements":[],"files":{}}"#,
-            "/type",
-            "this is an Excalidraw clipboard payload (type \"excalidraw/clipboard\"), \
-             not a scene document; paste it into Excalidraw and save the scene instead",
-        ),
-        (
             br#"{"type":"excalidraw","elements":[],"appState":{},"files":{}}"#,
             "/version",
             "scene document has no \"version\" member; expected envelope version 2",
@@ -136,6 +124,72 @@ fn noncanonical_scene_envelopes_are_rejected_at_the_offending_or_expected_member
         assert_eq!(descriptor.details(), None);
         assert_eq!(error.to_string(), expected_message);
         assert_eq!(descriptor.message(), expected_message);
+    }
+}
+
+/// Excalidraw's load path restores an absent `appState` to its defaults and
+/// an absent `files` to an empty map; older excalidraw.com exports omit
+/// `files`. Present but `null` is still another kind.
+#[test]
+fn absent_app_state_and_files_are_admitted_like_excalidraw_restores_them() {
+    for bytes in [
+        &br#"{"type":"excalidraw","version":2,"elements":[],"appState":{}}"#[..],
+        br#"{"type":"excalidraw","version":2,"elements":[],"files":{}}"#,
+        br#"{"type":"excalidraw","version":2,"source":"https://excalidraw.com","elements":[]}"#,
+    ] {
+        SceneDocument::parse(bytes).expect("an absent appState or files member is admitted");
+    }
+    let error =
+        SceneDocument::parse(br#"{"type":"excalidraw","version":2,"elements":[],"appState":null}"#)
+            .expect_err("a null appState is not an object");
+    assert_eq!(error.code(), ErrorCode::SCENE_INVALID_ENVELOPE);
+    assert_eq!(error.json_pointer(), Some("/appState"));
+}
+
+/// Image exports and Excalidraw library or clipboard payloads are recognized
+/// as files that are not scene documents, not reported as malformed ones.
+#[test]
+fn recognized_non_scene_inputs_are_unsupported_input() {
+    let cases: &[(&[u8], Option<&str>, &str)] = &[
+        (
+            b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR",
+            None,
+            "this is a PNG image, not a scene document; open an image exported with an \
+             embedded scene in Excalidraw and save it as an .excalidraw file",
+        ),
+        (
+            b"\xef\xbb\xbf  <svg xmlns=\"http://www.w3.org/2000/svg\"/>",
+            None,
+            "this is an SVG image, not a scene document; open an image exported with an \
+             embedded scene in Excalidraw and save it as an .excalidraw file",
+        ),
+        (
+            b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n",
+            None,
+            "this is a PDF document, not a scene document; render the .excalidraw file it \
+             was exported from",
+        ),
+        (
+            br#"{"type":"excalidrawlib","version":2,"source":"https://excalidraw.com","libraryItems":[]}"#,
+            Some("/type"),
+            "this is an Excalidraw library (type \"excalidrawlib\"), not a scene document; \
+             render a scene saved as an .excalidraw file instead",
+        ),
+        (
+            br#"{"type":"excalidraw/clipboard","elements":[],"files":{}}"#,
+            Some("/type"),
+            "this is an Excalidraw clipboard payload (type \"excalidraw/clipboard\"), \
+             not a scene document; paste it into Excalidraw and save the scene instead",
+        ),
+    ];
+    for &(bytes, expected_pointer, expected_message) in cases {
+        let error = SceneDocument::parse(bytes).expect_err("non-scene input must be rejected");
+        let descriptor = error.descriptor();
+        assert_eq!(descriptor.family(), ErrorFamily::SceneParse);
+        assert_eq!(descriptor.code(), ErrorCode::SCENE_UNSUPPORTED_INPUT);
+        assert_eq!(descriptor.json_pointer(), expected_pointer);
+        assert_eq!(descriptor.details(), None);
+        assert_eq!(error.to_string(), expected_message);
     }
 }
 

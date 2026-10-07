@@ -442,6 +442,32 @@ impl RenderSession {
                     composite_work,
                 )?;
             }
+            // A nested SVG's filter effects cost resvg their own surfaces and
+            // per-primitive work at the layer's device size, which the
+            // projection above does not price; measure and charge them before
+            // anything is rasterized.
+            let filter_work = plan
+                .nested_svg_filter_work(index, request.resource_limits().max_total_work_units())
+                .map_err(|error| {
+                    self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error)
+                })?;
+            if !filter_work.is_empty() {
+                self.transact(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::ProjectionAndFallback,
+                        "nested_svg_filter_samples",
+                        json_pointer,
+                    )
+                    .with_element_id(element_id)
+                    .with_local_owner(element_id),
+                    ResourceDelta {
+                        rasterized_pixels: filter_work.surface_pixels,
+                        total_work_units: filter_work.work_units,
+                        ..ResourceDelta::default()
+                    },
+                )?;
+            }
         }
 
         self.flush_pending_png_animation_diagnostics(request)?;

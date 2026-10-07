@@ -24,12 +24,57 @@ pub(super) struct BoundTextMaskSource {
     pub(super) height: f64,
 }
 
+/// The positions of a sequence of elements keyed by source index, so finding
+/// an element's container or occurrence is not a scan of the whole scene per
+/// element. Sorted by source index, then position, so the first entry for a
+/// source index is the element a scan from the front would find first.
+pub(super) struct SourcePositions(Vec<(usize, usize)>);
+
+impl SourcePositions {
+    pub(super) fn new(
+        source_indices: impl ExactSizeIterator<Item = usize>,
+    ) -> Result<Self, std::collections::TryReserveError> {
+        let mut positions = Vec::new();
+        positions.try_reserve_exact(source_indices.len())?;
+        positions.extend(
+            source_indices
+                .enumerate()
+                .map(|(position, source_index)| (source_index, position)),
+        );
+        positions.sort_unstable();
+        Ok(Self(positions))
+    }
+
+    /// Every position holding `source_index`, in ascending order.
+    pub(super) fn all(&self, source_index: usize) -> impl Iterator<Item = usize> + '_ {
+        let at = self
+            .0
+            .partition_point(|(candidate, _)| *candidate < source_index);
+        self.0
+            .get(at..)
+            .unwrap_or_default()
+            .iter()
+            .take_while(move |(candidate, _)| *candidate == source_index)
+            .map(|(_, position)| *position)
+    }
+
+    /// The first position holding `source_index`.
+    pub(super) fn first(&self, source_index: usize) -> Option<usize> {
+        self.all(source_index).next()
+    }
+}
+
 pub(super) fn resolve_bound_text_placements(
     outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
     relationships: &ResolvedRelationshipGraph,
 ) -> Result<Vec<BoundTextPlacement>, ResolveSceneError> {
     let mut placements = Vec::new();
     placements.try_reserve(outlines.len())?;
+    let positions = SourcePositions::new(
+        outlines
+            .iter()
+            .map(|(element, _)| element.source.source_index()),
+    )?;
     for (text, _) in outlines {
         if !matches!(text.kind, NormalizedElementKind::Text(_)) {
             continue;
@@ -41,9 +86,9 @@ pub(super) fn resolve_bound_text_placements(
         ) else {
             continue;
         };
-        let Some((container, geometry)) = outlines
-            .iter()
-            .find(|(candidate, _)| candidate.source.source_index() == container_index)
+        let Some((container, geometry)) = positions
+            .first(container_index)
+            .and_then(|position| outlines.get(position))
         else {
             continue;
         };
@@ -193,29 +238,27 @@ pub(super) fn has_reciprocal_bound_text(
     text_source_index: usize,
     relationships: &ResolvedRelationshipGraph,
 ) -> bool {
-    let Some(container_node) = relationships
-        .nodes
-        .iter()
-        .position(|node| node.source_index == container_source_index)
-    else {
+    let Some(container_node) = relationships.node_position(container_source_index) else {
         return false;
     };
-    relationships.edges.iter().any(|edge| {
-        if edge.source != container_node
-            || edge.kind != RelationshipKind::Binding
-            || !(edge.json_pointer.contains("/boundElements/")
-                || edge.json_pointer.contains("/boundElementIds/"))
-        {
-            return false;
-        }
-        let RelationshipTarget::Element(target) = edge.target else {
-            return false;
-        };
-        relationships
-            .nodes
-            .get(target)
-            .is_some_and(|node| node.source_index == text_source_index)
-    })
+    relationships
+        .outgoing_edges(container_node)
+        .iter()
+        .any(|edge| {
+            if edge.kind != RelationshipKind::Binding
+                || !(edge.json_pointer.contains("/boundElements/")
+                    || edge.json_pointer.contains("/boundElementIds/"))
+            {
+                return false;
+            }
+            let RelationshipTarget::Element(target) = edge.target else {
+                return false;
+            };
+            relationships
+                .nodes
+                .get(target)
+                .is_some_and(|node| node.source_index == text_source_index)
+        })
 }
 
 pub(super) fn resolve_bound_text_masks(
@@ -224,6 +267,11 @@ pub(super) fn resolve_bound_text_masks(
 ) -> Result<Vec<BoundTextMaskSource>, ResolveSceneError> {
     let mut masks = Vec::new();
     masks.try_reserve(outlines.len())?;
+    let positions = SourcePositions::new(
+        outlines
+            .iter()
+            .map(|(element, _)| element.source.source_index()),
+    )?;
     for (text, _) in outlines {
         if !matches!(text.kind, NormalizedElementKind::Text(_)) {
             continue;
@@ -235,15 +283,16 @@ pub(super) fn resolve_bound_text_masks(
         ) else {
             continue;
         };
-        let is_arrow = outlines.iter().any(|(candidate, _)| {
-            candidate.source.source_index() == container_source_index
-                && matches!(
+        let is_arrow = positions.all(container_source_index).any(|position| {
+            outlines.get(position).is_some_and(|(candidate, _)| {
+                matches!(
                     candidate.kind,
                     NormalizedElementKind::Linear(NormalizedLinear {
                         kind: NormalizedLinearKind::Arrow,
                         ..
                     })
                 )
+            })
         });
         if is_arrow
             && has_reciprocal_bound_text(
