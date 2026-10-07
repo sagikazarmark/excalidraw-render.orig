@@ -324,11 +324,7 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
 
     let mut text = String::new();
     for group in groups {
-        let severity = match group.first.severity() {
-            DiagnosticSeverity::Warning => "warning",
-            DiagnosticSeverity::Info => "info",
-            _ => "note",
-        };
+        let severity = group.first.severity();
         // The library's message names the mechanism; say what the reader sees.
         let replaced_characters = group.first.code().as_str() == "font.missing-glyph"
             && group.first.message() == OFFICIAL_MISSING_GLYPH;
