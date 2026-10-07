@@ -76,6 +76,7 @@ mod pdf_raster_fallback_contract;
 mod pdf_renderer_expectations;
 mod png_color_contract;
 mod png_limit_crossing_contract;
+mod png_paint_mask_work;
 mod png_precision_contract;
 mod png_profile_contract;
 mod png_stage4_contract;

@@ -567,7 +567,7 @@ struct SnappedRect {
     bottom: u32,
 }
 
-/// The clip `PaintMasks::paint_mask` intersects into an image's mask, in the
+/// The clip `PaintMasks::paint_mask` rasterizes into an image's mask, in the
 /// element's own space under `transform`: the rounded-corner outline when the
 /// image has one, else the `width` by `height` rectangle.
 struct PngImageClip<'a> {
