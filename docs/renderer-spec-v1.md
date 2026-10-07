@@ -502,7 +502,7 @@ The CLI selects one failure in this order:
 4. Explicit or inferred format selection.
 5. Request values and asset declarations.
 6. Path-conflict validation.
-7. Existing output and report checks.
+7. Output-location, existing output, and report checks.
 8. Bounded scene read and parse.
 9. Supplemental reads by ascending file-ID UTF-8 bytes.
 10. Render.
@@ -520,12 +520,22 @@ and report MUST differ. Existing paths use filesystem identity; nonexistent
 paths use normalized absolute lexical paths. `--force` permits replacing both
 destinations but never overrides conflicts.
 
+A scene output path that is an existing directory, or ends in a path separator,
+fails `cli.invalid-output-directory` with exit 2 even with `--force`; a frame
+output that exists and is not a directory fails the same code. An output file
+whose directory, or a frame output directory whose parent, is missing or not a
+directory fails `cli.output-write-failed` (operation `create`, artifact state
+`none`) at step 7, before the scene is read or rendered.
+
 Both requested path outputs are fully staged in their destination directories
 before either is delivered and are atomically replaced where supported. A
 path-delivery failure leaves no new partial destination. The artifact is
 delivered before the report. A report failure after artifact
 delivery is still command failure and records `artifact_state: "complete"`.
 Stdout write failure uses `possibly_partial` only if bytes may have escaped.
+When the stdout reader has closed (a broken pipe) and the report is human or
+`none` on stderr, the CLI exits 1 without writing anything to stderr; JSON and
+report-file modes still report the `cli.output-write-failed` failure.
 
 If JSON report-file delivery fails and stderr is not the failed channel, the CLI
 emits one complete canonical `cli.report-write-failed` schema-1 envelope with
@@ -550,8 +560,12 @@ occurrence. `none` suppresses successful reporting and emits one non-JSON
 | `2` | Grammar, request, format, duplicate-ID, or unsupported-revision usage error |
 
 `--list-revisions` accepts only human or JSON report controls and lists revisions
-in increasing order. `-V, --version` is human-only standalone stdout and prints
-package version, default revision, Excalidraw release, and profile digest.
+in increasing order. While the renderer implements a single revision,
+`--compatibility-revision` and `--list-revisions` keep working but are omitted
+from `--help`. `-V, --version` is human-only standalone stdout and prints one
+line, `excalidraw-render VERSION (Excalidraw RELEASE)`; with `-v, --verbose` it
+adds `compatibility revision N` and `reference profile DIGEST` lines for the
+default revision.
 
 ## 8. Rendering Semantics
 

@@ -480,9 +480,11 @@ fn cli_version(cli: &Path) -> Result<String> {
         .output()
         .map_err(|e| e.to_string())?;
     let text = String::from_utf8_lossy(&output.stdout);
+    // `excalidraw-render VERSION (Excalidraw RELEASE)`
     text.lines()
         .next()
         .and_then(|line| line.strip_prefix("excalidraw-render "))
+        .and_then(|rest| rest.split_whitespace().next())
         .map(str::to_owned)
         .ok_or_else(|| format!("unexpected --version output: {text}"))
 }

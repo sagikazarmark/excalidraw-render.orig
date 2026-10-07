@@ -88,5 +88,6 @@ excalidraw-render tests/conformance/cases/focused/bound-text-containers/scene.ex
 ```
 
 Also unpack the GitHub archive on Linux x86-64, verify its checksum, and run
-`excalidraw-render --version`. Record the release commit, crate checksums, and
-the Dagger trace in the changelog entry.
+`excalidraw-render --version`, which prints
+`excalidraw-render X.Y.Z (Excalidraw 0.18.1)`. Record the release commit,
+crate checksums, and the Dagger trace in the changelog entry.

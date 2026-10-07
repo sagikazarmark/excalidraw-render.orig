@@ -45,6 +45,37 @@ fn help_describes_the_commands_with_examples() {
         );
         assert!(frames.contains("--name-regex"), "{frames}");
         assert!(frames.contains("Examples:"), "{frames}");
+        assert!(
+            frames.contains("Every frame, including AI-generated (magic) frames, is exported"),
+            "{frames}"
+        );
+    }
+
+    // Help speaks the user's language: the single compatibility revision is
+    // not a choice to advertise, and the renderer's internal vocabulary stays
+    // out of it.
+    for args in [
+        vec!["--help"],
+        vec!["-h"],
+        vec!["frames", "--help"],
+        vec!["frames", "-h"],
+    ] {
+        let help = cli(&args);
+        let help = String::from_utf8(help.stdout).expect("help is UTF-8");
+        for jargon in [
+            "--compatibility-revision",
+            "--list-revisions",
+            "revision",
+            "profile",
+            "evidence",
+            "oracle",
+            "admitted",
+            "reference",
+            "live frame",
+            "compatibility diagnostics",
+        ] {
+            assert!(!help.contains(jargon), "{args:?} mentions {jargon}: {help}");
+        }
     }
 
     let bare_help = cli(&["help"]);
@@ -62,11 +93,12 @@ fn help_describes_the_commands_with_examples() {
 fn unknown_options_and_short_version_use_the_command_grammar() {
     let version = cli(&["-V"]);
     assert!(version.status.success(), "{version:?}");
-    assert!(
-        String::from_utf8_lossy(&version.stdout).starts_with(&format!(
-            "excalidraw-render {}\n",
+    assert_eq!(
+        String::from_utf8_lossy(&version.stdout),
+        format!(
+            "excalidraw-render {} (Excalidraw 0.18.1)\n",
             env!("CARGO_PKG_VERSION")
-        ))
+        )
     );
 
     for args in [vec!["--bogus"], vec!["scene.excalidraw", "--bogus"]] {
@@ -139,27 +171,63 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
         )
     );
 
+    // A missing directory is found before rendering, so no diagnostics of a
+    // render that could never be delivered precede the error.
     let nested = temp.join("no-such-directory").join("out.svg");
+    let reason = fs::read_dir(temp.join("no-such-directory")).expect_err("missing directory");
     let result = render_command(&nested)
         .output()
         .expect("render into a missing directory");
     assert_eq!(result.status.code(), Some(1));
-    let stderr = String::from_utf8_lossy(&result.stderr);
-    assert!(
-        stderr.starts_with(&format!(
-            "error: cannot create output '{}': ",
-            nested.display()
-        )),
-        "{stderr}"
-    );
-    assert!(stderr.contains("[cli.output-write-failed]\n"), "{stderr}");
-    assert!(
-        stderr.contains(&format!(
-            "hint: directory '{}' does not exist",
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: cannot create output '{}': {reason} [cli.output-write-failed]\n\
+             hint: directory '{}' does not exist; create it first\n",
+            nested.display(),
             temp.join("no-such-directory").display()
-        )),
-        "{stderr}"
+        )
     );
+    assert!(!temp.join("no-such-directory").exists());
+
+    // A directory is never a scene output, even with --force.
+    let directory = temp.join("directory");
+    fs::create_dir(&directory).expect("create a directory output");
+    for force in [false, true] {
+        let mut command = render_command(&directory);
+        command.args(["--format", "svg"]);
+        if force {
+            command.arg("--force");
+        }
+        let result = command.output().expect("render onto a directory");
+        assert_eq!(result.status.code(), Some(2), "force={force}");
+        assert_eq!(
+            String::from_utf8_lossy(&result.stderr),
+            format!(
+                "error: output '{}' is a directory [cli.invalid-output-directory]\n\
+                 hint: pass a file path to -o, or use `excalidraw-render frames INPUT -o \
+                 DIRECTORY --format FORMAT` to write one file per frame\n",
+                directory.display()
+            ),
+            "force={force}"
+        );
+        assert_no_staging_files(&directory);
+        assert_no_staging_files(temp);
+    }
+    // A trailing separator names a directory whether or not it exists yet.
+    let named = format!("{}/", temp.join("not-yet").display());
+    let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg(corpus_scene("basic-shapes.excalidraw"))
+        .args(["-o", &named, "--format", "svg", "--report-format", "json"])
+        .output()
+        .expect("render onto a directory name");
+    assert_eq!(result.status.code(), Some(2));
+    let report: serde_json::Value =
+        serde_json::from_slice(&result.stderr).expect("JSON directory-output report");
+    assert_eq!(report["error"]["code"], "cli.invalid-output-directory");
+    assert_eq!(report["error"]["details"]["argument"], "--output");
+    assert_eq!(report["error"]["details"]["value"], named.as_str());
+    assert!(!temp.join("not-yet").exists());
 
     let broken = temp.join("broken.excalidraw");
     fs::write(
@@ -438,15 +506,30 @@ fn standalone_commands_expose_revision_identity_and_exact_licenses() {
     assert_eq!(report["revisions"][0]["compatibility_revision"], 1);
     assert_eq!(report["revisions"][0]["default"], true);
 
-    let version = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
-        .arg("--version")
-        .output()
-        .expect("print version");
+    // The plain version names the release; --verbose adds the exact identity.
+    let version = cli(&["--version"]);
     assert!(version.status.success());
     let version = String::from_utf8(version.stdout).expect("version is UTF-8");
-    assert!(version.contains(env!("CARGO_PKG_VERSION")));
-    assert!(version.contains("compatibility revision 1"));
-    assert!(version.contains("Excalidraw v0.18.1"));
+    assert_eq!(
+        version,
+        format!(
+            "excalidraw-render {} (Excalidraw 0.18.1)\n",
+            env!("CARGO_PKG_VERSION")
+        )
+    );
+    let profile = Renderer::new().profile_identity();
+    for flag in ["--verbose", "-v"] {
+        let verbose = cli(&["--version", flag]);
+        assert!(verbose.status.success(), "{flag}");
+        assert_eq!(
+            String::from_utf8(verbose.stdout).expect("version is UTF-8"),
+            format!(
+                "{version}compatibility revision 1\nreference profile {}\n",
+                profile.profile_digest()
+            ),
+            "{flag}"
+        );
+    }
 
     let licenses = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .arg("--licenses")
@@ -1024,6 +1107,36 @@ fn interrupted_stdout_after_bytes_escape_reports_possibly_partial() {
     );
 }
 
+#[test]
+fn a_reader_closing_stdout_early_ends_a_human_report_quietly() {
+    // As in `interrupted_stdout_after_bytes_escape_reports_possibly_partial`,
+    // the artifact outgrows the pipe buffer so the reader closes mid-write.
+    for report in [&[][..], &["--report-format", "none"][..]] {
+        let mut child = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+            .arg(corpus_scene("basic-shapes.excalidraw"))
+            .args(["-o", "-", "--format=png", "--scale=4"])
+            .args(report)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("spawn renderer with a short reader");
+        let mut stdout = child.stdout.take().expect("take stdout pipe");
+        let mut first_byte = [0_u8; 1];
+        stdout
+            .read_exact(&mut first_byte)
+            .expect("receive one artifact byte");
+        drop(stdout);
+        let result = child.wait_with_output().expect("wait for the closed pipe");
+
+        assert_eq!(result.status.code(), Some(1), "{report:?}");
+        assert!(
+            result.stderr.is_empty(),
+            "{report:?}: {}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+    }
+}
+
 fn assert_failure(args: &[&str], exit: i32, code: &str) {
     let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .args(args)
@@ -1384,6 +1497,78 @@ fn frames_command_filters_names_and_writes_one_deterministically_named_artifact_
 }
 
 #[test]
+fn frame_exports_explain_bad_patterns_and_output_locations_before_rendering() {
+    let scratch = temp_directory_named("frame-usage");
+    let temp = scratch.path();
+    let input = corpus_scene("basic-shapes.excalidraw");
+
+    // The pattern's own syntax error says what to fix.
+    let result = cli(&[
+        "frames",
+        input.to_str().unwrap(),
+        "--list",
+        "--name-regex",
+        "[",
+    ]);
+    assert_eq!(result.status.code(), Some(2));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        "error: --name-regex is not valid Rust regex syntax: unclosed character class \
+         [cli.invalid-name-regex]\n"
+    );
+
+    // A file where the frame directory belongs is the mirror of a directory
+    // given as a scene output.
+    let file = temp.join("file");
+    fs::write(&file, b"keep").expect("create a file output");
+    let result = cli(&[
+        "frames",
+        input.to_str().unwrap(),
+        "-o",
+        file.to_str().unwrap(),
+        "--format",
+        "svg",
+    ]);
+    assert_eq!(result.status.code(), Some(2));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: frame output '{}' exists and is not a directory \
+             [cli.invalid-output-directory]\n\
+             hint: pass a directory to frames -o, or drop `frames` to render the whole scene \
+             to one file\n",
+            file.display()
+        )
+    );
+    assert_eq!(fs::read(&file).unwrap(), b"keep");
+
+    // Only the last directory is created, so a missing parent fails up front.
+    let parent = temp.join("missing");
+    let nested = parent.join("frames");
+    let reason = fs::read_dir(&parent).expect_err("missing directory");
+    let result = cli(&[
+        "frames",
+        input.to_str().unwrap(),
+        "-o",
+        nested.to_str().unwrap(),
+        "--format",
+        "svg",
+    ]);
+    assert_eq!(result.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&result.stderr),
+        format!(
+            "error: cannot create output directory '{}': {reason} [cli.output-write-failed]\n\
+             hint: directory '{}' does not exist; create it first\n",
+            nested.display(),
+            parent.display()
+        )
+    );
+    assert!(!parent.exists());
+    assert_no_staging_files(temp);
+}
+
+#[test]
 fn frame_batches_are_stage_all_by_default_and_partial_only_when_requested() {
     let scratch = temp_directory_named("frame-publication-policy");
     let temp = scratch.path();
@@ -1481,6 +1666,31 @@ fn frame_batches_are_stage_all_by_default_and_partial_only_when_requested() {
         "{human}"
     );
     assert!(!human.contains("frame-batch-"));
+
+    // A re-run over a complete earlier export collides on every frame; the
+    // fix is given once, for all of them.
+    let rerun = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(["frames"])
+        .arg(&input)
+        .arg("--output")
+        .arg(&partial)
+        .args(["--format", "svg"])
+        .output()
+        .expect("re-run a frame export");
+    assert_eq!(rerun.status.code(), Some(1));
+    let rerun = String::from_utf8(rerun.stderr).expect("human report is UTF-8");
+    assert_eq!(
+        rerun
+            .matches("already exists [cli.destination-exists]\n")
+            .count(),
+        2,
+        "{rerun}"
+    );
+    assert!(
+        rerun.ends_with("\nhint: use --force to overwrite the 2 existing frame files\n"),
+        "{rerun}"
+    );
+    assert_eq!(rerun.matches("hint:").count(), 1, "{rerun}");
 
     let none = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .args(["frames"])

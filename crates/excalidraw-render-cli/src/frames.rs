@@ -16,21 +16,22 @@ use unicode_normalization::UnicodeNormalization as _;
 use crate::human::{self, HumanReport};
 use crate::{
     deliver_report_bytes, destination_exists, emergency_report_failure, emit_failure, json_line,
-    parse_asset_declarations, path_conflict, path_entry_exists, read_bounded_asset, read_scene,
-    report_output, same_path, select_renderer, sha256, stage_report_file, validate_paths,
-    validate_report_options, write_stdout, write_stream, ArtifactDescriptor, Cli, CliDetails,
-    CliError, CliOperation, DeliveryError, DeliveryRole, DeliveryState, Failure, FormatArg,
-    PdfFallbackArg, ReportError, ReportFormat, SelectedIdentity, StagedFile, ASSETS,
-    EXIT_OPERATIONAL, EXIT_USAGE, METADATA, OUTPUT, RENDERING, REPORTING,
+    not_a_directory, parse_asset_declarations, path_conflict, path_entry_exists,
+    read_bounded_asset, read_scene, report_output, same_path, select_renderer, sha256,
+    stage_report_file, validate_paths, validate_report_options, write_stdout, write_stream,
+    ArtifactDescriptor, Cli, CliDetails, CliError, CliOperation, DeliveryError, DeliveryRole,
+    DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError, ReportFormat, SelectedIdentity,
+    StagedFile, ASSETS, EXIT_OPERATIONAL, EXIT_USAGE, METADATA, OUTPUT, RENDERING, REPORTING,
 };
 
 pub(crate) const LONG_ABOUT: &str = "\
 Render each selected frame of an Excalidraw scene to its own file in a
 directory.
 
-Every live frame and magic frame is exported with zero padding, named after the
-frame (or frame-N for unnamed frames). By default nothing is written unless
-every frame succeeds; use --list to preview the selection and file names.";
+Every frame, including AI-generated (magic) frames, is exported with zero
+padding and named after the frame (or frame-N for unnamed frames). By default
+nothing is written unless every frame succeeds; use --list to preview the
+selection and file names.";
 
 pub(crate) const EXAMPLES: &str = "\
 Examples:
@@ -112,18 +113,20 @@ pub(crate) struct FramesCli {
     /// express [default: allow-isolated]
     #[arg(long, value_enum, value_name = "MODE", help_heading = RENDERING)]
     pdf_raster_fallback: Option<PdfFallbackArg>,
+    // Hidden while the renderer implements a single revision, as in the scene
+    // command.
     /// Compatibility revision to render with [default: 1; see
     /// --list-revisions]
-    #[arg(long, value_name = "N", help_heading = RENDERING)]
+    #[arg(long, value_name = "N", hide = true, help_heading = RENDERING)]
     compatibility_revision: Option<String>,
 
     /// Embed the scene so Excalidraw can reopen each exported file for editing
     #[arg(long, help_heading = METADATA)]
     embed_scene: bool,
-    /// Embed the renderer version and compatibility profile
+    /// Embed the renderer version and the Excalidraw release it matches
     #[arg(long, help_heading = METADATA)]
     embed_provenance: bool,
-    /// Embed a summary of the compatibility diagnostics
+    /// Embed a summary of the rendering warnings
     #[arg(long, help_heading = METADATA)]
     embed_diagnostics: bool,
 
@@ -136,14 +139,14 @@ pub(crate) struct FramesCli {
     #[arg(long, value_name = "FILE_ID=MEDIA_TYPE", help_heading = ASSETS)]
     asset_mime: Vec<String>,
 
-    /// How to report diagnostics and errors on stderr, and the --list output
+    /// How to report warnings and errors on stderr, and the --list output
     /// on stdout
     #[arg(long, value_enum, default_value_t, help_heading = REPORTING)]
     report_format: ReportFormat,
     /// Write the report, or the --list output, to PATH instead
     #[arg(long, value_name = "PATH", help_heading = REPORTING)]
     report_output: Option<String>,
-    /// Also print informational diagnostics in the human report
+    /// Also print informational messages in the human report
     #[arg(short, long, help_heading = REPORTING)]
     verbose: bool,
 }
@@ -417,10 +420,20 @@ fn frame_name_regex(frames: &FramesCli) -> Result<Option<Regex>, Failure> {
         .as_deref()
         .map(Regex::new)
         .transpose()
-        .map_err(|_| {
+        .map_err(|error| {
+            // The regex crate renders a syntax error as a pattern excerpt with
+            // a caret, then `error: REASON`; the reason alone fits one line.
+            let error = error.to_string();
+            let reason = error
+                .lines()
+                .rev()
+                .find(|line| !line.trim().is_empty())
+                .map_or(error.as_str(), |line| {
+                    line.trim().strip_prefix("error: ").unwrap_or(line.trim())
+                });
             Failure::cli(
                 "cli.invalid-name-regex",
-                "--name-regex is not valid Rust regex syntax",
+                format!("--name-regex is not valid Rust regex syntax: {reason}"),
                 Some(CliDetails::CliArgument {
                     argument: "--name-regex".to_owned(),
                     value: frames.name_regex.clone(),
@@ -540,13 +553,43 @@ fn prepare_and_render_frames(
     if path_entry_exists(output_directory) && !output_directory.is_dir() {
         return Err(Failure::cli(
             "cli.invalid-output-directory",
-            "frame output path exists and is not a directory",
+            format!(
+                "frame output '{}' exists and is not a directory",
+                frames.output()
+            ),
             Some(CliDetails::CliArgument {
                 argument: "--output".to_owned(),
                 value: Some(frames.output().to_owned()),
             }),
             EXIT_USAGE,
+        )
+        .with_hint(
+            "pass a directory to frames -o, or drop `frames` to render the whole scene to one file",
         ));
+    }
+    // Publication creates only the last component, so a missing parent would
+    // fail every frame after rendering them all.
+    if !output_directory.is_dir() {
+        if let Some(error) = output_directory
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+            .and_then(not_a_directory)
+        {
+            let error = DeliveryError::new(CliOperation::Create, &error);
+            let mut failure = Failure::cli(
+                "cli.output-write-failed",
+                error.message(&format!("output directory '{}'", frames.output())),
+                Some(CliDetails::Delivery {
+                    role: DeliveryRole::Output,
+                    operation: CliOperation::Create,
+                    path: frames.output().to_owned(),
+                    artifact_state: DeliveryState::None,
+                }),
+                EXIT_OPERATIONAL,
+            );
+            failure.hints.extend(error.hint(output_directory));
+            return Err(failure);
+        }
     }
     if report_path != "stderr" && path_entry_exists(Path::new(report_path)) && !frames.force {
         return Err(destination_exists(DeliveryRole::Report, report_path));
@@ -1176,8 +1219,21 @@ fn frame_batch_report_bytes(
             for hint in hints {
                 text.push_str(&format!("hint: {hint}\n"));
             }
+            // A re-run over earlier output collides on every frame; say so
+            // once for all of them.
+            let existing = entries
+                .iter()
+                .filter_map(|(entry, _)| entry.error.as_ref())
+                .filter(|error| error.code() == "cli.destination-exists")
+                .count();
             for code in codes {
-                text.push_str(&human::hint_lines(code, std::iter::empty()));
+                if code == "cli.destination-exists" && existing > 1 {
+                    text.push_str(&format!(
+                        "hint: use --force to overwrite the {existing} existing frame files\n"
+                    ));
+                } else {
+                    text.push_str(&human::hint_lines(code, std::iter::empty()));
+                }
             }
             text.into_bytes()
         }
