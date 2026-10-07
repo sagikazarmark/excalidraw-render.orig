@@ -31,7 +31,8 @@ Initial release of the pure-Rust Excalidraw rendering library
 
 ### Compatibility
 
-- Targets Excalidraw 0.18.1, with [known limitations](docs/known-limitations.md).
+- Targets Excalidraw 0.18.1, with
+  [known limitations](https://github.com/sagikazarmark/excalidraw-render/blob/main/docs/known-limitations.md).
 - The font crates name that release in their version's build metadata
   (`0.1.0+excalidraw.0.18.1`).
 - Requires Rust 1.92 or newer. Linux x86-64 (glibc) is release-qualified;
@@ -42,6 +43,3 @@ Initial release of the pure-Rust Excalidraw rendering library
   and keep your lockfile when exact output bytes matter.
 - Exhaustive conformance and exact native/WASM equality are follow-up goals;
   this release does not claim their completion.
-
-Publication date, release commit, package checksums, and the Dagger verification
-trace will be recorded when the release is published.

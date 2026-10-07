@@ -13,8 +13,8 @@ each one at runtime.
 - Browser WASM is experimental. Four PNG cases differ from native by one channel
   value in one or two pixels due to `tiny-skia-path` cubic-root math
   ([#178](https://github.com/sagikazarmark/excalidraw-render/issues/178)).
-  Tests retain exact known output measurements; this is not a general allowance
-  for new differences. Output lengths also affect three resource traces.
+  Because resource traces count output length, three WASM resource traces
+  differ as well. No other WASM differences are known.
 - Other operating systems and architectures are not release-qualified.
 - Later 0.x releases may change rendering. Pin the renderer version, dependencies,
   and build environment when preserving exact output is important.
@@ -45,11 +45,8 @@ each one at runtime.
 - The pinned JPEG decoder can accept truncated entropy before a retained scan
   marker even in strict mode. Such malformed JPEGs can produce incorrect
   pixels instead of decode-failure recovery. Marker/framing checks alone do not
-  validate all entropy. This is a known correctness limitation, not a claim of
-  memory corruption. `jpeg_release_limitation` exercises the public API on a
-  bounded 9×9 truncated-scan fixture in all three formats and requires repeatable
-  output; it deliberately records the unresolved defect rather than claiming
-  malformed data decodes correctly
+  validate all entropy. Such output is still deterministic and bounded; this is
+  a correctness limitation, not memory corruption
   ([#193](https://github.com/sagikazarmark/excalidraw-render/issues/193)).
 - Fractional PNG stroke coverage has remaining browser differences
   ([#194](https://github.com/sagikazarmark/excalidraw-render/issues/194)).
@@ -68,8 +65,8 @@ each one at runtime.
   Thai, and Indic scripts such as Devanagari, Bengali and Tamil draw as `?`, as
   do Vietnamese stacked diacritics outside Nunito and Cascadia Code.
 - Other bundled font substitutions differ from ambient browser fonts.
-  These are diagnosed. SVG/PDF viewer antialiasing can differ within reviewed
-  visual budgets or case-specific exceptions.
+  These are diagnosed. Antialiasing in SVG and PDF viewers can differ slightly
+  from the browser.
 - PDF is vector-first, not universally all-vector: unsupported nested-SVG effects
   can use diagnosed raster fallback. Multi-page, tagged, and archival PDF formats
   are outside the initial scope.

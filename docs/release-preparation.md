@@ -7,10 +7,12 @@ are now managed by the maintainer; these commands are not current instructions.
 **Status: preparation verified; Dagger Cloud is green (23/23 checks).**
 The release remains unpublished, pending the repository move and clean-tag run.
 
-The maintainer requested **preparation only**, before moving the code to the
-existing `sagikazarmark/excalidraw` repository. This work starts at `c5fec02`;
-the working-tree runs below include uncommitted changes. No tag, repository
-visibility change, registry publication, or GitHub release is part of this session.
+This record covers preparation only, starting at `c5fec02`; the working-tree
+runs below include uncommitted changes. It predates the plan in
+[the runbook](../release.md): the code was then to move to the existing
+`sagikazarmark/excalidraw` repository, whereas the development repository is
+now renamed to `excalidraw-render` and made public. No tag, repository
+visibility change, registry publication, or GitHub release was part of it.
 
 ## Decisions and implementation
 

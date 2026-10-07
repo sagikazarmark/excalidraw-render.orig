@@ -3,7 +3,7 @@ name = "excalidraw-render"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "Pure-Rust rendering of Excalidraw scene documents"
+description = "Render Excalidraw drawings to SVG, PNG and PDF in pure Rust, without a browser"
 # The project's code is MIT OR Apache-2.0. Adapted code keeps its license: the
 # rough.js, perfect-freehand, points-on-curve and Excalidraw ports are MIT, the
 # HDR tone mapping is BSD-3-Clause (Skia), and the placeholder icons are
