@@ -133,7 +133,7 @@ fn frame_rendering_container_and_members_have_global_exact_recovery() {
             FrameOptions::default()
                 .with_enabled(false)
                 .with_clip(false)
-                .with_name(false)
+                .with_show_name(false)
                 .with_outline(false),
             json!([repair("/appState/frameRendering/clip", Value::Null)]),
         );
@@ -225,7 +225,7 @@ fn frame_controls_combine_with_requests_and_frame_exports_force_their_scope() {
                         FrameOptions::default()
                             .with_enabled(flags[0])
                             .with_clip(flags[1])
-                            .with_name(flags[2])
+                            .with_show_name(flags[2])
                             .with_outline(flags[3]),
                     )
                     .build()
@@ -250,7 +250,7 @@ fn frame_controls_combine_with_requests_and_frame_exports_force_their_scope() {
                             FrameOptions::default()
                                 .with_enabled(request_flags[0])
                                 .with_clip(request_flags[1])
-                                .with_name(request_flags[2])
+                                .with_show_name(request_flags[2])
                                 .with_outline(request_flags[3]),
                         )
                         .build()
@@ -260,7 +260,7 @@ fn frame_controls_combine_with_requests_and_frame_exports_force_their_scope() {
                             FrameOptions::default()
                                 .with_enabled(flags[0] && request_flags[0])
                                 .with_clip(flags[1] && request_flags[1])
-                                .with_name(flags[2] && request_flags[2])
+                                .with_show_name(flags[2] && request_flags[2])
                                 .with_outline(flags[3] && request_flags[3]),
                         )
                         .build()
@@ -323,7 +323,7 @@ fn frame_names_validate_only_when_painted_and_preserve_source_metadata() {
                 );
                 for options in [
                     FrameOptions::default().with_enabled(false),
-                    FrameOptions::default().with_name(false),
+                    FrameOptions::default().with_show_name(false),
                 ] {
                     assert_scene(&source, &clean, format, options, json!([]));
                 }

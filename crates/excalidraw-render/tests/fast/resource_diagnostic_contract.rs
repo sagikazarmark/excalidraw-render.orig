@@ -704,7 +704,7 @@ fn asset_reference_scope_and_prefix(limit: AssetLimit) {
                         excalidraw_render::FrameOptions::default()
                             .with_enabled(false)
                             .with_clip(false)
-                            .with_name(false)
+                            .with_show_name(false)
                             .with_outline(false),
                     )
                     .build()
@@ -720,7 +720,7 @@ fn asset_reference_scope_and_prefix(limit: AssetLimit) {
                                 excalidraw_render::FrameOptions::default()
                                     .with_enabled(false)
                                     .with_clip(false)
-                                    .with_name(false)
+                                    .with_show_name(false)
                                     .with_outline(false),
                             )
                             .build()
@@ -1345,7 +1345,7 @@ fn element_reference_order_and_frames(limit: ElementLimit) {
                 excalidraw_render::FrameOptions::default()
                     .with_enabled(false)
                     .with_clip(false)
-                    .with_name(false)
+                    .with_show_name(false)
                     .with_outline(false),
             )
             .build()
@@ -3886,7 +3886,7 @@ fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
         let options = excalidraw_render::FrameOptions::default()
             .with_enabled(false)
             .with_clip(false)
-            .with_name(false)
+            .with_show_name(false)
             .with_outline(false);
         let request = RenderRequest::builder(format)
             .frame_options(options)
@@ -3930,7 +3930,7 @@ fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
         );
         cycle["elements"][2]["frameId"] = json!("good");
         let request = RenderRequest::builder(format)
-            .frame_options(excalidraw_render::FrameOptions::default().with_name(false))
+            .frame_options(excalidraw_render::FrameOptions::default().with_show_name(false))
             .resource_limits(
                 ResourceLimits::builder()
                     .max_coordinate_magnitude(20.0)

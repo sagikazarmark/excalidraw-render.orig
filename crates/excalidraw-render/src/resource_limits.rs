@@ -190,6 +190,15 @@ define_resource_limits! {
 
 impl ResourceLimitsBuilder {
     /// Validates and constructs the immutable resource-limit profile.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`RequestError`] with code
+    /// `request.invalid-resource-limit`, naming the field, when a limit is
+    /// zero, not finite, or above its [absolute
+    /// maximum](ResourceLimits::absolute_maxima), or when a per-item limit
+    /// exceeds the aggregate it contributes to (for example
+    /// `max_asset_bytes` above `max_total_asset_bytes`).
     pub fn build(self) -> Result<ResourceLimits, RequestError> {
         self.validate_individual_limits()?;
 

@@ -21,7 +21,7 @@ fn scene(elements: Value) -> SceneDocument {
 fn request(format: OutputFormat, limit: f64) -> RenderRequest {
     RenderRequest::builder(format)
         .padding(0.0)
-        .frame_options(FrameOptions::default().with_name(false))
+        .frame_options(FrameOptions::default().with_show_name(false))
         .resource_limits(
             ResourceLimits::builder()
                 .max_coordinate_magnitude(limit)

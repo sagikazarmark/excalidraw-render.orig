@@ -104,7 +104,7 @@ impl fmt::Display for RequestError {
 impl Error for RequestError {}
 
 /// The single artifact format produced by a render request.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
 #[non_exhaustive]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
@@ -133,6 +133,12 @@ impl OutputFormat {
             Self::Png => "png",
             Self::Pdf => "pdf",
         }
+    }
+}
+
+impl fmt::Display for OutputFormat {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.as_str())
     }
 }
 
@@ -167,15 +173,15 @@ pub enum ColorMode {
 /// ```
 /// use excalidraw_render::FrameOptions;
 ///
-/// let options = FrameOptions::default().with_name(false).with_outline(false);
+/// let options = FrameOptions::default().with_show_name(false).with_outline(false);
 /// assert!(options.enabled() && options.clip());
-/// assert!(!options.name() && !options.outline());
+/// assert!(!options.show_name() && !options.outline());
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FrameOptions {
     enabled: bool,
     clip: bool,
-    name: bool,
+    show_name: bool,
     outline: bool,
 }
 
@@ -196,8 +202,8 @@ impl FrameOptions {
 
     /// Selects whether frame names are rendered (default `true`).
     #[must_use]
-    pub const fn with_name(mut self, name: bool) -> Self {
-        self.name = name;
+    pub const fn with_show_name(mut self, show_name: bool) -> Self {
+        self.show_name = show_name;
         self
     }
 
@@ -219,8 +225,8 @@ impl FrameOptions {
     }
 
     /// Returns whether frame names are rendered.
-    pub const fn name(&self) -> bool {
-        self.name
+    pub const fn show_name(&self) -> bool {
+        self.show_name
     }
 
     /// Returns whether frame outlines are rendered.
@@ -235,7 +241,7 @@ impl Default for FrameOptions {
         Self {
             enabled: true,
             clip: true,
-            name: true,
+            show_name: true,
             outline: true,
         }
     }
@@ -435,6 +441,13 @@ impl SupplementalAssetsBuilder {
     }
 
     /// Validates and constructs the deterministic asset mapping.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`RequestError`] naming the first offending asset when a
+    /// scene file ID is empty (`request.empty-asset-id`) or added more than
+    /// once (`request.duplicate-asset-id`), or when an advisory media type is
+    /// malformed (`request.invalid-asset-media-type`).
     pub fn build(self) -> Result<SupplementalAssets, RequestError> {
         let mut entries = BTreeMap::new();
         for (file_id, asset) in self.entries {
@@ -590,9 +603,11 @@ impl FrameRenderRequest {
     /// Starts a validated frame request builder for exactly one output format.
     pub fn builder(format: OutputFormat) -> FrameRenderRequestBuilder {
         FrameRenderRequestBuilder {
-            inner: RenderRequest::builder(format)
-                .padding(0.0)
-                .frame_options(FrameOptions::default().with_name(false).with_outline(false)),
+            inner: RenderRequest::builder(format).padding(0.0).frame_options(
+                FrameOptions::default()
+                    .with_show_name(false)
+                    .with_outline(false),
+            ),
         }
     }
 
@@ -692,6 +707,11 @@ impl FrameRenderRequestBuilder {
     }
 
     /// Validates and constructs the frame request.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`RequestError`] for the same invalid sizing and format
+    /// options as [`RenderRequestBuilder::build`].
     pub fn build(self) -> Result<FrameRenderRequest, RequestError> {
         self.inner.build().map(|inner| FrameRenderRequest { inner })
     }
@@ -754,6 +774,14 @@ impl RenderRequestBuilder {
     }
 
     /// Validates and constructs the request.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`RequestError`] when the padding is negative or not finite
+    /// (`request.invalid-padding`), the [`Sizing`] scale or maximum dimension
+    /// is not finite and positive (`request.invalid-scale`,
+    /// `request.invalid-max-dimension`), or [`PdfOptions`] were supplied for
+    /// another output format (`request.incompatible-format-options`).
     pub fn build(self) -> Result<RenderRequest, RequestError> {
         if !self.request.padding.is_finite() || self.request.padding < 0.0 {
             return Err(RequestError::new(

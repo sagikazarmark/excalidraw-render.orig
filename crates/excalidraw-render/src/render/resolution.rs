@@ -334,7 +334,7 @@ impl RenderSession {
             RenderTarget::Scene => EffectiveFrameRendering {
                 enabled: frame_rendering.enabled && request.frame_options().enabled(),
                 clip: frame_rendering.clip && request.frame_options().clip(),
-                name: frame_rendering.name && request.frame_options().name(),
+                name: frame_rendering.name && request.frame_options().show_name(),
                 outline: frame_rendering.outline && request.frame_options().outline(),
                 rectangular_clip: false,
                 emit_frame_elements: true,
@@ -1032,7 +1032,7 @@ impl RenderSession {
                 request.supplemental_assets(),
                 matches!(self.target, RenderTarget::Scene)
                     && request.frame_options().enabled()
-                    && request.frame_options().name(),
+                    && request.frame_options().show_name(),
                 if matches!(self.target, RenderTarget::Frame(_)) {
                     usize::MAX
                 } else {

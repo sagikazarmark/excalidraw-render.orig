@@ -283,7 +283,8 @@ so a plain `cargo test` or `cargo nextest run` leaves them to the release-mode
 run without naming them. The renderer's build script turns the variable into the
 `release_qualification` cfg, so changing it rebuilds only the renderer; it is
 not a Cargo feature, so it stays out of the published interface. Any value other
-than unset, empty, `0` or `1` fails the build.
+than unset, empty, `0` or `1` fails the build. The build script is not
+packaged: the published crate has no build script, so dependents never run it.
 
 ## Canonical CI and evidence generation
 

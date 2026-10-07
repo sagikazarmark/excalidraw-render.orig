@@ -409,7 +409,7 @@ fn map_request(key: &Value, options: &Value) -> Result<Request, String> {
             FrameOptions::default()
                 .with_enabled(control("enabled")?)
                 .with_clip(control("clip")?)
-                .with_name(control("name")?)
+                .with_show_name(control("name")?)
                 .with_outline(control("outline")?),
         )
         .build()

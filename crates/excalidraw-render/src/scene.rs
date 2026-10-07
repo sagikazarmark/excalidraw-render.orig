@@ -35,6 +35,18 @@ pub struct SceneDocument {
 
 impl SceneDocument {
     /// Parses and admits a scene document from UTF-8 JSON bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`SceneParseError`] when the bytes are not UTF-8
+    /// (`scene.invalid-utf8`) or JSON (`scene.invalid-json`), when the
+    /// document is not a version-2 Excalidraw scene envelope
+    /// (`scene.invalid-envelope`), when an object repeats a key
+    /// (`scene.duplicate-object-key`), or when it crosses one of the fixed
+    /// parser ceilings: 64 MiB of input (`scene.input-too-large`), nesting
+    /// depth, entry count, string, key or number-token size, or parser
+    /// memory (the other `scene.*` codes). These ceilings are independent of
+    /// [`ResourceLimits`](crate::ResourceLimits).
     pub fn parse(bytes: &[u8]) -> Result<Self, SceneParseError> {
         let root = json::parse(bytes).map_err(|error| {
             if matches!(

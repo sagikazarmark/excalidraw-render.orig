@@ -913,7 +913,7 @@ fn build_request(
             FrameOptions::default()
                 .with_enabled(!cli.no_frame_rendering)
                 .with_clip(!cli.no_frame_clipping)
-                .with_name(!cli.no_frame_names)
+                .with_show_name(!cli.no_frame_names)
                 .with_outline(!cli.no_frame_outlines),
         )
         .metadata_options(

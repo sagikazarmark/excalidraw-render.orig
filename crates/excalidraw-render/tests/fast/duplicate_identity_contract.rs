@@ -62,7 +62,7 @@ fn duplicate_frame_identity_reports_the_channels_consuming_disambiguation() {
                 .frame_options(
                     FrameOptions::default()
                         .with_clip(clip)
-                        .with_name(false)
+                        .with_show_name(false)
                         .with_outline(false),
                 )
                 .build()
@@ -306,7 +306,7 @@ fn frame_opacity_and_target_scope_select_duplicate_effects() {
                     FrameOptions::default()
                         .with_enabled(false)
                         .with_clip(false)
-                        .with_name(false)
+                        .with_show_name(false)
                         .with_outline(false),
                 )
                 .build()
@@ -342,7 +342,7 @@ fn empty_text_does_not_consume_disambiguated_frame_opacity() {
                 FrameOptions::default()
                     .with_enabled(false)
                     .with_clip(false)
-                    .with_name(false)
+                    .with_show_name(false)
                     .with_outline(false),
             )
             .build()
@@ -360,7 +360,11 @@ fn empty_text_does_not_consume_disambiguated_frame_opacity() {
         let mut outside = source.clone();
         outside["elements"][2]["x"] = json!(500);
         let clip_request = RenderRequest::builder(format)
-            .frame_options(FrameOptions::default().with_name(false).with_outline(false))
+            .frame_options(
+                FrameOptions::default()
+                    .with_show_name(false)
+                    .with_outline(false),
+            )
             .build()
             .unwrap();
         let clipped = Renderer::new()
@@ -412,7 +416,7 @@ fn retained_placeholders_consume_disambiguated_frame_opacity() {
                 FrameOptions::default()
                     .with_enabled(false)
                     .with_clip(false)
-                    .with_name(false)
+                    .with_show_name(false)
                     .with_outline(false),
             )
             .build()
@@ -717,12 +721,20 @@ fn duplicate_reports_survive_diagnostic_and_output_failures_in_scene_and_frames(
             }
         }
         let default = RenderRequest::builder(format)
-            .frame_options(FrameOptions::default().with_name(false).with_outline(false))
+            .frame_options(
+                FrameOptions::default()
+                    .with_show_name(false)
+                    .with_outline(false),
+            )
             .build()
             .unwrap();
         let baseline = renderer.render(&document, &default).unwrap();
         let request = RenderRequest::builder(format)
-            .frame_options(FrameOptions::default().with_name(false).with_outline(false))
+            .frame_options(
+                FrameOptions::default()
+                    .with_show_name(false)
+                    .with_outline(false),
+            )
             .resource_limits(
                 ResourceLimits::builder()
                     .max_output_bytes(baseline.artifact().bytes().len() as u64 - 1)

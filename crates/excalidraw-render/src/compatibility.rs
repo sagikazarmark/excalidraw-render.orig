@@ -10,7 +10,7 @@ use crate::scene::SceneDocument;
 /// Identifies the static-export profile a renderer release implements.
 ///
 /// This release implements exactly one revision, [`REVISION_1`]. During 0.x a
-/// revision may evolve between reviewed releases and no historical revision is
+/// revision may change in any release and no historical revision is
 /// retained; pin the package version and dependency lockfile when historical
 /// output bytes are required.
 ///
@@ -101,6 +101,31 @@ impl Renderer {
     }
 
     /// Renders one admitted scene into the request's selected output format.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`RenderError`] when no complete artifact can be produced.
+    /// Its [`category`](RenderError::category) says why:
+    ///
+    /// - [`Input`](RenderErrorCategory::Input): the scene has no finite
+    ///   bounds (`scene.unbounded-geometry`).
+    /// - [`Capability`](RenderErrorCategory::Capability): a font the scene
+    ///   needs is not in this build (`render.font-unavailable`; see the
+    ///   crate's `cjk` feature).
+    /// - [`ResourceLimit`](RenderErrorCategory::ResourceLimit): the render
+    ///   crosses one of the request's [`ResourceLimits`](crate::ResourceLimits)
+    ///   (a `resource.*` code), or a required allocation failed
+    ///   (`resource.memory-unavailable`).
+    /// - [`NoMeaningfulArtifact`](RenderErrorCategory::NoMeaningfulArtifact):
+    ///   a PDF raster fallback was forbidden by the request or could not be
+    ///   isolated (`pdf.raster-fallback-*`).
+    /// - [`Encoding`](RenderErrorCategory::Encoding): writing the artifact
+    ///   failed (an `encode.*` code).
+    /// - [`Internal`](RenderErrorCategory::Internal): a renderer invariant
+    ///   failed (`render.internal-failure`).
+    ///
+    /// The error carries the complete [report](RenderError::report)
+    /// accumulated before the failure.
     pub fn render(
         &self,
         scene: &SceneDocument,
@@ -110,6 +135,13 @@ impl Renderer {
     }
 
     /// Renders one discovered frame using reference frame-export semantics.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`RenderError`] in the same categories as
+    /// [`render`](Self::render). A frame whose viewport falls outside
+    /// `max_coordinate_magnitude` fails with
+    /// `resource.coordinate-range-exceeded`.
     pub fn render_frame(
         &self,
         frame: crate::FrameRef<'_>,
@@ -119,6 +151,16 @@ impl Renderer {
     }
 
     /// Starts lazy source-ordered rendering for selected frames.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`FrameBatchError`](crate::FrameBatchError) before rendering
+    /// anything when a selected frame belongs to another scene document
+    /// (`frame-batch.foreign-target`), when the same frame is selected twice
+    /// (`frame-batch.duplicate-target`), or when the preparation the frames
+    /// share cannot be completed (`frame-batch.shared-preparation-failed`).
+    /// Each frame's own render failure is reported by its
+    /// [`FrameRenderEntry`](crate::FrameRenderEntry) instead.
     pub fn render_frames<'scene, 'request>(
         &self,
         scene: &'scene SceneDocument,
@@ -628,6 +670,21 @@ pub enum Recovery {
 }
 
 impl Recovery {
+    /// Returns the stable serialized spelling.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Repaired => "repaired",
+            Self::Ignored => "ignored",
+            Self::Placeholder => "placeholder",
+            Self::Omitted => "omitted",
+            Self::Removed => "removed",
+            Self::Substituted => "substituted",
+            Self::Flattened => "flattened",
+            Self::Rasterized => "rasterized",
+            Self::MetadataOmitted => "metadata_omitted",
+        }
+    }
+
     /// The recovery the scene-surface manifest spells `recovery`, if any.
     pub(crate) fn from_manifest(recovery: &str) -> Option<Self> {
         match recovery {
@@ -642,6 +699,12 @@ impl Recovery {
             "metadata_omitted" => Some(Self::MetadataOmitted),
             _ => None,
         }
+    }
+}
+
+impl fmt::Display for Recovery {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.as_str())
     }
 }
 

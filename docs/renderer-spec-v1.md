@@ -349,10 +349,10 @@ One target request produces exactly one `OutputFormat`: `Svg`, `Png`, or `Pdf`, 
 
 `SceneDocument::frames()` discovers every live ordinary and magic frame source
 occurrence in source order. A borrowed `FrameRef` exposes its one-based frame
-ordinal, kind, and optional source string name while keeping source occurrence
-identity opaque. Frame requests expose background, sizing, color, metadata,
-supplemental assets, resource limits, and PDF controls, but expose neither
-padding nor whole-scene frame controls.
+ordinal, kind, optional nonempty source element ID, and optional source string
+name while keeping source occurrence identity opaque. Frame requests expose
+background, sizing, color, metadata, supplemental assets, resource limits, and
+PDF controls, but expose neither padding nor whole-scene frame controls.
 
 The lazy frame cursor validates one-scene ownership, rejects duplicate targets,
 sorts targets by frame ordinal, permits an empty target list, and yields one
@@ -367,7 +367,7 @@ change target bytes, reports, first crossings, or failures.
 | `padding(f64)` | Default `10`; finite and nonnegative |
 | `sizing(Sizing)` | Exactly `Scale(f64)` or `MaxDimension(f64)`; finite and positive |
 | `color_mode(ColorMode)` | `Light` or `Dark`; default `Light` |
-| `frame_options(FrameOptions)` | `enabled`, `clip`, `name`, and `outline`; all default `true` |
+| `frame_options(FrameOptions)` | `enabled`, `clip`, `show_name`, and `outline`; all default `true` |
 | `metadata_options(MetadataOptions)` | `embedded_scene`, `provenance`, and `diagnostic_summary`; all default `false` |
 | `supplemental_assets(SupplementalAssets)` | Owned bytes only |
 | `resource_limits(ResourceLimits)` | Validated semantic limits |

@@ -179,7 +179,9 @@ impl fmt::Display for DiagnosticCode {
 }
 
 /// Severity of one compatibility diagnostic occurrence.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+///
+/// Severities are ordered from least to most severe: `Info < Warning`.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[non_exhaustive]
 #[serde(rename_all = "snake_case")]
 pub enum DiagnosticSeverity {
@@ -189,8 +191,24 @@ pub enum DiagnosticSeverity {
     Warning,
 }
 
+impl DiagnosticSeverity {
+    /// Returns the stable serialized spelling.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Info => "info",
+            Self::Warning => "warning",
+        }
+    }
+}
+
+impl fmt::Display for DiagnosticSeverity {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.as_str())
+    }
+}
+
 /// Observable effect class of a compatibility diagnostic.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
 #[non_exhaustive]
 #[serde(rename_all = "snake_case")]
 pub enum DiagnosticEffect {
@@ -205,6 +223,16 @@ pub enum DiagnosticEffect {
 }
 
 impl DiagnosticEffect {
+    /// Returns the stable serialized spelling.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::InputRepair => "input_repair",
+            Self::Visual => "visual",
+            Self::Semantic => "semantic",
+            Self::Metadata => "metadata",
+        }
+    }
+
     /// The effect the scene-surface manifest spells `effect`, if any.
     pub(crate) fn from_manifest(effect: &str) -> Option<Self> {
         match effect {
@@ -214,6 +242,12 @@ impl DiagnosticEffect {
             "metadata" => Some(Self::Metadata),
             _ => None,
         }
+    }
+}
+
+impl fmt::Display for DiagnosticEffect {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.as_str())
     }
 }
 
@@ -565,11 +599,11 @@ impl fmt::Display for CompatibilityDiagnostic {
     /// One line for a person: `warning: MESSAGE [CODE] (element ID)`, the
     /// element part only when the diagnostic names one.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let severity = match self.severity {
-            DiagnosticSeverity::Info => "info",
-            DiagnosticSeverity::Warning => "warning",
-        };
-        write!(formatter, "{severity}: {} [{}]", self.message, self.code)?;
+        write!(
+            formatter,
+            "{}: {} [{}]",
+            self.severity, self.message, self.code
+        )?;
         if let Some(element_id) = &self.element_id {
             write!(formatter, " (element {element_id})")?;
         }
@@ -710,6 +744,12 @@ impl RenderErrorCategory {
             Self::Encoding => "encoding",
             Self::Internal => "internal",
         }
+    }
+}
+
+impl fmt::Display for RenderErrorCategory {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.as_str())
     }
 }
 

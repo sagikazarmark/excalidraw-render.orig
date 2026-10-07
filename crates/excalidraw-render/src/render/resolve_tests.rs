@@ -569,7 +569,11 @@ fn frame_controls_are_independent() {
 
     let no_decorations = resolve_with(
         &scene,
-        &frame_request(FrameOptions::default().with_name(false).with_outline(false)),
+        &frame_request(
+            FrameOptions::default()
+                .with_show_name(false)
+                .with_outline(false),
+        ),
     );
     assert!(!frame_clips(&no_decorations)[2].1.is_empty());
     let outer = frame(&no_decorations, "outer");

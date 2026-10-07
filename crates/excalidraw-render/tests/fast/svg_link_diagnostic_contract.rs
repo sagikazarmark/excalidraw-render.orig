@@ -211,7 +211,7 @@ fn forbidden_resource_contract_in_every_format() {
             json!({"outer":file("https://example.invalid/image.png")}),
         );
         let request = RenderRequest::builder(format)
-            .frame_options(excalidraw_render::FrameOptions::default().with_name(false))
+            .frame_options(excalidraw_render::FrameOptions::default().with_show_name(false))
             .metadata_options(
                 excalidraw_render::MetadataOptions::default().with_embedded_scene(true),
             )
@@ -919,7 +919,7 @@ fn unsafe_svg_owners_frames_and_prefixes() {
             }).collect();
             let request = RenderRequest::builder(format)
                 .supplemental_assets(assets.clone())
-                .frame_options(excalidraw_render::FrameOptions::default().with_name(false))
+                .frame_options(excalidraw_render::FrameOptions::default().with_show_name(false))
                 .build()
                 .unwrap();
             let first = Renderer::new().render(&source, &request).unwrap();
@@ -1037,7 +1037,7 @@ fn linked_source(kind: &str, link: Value) -> Value {
 }
 fn link_request(format: OutputFormat) -> RenderRequest {
     RenderRequest::builder(format)
-        .frame_options(excalidraw_render::FrameOptions::default().with_name(false))
+        .frame_options(excalidraw_render::FrameOptions::default().with_show_name(false))
         .build()
         .unwrap()
 }

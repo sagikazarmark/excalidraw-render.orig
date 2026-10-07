@@ -15,7 +15,10 @@ readme = "README.md"
 keywords = ["excalidraw", "rendering", "svg", "png", "pdf"]
 categories = ["graphics", "rendering"]
 # Integration tests read workspace evidence, so they run from the repository.
-include = ["/src/", "/build.rs", "/LICENSES/", "/LICENSE-BUNDLE.txt", "/README.md"]
+# `build.rs` stays there too: it only admits the release-qualification tests,
+# so the package leaves it out (Cargo publishes `build = false`) and
+# dependents never compile or run it.
+include = ["/src/", "/LICENSES/", "/LICENSE-BUNDLE.txt", "/README.md"]
 
 [lints]
 workspace = true

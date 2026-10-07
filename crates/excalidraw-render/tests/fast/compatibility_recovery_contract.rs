@@ -14,7 +14,7 @@ fn parse(source: &Value) -> SceneDocument {
 }
 fn request(format: OutputFormat) -> RenderRequest {
     RenderRequest::builder(format)
-        .frame_options(FrameOptions::default().with_name(false))
+        .frame_options(FrameOptions::default().with_show_name(false))
         .build()
         .unwrap()
 }
@@ -357,7 +357,11 @@ fn malformed_transform_opacity_and_clip_match_authored_geometry() {
                 &document,
                 &RenderRequest::builder(format)
                     .padding(0.0)
-                    .frame_options(FrameOptions::default().with_name(false).with_outline(false))
+                    .frame_options(
+                        FrameOptions::default()
+                            .with_show_name(false)
+                            .with_outline(false),
+                    )
                     .build()
                     .unwrap(),
             )
