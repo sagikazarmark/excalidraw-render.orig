@@ -1908,6 +1908,13 @@ fn unsafe_attribute(element_name: &str, name: &str, namespace: Option<&str>, val
     ) {
         return !safe_href(element_name, value);
     }
+    if element_name == "feConvolveMatrix"
+        && name == "order"
+        && namespace.is_none()
+        && convolve_order_overflows(value)
+    {
+        return true;
+    }
     let lowercase = value.to_ascii_lowercase();
     lowercase.contains("@import")
         || lowercase.contains("javascript:")
@@ -1915,6 +1922,24 @@ fn unsafe_attribute(element_name: &str, name: &str, namespace: Option<&str>, val
         || lowercase.contains("-moz-binding")
         || lowercase.contains("behavior:")
         || contains_nonlocal_url(&lowercase)
+}
+
+/// Whether usvg 0.48's `convert_convolve_matrix` would multiply this `order`
+/// past `u32`, which panics where overflow checks are on (and wraps into a
+/// kernel resvg indexes out of bounds where they are off). It reads the
+/// value as usvg does: two numbers, each truncated to `i32`, the second
+/// defaulting to the first, either one non-positive leaving the 3x3 default.
+/// No kernel matrix an asset could carry has that many cells, so dropping
+/// such an `order` changes no kernel that could have been drawn.
+fn convolve_order_overflows(value: &str) -> bool {
+    let mut numbers = svgtypes::NumberListParser::from(value);
+    // `as` saturates, like usvg's own conversion.
+    let x = numbers.next().and_then(Result::ok).map_or(3, |n| n as i32);
+    let y = numbers.next().and_then(Result::ok).map_or(x, |n| n as i32);
+    match (u32::try_from(x), u32::try_from(y)) {
+        (Ok(x), Ok(y)) if x > 0 && y > 0 => x.checked_mul(y).is_none(),
+        _ => false,
+    }
 }
 
 fn discover_effects(

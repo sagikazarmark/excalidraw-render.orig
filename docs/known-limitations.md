@@ -77,6 +77,12 @@ each one at runtime.
   `resource.total-work-exceeded` under the default limits. Library callers can
   raise `max_total_work_units` up to its absolute maximum; the CLI has no limit
   options, so use a lower `--scale` or `--max-dimension`.
+- Filter effects in a nested SVG image are charged per primitive at the size
+  they are rasterized, so a large or heavily parameterized filter (many
+  turbulence octaves, a wide morphology radius, a long primitive chain) can
+  fail a PNG or PDF render with `resource.total-work-exceeded` or
+  `resource.total-rasterized-pixels-exceeded`; SVG output embeds the image
+  and is unaffected.
 - The default limits bound one render to a few seconds of CPU on a current
   core for hostile input. Services that render untrusted scenes concurrently
   should still apply their own timeout and concurrency limits.

@@ -1302,6 +1302,151 @@ fn fixture_bmp24(rgb: [u8; 3]) -> Vec<u8> {
     bytes
 }
 
+/// A nested SVG whose one rectangle paints through a filter of `primitives`.
+fn filtered_svg(primitives: &str) -> Vec<u8> {
+    format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="f">{primitives}</filter><rect width="100" height="100" fill="#00ff00" filter="url(#f)"/></svg>"##
+    )
+    .into_bytes()
+}
+
+#[test]
+fn hostile_filter_effects_are_refused_by_their_charged_work() {
+    // Each is a small SVG whose filter would keep resvg busy for minutes or
+    // hours at this size: work that grows with octaves, kernel cells, the
+    // morphology neighbourhood, or a long primitive chain. The charge is
+    // measured before anything is rasterized, so the render is refused at
+    // once in both rasterizing formats.
+    let kernel = vec!["1"; 200 * 200].join(" ");
+    let effects = [
+        r#"<feTurbulence baseFrequency="0.9" numOctaves="1000000"/>"#.to_owned(),
+        r#"<feTurbulence baseFrequency="0.9" numOctaves="1000"/>"#.to_owned(),
+        r#"<feMorphology radius="100000"/>"#.to_owned(),
+        format!(r#"<feConvolveMatrix order="200" kernelMatrix="{kernel}"/>"#),
+        r#"<feGaussianBlur stdDeviation="5"/>"#.repeat(5000),
+    ];
+    for primitives in &effects {
+        let scene = nested_svg_scene(&filtered_svg(primitives), 500, 500);
+        for format in [OutputFormat::Png, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format)
+                .build()
+                .expect("request is valid");
+            let error = Renderer::new()
+                .render(&scene, &request)
+                .expect_err("the filter's work exceeds the default limits");
+            let effect = &primitives[..primitives.len().min(40)];
+            assert_eq!(
+                error.code(),
+                ErrorCode::RESOURCE_TOTAL_WORK_EXCEEDED,
+                "{format:?} {effect}"
+            );
+            assert_eq!(error.element_id(), Some("image"), "{format:?} {effect}");
+        }
+    }
+}
+
+#[test]
+fn convolve_orders_past_u32_are_removed_before_the_viewer_parses_them() {
+    // usvg multiplies the two orders in `u32`: with overflow checks on (this
+    // tier, and any consumer's debug build) a product past `u32::MAX` would
+    // panic, and without them "65536 65537" wraps to a 65536-cell kernel the
+    // matrix below matches. Each such `order` is dropped as unsafe content.
+    let wrapped_kernel = vec!["1"; 65_536].join(" ");
+    let hostile = [
+        format!(r#"<feConvolveMatrix order="65536 65537" kernelMatrix="{wrapped_kernel}"/>"#),
+        r#"<feConvolveMatrix order="1e10" kernelMatrix="1"/>"#.to_owned(),
+        r#"<feConvolveMatrix order="70000,70000" kernelMatrix="1"/>"#.to_owned(),
+    ];
+    // Orders whose product fits are kept verbatim, the largest among them.
+    let kept = [
+        r#"<feConvolveMatrix order="2 3" kernelMatrix="1 1 1 1 1 1"/>"#,
+        r#"<feConvolveMatrix order="65535 65537" kernelMatrix="1"/>"#,
+        r#"<feConvolveMatrix order="-70000 70000" kernelMatrix="1"/>"#,
+    ];
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        for primitive in &hostile {
+            let effect = &primitive[..primitive.len().min(48)];
+            let outcome = Renderer::new()
+                .render(
+                    &nested_svg_scene(&filtered_svg(primitive), 20, 10),
+                    &request,
+                )
+                .unwrap_or_else(|error| panic!("{format:?} {effect}: {error:?}"));
+            let removals = outcome
+                .report()
+                .diagnostics()
+                .iter()
+                .filter(|diagnostic| {
+                    diagnostic.code() == DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED
+                })
+                .count();
+            assert_eq!(removals, 1, "{format:?} {effect}");
+            if format == OutputFormat::Svg {
+                let artifact = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
+                assert!(!embedded_svg(artifact).contains("order="), "{effect}");
+            }
+        }
+        for primitive in kept {
+            let outcome = Renderer::new()
+                .render(
+                    &nested_svg_scene(&filtered_svg(primitive), 20, 10),
+                    &request,
+                )
+                .unwrap_or_else(|error| panic!("{format:?} {primitive}: {error:?}"));
+            assert!(
+                outcome.report().diagnostics().iter().all(|diagnostic| {
+                    diagnostic.code() != DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED
+                }),
+                "{format:?} {primitive}"
+            );
+            if format == OutputFormat::Svg {
+                let artifact = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
+                let order = primitive.split('"').nth(1).unwrap();
+                assert!(
+                    embedded_svg(artifact).contains(&format!(r#"order="{order}""#)),
+                    "{primitive}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn filter_effect_surfaces_count_toward_the_rasterized_pixel_limit() {
+    // One blur fits the ceiling in both rasterizing formats; twenty chained
+    // blurs each keep a result surface of the filter region, which the same
+    // ceiling refuses.
+    let limits = ResourceLimits::builder()
+        .max_raster_surface_pixels(4_000)
+        .max_total_rasterized_pixels(4_000)
+        .build()
+        .expect("limits are valid");
+    let blur = r#"<feGaussianBlur stdDeviation="1"/>"#;
+    for format in [OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .resource_limits(limits.clone())
+            .build()
+            .expect("request is valid");
+        let single = nested_svg_scene(&filtered_svg(blur), 20, 10);
+        Renderer::new()
+            .render(&single, &request)
+            .expect("one blur fits the rasterized pixel ceiling");
+        let chained = nested_svg_scene(&filtered_svg(&blur.repeat(20)), 20, 10);
+        let error = Renderer::new()
+            .render(&chained, &request)
+            .expect_err("twenty blur results exceed the rasterized pixel ceiling");
+        assert_eq!(
+            error.code(),
+            ErrorCode::RESOURCE_TOTAL_RASTERIZED_PIXELS_EXCEEDED,
+            "{format:?}"
+        );
+        assert_eq!(error.element_id(), Some("image"), "{format:?}");
+    }
+}
+
 fn assert_rgb_near(actual: [u8; 4], expected: [u8; 4]) {
     for (actual_channel, expected_channel) in actual.into_iter().zip(expected) {
         assert!(

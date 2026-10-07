@@ -114,6 +114,33 @@ impl RenderSession {
                 )?;
                 closure_bytes = closure_bytes.saturating_add(bytes);
             }
+            // The closure's filter effects cost resvg their own surfaces and
+            // per-primitive work beyond painting the input surface.
+            let filter_work = plan
+                .raster_closure_filter_work(
+                    closure,
+                    request.resource_limits().max_total_work_units(),
+                )
+                .map_err(|error| {
+                    self.format_failure(request, ErrorCode::ENCODE_PDF_FAILED, error)
+                })?;
+            if !filter_work.is_empty() {
+                self.transact(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::ProjectionAndFallback,
+                        "pdf_raster_fallback_filter_samples",
+                        &closure.json_pointer,
+                    )
+                    .with_element_id(Some(&closure.element_id))
+                    .with_local_owner(Some(&closure.element_id)),
+                    ResourceDelta {
+                        rasterized_pixels: filter_work.surface_pixels,
+                        total_work_units: filter_work.work_units,
+                        ..ResourceDelta::default()
+                    },
+                )?;
+            }
             surface_working.push(closure_bytes);
         }
         for closure in plan.raster_closures() {

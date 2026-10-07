@@ -24,6 +24,10 @@ Initial release of the pure-Rust Excalidraw rendering library
   (hand-drawn) generation as well as rasterization.
 - PNG draws elements of any size its raster surface admits, as SVG and PDF
   do; their raster work counts against the total work limit.
+- Filter effects in nested SVG images are charged before they are rasterized,
+  in PNG and in PDF raster fallback: each primitive's work at its device size
+  (including octaves, kernel size and morphology radius) counts against the
+  total work limit, and its result surface against the total rasterized pixels.
 
 ### Compatibility
 

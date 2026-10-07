@@ -59,8 +59,12 @@ use super::resolve::{
     ResolvedImageSourceRect, ResolvedScene, ResolvedTransform, StrokeStyle,
 };
 use super::rough::{Drawing, Fill, FillKind};
+use super::svg_filter_work::{self, FilterWork};
 use super::text::{ResolvedLabel, ResolvedText};
 use super::{freedraw, FormatEncodeError, SvgTreeCache};
+
+/// Fixed supersampling matches browser-canvas edge coverage without host raster defaults.
+const SUBPIXEL_SCALE: u32 = 4;
 
 #[derive(Debug)]
 pub(super) struct PngPlan {
@@ -177,6 +181,17 @@ pub(super) struct PngFrameClipMask {
     /// Clipped conservative device-space area of the frame clip in canvas
     /// pixels: the alpha-mask generation cost `P` of the shared mask.
     pub(super) pixels: u64,
+}
+
+/// The supersampled layer one nested SVG image paints into: its offset and
+/// size on the raster grid, and the transform resvg paints the document with.
+#[derive(Clone, Copy, Debug)]
+struct NestedSvgLayer {
+    left: u32,
+    top: u32,
+    width: u32,
+    height: u32,
+    transform: Transform,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -365,6 +380,99 @@ impl PngElement {
             origin.x.max(corner.x),
             origin.y.max(corner.y),
         ))
+    }
+
+    /// The supersampled layer an image element's nested SVG is painted into:
+    /// its device bounds on the `raster_width` by `raster_height` grid,
+    /// clamped to the canvas, and the transform resvg paints the document
+    /// with. `None` when the element is no image or paints no layer pixel.
+    fn nested_svg_layer(
+        &self,
+        raster_width: u32,
+        raster_height: u32,
+    ) -> Result<Option<NestedSvgLayer>, FormatEncodeError> {
+        let PlannedElement {
+            transform,
+            width,
+            height,
+            kind: PngElementKind::Image {
+                source_rect, scale, ..
+            },
+            ..
+        } = &self.planned
+        else {
+            return Ok(None);
+        };
+        // A degenerate destination paints no pixels. Avoid inverting its
+        // singular transform after a dimension default/recovery has
+        // legitimately produced zero.
+        if *width == 0.0 || *height == 0.0 {
+            return Ok(None);
+        }
+        let corners = [
+            Point { x: 0.0, y: 0.0 },
+            Point { x: *width, y: 0.0 },
+            Point {
+                x: *width,
+                y: *height,
+            },
+            Point { x: 0.0, y: *height },
+        ]
+        .map(|point| transform.map_point(point));
+        let multiplier = f64::from(SUBPIXEL_SCALE);
+        let left = (corners
+            .iter()
+            .map(|point| point.x)
+            .fold(f64::INFINITY, f64::min)
+            * multiplier)
+            .floor()
+            .clamp(0.0, f64::from(raster_width)) as u32;
+        let top = (corners
+            .iter()
+            .map(|point| point.y)
+            .fold(f64::INFINITY, f64::min)
+            * multiplier)
+            .floor()
+            .clamp(0.0, f64::from(raster_height)) as u32;
+        let right = (corners
+            .iter()
+            .map(|point| point.x)
+            .fold(f64::NEG_INFINITY, f64::max)
+            * multiplier)
+            .ceil()
+            .clamp(0.0, f64::from(raster_width)) as u32;
+        let bottom = (corners
+            .iter()
+            .map(|point| point.y)
+            .fold(f64::NEG_INFINITY, f64::max)
+            * multiplier)
+            .ceil()
+            .clamp(0.0, f64::from(raster_height)) as u32;
+        let Some(layer_width) = right.checked_sub(left).filter(|width| *width > 0) else {
+            return Ok(None);
+        };
+        let Some(layer_height) = bottom.checked_sub(top).filter(|height| *height > 0) else {
+            return Ok(None);
+        };
+        let raster_transform = transform.raster_image_transform_with_origin(
+            SUBPIXEL_SCALE,
+            *source_rect,
+            *width,
+            *height,
+            *scale,
+            left,
+            top,
+        )?;
+        if !raster_transform.is_valid() {
+            return Ok(None);
+        }
+        Ok(Some(NestedSvgLayer {
+            left,
+            top,
+            width: layer_width,
+            height: layer_height,
+            transform: raster_transform,
+        }))
     }
 
     /// The canvas `drawImage` call a raster image element issues (#198):
@@ -983,9 +1091,6 @@ impl PngPlan {
     }
 
     fn rasterize(&self) -> Result<Vec<u8>, FormatEncodeError> {
-        // Fixed supersampling matches browser-canvas edge coverage without host raster defaults.
-        const SUBPIXEL_SCALE: u32 = 4;
-
         let raster_width = self
             .width
             .checked_mul(SUBPIXEL_SCALE)
@@ -1265,71 +1370,16 @@ impl PngPlan {
                         // antialiased masks.
                         let snapped = element.snapped_image_rect(self.width, self.height);
                         if let Some(tree) = self.svg_trees.get(&asset.identity).map(Arc::as_ref) {
-                            let corners = [
-                                Point { x: 0.0, y: 0.0 },
-                                Point { x: *width, y: 0.0 },
-                                Point {
-                                    x: *width,
-                                    y: *height,
-                                },
-                                Point { x: 0.0, y: *height },
-                            ]
-                            .map(|point| transform.map_point(point));
-                            let multiplier = f64::from(SUBPIXEL_SCALE);
-                            let left = (corners
-                                .iter()
-                                .map(|point| point.x)
-                                .fold(f64::INFINITY, f64::min)
-                                * multiplier)
-                                .floor()
-                                .clamp(0.0, f64::from(raster_width))
-                                as u32;
-                            let top = (corners
-                                .iter()
-                                .map(|point| point.y)
-                                .fold(f64::INFINITY, f64::min)
-                                * multiplier)
-                                .floor()
-                                .clamp(0.0, f64::from(raster_height))
-                                as u32;
-                            let right = (corners
-                                .iter()
-                                .map(|point| point.x)
-                                .fold(f64::NEG_INFINITY, f64::max)
-                                * multiplier)
-                                .ceil()
-                                .clamp(0.0, f64::from(raster_width))
-                                as u32;
-                            let bottom = (corners
-                                .iter()
-                                .map(|point| point.y)
-                                .fold(f64::NEG_INFINITY, f64::max)
-                                * multiplier)
-                                .ceil()
-                                .clamp(0.0, f64::from(raster_height))
-                                as u32;
-                            let Some(layer_width) =
-                                right.checked_sub(left).filter(|width| *width > 0)
-                            else {
-                                continue;
-                            };
-                            let Some(layer_height) =
-                                bottom.checked_sub(top).filter(|height| *height > 0)
-                            else {
-                                continue;
-                            };
-                            let raster_transform = transform.raster_image_transform_with_origin(
-                                SUBPIXEL_SCALE,
-                                *source_rect,
-                                *width,
-                                *height,
-                                *scale,
+                            let Some(NestedSvgLayer {
                                 left,
                                 top,
-                            )?;
-                            if !raster_transform.is_valid() {
+                                width: layer_width,
+                                height: layer_height,
+                                transform: raster_transform,
+                            }) = element.nested_svg_layer(raster_width, raster_height)?
+                            else {
                                 continue;
-                            }
+                            };
                             let mut layer = Pixmap::new(layer_width, layer_height).ok_or(
                                 FormatEncodeError::MemoryUnavailable {
                                     subject_kind: "raster_surface",
@@ -1974,6 +2024,47 @@ impl PngPlan {
                 PngElementKind::Image { .. } => Some(self.element_rect_coverage_area(element)),
                 _ => None,
             })
+    }
+
+    /// What resvg will spend on the filter effects of the nested SVG the
+    /// element at `index` paints, measured on the layer `rasterize` hands it.
+    /// The work counts the supersampled layer pixels resvg actually filters;
+    /// the surfaces are in canvas pixels, the unit of the main surface, so a
+    /// layer pixel counts one sixteenth. Empty for any other element. The
+    /// walk stops past `budget` work units.
+    pub(super) fn nested_svg_filter_work(
+        &self,
+        index: usize,
+        budget: u64,
+    ) -> Result<FilterWork, FormatEncodeError> {
+        let Some(element) = self.elements.get(index) else {
+            return Ok(FilterWork::default());
+        };
+        let PngElementKind::Image { asset, .. } = &element.planned.kind else {
+            return Ok(FilterWork::default());
+        };
+        let Some(tree) = self.svg_trees.get(&asset.identity) else {
+            return Ok(FilterWork::default());
+        };
+        let raster_width = self
+            .width
+            .checked_mul(SUBPIXEL_SCALE)
+            .ok_or_else(png_size_error)?;
+        let raster_height = self
+            .height
+            .checked_mul(SUBPIXEL_SCALE)
+            .ok_or_else(png_size_error)?;
+        let Some(layer) = element.nested_svg_layer(raster_width, raster_height)? else {
+            return Ok(FilterWork::default());
+        };
+        let work =
+            svg_filter_work::measure_tree(tree, layer.transform, layer.width, layer.height, budget);
+        Ok(FilterWork {
+            work_units: work.work_units,
+            surface_pixels: work
+                .surface_pixels
+                .div_ceil(u64::from(SUBPIXEL_SCALE * SUBPIXEL_SCALE)),
+        })
     }
 
     pub(super) fn fallback_surface_area(&self, index: usize) -> Option<Option<u64>> {
