@@ -266,16 +266,16 @@
       "id": "missing-nested-binding-member-order",
       "risk": "normalization-repair",
       "input": {
-        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"arrow\",\"type\":\"arrow\",\"width\":10,\"height\":10,\"points\":[[0,0],[10,10]],\"startBinding\":{\"elementId\":\"target\"},\"endBinding\":{\"elementId\":\"\"},\"seed\":1,\"updated\":1}],\"appState\":{},\"files\":{}}"
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"arrow\",\"type\":\"arrow\",\"width\":10,\"height\":10,\"points\":[[0,0],[10,10]],\"startBinding\":{\"focus\":0},\"endBinding\":{\"elementId\":\"\"},\"seed\":1,\"updated\":1}],\"appState\":{},\"files\":{}}"
       },
       "minimized": true,
       "expected": {
         "kind": "admitted",
-        "canonicalSha256": "7ec3b392b1ec7ba9beff6ff4e2049b4115055403edc97ecff369b7ac989947d4",
+        "canonicalSha256": "8bf581c8fef9d7b0e6c9a6743d6d9bc49d92a8570158455bc9f8accdd944f569",
         "report": [
           {
             "code": "compatibility.unsupported-property-value",
-            "jsonPointer": "/elements/0/startBinding/gap"
+            "jsonPointer": "/elements/0/startBinding/elementId"
           },
           {
             "code": "compatibility.unsupported-property-value",

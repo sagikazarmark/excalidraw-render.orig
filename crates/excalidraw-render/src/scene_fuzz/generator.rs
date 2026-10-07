@@ -982,14 +982,14 @@ impl Generator {
                 1 => *root.member_mut("elements").expect("elements") = Node::Object(Vec::new()),
                 _ => *root.member_mut("elements").expect("elements") = Node::Null,
             }),
-            4 => ("/appState", |generator, root| match generator.below(3) {
-                0 => root.remove_member("appState"),
-                1 => *root.member_mut("appState").expect("appState") = Node::Array(Vec::new()),
+            // An absent appState or files member is admitted, as Excalidraw
+            // restores it; only another kind breaks the envelope.
+            4 => ("/appState", |generator, root| match generator.below(2) {
+                0 => *root.member_mut("appState").expect("appState") = Node::Array(Vec::new()),
                 _ => *root.member_mut("appState").expect("appState") = Node::string("{}"),
             }),
-            _ => ("/files", |generator, root| match generator.below(3) {
-                0 => root.remove_member("files"),
-                1 => *root.member_mut("files").expect("files") = Node::Array(Vec::new()),
+            _ => ("/files", |generator, root| match generator.below(2) {
+                0 => *root.member_mut("files").expect("files") = Node::Array(Vec::new()),
                 _ => *root.member_mut("files").expect("files") = Node::Bool(false),
             }),
         };

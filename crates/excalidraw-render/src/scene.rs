@@ -36,7 +36,16 @@ pub struct SceneDocument {
 impl SceneDocument {
     /// Parses and admits a scene document from UTF-8 JSON bytes.
     pub fn parse(bytes: &[u8]) -> Result<Self, SceneParseError> {
-        let root = json::parse(bytes)?;
+        let root = json::parse(bytes).map_err(|error| {
+            if matches!(
+                error.code,
+                ErrorCode::SCENE_INVALID_UTF8 | ErrorCode::SCENE_INVALID_JSON
+            ) {
+                recognized_export(bytes).unwrap_or(error)
+            } else {
+                error
+            }
+        })?;
         validate_envelope(&root)?;
 
         Ok(Self {
@@ -205,7 +214,7 @@ impl SceneDocument {
             return SourceField::Invalid;
         };
         let Some(JsonValue::Object(app_state)) = member_value(root, "appState") else {
-            return SourceField::Invalid;
+            return SourceField::Missing;
         };
         source_field(app_state, "frameRendering", |value| {
             let JsonValue::Object(members) = value else {
@@ -707,6 +716,15 @@ impl SceneParseError {
         )
     }
 
+    fn unsupported_input(json_pointer: Option<&str>, message: &str) -> Self {
+        Self::new(
+            ErrorCode::SCENE_UNSUPPORTED_INPUT,
+            message,
+            json_pointer.map(str::to_owned),
+            None,
+        )
+    }
+
     fn limit(limit: ParserLimit, measurement: Measurement, json_pointer: Option<String>) -> Self {
         Self::new(
             limit.code,
@@ -761,10 +779,37 @@ impl fmt::Display for SceneParseError {
 
 impl Error for SceneParseError {}
 
+/// The export a document that is neither UTF-8 nor JSON recognizably is
+/// (spec section 4.1): a PNG, SVG or PDF image is `scene.unsupported-input`
+/// rather than a malformed scene. `None` for anything else.
+fn recognized_export(bytes: &[u8]) -> Option<SceneParseError> {
+    let text = bytes
+        .strip_prefix("\u{feff}".as_bytes())
+        .unwrap_or(bytes)
+        .trim_ascii_start();
+    let message = if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        "this is a PNG image, not a scene document; open an image exported with an \
+         embedded scene in Excalidraw and save it as an .excalidraw file"
+    } else if text.starts_with(b"<svg")
+        || text.starts_with(b"<?xml")
+        || text.starts_with(b"<!DOCTYPE svg")
+    {
+        "this is an SVG image, not a scene document; open an image exported with an \
+         embedded scene in Excalidraw and save it as an .excalidraw file"
+    } else if bytes.starts_with(b"%PDF-") {
+        "this is a PDF document, not a scene document; render the .excalidraw file it \
+         was exported from"
+    } else {
+        return None;
+    };
+    Some(SceneParseError::unsupported_input(None, message))
+}
+
 /// Admits the version-2 envelope (spec section 4.1). Every rejection is
-/// `scene.invalid-envelope` at the offending or expected member; the message
-/// says what is wrong, and names the library and clipboard payloads that are
-/// most often mistaken for scene documents.
+/// `scene.invalid-envelope` at the offending or expected member, except the
+/// library and clipboard payloads most often mistaken for scene documents,
+/// which are `scene.unsupported-input` at `/type`; the message says what is
+/// wrong.
 fn validate_envelope(root: &JsonValue) -> Result<(), SceneParseError> {
     let JsonValue::Object(members) = root else {
         return Err(SceneParseError::invalid_envelope(
@@ -779,15 +824,15 @@ fn validate_envelope(root: &JsonValue) -> Result<(), SceneParseError> {
     match member_value(members, "type") {
         Some(JsonValue::String(value)) if &**value == "excalidraw" => {}
         Some(JsonValue::String(value)) if &**value == "excalidrawlib" => {
-            return Err(SceneParseError::invalid_envelope(
-                "/type",
+            return Err(SceneParseError::unsupported_input(
+                Some("/type"),
                 "this is an Excalidraw library (type \"excalidrawlib\"), not a scene document; \
                  render a scene saved as an .excalidraw file instead",
             ));
         }
         Some(JsonValue::String(value)) if &**value == "excalidraw/clipboard" => {
-            return Err(SceneParseError::invalid_envelope(
-                "/type",
+            return Err(SceneParseError::unsupported_input(
+                Some("/type"),
                 "this is an Excalidraw clipboard payload (type \"excalidraw/clipboard\"), \
                  not a scene document; paste it into Excalidraw and save the scene instead",
             ));
@@ -838,25 +883,39 @@ fn validate_envelope(root: &JsonValue) -> Result<(), SceneParseError> {
             ));
         }
     }
-    require_container(members, "elements", "/elements", "an array", |value| {
-        matches!(value, JsonValue::Array(_))
-    })?;
-    require_container(members, "appState", "/appState", "an object", |value| {
-        matches!(value, JsonValue::Object(_))
-    })?;
-    require_container(members, "files", "/files", "an object", |value| {
+    require_container(
+        members,
+        "elements",
+        "/elements",
+        "an array",
+        true,
+        |value| matches!(value, JsonValue::Array(_)),
+    )?;
+    // Excalidraw's load path restores an absent `appState` to its defaults
+    // and an absent `files` to an empty map, and older excalidraw.com exports
+    // omit `files`; either may be absent, but not another kind.
+    require_container(
+        members,
+        "appState",
+        "/appState",
+        "an object",
+        false,
+        |value| matches!(value, JsonValue::Object(_)),
+    )?;
+    require_container(members, "files", "/files", "an object", false, |value| {
         matches!(value, JsonValue::Object(_))
     })?;
     Ok(())
 }
 
-/// Requires the root member `key` to be present and of the expected container
-/// kind, which `expected` names for the message.
+/// Requires the root member `key`, when present or `required`, to be of the
+/// expected container kind, which `expected` names for the message.
 fn require_container(
     members: &[JsonMember],
     key: &str,
     pointer: &str,
     expected: &str,
+    required: bool,
     accepts: impl FnOnce(&JsonValue) -> bool,
 ) -> Result<(), SceneParseError> {
     match member_value(members, key) {
@@ -868,6 +927,7 @@ fn require_container(
                 json_kind_phrase(value)
             ),
         )),
+        None if !required => Ok(()),
         None => Err(SceneParseError::invalid_envelope(
             pointer,
             format!("scene document has no {key:?} member; expected {expected}"),

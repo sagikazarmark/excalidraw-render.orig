@@ -193,7 +193,7 @@ fn planned_binding_working_bytes(
         return 0;
     };
     if element_id.is_empty()
-        || !matches!(source.gap(), SourceField::Value(_))
+        || matches!(source.gap(), SourceField::Invalid)
         || matches!(source.focus(), SourceField::Invalid)
     {
         return 0;

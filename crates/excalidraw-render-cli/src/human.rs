@@ -149,7 +149,10 @@ pub(crate) fn scene_parse_context(
     error: &ErrorDescriptor,
 ) -> (String, Vec<String>) {
     let subject = format!("cannot parse {}", input_name(input));
-    let image = if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+    let unsupported = error.code().as_str() == "scene.unsupported-input";
+    let image = if !unsupported {
+        None
+    } else if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
         Some("a PNG")
     } else if looks_like_svg(bytes) {
         Some("an SVG")
@@ -173,6 +176,7 @@ pub(crate) fn scene_parse_context(
     let mut message = format!("{subject}: {}", error.message());
     let mut hints = Vec::new();
     match error.code().as_str() {
+        "scene.unsupported-input" => hints.push(envelope_hint(bytes).to_owned()),
         "scene.invalid-json" => {
             if let Err(syntax) = serde_json::from_slice::<IgnoredAny>(bytes) {
                 if syntax.line() > 0 {
@@ -205,13 +209,11 @@ fn looks_like_svg(bytes: &[u8]) -> bool {
 }
 
 /// The members a version-2 scene document must have, with the empty value
-/// that satisfies each.
-const SCENE_MEMBERS: [(&str, &str); 5] = [
+/// that satisfies each. `appState` and `files` may be absent.
+const SCENE_MEMBERS: [(&str, &str); 3] = [
     ("type", "\"excalidraw\""),
     ("version", "2"),
     ("elements", "[]"),
-    ("appState", "{}"),
-    ("files", "{}"),
 ];
 
 /// Every scene member a would-be scene lacks, in one hint, so a hand-written
@@ -229,18 +231,14 @@ fn missing_members_hint(bytes: &[u8]) -> Option<String> {
         .filter(|(name, _)| !root.contains_key(*name))
         .map(|(name, value)| format!("\"{name}\": {value}"))
         .collect::<Vec<_>>();
-    let mut hint = match missing.as_slice() {
-        [] => return None,
-        [member] => format!("add the missing member {member} to the scene"),
-        members => format!(
+    match missing.as_slice() {
+        [] => None,
+        [member] => Some(format!("add the missing member {member} to the scene")),
+        members => Some(format!(
             "add the missing members {} to the scene",
             members.join(", ")
-        ),
-    };
-    if !root.contains_key("files") {
-        hint.push_str(" (this renderer requires the files map that Excalidraw treats as optional)");
+        )),
     }
-    Some(hint)
 }
 
 /// What a JSON document that is not a version-2 scene probably is.

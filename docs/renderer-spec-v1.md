@@ -188,17 +188,23 @@ members:
 - `type` equal to `"excalidraw"`.
 - `version` represented by the integer token `2`.
 - `elements` as an array.
-- `appState` as an object.
-- `files` as an object.
+- `appState`, when present, as an object.
+- `files`, when present, as an object.
 
-`appState` and `files` MAY be empty but MUST NOT be absent or null. `source` and
+`appState` and `files` MAY be empty or absent but MUST NOT be null or another
+kind: Excalidraw's load path restores an absent `appState` to its defaults and
+an absent `files` to an empty map, and older excalidraw.com exports omit
+`files`. An absent member is admitted silently and normalizes as the empty one;
+canonicalized original scene documents keep it absent. `source` and
 all other root members are permitted and preserved. Bare arrays, scalars, null,
-partial envelopes, clipboard or library payloads, another type, another envelope
-version, or a wrong required container type MUST fail with
-`scene.invalid-envelope`. Its message names the offending or missing member and
-what was found there, and says when the document is an Excalidraw library
-(`"excalidrawlib"`) or clipboard (`"excalidraw/clipboard"`) payload rather
-than a scene document. Duplicate object members MUST be rejected.
+partial envelopes, another type, another envelope version, or a wrong required
+container type MUST fail with `scene.invalid-envelope`. Its message names the
+offending or missing member and what was found there. An Excalidraw library
+(`"excalidrawlib"`) or clipboard (`"excalidraw/clipboard"`) payload MUST fail
+with `scene.unsupported-input` at `/type`, and bytes that are neither UTF-8 nor
+JSON but begin as a PNG, SVG or PDF document MUST fail with
+`scene.unsupported-input` and a null pointer; each message names what the input
+is. Duplicate object members MUST be rejected.
 
 After the envelope passes, parsing MUST remain compatibility-revision-neutral.
 It MUST retain every occurrence, including scalar element entries, malformed
@@ -748,8 +754,12 @@ Rendering never resolves network or filesystem resources. Nested SVG is parsed
 and sanitized locally before any viewer library. DTDs, external entities,
 scripts, event attributes, active animation, `foreignObject`, unsafe actions,
 unsupported foreign namespaces, external CSS/fonts, `@import`, and non-fragment
-URLs are removed or rejected under the declared diagnostics. Only same-document
-fragments and admitted bounded data images can resolve.
+URLs are removed or rejected under the declared diagnostics. Authoring-tool
+metadata a browser neither renders nor acts on — elements whose whole subtree
+and attributes (other than `on*` spellings) are in the Inkscape, Sodipodi, RDF,
+Creative Commons, Dublin Core, Adobe Illustrator or Sketch namespaces — is
+removed without a diagnostic. Only same-document fragments and admitted
+bounded data images can resolve.
 
 What remains draws as the pinned reference draws an SVG image:
 - Entities:
@@ -2175,6 +2185,7 @@ Parse pointer rules are:
 | `scene.invalid-utf8` | null |
 | `scene.invalid-json` | Narrowest reliable parser-established path, otherwise null |
 | `scene.invalid-envelope` | Narrowest offending/expected member; root for wrong top-level kind |
+| `scene.unsupported-input` | `/type` for a library or clipboard payload; null for an image or PDF |
 | `scene.input-too-large` | null before a reliable path exists |
 | JSON depth/structure/string/number/parse-memory excess | Value/member whose admission crosses when reliable, otherwise null |
 | `scene.object-key-too-large` | Expected member, containing object, or null in decreasing reliability |
@@ -2307,7 +2318,7 @@ Detail bindings are fixed, not producer-selected:
 
 | Code family or code | Required details |
 | --- | --- |
-| `scene.invalid-utf8`, `scene.invalid-json`, `scene.invalid-envelope`, `scene.duplicate-object-key` | null |
+| `scene.invalid-utf8`, `scene.invalid-json`, `scene.invalid-envelope`, `scene.unsupported-input`, `scene.duplicate-object-key` | null |
 | `scene.input-too-large` | `parse_limit`, `max_input_bytes`, bytes |
 | `scene.json-depth-exceeded` | `parse_limit`, `max_json_depth`, depth |
 | `scene.json-structure-exceeded` | `parse_limit`, `max_json_structure_entries`, count |
@@ -2384,6 +2395,7 @@ Scene-parse codes are:
 scene.invalid-utf8
 scene.invalid-json
 scene.invalid-envelope
+scene.unsupported-input
 scene.input-too-large
 scene.json-depth-exceeded
 scene.json-structure-exceeded
@@ -2474,12 +2486,12 @@ Its complete revision-1 vocabulary is:
 | --- | --- |
 | `normalization.missing-element-id` | Warning; repair identity |
 | `normalization.duplicate-element-id` | Warning; repair identity and affected relations |
-| `normalization.missing-timestamp` | Warning; repair to canonical zero |
+| `normalization.missing-timestamp` | Info; repair to canonical zero |
 | `normalization.zero-rough-seed` | Warning; deterministic visual repair |
 | `normalization.relationship-cycle` | Warning; remove cycle-closing edge |
 | `compatibility.unsupported-element-type` | Warning; unknown-element fallback |
 | `compatibility.malformed-element` | Warning; malformed fallback or omission |
-| `compatibility.unsupported-property` | Warning; ignore with visual/semantic/metadata effects |
+| `compatibility.unsupported-property` | Warning; ignore with visual/semantic/metadata effects. Info with `input_repair` effect for editor-only state |
 | `compatibility.unsupported-property-value` | Warning; manifest fallback/effects |
 | `compatibility.known-element-replaced` | Warning; known-element fallback or omission |
 | `asset.supplement-conflict` | Warning; scene payload wins |
@@ -2516,7 +2528,14 @@ Its complete revision-1 vocabulary is:
 | `pdf.raster-fallback` | Warning; isolated closure rasterized |
 
 Only animation flattening and the two declared font substitutions are
-informational; all other codes are warnings. A narrower field, value, or
+informational among asset and font codes, and only timestamp repair and
+ignored editor-only state among normalization and compatibility diagnostics;
+all other codes and occurrences are warnings. Editor-only state is the unrecognized editing state
+that Excalidraw releases after 0.18.1 persist and no static export reads:
+`appState.lockedMultiSelections`, an element's `polygon` and
+`moveMidPointsWithElement`, and a binding's `mode` and, on a non-elbow arrow,
+`fixedPoint`. A binding without `gap` is kept with gap zero, as one without
+`focus` is kept with focus zero, without a diagnostic. A narrower field, value, or
 resource diagnostic suppresses a duplicate generic replacement diagnostic.
 Occurrences are never deduplicated.
 

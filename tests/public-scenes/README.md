@@ -70,6 +70,15 @@ The three non-obvious rows, each checked against the source:
 - The `compatibility.*` and `normalization.*` rows are ordinary revision-1
   reporting on unknown or absent nested properties.
 
+Since then the specification follows Excalidraw's load path instead: a
+missing `files` (or `appState`) member is admitted as empty, so all fifteen
+scenes export. The later editor's binding `mode`/`fixedPoint`, line
+`polygon`, `moveMidPointsWithElement` and `lockedMultiSelections`, and missing
+timestamps are informational, and a binding without `gap` is kept. With the
+default human report only `agentstack-architecture` (`image.decode-failed`)
+prints a diagnostic; `varmq-queue-diagram` exceeds the default PNG raster
+surface and exports as SVG or with `--max-dimension`.
+
 ## Content review
 
 Reviewed on 2026-09-02 before the pool was accepted; recorded here so it is not

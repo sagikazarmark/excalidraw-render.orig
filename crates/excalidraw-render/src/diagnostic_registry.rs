@@ -351,6 +351,9 @@ pub(crate) enum DiagnosticKind<'a> {
     MalformedElement(LocalRecovery),
     /// `compatibility.unsupported-property`.
     UnsupportedProperty,
+    /// `compatibility.unsupported-property` for a property a later Excalidraw
+    /// editor persists that its static export never reads: informational.
+    EditorPropertyIgnored,
     /// `compatibility.unsupported-property-value`, with the recovery and
     /// recipe the manifest (or the normalizer's rule) declares for the field.
     UnsupportedPropertyValue {
@@ -499,7 +502,9 @@ impl DiagnosticKind<'_> {
                 DiagnosticCode::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE
             }
             Self::MalformedElement(_) => DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT,
-            Self::UnsupportedProperty => DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+            Self::UnsupportedProperty | Self::EditorPropertyIgnored => {
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY
+            }
             Self::UnsupportedPropertyValue { .. } => {
                 DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
             }
@@ -533,11 +538,14 @@ impl DiagnosticKind<'_> {
         }
     }
 
-    /// Only animation flattening and the two declared font substitutions are
-    /// informational (spec section 11.3).
+    /// Animation flattening, the two declared font substitutions, timestamp
+    /// repair and ignored editor-only properties are informational (spec
+    /// section 11.3).
     pub(crate) const fn severity(&self) -> DiagnosticSeverity {
         match self {
             Self::AnimationFlattened { .. }
+            | Self::MissingTimestamp
+            | Self::EditorPropertyIgnored
             | Self::LiberationSansSubstituted
             | Self::NotoEmojiSubstituted
             | Self::EmbeddableNotoEmojiSubstituted => DiagnosticSeverity::Info,
@@ -573,7 +581,9 @@ impl DiagnosticKind<'_> {
                 recovery.recovery(),
                 recovery.recipe(FallbackRecipe::MalformedElement),
             )?,
-            Self::UnsupportedProperty => compatibility(Recovery::Ignored, None)?,
+            Self::UnsupportedProperty | Self::EditorPropertyIgnored => {
+                compatibility(Recovery::Ignored, None)?
+            }
             Self::UnsupportedPropertyValue { recovery, recipe } => compatibility(recovery, recipe)?,
             Self::KnownElementReplaced(recovery) => compatibility(
                 recovery.recovery(),

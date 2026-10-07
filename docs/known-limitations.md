@@ -21,13 +21,18 @@ each one at runtime.
 
 ## Scene input
 
-- A scene must be a version-2 document with `type`, `version`, `elements`,
-  `appState` and `files` members, even empty ones. Excalidraw's own exports
-  always have them, and Excalidraw treats a missing `files` map as empty; this
-  renderer rejects a document missing any of them with
-  `scene.invalid-envelope`, and the CLI names every missing member in one hint.
+- A scene must be a version-2 document with `type`, `version` and `elements`
+  members. Like Excalidraw, the renderer treats a missing `appState` as the
+  defaults and a missing `files` map as empty. A document missing a required
+  member is rejected with `scene.invalid-envelope`, and the CLI names every
+  missing member in one hint.
 - Only `.excalidraw` JSON is read. PNG and SVG exports with an embedded scene,
-  library files, and clipboard data are recognized and rejected.
+  library files, and clipboard data are recognized and rejected with
+  `scene.unsupported-input`.
+- Properties that Excalidraw releases after 0.18.1 add are ignored. Known
+  editor-only state (such as binding modes and line polygon toggles) is
+  reported as informational; other unrecognized properties are warnings,
+  since a later release may render them.
 
 ## Images and rendering
 

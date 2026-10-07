@@ -280,6 +280,10 @@ impl ErrorCode {
     /// The scene envelope does not have the required version-2 shape.
     pub const SCENE_INVALID_ENVELOPE: Self = Self("scene.invalid-envelope");
 
+    /// The input is a recognized file that is not a scene document: a PNG,
+    /// SVG or PDF export, or an Excalidraw library or clipboard payload.
+    pub const SCENE_UNSUPPORTED_INPUT: Self = Self("scene.unsupported-input");
+
     /// The scene-document bytes exceed the fixed parser input ceiling.
     pub const SCENE_INPUT_TOO_LARGE: Self = Self("scene.input-too-large");
 

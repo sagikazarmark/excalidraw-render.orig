@@ -146,8 +146,8 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
     assert_eq!(result.status.code(), Some(1));
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(
-        stderr.contains(&format!(
-            "\nerror: cannot create output '{}': ",
+        stderr.starts_with(&format!(
+            "error: cannot create output '{}': ",
             nested.display()
         )),
         "{stderr}"
@@ -177,31 +177,28 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
         )
     );
 
+    // Like Excalidraw, a scene without `appState` or `files` renders with
+    // their defaults, silently.
     let no_files = temp.join("no-files.excalidraw");
     fs::write(
         &no_files,
-        br#"{"type":"excalidraw","version":2,"elements":[],"appState":{}}"#,
+        br#"{"type":"excalidraw","version":2,"elements":[]}"#,
     )
-    .expect("write a scene without a files map");
+    .expect("write a scene without app state or a files map");
     let result = cli(&[no_files.to_str().unwrap(), "-o", "-", "-f", "svg"]);
-    assert_eq!(result.status.code(), Some(1));
-    let stderr = String::from_utf8_lossy(&result.stderr);
-    assert!(
-        stderr.contains("[scene.invalid-envelope]\nhint: ")
-            && stderr.contains("add the missing member \"files\": {} to the scene"),
-        "{stderr}"
-    );
+    assert!(result.status.success(), "{result:?}");
+    assert_eq!(String::from_utf8_lossy(&result.stderr), "");
 
     let bare = temp.join("bare.excalidraw");
-    fs::write(&bare, br#"{"type":"excalidraw","elements":[]}"#)
-        .expect("write a scene missing several members");
+    fs::write(&bare, br#"{"type":"excalidraw"}"#).expect("write a scene missing several members");
     let result = cli(&[bare.to_str().unwrap(), "-o", "-", "-f", "svg"]);
     assert_eq!(result.status.code(), Some(1));
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(
-        stderr.contains(
-            "hint: add the missing members \"version\": 2, \"appState\": {}, \"files\": {} to the scene"
-        ),
+        stderr.contains("[scene.invalid-envelope]\nhint: ")
+            && stderr.contains(
+                "hint: add the missing members \"version\": 2, \"elements\": [] to the scene"
+            ),
         "{stderr}"
     );
 
@@ -213,7 +210,7 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
     assert_eq!(result.status.code(), Some(1));
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(
-        stderr.contains("\nerror: ") && stderr.contains("[resource.raster-surface-exceeded]\n"),
+        stderr.starts_with("error: ") && stderr.contains("[resource.raster-surface-exceeded]\n"),
         "{stderr}"
     );
     assert!(stderr.contains("hint: use --max-dimension"), "{stderr}");
@@ -268,8 +265,8 @@ fn image_inputs_are_recognized_and_explained() {
     render_command(&svg).output().expect("render an SVG");
 
     for (image, kind, code) in [
-        (&png, "PNG", "scene.invalid-utf8"),
-        (&svg, "SVG", "scene.invalid-json"),
+        (&png, "PNG", "scene.unsupported-input"),
+        (&svg, "SVG", "scene.unsupported-input"),
     ] {
         let result = cli(&[image.to_str().unwrap(), "-o", "-", "-f", "svg"]);
         assert_eq!(result.status.code(), Some(1), "{kind}");
@@ -313,11 +310,11 @@ fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
         r#"{"type":"excalidraw","version":2,"elements":[
             {"id":"ar","type":"text","x":0,"y":0,"width":100,"height":35,"text":"مرحبا بالعالم","originalText":"مرحبا بالعالم","fontSize":28,"fontFamily":5,"lineHeight":1.25,"updated":1},
             {"id":"helvetica","type":"text","x":0,"y":50,"width":100,"height":35,"text":"Hello","originalText":"Hello","fontSize":28,"fontFamily":2,"lineHeight":1.25,"updated":1},
-            {"id":"a","type":"rectangle","x":0,"y":100,"width":10,"height":10},
-            {"id":"b","type":"rectangle","x":20,"y":100,"width":10,"height":10},
-            {"id":"c","type":"rectangle","x":40,"y":100,"width":10,"height":10},
-            {"id":"d","type":"rectangle","x":60,"y":100,"width":10,"height":10},
-            {"id":"e","type":"rectangle","x":80,"y":100,"width":10,"height":10}
+            {"id":"a","type":"rectangle","x":0,"y":100,"width":10,"height":10,"futureField":1},
+            {"id":"b","type":"rectangle","x":20,"y":100,"width":10,"height":10,"futureField":1},
+            {"id":"c","type":"rectangle","x":40,"y":100,"width":10,"height":10,"futureField":1},
+            {"id":"d","type":"rectangle","x":60,"y":100,"width":10,"height":10,"futureField":1},
+            {"id":"e","type":"rectangle","x":80,"y":100,"width":10,"height":10,"futureField":1}
         ],"appState":{},"files":{}}"#,
     )
     .expect("write diagnosed scene");
@@ -338,20 +335,29 @@ fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
     assert!(
         lines.iter().any(|line| line.starts_with("warning: ")
             && line.ends_with(
-                "[normalization.missing-timestamp] (5 occurrences; elements a, b, c and 2 more)"
+                "[compatibility.unsupported-property] (5 occurrences; elements a, b, c and 2 more)"
             )),
         "{stderr}"
     );
-    assert!(
-        !stderr.contains("font.liberation-sans-substituted"),
-        "{stderr}"
-    );
+    for code in [
+        "font.liberation-sans-substituted",
+        "normalization.missing-timestamp",
+    ] {
+        assert!(!stderr.contains(code), "{stderr}");
+    }
 
     let verbose = cli(&[input.to_str().unwrap(), "-o", "-", "-f", "svg", "--verbose"]);
     let verbose = String::from_utf8(verbose.stderr).expect("report is UTF-8");
     assert!(
         verbose.lines().any(|line| line.starts_with("info: ")
             && line.ends_with("[font.liberation-sans-substituted] (element helvetica)")),
+        "{verbose}"
+    );
+    assert!(
+        verbose.lines().any(|line| line.starts_with("info: ")
+            && line.ends_with(
+                "[normalization.missing-timestamp] (5 occurrences; elements a, b, c and 2 more)"
+            )),
         "{verbose}"
     );
 
@@ -366,7 +372,7 @@ fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
         "json",
     ]);
     let report: serde_json::Value = serde_json::from_slice(&json.stderr).expect("JSON report");
-    assert_eq!(report["diagnostics"].as_array().map(Vec::len), Some(18));
+    assert_eq!(report["diagnostics"].as_array().map(Vec::len), Some(23));
 }
 
 #[test]

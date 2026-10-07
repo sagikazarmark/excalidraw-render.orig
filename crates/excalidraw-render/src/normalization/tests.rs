@@ -467,6 +467,67 @@ fn elbow_bindings_and_arrow_defaults_match_the_pinned_restore_path() {
 }
 
 #[test]
+fn later_editor_bindings_keep_their_target_and_report_editor_state_as_info() {
+    // Excalidraw after 0.18.1 persists `{elementId, mode, fixedPoint}`
+    // without `focus` or `gap`. The pinned restore keeps such a binding; its
+    // `mode` and non-elbow `fixedPoint` are editor state no export reads.
+    let scene = SceneDocument::parse(
+        br##"{"type":"excalidraw","version":2,"elements":[{"id":"arrow","type":"arrow","width":10,"height":10,"points":[[0,0],[10,10]],"startBinding":{"mode":"orbit","elementId":"target","fixedPoint":[1,0.5001]},"seed":1,"updated":1}],"appState":{},"files":{}}"##,
+    )
+    .expect("later binding vector is admitted");
+    let mut diagnostics = Vec::new();
+
+    let normalized = normalize_scene(
+        &scene,
+        CompatibilityRevision::REVISION_1,
+        OutputFormat::Svg,
+        |event| {
+            if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
+            }
+            Ok::<_, ()>(())
+        },
+    )
+    .expect("normalization succeeds")
+    .expect("the scene is in the implemented normalization slice");
+    let NormalizedElementKind::Linear(arrow) = &normalized.elements[0].kind else {
+        panic!("the arrow retains its normalized linear kind");
+    };
+
+    assert_eq!(
+        arrow.start_binding.as_ref().map(|binding| (
+            binding.element_id.as_str(),
+            binding.focus,
+            binding.gap,
+            binding.fixed_point,
+        )),
+        Some(("target", 0.0, 0.0, None))
+    );
+    assert_eq!(
+        diagnostics
+            .iter()
+            .map(|diagnostic| (
+                diagnostic.json_pointer(),
+                diagnostic.severity(),
+                diagnostic.effects().to_vec(),
+            ))
+            .collect::<Vec<_>>(),
+        [
+            (
+                "/elements/0/startBinding/mode",
+                crate::DiagnosticSeverity::Info,
+                vec![crate::DiagnosticEffect::InputRepair],
+            ),
+            (
+                "/elements/0/startBinding/fixedPoint",
+                crate::DiagnosticSeverity::Info,
+                vec![crate::DiagnosticEffect::InputRepair],
+            ),
+        ]
+    );
+}
+
+#[test]
 fn image_frame_and_frame_rendering_state_is_normalized_without_mutating_source() {
     let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":80,"height":60,"fileId":"asset","status":"saved","scale":[-1,1],"crop":{"x":1,"y":2,"width":30,"height":20,"naturalWidth":60,"naturalHeight":40},"seed":1,"updated":1},{"id":"frame","type":"frame","width":100,"height":100,"name":"Named","seed":1,"updated":1},{"id":"magic","type":"magicframe","width":100,"height":100,"seed":1,"updated":1}],"appState":{"frameRendering":{"enabled":false,"clip":true}},"files":{"asset":{"id":"asset","created":1}}}"##;
     let scene = SceneDocument::parse(source).expect("state normalization vector is admitted");
@@ -710,7 +771,7 @@ fn invalid_file_created_values_remain_ignored() {
 #[test]
 fn malformed_elbow_binding_members_use_their_narrowest_recovery() {
     let scene = SceneDocument::parse(
-        br##"{"type":"excalidraw","version":2,"elements":[{"id":"arrow","type":"arrow","width":10,"height":10,"points":[[0,0],[10,10]],"elbowed":true,"startBinding":{"elementId":"target","gap":1,"fixedPoint":"invalid"},"endBinding":{"elementId":"target","fixedPoint":[0,0]},"seed":1,"updated":1}],"appState":{},"files":{}}"##,
+        br##"{"type":"excalidraw","version":2,"elements":[{"id":"arrow","type":"arrow","width":10,"height":10,"points":[[0,0],[10,10]],"elbowed":true,"startBinding":{"elementId":"target","gap":1,"fixedPoint":"invalid"},"endBinding":{"elementId":"target","gap":"wide","fixedPoint":[0,0]},"seed":1,"updated":1}],"appState":{},"files":{}}"##,
     )
     .expect("binding recovery vector is admitted");
     let mut diagnostics = Vec::new();
@@ -768,13 +829,13 @@ fn malformed_elbow_binding_members_use_their_narrowest_recovery() {
 #[test]
 fn a_missing_nested_binding_member_keeps_its_parent_members_source_order() {
     // Spec §11.3 orders diagnostics by the owning source member before the
-    // nested position. A missing `gap` under `startBinding` therefore
+    // nested position. A missing `elementId` under `startBinding` therefore
     // precedes an invalid `elementId` under the later `endBinding`, even
     // though the missing member has no nested position of its own. Found
     // by the scene fuzz, whose saturated nested ordinal used to spill out
     // of the member lane and sort the diagnostic after the whole element.
     let scene = SceneDocument::parse(
-        br##"{"type":"excalidraw","version":2,"elements":[{"id":"arrow","type":"arrow","width":10,"height":10,"points":[[0,0],[10,10]],"startBinding":{"elementId":"target"},"endBinding":{"elementId":""},"seed":1,"updated":1}],"appState":{},"files":{}}"##,
+        br##"{"type":"excalidraw","version":2,"elements":[{"id":"arrow","type":"arrow","width":10,"height":10,"points":[[0,0],[10,10]],"startBinding":{"focus":0},"endBinding":{"elementId":""},"seed":1,"updated":1}],"appState":{},"files":{}}"##,
     )
     .expect("binding order vector is admitted");
     let mut diagnostics = Vec::new();
@@ -799,7 +860,7 @@ fn a_missing_nested_binding_member_keeps_its_parent_members_source_order() {
             .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
         [
-            "/elements/0/startBinding/gap",
+            "/elements/0/startBinding/elementId",
             "/elements/0/endBinding/elementId",
         ]
     );

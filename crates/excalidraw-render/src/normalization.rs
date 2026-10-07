@@ -510,17 +510,17 @@ impl ElementDiagnosticContext<'_, '_> {
             return Ok(());
         }
         let pointer = pointer_child(&pointer_child(self.element_pointer, field)?, nested_field)?;
-        let diagnostic = PendingDiagnostic::new(
-            DiagnosticKind::UnsupportedProperty,
+        let editor_only = matches!(field, "startBinding" | "endBinding")
+            && crate::scene_surface::is_editor_only_property(
+                crate::scene_surface::PropertyOwner::Binding,
+                &pointer_child("", nested_field)?,
+            );
+        let diagnostic = crate::scene_surface::unrecognized_property_diagnostic(
             self.format,
-            &[
-                DiagnosticEffect::Visual,
-                DiagnosticEffect::Semantic,
-                DiagnosticEffect::Metadata,
-            ],
             Some(self.element_id),
             &pointer,
-            "unmatched nested property was ignored by the revision-1 scene-surface policy",
+            editor_only,
+            "unrecognized nested property was ignored",
         )?;
         self.diagnostics.try_reserve(1)?;
         self.diagnostics.push((
@@ -542,17 +542,12 @@ impl ElementDiagnosticContext<'_, '_> {
         if !self.can_retain() {
             return Ok(());
         }
-        let diagnostic = PendingDiagnostic::new(
-            DiagnosticKind::UnsupportedProperty,
+        let diagnostic = crate::scene_surface::unrecognized_property_diagnostic(
             self.format,
-            &[
-                DiagnosticEffect::Visual,
-                DiagnosticEffect::Semantic,
-                DiagnosticEffect::Metadata,
-            ],
             Some(self.element_id),
             pointer,
-            "unmatched nested property was ignored by the revision-1 scene-surface policy",
+            false,
+            "unrecognized nested property was ignored",
         )?;
         self.diagnostics.try_reserve(1)?;
         self.diagnostics.push((
@@ -1562,22 +1557,14 @@ fn normalize_frame_rendering(
         }
         diagnostics.try_reserve(1)?;
         diagnostics.push((
-            SourceDiagnosticPosition::nested(
-                app_state_position.unwrap_or(usize::MAX),
-                position,
-            )
-            .as_u64(),
-            PendingDiagnostic::new(
-                DiagnosticKind::UnsupportedProperty,
+            SourceDiagnosticPosition::nested(app_state_position.unwrap_or(usize::MAX), position)
+                .as_u64(),
+            crate::scene_surface::unrecognized_property_diagnostic(
                 format,
-                &[
-                    DiagnosticEffect::Visual,
-                    DiagnosticEffect::Semantic,
-                    DiagnosticEffect::Metadata,
-                ],
                 None,
                 &pointer_child("/appState/frameRendering", &member.key)?,
-                "unmatched frame-rendering property was ignored by the revision-1 scene-surface policy",
+                false,
+                "unrecognized frame-rendering property was ignored",
             )?,
         ));
     }

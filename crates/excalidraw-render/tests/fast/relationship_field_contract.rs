@@ -157,7 +157,8 @@ fn endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary() {
                             "elementId" => value
                                 .as_ref()
                                 .is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty())),
-                            "gap" => value.as_ref().is_some_and(Value::is_number),
+                            // An absent gap is restored, as later editors no longer persist it.
+                            "gap" => value.as_ref().is_none_or(Value::is_number),
                             _ => value.as_ref().is_none_or(|v| {
                                 v.is_number() || v.is_null() || v == false || v == ""
                             }),
@@ -533,7 +534,7 @@ fn bound_arrays_preserve_valid_siblings_and_modern_presence_wins() {
         assert_report(
             &outcome,
             format,
-            json!([{"code":"normalization.missing-timestamp","severity":"warning","effects":["input_repair"],"element_id":"target","json_pointer":"/elements/2/updated","details":{"kind":"compatibility","recovery":"repaired","recipe_id":null}}]),
+            json!([{"code":"normalization.missing-timestamp","severity":"info","effects":["input_repair"],"element_id":"target","json_pointer":"/elements/2/updated","details":{"kind":"compatibility","recovery":"repaired","recipe_id":null}}]),
         );
     }
 }
@@ -586,7 +587,7 @@ fn omitted_bindings_do_not_select_outside_targets_and_valid_siblings_survive() {
             .render_frame(document.frames().next().unwrap(), &request)
             .unwrap();
         let rows = json!([repair("boundElements/1/id","omitted",json!(["input_repair","visual","semantic"])),
-            {"code":"normalization.missing-timestamp","severity":"warning","effects":["input_repair"],"element_id":"target","json_pointer":"/elements/2/updated","details":{"kind":"compatibility","recovery":"repaired","recipe_id":null}}]);
+            {"code":"normalization.missing-timestamp","severity":"info","effects":["input_repair"],"element_id":"target","json_pointer":"/elements/2/updated","details":{"kind":"compatibility","recovery":"repaired","recipe_id":null}}]);
         assert_report(&result, format, rows);
         let replay = renderer
             .render_frames(&document, document.frames(), &request)
