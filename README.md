@@ -75,7 +75,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 The [library README](crates/excalidraw-render/README.md) covers frame export,
-serving untrusted input, the optional CJK fonts, and reproducibility. API
+serving untrusted input, the Cargo features (optional PNG, PDF and CJK
+support, for example for SVG-only WebAssembly builds), and reproducibility. API
 documentation is on [docs.rs](https://docs.rs/excalidraw-render).
 
 ## Platforms and compatibility

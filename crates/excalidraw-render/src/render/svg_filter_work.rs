@@ -70,7 +70,8 @@ impl FilterWork {
 /// Measures `resvg::render(tree, transform, pixmap)` into a `width` by
 /// `height` pixmap. The walk stops once it has found more than `budget` work
 /// units (or visited more than `budget` nodes), which already exceeds any
-/// admissible charge.
+/// admissible charge. PNG draws whole nested trees.
+#[cfg(any(feature = "png", test))]
 pub(super) fn measure_tree(
     tree: &usvg::Tree,
     transform: Transform,
@@ -86,7 +87,8 @@ pub(super) fn measure_tree(
 }
 
 /// Measures `resvg::render_node(node, transform, pixmap)` into a `width` by
-/// `height` pixmap, as [`measure_tree`] does.
+/// `height` pixmap, as `measure_tree` does. PDF rasterizes isolated nodes.
+#[cfg(feature = "pdf")]
 pub(super) fn measure_node(
     node: &usvg::Node,
     transform: Transform,

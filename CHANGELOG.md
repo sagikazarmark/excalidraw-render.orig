@@ -13,6 +13,12 @@ command-line tool.
 - Fonts and other rendering assets are bundled: rendering needs no browser,
   Node.js, network access, or installed fonts. The default `cjk` feature adds Xiaolai, Excalifont's
   Chinese/Japanese/Korean fallback (about 12 MiB).
+- PNG and PDF output are the default `png` and `pdf` features. SVG is always
+  available, so an SVG-only build (WebAssembly in particular) can turn them
+  off with `default-features = false` and skip the rasterizer and the PDF
+  writer. The API is the same either way: a request for a format that is off
+  fails to build with `request.format-unavailable`, and a feature never
+  changes the bytes of the formats a build can produce.
 - Every render returns a compatibility report listing what it substituted,
   omitted, or approximated, so differences are reported instead of silent.
 - Output is deterministic: the same renderer release, input, options, and
@@ -61,7 +67,6 @@ command-line tool.
 
 <!--
   PENDING 0.1.0 ENTRIES: changes still landing from parallel pre-0.1 branches
-  go here, then into the sections above (optional `png`/`pdf` features, CLI
-  message improvements, the PDF gradient fix, library API additions such as
+  go here, then into the sections above (CLI message improvements, the PDF gradient fix, library API additions such as
   `Clone` on outcomes). Remove this comment before release.
 -->

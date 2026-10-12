@@ -10,6 +10,7 @@ use super::{svg_fonts, text, FormatEncodeError, RenderResourceAccount, RenderSes
 #[derive(Debug)]
 pub(super) struct ResolvedFont {
     pub(super) identity: &'static str,
+    #[cfg_attr(not(feature = "pdf"), allow(dead_code))]
     pub(super) sfnt: std::sync::Arc<[u8]>,
 }
 

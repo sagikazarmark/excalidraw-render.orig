@@ -451,7 +451,10 @@ pub(crate) enum DiagnosticKind<'a> {
     },
     /// A `metadata.*` component failure whose component was omitted.
     MetadataOmitted(MetadataFailure),
-    /// `pdf.raster-fallback` for an isolated closure that was rasterized.
+    /// `pdf.raster-fallback` for an isolated closure that was rasterized. The
+    /// registry binds every revision-1 code in every build, so the binding
+    /// stays when the `pdf` feature that diagnoses it is off.
+    #[cfg_attr(not(feature = "pdf"), allow(dead_code))]
     PdfRasterFallback {
         logical_bounds: LogicalBounds,
         pixel_width: u64,

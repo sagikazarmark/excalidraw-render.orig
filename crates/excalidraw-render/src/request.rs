@@ -118,11 +118,11 @@ impl Error for RequestError {}
 #[non_exhaustive]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
-    /// A semantic SVG document.
+    /// A semantic SVG document. Every build supports it.
     Svg,
-    /// A canvas-equivalent PNG image.
+    /// A canvas-equivalent PNG image. Needs the default `png` feature.
     Png,
-    /// A one-page vector-first PDF document.
+    /// A one-page vector-first PDF document. Needs the default `pdf` feature.
     Pdf,
 }
 
@@ -142,6 +142,33 @@ impl OutputFormat {
             Self::Svg => "svg",
             Self::Png => "png",
             Self::Pdf => "pdf",
+        }
+    }
+
+    /// The Cargo feature that compiles this format in, when it is not part of
+    /// every build, and whether this build enables it.
+    const fn feature(self) -> Option<(&'static str, bool)> {
+        match self {
+            Self::Svg => None,
+            Self::Png => Some(("png", cfg!(feature = "png"))),
+            Self::Pdf => Some(("pdf", cfg!(feature = "pdf"))),
+        }
+    }
+
+    /// Rejects a format whose Cargo feature this build leaves out, before any
+    /// other request validation: no option of the request could be honored.
+    fn require_enabled(self) -> Result<(), RequestError> {
+        match self.feature() {
+            Some((feature, false)) => Err(RequestError::new(
+                ErrorCode::REQUEST_FORMAT_UNAVAILABLE,
+                format!(
+                    "{} output is not enabled in this build; enable the `{feature}` feature \
+                     of excalidraw-render",
+                    self.as_str().to_ascii_uppercase()
+                ),
+                "format",
+            )),
+            Some((_, true)) | None => Ok(()),
         }
     }
 }
@@ -726,8 +753,8 @@ impl FrameRenderRequestBuilder {
     ///
     /// # Errors
     ///
-    /// Returns a [`RequestError`] for the same invalid sizing and format
-    /// options as [`RenderRequestBuilder::build`].
+    /// Returns a [`RequestError`] for the same disabled format, invalid
+    /// sizing and format options as [`RenderRequestBuilder::build`].
     pub fn build(self) -> Result<FrameRenderRequest, RequestError> {
         self.inner.build().map(|inner| FrameRenderRequest { inner })
     }
@@ -793,12 +820,16 @@ impl RenderRequestBuilder {
     ///
     /// # Errors
     ///
-    /// Returns a [`RequestError`] when the padding is negative or not finite
-    /// (`request.invalid-padding`), the [`Sizing`] scale or maximum dimension
-    /// is not finite and positive (`request.invalid-scale`,
+    /// Returns a [`RequestError`] when the output format's Cargo feature is
+    /// not enabled in this build (`request.format-unavailable`; see the
+    /// [crate documentation](crate#cargo-features)), the padding is negative
+    /// or not finite (`request.invalid-padding`), the [`Sizing`] scale or
+    /// maximum dimension is not finite and positive (`request.invalid-scale`,
     /// `request.invalid-max-dimension`), or [`PdfOptions`] were supplied for
     /// another output format (`request.incompatible-format-options`).
     pub fn build(self) -> Result<RenderRequest, RequestError> {
+        self.request.format.require_enabled()?;
+
         if !self.request.padding.is_finite() || self.request.padding < 0.0 {
             return Err(RequestError::new(
                 ErrorCode::REQUEST_INVALID_PADDING,

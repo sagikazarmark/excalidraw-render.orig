@@ -259,13 +259,13 @@ pub(super) fn tree(tree: &usvg::Tree, limit: f64) -> Result<(), ResolveError> {
             f64::from(tree.size().height()),
         ])
         .map_err(failure)?;
-    group(tree.root(), range, tiny_skia::Transform::identity())
+    group(tree.root(), range, usvg::Transform::identity())
 }
 
 fn group(
     root: &usvg::Group,
     range: CoordinateRange,
-    extra: tiny_skia::Transform,
+    extra: usvg::Transform,
 ) -> Result<(), ResolveError> {
     let mut pending = Vec::new();
     pending.try_reserve(1).map_err(|_| ResolveError::Memory)?;
@@ -400,7 +400,7 @@ fn group(
             let mut result = Ok(());
             node.subroots(|root| {
                 if result.is_ok() {
-                    result = group(root, range, tiny_skia::Transform::identity());
+                    result = group(root, range, usvg::Transform::identity());
                 }
             });
             result?;
@@ -411,10 +411,10 @@ fn group(
 
 fn paint_coordinates(
     paint: &usvg::Paint,
-    transform: tiny_skia::Transform,
+    transform: usvg::Transform,
     range: CoordinateRange,
 ) -> Result<(), ResolveError> {
-    let point = |x: f64, y: f64, t: tiny_skia::Transform| {
+    let point = |x: f64, y: f64, t: usvg::Transform| {
         range
             .values([
                 x,

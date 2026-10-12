@@ -208,6 +208,7 @@ impl ResolvedLabel {
     /// The UTF-16 code units of cluster text this label's glyphs repeat: each
     /// glyph of a cluster shaped to several glyphs carries the cluster's whole
     /// text, which PDF hands Krilla to read and compare once per glyph.
+    #[cfg(feature = "pdf")]
     pub(super) fn repeated_cluster_text(&self) -> u64 {
         let shares = |left: &ResolvedGlyph, right: &ResolvedGlyph| {
             !left.unicode.is_empty() && Arc::ptr_eq(&left.unicode, &right.unicode)
@@ -1903,6 +1904,7 @@ pub(super) fn mandatory_notices_json(
     let mut notices = super::notices::FontNoticeSet::default();
     let notice_error = |error| match error {
         super::notices::NoticeError::Memory => LabelError::Memory,
+        #[cfg(feature = "png")]
         super::notices::NoticeError::InvalidProvenance => LabelError::InvalidFont,
     };
     if liberation {

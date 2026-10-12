@@ -85,6 +85,7 @@ impl CanonicalColor {
         [self.red, self.green, self.blue]
     }
 
+    #[cfg(any(feature = "png", test))]
     pub(crate) fn rgba8(self) -> [u8; 4] {
         [
             self.red,
@@ -155,6 +156,7 @@ pub(crate) enum ColorLowering {
 /// images do not receive it and invert with the root filter alone. The result
 /// rounds to the 8-bit surface the root filter then reads, so an exact gray,
 /// which every function here maps to an exact gray, keeps its channels equal.
+#[cfg(any(feature = "pdf", test))]
 pub(crate) fn image_invert_filter(rgb: [u8; 3]) -> [u8; 3] {
     let inverted = hue_rotate_180(invert(rgb.map(f64::from), [1.0, 0.0]));
     saturate(inverted, 1.25).map(|value| value.clamp(0.0, 255.0).round() as u8)
@@ -165,6 +167,7 @@ pub(crate) fn image_invert_filter(rgb: [u8; 3]) -> [u8; 3] {
 /// Official SVG is the visual authority for PDF (spec section 8.6), so PDF
 /// lowers this into its image pixels; the reference's canvas export resets the
 /// filter for raster images and PNG leaves their pixels alone.
+#[cfg(any(feature = "pdf", test))]
 pub(crate) fn dark_mode_raster_image_pixel(rgb: [u8; 3]) -> [u8; 3] {
     theme_filter_rounded(image_invert_filter(rgb))
 }
@@ -190,6 +193,7 @@ fn hue_rotate_180([red, green, blue]: [f64; 3]) -> [f64; 3] {
 
 /// `saturate(amount)`: the Filter Effects `saturate` matrix, clamped like the
 /// hue rotation.
+#[cfg(any(feature = "pdf", test))]
 fn saturate([red, green, blue]: [f64; 3], amount: f64) -> [f64; 3] {
     [
         (0.213 + 0.787 * amount) * red
