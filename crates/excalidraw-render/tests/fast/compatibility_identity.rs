@@ -1,6 +1,7 @@
 use excalidraw_render::{
-    CompatibilityRevision, FrameRenderRequest, RenderError, RenderOutcome, RenderRequest, Renderer,
-    SceneDocument,
+    Artifact, CompatibilityRevision, FrameBatchError, FrameRef, FrameRefs, FrameRenderCursor,
+    FrameRenderEntry, FrameRenderRequest, RenderError, RenderOutcome, RenderRequest, Renderer,
+    RequestError, SceneDocument, SceneParseError,
 };
 
 const REVISION_1_REFERENCE_PROFILE_DIGEST: &str =
@@ -17,7 +18,7 @@ fn a_renderer_exposes_the_reference_profile_it_reproduces() {
         assert_eq!(identity.compatibility_revision().get(), 1);
         assert_eq!(identity.excalidraw_release(), "v0.18.1");
         assert_eq!(
-            identity.profile_digest(),
+            identity.reference_profile_digest(),
             REVISION_1_REFERENCE_PROFILE_DIGEST
         );
 
@@ -27,7 +28,10 @@ fn a_renderer_exposes_the_reference_profile_it_reproduces() {
             identity.compatibility_revision()
         );
         assert_eq!(frame.excalidraw_release(), identity.excalidraw_release());
-        assert_ne!(frame.profile_digest(), identity.profile_digest());
+        assert_ne!(
+            frame.reference_profile_digest(),
+            identity.reference_profile_digest()
+        );
     }
 }
 
@@ -62,6 +66,9 @@ fn renderer_scenes_requests_and_results_are_safe_to_share_between_threads() {
     assert_send_sync::<RenderError>();
     assert_clone::<Renderer>();
     assert_clone::<SceneDocument>();
+    assert_clone::<RenderOutcome>();
+    assert_clone::<RenderError>();
+    assert_clone::<Artifact>();
 
     let renderer = std::sync::Arc::new(Renderer::new());
     let other_thread = std::sync::Arc::clone(&renderer);
@@ -75,4 +82,26 @@ fn renderer_scenes_requests_and_results_are_safe_to_share_between_threads() {
         renderer.clone().profile_identity().compatibility_revision(),
         CompatibilityRevision::REVISION_1
     );
+}
+
+/// Every failure can be boxed into `Box<dyn Error + Send + Sync>` and sent to
+/// another thread, and a frame batch's borrowed views and its cursor can be
+/// handed to a worker for as long as the scene and request they borrow.
+#[test]
+fn errors_and_frame_batch_values_are_safe_to_send_between_threads() {
+    fn assert_send_sync<T: Send + Sync>() {}
+    fn assert_thread_safe_error<T: std::error::Error + Send + Sync + 'static>() {}
+    fn assert_borrowed_frame_values<'scene, 'request>(
+        _: std::marker::PhantomData<(&'scene (), &'request ())>,
+    ) {
+        assert_send_sync::<FrameRef<'scene>>();
+        assert_send_sync::<FrameRefs<'scene>>();
+        assert_send_sync::<FrameRenderEntry<'scene>>();
+        assert_send_sync::<FrameRenderCursor<'scene, 'request>>();
+    }
+    assert_thread_safe_error::<SceneParseError>();
+    assert_thread_safe_error::<RequestError>();
+    assert_thread_safe_error::<RenderError>();
+    assert_thread_safe_error::<FrameBatchError>();
+    assert_borrowed_frame_values(std::marker::PhantomData);
 }

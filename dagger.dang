@@ -238,6 +238,18 @@ type Lint {
   }
 
   """
+  Lint the renderer without its default features and with each one alone
+  (ADR-0023), so a build that leaves out `png`, `pdf` or `cjk` keeps compiling
+  without warnings. `clippy` covers the default features.
+  """
+  features: String! @check {
+    self.run([
+      "bash", "-eu", "-c",
+      "for features in '' png pdf cjk; do cargo clippy --locked --no-deps --all-targets -p excalidraw-render --no-default-features --features \"$features\" -- -D warnings; done",
+    ])
+  }
+
+  """
   Compile the published crates with the workspace `rust-version`, so the
   declared minimum supported Rust version stays true. Keep the image tag in
   step with `rust-version` in the root `Cargo.toml`.
@@ -393,6 +405,18 @@ type Test {
     self.compiled
       .withExec(["python3", "-m", "unittest", "discover", "-s", "tools/ci", "-p", "test_*.py"])
       .withExec(["cargo", "nextest", "run", "--locked", "--workspace", "--profile", "ci-fast"])
+      .combinedOutput
+  }
+
+  """
+  Test the builds that leave out the `png` or `pdf` feature (ADR-0023): their
+  dependency graphs drop those formats' libraries, a request for a left-out
+  format fails with `request.format-unavailable`, and every format they keep
+  renders the public scene corpus to the default build's bytes.
+  """
+  features: String! @check {
+    self.compiled
+      .withExec(["bash", "tools/ci/check-format-features.sh"])
       .combinedOutput
   }
 

@@ -29,6 +29,7 @@ jobs:
                     - full-equality
                     - input-boundaries
                     - lint:clippy
+                    - lint:features
                     - lint:fmt
                     - lint:msrv
                     - packaging:cli
@@ -38,6 +39,7 @@ jobs:
                     - packaging:snapshot-replay
                     - test:doc
                     - test:fast
+                    - test:features
                     - test:render
                     - wasm:cli
                     - wasm:no-cjk

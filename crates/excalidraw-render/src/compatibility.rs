@@ -67,7 +67,7 @@ impl ReferenceProfileIdentity {
     }
 
     /// Returns the canonical SHA-256 digest of the reference profile.
-    pub const fn profile_digest(&self) -> &'static str {
+    pub const fn reference_profile_digest(&self) -> &'static str {
         self.reference_profile_digest
     }
 }
@@ -240,6 +240,10 @@ impl ErrorCode {
 
     /// A semantic resource ceiling is zero, invalid, inconsistent, or too large.
     pub const REQUEST_INVALID_RESOURCE_LIMIT: Self = Self("request.invalid-resource-limit");
+
+    /// The requested output format's Cargo feature (`png` or `pdf`) is not
+    /// enabled in this build.
+    pub const REQUEST_FORMAT_UNAVAILABLE: Self = Self("request.format-unavailable");
 
     /// Finite whole-scene geometry could not be established.
     pub const SCENE_UNBOUNDED_GEOMETRY: Self = Self("scene.unbounded-geometry");

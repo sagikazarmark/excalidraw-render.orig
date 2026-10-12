@@ -6,6 +6,13 @@ PDF**, for a whole scene or frame by frame. Fonts and other rendering assets are
 bundled: rendering needs no browser, Node.js, network access, or installed
 fonts.
 
+![A hand-drawn architecture diagram with hatched boxes in several colors, curved and straight arrows, and labels in three Excalidraw fonts](docs/images/elasticsearch-spec-overview.svg)
+
+<sub>Rendered with `excalidraw-render tests/public-scenes/elasticsearch-spec-overview/scene.excalidraw -o overview.svg`.
+Scene: [`overview.excalidraw`](https://github.com/elastic/elasticsearch-specification/blob/3d51338565d6558c96b55dad9142e4c2a500ca38/overview.excalidraw)
+from elastic/elasticsearch-specification, © Elastic and contributors,
+[Apache-2.0](tests/public-scenes/elasticsearch-spec-overview/LICENSE).</sub>
+
 - Hand-drawn strokes, fills, arrows, text, images, frames, and dark mode, as
   Excalidraw 0.18.1 exports them.
 - Every render returns a compatibility report listing the substitutions,
@@ -36,7 +43,8 @@ excalidraw-render frames drawing.excalidraw -o frames --format png
 The output extension selects the format, or use `--format`. Input and output
 may be `-` for standard input and output. An existing output is kept unless you
 pass `--force`. For large drawings, `--max-dimension 4096` bounds the PNG/PDF
-size; it replaces `--scale`, so pass one or the other. `frames --list` prints
+size; it replaces `--scale`, so pass one or the other. Very large drawings can
+exceed the PNG size limit; bound them this way or render to SVG or PDF. `frames --list` prints
 the frames and the file names an export would write to standard output.
 `--report-format json` prints a machine-readable compatibility report.
 See `excalidraw-render --help` for every option.
@@ -67,7 +75,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 The [library README](crates/excalidraw-render/README.md) covers frame export,
-serving untrusted input, the optional CJK fonts, and reproducibility. API
+serving untrusted input, the Cargo features (optional PNG, PDF and CJK
+support, for example for SVG-only WebAssembly builds), and reproducibility. API
 documentation is on [docs.rs](https://docs.rs/excalidraw-render).
 
 ## Platforms and compatibility

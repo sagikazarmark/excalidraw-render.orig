@@ -4,13 +4,14 @@
 //! chunks and `IEND` with CRC-32 trailers. Everything here is pure integer code
 //! with fixed parameters, so the bytes are stable across every supported target
 //! and the package-consumer expectation pins them; nothing here knows about
-//! the plan or the painter.
+//! the plan or the painter. PNG output and PDF's isolated raster fallback
+//! both encode through it, so it is compiled with either format.
 
 use miniz_oxide::deflate::core::{compress_to_output, CompressorOxide, TDEFLFlush, TDEFLStatus};
 use miniz_oxide::DataFormat;
 
-use super::super::metadata::{operation, ArtifactMetadata, Stage};
-use super::super::FormatEncodeError;
+use super::metadata::{operation, ArtifactMetadata, Stage};
+use super::FormatEncodeError;
 
 /// Bytes per RGBA sample; the filter distance to the left neighbour.
 const PIXEL_BYTES: usize = 4;
@@ -416,7 +417,7 @@ fn append_chunk(output: &mut Vec<u8>, kind: [u8; 4], data: &[u8]) -> Result<(), 
     Ok(())
 }
 
-pub(super) fn png_size_error() -> FormatEncodeError {
+pub(in crate::render) fn png_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("PNG dimensions exceed encoder capacity".to_owned())
 }
 

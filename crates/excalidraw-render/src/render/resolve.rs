@@ -38,7 +38,7 @@ use crate::resource_accounting::ResourceDelta;
 use crate::scene_surface::SurfaceFallback;
 use crate::{
     DiagnosticEffect, ErrorCode, FiniteValue, OutputFormat, RenderRequest, ResourceValue,
-    SceneDocument, Sizing,
+    SceneDocument,
 };
 
 use super::bound_text::{
@@ -104,7 +104,7 @@ pub(super) fn relationship_asset_authorities(
         };
         let authority = match edge.target {
             crate::relationships::RelationshipTarget::Asset {
-                authority: crate::relationships::AssetAuthority::SceneFile(_),
+                authority: crate::relationships::AssetAuthority::SceneFile,
                 ..
             } => asset::Authority::Scene,
             crate::relationships::RelationshipTarget::Asset {
@@ -833,7 +833,10 @@ impl ResolvedScene {
         })
     }
 
-    pub(super) fn raster_or_pdf_scale(&self, sizing: Sizing) -> f64 {
+    #[cfg(any(feature = "png", feature = "pdf"))]
+    pub(super) fn raster_or_pdf_scale(&self, sizing: crate::Sizing) -> f64 {
+        use crate::Sizing;
+
         let largest_dimension = self.logical_width.max(self.logical_height);
         match sizing {
             Sizing::Scale(scale) => scale,
@@ -880,6 +883,8 @@ impl ResolvedElement {
     }
 }
 
+/// A resolved image asset. Resolution is the same in every build, so the
+/// fields only one format's encoder reads stay in builds without that format.
 #[derive(Debug)]
 pub(super) struct ResolvedImageAsset {
     pub(super) identity: [u8; 32],
@@ -887,10 +892,14 @@ pub(super) struct ResolvedImageAsset {
     pub(super) media_type: &'static str,
     pub(super) width: u32,
     pub(super) height: u32,
+    #[cfg_attr(not(feature = "pdf"), allow(dead_code))]
     pub(super) rgba: Option<std::sync::Arc<Vec<u8>>>,
+    #[cfg_attr(not(feature = "png"), allow(dead_code))]
     pub(super) premultiplied_rgba: Option<std::sync::Arc<Vec<u8>>>,
     pub(super) sanitized_svg: Option<std::sync::Arc<Vec<u8>>>,
+    #[cfg_attr(not(feature = "pdf"), allow(dead_code))]
     pub(super) svg_effects: Vec<asset::svg::Effect>,
+    #[cfg_attr(not(feature = "pdf"), allow(dead_code))]
     pub(super) svg_fallback_pointer: Option<String>,
 }
 
@@ -994,9 +1003,12 @@ impl ResolvedImageCornerClip {
 pub(super) struct ResolvedImageFallback {
     source_order: u64,
     pub(super) source: NormalizedElementSource,
+    /// Only PNG paints the status's placeholder and its opacity.
+    #[cfg_attr(not(feature = "png"), allow(dead_code))]
     pub(super) status: crate::normalization::NormalizedImageStatus,
     pub(super) frame_clips: Vec<ResolvedClip>,
     pub(super) transform: ResolvedTransform,
+    #[cfg_attr(not(feature = "png"), allow(dead_code))]
     pub(super) opacity: f64,
     pub(super) width: f64,
     pub(super) height: f64,
@@ -1226,6 +1238,7 @@ pub(super) struct ResolvedFrameOutline {
     /// The stroke the reference's canvas export gives the frame for the mode,
     /// which PNG paints: `FRAME_STYLE.strokeColor` for an ordinary frame and
     /// the theme's magic-frame color for a magic frame.
+    #[cfg_attr(not(feature = "png"), allow(dead_code))]
     pub(super) canvas_stroke_color: CanonicalColor,
 }
 

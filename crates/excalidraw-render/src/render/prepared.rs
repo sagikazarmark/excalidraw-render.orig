@@ -143,7 +143,6 @@ impl PreparedFrameRender {
         let relationships = relationships::resolve(
             scene,
             &normalization.elements,
-            &normalization.files,
             request.supplemental_assets(),
             |event| PreparedRelationshipEvent::record(&mut relationship_events, event),
         );

@@ -655,7 +655,7 @@ impl Default for CompatibilityReport {
 }
 
 /// One complete renderer-owned static export.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Artifact {
     pub(crate) format: OutputFormat,
     pub(crate) bytes: Vec<u8>,
@@ -684,7 +684,7 @@ impl Artifact {
 }
 
 /// Successful result of one complete render transaction.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RenderOutcome {
     pub(crate) artifact: Artifact,
     pub(crate) report: CompatibilityReport,
@@ -757,7 +757,7 @@ impl fmt::Display for RenderErrorCategory {
 ///
 /// [`Error::source`] is always `None`: dependency failures (decoders,
 /// encoders, font tooling) are flattened into the stable code and message.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RenderError {
     pub(crate) category: RenderErrorCategory,
     pub(crate) code: ErrorCode,

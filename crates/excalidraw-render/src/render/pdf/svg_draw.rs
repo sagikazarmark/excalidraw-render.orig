@@ -302,15 +302,25 @@ fn spread_periods(
     // A bound within rounding of a period boundary does not open a period:
     // normalized transforms carry residues such as a 1e-31 translation.
     const SLACK: f32 = 1e-4;
+    // Period indices are only stepped exactly below 2^24: past it `first + 1`
+    // can round back to `first`, opening no period or never reaching `last`.
+    // The comparisons also reject NaN and infinite bounds.
+    const EXACT_INTEGERS: f32 = 16_777_216.0;
     let first = (low + SLACK).floor();
     let last = (high - SLACK).ceil().max(first + 1.0);
-    let periods = last - first;
-    if !periods.is_finite() || periods * stops.len() as f32 > MAX_PADDED_STOPS as f32 {
+    if !(first.abs() < EXACT_INTEGERS && last.abs() < EXACT_INTEGERS) {
         return None;
     }
-    let mut padded = Vec::with_capacity(stops.len() * periods as usize);
-    let mut period = first;
-    while period < last {
+    let periods = last - first;
+    if periods * stops.len() as f32 > MAX_PADDED_STOPS as f32 {
+        return None;
+    }
+    // Both bounds are integers within f32's exact range, so `periods` is a
+    // whole count of at least one.
+    let count = periods as usize;
+    let mut padded = Vec::with_capacity(stops.len() * count);
+    for index in 0..count {
+        let period = first + index as f32;
         let mirrored = method == usvg::SpreadMethod::Reflect && period.rem_euclid(2.0) == 1.0;
         let ordered: Box<dyn Iterator<Item = &Stop>> = if mirrored {
             Box::new(stops.iter().rev())
@@ -328,7 +338,10 @@ fn spread_periods(
                 ..stop.clone()
             });
         }
-        period += 1.0;
+    }
+    // Krilla cannot encode a gradient without stops.
+    if padded.is_empty() {
+        return None;
     }
     Some((first, last, padded))
 }
@@ -799,5 +812,41 @@ mod tests {
         assert!(spread_periods(usvg::SpreadMethod::Pad, &stops, || Some((0.0, 2.0))).is_none());
         assert!(spread_periods(usvg::SpreadMethod::Repeat, &stops, || None).is_none());
         assert!(spread_periods(usvg::SpreadMethod::Repeat, &stops, || Some((0.0, 1e6))).is_none());
+    }
+
+    #[test]
+    fn periods_past_exact_f32_integers_keep_their_spread() {
+        // Past 2^24 adding one period no longer changes an f32, so a span
+        // there cannot be stepped through period by period.
+        let stops = [stop(0.0, 255), stop(1.0, 0)];
+        for method in [usvg::SpreadMethod::Repeat, usvg::SpreadMethod::Reflect] {
+            assert!(spread_periods(method, &stops, || Some((2.0e7, 2.0e7 + 100.0))).is_none());
+            assert!(spread_periods(method, &stops, || Some((-2.0e7 - 100.0, -2.0e7))).is_none());
+        }
+    }
+
+    #[test]
+    fn a_span_that_opens_no_period_keeps_its_spread() {
+        // There `first + 1` rounds back to `first`: no period, no stops,
+        // which Krilla cannot encode.
+        let stops = [stop(0.0, 255), stop(1.0, 0)];
+        let bound = 33_554_432.0_f32;
+        assert!(
+            spread_periods(usvg::SpreadMethod::Repeat, &stops, || Some((bound, bound))).is_none()
+        );
+    }
+
+    #[test]
+    fn periods_just_below_the_exact_f32_integers_still_pad() {
+        let stops = [stop(0.0, 255), stop(1.0, 0)];
+        let low = 16_777_213.0_f32;
+        let (first, last, padded) = spread_periods(usvg::SpreadMethod::Reflect, &stops, || {
+            Some((low, low + 2.0))
+        })
+        .unwrap();
+        assert_eq!((first, last), (low, low + 2.0));
+        assert_eq!(padded.len(), 4);
+        // 2^24 - 3 is odd: the first period is mirrored.
+        assert_eq!(padded[0].color, stop(0.0, 0).color);
     }
 }

@@ -6,6 +6,8 @@ use crate::fonts::FontNotice;
 pub(super) struct MandatoryNotices(String);
 
 pub(super) enum NoticeError {
+    /// Only PNG resolves notices from fallback kinds, which can find none.
+    #[cfg(feature = "png")]
     InvalidProvenance,
     Memory,
 }
@@ -81,6 +83,7 @@ impl MandatoryNotices {
         &self.0
     }
 
+    #[cfg(feature = "png")]
     pub(super) fn for_fallbacks(
         fallback_kinds: &[&str],
         format: crate::OutputFormat,

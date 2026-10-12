@@ -13,7 +13,9 @@ use crate::portable_math::{
 use crate::ColorMode;
 
 use super::resolve::ResolveSceneError;
-use super::{freedraw, rough, FormatEncodeError};
+#[cfg(any(feature = "pdf", test))]
+use super::FormatEncodeError;
+use super::{freedraw, rough};
 
 mod cubic;
 
@@ -1418,6 +1420,7 @@ fn corner_radius(size: f64, roundness: crate::normalization::NormalizedRoundness
 
 /// Sutherland–Hodgman clipping of a convex `subject` polygon against a convex
 /// `clip` polygon of either winding; both are page-space `(x, y)` pairs.
+#[cfg(any(feature = "pdf", test))]
 pub(super) fn clip_convex_polygon(
     subject: &[(f64, f64)],
     clip: &[(f64, f64)],
@@ -1472,11 +1475,13 @@ pub(super) fn clip_convex_polygon(
     Ok(output)
 }
 
+#[cfg(any(feature = "pdf", test))]
 fn polygon_half_plane(point: (f64, f64), edge_start: (f64, f64), edge_end: (f64, f64)) -> f64 {
     (edge_end.0 - edge_start.0) * (point.1 - edge_start.1)
         - (edge_end.1 - edge_start.1) * (point.0 - edge_start.0)
 }
 
+#[cfg(any(feature = "pdf", test))]
 fn line_intersection(
     start: (f64, f64),
     end: (f64, f64),

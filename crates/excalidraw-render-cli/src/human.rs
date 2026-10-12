@@ -16,6 +16,7 @@ use serde::Deserialize;
 /// summarizes the rest.
 const SHOWN_ELEMENTS: usize = 3;
 const SHOWN_CHARACTERS: usize = 5;
+const SHOWN_PROPERTIES: usize = 3;
 
 /// The library's message for official text drawn with the `?` replacement glyph.
 const OFFICIAL_MISSING_GLYPH: &str =
@@ -62,11 +63,13 @@ pub(crate) fn error_line(message: &str, code: &str) -> String {
     format!("error: {message} [{code}]\n")
 }
 
-/// `hint:` lines for `hints`, followed by the advice `code` implies.
+/// `hint:` lines for `hints`, or, when there are none, for the advice `code`
+/// implies: advice specific to one failure replaces its code's general advice.
 pub(crate) fn hint_lines<'a>(code: &str, hints: impl IntoIterator<Item = &'a str>) -> String {
+    let mut hints = hints.into_iter().peekable();
+    let general = hints.peek().is_none().then(|| code_hint(code)).flatten();
     hints
-        .into_iter()
-        .chain(code_hint(code))
+        .chain(general)
         .map(|hint| format!("hint: {hint}\n"))
         .collect()
 }
@@ -79,8 +82,10 @@ pub(crate) fn code_hint(code: &str) -> Option<&'static str> {
             "pass --format svg, png, or pdf, or name the output with a .svg, .png, or .pdf extension"
         }
         "cli.frame-no-match" => "run `excalidraw-render frames INPUT --list` to see the frames",
+        // A PNG canvas gets advice sized from the error; this is for the
+        // rest, such as content a PDF rasterizes.
         "resource.raster-surface-exceeded" => {
-            "use --max-dimension N (for example 4096) or a lower --scale to shrink the image"
+            "shrink the output with a lower --max-dimension or --scale, or render to SVG instead"
         }
         "resource.svg-dimensions-exceeded" => "use a lower --scale",
         "pdf.raster-fallback-forbidden" => {
@@ -173,10 +178,14 @@ pub(crate) fn scene_parse_context(
         );
     }
 
+    if error.code().as_str() == "scene.invalid-json" && is_blank(bytes) {
+        return (format!("{subject}: it is empty"), Vec::new());
+    }
+
     let mut message = format!("{subject}: {}", error.message());
     let mut hints = Vec::new();
     match error.code().as_str() {
-        "scene.unsupported-input" => hints.push(envelope_hint(bytes).to_owned()),
+        "scene.unsupported-input" => hints.extend(envelope_hint(bytes).map(str::to_owned)),
         "scene.invalid-json" => {
             if let Err(syntax) = serde_json::from_slice::<IgnoredAny>(bytes) {
                 if syntax.line() > 0 {
@@ -189,8 +198,9 @@ pub(crate) fn scene_parse_context(
                 }
             }
         }
-        "scene.invalid-envelope" => hints
-            .push(missing_members_hint(bytes).unwrap_or_else(|| envelope_hint(bytes).to_owned())),
+        "scene.invalid-envelope" => hints.extend(
+            missing_members_hint(bytes).or_else(|| envelope_hint(bytes).map(str::to_owned)),
+        ),
         _ => {
             if let Some(pointer) = error.json_pointer().filter(|pointer| !pointer.is_empty()) {
                 let _ = write!(message, " at {pointer}");
@@ -201,11 +211,17 @@ pub(crate) fn scene_parse_context(
 }
 
 fn looks_like_svg(bytes: &[u8]) -> bool {
-    let start = bytes
-        .strip_prefix("\u{feff}".as_bytes())
-        .unwrap_or(bytes)
-        .trim_ascii_start();
+    let start = without_bom(bytes).trim_ascii_start();
     start.starts_with(b"<svg") || start.starts_with(b"<?xml") || start.starts_with(b"<!DOCTYPE svg")
+}
+
+/// Whether `bytes` hold nothing but whitespace (or nothing at all).
+fn is_blank(bytes: &[u8]) -> bool {
+    without_bom(bytes).trim_ascii().is_empty()
+}
+
+fn without_bom(bytes: &[u8]) -> &[u8] {
+    bytes.strip_prefix("\u{feff}".as_bytes()).unwrap_or(bytes)
 }
 
 /// The members a version-2 scene document must have, with the empty value
@@ -241,8 +257,10 @@ fn missing_members_hint(bytes: &[u8]) -> Option<String> {
     }
 }
 
-/// What a JSON document that is not a version-2 scene probably is.
-fn envelope_hint(bytes: &[u8]) -> &'static str {
+/// What a JSON document that is not a version-2 scene probably is, when the
+/// error does not already say: the library names libraries, clipboard data and
+/// unsupported versions itself.
+fn envelope_hint(bytes: &[u8]) -> Option<&'static str> {
     #[derive(Deserialize)]
     struct Envelope {
         #[serde(rename = "type")]
@@ -253,22 +271,21 @@ fn envelope_hint(bytes: &[u8]) -> &'static str {
     let kind = envelope
         .as_ref()
         .and_then(|envelope| envelope.kind.as_ref()?.as_str().map(str::to_owned));
+    let version = envelope
+        .as_ref()
+        .and_then(|envelope| envelope.version.as_ref());
     match kind.as_deref() {
-        Some("excalidrawlib") => {
-            "this is an Excalidraw library; only scene documents can be rendered"
-        }
-        Some("excalidraw/clipboard") => {
-            "this is Excalidraw clipboard data; paste it into Excalidraw and save the scene as .excalidraw"
-        }
-        Some("excalidraw")
-            if envelope
-                .as_ref()
-                .and_then(|envelope| envelope.version.as_ref())
-                .is_some_and(|version| version != 2) =>
-        {
-            "only version 2 scene documents are supported"
-        }
-        _ => "an Excalidraw scene is a JSON object with \"type\": \"excalidraw\" and \"version\": 2",
+        Some("excalidrawlib" | "excalidraw/clipboard") => None,
+        Some("excalidraw") if version.is_some_and(|version| version != 2) => version
+            .and_then(serde_json::Value::as_u64)
+            .is_some_and(|version| version > 2)
+            .then_some(
+                "the file may come from a newer Excalidraw than this renderer supports; \
+                 check for a newer excalidraw-render",
+            ),
+        _ => Some(
+            "an Excalidraw scene is a JSON object with \"type\": \"excalidraw\" and \"version\": 2",
+        ),
     }
 }
 
@@ -280,11 +297,13 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
         count: usize,
         elements: Vec<&'a str>,
         characters: Vec<u32>,
+        properties: Vec<String>,
         // Membership only, never iterated: the lists above keep first-occurrence
         // order, and these keep a report of many (long) ids from comparing each
         // occurrence against every one already listed.
         seen_elements: HashSet<&'a str>,
         seen_characters: HashSet<u32>,
+        seen_properties: HashSet<String>,
     }
     let mut groups: Vec<Group<'_>> = Vec::new();
     for diagnostic in diagnostics {
@@ -303,8 +322,10 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
                     count: 0,
                     elements: Vec::new(),
                     characters: Vec::new(),
+                    properties: Vec::new(),
                     seen_elements: HashSet::new(),
                     seen_characters: HashSet::new(),
+                    seen_properties: HashSet::new(),
                 });
                 groups.len() - 1
             });
@@ -318,6 +339,11 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
         if let Some(DiagnosticDetails::MissingGlyph { codepoint, .. }) = diagnostic.details() {
             if group.seen_characters.insert(*codepoint) {
                 group.characters.push(*codepoint);
+            }
+        }
+        if let Some(property) = property_path(diagnostic) {
+            if group.seen_properties.insert(property.clone()) {
+                group.properties.push(property);
             }
         }
     }
@@ -336,8 +362,14 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
                     "{count} characters have no glyph in the bundled fonts and were drawn as \"?\""
                 ),
             }
-        } else {
+        } else if group.properties.is_empty() {
             group.first.message().to_owned()
+        } else {
+            format!(
+                "{}: {}",
+                group.first.message(),
+                listed(&group.properties, SHOWN_PROPERTIES)
+            )
         };
         let mut facts = Vec::new();
         if group.count > 1 && !replaced_characters {
@@ -366,6 +398,31 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
         text.push('\n');
     }
     text
+}
+
+/// The property a diagnostic is about, from its JSON pointer: the path within
+/// its element (`startBinding.fixedPoint`), which the line names by ID, or
+/// the whole path for anything outside the elements
+/// (`appState.lockedMultiSelections`). `None` for a diagnostic about a whole
+/// element or the whole scene.
+fn property_path(diagnostic: &CompatibilityDiagnostic) -> Option<String> {
+    let mut segments = diagnostic
+        .json_pointer()
+        .strip_prefix('/')?
+        .split('/')
+        .map(|segment| segment.replace("~1", "/").replace("~0", "~"))
+        .collect::<Vec<_>>();
+    if diagnostic.element_id().is_some()
+        && segments
+            .first()
+            .is_some_and(|segment| segment == "elements")
+        && segments
+            .get(1)
+            .is_some_and(|index| index.bytes().all(|byte| byte.is_ascii_digit()))
+    {
+        segments.drain(..2);
+    }
+    (!segments.is_empty()).then(|| segments.join("."))
 }
 
 /// `a, b, c and 2 more`, naming at most `shown` items.

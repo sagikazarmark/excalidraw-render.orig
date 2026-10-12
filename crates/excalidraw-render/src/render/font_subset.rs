@@ -378,6 +378,7 @@ fn ensure_nonempty_glyf(sfnt: &[u8]) -> Result<Vec<u8>, Error> {
 /// Modified Version Krilla subsets while embedding carries the effective
 /// alias and keeps the source's legal records (ADR-0001). Glyph IDs are
 /// untouched, so the renderer's shaped glyphs address it directly.
+#[cfg(feature = "pdf")]
 pub(super) fn rename_program(sfnt: &[u8], alias: &str, identity: &str) -> Result<Vec<u8>, Error> {
     let renamed = rewrite_names(sfnt, alias, identity)?;
     validate_names(sfnt, &renamed, alias, identity)?;

@@ -13,12 +13,12 @@ use tiny_skia::{
 use crate::color::{self, CanonicalColor};
 
 use super::super::geometry::{Path, PathOperation};
+use super::super::png_encoder::png_size_error;
 use super::super::resolve::StrokeStyle;
 use super::super::rough::{Drawing, FillKind};
 use super::super::text::{LabelPath, LabelPathOperation};
 use super::super::{freedraw, FormatEncodeError};
 use super::coverage::frame_clip_coverage_bounds;
-use super::encoder::png_size_error;
 use super::guard::{GuardedDraw, GuardedMask};
 use super::{frame_clip_set_key, PngElement, PngFrameClip, PngImageClip, PngLabelMask};
 

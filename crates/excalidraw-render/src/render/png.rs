@@ -5,9 +5,9 @@
 //! per-index area queries exist so the session can charge the §13.2 raster
 //! ledger from the plan before painting.
 //!
-//! `encoder` is the owned PNG encoder ADR-0004 describes — scanline filtering,
-//! deflate, chunk assembly and the size-error vocabulary — with no dependency
-//! on the plan or the painter; `paint` lowers
+//! The owned PNG encoder ADR-0004 describes — scanline filtering, deflate,
+//! chunk assembly and the size-error vocabulary — is the sibling
+//! `png_encoder`, which PDF's raster fallback shares; `paint` lowers
 //! Rough drawings, freedraw outlines, labels and the Font Awesome placeholder
 //! into tiny-skia paths and owns the shared frame-clip masks; `coverage` holds
 //! the conservative device-space area estimators the ledger reads, which are
@@ -15,12 +15,8 @@
 
 mod canvas_image;
 mod coverage;
-mod encoder;
 mod guard;
 mod paint;
-
-pub(super) use encoder::PngIdatStream;
-pub(super) use encoder::{canonicalize_straight_alpha, compress_rgba};
 
 use canvas_image::{
     device_draw_image_rect, paint_alpha8, scale_pixels_chain_pixels, AffineF, CanvasImageDraw,
@@ -31,7 +27,6 @@ use coverage::{
     conservative_freedraw_coverage_area, conservative_text_coverage_area, fallback_coverage_bounds,
     frame_clip_coverage_area, frame_clip_coverage_bounds, label_mask_coverage_area,
 };
-use encoder::png_size_error;
 use guard::{GuardedDraw, GuardedMask};
 use paint::{
     apply_theme_filter, composite_unmasked_raster_blocks, downsample_rgba, fallback_paths,
@@ -53,6 +48,9 @@ use tiny_skia::{
 use super::geometry::{Path, Point, FRAME_OUTLINE_STROKE_WIDTH};
 use super::notices::{MandatoryNotices, NoticeError};
 use super::plan::PlannedElement;
+use super::png_encoder::{
+    canonicalize_straight_alpha, compress_rgba, png_size_error, PngIdatStream,
+};
 use super::resolve::{
     decoration_fill_color, decoration_stroke_style, DarkModeImageFilter, FallbackColors,
     FallbackSource, ResolvedClip, ResolvedElement, ResolvedFrameOutline, ResolvedImageAsset,

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -15,10 +15,10 @@ use unicode_normalization::UnicodeNormalization as _;
 
 use crate::human::{self, HumanReport};
 use crate::{
-    deliver_report_bytes, destination_exists, emergency_report_failure, emit_failure, json_line,
-    not_a_directory, parse_asset_declarations, path_conflict, path_entry_exists,
-    read_bounded_asset, read_scene, report_output, same_path, select_renderer, sha256,
-    stage_report_file, validate_paths, validate_report_options, write_stdout, write_stream,
+    deliver_report_bytes, destination_exists, destination_is_taken, emergency_report_failure,
+    emit_failure, json_line, not_a_directory, parse_asset_declarations, path_conflict,
+    path_entry_exists, read_bounded_asset, read_scene, report_output, same_path, select_renderer,
+    sha256, stage_report_file, validate_paths, validate_report_options, write_stdout, write_stream,
     ArtifactDescriptor, Cli, CliDetails, CliError, CliOperation, DeliveryError, DeliveryRole,
     DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError, ReportFormat, SelectedIdentity,
     StagedFile, ASSETS, EXIT_OPERATIONAL, EXIT_USAGE, METADATA, OUTPUT, RENDERING, REPORTING,
@@ -82,6 +82,12 @@ pub(crate) struct FramesCli {
     max_frames: u32,
     /// Print the frames and file names the selection would export, without
     /// rendering or writing anything
+    ///
+    /// Each frame is one line of four tab-separated columns: its number in the
+    /// scene (counting from 1, whatever --name-regex selects), its kind (frame
+    /// or magicframe), its name (empty if it has none) and the name of the
+    /// file it would be written to (without an extension unless --format is
+    /// given). --report-format json prints the same as one JSON document.
     #[arg(long, help_heading = SELECTION)]
     list: bool,
 
@@ -318,7 +324,7 @@ fn prepare_frame_list(
         // List mode writes no artifact, so the only aliasing risk is the report
         // overwriting the scene it is reporting on.
         validate_paths(&frames.input, "-", report_path, &BTreeMap::new())?;
-        if path_entry_exists(Path::new(report_path)) && !frames.force {
+        if destination_is_taken(Path::new(report_path)) && !frames.force {
             return Err(destination_exists(DeliveryRole::Report, report_path));
         }
     }
@@ -467,7 +473,7 @@ fn prepare_frame_preamble(
     *identity = Some(SelectedIdentity {
         revision: profile.compatibility_revision(),
         release: profile.excalidraw_release(),
-        digest: profile.profile_digest(),
+        digest: profile.reference_profile_digest(),
     });
 
     let (asset_paths, asset_mimes) = parse_asset_declarations(&frames.asset, &frames.asset_mime)?;
@@ -591,13 +597,13 @@ fn prepare_and_render_frames(
             return Err(failure);
         }
     }
-    if report_path != "stderr" && path_entry_exists(Path::new(report_path)) && !frames.force {
+    if report_path != "stderr" && destination_is_taken(Path::new(report_path)) && !frames.force {
         return Err(destination_exists(DeliveryRole::Report, report_path));
     }
     let scene = read_scene(&frames.input)?;
     let selected = select_frames(&scene, regex.as_ref());
     if selected.is_empty() {
-        return Err(Failure::cli(
+        let failure = Failure::cli(
             "cli.frame-no-match",
             match &frames.name_regex {
                 Some(regex) => format!("no frames match --name-regex '{regex}'"),
@@ -605,7 +611,14 @@ fn prepare_and_render_frames(
             },
             None,
             EXIT_OPERATIONAL,
-        ));
+        );
+        // Listing the frames helps a pattern that matched none, not a scene
+        // that has none.
+        return Err(if scene.frames().next().is_none() {
+            failure.with_hint("render the whole scene instead: `excalidraw-render INPUT -o FILE`")
+        } else {
+            failure
+        });
     }
     if selected.len() > frames.max_frames as usize {
         return Err(frame_limit_exceeded(frames));
@@ -623,7 +636,7 @@ fn prepare_and_render_frames(
     )?;
     let destination_collisions = destinations
         .iter()
-        .map(|destination| path_entry_exists(destination) && !frames.force)
+        .map(|destination| destination_is_taken(destination) && !frames.force)
         .collect::<Vec<_>>();
 
     let limits = ResourceLimits::default();
@@ -731,7 +744,7 @@ fn prepare_and_render_frames(
                     byte_length: bytes.len(),
                     sha256: sha256(bytes),
                 });
-                if initial_collision || path_entry_exists(destination) && !frames.force {
+                if initial_collision || destination_is_taken(destination) && !frames.force {
                     had_failure = true;
                     entry.error = Some(frame_destination_error(destination));
                     entries.push((entry, None));
@@ -858,7 +871,8 @@ fn frame_output_basenames(
     frames: &[excalidraw_render::FrameRef<'_>],
     format: Option<OutputFormat>,
 ) -> Vec<String> {
-    let mut used = BTreeSet::new();
+    let mut used = HashSet::new();
+    let mut next_suffixes = HashMap::new();
     let mut basenames = Vec::with_capacity(frames.len());
     for frame in frames {
         let normalized_name = frame.name().map(|name| name.nfc().collect::<String>());
@@ -876,31 +890,67 @@ fn frame_output_basenames(
         } else {
             String::new()
         };
-        let mut suffix = 1_u32;
-        loop {
-            let collision_suffix = (suffix > 1).then(|| format!("-{suffix}"));
-            let reserved_bytes =
-                stable_suffix.len() + collision_suffix.as_deref().map_or(0, str::len);
-            let mut basename = truncate_basename(&root, 120 - reserved_bytes);
-            basename.push_str(&stable_suffix);
-            if let Some(collision_suffix) = collision_suffix {
-                basename.push_str(&collision_suffix);
-            }
-            let key = unicase::UniCase::new(basename.nfc().collect::<String>())
-                .to_folded_case()
-                .nfc()
-                .collect::<String>();
-            if used.insert(key) {
-                basenames.push(match format {
-                    Some(format) => format!("{basename}.{}", format.as_str()),
-                    None => basename,
-                });
-                break;
-            }
-            suffix += 1;
-        }
+        let basename = unique_basename(&root, &stable_suffix, &mut used, &mut next_suffixes);
+        basenames.push(match format {
+            Some(format) => format!("{basename}.{}", format.as_str()),
+            None => basename,
+        });
     }
     basenames
+}
+
+/// The first of `ROOT`, `ROOT-2`, `ROOT-3`, … (each truncated to keep the
+/// stable suffix and fit 120 bytes) whose folded name is not `used` yet, which
+/// it then marks used.
+///
+/// Trying every suffix from 2 would make frames that share a name quadratic
+/// in their count, so `next_suffixes` remembers, per folded stem and suffix
+/// length, the first suffix not yet known to be taken. Folding commutes with
+/// appending `-N`, so every root with the same folded stem finds the same
+/// names taken, even when the roots are spelled differently.
+fn unique_basename(
+    root: &str,
+    stable_suffix: &str,
+    used: &mut HashSet<String>,
+    next_suffixes: &mut HashMap<(String, u32), u64>,
+) -> String {
+    let stem = |reserved_bytes: usize| {
+        let mut stem = truncate_basename(root, 120 - stable_suffix.len() - reserved_bytes);
+        stem.push_str(stable_suffix);
+        stem
+    };
+    let basename = stem(0);
+    if used.insert(folded_name(&basename)) {
+        return basename;
+    }
+    // Suffixes of one digit count share a truncation: 2-9, then 10-99, …
+    let mut first = 2_u64;
+    let mut digits = 1_u32;
+    loop {
+        let last = 10_u64.saturating_pow(digits) - 1;
+        let stem = stem(1 + digits as usize);
+        let next = next_suffixes
+            .entry((folded_name(&stem), digits))
+            .or_insert(first);
+        while *next <= last {
+            let basename = format!("{stem}-{next}");
+            *next += 1;
+            if used.insert(folded_name(&basename)) {
+                return basename;
+            }
+        }
+        first = last + 1;
+        digits += 1;
+    }
+}
+
+/// The name two basenames share when a case-insensitive file system would
+/// treat them as one file.
+fn folded_name(basename: &str) -> String {
+    unicase::UniCase::new(basename.nfc().collect::<String>())
+        .to_folded_case()
+        .nfc()
+        .collect()
 }
 
 fn portable_frame_slug(name: &str) -> String {
@@ -1191,25 +1241,26 @@ fn frame_batch_report_bytes(
                 human.notes(),
                 human::diagnostics(&diagnostics, human.verbose)
             );
+            let mut reported = false;
             let mut codes = Vec::new();
             let mut hints = Vec::new();
             for (entry, _) in entries {
                 if let Some(error) = &entry.error {
+                    reported = true;
                     text.push_str(&human::error_line(
                         &frame_error_message(entry, error),
                         error.code(),
                     ));
-                    if !codes.contains(&error.code()) {
-                        codes.push(error.code());
-                    }
-                    if let Some(hint) = error.sizing_hint() {
-                        if !hints.contains(&hint) {
-                            hints.push(hint);
-                        }
+                    // An error's own advice replaces its code's general one.
+                    match error.specific_hint() {
+                        Some(hint) if !hints.contains(&hint) => hints.push(hint),
+                        Some(_) => {}
+                        None if !codes.contains(&error.code()) => codes.push(error.code()),
+                        None => {}
                     }
                 }
             }
-            if status != "success" && codes.is_empty() {
+            if status != "success" && !reported {
                 text.push_str(&human::error_line(
                     "frame batch delivery failed",
                     "cli.output-write-failed",
@@ -1573,6 +1624,218 @@ mod tests {
             frame_output_basenames(&frames, Some(OutputFormat::Png)),
             ["Overview.png", "Detail.png"]
         );
+    }
+
+    /// The original quadratic de-duplication, kept as the reference the linear
+    /// one must match byte for byte: each frame tries suffixes from 1 until its
+    /// folded name is free.
+    fn reference_frame_output_basenames(
+        frames: &[excalidraw_render::FrameRef<'_>],
+        format: Option<OutputFormat>,
+    ) -> Vec<String> {
+        use std::collections::BTreeSet;
+        use unicode_normalization::UnicodeNormalization as _;
+
+        let mut used = BTreeSet::new();
+        let mut basenames = Vec::with_capacity(frames.len());
+        for frame in frames {
+            let normalized_name = frame.name().map(|name| name.nfc().collect::<String>());
+            let mut root = normalized_name
+                .as_deref()
+                .map(portable_frame_slug)
+                .filter(|name| !name.is_empty())
+                .unwrap_or_else(|| format!("frame-{}", frame.ordinal()));
+            if is_reserved_device_name(&root) {
+                root.insert(0, '_');
+            }
+            let stable_suffix = if root.len() > 120 {
+                let digest = crate::sha256(normalized_name.as_deref().unwrap_or(&root).as_bytes());
+                format!("-{}", &digest["sha256:".len().."sha256:".len() + 8])
+            } else {
+                String::new()
+            };
+            let mut suffix = 1_u32;
+            loop {
+                let collision_suffix = (suffix > 1).then(|| format!("-{suffix}"));
+                let reserved_bytes =
+                    stable_suffix.len() + collision_suffix.as_deref().map_or(0, str::len);
+                let mut basename = truncate_basename(&root, 120 - reserved_bytes);
+                basename.push_str(&stable_suffix);
+                if let Some(collision_suffix) = collision_suffix {
+                    basename.push_str(&collision_suffix);
+                }
+                let key = unicase::UniCase::new(basename.nfc().collect::<String>())
+                    .to_folded_case()
+                    .nfc()
+                    .collect::<String>();
+                if used.insert(key) {
+                    basenames.push(match format {
+                        Some(format) => format!("{basename}.{}", format.as_str()),
+                        None => basename,
+                    });
+                    break;
+                }
+                suffix += 1;
+            }
+        }
+        basenames
+    }
+
+    /// Asserts the basenames of a scene whose frames carry `names` match the
+    /// reference de-duplication, with and without an extension.
+    fn assert_matches_reference(names: &[Option<&str>]) {
+        let scene = scene_with_frame_names(names);
+        let frames = scene.frames().collect::<Vec<_>>();
+        for format in [None, Some(OutputFormat::Png)] {
+            let actual = frame_output_basenames(&frames, format);
+            let expected = reference_frame_output_basenames(&frames, format);
+            if let Some(index) = (0..expected.len()).find(|&i| actual[i] != expected[i]) {
+                panic!(
+                    "frame {} ({:?}) is named {:?}, the reference names it {:?}",
+                    index + 1,
+                    names[index],
+                    actual[index],
+                    expected[index]
+                );
+            }
+            assert_eq!(actual.len(), expected.len());
+        }
+    }
+
+    /// Every spelling of `word` that differs only in letter case, `count` of
+    /// them: each is its own root, but all fold to one name.
+    fn case_variants(word: &str, count: usize) -> Vec<String> {
+        (0..count)
+            .map(|mask| {
+                word.chars()
+                    .enumerate()
+                    .map(|(bit, character)| {
+                        if mask >> (bit % usize::BITS as usize) & 1 == 1 {
+                            character.to_ascii_uppercase()
+                        } else {
+                            character
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn frame_basename_deduplication_matches_the_reference_on_adversarial_names() {
+        let mut cases: Vec<Vec<Option<String>>> = Vec::new();
+        let some = |names: Vec<String>| names.into_iter().map(Some).collect::<Vec<_>>();
+
+        // Spellings that fold alike but are distinct roots, so a counter per
+        // spelling would still retry every taken suffix.
+        cases.push(some(case_variants("abcdefghijk", 2048)));
+        // Generated suffixes collide with literal names, before and after.
+        cases.push(some(
+            [
+                "A-2", "A", "A", "a-3", "A", "A-5", "A", "A", "a", "A-4", "A-10", "A",
+            ]
+            .iter()
+            .map(|name| (*name).to_owned())
+            .chain(std::iter::repeat_n("A".to_owned(), 30))
+            .chain((2..40).map(|suffix| format!("A-{suffix}")))
+            .chain(std::iter::repeat_n("a".to_owned(), 30))
+            .collect(),
+        ));
+        // Roots near the 120-byte budget are truncated differently once the
+        // suffix gains a digit; ASCII and two-byte characters.
+        for (unit, count) in [("x", 118), ("x", 119), ("x", 120), ("é", 59), ("é", 60)] {
+            let root = unit.repeat(count);
+            let mut names = vec![root.clone(); 25];
+            names.push(format!("{}-12", unit.repeat(count.saturating_sub(4))));
+            names.push(format!("{}-3", &root[..root.len() - 2 * unit.len()]));
+            names.extend(vec![root.clone(); 15]);
+            names.extend(vec![root.to_uppercase(); 15]);
+            cases.push(some(names));
+        }
+        // Long names carry a hash of their spelling; duplicates and spellings
+        // that differ only in case.
+        let long = "Long Name ".repeat(14);
+        let mut names = vec![long.clone(); 12];
+        names.extend(case_variants(&long, 16));
+        names.extend(vec![long.to_uppercase(); 12]);
+        cases.push(some(names));
+        // Case folding and normalization, reserved device names, and unnamed
+        // frames colliding with literal ordinal names.
+        cases.push(
+            [
+                Some("Straße"),
+                Some("STRASSE"),
+                Some("strasse-2"),
+                Some("Strasse"),
+                Some("caf\u{e9}"),
+                Some("cafe\u{301}"),
+                Some("CAF\u{c9}-2"),
+                Some("CAFE\u{301}"),
+                Some("CON"),
+                Some("_con"),
+                Some("con"),
+                None,
+                Some("frame-12"),
+                Some("Frame-13"),
+                None,
+                Some("!!!"),
+                None,
+                Some("frame-15-2"),
+                Some("FRAME-15"),
+            ]
+            .iter()
+            .map(|name| name.map(str::to_owned))
+            .chain(std::iter::repeat_n(None, 8))
+            .collect(),
+        );
+        // Pseudo-random names over an alphabet chosen to collide.
+        let alphabet = [
+            "a", "A", "-", "2", "1", "ß", "SS", "ss", "é", "e\u{301}", " ", "x", "_",
+        ];
+        let mut state = 0x9e37_79b9_7f4a_7c15_u64;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for _ in 0..4 {
+            let names = (0..1500)
+                .map(|_| {
+                    let length = (next() % 6) as usize;
+                    (0..length)
+                        .map(|_| alphabet[(next() % alphabet.len() as u64) as usize])
+                        .collect::<String>()
+                })
+                .collect::<Vec<_>>();
+            cases.push(some(names));
+        }
+
+        for case in &cases {
+            let names = case.iter().map(Option::as_deref).collect::<Vec<_>>();
+            assert_matches_reference(&names);
+        }
+    }
+
+    /// The most frames a batch may select, every one a spelling of one name:
+    /// the reference would try about 134 million names here.
+    #[test]
+    fn the_largest_batch_of_one_name_is_named_in_one_pass() {
+        let variants = case_variants("abcdefghijklmn", 16_384);
+        let names = variants
+            .iter()
+            .map(|name| Some(name.as_str()))
+            .collect::<Vec<_>>();
+        let scene = scene_with_frame_names(&names);
+        let frames = scene.frames().collect::<Vec<_>>();
+        let basenames = frame_output_basenames(&frames, None);
+        for (index, (basename, variant)) in basenames.iter().zip(&variants).enumerate() {
+            let expected = match index {
+                0 => variant.clone(),
+                _ => format!("{variant}-{}", index + 1),
+            };
+            assert_eq!(basename, &expected);
+        }
     }
 
     #[test]

@@ -6,6 +6,10 @@
 #
 #   fast        every unit-level, component and full-pipeline render test
 #               (one binary; each former file is a module)
+#   format_features
+#               the refusals of a build without `png` or `pdf` (ADR-0023);
+#               empty with the default features, so it costs nothing here
+#               and `tools/ci/check-format-features.sh` runs it reduced
 #   parity_*    parity against official evidence: the registry-driven scene
 #               harnesses and the frame-export case
 #   limits_*    fixed parser ceilings that build 64 MiB and 1M-entry scenes,
