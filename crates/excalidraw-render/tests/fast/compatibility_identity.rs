@@ -1,6 +1,7 @@
 use excalidraw_render::{
-    CompatibilityRevision, FrameRenderRequest, RenderError, RenderOutcome, RenderRequest, Renderer,
-    SceneDocument,
+    CompatibilityRevision, FrameBatchError, FrameRef, FrameRefs, FrameRenderCursor,
+    FrameRenderEntry, FrameRenderRequest, RenderError, RenderOutcome, RenderRequest, Renderer,
+    RequestError, SceneDocument, SceneParseError,
 };
 
 const REVISION_1_REFERENCE_PROFILE_DIGEST: &str =
@@ -78,4 +79,26 @@ fn renderer_scenes_requests_and_results_are_safe_to_share_between_threads() {
         renderer.clone().profile_identity().compatibility_revision(),
         CompatibilityRevision::REVISION_1
     );
+}
+
+/// Every failure can be boxed into `Box<dyn Error + Send + Sync>` and sent to
+/// another thread, and a frame batch's borrowed views and its cursor can be
+/// handed to a worker for as long as the scene and request they borrow.
+#[test]
+fn errors_and_frame_batch_values_are_safe_to_send_between_threads() {
+    fn assert_send_sync<T: Send + Sync>() {}
+    fn assert_thread_safe_error<T: std::error::Error + Send + Sync + 'static>() {}
+    fn assert_borrowed_frame_values<'scene, 'request>(
+        _: std::marker::PhantomData<(&'scene (), &'request ())>,
+    ) {
+        assert_send_sync::<FrameRef<'scene>>();
+        assert_send_sync::<FrameRefs<'scene>>();
+        assert_send_sync::<FrameRenderEntry<'scene>>();
+        assert_send_sync::<FrameRenderCursor<'scene, 'request>>();
+    }
+    assert_thread_safe_error::<SceneParseError>();
+    assert_thread_safe_error::<RequestError>();
+    assert_thread_safe_error::<RenderError>();
+    assert_thread_safe_error::<FrameBatchError>();
+    assert_borrowed_frame_values(std::marker::PhantomData);
 }
