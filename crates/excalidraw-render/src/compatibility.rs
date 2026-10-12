@@ -67,7 +67,7 @@ impl ReferenceProfileIdentity {
     }
 
     /// Returns the canonical SHA-256 digest of the reference profile.
-    pub const fn profile_digest(&self) -> &'static str {
+    pub const fn reference_profile_digest(&self) -> &'static str {
         self.reference_profile_digest
     }
 }

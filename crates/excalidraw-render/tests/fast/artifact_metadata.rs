@@ -55,7 +55,7 @@ fn every_format_round_trips_one_canonical_artifact_manifest() {
                 "\"sha256\":\"{}\"}}}}"
             ),
             env!("CARGO_PKG_VERSION"),
-            outcome.profile_identity().profile_digest(),
+            outcome.profile_identity().reference_profile_digest(),
             scene_digest,
         );
         assert_eq!(manifest, expected, "{format:?} manifest");

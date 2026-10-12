@@ -393,7 +393,7 @@ fn manifest_json_len(
             .saturating_add(byte_len(",\"excalidraw_release\":\""))
             .saturating_add(byte_len(profile.excalidraw_release()))
             .saturating_add(byte_len("\",\"reference_profile_digest\":\""))
-            .saturating_add(byte_len(profile.profile_digest()))
+            .saturating_add(byte_len(profile.reference_profile_digest()))
             .saturating_add(2);
     } else {
         len = len.saturating_add(4);
@@ -525,7 +525,7 @@ fn manifest_json(
             manifest.push_str(",\"excalidraw_release\":\"");
             manifest.push_str(profile.excalidraw_release());
             manifest.push_str("\",\"reference_profile_digest\":\"");
-            manifest.push_str(profile.profile_digest());
+            manifest.push_str(profile.reference_profile_digest());
             manifest.push_str("\"}");
             Ok(())
         })?;

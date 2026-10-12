@@ -104,7 +104,7 @@ pub(super) fn relationship_asset_authorities(
         };
         let authority = match edge.target {
             crate::relationships::RelationshipTarget::Asset {
-                authority: crate::relationships::AssetAuthority::SceneFile(_),
+                authority: crate::relationships::AssetAuthority::SceneFile,
                 ..
             } => asset::Authority::Scene,
             crate::relationships::RelationshipTarget::Asset {

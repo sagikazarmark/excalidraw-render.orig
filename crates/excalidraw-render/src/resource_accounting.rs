@@ -853,7 +853,7 @@ impl ResourceTrace {
             schema_version: 1,
             header: ResourceTraceHeader {
                 compatibility_revision: profile.compatibility_revision().get(),
-                reference_profile_digest: profile.profile_digest().to_owned(),
+                reference_profile_digest: profile.reference_profile_digest().to_owned(),
                 format: request.format(),
                 limits: ResourceTraceLimits::from(request.resource_limits()),
                 input_digests: ResourceInputDigests {

@@ -742,7 +742,7 @@ fn standalone_commands_expose_revision_identity_and_exact_licenses() {
             String::from_utf8(verbose.stdout).expect("version is UTF-8"),
             format!(
                 "{version}compatibility revision 1\nreference profile {}\n",
-                profile.profile_digest()
+                profile.reference_profile_digest()
             ),
             "{flag}"
         );
@@ -1570,7 +1570,9 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
     assert_eq!(report["compatibility_revision"], 1);
     assert_eq!(
         report["reference_profile_digest"],
-        Renderer::new().frame_profile_identity().profile_digest()
+        Renderer::new()
+            .frame_profile_identity()
+            .reference_profile_digest()
     );
     assert_eq!(report["frames"].as_array().map(Vec::len), Some(3));
     assert_eq!(report["frames"][0]["ordinal"], 1);
@@ -1756,7 +1758,9 @@ fn frames_command_filters_names_and_writes_one_deterministically_named_artifact_
     );
     assert_eq!(
         report["reference_profile_digest"],
-        Renderer::new().frame_profile_identity().profile_digest()
+        Renderer::new()
+            .frame_profile_identity()
+            .reference_profile_digest()
     );
 
     let no_match_output = temp.join("no-match");

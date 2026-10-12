@@ -473,7 +473,7 @@ fn prepare_frame_preamble(
     *identity = Some(SelectedIdentity {
         revision: profile.compatibility_revision(),
         release: profile.excalidraw_release(),
-        digest: profile.profile_digest(),
+        digest: profile.reference_profile_digest(),
     });
 
     let (asset_paths, asset_mimes) = parse_asset_declarations(&frames.asset, &frames.asset_mime)?;

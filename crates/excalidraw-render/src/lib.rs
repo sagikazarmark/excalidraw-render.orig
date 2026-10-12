@@ -102,11 +102,12 @@
 //!   all work is bounded by [`ResourceLimits`], but a render cannot be
 //!   interrupted once started. When you need a hard wall-clock deadline, render
 //!   in a separate process you can kill.
-//! - **Bound raster sizes from the request.** Prefer
+//! - **Bound raster sizes from the request.** For PNG and PDF, prefer
 //!   [`Sizing::MaxDimension`] over a caller-chosen [`Sizing::Scale`] so a
-//!   large scene cannot request an enormous PNG; then lower
+//!   large scene cannot request an enormous PNG or page; then lower
 //!   `max_raster_dimension` and `max_raster_surface_pixels` to what you are
-//!   willing to allocate.
+//!   willing to allocate. SVG ignores `MaxDimension` and keeps the scene's
+//!   logical size, which `max_svg_dimension` bounds instead.
 //! - **`max_working_bytes` is not a memory cap.** It budgets the renderer's
 //!   deterministic, logical working set so that the same input fails the same
 //!   way on every machine; it does not measure or limit allocator usage.
