@@ -53,6 +53,7 @@ mod plan;
 #[cfg(test)]
 mod plan_tests;
 mod png;
+mod png_encoder;
 mod prepared;
 pub(crate) use prepared::{FramePreparationError, PreparedFrameRender};
 #[cfg(test)]
