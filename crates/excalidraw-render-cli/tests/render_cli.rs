@@ -891,6 +891,66 @@ fn treats_dangling_symlink_destinations_as_existing_paths() {
     );
 }
 
+/// A device or a pipe named as the output is written in place: there is no
+/// file to protect, and replacing the device node would be wrong even with
+/// `--force`.
+#[cfg(unix)]
+#[test]
+fn writes_devices_and_pipes_in_place_without_force() {
+    for args in [
+        vec!["-o", "/dev/null", "-f", "svg"],
+        vec!["-o", "/dev/null", "-f", "png", "--force"],
+        vec![
+            "-o",
+            "-",
+            "-f",
+            "svg",
+            "--report-format",
+            "json",
+            "--report-output",
+            "/dev/null",
+        ],
+    ] {
+        let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+            .arg(corpus_scene("basic-shapes.excalidraw"))
+            .args(&args)
+            .output()
+            .expect("render to /dev/null");
+        assert!(result.status.success(), "{args:?}: {result:?}");
+        assert_eq!(String::from_utf8_lossy(&result.stderr), "", "{args:?}");
+    }
+    let null = fs::metadata("/dev/null").expect("/dev/null exists");
+    assert!(!null.is_file(), "/dev/null was replaced by a file");
+
+    let scratch = temp_directory_named("fifo-destination");
+    let fifo = scratch.path().join("pipe");
+    let made = Command::new("mkfifo")
+        .arg(&fifo)
+        .status()
+        .expect("run mkfifo");
+    assert!(made.success());
+    let reader = {
+        let fifo = fifo.clone();
+        std::thread::spawn(move || fs::read(fifo).expect("read the pipe"))
+    };
+    let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg(corpus_scene("basic-shapes.excalidraw"))
+        .arg("-o")
+        .arg(&fifo)
+        .args(["-f", "svg"])
+        .output()
+        .expect("render to a pipe");
+    if !result.status.success() {
+        // Release the reader, still waiting for a writer.
+        drop(fs::OpenOptions::new().write(true).open(&fifo));
+    }
+    let piped = reader.join().expect("the reader finishes");
+    assert!(result.status.success(), "{result:?}");
+    assert_eq!(String::from_utf8_lossy(&result.stderr), "");
+    assert!(piped.starts_with(b"<svg"), "{}", piped.len());
+    assert_no_staging_files(scratch.path());
+}
+
 #[test]
 fn rejects_scene_and_asset_payloads_beyond_fixed_transport_bounds() {
     let scratch = temp_directory_named("bounded-reads");

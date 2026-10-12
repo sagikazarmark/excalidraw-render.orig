@@ -15,10 +15,10 @@ use unicode_normalization::UnicodeNormalization as _;
 
 use crate::human::{self, HumanReport};
 use crate::{
-    deliver_report_bytes, destination_exists, emergency_report_failure, emit_failure, json_line,
-    not_a_directory, parse_asset_declarations, path_conflict, path_entry_exists,
-    read_bounded_asset, read_scene, report_output, same_path, select_renderer, sha256,
-    stage_report_file, validate_paths, validate_report_options, write_stdout, write_stream,
+    deliver_report_bytes, destination_exists, destination_is_taken, emergency_report_failure,
+    emit_failure, json_line, not_a_directory, parse_asset_declarations, path_conflict,
+    path_entry_exists, read_bounded_asset, read_scene, report_output, same_path, select_renderer,
+    sha256, stage_report_file, validate_paths, validate_report_options, write_stdout, write_stream,
     ArtifactDescriptor, Cli, CliDetails, CliError, CliOperation, DeliveryError, DeliveryRole,
     DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError, ReportFormat, SelectedIdentity,
     StagedFile, ASSETS, EXIT_OPERATIONAL, EXIT_USAGE, METADATA, OUTPUT, RENDERING, REPORTING,
@@ -318,7 +318,7 @@ fn prepare_frame_list(
         // List mode writes no artifact, so the only aliasing risk is the report
         // overwriting the scene it is reporting on.
         validate_paths(&frames.input, "-", report_path, &BTreeMap::new())?;
-        if path_entry_exists(Path::new(report_path)) && !frames.force {
+        if destination_is_taken(Path::new(report_path)) && !frames.force {
             return Err(destination_exists(DeliveryRole::Report, report_path));
         }
     }
@@ -591,7 +591,7 @@ fn prepare_and_render_frames(
             return Err(failure);
         }
     }
-    if report_path != "stderr" && path_entry_exists(Path::new(report_path)) && !frames.force {
+    if report_path != "stderr" && destination_is_taken(Path::new(report_path)) && !frames.force {
         return Err(destination_exists(DeliveryRole::Report, report_path));
     }
     let scene = read_scene(&frames.input)?;
@@ -623,7 +623,7 @@ fn prepare_and_render_frames(
     )?;
     let destination_collisions = destinations
         .iter()
-        .map(|destination| path_entry_exists(destination) && !frames.force)
+        .map(|destination| destination_is_taken(destination) && !frames.force)
         .collect::<Vec<_>>();
 
     let limits = ResourceLimits::default();
@@ -731,7 +731,7 @@ fn prepare_and_render_frames(
                     byte_length: bytes.len(),
                     sha256: sha256(bytes),
                 });
-                if initial_collision || path_entry_exists(destination) && !frames.force {
+                if initial_collision || destination_is_taken(destination) && !frames.force {
                     had_failure = true;
                     entry.error = Some(frame_destination_error(destination));
                     entries.push((entry, None));
@@ -1717,13 +1717,15 @@ mod tests {
         cases.push(some(case_variants("abcdefghijk", 2048)));
         // Generated suffixes collide with literal names, before and after.
         cases.push(some(
-            ["A-2", "A", "A", "a-3", "A", "A-5", "A", "A", "a", "A-4", "A-10", "A"]
-                .iter()
-                .map(|name| (*name).to_owned())
-                .chain(std::iter::repeat_n("A".to_owned(), 30))
-                .chain((2..40).map(|suffix| format!("A-{suffix}")))
-                .chain(std::iter::repeat_n("a".to_owned(), 30))
-                .collect(),
+            [
+                "A-2", "A", "A", "a-3", "A", "A-5", "A", "A", "a", "A-4", "A-10", "A",
+            ]
+            .iter()
+            .map(|name| (*name).to_owned())
+            .chain(std::iter::repeat_n("A".to_owned(), 30))
+            .chain((2..40).map(|suffix| format!("A-{suffix}")))
+            .chain(std::iter::repeat_n("a".to_owned(), 30))
+            .collect(),
         ));
         // Roots near the 120-byte budget are truncated differently once the
         // suffix gains a digit; ASCII and two-byte characters.
@@ -1806,7 +1808,10 @@ mod tests {
     #[test]
     fn the_largest_batch_of_one_name_is_named_in_one_pass() {
         let variants = case_variants("abcdefghijklmn", 16_384);
-        let names = variants.iter().map(|name| Some(name.as_str())).collect::<Vec<_>>();
+        let names = variants
+            .iter()
+            .map(|name| Some(name.as_str()))
+            .collect::<Vec<_>>();
         let scene = scene_with_frame_names(&names);
         let frames = scene.frames().collect::<Vec<_>>();
         let basenames = frame_output_basenames(&frames, None);

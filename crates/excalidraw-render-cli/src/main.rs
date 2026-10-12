@@ -725,7 +725,7 @@ fn run_standalone(cli: &Cli) -> u8 {
             )
         }
     };
-    if report_output(cli) != "stderr" && path_entry_exists(Path::new(report_output(cli))) {
+    if report_output(cli) != "stderr" && destination_is_taken(Path::new(report_output(cli))) {
         return emit_failure(
             cli,
             None,
@@ -1168,6 +1168,32 @@ fn path_entry_exists(path: &Path) -> bool {
     fs::symlink_metadata(path).is_ok()
 }
 
+/// Whether writing to `path` would destroy something only `--force` may
+/// replace: any existing entry, a dangling symlink included, except a device
+/// or pipe, which is written in place.
+fn destination_is_taken(path: &Path) -> bool {
+    path_entry_exists(path) && !is_stream_destination(path)
+}
+
+/// Whether `path` is, or links to, a character device or a pipe (such as
+/// `/dev/null`): a stream the artifact is written into, never a file to
+/// stage beside and replace.
+fn is_stream_destination(path: &Path) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::FileTypeExt;
+        fs::metadata(path).is_ok_and(|metadata| {
+            let kind = metadata.file_type();
+            kind.is_char_device() || kind.is_fifo()
+        })
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = path;
+        false
+    }
+}
+
 fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Failure> {
     if output != "-" {
         check_output_file_location(output)?;
@@ -1181,7 +1207,7 @@ fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Fai
         {
             continue;
         }
-        if path_entry_exists(Path::new(path)) && !force {
+        if destination_is_taken(Path::new(path)) && !force {
             return Err(destination_exists(role, path));
         }
     }
@@ -1635,7 +1661,7 @@ fn report_destination_is_safe(cli: &Cli) -> bool {
     if report == "-" {
         return false;
     }
-    if report == "stderr" || (path_entry_exists(Path::new(report)) && !cli.force) {
+    if report == "stderr" || (destination_is_taken(Path::new(report)) && !cli.force) {
         return report == "stderr";
     }
     if cli
@@ -1900,11 +1926,18 @@ fn write_stream_tracked(
 }
 
 /// A fully written, synced temporary sibling of one destination. Only its path
-/// is held, so staging many frames never holds one descriptor per frame.
+/// is held, so staging many frames never holds one descriptor per frame. A
+/// device or pipe destination has no sibling to stage: its bytes are held and
+/// written in place on delivery.
 struct StagedFile {
-    temporary: TempPath,
+    staged: Staged,
     destination: PathBuf,
     replace: bool,
+}
+
+enum Staged {
+    Temporary(TempPath),
+    Stream(Vec<u8>),
 }
 
 impl StagedFile {
@@ -1922,6 +1955,13 @@ impl StagedFile {
         bytes: &[u8],
         replace: bool,
     ) -> Result<Self, DeliveryError> {
+        if is_stream_destination(destination) {
+            return Ok(Self {
+                staged: Staged::Stream(bytes.to_vec()),
+                destination: destination.to_path_buf(),
+                replace,
+            });
+        }
         let name = destination
             .file_name()
             .and_then(|name| name.to_str())
@@ -1941,23 +1981,30 @@ impl StagedFile {
             .and_then(|()| file.as_file().sync_all())
             .map_err(|error| DeliveryError::new(CliOperation::Flush, &error))?;
         Ok(Self {
-            temporary: file.into_temp_path(),
+            staged: Staged::Temporary(file.into_temp_path()),
             destination: destination.to_path_buf(),
             replace,
         })
     }
 
     /// Atomically publishes the staged file; without `replace` an existing
-    /// destination, even one created after staging, is never overwritten.
+    /// destination, even one created after staging, is never overwritten. A
+    /// device or pipe is opened and written instead.
     fn deliver(self) -> Result<(), DeliveryError> {
-        if self.replace {
-            self.temporary
+        match self.staged {
+            Staged::Stream(bytes) => {
+                let mut stream = fs::OpenOptions::new()
+                    .write(true)
+                    .open(&self.destination)
+                    .map_err(|error| DeliveryError::new(CliOperation::Open, &error))?;
+                write_stream(&mut stream, &bytes)
+            }
+            Staged::Temporary(temporary) if self.replace => temporary
                 .persist(&self.destination)
-                .map_err(|error| DeliveryError::new(CliOperation::Replace, &error.error))
-        } else {
-            self.temporary
+                .map_err(|error| DeliveryError::new(CliOperation::Replace, &error.error)),
+            Staged::Temporary(temporary) => temporary
                 .persist_noclobber(&self.destination)
-                .map_err(|error| DeliveryError::new(CliOperation::Create, &error.error))
+                .map_err(|error| DeliveryError::new(CliOperation::Create, &error.error)),
         }
     }
 }
