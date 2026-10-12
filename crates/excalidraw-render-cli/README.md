@@ -39,7 +39,9 @@ excalidraw-render frames drawing.excalidraw -o frames --format png
 The output extension selects the format, or use `--format`. Input and output
 may be `-` for standard input and output. An existing output is kept unless you
 pass `--force`. For large drawings, `--max-dimension 4096` bounds the PNG/PDF
-size; it replaces `--scale`, so pass one or the other. `frames --list` prints
+size; it replaces `--scale`, so pass one or the other. Very large drawings may
+need `--max-dimension` for PNG output, or render them to SVG or PDF.
+`frames --list` prints
 the frames and the file names an export would write to standard output.
 
 Warnings describe substitutions, omissions, and fallbacks the renderer made;
