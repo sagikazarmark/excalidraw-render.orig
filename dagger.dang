@@ -409,6 +409,18 @@ type Test {
   }
 
   """
+  Test the builds that leave out the `png` or `pdf` feature (ADR-0023): their
+  dependency graphs drop those formats' libraries, a request for a left-out
+  format fails with `request.format-unavailable`, and every format they keep
+  renders the public scene corpus to the default build's bytes.
+  """
+  features: String! @check {
+    self.compiled
+      .withExec(["bash", "tools/ci/check-format-features.sh"])
+      .combinedOutput
+  }
+
+  """
   Execute the render tier: the parity harnesses and the fixed parser ceilings.
   """
   render: String! @check {

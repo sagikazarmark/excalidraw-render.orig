@@ -39,6 +39,7 @@ jobs:
                     - packaging:snapshot-replay
                     - test:doc
                     - test:fast
+                    - test:features
                     - test:render
                     - wasm:cli
                     - wasm:no-cjk
