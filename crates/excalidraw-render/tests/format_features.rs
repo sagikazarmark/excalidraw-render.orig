@@ -1,6 +1,9 @@
 //! A build without the `png` or `pdf` feature keeps the whole request API, but
 //! refuses to build a request for the format it leaves out (ADR-0023). This
-//! module compiles only in such a build.
+//! binary is empty in any other; `tools/ci/check-format-features.sh` runs it
+//! in each reduced build.
+
+#![cfg(not(all(feature = "png", feature = "pdf")))]
 
 use excalidraw_render::{
     DiagnosticDetails, ErrorCode, ErrorFamily, FrameRenderRequest, OutputFormat, PdfOptions,
