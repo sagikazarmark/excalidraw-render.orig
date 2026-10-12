@@ -19,9 +19,11 @@ use tempfile::TempPath;
 
 mod frames;
 mod human;
+mod pixel_limit;
 
 use frames::{run_frames, FramesCli};
 use human::HumanReport;
+use pixel_limit::{PixelLimit, SceneSize};
 
 const EXIT_OPERATIONAL: u8 = 1;
 const EXIT_USAGE: u8 = 2;
@@ -270,21 +272,25 @@ impl ReportError {
     }
 
     /// Advice the code alone does not imply: only the message tells a PNG or
-    /// PDF the sizing shrank to nothing from other encoding failures.
-    fn sizing_hint(&self) -> Option<&'static str> {
+    /// PDF the sizing shrank to nothing from other encoding failures, and
+    /// only the details how far a PNG is over the pixel limit.
+    fn specific_hint(&self) -> Option<String> {
         match self {
-            Self::Library(error) => human::sizing_hint(error.code().as_str(), error.message()),
+            Self::Library(error) => human::sizing_hint(error.code().as_str(), error.message())
+                .map(str::to_owned)
+                .or_else(|| PixelLimit::of(error).map(|limit| limit.hint(None))),
             Self::Cli(_) => None,
         }
     }
 
     /// The message a person reads: the report message, with the element a
-    /// library failure names.
+    /// library failure names, or a PNG over the pixel limit in pixels.
     fn human_message(&self) -> String {
         match self {
-            Self::Library(error) => match error.element_id() {
-                Some(element) => format!("{} (element {element})", error.message()),
-                None => error.message().to_owned(),
+            Self::Library(error) => match (PixelLimit::of(error), error.element_id()) {
+                (Some(limit), _) => limit.message(None),
+                (None, Some(element)) => format!("{} (element {element})", error.message()),
+                (None, None) => error.message().to_owned(),
             },
             Self::Cli(error) => error.message.clone(),
         }
@@ -851,12 +857,43 @@ fn run_render(
     let request = build_request(cli, format, assets)?;
     let outcome = renderer.render(&scene, &request).map_err(|error| {
         let diagnostics = error.report().diagnostics().to_vec();
-        let mut failure = Failure::library(error.descriptor(), EXIT_OPERATIONAL);
+        let descriptor = error.descriptor();
+        let pixel_limit = PixelLimit::of(&descriptor);
+        let mut failure = Failure::library(descriptor, EXIT_OPERATIONAL);
         failure.diagnostics = diagnostics;
+        // A person is told the PNG's size and the largest that fits, which
+        // takes the scene's size; programs get the report as it is.
+        if let Some(limit) = pixel_limit.filter(|_| cli.report_format != ReportFormat::Json) {
+            let scene = scene_size(&renderer, &scene, &request);
+            failure.human_message = Some(limit.message(scene));
+            failure.hints.push(limit.hint(scene));
+        }
         failure
     })?;
     let (artifact, report) = outcome.into_parts();
     Ok((artifact.into_bytes(), report.diagnostics().to_vec()))
+}
+
+/// The size of `scene` before `request`'s sizing (its padding and frame
+/// options applied), from the view box of a plain SVG export of it, which
+/// costs a fraction of the PNG; `None` when that export fails.
+fn scene_size(
+    renderer: &Renderer,
+    scene: &SceneDocument,
+    request: &RenderRequest,
+) -> Option<SceneSize> {
+    let probe = RenderRequest::builder(OutputFormat::Svg)
+        .padding(request.padding())
+        .frame_options(request.frame_options().clone())
+        .build()
+        .ok()?;
+    let svg = renderer.render(scene, &probe).ok()?;
+    let (width, height) = pixel_limit::svg_logical_size(svg.artifact().bytes())?;
+    Some(SceneSize {
+        width,
+        height,
+        sizing: request.sizing(),
+    })
 }
 
 /// The renderer for `--compatibility-revision`, which accepts only the one
@@ -1704,13 +1741,20 @@ fn failure_report_bytes(
         }
         text.push_str(&human::error_line(&message, code));
         if mode == ReportFormat::Human {
+            // Advice the CLI worked out for this failure comes first; the
+            // error's own details, then its code, are the fallbacks.
+            let specific = failure
+                .hints
+                .is_empty()
+                .then(|| failure.error.specific_hint())
+                .flatten();
             text.push_str(&human::hint_lines(
                 code,
                 failure
                     .hints
                     .iter()
                     .map(String::as_str)
-                    .chain(failure.error.sizing_hint()),
+                    .chain(specific.as_deref()),
             ));
         }
         return text.into_bytes();

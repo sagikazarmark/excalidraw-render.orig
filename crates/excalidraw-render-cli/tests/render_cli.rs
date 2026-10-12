@@ -281,7 +281,8 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
         stderr.starts_with("error: ") && stderr.contains("[resource.raster-surface-exceeded]\n"),
         "{stderr}"
     );
-    assert!(stderr.contains("hint: use --max-dimension"), "{stderr}");
+    // The scene fits unscaled, so the fix is a lower scale.
+    assert!(stderr.contains("hint: use --scale "), "{stderr}");
 
     // A sizing that rounds the output to nothing names the cause and the fix.
     for (name, sizing, unit) in [
@@ -434,6 +435,74 @@ fn hints_add_what_the_error_does_not_say() {
          hint: render the whole scene instead: `excalidraw-render INPUT -o FILE`\n"
     );
     assert!(!frames.exists());
+}
+
+/// A PNG over the pixel limit is sized in pixels and megapixels, and the
+/// hint names the largest `--max-dimension` (or, for a scene that fits
+/// unscaled, `--scale`) that fits; one more does not. The JSON report keeps
+/// the library's error.
+#[test]
+fn an_oversized_png_names_its_size_and_the_largest_that_fits() {
+    let scratch = temp_directory_named("oversized-png");
+    let temp = scratch.path();
+    let rectangle = |name: &str, width: u32, height: u32| {
+        let path = temp.join(name);
+        fs::write(
+            &path,
+            format!(
+                r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"r","type":"rectangle","x":0,"y":0,"width":{width},"height":{height},"roughness":0,"updated":1}}],"appState":{{}},"files":{{}}}}"#
+            ),
+        )
+        .expect("write the scene");
+        path.to_str().expect("the scratch path is UTF-8").to_owned()
+    };
+    let render = |args: &[&str]| {
+        let result = cli(args);
+        assert_eq!(result.status.code(), Some(1), "{args:?}: {result:?}");
+        String::from_utf8(result.stderr).expect("the report is UTF-8")
+    };
+
+    // 7020 × 5020 with the default padding: too large unscaled.
+    let large = rectangle("large.excalidraw", 7000, 5000);
+    assert_eq!(
+        render(&[&large, "-o", "-", "-f", "png"]),
+        "error: the PNG would be 7020 × 5020 pixels (35.2 megapixels), over the \
+         33.6-megapixel limit [resource.raster-surface-exceeded]\n\
+         hint: use --max-dimension 6850, the largest size that fits, or render to SVG or \
+         PDF instead\n"
+    );
+    // A maximum of 6850 is 6850 × 4898 = 33551300 pixels; one more is over.
+    assert!(
+        render(&[&large, "-o", "-", "-f", "png", "--max-dimension", "6851"]).starts_with(
+            "error: the PNG would be 6851 × 4899 pixels (33.56 megapixels), over the \
+             33.55-megapixel limit [resource.raster-surface-exceeded]\n"
+        )
+    );
+
+    // 4020 × 3020 fits unscaled, so a lower scale is the fix for --scale 2.
+    let medium = rectangle("medium.excalidraw", 4000, 3000);
+    assert_eq!(
+        render(&[&medium, "-o", "-", "-f", "png", "--scale", "2"]),
+        "error: the PNG would be 8040 × 6040 pixels (48.6 megapixels), over the \
+         33.6-megapixel limit [resource.raster-surface-exceeded]\n\
+         hint: use --scale 1.66, the largest scale that fits, or render to SVG or PDF \
+         instead\n"
+    );
+    assert!(
+        render(&[&medium, "-o", "-", "-f", "png", "--scale", "1.67"])
+            .contains("[resource.raster-surface-exceeded]")
+    );
+
+    // The report for programs is unchanged.
+    let json = cli(&[&large, "-o", "-", "-f", "png", "--report-format", "json"]);
+    let report: serde_json::Value =
+        serde_json::from_slice(&json.stderr).expect("JSON failure report");
+    assert_eq!(
+        report["error"]["message"],
+        "required PNG raster surface exceeds its configured limit: needs 35240400 pixels, \
+         but max_raster_surface_pixels is 33554432"
+    );
+    assert_eq!(report["error"]["details"]["configured"], 33_554_432);
 }
 
 #[test]

@@ -82,8 +82,10 @@ pub(crate) fn code_hint(code: &str) -> Option<&'static str> {
             "pass --format svg, png, or pdf, or name the output with a .svg, .png, or .pdf extension"
         }
         "cli.frame-no-match" => "run `excalidraw-render frames INPUT --list` to see the frames",
+        // A PNG canvas gets advice sized from the error; this is for the
+        // rest, such as content a PDF rasterizes.
         "resource.raster-surface-exceeded" => {
-            "use --max-dimension N (for example 4096) or a lower --scale to shrink the image"
+            "shrink the output with a lower --max-dimension or --scale, or render to SVG instead"
         }
         "resource.svg-dimensions-exceeded" => "use a lower --scale",
         "pdf.raster-fallback-forbidden" => {

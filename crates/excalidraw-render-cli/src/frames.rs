@@ -1235,25 +1235,26 @@ fn frame_batch_report_bytes(
                 human.notes(),
                 human::diagnostics(&diagnostics, human.verbose)
             );
+            let mut reported = false;
             let mut codes = Vec::new();
             let mut hints = Vec::new();
             for (entry, _) in entries {
                 if let Some(error) = &entry.error {
+                    reported = true;
                     text.push_str(&human::error_line(
                         &frame_error_message(entry, error),
                         error.code(),
                     ));
-                    if !codes.contains(&error.code()) {
-                        codes.push(error.code());
-                    }
-                    if let Some(hint) = error.sizing_hint() {
-                        if !hints.contains(&hint) {
-                            hints.push(hint);
-                        }
+                    // An error's own advice replaces its code's general one.
+                    match error.specific_hint() {
+                        Some(hint) if !hints.contains(&hint) => hints.push(hint),
+                        Some(_) => {}
+                        None if !codes.contains(&error.code()) => codes.push(error.code()),
+                        None => {}
                     }
                 }
             }
-            if status != "success" && codes.is_empty() {
+            if status != "success" && !reported {
                 text.push_str(&human::error_line(
                     "frame batch delivery failed",
                     "cli.output-write-failed",
