@@ -235,6 +235,7 @@ impl DrawableShape {
         matches!(self, Self::Curve | Self::Polygon)
     }
 
+    #[cfg(any(feature = "png", feature = "pdf"))]
     pub(super) const fn canvas_uses_even_odd_fill(self) -> bool {
         matches!(self, Self::Curve | Self::Path | Self::Polygon)
     }

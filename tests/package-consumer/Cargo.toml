@@ -8,8 +8,10 @@ publish = false
 default = ["cjk"]
 cjk = ["excalidraw-render/cjk"]
 
+# `cjk` is the consumer's own feature so `check-no-cjk.sh` can turn it off;
+# the facade renders every format, so PNG and PDF stay on in both builds.
 [dependencies]
-excalidraw-render = { path = "../../target/package/excalidraw-render-0.1.0", version = "=0.1.0", default-features = false }
+excalidraw-render = { path = "../../target/package/excalidraw-render-0.1.0", version = "=0.1.0", default-features = false, features = ["png", "pdf"] }
 
 [dev-dependencies]
 base64 = "=0.22.1"

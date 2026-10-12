@@ -4,18 +4,21 @@
 //! planning-phase working-byte reservations, and taking the staged output. Each
 //! method here owns one format's plan construction and the semantic accounting
 //! that plan implies. They stay `RenderSession` methods because charging the
-//! resource meter is the session's job, not the plan's.
+//! resource meter is the session's job, not the plan's. The PNG and PDF
+//! methods exist only in builds with that format's feature.
 
-use crate::resource_accounting::{
-    ResourceContext, ResourceDelta, ResourcePhase, ResourceRecordKind,
-};
+#[cfg(feature = "png")]
+use crate::resource_accounting::ResourceDelta;
+use crate::resource_accounting::{ResourceContext, ResourcePhase, ResourceRecordKind};
 use crate::{ErrorCode, RenderError, RenderRequest, SceneDocument};
 
 use super::font_demand::{
     build_svg_font_bundle, release_svg_font_encoding_records, svg_font_demand,
     svg_font_demand_estimates, svg_font_text_order,
 };
+#[cfg(feature = "pdf")]
 use super::pdf::PdfPlan;
+#[cfg(feature = "png")]
 use super::png::PngPlan;
 use super::resolve::{ResolvedScene, SemanticWorkingRecord};
 use super::svg::SvgPlan;
@@ -210,6 +213,7 @@ impl RenderSession {
     }
 
     /// Plans and stages one PNG artifact, including its raster surface budget.
+    #[cfg(feature = "png")]
     pub(super) fn encode_png(
         &mut self,
         resolved: ResolvedScene,
@@ -623,6 +627,7 @@ impl RenderSession {
     }
 
     /// Plans and stages one PDF artifact, including any raster fallbacks.
+    #[cfg(feature = "pdf")]
     pub(super) fn encode_pdf(
         &mut self,
         resolved: ResolvedScene,
@@ -782,6 +787,7 @@ impl RenderSession {
 /// The clipping frame's identity for a shared frame clip mask's ledger events:
 /// its element id and JSON pointer, or the scene itself when the frame emits no
 /// element of its own.
+#[cfg(feature = "png")]
 fn frame_clip_mask_source<'a>(
     plan: &'a PngPlan,
     mask: &super::png::PngFrameClipMask,
@@ -791,6 +797,7 @@ fn frame_clip_mask_source<'a>(
         .unwrap_or((None, ""))
 }
 
+#[cfg(feature = "png")]
 fn frame_clip_mask_surface<'a>(
     frame_id: Option<&'a str>,
     frame_pointer: &'a str,
@@ -805,6 +812,7 @@ fn frame_clip_mask_surface<'a>(
 }
 
 /// The canonical raster mask surface record: `256 + pixels`.
+#[cfg(feature = "png")]
 fn frame_clip_mask_surface_bytes(mask: &super::png::PngFrameClipMask) -> u64 {
     256_u64.saturating_add(mask.pixels)
 }

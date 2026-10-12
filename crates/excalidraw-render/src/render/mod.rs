@@ -48,11 +48,14 @@ mod metadata;
 pub(crate) use metadata::{test_faults, Stage as MetadataStage};
 mod notices;
 mod number_format;
+#[cfg(feature = "pdf")]
 mod pdf;
 mod plan;
 #[cfg(test)]
 mod plan_tests;
+#[cfg(feature = "png")]
 mod png;
+#[cfg(any(feature = "png", feature = "pdf"))]
 mod png_encoder;
 mod prepared;
 pub(crate) use prepared::{FramePreparationError, PreparedFrameRender};
@@ -68,16 +71,19 @@ mod resolution;
 mod resolve;
 mod rough;
 mod svg;
+#[cfg(any(feature = "png", feature = "pdf"))]
 mod svg_filter_work;
 mod svg_fonts;
 #[cfg(test)]
 mod test_support;
+#[cfg(all(test, any(feature = "png", feature = "pdf")))]
+use test_support::resolve_with_svg_trees_for_test;
 #[cfg(test)]
 use test_support::{
     font_subset_cache_stats, font_subset_qualification_error, new_font_subset_cache,
     prepared_font_subset_cache_stats, render_font_subset_qualification_trace,
     render_frame_with_trace, render_with_trace, render_with_trace_and_font_subset_cache,
-    resolve_for_test, resolve_with_svg_trees_for_test,
+    resolve_for_test,
 };
 #[cfg(test)]
 mod tests;
@@ -285,6 +291,9 @@ impl ResourceAccount for RenderResourceAccount<'_> {
     }
 }
 
+/// An animation diagnostic shared resolution queues for a PNG request; only
+/// the PNG encoder flushes the queue, so a build without it reads no field.
+#[cfg_attr(not(feature = "png"), allow(dead_code))]
 struct PendingAnimationDiagnostic {
     diagnostic: PendingDiagnostic,
     local_owner: String,
@@ -443,8 +452,9 @@ impl RenderSession {
     ) -> Result<Vec<u8>, RenderError> {
         match request.format() {
             OutputFormat::Svg => self.validate_svg_dimensions(&resolved, request)?,
+            #[cfg(feature = "pdf")]
             OutputFormat::Pdf => self.validate_pdf_dimensions(&resolved, request)?,
-            OutputFormat::Png => {}
+            _ => {}
         }
         let plan_base = ResourceContext::new(ResourcePhase::FormatPlanning, "format_plan_base", "")
             .with_record(ResourceRecordKind::FormatPlanBase);
@@ -505,8 +515,20 @@ impl RenderSession {
             OutputFormat::Svg => {
                 self.encode_svg(resolved, scene, request, semantic_working, svg_font_payload)?;
             }
+            #[cfg(feature = "png")]
             OutputFormat::Png => self.encode_png(resolved, scene, request, semantic_working)?,
+            #[cfg(feature = "pdf")]
             OutputFormat::Pdf => self.encode_pdf(resolved, scene, request, semantic_working)?,
+            // A request for a format this build leaves out never builds
+            // (`request.format-unavailable`), so no render reaches this arm.
+            #[cfg(not(all(feature = "png", feature = "pdf")))]
+            _ => {
+                return Err(self.internal_failure(
+                    request.format(),
+                    "the requested output format is not enabled in this build",
+                    "",
+                ));
+            }
         }
 
         if let Some(profile_selection) = pdf_profile_selection {
@@ -526,6 +548,7 @@ impl RenderSession {
     /// saturated: the area is then reported as the checked-overflow lower
     /// bound `configured + 1` (spec sections 11.1 and 13.2), not the
     /// saturated product.
+    #[cfg(feature = "png")]
     fn required_raster_surface_failure(
         &mut self,
         request: &RenderRequest,
@@ -623,6 +646,7 @@ impl RenderSession {
         )
     }
 
+    #[cfg(feature = "png")]
     fn flush_pending_png_animation_diagnostics(
         &mut self,
         request: &RenderRequest,
@@ -647,6 +671,7 @@ impl RenderSession {
         Ok(())
     }
 
+    #[cfg(feature = "png")]
     fn release_pending_png_animation_diagnostic(
         &mut self,
         request: &RenderRequest,
@@ -783,6 +808,7 @@ impl RenderSession {
         std::mem::take(&mut self.report)
     }
 
+    #[cfg(any(feature = "png", feature = "pdf", test))]
     fn emit_premeasured_output(
         &mut self,
         request: &RenderRequest,
@@ -1006,6 +1032,7 @@ impl RenderSession {
         Ok(())
     }
 
+    #[cfg(feature = "pdf")]
     fn validate_pdf_dimensions(
         &mut self,
         resolved: &ResolvedScene,

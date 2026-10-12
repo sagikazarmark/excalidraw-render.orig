@@ -66,6 +66,7 @@
 //! assert!(svg.starts_with(b"<svg"));
 //!
 //! // Export every frame as a PNG no larger than 1024 pixels on either side.
+//! # #[cfg(feature = "png")] {
 //! let request = FrameRenderRequest::builder(OutputFormat::Png)
 //!     .sizing(Sizing::MaxDimension(1024.0))
 //!     .build()?;
@@ -75,6 +76,7 @@
 //!     println!("{}: {} bytes", frame.name().unwrap_or("unnamed"), png.len());
 //!     assert!(png.starts_with(b"\x89PNG"));
 //! }
+//! # }
 //! # Ok(())
 //! # }
 //! ```
@@ -134,14 +136,35 @@
 //!   opt-level = 2
 //!   ```
 //!
-//! # Features
+//! # Cargo features
 //!
-//! - **`cjk`** (default) bundles Xiaolai, Excalifont's Chinese, Japanese and
-//!   Korean fallback font (about 12 MiB). Without it, a render whose text
-//!   needs Xiaolai fails with [`ErrorCode::RENDER_FONT_UNAVAILABLE`]
+//! All three features are on by default. The API is the same with any
+//! combination of them, so Cargo's feature unification can never change what
+//! compiles; a feature only decides which requests a build can serve, and
+//! turning one off never changes the bytes of the output that remains.
+//!
+//! - **`png`** renders [`OutputFormat::Png`]. It brings the `resvg`
+//!   rasterizer and `tiny-skia`.
+//! - **`pdf`** renders [`OutputFormat::Pdf`]. It brings the Krilla PDF writer,
+//!   and the rasterizer for the isolated raster fallbacks of embedded SVG
+//!   effects.
+//! - **`cjk`** bundles Xiaolai, Excalifont's Chinese, Japanese and Korean
+//!   fallback font (about 12 MiB). Without it, a render whose text needs
+//!   Xiaolai fails with [`ErrorCode::RENDER_FONT_UNAVAILABLE`]
 //!   (`render.font-unavailable`, a [`RenderErrorCategory::Capability`]
 //!   failure) rather than substituting another font. Every other font,
 //!   including Noto Emoji, is always bundled.
+//!
+//! SVG output is always available. Without `png` or `pdf`, building a
+//! [`RenderRequest`] or [`FrameRenderRequest`] for that format fails with
+//! [`ErrorCode::REQUEST_FORMAT_UNAVAILABLE`] (`request.format-unavailable`),
+//! whose message names the feature to enable. An SVG-only build, for example
+//! for WebAssembly, depends on the renderer like this:
+//!
+//! ```toml
+//! [dependencies]
+//! excalidraw-render = { version = "0.1", default-features = false, features = ["cjk"] }
+//! ```
 
 #![warn(missing_docs)]
 #![warn(clippy::missing_errors_doc)]

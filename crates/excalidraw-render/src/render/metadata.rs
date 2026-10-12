@@ -229,6 +229,7 @@ impl ArtifactMetadata {
         self.manifest.as_deref()
     }
 
+    #[cfg(any(feature = "pdf", test))]
     pub(super) fn canonical_scene(&self) -> Option<&[u8]> {
         self.scene.as_ref().map(|scene| scene.canonical.as_slice())
     }

@@ -24,8 +24,14 @@ include = ["/src/", "/LICENSES/", "/LICENSE-BUNDLE.txt", "/README.md"]
 workspace = true
 
 [features]
-default = ["cjk"]
+default = ["cjk", "png", "pdf"]
 cjk = ["excalidraw-fonts/cjk"]
+# The output formats besides SVG (ADR-0023). The public API is the same with
+# or without them: a request for a format that is off fails to build with
+# `request.format-unavailable`. Both formats rasterize (PDF for its isolated
+# fallbacks), so each enables the rasterizer rather than one implying the other.
+png = ["dep:resvg", "dep:tiny-skia"]
+pdf = ["dep:krilla", "dep:resvg", "dep:tiny-skia"]
 
 # docs.rs builds for every tier-1 target by default. The API is the same on
 # each; build only the release-qualified target (ADR-0006).
@@ -41,7 +47,7 @@ cssparser-color.workspace = true
 crc32fast.workspace = true
 gif.workspace = true
 image-webp.workspace = true
-krilla.workspace = true
+krilla = { workspace = true, optional = true }
 libm.workspace = true
 miniz_oxide.workspace = true
 moxcms.workspace = true
@@ -50,14 +56,14 @@ simplecss.workspace = true
 sha2.workspace = true
 skera.workspace = true
 png.workspace = true
-resvg.workspace = true
+resvg = { workspace = true, optional = true }
 roxmltree.workspace = true
 harfrust.workspace = true
 ttf-parser.workspace = true
 ryu-js.workspace = true
 unicode-bidi.workspace = true
 svgtypes.workspace = true
-tiny-skia.workspace = true
+tiny-skia = { workspace = true, optional = true }
 ttf2woff2.workspace = true
 usvg.workspace = true
 wuff.workspace = true
@@ -68,6 +74,10 @@ zune-jpeg.workspace = true
 [dev-dependencies]
 excalidraw-render-compare = { path = "../excalidraw-render-compare" }
 jpeg-encoder.workspace = true
+# Tests rasterize SVG artifacts to judge them, so SVG coverage keeps the
+# viewer library when the `png` and `pdf` features that use it are off.
+resvg.workspace = true
+tiny-skia.workspace = true
 # Test-only: reports reach applications through `serde::Serialize`, so each
 # application chooses its own serde_json.
 serde_json.workspace = true
