@@ -15,20 +15,13 @@ use crate::{DiagnosticDetails, ErrorCode, ErrorDescriptor, ResourceLimits};
 pub struct RequestError {
     code: ErrorCode,
     message: Box<str>,
-    field: &'static str,
-    asset_id: Option<String>,
-    option: Option<&'static str>,
+    /// Always [`DiagnosticDetails::RequestValue`].
+    details: Box<DiagnosticDetails>,
 }
 
 impl RequestError {
     pub(crate) fn new(code: ErrorCode, message: impl Into<Box<str>>, field: &'static str) -> Self {
-        Self {
-            code,
-            message: message.into(),
-            field,
-            asset_id: None,
-            option: None,
-        }
+        Self::with_value(code, message, field, None, None)
     }
 
     fn for_option(
@@ -37,13 +30,7 @@ impl RequestError {
         field: &'static str,
         option: &'static str,
     ) -> Self {
-        Self {
-            code,
-            message: message.into(),
-            field,
-            asset_id: None,
-            option: Some(option),
-        }
+        Self::with_value(code, message, field, None, Some(option))
     }
 
     fn for_asset(
@@ -52,12 +39,36 @@ impl RequestError {
         asset_id: String,
         option: Option<&'static str>,
     ) -> Self {
+        Self::with_value(code, message, "supplemental_assets", Some(asset_id), option)
+    }
+
+    fn with_value(
+        code: ErrorCode,
+        message: impl Into<Box<str>>,
+        field: &'static str,
+        asset_id: Option<String>,
+        option: Option<&'static str>,
+    ) -> Self {
         Self {
             code,
             message: message.into(),
-            field: "supplemental_assets",
-            asset_id: Some(asset_id),
-            option,
+            details: Box::new(DiagnosticDetails::RequestValue {
+                field,
+                asset_id,
+                option,
+            }),
+        }
+    }
+
+    /// The rejected field, supplemental asset ID and format option.
+    const fn request_value(&self) -> (&'static str, Option<&String>, Option<&'static str>) {
+        match &*self.details {
+            DiagnosticDetails::RequestValue {
+                field,
+                asset_id,
+                option,
+            } => (field, asset_id.as_ref(), *option),
+            _ => unreachable!(),
         }
     }
 
@@ -68,30 +79,29 @@ impl RequestError {
 
     /// Returns the rejected canonical request field.
     pub const fn field(&self) -> &str {
-        self.field
+        self.request_value().0
     }
 
     /// Returns the applicable supplemental asset ID.
     pub fn asset_id(&self) -> Option<&str> {
-        self.asset_id.as_deref()
+        self.request_value().1.map(String::as_str)
     }
 
     /// Returns the applicable format-option name.
     pub const fn option(&self) -> Option<&str> {
-        self.option
+        self.request_value().2
+    }
+
+    /// Returns typed details of this failure: always
+    /// [`DiagnosticDetails::RequestValue`], naming the rejected field and,
+    /// where they apply, the supplemental asset and format option.
+    pub fn details(&self) -> Option<&DiagnosticDetails> {
+        Some(&self.details)
     }
 
     /// Returns this failure's stable serializable descriptor.
     pub fn descriptor(&self) -> ErrorDescriptor {
-        ErrorDescriptor::request(
-            self.code,
-            self.to_string(),
-            DiagnosticDetails::RequestValue {
-                field: self.field,
-                asset_id: self.asset_id.clone(),
-                option: self.option,
-            },
-        )
+        ErrorDescriptor::request(self.code, self.to_string(), (*self.details).clone())
     }
 }
 

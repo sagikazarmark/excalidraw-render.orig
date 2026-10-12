@@ -168,8 +168,9 @@ fn numeric_request_values_are_validated_before_rendering() {
         assert_eq!(error.descriptor().family(), ErrorFamily::Request);
         assert_eq!(error.descriptor().category(), None);
         assert_eq!(error.descriptor().json_pointer(), None);
+        assert_eq!(error.details(), error.descriptor().details());
         assert!(matches!(
-            error.descriptor().details(),
+            error.details(),
             Some(DiagnosticDetails::RequestValue {
                 field,
                 asset_id: None,
@@ -286,6 +287,15 @@ fn supplemental_asset_identifiers_and_media_types_are_validated() {
         assert_eq!(error.field(), "supplemental_assets");
         assert_eq!(error.asset_id(), Some("image-1"));
         assert_eq!(error.option(), Some("media_type"));
+        assert!(matches!(
+            error.details(),
+            Some(DiagnosticDetails::RequestValue {
+                field: "supplemental_assets",
+                asset_id: Some(asset_id),
+                option: Some("media_type"),
+                ..
+            }) if asset_id == "image-1"
+        ));
     }
 }
 
