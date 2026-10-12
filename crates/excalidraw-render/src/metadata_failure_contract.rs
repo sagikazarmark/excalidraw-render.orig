@@ -233,7 +233,7 @@ fn assert_manifest(
         expected["target"] = json!({"kind":"frame","ordinal":ordinal});
     }
     if parts.provenance {
-        expected["provenance"] = json!({"renderer_version":env!("CARGO_PKG_VERSION"),"compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":outcome.profile_identity().profile_digest()});
+        expected["provenance"] = json!({"renderer_version":env!("CARGO_PKG_VERSION"),"compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":outcome.profile_identity().reference_profile_digest()});
     }
     if parts.diagnostic_summary {
         expected["diagnostic_summary"] = json!({"snapshot":"pre_metadata","total":u8::from(has_prefix),"by_severity":{"info":0,"warning":u8::from(has_prefix)},"by_code":if has_prefix{json!([{"code":if notices&&format==OutputFormat::Png {"image.missing-file"}else{"compatibility.unsupported-element-type"},"count":1}])}else{json!([])}});

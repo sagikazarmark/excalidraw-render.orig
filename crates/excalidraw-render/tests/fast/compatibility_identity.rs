@@ -17,7 +17,7 @@ fn a_renderer_exposes_the_reference_profile_it_reproduces() {
         assert_eq!(identity.compatibility_revision().get(), 1);
         assert_eq!(identity.excalidraw_release(), "v0.18.1");
         assert_eq!(
-            identity.profile_digest(),
+            identity.reference_profile_digest(),
             REVISION_1_REFERENCE_PROFILE_DIGEST
         );
 
@@ -27,7 +27,10 @@ fn a_renderer_exposes_the_reference_profile_it_reproduces() {
             identity.compatibility_revision()
         );
         assert_eq!(frame.excalidraw_release(), identity.excalidraw_release());
-        assert_ne!(frame.profile_digest(), identity.profile_digest());
+        assert_ne!(
+            frame.reference_profile_digest(),
+            identity.reference_profile_digest()
+        );
     }
 }
 

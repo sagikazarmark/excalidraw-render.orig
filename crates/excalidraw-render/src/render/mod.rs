@@ -154,7 +154,7 @@ fn render_with_svg_font_payload(
     );
     debug_assert_eq!(
         catalog.asset_catalog().reference_profile_digest,
-        profile.profile_digest()
+        profile.reference_profile_digest()
     );
     let mut session = RenderSession::new(profile, catalog.scene_surface(), scene, request);
     session.render(scene, request, None, svg_font_payload)

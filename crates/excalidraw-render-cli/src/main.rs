@@ -676,7 +676,7 @@ fn run_standalone(cli: &Cli) -> u8 {
             text.push_str(&format!(
                 "compatibility revision {}\nreference profile {}\n",
                 profile.compatibility_revision(),
-                profile.profile_digest()
+                profile.reference_profile_digest()
             ));
         }
         return write_stdout(text.as_bytes());
@@ -689,7 +689,7 @@ fn run_standalone(cli: &Cli) -> u8 {
     let revisions = vec![RevisionEntry {
         compatibility_revision: profile.compatibility_revision(),
         excalidraw_release: profile.excalidraw_release(),
-        reference_profile_digest: profile.profile_digest(),
+        reference_profile_digest: profile.reference_profile_digest(),
         default: true,
     }];
     let bytes = match cli.report_format {
@@ -796,7 +796,7 @@ fn run_render(
     *identity = Some(SelectedIdentity {
         revision: profile.compatibility_revision(),
         release: profile.excalidraw_release(),
-        digest: profile.profile_digest(),
+        digest: profile.reference_profile_digest(),
     });
 
     let format = select_format(cli.format, output)?;
