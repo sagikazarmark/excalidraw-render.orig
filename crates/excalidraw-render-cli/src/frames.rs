@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -858,7 +858,8 @@ fn frame_output_basenames(
     frames: &[excalidraw_render::FrameRef<'_>],
     format: Option<OutputFormat>,
 ) -> Vec<String> {
-    let mut used = BTreeSet::new();
+    let mut used = HashSet::new();
+    let mut next_suffixes = HashMap::new();
     let mut basenames = Vec::with_capacity(frames.len());
     for frame in frames {
         let normalized_name = frame.name().map(|name| name.nfc().collect::<String>());
@@ -876,31 +877,67 @@ fn frame_output_basenames(
         } else {
             String::new()
         };
-        let mut suffix = 1_u32;
-        loop {
-            let collision_suffix = (suffix > 1).then(|| format!("-{suffix}"));
-            let reserved_bytes =
-                stable_suffix.len() + collision_suffix.as_deref().map_or(0, str::len);
-            let mut basename = truncate_basename(&root, 120 - reserved_bytes);
-            basename.push_str(&stable_suffix);
-            if let Some(collision_suffix) = collision_suffix {
-                basename.push_str(&collision_suffix);
-            }
-            let key = unicase::UniCase::new(basename.nfc().collect::<String>())
-                .to_folded_case()
-                .nfc()
-                .collect::<String>();
-            if used.insert(key) {
-                basenames.push(match format {
-                    Some(format) => format!("{basename}.{}", format.as_str()),
-                    None => basename,
-                });
-                break;
-            }
-            suffix += 1;
-        }
+        let basename = unique_basename(&root, &stable_suffix, &mut used, &mut next_suffixes);
+        basenames.push(match format {
+            Some(format) => format!("{basename}.{}", format.as_str()),
+            None => basename,
+        });
     }
     basenames
+}
+
+/// The first of `ROOT`, `ROOT-2`, `ROOT-3`, … (each truncated to keep the
+/// stable suffix and fit 120 bytes) whose folded name is not `used` yet, which
+/// it then marks used.
+///
+/// Trying every suffix from 2 would make frames that share a name quadratic
+/// in their count, so `next_suffixes` remembers, per folded stem and suffix
+/// length, the first suffix not yet known to be taken. Folding commutes with
+/// appending `-N`, so every root with the same folded stem finds the same
+/// names taken, even when the roots are spelled differently.
+fn unique_basename(
+    root: &str,
+    stable_suffix: &str,
+    used: &mut HashSet<String>,
+    next_suffixes: &mut HashMap<(String, u32), u64>,
+) -> String {
+    let stem = |reserved_bytes: usize| {
+        let mut stem = truncate_basename(root, 120 - stable_suffix.len() - reserved_bytes);
+        stem.push_str(stable_suffix);
+        stem
+    };
+    let basename = stem(0);
+    if used.insert(folded_name(&basename)) {
+        return basename;
+    }
+    // Suffixes of one digit count share a truncation: 2-9, then 10-99, …
+    let mut first = 2_u64;
+    let mut digits = 1_u32;
+    loop {
+        let last = 10_u64.saturating_pow(digits) - 1;
+        let stem = stem(1 + digits as usize);
+        let next = next_suffixes
+            .entry((folded_name(&stem), digits))
+            .or_insert(first);
+        while *next <= last {
+            let basename = format!("{stem}-{next}");
+            *next += 1;
+            if used.insert(folded_name(&basename)) {
+                return basename;
+            }
+        }
+        first = last + 1;
+        digits += 1;
+    }
+}
+
+/// The name two basenames share when a case-insensitive file system would
+/// treat them as one file.
+fn folded_name(basename: &str) -> String {
+    unicase::UniCase::new(basename.nfc().collect::<String>())
+        .to_folded_case()
+        .nfc()
+        .collect()
 }
 
 fn portable_frame_slug(name: &str) -> String {
@@ -1573,6 +1610,213 @@ mod tests {
             frame_output_basenames(&frames, Some(OutputFormat::Png)),
             ["Overview.png", "Detail.png"]
         );
+    }
+
+    /// The original quadratic de-duplication, kept as the reference the linear
+    /// one must match byte for byte: each frame tries suffixes from 1 until its
+    /// folded name is free.
+    fn reference_frame_output_basenames(
+        frames: &[excalidraw_render::FrameRef<'_>],
+        format: Option<OutputFormat>,
+    ) -> Vec<String> {
+        use std::collections::BTreeSet;
+        use unicode_normalization::UnicodeNormalization as _;
+
+        let mut used = BTreeSet::new();
+        let mut basenames = Vec::with_capacity(frames.len());
+        for frame in frames {
+            let normalized_name = frame.name().map(|name| name.nfc().collect::<String>());
+            let mut root = normalized_name
+                .as_deref()
+                .map(portable_frame_slug)
+                .filter(|name| !name.is_empty())
+                .unwrap_or_else(|| format!("frame-{}", frame.ordinal()));
+            if is_reserved_device_name(&root) {
+                root.insert(0, '_');
+            }
+            let stable_suffix = if root.len() > 120 {
+                let digest = crate::sha256(normalized_name.as_deref().unwrap_or(&root).as_bytes());
+                format!("-{}", &digest["sha256:".len().."sha256:".len() + 8])
+            } else {
+                String::new()
+            };
+            let mut suffix = 1_u32;
+            loop {
+                let collision_suffix = (suffix > 1).then(|| format!("-{suffix}"));
+                let reserved_bytes =
+                    stable_suffix.len() + collision_suffix.as_deref().map_or(0, str::len);
+                let mut basename = truncate_basename(&root, 120 - reserved_bytes);
+                basename.push_str(&stable_suffix);
+                if let Some(collision_suffix) = collision_suffix {
+                    basename.push_str(&collision_suffix);
+                }
+                let key = unicase::UniCase::new(basename.nfc().collect::<String>())
+                    .to_folded_case()
+                    .nfc()
+                    .collect::<String>();
+                if used.insert(key) {
+                    basenames.push(match format {
+                        Some(format) => format!("{basename}.{}", format.as_str()),
+                        None => basename,
+                    });
+                    break;
+                }
+                suffix += 1;
+            }
+        }
+        basenames
+    }
+
+    /// Asserts the basenames of a scene whose frames carry `names` match the
+    /// reference de-duplication, with and without an extension.
+    fn assert_matches_reference(names: &[Option<&str>]) {
+        let scene = scene_with_frame_names(names);
+        let frames = scene.frames().collect::<Vec<_>>();
+        for format in [None, Some(OutputFormat::Png)] {
+            let actual = frame_output_basenames(&frames, format);
+            let expected = reference_frame_output_basenames(&frames, format);
+            if let Some(index) = (0..expected.len()).find(|&i| actual[i] != expected[i]) {
+                panic!(
+                    "frame {} ({:?}) is named {:?}, the reference names it {:?}",
+                    index + 1,
+                    names[index],
+                    actual[index],
+                    expected[index]
+                );
+            }
+            assert_eq!(actual.len(), expected.len());
+        }
+    }
+
+    /// Every spelling of `word` that differs only in letter case, `count` of
+    /// them: each is its own root, but all fold to one name.
+    fn case_variants(word: &str, count: usize) -> Vec<String> {
+        (0..count)
+            .map(|mask| {
+                word.chars()
+                    .enumerate()
+                    .map(|(bit, character)| {
+                        if mask >> (bit % usize::BITS as usize) & 1 == 1 {
+                            character.to_ascii_uppercase()
+                        } else {
+                            character
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn frame_basename_deduplication_matches_the_reference_on_adversarial_names() {
+        let mut cases: Vec<Vec<Option<String>>> = Vec::new();
+        let some = |names: Vec<String>| names.into_iter().map(Some).collect::<Vec<_>>();
+
+        // Spellings that fold alike but are distinct roots, so a counter per
+        // spelling would still retry every taken suffix.
+        cases.push(some(case_variants("abcdefghijk", 2048)));
+        // Generated suffixes collide with literal names, before and after.
+        cases.push(some(
+            ["A-2", "A", "A", "a-3", "A", "A-5", "A", "A", "a", "A-4", "A-10", "A"]
+                .iter()
+                .map(|name| (*name).to_owned())
+                .chain(std::iter::repeat_n("A".to_owned(), 30))
+                .chain((2..40).map(|suffix| format!("A-{suffix}")))
+                .chain(std::iter::repeat_n("a".to_owned(), 30))
+                .collect(),
+        ));
+        // Roots near the 120-byte budget are truncated differently once the
+        // suffix gains a digit; ASCII and two-byte characters.
+        for (unit, count) in [("x", 118), ("x", 119), ("x", 120), ("é", 59), ("é", 60)] {
+            let root = unit.repeat(count);
+            let mut names = vec![root.clone(); 25];
+            names.push(format!("{}-12", unit.repeat(count.saturating_sub(4))));
+            names.push(format!("{}-3", &root[..root.len() - 2 * unit.len()]));
+            names.extend(vec![root.clone(); 15]);
+            names.extend(vec![root.to_uppercase(); 15]);
+            cases.push(some(names));
+        }
+        // Long names carry a hash of their spelling; duplicates and spellings
+        // that differ only in case.
+        let long = "Long Name ".repeat(14);
+        let mut names = vec![long.clone(); 12];
+        names.extend(case_variants(&long, 16));
+        names.extend(vec![long.to_uppercase(); 12]);
+        cases.push(some(names));
+        // Case folding and normalization, reserved device names, and unnamed
+        // frames colliding with literal ordinal names.
+        cases.push(
+            [
+                Some("Straße"),
+                Some("STRASSE"),
+                Some("strasse-2"),
+                Some("Strasse"),
+                Some("caf\u{e9}"),
+                Some("cafe\u{301}"),
+                Some("CAF\u{c9}-2"),
+                Some("CAFE\u{301}"),
+                Some("CON"),
+                Some("_con"),
+                Some("con"),
+                None,
+                Some("frame-12"),
+                Some("Frame-13"),
+                None,
+                Some("!!!"),
+                None,
+                Some("frame-15-2"),
+                Some("FRAME-15"),
+            ]
+            .iter()
+            .map(|name| name.map(str::to_owned))
+            .chain(std::iter::repeat_n(None, 8))
+            .collect(),
+        );
+        // Pseudo-random names over an alphabet chosen to collide.
+        let alphabet = [
+            "a", "A", "-", "2", "1", "ß", "SS", "ss", "é", "e\u{301}", " ", "x", "_",
+        ];
+        let mut state = 0x9e37_79b9_7f4a_7c15_u64;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for _ in 0..4 {
+            let names = (0..1500)
+                .map(|_| {
+                    let length = (next() % 6) as usize;
+                    (0..length)
+                        .map(|_| alphabet[(next() % alphabet.len() as u64) as usize])
+                        .collect::<String>()
+                })
+                .collect::<Vec<_>>();
+            cases.push(some(names));
+        }
+
+        for case in &cases {
+            let names = case.iter().map(Option::as_deref).collect::<Vec<_>>();
+            assert_matches_reference(&names);
+        }
+    }
+
+    /// The most frames a batch may select, every one a spelling of one name:
+    /// the reference would try about 134 million names here.
+    #[test]
+    fn the_largest_batch_of_one_name_is_named_in_one_pass() {
+        let variants = case_variants("abcdefghijklmn", 16_384);
+        let names = variants.iter().map(|name| Some(name.as_str())).collect::<Vec<_>>();
+        let scene = scene_with_frame_names(&names);
+        let frames = scene.frames().collect::<Vec<_>>();
+        let basenames = frame_output_basenames(&frames, None);
+        for (index, (basename, variant)) in basenames.iter().zip(&variants).enumerate() {
+            let expected = match index {
+                0 => variant.clone(),
+                _ => format!("{variant}-{}", index + 1),
+            };
+            assert_eq!(basename, &expected);
+        }
     }
 
     #[test]
