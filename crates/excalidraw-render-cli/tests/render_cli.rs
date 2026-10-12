@@ -49,6 +49,10 @@ fn help_describes_the_commands_with_examples() {
             frames.contains("Every frame, including AI-generated (magic) frames, is exported"),
             "{frames}"
         );
+        assert!(
+            frames.contains("Each frame is one line of four tab-separated columns"),
+            "{frames}"
+        );
     }
 
     // Help speaks the user's language: the single compatibility revision is
@@ -281,7 +285,8 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
         stderr.starts_with("error: ") && stderr.contains("[resource.raster-surface-exceeded]\n"),
         "{stderr}"
     );
-    assert!(stderr.contains("hint: use --max-dimension"), "{stderr}");
+    // The scene fits unscaled, so the fix is a lower scale.
+    assert!(stderr.contains("hint: use --scale "), "{stderr}");
 
     // A sizing that rounds the output to nothing names the cause and the fix.
     for (name, sizing, unit) in [
@@ -318,6 +323,190 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
             existing.display()
         )
     );
+}
+
+/// Hints say what the error line does not: never a restatement of it, and
+/// never a fix that cannot help.
+#[test]
+fn hints_add_what_the_error_does_not_say() {
+    let scratch = temp_directory_named("hints");
+    let temp = scratch.path();
+    let write = |name: &str, contents: &str| {
+        let path = temp.join(name);
+        fs::write(&path, contents).expect("write the input");
+        path.to_str().expect("the scratch path is UTF-8").to_owned()
+    };
+    let stderr = |args: &[&str], exit: i32| {
+        let result = cli(args);
+        assert_eq!(result.status.code(), Some(exit), "{args:?}: {result:?}");
+        String::from_utf8(result.stderr).expect("the report is UTF-8")
+    };
+
+    // A file from a newer Excalidraw is told apart from a malformed one.
+    let newer = write(
+        "newer.excalidraw",
+        r#"{"type":"excalidraw","version":3,"elements":[]}"#,
+    );
+    assert_eq!(
+        stderr(&[&newer, "-o", "-", "-f", "svg"], 1),
+        format!(
+            "error: cannot parse '{newer}': scene envelope version 3 is not supported; only \
+             version 2 is [scene.invalid-envelope]\n\
+             hint: the file may come from a newer Excalidraw than this renderer supports; \
+             check for a newer excalidraw-render\n"
+        )
+    );
+    // Other unsupported versions, a library and clipboard data are explained
+    // by the error alone.
+    for (name, contents) in [
+        (
+            "older.excalidraw",
+            r#"{"type":"excalidraw","version":1,"elements":[]}"#,
+        ),
+        (
+            "quoted.excalidraw",
+            r#"{"type":"excalidraw","version":"2","elements":[]}"#,
+        ),
+        (
+            "shapes.excalidrawlib",
+            r#"{"type":"excalidrawlib","version":2,"libraryItems":[]}"#,
+        ),
+        (
+            "clipboard.json",
+            r#"{"type":"excalidraw/clipboard","elements":[]}"#,
+        ),
+    ] {
+        let input = write(name, contents);
+        let report = stderr(&[&input, "-o", "-", "-f", "svg"], 1);
+        assert_eq!(report.lines().count(), 1, "{report}");
+        assert!(report.starts_with("error: cannot parse "), "{report}");
+    }
+
+    // Empty input is reported as empty, not as a JSON syntax error.
+    for (name, contents) in [("empty.excalidraw", ""), ("blank.excalidraw", " \n\t\n")] {
+        let input = write(name, contents);
+        assert_eq!(
+            stderr(&[&input, "-o", "-", "-f", "svg"], 1),
+            format!("error: cannot parse '{input}': it is empty [scene.invalid-json]\n")
+        );
+        // The JSON report keeps the library's error.
+        let json = cli(&[&input, "-o", "-", "-f", "svg", "--report-format", "json"]);
+        let report: serde_json::Value =
+            serde_json::from_slice(&json.stderr).expect("JSON failure report");
+        assert_eq!(
+            report["error"]["message"],
+            "scene document is not valid JSON"
+        );
+    }
+    let empty_stdin = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(["-", "-o", "-", "-f", "svg"])
+        .stdin(Stdio::null())
+        .output()
+        .expect("render empty standard input");
+    assert_eq!(empty_stdin.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&empty_stdin.stderr),
+        "error: cannot parse standard input: it is empty [scene.invalid-json]\n"
+    );
+
+    // A missing INPUT says how to pipe a scene in.
+    assert_eq!(
+        stderr(&["-o", "out.svg"], 2),
+        "error: INPUT is required [cli.invalid-arguments]\n\
+         hint: name the scene file, or pass - to read it from standard input\n"
+    );
+
+    // A scene without frames points at the whole-scene render, not at a
+    // listing that would be empty.
+    let unframed = write(
+        "unframed.excalidraw",
+        r#"{"type":"excalidraw","version":2,"elements":[]}"#,
+    );
+    let frames = temp.join("frames");
+    assert_eq!(
+        stderr(
+            &[
+                "frames",
+                &unframed,
+                "-o",
+                frames.to_str().unwrap(),
+                "--format",
+                "svg"
+            ],
+            1
+        ),
+        "error: the scene has no frames [cli.frame-no-match]\n\
+         hint: render the whole scene instead: `excalidraw-render INPUT -o FILE`\n"
+    );
+    assert!(!frames.exists());
+}
+
+/// A PNG over the pixel limit is sized in pixels and megapixels, and the
+/// hint names the largest `--max-dimension` (or, for a scene that fits
+/// unscaled, `--scale`) that fits; one more does not. The JSON report keeps
+/// the library's error.
+#[test]
+fn an_oversized_png_names_its_size_and_the_largest_that_fits() {
+    let scratch = temp_directory_named("oversized-png");
+    let temp = scratch.path();
+    let rectangle = |name: &str, width: u32, height: u32| {
+        let path = temp.join(name);
+        fs::write(
+            &path,
+            format!(
+                r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"r","type":"rectangle","x":0,"y":0,"width":{width},"height":{height},"roughness":0,"updated":1}}],"appState":{{}},"files":{{}}}}"#
+            ),
+        )
+        .expect("write the scene");
+        path.to_str().expect("the scratch path is UTF-8").to_owned()
+    };
+    let render = |args: &[&str]| {
+        let result = cli(args);
+        assert_eq!(result.status.code(), Some(1), "{args:?}: {result:?}");
+        String::from_utf8(result.stderr).expect("the report is UTF-8")
+    };
+
+    // 7020 × 5020 with the default padding: too large unscaled.
+    let large = rectangle("large.excalidraw", 7000, 5000);
+    assert_eq!(
+        render(&[&large, "-o", "-", "-f", "png"]),
+        "error: the PNG would be 7020 × 5020 pixels (35.2 megapixels), over the \
+         33.6-megapixel limit [resource.raster-surface-exceeded]\n\
+         hint: use --max-dimension 6850, the largest size that fits, or render to SVG or \
+         PDF instead\n"
+    );
+    // A maximum of 6850 is 6850 × 4898 = 33551300 pixels; one more is over.
+    assert!(
+        render(&[&large, "-o", "-", "-f", "png", "--max-dimension", "6851"]).starts_with(
+            "error: the PNG would be 6851 × 4899 pixels (33.56 megapixels), over the \
+             33.55-megapixel limit [resource.raster-surface-exceeded]\n"
+        )
+    );
+
+    // 4020 × 3020 fits unscaled, so a lower scale is the fix for --scale 2.
+    let medium = rectangle("medium.excalidraw", 4000, 3000);
+    assert_eq!(
+        render(&[&medium, "-o", "-", "-f", "png", "--scale", "2"]),
+        "error: the PNG would be 8040 × 6040 pixels (48.6 megapixels), over the \
+         33.6-megapixel limit [resource.raster-surface-exceeded]\n\
+         hint: use --scale 1.66, the largest scale that fits, or render to SVG or PDF \
+         instead\n"
+    );
+    assert!(
+        render(&[&medium, "-o", "-", "-f", "png", "--scale", "1.67"])
+            .contains("[resource.raster-surface-exceeded]")
+    );
+
+    // The report for programs is unchanged.
+    let json = cli(&[&large, "-o", "-", "-f", "png", "--report-format", "json"]);
+    let report: serde_json::Value =
+        serde_json::from_slice(&json.stderr).expect("JSON failure report");
+    assert_eq!(
+        report["error"]["message"],
+        "required PNG raster surface exceeds its configured limit: needs 35240400 pixels, \
+         but max_raster_surface_pixels is 33554432"
+    );
+    assert_eq!(report["error"]["details"]["configured"], 33_554_432);
 }
 
 #[test]
@@ -400,11 +589,12 @@ fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
             && line.ends_with(" more)")),
         "{stderr}"
     );
+    // The property each warning is about is named, once per group.
     assert!(
-        lines.iter().any(|line| line.starts_with("warning: ")
-            && line.ends_with(
-                "[compatibility.unsupported-property] (5 occurrences; elements a, b, c and 2 more)"
-            )),
+        lines.contains(
+            &"warning: unrecognized element property was ignored: futureField \
+              [compatibility.unsupported-property] (5 occurrences; elements a, b, c and 2 more)"
+        ),
         "{stderr}"
     );
     for code in [
@@ -422,11 +612,38 @@ fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
         "{verbose}"
     );
     assert!(
-        verbose.lines().any(|line| line.starts_with("info: ")
-            && line.ends_with(
-                "[normalization.missing-timestamp] (5 occurrences; elements a, b, c and 2 more)"
-            )),
+        verbose.lines().any(|line| line
+            == "info: missing required timestamp was repaired to canonical zero: updated \
+                [normalization.missing-timestamp] (5 occurrences; elements a, b, c and 2 more)"),
         "{verbose}"
+    );
+    // A group of different properties names a few of them, and a property
+    // outside the elements by its full path.
+    let editor_only = temp.join("editor-only.excalidraw");
+    fs::write(
+        &editor_only,
+        r#"{"type":"excalidraw","version":2,"elements":[
+            {"id":"l","type":"line","x":0,"y":0,"width":10,"height":10,"points":[[0,0],[10,10]],"polygon":false,"updated":1}
+        ],"appState":{"lockedMultiSelections":{}},"files":{}}"#,
+    )
+    .expect("write a scene with editor-only properties");
+    let editor_only = cli(&[
+        editor_only.to_str().unwrap(),
+        "-o",
+        "-",
+        "-f",
+        "svg",
+        "--verbose",
+    ]);
+    assert!(editor_only.status.success(), "{editor_only:?}");
+    let editor_only = String::from_utf8(editor_only.stderr).expect("report is UTF-8");
+    assert!(
+        editor_only.lines().any(|line| {
+            line
+            == "info: editor-only property was ignored: polygon, appState.lockedMultiSelections \
+                [compatibility.unsupported-property] (2 occurrences; element l)"
+        }),
+        "{editor_only}"
     );
 
     // JSON keeps every occurrence.
@@ -889,6 +1106,66 @@ fn treats_dangling_symlink_destinations_as_existing_paths() {
         1,
         "cli.destination-exists",
     );
+}
+
+/// A device or a pipe named as the output is written in place: there is no
+/// file to protect, and replacing the device node would be wrong even with
+/// `--force`.
+#[cfg(unix)]
+#[test]
+fn writes_devices_and_pipes_in_place_without_force() {
+    for args in [
+        vec!["-o", "/dev/null", "-f", "svg"],
+        vec!["-o", "/dev/null", "-f", "png", "--force"],
+        vec![
+            "-o",
+            "-",
+            "-f",
+            "svg",
+            "--report-format",
+            "json",
+            "--report-output",
+            "/dev/null",
+        ],
+    ] {
+        let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+            .arg(corpus_scene("basic-shapes.excalidraw"))
+            .args(&args)
+            .output()
+            .expect("render to /dev/null");
+        assert!(result.status.success(), "{args:?}: {result:?}");
+        assert_eq!(String::from_utf8_lossy(&result.stderr), "", "{args:?}");
+    }
+    let null = fs::metadata("/dev/null").expect("/dev/null exists");
+    assert!(!null.is_file(), "/dev/null was replaced by a file");
+
+    let scratch = temp_directory_named("fifo-destination");
+    let fifo = scratch.path().join("pipe");
+    let made = Command::new("mkfifo")
+        .arg(&fifo)
+        .status()
+        .expect("run mkfifo");
+    assert!(made.success());
+    let reader = {
+        let fifo = fifo.clone();
+        std::thread::spawn(move || fs::read(fifo).expect("read the pipe"))
+    };
+    let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg(corpus_scene("basic-shapes.excalidraw"))
+        .arg("-o")
+        .arg(&fifo)
+        .args(["-f", "svg"])
+        .output()
+        .expect("render to a pipe");
+    if !result.status.success() {
+        // Release the reader, still waiting for a writer.
+        drop(fs::OpenOptions::new().write(true).open(&fifo));
+    }
+    let piped = reader.join().expect("the reader finishes");
+    assert!(result.status.success(), "{result:?}");
+    assert_eq!(String::from_utf8_lossy(&result.stderr), "");
+    assert!(piped.starts_with(b"<svg"), "{}", piped.len());
+    assert_no_staging_files(scratch.path());
 }
 
 #[test]
