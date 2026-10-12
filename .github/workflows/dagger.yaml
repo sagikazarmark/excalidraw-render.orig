@@ -29,6 +29,7 @@ jobs:
                     - full-equality
                     - input-boundaries
                     - lint:clippy
+                    - lint:features
                     - lint:fmt
                     - lint:msrv
                     - packaging:cli
