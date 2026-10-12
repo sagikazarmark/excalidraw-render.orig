@@ -5,6 +5,13 @@ to **SVG, PNG, and vector-first PDF**, for a whole scene or frame by frame. It
 is a single native binary with every font bundled: no browser, Node.js,
 network access, or installed fonts.
 
+![A hand-drawn architecture diagram with hatched boxes in several colors, curved and straight arrows, and labels in three Excalidraw fonts](https://raw.githubusercontent.com/sagikazarmark/excalidraw-render/main/docs/images/elasticsearch-spec-overview.svg)
+
+<sub>Rendered with `excalidraw-render overview.excalidraw -o overview.svg`.
+Scene: [`overview.excalidraw`](https://github.com/elastic/elasticsearch-specification/blob/3d51338565d6558c96b55dad9142e4c2a500ca38/overview.excalidraw)
+from elastic/elasticsearch-specification, © Elastic and contributors,
+[Apache-2.0](https://github.com/sagikazarmark/excalidraw-render/blob/main/tests/public-scenes/elasticsearch-spec-overview/LICENSE).</sub>
+
 The compatibility target is Excalidraw **0.18.1**. Output is close to, but not
 pixel-identical with, the browser exporter; see the
 [known limitations](../../docs/known-limitations.md).
@@ -32,7 +39,9 @@ excalidraw-render frames drawing.excalidraw -o frames --format png
 The output extension selects the format, or use `--format`. Input and output
 may be `-` for standard input and output. An existing output is kept unless you
 pass `--force`. For large drawings, `--max-dimension 4096` bounds the PNG/PDF
-size; it replaces `--scale`, so pass one or the other. `frames --list` prints
+size; it replaces `--scale`, so pass one or the other. Very large drawings may
+need `--max-dimension` for PNG output, or render them to SVG or PDF.
+`frames --list` prints
 the frames and the file names an export would write to standard output.
 
 Warnings describe substitutions, omissions, and fallbacks the renderer made;
