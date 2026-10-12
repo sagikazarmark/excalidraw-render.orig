@@ -44,6 +44,8 @@ command-line tool.
 - Errors name the file, the reason, and a fix. Repeated warnings are grouped,
   informational messages appear with `--verbose`, and `--report-format json`
   prints a machine-readable report.
+- An existing output file is kept unless you pass `--force`; devices and pipes
+  such as `/dev/null` are written to directly.
 
 ### Compatibility
 
@@ -64,9 +66,3 @@ command-line tool.
 - This release does not yet claim exhaustive conformance with Excalidraw or
   byte-identical output between native and WASM builds; both are follow-up
   goals.
-
-<!--
-  PENDING 0.1.0 ENTRIES: changes still landing from parallel pre-0.1 branches
-  go here, then into the sections above (CLI message improvements, the PDF gradient fix, library API additions such as
-  `Clone` on outcomes). Remove this comment before release.
--->
