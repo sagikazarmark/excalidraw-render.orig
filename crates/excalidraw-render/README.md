@@ -5,6 +5,14 @@ Pure-Rust rendering of [Excalidraw](https://excalidraw.com) scene documents to
 and other rendering assets are bundled: rendering needs no browser, Node.js,
 network access, or installed fonts.
 
+![A hand-drawn architecture diagram with hatched boxes in several colors, curved and straight arrows, and labels in three Excalidraw fonts](https://raw.githubusercontent.com/sagikazarmark/excalidraw-render/main/docs/images/elasticsearch-spec-overview.svg)
+
+<sub>Rendered to SVG with this crate's default request (the command-line
+equivalent is `excalidraw-render overview.excalidraw -o overview.svg`).
+Scene: [`overview.excalidraw`](https://github.com/elastic/elasticsearch-specification/blob/3d51338565d6558c96b55dad9142e4c2a500ca38/overview.excalidraw)
+from elastic/elasticsearch-specification, © Elastic and contributors,
+[Apache-2.0](https://github.com/sagikazarmark/excalidraw-render/blob/main/tests/public-scenes/elasticsearch-spec-overview/LICENSE).</sub>
+
 The compatibility target is Excalidraw **0.18.1**. Output is close to, but not
 pixel-identical with, the browser exporter; every render returns a
 compatibility report describing the substitutions, omissions, and fallbacks it

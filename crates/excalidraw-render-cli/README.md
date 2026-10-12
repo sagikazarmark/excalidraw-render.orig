@@ -5,6 +5,13 @@ to **SVG, PNG, and vector-first PDF**, for a whole scene or frame by frame. It
 is a single native binary with every font bundled: no browser, Node.js,
 network access, or installed fonts.
 
+![A hand-drawn architecture diagram with hatched boxes in several colors, curved and straight arrows, and labels in three Excalidraw fonts](https://raw.githubusercontent.com/sagikazarmark/excalidraw-render/main/docs/images/elasticsearch-spec-overview.svg)
+
+<sub>Rendered with `excalidraw-render overview.excalidraw -o overview.svg`.
+Scene: [`overview.excalidraw`](https://github.com/elastic/elasticsearch-specification/blob/3d51338565d6558c96b55dad9142e4c2a500ca38/overview.excalidraw)
+from elastic/elasticsearch-specification, © Elastic and contributors,
+[Apache-2.0](https://github.com/sagikazarmark/excalidraw-render/blob/main/tests/public-scenes/elasticsearch-spec-overview/LICENSE).</sub>
+
 The compatibility target is Excalidraw **0.18.1**. Output is close to, but not
 pixel-identical with, the browser exporter; see the
 [known limitations](../../docs/known-limitations.md).
