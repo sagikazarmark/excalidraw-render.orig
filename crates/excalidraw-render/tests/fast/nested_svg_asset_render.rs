@@ -1447,6 +1447,24 @@ fn filter_effect_surfaces_count_toward_the_rasterized_pixel_limit() {
     }
 }
 
+#[test]
+fn far_offset_repeating_gradients_render_to_pdf() {
+    // Each gradient puts the painted rect beyond 2^24 periods from its
+    // origin, where period indices are no longer exact in f32: across the
+    // wide rect it spans 100 periods there, across the narrow one it
+    // collapses to a single point.
+    for (rect_width, x2, offset) in [("100", "1", "-20000000"), ("1", "10", "-340000000")] {
+        for spread in ["repeat", "reflect"] {
+            let nested = format!(
+                r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><linearGradient id="paint" gradientUnits="userSpaceOnUse" x1="0" x2="{x2}" spreadMethod="{spread}" gradientTransform="translate({offset} 0)"><stop stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/></linearGradient></defs><rect width="{rect_width}" height="100" fill="url(#paint)"/></svg>"##
+            );
+            let scene = nested_svg_scene(nested.as_bytes(), 100, 100);
+            let pdf = render_artifact(&scene, OutputFormat::Pdf);
+            assert!(pdf_text(&pdf).starts_with("%PDF-1.7"), "{spread} {offset}");
+        }
+    }
+}
+
 fn assert_rgb_near(actual: [u8; 4], expected: [u8; 4]) {
     for (actual_channel, expected_channel) in actual.into_iter().zip(expected) {
         assert!(
