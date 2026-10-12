@@ -33,8 +33,20 @@ The output extension selects the format, or use `--format`. Input and output
 may be `-` for standard input and output. An existing output file is kept
 unless you pass `--force`; a device or pipe such as `/dev/null` is written to
 directly. For large drawings, `--max-dimension 4096` bounds the PNG/PDF
-size; it replaces `--scale`, so pass one or the other. `frames --list` prints
-the frames and the file names an export would write to standard output.
+size; it replaces `--scale`, so pass one or the other.
+
+`frames --list` prints the frames and the file names an export would write to
+standard output, one line of four tab-separated columns per frame: its number
+in the scene (counting from 1, whatever `--name-regex` selects), its kind
+(`frame` or `magicframe`), its name (empty if it has none) and the name of the
+file it would be written to (without an extension unless `--format` is given):
+
+```text
+1	frame	Slide 1	Slide-1.png
+2	magicframe		frame-2.png
+```
+
+`--report-format json` prints the same as one JSON document.
 
 Warnings describe substitutions, omissions, and fallbacks the renderer made;
 `--report-format json` prints a machine-readable report. Run

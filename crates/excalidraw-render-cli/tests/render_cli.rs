@@ -49,6 +49,10 @@ fn help_describes_the_commands_with_examples() {
             frames.contains("Every frame, including AI-generated (magic) frames, is exported"),
             "{frames}"
         );
+        assert!(
+            frames.contains("Each frame is one line of four tab-separated columns"),
+            "{frames}"
+        );
     }
 
     // Help speaks the user's language: the single compatibility revision is

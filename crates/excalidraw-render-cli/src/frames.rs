@@ -82,6 +82,12 @@ pub(crate) struct FramesCli {
     max_frames: u32,
     /// Print the frames and file names the selection would export, without
     /// rendering or writing anything
+    ///
+    /// Each frame is one line of four tab-separated columns: its number in the
+    /// scene (counting from 1, whatever --name-regex selects), its kind (frame
+    /// or magicframe), its name (empty if it has none) and the name of the
+    /// file it would be written to (without an extension unless --format is
+    /// given). --report-format json prints the same as one JSON document.
     #[arg(long, help_heading = SELECTION)]
     list: bool,
 
