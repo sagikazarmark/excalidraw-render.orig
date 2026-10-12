@@ -148,7 +148,13 @@ impl fmt::Display for OutputFormat {
 pub enum Sizing {
     /// Multiplies logical output dimensions by the supplied scale.
     Scale(f64),
-    /// Downscales output to at most the supplied largest dimension.
+    /// Downscales PNG and PDF output so its larger side is at most the
+    /// supplied number of logical pixels; never enlarges.
+    ///
+    /// PNG output then measures at most this many pixels on its larger side.
+    /// A PDF page maps one logical pixel to 0.75 points, so its larger side
+    /// is at most three quarters of this many points. SVG output ignores it
+    /// and keeps its logical size; use [`Sizing::Scale`] to resize SVG.
     MaxDimension(f64),
 }
 
