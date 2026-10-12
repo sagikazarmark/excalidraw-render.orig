@@ -1,9 +1,17 @@
-//! Pure-Rust rendering of Excalidraw scene documents.
+//! Renders [Excalidraw](https://excalidraw.com) scenes to SVG, PNG and PDF,
+//! matching Excalidraw 0.18.1's exporter as closely as possible.
 //!
-//! Scene and frame exports to SVG, PNG, and vector-first PDF are produced
-//! against a compatibility revision identifying the rendering profile.
-//! In 0.x, any release may change output and diagnostics; pin the renderer
-//! version and dependency lockfile for reproducible output.
+//! It is pure Rust with every font bundled: rendering needs no browser,
+//! Node.js, network access or installed fonts. Export a whole scene or each
+//! frame on its own. Every render also returns a compatibility report that
+//! lists what the renderer substituted, omitted or approximated, so
+//! differences from Excalidraw are reported rather than silent.
+//!
+//! The Excalidraw behaviour a release reproduces is identified by a
+//! [`CompatibilityRevision`]: this release implements revision 1, bound to
+//! Excalidraw 0.18.1, and [`Renderer::profile_identity`] names it. In 0.x,
+//! any release may change output and diagnostics; pin the renderer version
+//! and dependency lockfile for reproducible output.
 //! Linux x86-64 GNU is release-qualified; browser WASM is experimental.
 //!
 //! Throughout this documentation, *reference* means Excalidraw's own exporter
