@@ -597,7 +597,7 @@ fn prepare_and_render_frames(
     let scene = read_scene(&frames.input)?;
     let selected = select_frames(&scene, regex.as_ref());
     if selected.is_empty() {
-        return Err(Failure::cli(
+        let failure = Failure::cli(
             "cli.frame-no-match",
             match &frames.name_regex {
                 Some(regex) => format!("no frames match --name-regex '{regex}'"),
@@ -605,7 +605,14 @@ fn prepare_and_render_frames(
             },
             None,
             EXIT_OPERATIONAL,
-        ));
+        );
+        // Listing the frames helps a pattern that matched none, not a scene
+        // that has none.
+        return Err(if scene.frames().next().is_none() {
+            failure.with_hint("render the whole scene instead: `excalidraw-render INPUT -o FILE`")
+        } else {
+            failure
+        });
     }
     if selected.len() > frames.max_frames as usize {
         return Err(frame_limit_exceeded(frames));

@@ -320,6 +320,122 @@ fn human_errors_name_the_path_the_reason_and_the_fix() {
     );
 }
 
+/// Hints say what the error line does not: never a restatement of it, and
+/// never a fix that cannot help.
+#[test]
+fn hints_add_what_the_error_does_not_say() {
+    let scratch = temp_directory_named("hints");
+    let temp = scratch.path();
+    let write = |name: &str, contents: &str| {
+        let path = temp.join(name);
+        fs::write(&path, contents).expect("write the input");
+        path.to_str().expect("the scratch path is UTF-8").to_owned()
+    };
+    let stderr = |args: &[&str], exit: i32| {
+        let result = cli(args);
+        assert_eq!(result.status.code(), Some(exit), "{args:?}: {result:?}");
+        String::from_utf8(result.stderr).expect("the report is UTF-8")
+    };
+
+    // A file from a newer Excalidraw is told apart from a malformed one.
+    let newer = write(
+        "newer.excalidraw",
+        r#"{"type":"excalidraw","version":3,"elements":[]}"#,
+    );
+    assert_eq!(
+        stderr(&[&newer, "-o", "-", "-f", "svg"], 1),
+        format!(
+            "error: cannot parse '{newer}': scene envelope version 3 is not supported; only \
+             version 2 is [scene.invalid-envelope]\n\
+             hint: the file may come from a newer Excalidraw than this renderer supports; \
+             check for a newer excalidraw-render\n"
+        )
+    );
+    // Other unsupported versions, a library and clipboard data are explained
+    // by the error alone.
+    for (name, contents) in [
+        (
+            "older.excalidraw",
+            r#"{"type":"excalidraw","version":1,"elements":[]}"#,
+        ),
+        (
+            "quoted.excalidraw",
+            r#"{"type":"excalidraw","version":"2","elements":[]}"#,
+        ),
+        (
+            "shapes.excalidrawlib",
+            r#"{"type":"excalidrawlib","version":2,"libraryItems":[]}"#,
+        ),
+        (
+            "clipboard.json",
+            r#"{"type":"excalidraw/clipboard","elements":[]}"#,
+        ),
+    ] {
+        let input = write(name, contents);
+        let report = stderr(&[&input, "-o", "-", "-f", "svg"], 1);
+        assert_eq!(report.lines().count(), 1, "{report}");
+        assert!(report.starts_with("error: cannot parse "), "{report}");
+    }
+
+    // Empty input is reported as empty, not as a JSON syntax error.
+    for (name, contents) in [("empty.excalidraw", ""), ("blank.excalidraw", " \n\t\n")] {
+        let input = write(name, contents);
+        assert_eq!(
+            stderr(&[&input, "-o", "-", "-f", "svg"], 1),
+            format!("error: cannot parse '{input}': it is empty [scene.invalid-json]\n")
+        );
+        // The JSON report keeps the library's error.
+        let json = cli(&[&input, "-o", "-", "-f", "svg", "--report-format", "json"]);
+        let report: serde_json::Value =
+            serde_json::from_slice(&json.stderr).expect("JSON failure report");
+        assert_eq!(
+            report["error"]["message"],
+            "scene document is not valid JSON"
+        );
+    }
+    let empty_stdin = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(["-", "-o", "-", "-f", "svg"])
+        .stdin(Stdio::null())
+        .output()
+        .expect("render empty standard input");
+    assert_eq!(empty_stdin.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&empty_stdin.stderr),
+        "error: cannot parse standard input: it is empty [scene.invalid-json]\n"
+    );
+
+    // A missing INPUT says how to pipe a scene in.
+    assert_eq!(
+        stderr(&["-o", "out.svg"], 2),
+        "error: INPUT is required [cli.invalid-arguments]\n\
+         hint: name the scene file, or pass - to read it from standard input\n"
+    );
+
+    // A scene without frames points at the whole-scene render, not at a
+    // listing that would be empty.
+    let unframed = write(
+        "unframed.excalidraw",
+        r#"{"type":"excalidraw","version":2,"elements":[]}"#,
+    );
+    let frames = temp.join("frames");
+    assert_eq!(
+        stderr(
+            &[
+                "frames",
+                &unframed,
+                "-o",
+                frames.to_str().unwrap(),
+                "--format",
+                "svg"
+            ],
+            1
+        ),
+        "error: the scene has no frames [cli.frame-no-match]\n\
+         hint: render the whole scene instead: `excalidraw-render INPUT -o FILE`\n"
+    );
+    assert!(!frames.exists());
+}
+
 #[test]
 fn image_inputs_are_recognized_and_explained() {
     let scratch = temp_directory_named("image-inputs");

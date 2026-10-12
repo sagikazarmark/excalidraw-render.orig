@@ -63,11 +63,13 @@ pub(crate) fn error_line(message: &str, code: &str) -> String {
     format!("error: {message} [{code}]\n")
 }
 
-/// `hint:` lines for `hints`, followed by the advice `code` implies.
+/// `hint:` lines for `hints`, or, when there are none, for the advice `code`
+/// implies: advice specific to one failure replaces its code's general advice.
 pub(crate) fn hint_lines<'a>(code: &str, hints: impl IntoIterator<Item = &'a str>) -> String {
+    let mut hints = hints.into_iter().peekable();
+    let general = hints.peek().is_none().then(|| code_hint(code)).flatten();
     hints
-        .into_iter()
-        .chain(code_hint(code))
+        .chain(general)
         .map(|hint| format!("hint: {hint}\n"))
         .collect()
 }
@@ -174,10 +176,14 @@ pub(crate) fn scene_parse_context(
         );
     }
 
+    if error.code().as_str() == "scene.invalid-json" && is_blank(bytes) {
+        return (format!("{subject}: it is empty"), Vec::new());
+    }
+
     let mut message = format!("{subject}: {}", error.message());
     let mut hints = Vec::new();
     match error.code().as_str() {
-        "scene.unsupported-input" => hints.push(envelope_hint(bytes).to_owned()),
+        "scene.unsupported-input" => hints.extend(envelope_hint(bytes).map(str::to_owned)),
         "scene.invalid-json" => {
             if let Err(syntax) = serde_json::from_slice::<IgnoredAny>(bytes) {
                 if syntax.line() > 0 {
@@ -190,8 +196,9 @@ pub(crate) fn scene_parse_context(
                 }
             }
         }
-        "scene.invalid-envelope" => hints
-            .push(missing_members_hint(bytes).unwrap_or_else(|| envelope_hint(bytes).to_owned())),
+        "scene.invalid-envelope" => hints.extend(
+            missing_members_hint(bytes).or_else(|| envelope_hint(bytes).map(str::to_owned)),
+        ),
         _ => {
             if let Some(pointer) = error.json_pointer().filter(|pointer| !pointer.is_empty()) {
                 let _ = write!(message, " at {pointer}");
@@ -202,11 +209,17 @@ pub(crate) fn scene_parse_context(
 }
 
 fn looks_like_svg(bytes: &[u8]) -> bool {
-    let start = bytes
-        .strip_prefix("\u{feff}".as_bytes())
-        .unwrap_or(bytes)
-        .trim_ascii_start();
+    let start = without_bom(bytes).trim_ascii_start();
     start.starts_with(b"<svg") || start.starts_with(b"<?xml") || start.starts_with(b"<!DOCTYPE svg")
+}
+
+/// Whether `bytes` hold nothing but whitespace (or nothing at all).
+fn is_blank(bytes: &[u8]) -> bool {
+    without_bom(bytes).trim_ascii().is_empty()
+}
+
+fn without_bom(bytes: &[u8]) -> &[u8] {
+    bytes.strip_prefix("\u{feff}".as_bytes()).unwrap_or(bytes)
 }
 
 /// The members a version-2 scene document must have, with the empty value
@@ -242,8 +255,10 @@ fn missing_members_hint(bytes: &[u8]) -> Option<String> {
     }
 }
 
-/// What a JSON document that is not a version-2 scene probably is.
-fn envelope_hint(bytes: &[u8]) -> &'static str {
+/// What a JSON document that is not a version-2 scene probably is, when the
+/// error does not already say: the library names libraries, clipboard data and
+/// unsupported versions itself.
+fn envelope_hint(bytes: &[u8]) -> Option<&'static str> {
     #[derive(Deserialize)]
     struct Envelope {
         #[serde(rename = "type")]
@@ -254,22 +269,21 @@ fn envelope_hint(bytes: &[u8]) -> &'static str {
     let kind = envelope
         .as_ref()
         .and_then(|envelope| envelope.kind.as_ref()?.as_str().map(str::to_owned));
+    let version = envelope
+        .as_ref()
+        .and_then(|envelope| envelope.version.as_ref());
     match kind.as_deref() {
-        Some("excalidrawlib") => {
-            "this is an Excalidraw library; only scene documents can be rendered"
-        }
-        Some("excalidraw/clipboard") => {
-            "this is Excalidraw clipboard data; paste it into Excalidraw and save the scene as .excalidraw"
-        }
-        Some("excalidraw")
-            if envelope
-                .as_ref()
-                .and_then(|envelope| envelope.version.as_ref())
-                .is_some_and(|version| version != 2) =>
-        {
-            "only version 2 scene documents are supported"
-        }
-        _ => "an Excalidraw scene is a JSON object with \"type\": \"excalidraw\" and \"version\": 2",
+        Some("excalidrawlib" | "excalidraw/clipboard") => None,
+        Some("excalidraw") if version.is_some_and(|version| version != 2) => version
+            .and_then(serde_json::Value::as_u64)
+            .is_some_and(|version| version > 2)
+            .then_some(
+                "the file may come from a newer Excalidraw than this renderer supports; \
+                 check for a newer excalidraw-render",
+            ),
+        _ => Some(
+            "an Excalidraw scene is a JSON object with \"type\": \"excalidraw\" and \"version\": 2",
+        ),
     }
 }
 

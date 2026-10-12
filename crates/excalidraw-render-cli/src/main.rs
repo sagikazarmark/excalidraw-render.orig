@@ -780,6 +780,7 @@ fn run_render(
             None,
             EXIT_USAGE,
         )
+        .with_hint("name the scene file, or pass - to read it from standard input")
     })?;
     let output = cli.output.as_deref().ok_or_else(|| {
         Failure::cli(
