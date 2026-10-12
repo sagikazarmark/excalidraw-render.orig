@@ -38,6 +38,8 @@ mod excalifont_text_render;
 mod extreme_value_render;
 mod final_surface_contract;
 mod font_catalog_render;
+#[cfg(not(all(feature = "png", feature = "pdf")))]
+mod format_features;
 mod frame_clip_accounting;
 mod frame_export;
 mod frame_field_contract;
