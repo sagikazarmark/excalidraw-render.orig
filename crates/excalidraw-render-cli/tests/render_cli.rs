@@ -400,11 +400,12 @@ fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
             && line.ends_with(" more)")),
         "{stderr}"
     );
+    // The property each warning is about is named, once per group.
     assert!(
-        lines.iter().any(|line| line.starts_with("warning: ")
-            && line.ends_with(
-                "[compatibility.unsupported-property] (5 occurrences; elements a, b, c and 2 more)"
-            )),
+        lines.contains(
+            &"warning: unrecognized element property was ignored: futureField \
+              [compatibility.unsupported-property] (5 occurrences; elements a, b, c and 2 more)"
+        ),
         "{stderr}"
     );
     for code in [
@@ -422,11 +423,38 @@ fn human_diagnostics_are_grouped_and_informational_ones_need_verbose() {
         "{verbose}"
     );
     assert!(
-        verbose.lines().any(|line| line.starts_with("info: ")
-            && line.ends_with(
-                "[normalization.missing-timestamp] (5 occurrences; elements a, b, c and 2 more)"
-            )),
+        verbose.lines().any(|line| line
+            == "info: missing required timestamp was repaired to canonical zero: updated \
+                [normalization.missing-timestamp] (5 occurrences; elements a, b, c and 2 more)"),
         "{verbose}"
+    );
+    // A group of different properties names a few of them, and a property
+    // outside the elements by its full path.
+    let editor_only = temp.join("editor-only.excalidraw");
+    fs::write(
+        &editor_only,
+        r#"{"type":"excalidraw","version":2,"elements":[
+            {"id":"l","type":"line","x":0,"y":0,"width":10,"height":10,"points":[[0,0],[10,10]],"polygon":false,"updated":1}
+        ],"appState":{"lockedMultiSelections":{}},"files":{}}"#,
+    )
+    .expect("write a scene with editor-only properties");
+    let editor_only = cli(&[
+        editor_only.to_str().unwrap(),
+        "-o",
+        "-",
+        "-f",
+        "svg",
+        "--verbose",
+    ]);
+    assert!(editor_only.status.success(), "{editor_only:?}");
+    let editor_only = String::from_utf8(editor_only.stderr).expect("report is UTF-8");
+    assert!(
+        editor_only.lines().any(|line| {
+            line
+            == "info: editor-only property was ignored: polygon, appState.lockedMultiSelections \
+                [compatibility.unsupported-property] (2 occurrences; element l)"
+        }),
+        "{editor_only}"
     );
 
     // JSON keeps every occurrence.

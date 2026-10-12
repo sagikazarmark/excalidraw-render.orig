@@ -16,6 +16,7 @@ use serde::Deserialize;
 /// summarizes the rest.
 const SHOWN_ELEMENTS: usize = 3;
 const SHOWN_CHARACTERS: usize = 5;
+const SHOWN_PROPERTIES: usize = 3;
 
 /// The library's message for official text drawn with the `?` replacement glyph.
 const OFFICIAL_MISSING_GLYPH: &str =
@@ -280,11 +281,13 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
         count: usize,
         elements: Vec<&'a str>,
         characters: Vec<u32>,
+        properties: Vec<String>,
         // Membership only, never iterated: the lists above keep first-occurrence
         // order, and these keep a report of many (long) ids from comparing each
         // occurrence against every one already listed.
         seen_elements: HashSet<&'a str>,
         seen_characters: HashSet<u32>,
+        seen_properties: HashSet<String>,
     }
     let mut groups: Vec<Group<'_>> = Vec::new();
     for diagnostic in diagnostics {
@@ -303,8 +306,10 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
                     count: 0,
                     elements: Vec::new(),
                     characters: Vec::new(),
+                    properties: Vec::new(),
                     seen_elements: HashSet::new(),
                     seen_characters: HashSet::new(),
+                    seen_properties: HashSet::new(),
                 });
                 groups.len() - 1
             });
@@ -318,6 +323,11 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
         if let Some(DiagnosticDetails::MissingGlyph { codepoint, .. }) = diagnostic.details() {
             if group.seen_characters.insert(*codepoint) {
                 group.characters.push(*codepoint);
+            }
+        }
+        if let Some(property) = property_path(diagnostic) {
+            if group.seen_properties.insert(property.clone()) {
+                group.properties.push(property);
             }
         }
     }
@@ -336,8 +346,14 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
                     "{count} characters have no glyph in the bundled fonts and were drawn as \"?\""
                 ),
             }
-        } else {
+        } else if group.properties.is_empty() {
             group.first.message().to_owned()
+        } else {
+            format!(
+                "{}: {}",
+                group.first.message(),
+                listed(&group.properties, SHOWN_PROPERTIES)
+            )
         };
         let mut facts = Vec::new();
         if group.count > 1 && !replaced_characters {
@@ -366,6 +382,31 @@ pub(crate) fn diagnostics(diagnostics: &[CompatibilityDiagnostic], verbose: bool
         text.push('\n');
     }
     text
+}
+
+/// The property a diagnostic is about, from its JSON pointer: the path within
+/// its element (`startBinding.fixedPoint`), which the line names by ID, or
+/// the whole path for anything outside the elements
+/// (`appState.lockedMultiSelections`). `None` for a diagnostic about a whole
+/// element or the whole scene.
+fn property_path(diagnostic: &CompatibilityDiagnostic) -> Option<String> {
+    let mut segments = diagnostic
+        .json_pointer()
+        .strip_prefix('/')?
+        .split('/')
+        .map(|segment| segment.replace("~1", "/").replace("~0", "~"))
+        .collect::<Vec<_>>();
+    if diagnostic.element_id().is_some()
+        && segments
+            .first()
+            .is_some_and(|segment| segment == "elements")
+        && segments
+            .get(1)
+            .is_some_and(|index| index.bytes().all(|byte| byte.is_ascii_digit()))
+    {
+        segments.drain(..2);
+    }
+    (!segments.is_empty()).then(|| segments.join("."))
 }
 
 /// `a, b, c and 2 more`, naming at most `shown` items.
