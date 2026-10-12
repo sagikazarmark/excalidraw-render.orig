@@ -1066,7 +1066,6 @@ impl RenderSession {
             let relationships = relationships::resolve(
                 scene,
                 &normalization.elements,
-                &normalization.files,
                 request.supplemental_assets(),
                 |event| self.observe_relationship_event(request, event),
             );
