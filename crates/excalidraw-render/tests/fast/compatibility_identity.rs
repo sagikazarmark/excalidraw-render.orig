@@ -1,5 +1,5 @@
 use excalidraw_render::{
-    CompatibilityRevision, FrameBatchError, FrameRef, FrameRefs, FrameRenderCursor,
+    Artifact, CompatibilityRevision, FrameBatchError, FrameRef, FrameRefs, FrameRenderCursor,
     FrameRenderEntry, FrameRenderRequest, RenderError, RenderOutcome, RenderRequest, Renderer,
     RequestError, SceneDocument, SceneParseError,
 };
@@ -66,6 +66,9 @@ fn renderer_scenes_requests_and_results_are_safe_to_share_between_threads() {
     assert_send_sync::<RenderError>();
     assert_clone::<Renderer>();
     assert_clone::<SceneDocument>();
+    assert_clone::<RenderOutcome>();
+    assert_clone::<RenderError>();
+    assert_clone::<Artifact>();
 
     let renderer = std::sync::Arc::new(Renderer::new());
     let other_thread = std::sync::Arc::clone(&renderer);
