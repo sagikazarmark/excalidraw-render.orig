@@ -56,7 +56,15 @@ threads-required = "num-cpus"
 release-cli = { max-threads = 1 }
 
 [[profile.default.overrides]]
-filter = 'package(xtask) & (binary(=coverage) | binary(=representative_candidate))'
+filter = '''
+package(xtask) & (
+    binary(=coverage)
+    | binary(=representative_candidate)
+    | test(=coverage::ownership::tests::five_layer_mapping_is_optional_but_pdf_judgments_remain_required)
+    | test(=coverage::ownership::representative::tests::representative_owner_release_positive_path_uses_real_gate_in_isolated_fixture)
+    | test(=conformance_candidate_native::tests::fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds)
+)
+'''
 test-group = "release-cli"
 
 # The PR gate's fast leg: the `default` set without the parity and limits
