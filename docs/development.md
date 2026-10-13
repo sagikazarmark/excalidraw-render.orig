@@ -267,7 +267,7 @@ part of the push gate: the SVG font subset qualification corpus
 (`render::font_subset_qualification::complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces`)
 and the frame batch property test
 (`render::frame_batch_property::frame_batch_rendering_matches_standalone_around_resource_limits`).
-`just qualification x86_64-unknown-linux-gnu`, which the `Packaged public facade`
+`just qualification x86_64-unknown-linux-gnu`, which the `Release evidence`
 workflow runs, runs the complete renderer unit target in
 `--release` with the environment variable that admits them, without a name
 filter, so a renamed test cannot drop out silently:

@@ -1,5 +1,3 @@
-# The per-change gates (ADR-0024): one job per check, in the devenv shell,
-# with the Cargo build cached between runs.
 name: CI
 
 on:
@@ -9,6 +7,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -22,6 +24,7 @@ jobs:
   fmt:
     name: Format
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -32,12 +35,13 @@ jobs:
       - name: Set up devenv
         uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
 
-      - name: Format
+      - name: Check formatting
         run: just fmt
 
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -60,6 +64,7 @@ jobs:
   features:
     name: Clippy (features)
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -76,12 +81,13 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
 
-      - name: Clippy (features)
+      - name: Clippy without default features and with each one alone
         run: just features
 
   msrv:
     name: Rust 1.92
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -98,13 +104,14 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv --option languages.rust.version:string 1.92.0 shell -- {0}
 
-      - name: Rust 1.92
+      - name: Check MSRV
         shell: devenv --option languages.rust.version:string 1.92.0 shell -- bash -e {0}
         run: just msrv
 
   test:
-    name: Test (fast)
+    name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -121,34 +128,20 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
 
-      - name: Test (fast)
+      # The tiers share one compilation of the workspace test targets.
+      - name: Fast tier
         run: just test
 
-  test-render:
-    name: Test (render)
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
-
-      - name: Set up Rust cache
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-          cmd-format: devenv shell -- {0}
-
-      - name: Test (render)
+      - name: Render tier
         run: just test-render
+
+      - name: Doc tests
+        run: just test-doc
 
   test-features:
     name: Test (features)
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -165,34 +158,13 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
 
-      - name: Test (features)
+      - name: Test the builds that leave out PNG or PDF
         run: just test-features
-
-  test-doc:
-    name: Test (doc)
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
-
-      - name: Set up Rust cache
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-          cmd-format: devenv shell -- {0}
-
-      - name: Test (doc)
-        run: just test-doc
 
   conformance:
     name: Conformance
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -209,12 +181,13 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
 
-      - name: Conformance
+      - name: Verify cases, ledgers and approved evidence
         run: just conformance
 
   packaging:
     name: Packaging
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -234,5 +207,5 @@ jobs:
             . -> target
             tests/package-consumer -> ../../target/package-consumer
 
-      - name: Packaging
+      - name: Check the packaged crates
         run: just packaging

@@ -174,9 +174,11 @@ output lengths under #178. The public join has zero disagreements. See
 [trace collection](research/trace-collection.md) for the distinction between
 report export and a pass.
 
-The PDF workflow only schedules Dagger calls. The nightly workflow runs the
-`just nightly-*` expansions and the browser-WASM release checks. Target-evidence
-export is manual.
+GitHub Actions runs only recipes in the devenv shell: `ci.yaml` the per-change
+gates, `nightly.yaml` the `just nightly-*` expansions and the browser-WASM
+release checks, and `release-evidence.yaml`, on demand, `just target-evidence`
+with its output as an artifact. The PDF harness gates are not scheduled; run
+them with `dagger api call evidence pdf`.
 
 Codec and nested-SVG mutation fuzzing runs through `just nightly-asset-fuzz`;
 its PR smoke, seed matrix, resource envelope and failure-replay procedure are

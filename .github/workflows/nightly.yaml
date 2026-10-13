@@ -1,4 +1,4 @@
-name: Nightly randomized expansions
+name: Nightly
 
 on:
   schedule:
@@ -8,15 +8,19 @@ on:
 permissions:
   contents: read
 
+env:
+  CARGO_TERM_COLOR: always
+
 defaults:
   run:
     shell: devenv shell -- bash -e {0}
 
 jobs:
-  nightly:
+  expansion:
     name: Nightly (${{ matrix.task }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
     strategy:
       fail-fast: false
       matrix:
@@ -31,13 +35,19 @@ jobs:
       - name: Set up devenv
         uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
 
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+
       - name: Expand
         run: just nightly-${{ matrix.task }}
 
   wasm:
     name: Browser WASM
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     steps:
       - name: Checkout repository
@@ -47,6 +57,15 @@ jobs:
 
       - name: Set up devenv
         uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+          workspaces: |
+            . -> target
+            tests/package-consumer -> ../../target/package-consumer
 
       - name: Qualification
         run: just qualification wasm32-unknown-unknown
