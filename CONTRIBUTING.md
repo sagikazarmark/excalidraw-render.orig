@@ -2,48 +2,40 @@
 
 This is the entry point for testing, generating references and reviewing
 expectation changes. [Development details](docs/development.md) cover build/run
-options; [CI operations](docs/ci.md) cover Dagger and release evidence.
+options; [CI operations](docs/ci.md) cover the gates and release evidence.
 
-Use Rust 1.97.1 for release-equivalent results. The optional `devenv shell`
-provides the development tools and selects Dagger `v1.0.0-beta.14`.
+Work in the `devenv shell`: it pins every tool the gates use, including Rust
+1.97.1, nextest, qpdf 12.3.2, Firefox and the wasm-bindgen runner (ADR-0024).
+Every gate is a [`just`](justfile) recipe; `just` lists them.
 
 ## Run tests
 
 | Level | Command | What it checks |
 | --- | --- | --- |
 | Unit feedback | `cargo nextest run --locked --workspace --exclude xtask --lib --bins --profile ci-fast` | Renderer, CLI, assets, and comparator unit targets |
-| Full Rust | `cargo nextest run --locked --workspace` and `cargo test --locked --workspace --doc` | Quick tests, official-reference parity, parser limits, and doctests |
-| CI | `dagger --engine cloud check` | Pinned lint, tests, evidence, packaging, native and experimental-WASM checks |
+| Full Rust | `just test test-render test-doc` | Quick tests, official-reference parity, parser limits, and doctests |
+| Per change | `just ci` | Formatting, lints, every test tier, the conformance verifiers and the packaged consumers |
+| Release | `just release` | Native and browser-WASM qualification, snapshot replay, traces and full equality |
+
+The per-change gates run on any host the devenv shell supports, macOS included.
+CI runs the same recipes, one job each. Native release evidence needs
+`x86_64-unknown-linux-gnu`, the supported native target; the browser-WASM
+release checks run anywhere.
 
 `cargo test --locked --workspace` also works without nextest. Neither ordinary
 Rust command runs the ignored viewer harnesses or release-only qualification.
 Optional CJK coverage uses an isolated packaged consumer so workspace feature
-unification cannot accidentally restore the payloads. After packaging and
-unpacking the crates with `tests/package-consumer/check-packaged-cli.sh`, run
-`bash tests/package-consumer/check-no-cjk.sh x86_64-unknown-linux-gnu`.
-Dagger runs this check on native and experimental browser WASM.
+unification cannot accidentally restore the payloads: `just package-no-cjk`
+checks it natively and `just wasm-packaging` in browser WASM.
 The full workspace includes `xtask` evidence tests that invoke Node and qpdf
-12.3.2 from `target/pdf-harness/qpdf/bin/qpdf`; Dagger installs these automatically.
-Use Dagger for the full workspace if those tools are not installed locally.
+12.3.2; the devenv shell provides both, and links qpdf at
+`target/pdf-harness/qpdf`.
 The full integration suite includes the unsupported field/value families as
 independent tests, with a checked test-group owner (ADR-0018). Use the unit
 targets or a focused test while iterating. For CLI integration changes, run
 `cargo test --locked -p excalidraw-render-cli --test render_cli`.
-Dagger runs release qualification; release preparation additionally runs the
-SVG/PDF viewer harnesses. See [the release runbook](release.md).
-
-For a local Dagger engine, omit `--engine cloud`; a container runtime is then
-required. Dagger Cloud requires a logged-in account with engine access. When
-entering from an older shell, set `DAGGER_X_RELEASE=v1.0.0-beta.14`.
-GitHub Actions is optional: a successful Dagger run is authoritative regardless
-of Actions availability.
-
-Use `dagger check --list` to discover check names. Run a subset while developing:
-
-```sh
-dagger --engine cloud check test:fast
-dagger --engine cloud check 'conformance:*'
-```
+Release preparation additionally runs the SVG/PDF viewer harnesses. See
+[the release runbook](release.md).
 
 ## Understand a failure
 
@@ -81,7 +73,7 @@ render inputs or expected output still use the workflow below.
 4. Review changed expectations and comparison rules through normal Git/PR review.
    No separate approval hash, issue-comment acceptance or approval-writing command
    is required for any evidence family.
-5. Run the affected checks, then the full Dagger checks before release.
+5. Run the affected checks, then `just ci`, and `just release` before a release.
 
 Running tests needs no fresh approval. An unchanged accepted baseline remains
 accepted. Contributors and agents may prepare updates; maintainer acceptance
@@ -143,8 +135,8 @@ Completed evaluations and proposal migrations are historical research. Their
 command transcripts are not additional contribution steps; see
 [retired tooling](tools/historical-tooling.md). Older approval records and command
 transcripts remain historical. Current verification checks outputs, input/profile
-bindings, explicit tolerances and complete execution results directly. Tool
-download checksums and binary-identity hashes are still enforced.
+bindings, explicit tolerances and complete execution results directly.
+`devenv.lock` pins the tools, and the harness images keep their digests.
 
 ## Release scope
 

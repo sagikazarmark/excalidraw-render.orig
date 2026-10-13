@@ -41,13 +41,10 @@ appearance and exact resource-boundary gates remain the independent oracles.
 
 ```sh
 cargo test --locked -p excalidraw-render --test asset_fuzz
-dagger api call nightly asset-fuzz
-# Same expansion locally (test profile retains overflow/debug assertions):
-EXCALIDRAW_ASSET_FUZZ_CASES=4096 cargo test --locked -p excalidraw-render --test asset_fuzz \
-  asset_fuzz::nightly_asset_fuzz_is_bounded_and_deterministic -- --ignored --exact
+just nightly-asset-fuzz        # 4,096 cases; pass a count to change it
 ```
 
-GitHub's nightly scheduler invokes the canonical Dagger operation. Its 60-minute
+GitHub's nightly scheduler runs the same recipe. Its 60-minute
 job timeout is a backstop for hangs; timeout, abort and OOM are failed runs, never
 typed successes. Inputs are bounded independently: payloads ≤256 KiB, ≤6 linear
 wrappers or ≤2 repeated wrappers, scenes ≤8 MiB, ≤8 byte mutations. Semantic

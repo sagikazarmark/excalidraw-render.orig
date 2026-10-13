@@ -13,8 +13,8 @@ host := "$(rustc -vV | sed -n 's/^host: //p')"
 default:
     @just --list --unsorted
 
-# Run all CI jobs.
-ci: fmt clippy features msrv test test-render test-features test-doc conformance packaging
+# Run every per-change gate except msrv, which needs its own toolchain.
+ci: fmt clippy features test test-render test-features test-doc conformance packaging
 
 # Check the formatting of every repo-authored crate (lint:fmt).
 fmt:

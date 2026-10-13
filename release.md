@@ -46,13 +46,19 @@ number, not only new metadata.
 
 ## 2. Verify
 
+On Linux x86-64, in the devenv shell:
+
 ```sh
-dagger --engine cloud check
+just ci
+devenv --option languages.rust.version:string 1.92.0 shell -- just msrv
+just release
 cargo publish --workspace --dry-run --locked
 ```
 
-`dagger check` is the release gate (lint, MSRV, tests, evidence, packaging,
-native and experimental WASM). The SVG/PDF viewer harnesses run separately;
+`just ci` is the per-change gate (lint, tests, evidence, packaging), `just msrv`
+the MSRV check, and
+`just release` the release checks (native and experimental-WASM qualification,
+snapshot replay, traces and full equality). The SVG/PDF viewer harnesses run separately;
 see [conformance operations](tests/conformance/README.md). The publish dry run
 packages and compiles every crate against its packaged dependencies.
 
@@ -78,12 +84,12 @@ After the first publication, add any co-owners with
 ```sh
 git switch --detach vX.Y.Z
 git status --porcelain   # must print nothing
-dagger --engine cloud call release-archive --version X.Y.Z export --path dist
+just release-archive X.Y.Z
 ```
 
-Dagger builds whatever is checked out, so check out the tag in a clean tree
+The recipe builds whatever is checked out, so check out the tag in a clean tree
 first; the archive build refuses a `--version` that differs from the workspace
-version. It builds the Linux x86-64 (glibc) CLI with the pinned toolchain,
+version. It builds the Linux x86-64 (glibc) CLI with the devenv toolchain into `dist/`,
 producing `excalidraw-render-X.Y.Z-x86_64-unknown-linux-gnu.tar.gz`
 and its `.sha256` file. The archive holds the binary, README, and every license.
 
@@ -107,5 +113,5 @@ excalidraw-render tests/conformance/cases/focused/bound-text-containers/scene.ex
 Also unpack the GitHub archive on Linux x86-64, verify its checksum, and run
 `excalidraw-render --version`, which prints
 `excalidraw-render X.Y.Z (Excalidraw 0.18.1)`. Then record the release commit,
-crate checksums, and the Dagger trace in the changelog entry, in a follow-up
+crate checksums, and the release-check logs in the changelog entry, in a follow-up
 commit on `main`: the tag and the GitHub release notes are already fixed.

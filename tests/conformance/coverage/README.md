@@ -47,10 +47,10 @@ cargo run --locked -p xtask -- conformance inventory > target/inventory.json
 # Review the staged diff, then copy target/inventory.json here.
 cargo run --locked -p xtask -- conformance verify-inventory
 cargo run --locked -p xtask -- conformance inventory-digest
-dagger check excalidraw-render:conformance:coverage-inventory
+just conformance
 ```
 
-Generation through the pinned Dagger environment:
+Generation through the Dagger evidence operations:
 
 ```sh
 dagger api call evidence inventory --output target/inventory.json
@@ -114,8 +114,8 @@ schema = "excalidraw-render/coverage-results/v1"
 compatibility_revision = 1
 commit = 40 lowercase hex characters
 inventory_sha256 = canonical inventory digest
-tool_manifest_sha256 = SHA-256(tests/package-consumer/tool-manifest.json)
-dagger_lock_sha256 = SHA-256(dagger.lock)
+(older bundles also carry tool_manifest_sha256 and dagger_lock_sha256, the
+ retired runner's pin-file digests, as provenance; ADR-0024)
 runs = exactly one run per (supported target, forward|reverse)
   target = x86_64-unknown-linux-gnu | wasm32-unknown-unknown
   order = forward | reverse
@@ -156,10 +156,10 @@ tests do) proves only the validator's behavior.
 
 ### Test-only trace collection
 
-`dagger api call traces` collects the same 168 keys through the internal test-only
-trace seam on both targets and orders. `dagger api call full-results` joins those
-measurements to fresh packaged native and WASM artifact/report measurements;
-`dagger check excalidraw-render:full-equality` rejects all combined disagreements.
+`just trace-logs <target>` collects the same 168 keys through the internal test-only
+trace seam on both targets and orders. `just full-equality` joins those
+measurements to fresh packaged native and WASM artifact/report measurements and
+rejects all combined disagreements.
 The exported trace-collection schema requires `conformance verify-joined-results`,
 not the generic draft `verify-results` command. No public trace API is added.
 See [execution details and findings](../../../docs/research/trace-collection.md).
@@ -171,13 +171,12 @@ closure or a waiver of the upstream blocker.
 ### Browser-WASM collection and replay
 
 ```sh
-dagger check excalidraw-render:wasm:snapshot-replay
-dagger api call wasm browser-snapshot-logs --output target/wasm-snapshot-logs
+just wasm-snapshot-replay
 ```
 
-The first is a blocking comparison against the approved native baseline. The
-second exports logs and `replay.json` even when comparison fails; check its
-`decision`. Both execute all 168 keys twice in each of separate forward/reverse
+It is a blocking comparison against the approved native baseline, and leaves
+the logs and `replay.json` in `target/release-evidence/wasm-snapshots` even when
+the comparison fails; check its `decision`. It executes all 168 keys twice in each of separate forward/reverse
 browser runner invocations. The generated harness embeds the scenes and options
 and reuses the approved native collector source's request adapter without editing
 that approval-pinned file. Generated Rust/input files are ignored staging files.
@@ -186,7 +185,7 @@ Per-key digests/lengths cover complete artifacts, reports and typed failure
 descriptors. The host rejects missing/extra/duplicate/out-of-order keys, absent
 or duplicate completion, stale input binding, session drift, and any native
 baseline difference. Logs are execution evidence, not trusted attestations when
-supplied independently of the Dagger runner. No trace values are fabricated.
+supplied independently of the recipe. No trace values are fabricated.
 
 Initial execution found seven cross-target mismatches (four PNG byte differences
 and image-codecs resource failures in all formats); 161 keys match. Both WASM
@@ -277,7 +276,7 @@ draft inventory's floating-point canonicalization limitation.
 cargo run --locked -p xtask -- conformance stage-native-baseline \
   target/native-snapshots-clean target/new-native-baseline
 cargo run --locked -p xtask -- conformance verify-native-baseline
-dagger check packaging:snapshot-replay
+just snapshot-replay
 ```
 
 Staging refuses existing output directories and modified-source candidates. It
@@ -476,14 +475,13 @@ the closure owner bound this record through the compiled-in `layers` verifier
 ### Native snapshot candidates
 
 The native public-facade collector is implemented as the non-published
-`tests/package-consumer/examples/native_snapshots.rs`. Run it in pinned Dagger:
+`tests/package-consumer/examples/native_snapshots.rs`. Run it on Linux x86-64:
 
 ```sh
-dagger api call packaging snapshots --output target/native-snapshots
-cargo run --locked -p xtask -- conformance verify-native-snapshots target/native-snapshots
+just snapshot-replay
 ```
 
-Dagger verifies the inventory, packages the library/assets, runs request-adapter
+The recipe verifies the inventory, packages the library/assets, runs request-adapter
 tests, and builds the collector with `--release --locked` against those unpacked
 crates. The parent spawns two separate worker processes in forward/reverse order.
 Each key renders twice through fresh public-API sessions. The parent compares
@@ -502,16 +500,17 @@ library/asset archives. It reuses inventory execution keys and two-sample result
 shape but omits the unavailable trace field and WASM runs. It must not be fed to
 `verify-results`, which correctly requires both targets and traces.
 
-Provenance records rustc, Git HEAD, source status, inventory, tool and consumer
-locks, consumer manifest/configuration, collector source and package digests.
+Provenance records rustc, Git HEAD, source status, inventory, consumer
+lock, consumer manifest/configuration, collector source and package digests.
 Cargo metadata must resolve each library/asset dependency to the packaged source.
 Working-tree output is visibly
 marked modified; Git HEAD alone is not claimed as its complete source identity.
 The package archives preserve the actual compiled inputs. Output directory reuse
-is refused by the collector; Dagger exports to a caller-selected staging location.
+is refused by the collector; the recipe collects into `target/release-evidence/native-snapshots`
+and verifies the candidate there.
 The verifier rehashes every artifact/report/failure blob, checks exact execution
 coverage/order and repeat equality, rejects extra blobs, verifies packaged archive
-digests, exported worker-report equality and current input/tool/collector bindings. This does not grant approval or
+digests, exported worker-report equality and current input/collector bindings. This does not grant approval or
 prove semantic parity with official evidence: it stages reproducible candidates
 for that review. Typed render failures retain their error descriptor and full
 report instead of inventing an artifact.
@@ -529,5 +528,5 @@ of blobs and package archives; generated candidate files are not committed.
 3. Resolve the exposed WASM byte and cross-target trace differences; both collectors
    and their combined gate now execute the current inventory in both orders.
 4. Promote representative cases and expand codec/renderer fuzz reach, then make
-   complete collection/equality/snapshot checking a Dagger release gate. Only then
+   complete collection/equality/snapshot checking a release gate. Only then
    replace the draft closure rejection with a verified approved closure state.
