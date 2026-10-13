@@ -52,7 +52,6 @@ pub(in crate::coverage) fn inputs() -> Result<Vec<u8>, String> {
         &json!({"schema":"excalidraw-render/wasm-snapshot-inputs/v1",
         "inventory_sha256":digest(&inventory)?,"executions":inventory.executions,"scenes":scenes,
         "collector_sha256":sha256(&read(NATIVE)?),"template_sha256":sha256(&read(TEMPLATE)?),
-        "tool_manifest_sha256":sha256(&read("tests/package-consumer/tool-manifest.json")?),
         "consumer_manifest_sha256":sha256(&read("tests/package-consumer/Cargo.toml")?),
         "consumer_lock_sha256":sha256(&read("tests/package-consumer/Cargo.lock")?),
         "runner_sha256":sha256(&read("tools/ci/wasm-snapshots.sh")?),

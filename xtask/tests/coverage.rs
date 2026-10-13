@@ -1,6 +1,5 @@
 //! The external contract consumed by future native/WASM snapshot collectors.
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -25,14 +24,6 @@ fn assert_success(output: Output) {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-}
-
-fn hash(bytes: &[u8]) -> String {
-    lower_hex(&Sha256::digest(bytes))
-}
-
-fn lower_hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 fn inventory() -> Value {
@@ -68,9 +59,7 @@ fn valid_bundle() -> Value {
         }
     }
     json!({"schema":"excalidraw-render/coverage-results/v1","compatibility_revision":1,
-        "commit":"1".repeat(40),"inventory_sha256":identity,
-        "tool_manifest_sha256":hash(&fs::read(root().join("tests/package-consumer/tool-manifest.json")).unwrap()),
-        "dagger_lock_sha256":hash(&fs::read(root().join("dagger.lock")).unwrap()),"runs":runs})
+        "commit":"1".repeat(40),"inventory_sha256":identity,"runs":runs})
 }
 
 struct Scratch(PathBuf);
@@ -220,6 +209,16 @@ fn compares_both_targets_both_orders_and_both_sessions_including_failures() {
 fn rejects_incomplete_stale_or_divergent_collector_results() {
     let scratch = Scratch::new("reject");
     let valid = valid_bundle();
+    // Pin-file digests are provenance, not a binding to today's files (ADR-0024).
+    let mut retired = valid.clone();
+    retired["tool_manifest_sha256"] = json!("0".repeat(64));
+    retired["dagger_lock_sha256"] = json!("0".repeat(64));
+    let result = scratch.verify(&retired);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
     type Mutation = (&'static str, fn(&mut Value));
     let mutations: &[Mutation] = &[
         ("unknown field", |v| {
@@ -251,9 +250,6 @@ fn rejects_incomplete_stale_or_divergent_collector_results() {
         }),
         ("inventory binding", |v| {
             v["inventory_sha256"] = json!("0".repeat(64))
-        }),
-        ("tooling differs", |v| {
-            v["tool_manifest_sha256"] = json!("0".repeat(64))
         }),
         ("fresh-session mismatch", |v| {
             v["runs"][0]["results"][0]["samples"][1]["report"]["sha256"] = json!("b".repeat(64))

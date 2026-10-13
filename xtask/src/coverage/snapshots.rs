@@ -64,8 +64,11 @@ struct Snapshots {
     source_status: String,
     rustc: String,
     inventory: FileRecord,
-    tool_manifest: FileRecord,
-    dagger_lock: FileRecord,
+    // The retired Dagger runner's pin files, which older bundles record (ADR-0024).
+    #[serde(default)]
+    tool_manifest: Option<FileRecord>,
+    #[serde(default)]
+    dagger_lock: Option<FileRecord>,
     consumer_lock: FileRecord,
     consumer_manifest: FileRecord,
     consumer_config: FileRecord,
@@ -284,11 +287,6 @@ fn verified_bundle(root: &Path, inventory: &Inventory) -> Result<Snapshots, Stri
     let bundle: Snapshots =
         parse(&fs::read(root.join("snapshots.json")).map_err(|e| e.to_string())?)?;
     current_file(&bundle.inventory, INVENTORY)?;
-    current_file(
-        &bundle.tool_manifest,
-        "tests/package-consumer/tool-manifest.json",
-    )?;
-    current_file(&bundle.dagger_lock, "dagger.lock")?;
     current_file(&bundle.consumer_lock, "tests/package-consumer/Cargo.lock")?;
     current_file(
         &bundle.consumer_manifest,
@@ -302,12 +300,9 @@ fn verified_bundle(root: &Path, inventory: &Inventory) -> Result<Snapshots, Stri
         &bundle.collector,
         "tests/package-consumer/examples/native_snapshots.rs",
     )?;
-    let tools: Value = parse(&read("tests/package-consumer/tool-manifest.json")?)?;
-    if !bundle.rustc.starts_with(&format!(
-        "rustc {} ",
-        string(&tools["rust_toolchain"], "version")?
-    )) {
-        return Err("snapshot compiler is not pinned".into());
+    // The compiler is recorded, not checked against a pin file: devenv pins it.
+    if !bundle.rustc.starts_with("rustc ") {
+        return Err("invalid snapshot compiler identity".into());
     }
     let mut packages = BTreeSet::new();
     for package in &bundle.packages {

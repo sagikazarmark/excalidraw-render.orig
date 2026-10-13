@@ -8,7 +8,6 @@ fn trace_inputs() -> Result<Vec<u8>, String> {
         json!(sha256(&read("tests/package-consumer/trace-snapshots.inc")?));
     input["trace_runner_sha256"] = json!(sha256(&read("tools/ci/trace-snapshots.sh")?));
     input["trace_stager_sha256"] = json!(sha256(&read("xtask/src/coverage/traces.rs")?));
-    input["dagger_lock_sha256"] = json!(sha256(&read("dagger.lock")?));
     let output = std::process::Command::new("git")
         .args(["rev-parse", "HEAD"])
         .current_dir(repo_root())
@@ -178,8 +177,8 @@ fn aggregate(directory: &str, join: bool) -> Result<(), String> {
             .trim()
             .into(),
         inventory_sha256: digest(&inventory)?,
-        tool_manifest_sha256: descriptor("tests/package-consumer/tool-manifest.json")?.sha256,
-        dagger_lock_sha256: descriptor("dagger.lock")?.sha256,
+        tool_manifest_sha256: None,
+        dagger_lock_sha256: None,
         runs,
     };
     let public_disagreements = if join {
