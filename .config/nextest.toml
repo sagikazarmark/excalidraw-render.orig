@@ -48,6 +48,17 @@ default-filter = 'not binary(/^harness_/)'
 filter = 'binary(/^parity_registered_case_/) & test(/^every_registered_scene_case_/)'
 threads-required = "num-cpus"
 
+# These xtask tests run commands that build the qualified release CLI on first
+# use (LTO, one codegen unit: minutes on a CI runner). Run concurrently, the
+# first uses only queue on Cargo's build lock while holding test slots, so they
+# take turns in their own group.
+[test-groups]
+release-cli = { max-threads = 1 }
+
+[[profile.default.overrides]]
+filter = 'package(xtask) & (binary(=coverage) | binary(=representative_candidate))'
+test-group = "release-cli"
+
 # The PR gate's fast leg: the `default` set without the parity and limits
 # tiers. Together with `ci-render` it covers the `default` set exactly once.
 [profile.ci-fast]
