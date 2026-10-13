@@ -35,7 +35,7 @@ rust-version = "1.92"
 # Held at 0.22 (#208) with Krilla 0.8.2, which requires `^0.22.1`. usvg 0.48's
 # `writer` feature (implied by `text`) brings 0.23 as a second copy (#209);
 # move to 0.23 with a Krilla release that accepts it.
-base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
+base64 = { version = "0.23.1", default-features = false, features = ["alloc"] }
 clap = { version = "=4.6.7", features = ["derive", "wrap_help"] }
 excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
 # The font packages publish as `excalidraw-render-fonts*`; the keys keep the
@@ -53,7 +53,7 @@ image-webp = "0.2.4"
 # the comparator's tests. The renderer parses scene numbers itself, and xtask's
 # `arbitrary_precision` keeps each `Value` number's source token, so only typed
 # float deserialization would see the correctly rounded parse; nothing here does.
-jsonschema = { version = "=0.58.3", default-features = false }
+jsonschema = { version = "=0.58.6", default-features = false }
 # The PDF writer (ADR-0021). A Krilla bump is a byte-affecting change for every
 # PDF, as svg2pdf's was, so the lock moves it deliberately. Krilla shapes nothing (every glyph
 # arrives positioned). `raster-images` only compiles its image module: every
@@ -72,7 +72,7 @@ libm = "0.2.16"
 # Held at 0.8 (#208): png 0.18.1 requires `^0.8`, so 0.9 would not remove
 # 0.8.9, and moving the IDAT compressor changes every PNG (ADR-0004).
 # Revisit when png moves to miniz_oxide 0.9.
-miniz_oxide = "0.8.9"
+miniz_oxide = "0.9.1"
 moxcms = { version = "0.9.1", default-features = false }
 png = "0.18.1"
 jpeg-encoder = "=0.7.1"
@@ -83,23 +83,23 @@ serde = { version = "1.0.229", features = ["derive"] }
 # Formats floats through zmij: positive exponents are signed (`1e+20`), the
 # spelling spec 11.1 requires (#211). Only the CLI and tests serialize JSON;
 # the renderer's dependency on it is test-only.
-serde_json = "=1.0.151"
+serde_json = "=1.0.152"
 simplecss = "0.2.2"
 sha1 = "=0.11.0"
 sha2 = "0.11.0"
 # The upstream malformed-name fix replaces the safety adapter. The frozen
 # profile token stays at 0.5.1 until ADR-0003's single evidence refresh.
-skera = { version = "0.7.0", default-features = false }
+skera = { version = "0.8.0", default-features = false }
 # Shaping only (#202). Parsing and measurement stay on ttf-parser; HarfRust
 # 0.13 builds on read-fonts 0.43, which doesn't share types with write-fonts'
 # 0.44, so a parser move waits until they share a read-fonts line.
-harfrust = { version = "0.13.3", default-features = false, features = ["std"] }
+harfrust = { version = "0.14.0", default-features = false, features = ["std"] }
 # The version and features rustybuzz 0.20.1 used, minus its layout tables.
 ttf-parser = { version = "0.25.1", default-features = false, features = ["std", "variable-fonts", "glyph-names", "no-std-float"] }
 ryu-js = { version = "1.0.3", default-features = false }
 unicode-bidi = "0.3.18"
 unicode-normalization = "=0.1.25"
-unicase = "=2.9.0"
+unicase = "=2.10.0"
 svgtypes = "0.16.1"
 # Host-only: CLI delivery staging and xtask scratch directories. Never a
 # renderer dependency, so random temporary names cannot reach output bytes.
@@ -121,7 +121,7 @@ wuff = { version = "0.2.8", default-features = false, features = ["brotli"] }
 # the version skera plans over. Name handling and the typed layout validator
 # (ADR-0020) read subsets through it, so the workspace has no direct read-fonts
 # dependency.
-write-fonts = { version = "0.53.0", default-features = false, features = ["read", "tables"] }
+write-fonts = { version = "0.54.0", default-features = false, features = ["read", "tables"] }
 zune-jpeg = { version = "0.5.15", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
