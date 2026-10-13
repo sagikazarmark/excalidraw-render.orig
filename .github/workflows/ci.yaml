@@ -1,6 +1,5 @@
-# The Cargo gates of the Dagger module, outside Dagger: one job per check, in
-# the devenv shell, with the Cargo build cached between runs. Packaging, wasm,
-# and full equality stay in the Dagger workflow.
+# The per-change gates (ADR-0024): one job per check, in the devenv shell,
+# with the Cargo build cached between runs.
 name: CI
 
 on:
@@ -212,3 +211,28 @@ jobs:
 
       - name: Conformance
         run: just conformance
+
+  packaging:
+    name: Packaging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+          workspaces: |
+            . -> target
+            tests/package-consumer -> ../../target/package-consumer
+
+      - name: Packaging
+        run: just packaging

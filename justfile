@@ -1,10 +1,12 @@
-# The Cargo gates of the Dagger module (`dagger.dang`), run in the devenv shell.
-# Packaging, wasm, and full equality stay in Dagger.
+# The gates, run in the devenv shell (ADR-0024).
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 # The repo-authored crates
 packages := "-p excalidraw-render -p excalidraw-render-cli -p excalidraw-render-compare -p excalidraw-render-fonts -p excalidraw-render-fonts-xiaolai -p excalidraw-render-fonts-xiaolai-extended -p xtask"
+
+# The Rust target of this host, which the packaged consumers build for
+host := "$(rustc -vV | sed -n 's/^host: //p')"
 
 # List the recipes.
 [private]
@@ -12,7 +14,7 @@ default:
     @just --list --unsorted
 
 # Run all CI jobs.
-ci: fmt clippy features msrv test test-render test-features test-doc conformance
+ci: fmt clippy features msrv test test-render test-features test-doc conformance packaging
 
 # Check the formatting of every repo-authored crate (lint:fmt).
 fmt:
@@ -61,3 +63,26 @@ conformance:
     target/debug/xtask conformance verify-svg-font-subsets
     target/debug/xtask conformance verify-svg-viewers
     target/debug/xtask conformance verify-pdf-viewers
+
+# Check the published crates the way a downstream consumer uses them (packaging:*).
+packaging: package-cli package-facade package-no-cjk
+
+# Package the published crates and unpack them under target/package.
+package:
+    rm -rf target/package
+    cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare \
+        --allow-dirty --no-verify --target-dir target
+    for archive in target/package/*.crate; do tar -xzf "$archive" -C target/package; done
+
+# Check the packaged CLI against the packaged renderer (packaging:cli).
+package-cli: package
+    bash tests/package-consumer/check-packaged-cli.sh "{{ host }}"
+
+# Run the public facade against the packaged renderer (packaging:public-facade).
+package-facade: package
+    cd tests/package-consumer && cargo test --locked --release --target "{{ host }}" \
+        --test public_facade --test optional_cjk
+
+# Check that a packaged dependency can leave out the CJK payloads (packaging:no-cjk).
+package-no-cjk: package
+    bash tests/package-consumer/check-no-cjk.sh "{{ host }}"
