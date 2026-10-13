@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@103adba998fdfd83aa69c5f3c1f5854d23318f66 # cachix-push (sagikazarmark/setup-devenv#1)
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
         with:
           cachix-cache: rust-projects
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
