@@ -3,54 +3,6 @@ use crate::common::png_stage4::{self as vectors, Case, Outcome};
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use serde_json::json;
 
-fn source_bindings() {
-    use sha2::{Digest, Sha256};
-    for (bytes, expected) in [
-        (
-            include_bytes!("../common/png_icc_safety.rs").as_slice(),
-            "b3c9ee249137314ef30d4c8d45b7b5dd5e381a1f7de3d5e0138440b8a12fdf81",
-        ),
-        (
-            include_bytes!("../common/png_stage4_composition.rs").as_slice(),
-            "472b000e565d975e33e434799c1cf44845fef949a6aa5afd3465122da311c116",
-        ),
-        (
-            include_bytes!("../common/png_stage4_review.rs").as_slice(),
-            "00846cfc34db318377ecc8858dc9b1bd39f1cfb2250be74c70adf4375cd5dd31",
-        ),
-        (
-            include_bytes!("../common/png_stage4.rs").as_slice(),
-            "56e0401fc0ce0bee42135225a39e428923ea134c2b2e9528d78f754fe6bc1e16",
-        ),
-        (
-            include_bytes!("../common/png_stage4_reference.rs").as_slice(),
-            "7579570bcca2466cec5a1ee0b406679c43568ebad69f3d01fac7b3fbe78d6bec",
-        ),
-        (
-            include_bytes!("../common/png_color_reference.rs").as_slice(),
-            "581e09c740b50e8b1eff3ec97145698199c96adfb462ac8fbaa40d781c70144f",
-        ),
-        (
-            include_bytes!("png_profile_contract.rs").as_slice(),
-            "994389eed1224886cfb0df9e8382d90bcac8b6350d72618409a01a1d108a3661",
-        ),
-        (
-            include_bytes!("../common/codec_fixtures.rs").as_slice(),
-            "e85ca0eac6e85596a5ece930e2c8a0470dce63761f0a122927a7ce8b4f36c509",
-        ),
-        (
-            include_bytes!("../common/pdf_inspect.rs").as_slice(),
-            "28e13e1b91eacaf9743e41a1f43aecc1ecb7cab0020d9ac21c0368377500cda2",
-        ),
-        (
-            include_bytes!("../common/raster.rs").as_slice(),
-            "46a6ed5daacc715f1f3c28c2b806b95a04e13206b4bc7f6d13c0ea50c99b8e10",
-        ),
-    ] {
-        assert_eq!(lower_hex(&Sha256::digest(bytes)), expected);
-    }
-}
-
 #[test]
 fn review_adam7_narrow_multiline_subframes_preserve_rows_and_validate_later_indexes() {
     for selected in [false, true] {
@@ -189,7 +141,6 @@ fn review_lower_depth_transparency_keys_never_alias_after_truncation() {
 
 #[test]
 fn authored_case_cardinalities_are_explicit() {
-    source_bindings();
     for (name, actual, expected) in [
         ("orientation", vectors::orientations().len(), 32),
         (
@@ -226,7 +177,6 @@ fn authored_case_cardinalities_are_explicit() {
 }
 
 fn check(rows: Vec<Case>) {
-    source_bindings();
     for row in rows {
         let source = vectors::scene(&row);
         let scene = SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap();
@@ -525,7 +475,6 @@ fn png_limits_have_exact_boundaries_and_precedence() {
 }
 
 fn check_evidence(evidence: serde_json::Value, group: &str, count: usize) {
-    source_bindings();
     use crate::common::{png_color_reference as reference, png_stage4_reference};
     use sha2::{Digest, Sha256};
     for source in evidence["sources"].as_array().unwrap() {
@@ -680,7 +629,6 @@ fn malformed_iccp_has_explicit_ignore_or_recovery_contracts() {
 
 #[test]
 fn profile_validation_and_decode_limits_have_exact_boundaries() {
-    source_bindings();
     use excalidraw_render::ResourceLimits;
     for row in vectors::composition(&[], false)
         .into_iter()
@@ -810,7 +758,6 @@ fn profile_validation_and_decode_limits_have_exact_boundaries() {
 
 #[test]
 fn profile_projection_shares_identities_but_charges_occurrences_tracer() {
-    source_bindings();
     use crate::common::png_color_reference as reference;
     use base64::Engine as _;
     use excalidraw_render::{ErrorCode, ResourceLimits};

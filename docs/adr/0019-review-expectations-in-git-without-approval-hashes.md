@@ -38,3 +38,9 @@ needs no requalification of its own: the adapter records the release it ran in
 each receipt, and the harness gates judge its fresh rasters against the
 expectations, so a release that renders differently fails there and its new
 expectations are reviewed like any other.
+
+The same amendment drops the digest pins that eight codec contract tests and
+`png_projection_contract` held on shared test helpers (`common/raster.rs`,
+`png_profile_contract.rs` and others). A pinned helper failed unrelated tests on
+any edit; what a helper computes is checked by the assertions that use it, as
+ADR-0017 already holds for source anchors.

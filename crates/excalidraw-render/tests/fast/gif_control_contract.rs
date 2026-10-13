@@ -719,22 +719,6 @@ fn evidence() -> Value {
             hash(&std::fs::read(crate::common::repository_root().join(path)).unwrap())
         );
     }
-    for (bytes, digest) in [
-        (
-            include_bytes!("png_profile_contract.rs").as_slice(),
-            "994389eed1224886cfb0df9e8382d90bcac8b6350d72618409a01a1d108a3661",
-        ),
-        (
-            include_bytes!("../common/pdf_inspect.rs").as_slice(),
-            "28e13e1b91eacaf9743e41a1f43aecc1ecb7cab0020d9ac21c0368377500cda2",
-        ),
-        (
-            include_bytes!("../common/raster.rs").as_slice(),
-            "46a6ed5daacc715f1f3c28c2b806b95a04e13206b4bc7f6d13c0ea50c99b8e10",
-        ),
-    ] {
-        assert_eq!(hash(bytes), digest);
-    }
     let collection = &record["collection"];
     assert_eq!(collection["renderer"], "official v0.18.1");
     assert_eq!(collection["chromium"], "149.0.7827.55");

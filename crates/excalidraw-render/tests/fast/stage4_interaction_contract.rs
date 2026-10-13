@@ -1,6 +1,5 @@
 //! Stage-4 interaction contracts. Representative-scene approval is a separate
 //! obligation: this authored tracer deliberately makes no approval claim.
-use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{
     ColorMode, ErrorCode, FrameOptions, FrameRenderRequest, MetadataOptions, OutputFormat,
@@ -67,23 +66,6 @@ fn file(bytes: &[u8], mime: &str) -> Value {
     json!({"id":"asset","mimeType":mime,"dataURL":format!("data:{mime};base64,{}",base64::engine::general_purpose::STANDARD.encode(bytes)),"created":1})
 }
 fn silent(report: &excalidraw_render::CompatibilityReport) {
-    use sha2::{Digest, Sha256};
-    for (bytes, expected) in [
-        (
-            include_bytes!("../common/codec_fixtures.rs").as_slice(),
-            "e85ca0eac6e85596a5ece930e2c8a0470dce63761f0a122927a7ce8b4f36c509",
-        ),
-        (
-            include_bytes!("../common/pdf_inspect.rs").as_slice(),
-            "28e13e1b91eacaf9743e41a1f43aecc1ecb7cab0020d9ac21c0368377500cda2",
-        ),
-        (
-            include_bytes!("../common/raster.rs").as_slice(),
-            "46a6ed5daacc715f1f3c28c2b806b95a04e13206b4bc7f6d13c0ea50c99b8e10",
-        ),
-    ] {
-        assert_eq!(lower_hex(&Sha256::digest(bytes)), expected);
-    }
     assert_eq!(
         serde_json::to_value(report).unwrap(),
         json!({"schema_version":1,"diagnostics":[]})
