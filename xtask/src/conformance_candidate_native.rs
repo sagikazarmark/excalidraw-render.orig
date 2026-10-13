@@ -203,10 +203,8 @@ pub(crate) fn validate_build_identity(identity: &Value) -> Result<()> {
 }
 pub fn build() -> Result<(PathBuf, Value)> {
     let rustc = tool("rustc", &["-vV"])?;
-    if !rustc.starts_with("rustc 1.97.1 ")
-        || !rustc.lines().any(|s| s == "host: x86_64-unknown-linux-gnu")
-    {
-        return Err("native candidate replay requires pinned Rust 1.97.1 Linux x86_64".into());
+    if !rustc.starts_with("rustc 1.97.1 ") {
+        return Err("native candidate replay requires pinned Rust 1.97.1".into());
     }
     let cargo = tool("cargo", &["--version"])?;
     let (executable, cargo_profile) = release_cli()?;
