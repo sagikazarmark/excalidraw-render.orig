@@ -9,6 +9,7 @@
 /tools/pdf-harness/pdfjs/node_modules/
 **/__pycache__/
 /tmp/
+/dist/
 .DS_Store
 
 
