@@ -33,7 +33,10 @@ jobs:
           persist-credentials: false
 
       - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
+        uses: sagikazarmark/setup-devenv@103adba998fdfd83aa69c5f3c1f5854d23318f66 # cachix-push (sagikazarmark/setup-devenv#1)
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -56,7 +59,10 @@ jobs:
           persist-credentials: false
 
       - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
+        uses: sagikazarmark/setup-devenv@103adba998fdfd83aa69c5f3c1f5854d23318f66 # cachix-push (sagikazarmark/setup-devenv#1)
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
