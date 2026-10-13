@@ -15,10 +15,9 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/sagikazarmark/excalidraw-render"
-# The oldest compiler the published crates support; the `lint:msrv` Dagger check
-# compiles the renderer and CLI with it. Krilla 0.8.2 declares 1.92.
-# The gates themselves build with the toolchain
-# `tests/package-consumer/tool-manifest.json` and `dagger.toml` pin.
+# The oldest compiler the published crates support; `just msrv` compiles the
+# renderer and CLI with it. Krilla 0.8.2 declares 1.92.
+# The gates themselves build with the toolchain `devenv.nix` pins.
 rust-version = "1.92"
 
 [workspace.dependencies]

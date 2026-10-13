@@ -4,26 +4,14 @@ ignore = [".devenv", "target"]
 source = "."
 entrypoint = true
 
-# Canonical toolchain, matching tests/package-consumer/tool-manifest.json.
+# The Rust image the evidence operations run in; devenv pins the gates' toolchain.
 settings.rustVersion = "1.97.1-slim-trixie"
 
-# Registered for ad-hoc `dagger api call rust ...` work only. Its own checks stay
-# skipped: this repository lints and formats a hand-picked subset of the
-# workspace, and uses manifest-hashed nextest archives and separate test tiers.
-# The upstream module now supports nextest and cargo selection flags, but its
-# default nextest archive is musl rather than our approved GNU archive.
+# The evidence operations build their container with it. Its own checks stay
+# skipped: the gates run from the justfile (ADR-0024).
 [modules.rust]
 source = "github.com/sagikazarmark/daggerverse-beta/rust"
 check.skip = ["rust"]
 
 settings.version = "1.97.1-slim-trixie"
 
-[modules.dagger-gha]
-source = "github.com/sagikazarmark/daggerverse-beta/dagger-gha"
-
-# One job per check group, so a lint failure stays legible next to a test
-# failure, and actions pinned by commit like the hand-written workflows.
-[modules.dagger-gha.settings]
-expand = true
-groupLevel = 2
-pin = '"COMMIT"'

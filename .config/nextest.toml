@@ -29,10 +29,9 @@
 #
 # nextest does not run doc tests; the workflows keep a `cargo test --doc` step.
 #
-# The workflows and the Dagger mirror install the release that
-# `tests/package-consumer/tool-manifest.json` pins, and a developer is pointed
-# at it; the floor is the release that introduced `default-filter`, which is
-# all this file needs.
+# The devenv shell provides nextest, and a developer is pointed at the
+# recommended release; the floor is the release that introduced
+# `default-filter`, which is all this file needs.
 nextest-version = { required = "0.9.75", recommended = "0.9.143" }
 
 [profile.default]

@@ -6,18 +6,28 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: devenv shell -- bash -e {0}
+
 jobs:
   evidence:
     runs-on: ubuntu-24.04
+
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Execute and aggregate both supported targets
-        uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          version: v1.0.0-beta.14
-          verb: api
-          args: call target-evidence --output target/dagger-evidence
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          persist-credentials: false
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
+
+      - name: Execute and aggregate both supported targets
+        run: just target-evidence
+
+      - name: Upload the target evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: svg-font-subset-target-aggregate
-          path: target/dagger-evidence
+          path: target/release-evidence

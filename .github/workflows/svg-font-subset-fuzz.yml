@@ -8,43 +8,54 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: devenv shell -- bash -e {0}
+
 jobs:
   nightly:
+    name: Nightly (${{ matrix.task }})
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        task: [font-subset-fuzz, frame-batch-property, scene-fuzz, asset-fuzz]
+        task: [font-subset-fuzz, frame-batch-property, scene-fuzz, asset-fuzz, render-fuzz]
+
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          version: v1.0.0-beta.14
-          verb: api
-          args: call nightly ${{ matrix.task }}
-  render-fuzz:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77
-        with:
-          version: v1.0.0-beta.14
-          verb: api
-          args: call --load-module tools/ci/render-fuzz nightly
+          persist-credentials: false
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
+
+      - name: Expand
+        run: just nightly-${{ matrix.task }}
+
   wasm:
+    name: Browser WASM
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          version: v1.0.0-beta.14
-          verb: check
-          args: excalidraw-render:wasm
-      - uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77
-        with:
-          version: v1.0.0-beta.14
-          verb: api
-          args: call --load-module tools/ci/render-fuzz wasm
+          persist-credentials: false
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@f2d55def32daee3f89bb3dfa0499b439a988392a # v0.2.0
+
+      - name: Qualification
+        run: just qualification wasm32-unknown-unknown
+
+      - name: Packaged consumers
+        run: just wasm-packaging
+
+      - name: Snapshot replay
+        run: just wasm-snapshot-replay
+
+      - name: Complete-render fuzz smoke
+        run: just render-fuzz-wasm

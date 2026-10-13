@@ -1,4 +1,4 @@
-//! Test-build trace instrumentation is staged only in Dagger's source snapshot.
+//! Test-build trace instrumentation is staged only in a worktree (`just trace-logs`).
 use super::*;
 use std::path::Path;
 
