@@ -5,16 +5,22 @@
 //! and shared clip masks, the PDF raster closures a nested SVG's effects need,
 //! the SVG plan's one definition per shared clip) is tested here once, and the
 //! bytes those decisions become are the encoder unit tests' and the
-//! end-to-end smokes' business.
+//! end-to-end smokes' business. A format's tests build only with its feature.
 
 use super::font_demand::{build_svg_font_bundle, svg_font_demand, svg_font_text_order};
+#[cfg(feature = "pdf")]
 use super::pdf::PdfPlan;
+#[cfg(feature = "png")]
 use super::png::PngPlan;
-use super::resolve_tests::{request, scene, NAMED_FRAME_SCENE, NESTED_FRAME_SCENE};
+#[cfg(feature = "png")]
+use super::resolve_tests::NESTED_FRAME_SCENE;
+use super::resolve_tests::{request, scene, NAMED_FRAME_SCENE};
 use super::svg::SvgPlan;
 use super::*;
+#[cfg(feature = "png")]
 use crate::FrameOptions;
 
+#[cfg(feature = "png")]
 fn png_plan(scene: &SceneDocument, request: &RenderRequest) -> PngPlan {
     let (resolved, svg_trees) =
         resolve_with_svg_trees_for_test(scene, request).expect("scene resolves");
@@ -23,6 +29,7 @@ fn png_plan(scene: &SceneDocument, request: &RenderRequest) -> PngPlan {
 
 // --- PNG surface ----------------------------------------------------------
 
+#[cfg(feature = "png")]
 #[test]
 fn png_surface_truncates_the_fractional_frame_name_extent() {
     // The name box makes the scene 600 x 620.5 logical pixels; the surface
@@ -31,34 +38,48 @@ fn png_surface_truncates_the_fractional_frame_name_extent() {
     assert_eq!((plan.width(), plan.height()), (600, 620));
 }
 
+/// A coverage owner, so it compiles in every build (ADR-0018); without the
+/// `png` feature it checks that a PNG request is refused instead.
 #[test]
 fn png_surface_follows_the_sizing_rule() {
-    // A 20 x 10 rectangle with the default 10 px padding: 40 x 30 logical.
-    let scene = scene(br##"{
-        "type":"excalidraw","version":2,
-        "elements":[{"id":"box","type":"rectangle","x":0,"y":0,"width":20,"height":10,"roughness":0,"updated":1}],
-        "appState":{},"files":{}
-    }"##);
-    for (sizing, expected) in [
-        (Sizing::Scale(1.0), (40, 30)),
-        (Sizing::Scale(1.5), (60, 45)),
-        (Sizing::Scale(2.0), (80, 60)),
-        // A ceiling below the largest dimension scales both by its ratio.
-        (Sizing::MaxDimension(20.0), (20, 15)),
-        // A ceiling above it leaves the scene at scale 1.
-        (Sizing::MaxDimension(100.0), (40, 30)),
-    ] {
-        let request = RenderRequest::builder(OutputFormat::Png)
-            .sizing(sizing)
+    #[cfg(not(feature = "png"))]
+    assert_eq!(
+        RenderRequest::builder(OutputFormat::Png)
             .build()
-            .expect("sized request is valid");
-        let plan = png_plan(&scene, &request);
-        assert_eq!((plan.width(), plan.height()), expected, "{sizing:?}");
+            .expect_err("PNG is not in this build")
+            .code(),
+        ErrorCode::REQUEST_FORMAT_UNAVAILABLE
+    );
+    #[cfg(feature = "png")]
+    {
+        // A 20 x 10 rectangle with the default 10 px padding: 40 x 30 logical.
+        let scene = scene(br##"{
+            "type":"excalidraw","version":2,
+            "elements":[{"id":"box","type":"rectangle","x":0,"y":0,"width":20,"height":10,"roughness":0,"updated":1}],
+            "appState":{},"files":{}
+        }"##);
+        for (sizing, expected) in [
+            (Sizing::Scale(1.0), (40, 30)),
+            (Sizing::Scale(1.5), (60, 45)),
+            (Sizing::Scale(2.0), (80, 60)),
+            // A ceiling below the largest dimension scales both by its ratio.
+            (Sizing::MaxDimension(20.0), (20, 15)),
+            // A ceiling above it leaves the scene at scale 1.
+            (Sizing::MaxDimension(100.0), (40, 30)),
+        ] {
+            let request = RenderRequest::builder(OutputFormat::Png)
+                .sizing(sizing)
+                .build()
+                .expect("sized request is valid");
+            let plan = png_plan(&scene, &request);
+            assert_eq!((plan.width(), plan.height()), expected, "{sizing:?}");
+        }
     }
 }
 
 // --- PNG frame clip masks -------------------------------------------------
 
+#[cfg(feature = "png")]
 #[test]
 fn png_builds_one_clip_mask_per_clipping_frame() {
     let plan = png_plan(&scene(NAMED_FRAME_SCENE), &request(OutputFormat::Png));
@@ -76,6 +97,7 @@ fn png_builds_one_clip_mask_per_clipping_frame() {
     );
 }
 
+#[cfg(feature = "png")]
 #[test]
 fn png_nested_frames_each_own_a_clip_mask_only_when_clipping_is_on() {
     let nested = scene(NESTED_FRAME_SCENE);
@@ -108,6 +130,7 @@ fn png_nested_frames_each_own_a_clip_mask_only_when_clipping_is_on() {
 
 // --- PDF raster closures --------------------------------------------------
 
+#[cfg(feature = "pdf")]
 fn pdf_plan(scene: &SceneDocument, request: &RenderRequest) -> PdfPlan {
     let (resolved, svg_trees) =
         resolve_with_svg_trees_for_test(scene, request).expect("scene resolves");
@@ -123,6 +146,7 @@ fn data_url(media_type: &str, bytes: &[u8]) -> String {
 }
 
 /// One `width` x `height` image element at the origin over the nested SVG.
+#[cfg(feature = "pdf")]
 fn nested_svg_scene(svg: &[u8], width: u32, height: u32) -> SceneDocument {
     scene(
         format!(
@@ -147,6 +171,7 @@ fn nested_svg_scene(svg: &[u8], width: u32, height: u32) -> SceneDocument {
 
 /// The default PDF request's plan for one 20 x 10 nested SVG, whose
 /// `raster_closures` the effect tests read.
+#[cfg(feature = "pdf")]
 fn pdf_plan_of(nested: &[u8]) -> PdfPlan {
     pdf_plan(
         &nested_svg_scene(nested, 20, 10),
@@ -154,6 +179,7 @@ fn pdf_plan_of(nested: &[u8]) -> PdfPlan {
     )
 }
 
+#[cfg(feature = "pdf")]
 fn bounds(closure: &pdf::PdfRasterClosure) -> (f64, f64, f64, f64) {
     let bounds = closure.logical_bounds;
     (bounds.x(), bounds.y(), bounds.width(), bounds.height())
@@ -161,6 +187,7 @@ fn bounds(closure: &pdf::PdfRasterClosure) -> (f64, f64, f64, f64) {
 
 const BLURRED_RECT: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" fill="#00ff00" filter="url(#blur)"/></svg>"##;
 
+#[cfg(feature = "pdf")]
 #[test]
 fn pdf_plans_one_isolated_closure_for_a_filtered_nested_rect() {
     let plan = pdf_plan_of(BLURRED_RECT);
@@ -176,6 +203,7 @@ fn pdf_plans_one_isolated_closure_for_a_filtered_nested_rect() {
     assert!(!closure.unisolatable);
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn pdf_plans_a_closure_for_an_inline_style_filter() {
     let plan = pdf_plan_of(
@@ -189,6 +217,7 @@ fn pdf_plans_a_closure_for_an_inline_style_filter() {
     );
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn a_root_local_effect_does_not_require_external_backdrop_capture() {
     let plan = pdf_plan_of(
@@ -200,6 +229,7 @@ fn a_root_local_effect_does_not_require_external_backdrop_capture() {
     assert!(!closure.unisolatable);
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn pdf_plans_no_closure_for_empty_noop_or_fully_clipped_effects() {
     for (case, nested) in [
@@ -222,6 +252,7 @@ fn pdf_plans_no_closure_for_empty_noop_or_fully_clipped_effects() {
     }
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn pdf_merges_dependent_effects_to_the_outermost_required_closure() {
     let plan = pdf_plan_of(
@@ -237,6 +268,7 @@ fn pdf_merges_dependent_effects_to_the_outermost_required_closure() {
     );
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn pdf_plans_sibling_effect_closures_in_expanded_tree_order() {
     let plan = pdf_plan_of(
@@ -251,6 +283,7 @@ fn pdf_plans_sibling_effect_closures_in_expanded_tree_order() {
     );
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn pdf_shared_filter_occurrences_keep_their_own_causative_nodes() {
     let plan = pdf_plan_of(
@@ -265,6 +298,7 @@ fn pdf_shared_filter_occurrences_keep_their_own_causative_nodes() {
     );
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn pdf_plans_each_expanded_effect_reuse_occurrence() {
     let plan = pdf_plan_of(
@@ -279,6 +313,7 @@ fn pdf_plans_each_expanded_effect_reuse_occurrence() {
     );
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn an_effect_that_reads_the_backdrop_is_marked_unisolatable() {
     let plan = pdf_plan_of(
@@ -290,6 +325,7 @@ fn an_effect_that_reads_the_backdrop_is_marked_unisolatable() {
     assert!(closure.unisolatable);
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn pdf_effect_closure_resolution_uses_the_final_device_grid() {
     let request = RenderRequest::builder(OutputFormat::Pdf)
@@ -308,6 +344,7 @@ fn pdf_effect_closure_resolution_uses_the_final_device_grid() {
     assert_eq!((closure.pixel_width, closure.pixel_height), (40, 20));
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn pdf_effect_closure_bounds_intersect_the_image_crop() {
     let scene = scene(
@@ -337,6 +374,7 @@ fn pdf_effect_closure_bounds_intersect_the_image_crop() {
     );
 }
 
+#[cfg(feature = "pdf")]
 #[test]
 fn repeated_effect_occurrences_plan_one_closure_each() {
     let scene = scene(

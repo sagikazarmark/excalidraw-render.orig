@@ -157,6 +157,7 @@ pub(crate) enum ResourcePhase {
     IntrinsicAssets,
     SharedSemanticResolution,
     FormatPlanning,
+    #[cfg(any(feature = "png", feature = "pdf", test))]
     ProjectionAndFallback,
     Metadata,
     EncodingAndOutcomeAssembly,
@@ -171,14 +172,20 @@ pub(crate) enum ResourceRecordKind {
     BuiltInSelectionState,
     BuiltInGlyphOrRangeState,
     RequestDerivedBuiltInBlob,
+    #[cfg(any(feature = "png", feature = "pdf"))]
     RasterColorSurface,
+    #[cfg(feature = "png")]
     RasterMaskSurface,
+    #[cfg(feature = "pdf")]
     PdfImageRgbFormatResource,
+    #[cfg(feature = "pdf")]
     PdfImageAlphaFormatResource,
     Diagnostic,
     SvgSerializerWorkspace,
     SvgFontSubsetWorkspace,
+    #[cfg(feature = "png")]
     PngEncoderWorkspace,
+    #[cfg(feature = "pdf")]
     PdfStreamWorkspace,
     OutputBuffer,
 }
@@ -853,7 +860,7 @@ impl ResourceTrace {
             schema_version: 1,
             header: ResourceTraceHeader {
                 compatibility_revision: profile.compatibility_revision().get(),
-                reference_profile_digest: profile.profile_digest().to_owned(),
+                reference_profile_digest: profile.reference_profile_digest().to_owned(),
                 format: request.format(),
                 limits: ResourceTraceLimits::from(request.resource_limits()),
                 input_digests: ResourceInputDigests {

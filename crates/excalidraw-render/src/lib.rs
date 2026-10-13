@@ -1,9 +1,17 @@
-//! Pure-Rust rendering of Excalidraw scene documents.
+//! Renders [Excalidraw](https://excalidraw.com) scenes to SVG, PNG and PDF,
+//! matching Excalidraw 0.18.1's exporter as closely as possible.
 //!
-//! Scene and frame exports to SVG, PNG, and vector-first PDF are produced
-//! against a compatibility revision identifying the rendering profile.
-//! In 0.x, any release may change output and diagnostics; pin the renderer
-//! version and dependency lockfile for reproducible output.
+//! It is pure Rust with every font bundled: rendering needs no browser,
+//! Node.js, network access or installed fonts. Export a whole scene or each
+//! frame on its own. Every render also returns a compatibility report that
+//! lists what the renderer substituted, omitted or approximated, so
+//! differences from Excalidraw are reported rather than silent.
+//!
+//! The Excalidraw behaviour a release reproduces is identified by a
+//! [`CompatibilityRevision`]: this release implements revision 1, bound to
+//! Excalidraw 0.18.1, and [`Renderer::profile_identity`] names it. In 0.x,
+//! any release may change output and diagnostics; pin the renderer version
+//! and dependency lockfile for reproducible output.
 //! Linux x86-64 GNU is release-qualified; browser WASM is experimental.
 //!
 //! Throughout this documentation, *reference* means Excalidraw's own exporter
@@ -58,6 +66,7 @@
 //! assert!(svg.starts_with(b"<svg"));
 //!
 //! // Export every frame as a PNG no larger than 1024 pixels on either side.
+//! # #[cfg(feature = "png")] {
 //! let request = FrameRenderRequest::builder(OutputFormat::Png)
 //!     .sizing(Sizing::MaxDimension(1024.0))
 //!     .build()?;
@@ -67,6 +76,7 @@
 //!     println!("{}: {} bytes", frame.name().unwrap_or("unnamed"), png.len());
 //!     assert!(png.starts_with(b"\x89PNG"));
 //! }
+//! # }
 //! # Ok(())
 //! # }
 //! ```
@@ -94,11 +104,12 @@
 //!   all work is bounded by [`ResourceLimits`], but a render cannot be
 //!   interrupted once started. When you need a hard wall-clock deadline, render
 //!   in a separate process you can kill.
-//! - **Bound raster sizes from the request.** Prefer
+//! - **Bound raster sizes from the request.** For PNG and PDF, prefer
 //!   [`Sizing::MaxDimension`] over a caller-chosen [`Sizing::Scale`] so a
-//!   large scene cannot request an enormous PNG; then lower
+//!   large scene cannot request an enormous PNG or page; then lower
 //!   `max_raster_dimension` and `max_raster_surface_pixels` to what you are
-//!   willing to allocate.
+//!   willing to allocate. SVG ignores `MaxDimension` and keeps the scene's
+//!   logical size, which `max_svg_dimension` bounds instead.
 //! - **`max_working_bytes` is not a memory cap.** It budgets the renderer's
 //!   deterministic, logical working set so that the same input fails the same
 //!   way on every machine; it does not measure or limit allocator usage.
@@ -125,14 +136,35 @@
 //!   opt-level = 2
 //!   ```
 //!
-//! # Features
+//! # Cargo features
 //!
-//! - **`cjk`** (default) bundles Xiaolai, Excalifont's Chinese, Japanese and
-//!   Korean fallback font (about 12 MiB). Without it, a render whose text
-//!   needs Xiaolai fails with [`ErrorCode::RENDER_FONT_UNAVAILABLE`]
+//! All three features are on by default. The API is the same with any
+//! combination of them, so Cargo's feature unification can never change what
+//! compiles; a feature only decides which requests a build can serve, and
+//! turning one off never changes the bytes of the output that remains.
+//!
+//! - **`png`** renders [`OutputFormat::Png`]. It brings the `resvg`
+//!   rasterizer and `tiny-skia`.
+//! - **`pdf`** renders [`OutputFormat::Pdf`]. It brings the Krilla PDF writer,
+//!   and the rasterizer for the isolated raster fallbacks of embedded SVG
+//!   effects.
+//! - **`cjk`** bundles Xiaolai, Excalifont's Chinese, Japanese and Korean
+//!   fallback font (about 12 MiB). Without it, a render whose text needs
+//!   Xiaolai fails with [`ErrorCode::RENDER_FONT_UNAVAILABLE`]
 //!   (`render.font-unavailable`, a [`RenderErrorCategory::Capability`]
 //!   failure) rather than substituting another font. Every other font,
 //!   including Noto Emoji, is always bundled.
+//!
+//! SVG output is always available. Without `png` or `pdf`, building a
+//! [`RenderRequest`] or [`FrameRenderRequest`] for that format fails with
+//! [`ErrorCode::REQUEST_FORMAT_UNAVAILABLE`] (`request.format-unavailable`),
+//! whose message names the feature to enable. An SVG-only build, for example
+//! for WebAssembly, depends on the renderer like this:
+//!
+//! ```toml
+//! [dependencies]
+//! excalidraw-render = { version = "0.1", default-features = false, features = ["cjk"] }
+//! ```
 
 #![warn(missing_docs)]
 #![warn(clippy::missing_errors_doc)]

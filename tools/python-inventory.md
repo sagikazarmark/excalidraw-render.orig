@@ -5,7 +5,7 @@ CI/release maintainer:
 
 | File | Purpose |
 | --- | --- |
-| `tools/ci/release-results.py` | Experimental-WASM gate over validated snapshot/joined collections; root Dagger calls `snapshots` and `joined`. |
+| `tools/ci/release-results.py` | Experimental-WASM gate over validated snapshot/joined collections; `just wasm-snapshot-replay` calls `snapshots` and `just full-equality` calls `joined`. |
 | `tools/ci/test_release_results.py` | Adversarial tests for the release gate's exact allowances, execution coverage, reports and trace drift. |
 
 The count includes existing untracked first-party files, excludes deleted index

@@ -272,9 +272,13 @@ impl PreparedSvg {
             }
             output
         };
-        super::super::png::canonicalize_straight_alpha(output.data_mut())?;
-        let png = super::super::png::compress_rgba(output.width(), output.height(), output.data())?
-            .assemble(None)?;
+        super::super::png_encoder::canonicalize_straight_alpha(output.data_mut())?;
+        let png = super::super::png_encoder::compress_rgba(
+            output.width(),
+            output.height(),
+            output.data(),
+        )?
+        .assemble(None)?;
         let mut data = String::new();
         data.try_reserve(base64::encoded_len(png.len(), true).ok_or_else(memory)?)
             .map_err(|_| memory())?;

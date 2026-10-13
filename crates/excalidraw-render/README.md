@@ -5,6 +5,14 @@ Pure-Rust rendering of [Excalidraw](https://excalidraw.com) scene documents to
 and other rendering assets are bundled: rendering needs no browser, Node.js,
 network access, or installed fonts.
 
+![A hand-drawn architecture diagram with hatched boxes in several colors, curved and straight arrows, and labels in three Excalidraw fonts](https://raw.githubusercontent.com/sagikazarmark/excalidraw-render/main/docs/images/elasticsearch-spec-overview.svg)
+
+<sub>Rendered to SVG with this crate's default request (the command-line
+equivalent is `excalidraw-render overview.excalidraw -o overview.svg`).
+Scene: [`overview.excalidraw`](https://github.com/elastic/elasticsearch-specification/blob/3d51338565d6558c96b55dad9142e4c2a500ca38/overview.excalidraw)
+from elastic/elasticsearch-specification, © Elastic and contributors,
+[Apache-2.0](https://github.com/sagikazarmark/excalidraw-render/blob/main/tests/public-scenes/elasticsearch-spec-overview/LICENSE).</sub>
+
 The compatibility target is Excalidraw **0.18.1**. Output is close to, but not
 pixel-identical with, the browser exporter; every render returns a
 compatibility report describing the substitutions, omissions, and fallbacks it
@@ -88,15 +96,32 @@ renderer even in debug builds:
 opt-level = 2
 ```
 
-## Features
+## Cargo features
 
-- `cjk` (default): bundles Xiaolai, Excalifont's Chinese/Japanese/Korean
-  fallback (about 12 MiB). Without it, a render that needs Xiaolai fails with
+All three features are on by default. The API is the same with any
+combination of them; a feature only decides which requests a build can serve.
+
+- `png`: PNG output. Brings the `resvg` rasterizer and `tiny-skia`.
+- `pdf`: PDF output. Brings the Krilla PDF writer, and the rasterizer for the
+  isolated raster fallbacks of embedded SVG effects.
+- `cjk`: bundles Xiaolai, Excalifont's Chinese/Japanese/Korean fallback
+  (about 12 MiB). Without it, a render that needs Xiaolai fails with
   `render.font-unavailable` instead of substituting another font. All other
   fonts, including Noto Emoji, are always bundled.
-  Features are additive, so another dependency can enable `cjk` again;
-  disabling it removes the font crates from the build, not necessarily from
-  your lockfile or `cargo fetch`.
+
+SVG output is always available. Without `png` or `pdf`, building a request for
+that format fails with `request.format-unavailable`, and turning a feature off
+never changes the bytes of the output that remains. For an SVG-only build, for
+example for WebAssembly:
+
+```toml
+[dependencies]
+excalidraw-render = { version = "0.1", default-features = false, features = ["cjk"] }
+```
+
+Features are additive, so another dependency can enable one again; disabling
+one removes its crates from the build, not necessarily from your lockfile or
+`cargo fetch`.
 
 ## Reproducibility
 

@@ -431,8 +431,24 @@ fn alignment_and_container_positions_have_independent_oracles() {
     }
 }
 
+// One test per format, so the slow matrix spreads across cores; each owns its
+// format's row in the coverage ledger.
 #[test]
-fn line_height_derives_from_wrapped_lines_or_source_family_metrics() {
+fn line_height_derives_from_wrapped_lines_or_source_family_metrics_svg() {
+    line_height_contract(OutputFormat::Svg);
+}
+
+#[test]
+fn line_height_derives_from_wrapped_lines_or_source_family_metrics_png() {
+    line_height_contract(OutputFormat::Png);
+}
+
+#[test]
+fn line_height_derives_from_wrapped_lines_or_source_family_metrics_pdf() {
+    line_height_contract(OutputFormat::Pdf);
+}
+
+fn line_height_contract(format: OutputFormat) {
     for (family, metric) in [
         (1, 1.25),
         (2, 1.15),
@@ -478,9 +494,7 @@ fn line_height_derives_from_wrapped_lines_or_source_family_metrics() {
                     if value.is_some() {
                         rows.as_array_mut().unwrap().push(repair("lineHeight"));
                     }
-                    for format in FORMATS {
-                        assert_contract(&source, &clean, format, rows.clone());
-                    }
+                    assert_contract(&source, &clean, format, rows);
                 }
             }
         }

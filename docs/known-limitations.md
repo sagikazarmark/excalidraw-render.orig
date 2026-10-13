@@ -6,18 +6,42 @@ declared repairs, substitutions, omissions, and fallbacks. The differences below
 are known defects or unqualified behavior; a report is not guaranteed to diagnose
 each one at runtime.
 
-## Platforms and reproducibility
+## What you are most likely to notice
 
-- Linux x86-64 GNU is the release-qualified native target. The prebuilt binary's
-  glibc requirement follows the pinned release builder and is recorded with its archive.
-- Browser WASM is experimental. Four PNG cases differ from native by one channel
-  value in one or two pixels due to `tiny-skia-path` cubic-root math
-  ([#178](https://github.com/sagikazarmark/excalidraw-render/issues/178)).
-  Because resource traces count output length, three WASM resource traces
-  differ as well. No other WASM differences are known.
-- Other operating systems and architectures are not release-qualified.
-- Later 0.x releases may change rendering. Pin the renderer version, dependencies,
-  and build environment when preserving exact output is important.
+- **Some scripts draw as `?`.** Text is drawn only with the bundled fonts. A
+  browser falls back to system fonts; this renderer draws `?` for a character
+  none of them covers and reports `font.missing-glyph`. The bundled fonts cover
+  Latin, Greek and Cyrillic (Nunito lacks Greek; Lilita One and Comic Shanns
+  lack both), and Chinese, Japanese and Korean only in the Excalifont family
+  (through Xiaolai, the default `cjk` feature). Hebrew, Arabic, Armenian,
+  Georgian, Ethiopic, Thai, and Indic scripts such as Devanagari, Bengali and
+  Tamil draw as `?`, as do Vietnamese stacked diacritics outside Nunito and
+  Cascadia Code.
+- **Emoji are monochrome.** Emoji render as monochrome Noto Emoji outlines in
+  the text color, not the color emoji a browser draws from system fonts; an
+  opt-in color face is planned
+  ([#233](https://github.com/sagikazarmark/excalidraw-render/issues/233)).
+- **Very large drawings can be too big for PNG.** A PNG render fails with
+  `resource.raster-surface-exceeded` when its image would exceed the default
+  raster surface limits: 33,554,432 pixels in area (about 5,800 × 5,800) or
+  16,384 pixels on a side. Pass `--max-dimension 4096` (or a lower `--scale`)
+  to shrink the image, or render to SVG or PDF, which do not draw the whole
+  drawing onto one raster canvas. Library callers use `Sizing::MaxDimension`
+  or raise `max_raster_surface_pixels` in `ResourceLimits`. Diagrams with
+  many long diagonal lines can also hit the work limit; see
+  [Resource limits](#resource-limits).
+- **Output is close to, not identical with, the browser.** Fractional PNG
+  stroke coverage has remaining browser differences
+  ([#194](https://github.com/sagikazarmark/excalidraw-render/issues/194)), and
+  antialiasing in SVG and PDF viewers can differ slightly from the browser.
+
+## Text and fonts
+
+- Bundled font substitutions differ from ambient browser fonts. These are
+  diagnosed.
+- Without the default `cjk` feature the library does not bundle Xiaolai, and a
+  render that needs it fails with `render.font-unavailable` instead of
+  substituting another font.
 
 ## Scene input
 
@@ -34,39 +58,8 @@ each one at runtime.
   reported as informational; other unrecognized properties are warnings,
   since a later release may render them.
 
-## Images and rendering
+## PDF output
 
-- AVIF is unsupported and follows unsupported-image recovery
-  ([#68](https://github.com/sagikazarmark/excalidraw-render/issues/68)).
-- Some less common JPEG sampling configurations and CMYK/YCCK conversions differ
-  from Chromium ([#187](https://github.com/sagikazarmark/excalidraw-render/issues/187)).
-  HDR-base JPEG gain-map projection is incomplete
-  ([#190](https://github.com/sagikazarmark/excalidraw-render/issues/190)).
-- The pinned JPEG decoder can accept truncated entropy before a retained scan
-  marker even in strict mode. Such malformed JPEGs can produce incorrect
-  pixels instead of decode-failure recovery. Marker/framing checks alone do not
-  validate all entropy. Such output is still deterministic and bounded; this is
-  a correctness limitation, not memory corruption
-  ([#193](https://github.com/sagikazarmark/excalidraw-render/issues/193)).
-- Fractional PNG stroke coverage has remaining browser differences
-  ([#194](https://github.com/sagikazarmark/excalidraw-render/issues/194)).
-- A lossless WebP with bitstream alpha, a clear VP8X alpha flag, and a transforming
-  ICC profile has a known color mismatch
-  ([#197](https://github.com/sagikazarmark/excalidraw-render/issues/197)).
-- Emoji render as monochrome Noto Emoji outlines, not the colour emoji a
-  browser draws from system fonts; an opt-in colour face is planned
-  ([#233](https://github.com/sagikazarmark/excalidraw-render/issues/233)).
-- Text is drawn only with the bundled fonts. A browser falls back to system
-  fonts; this renderer draws `?` for a character none of them covers and
-  reports `font.missing-glyph`. The bundled fonts cover Latin, Greek and
-  Cyrillic (Nunito lacks Greek; Lilita One and Comic Shanns lack both), and
-  Chinese, Japanese and Korean only in the Excalifont family (through Xiaolai,
-  the default `cjk` feature). Hebrew, Arabic, Armenian, Georgian, Ethiopic,
-  Thai, and Indic scripts such as Devanagari, Bengali and Tamil draw as `?`, as
-  do Vietnamese stacked diacritics outside Nunito and Cascadia Code.
-- Other bundled font substitutions differ from ambient browser fonts.
-  These are diagnosed. Antialiasing in SVG and PDF viewers can differ slightly
-  from the browser.
 - PDF is vector-first, not universally all-vector: unsupported nested-SVG effects
   can use diagnosed raster fallback. Multi-page, tagged, and archival PDF formats
   are outside the initial scope.
@@ -88,6 +81,42 @@ each one at runtime.
 - The default limits bound one render to a few seconds of CPU on a current
   core for hostile input. Services that render untrusted scenes concurrently
   should still apply their own timeout and concurrency limits.
+
+## Images
+
+- AVIF is unsupported and follows unsupported-image recovery
+  ([#68](https://github.com/sagikazarmark/excalidraw-render/issues/68)).
+
+### Rare image-decoding differences
+
+These affect unusual or malformed embedded images only.
+
+- Some less common JPEG sampling configurations and CMYK/YCCK conversions differ
+  from Chromium ([#187](https://github.com/sagikazarmark/excalidraw-render/issues/187)).
+  HDR-base JPEG gain-map projection is incomplete
+  ([#190](https://github.com/sagikazarmark/excalidraw-render/issues/190)).
+- The pinned JPEG decoder can accept truncated entropy before a retained scan
+  marker even in strict mode. Such malformed JPEGs can produce incorrect
+  pixels instead of decode-failure recovery. Marker/framing checks alone do not
+  validate all entropy. Such output is still deterministic and bounded; this is
+  a correctness limitation, not memory corruption
+  ([#193](https://github.com/sagikazarmark/excalidraw-render/issues/193)).
+- A lossless WebP with bitstream alpha, a clear VP8X alpha flag, and a transforming
+  ICC profile has a known color mismatch
+  ([#197](https://github.com/sagikazarmark/excalidraw-render/issues/197)).
+
+## Platforms and reproducibility
+
+- Linux x86-64 GNU is the release-qualified native target. The prebuilt binary's
+  glibc requirement follows the pinned release builder and is recorded with its archive.
+- Other operating systems and architectures are not release-qualified.
+- Later 0.x releases may change rendering. Pin the renderer version, dependencies,
+  and build environment when preserving exact output is important.
+- Browser WASM is experimental. Four PNG cases differ from native by one channel
+  value in one or two pixels due to `tiny-skia-path` cubic-root math
+  ([#178](https://github.com/sagikazarmark/excalidraw-render/issues/178)).
+  Because resource traces count output length, three WASM resource traces
+  differ as well. No other WASM differences are known.
 
 ## Coverage and issue references
 

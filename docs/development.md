@@ -50,8 +50,8 @@ exact; they bind nothing downstream, and `cargo install --locked` uses the
 published lock. `serde_json` is a test-only dependency of the library.
 
 The published crates declare `rust-version = "1.92"`, the oldest compiler they
-support; the `lint:msrv` Dagger check compiles the renderer and CLI with it.
-The gates otherwise build with the toolchain pinned in `dagger.toml` (1.97.1).
+support; `just msrv` compiles the renderer and CLI with it. The gates otherwise
+build with the toolchain `devenv.nix` pins (1.97.1).
 
 ## Run
 
@@ -106,7 +106,7 @@ target/release/excalidraw-render frames drawing.excalidraw --list --report-forma
 The pinned official Excalidraw browser renderer is development-only. Normal Rust
 builds and renderer/CLI tests do not need Node, a browser, Docker, or network
 access. The full workspace's `xtask` evidence tests additionally invoke Node
-and pinned qpdf; Dagger installs these automatically. See
+and pinned qpdf; the devenv shell provides both. See
 [`tools/reference-oracle/README.md`](../tools/reference-oracle/README.md) for the
 opt-in profile verification workflow.
 
@@ -247,9 +247,7 @@ cargo test --workspace --doc                       # nextest runs no doc tests
 ```
 
 `cargo test --workspace` still runs every non-ignored test in one go, without
-the tiers. The pinned nextest release is installed from
-`tests/package-consumer/tool-manifest.json` with
-`bash tests/package-consumer/install-cargo-nextest.sh <download-directory>`.
+the tiers. The devenv shell provides nextest.
 
 The two registry parity harnesses render each registered variant once per
 format per run: the SVG harness judges one render on path geometry, root extent
@@ -269,8 +267,8 @@ part of the push gate: the SVG font subset qualification corpus
 (`render::font_subset_qualification::complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces`)
 and the frame batch property test
 (`render::frame_batch_property::frame_batch_rendering_matches_standalone_around_resource_limits`).
-The `Packaged public facade` workflow's native leg and the
-`packaging:qualification` Dagger check run the complete renderer unit target in
+`just qualification x86_64-unknown-linux-gnu`, which the `Release evidence`
+workflow runs, runs the complete renderer unit target in
 `--release` with the environment variable that admits them, without a name
 filter, so a renamed test cannot drop out silently:
 
@@ -286,50 +284,52 @@ not a Cargo feature, so it stays out of the published interface. Any value other
 than unset, empty, `0` or `1` fails the build. The build script is not
 packaged: the published crate has no build script, so dependents never run it.
 
-## Canonical CI and evidence generation
+## CI and evidence generation
 
-Dagger owns CI for both supported targets: Linux x86-64 and browser WASM.
-Run the push gates locally or on any Dagger runner:
-
-```sh
-dagger check
-```
-
-The devenv shell carries the pinned Dagger CLI (`dagger.enable` in
-`devenv.nix`); the engine needs a working container runtime and nothing else.
-`dagger check --list` names every check, and a selector runs a subset:
+The gates are recipes in the [justfile](../justfile), run in the devenv shell
+(ADR-0024). The shell pins every tool they use through `devenv.lock`, so a
+laptop and CI run the same commands with the same tools:
 
 ```sh
-dagger check --list
-dagger check 'lint:*'
-dagger check test:fast
+just              # list the recipes
+just ci           # every per-change gate
+just test         # one of them
 ```
 
-`lint` checks formatting and clippy; `test` runs the fast/render tiers and
-doctests; `conformance` verifies catalog and approved evidence; `packaging`
-executes the native qualification and packaged CLI/facade; `wasm` executes
-the browser tests and packaged facade in Chromium **149.0.7827.55**.
-Longer scheduled operations are explicit calls:
+The per-change gates are `fmt`, `clippy`, `features`, `msrv`, the `test`,
+`test-render`, `test-features` and `test-doc` tiers, `conformance` and
+`packaging`. They run on any host the shell supports. `msrv` is meant for the
+workspace `rust-version`:
 
 ```sh
-dagger api call nightly font-subset-fuzz
-dagger api call nightly frame-batch-property --cases 64
-dagger api call nightly scene-fuzz --cases 512
-dagger api call evidence pdf
+devenv --option languages.rust.version:string 1.92.0 shell -- just msrv
 ```
 
-`.github/workflows/dagger.yaml` is generated from `dagger.toml`. The
-`dagger-gha:generate` check fails when the committed file drifts from the
-configuration; regenerate it with:
+The release checks run on the supported targets. Browser WASM runs in headless
+Firefox through geckodriver on any host; native evidence needs
+`x86_64-unknown-linux-gnu`:
 
 ```sh
-dagger generate dagger-gha:generate
+just release                          # everything below
+just qualification wasm32-unknown-unknown
+just wasm-packaging                   # packaged facade and no-CJK consumer in WASM
+just wasm-snapshot-replay
+just snapshot-replay                  # native; Linux x86-64
+just full-equality                    # traces and the joined comparison
 ```
 
-`dagger.lock` pins module revisions and base image resolution. The package-consumer
-tool manifest pins Rust, nextest, Chromium, ChromeDriver, and the WASM runner;
-the reference/viewer harnesses retain their separately pinned images and tools.
-GitHub workflows only invoke Dagger and handle scheduling/artifact upload.
+The nightly expansions take a case count:
 
-See [the Dagger operation guide](ci.md) for evidence reproduction,
-generation, the two-target aggregate, and the pending identity refresh.
+```sh
+just nightly-font-subset-fuzz
+just nightly-frame-batch-property 64
+just nightly-scene-fuzz 512
+```
+
+The reference oracle and the viewer harnesses run approval-pinned Docker
+images, through Dagger (`dagger api call evidence pdf`); the devenv shell
+carries the Dagger CLI. GitHub workflows run the recipes in the devenv shell
+and handle scheduling and artifact upload.
+
+See [CI operations](ci.md) for evidence reproduction, generation and the
+two-target aggregate.

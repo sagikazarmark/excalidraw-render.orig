@@ -6,6 +6,10 @@
 #
 #   fast        every unit-level, component and full-pipeline render test
 #               (one binary; each former file is a module)
+#   format_features
+#               the refusals of a build without `png` or `pdf` (ADR-0023);
+#               empty with the default features, so it costs nothing here
+#               and `tools/ci/check-format-features.sh` runs it reduced
 #   parity_*    parity against official evidence: the registry-driven scene
 #               harnesses and the frame-export case
 #   limits_*    fixed parser ceilings that build 64 MiB and 1M-entry scenes,
@@ -25,10 +29,9 @@
 #
 # nextest does not run doc tests; the workflows keep a `cargo test --doc` step.
 #
-# The workflows and the Dagger mirror install the release that
-# `tests/package-consumer/tool-manifest.json` pins, and a developer is pointed
-# at it; the floor is the release that introduced `default-filter`, which is
-# all this file needs.
+# The devenv shell provides nextest, and a developer is pointed at the
+# recommended release; the floor is the release that introduced
+# `default-filter`, which is all this file needs.
 nextest-version = { required = "0.9.75", recommended = "0.9.143" }
 
 [profile.default]
@@ -44,6 +47,25 @@ default-filter = 'not binary(/^harness_/)'
 [[profile.default.overrides]]
 filter = 'binary(/^parity_registered_case_/) & test(/^every_registered_scene_case_/)'
 threads-required = "num-cpus"
+
+# These xtask tests run commands that build the qualified release CLI on first
+# use (LTO, one codegen unit: minutes on a CI runner). Run concurrently, the
+# first uses only queue on Cargo's build lock while holding test slots, so they
+# take turns in their own group.
+[test-groups]
+release-cli = { max-threads = 1 }
+
+[[profile.default.overrides]]
+filter = '''
+package(xtask) & (
+    binary(=coverage)
+    | binary(=representative_candidate)
+    | test(=coverage::ownership::tests::five_layer_mapping_is_optional_but_pdf_judgments_remain_required)
+    | test(=coverage::ownership::representative::tests::representative_owner_release_positive_path_uses_real_gate_in_isolated_fixture)
+    | test(=conformance_candidate_native::tests::fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds)
+)
+'''
+test-group = "release-cli"
 
 # The PR gate's fast leg: the `default` set without the parity and limits
 # tiers. Together with `ci-render` it covers the `default` set exactly once.

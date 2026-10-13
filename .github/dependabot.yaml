@@ -1,0 +1,22 @@
+version: 2
+
+updates:
+  # A lock update can change artifact bytes, so each one runs every gate and is
+  # adopted through review (see the pinning policy in Cargo.toml).
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      cargo:
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+    groups:
+      github-actions:
+        patterns:
+          - "*"

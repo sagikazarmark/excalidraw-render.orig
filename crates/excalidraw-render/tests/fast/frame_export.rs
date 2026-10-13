@@ -59,26 +59,26 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
         repository_root().join("tests/oracle/reference-profiles/revision-1-frame.json");
     let profile_bytes = std::fs::read(profile_path).expect("frame profile is checked");
     assert_eq!(
-        frame_profile.profile_digest(),
+        frame_profile.reference_profile_digest(),
         format!("sha256:{}", lower_hex(&Sha256::digest(profile_bytes)))
     );
     assert_ne!(
-        frame_profile.profile_digest(),
-        renderer.profile_identity().profile_digest()
+        frame_profile.reference_profile_digest(),
+        renderer.profile_identity().reference_profile_digest()
     );
 
     let outcome = renderer
         .render_frame(frame, &request)
         .expect("frame with metadata renders");
     assert_eq!(
-        outcome.profile_identity().profile_digest(),
-        frame_profile.profile_digest()
+        outcome.profile_identity().reference_profile_digest(),
+        frame_profile.reference_profile_digest()
     );
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains("urn:excalidraw-render:artifact-manifest:1"));
     assert!(svg.contains("{\"schema_version\":2,"));
     assert!(svg.contains("\"target\":{\"kind\":\"frame\",\"ordinal\":1,\"name\":\"Roadmap\"}"));
-    assert!(svg.contains(frame_profile.profile_digest()));
+    assert!(svg.contains(frame_profile.reference_profile_digest()));
     assert!(svg.contains("\"embedded_scene\":{"));
 
     let png = renderer
@@ -96,8 +96,8 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
         )
         .expect("frame with metadata renders to PNG");
     assert_eq!(
-        png.profile_identity().profile_digest(),
-        frame_profile.profile_digest()
+        png.profile_identity().reference_profile_digest(),
+        frame_profile.reference_profile_digest()
     );
     assert!(contains_bytes(
         png.artifact().bytes(),
@@ -123,8 +123,8 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
         )
         .expect("frame with metadata renders to PDF");
     assert_eq!(
-        pdf.profile_identity().profile_digest(),
-        frame_profile.profile_digest()
+        pdf.profile_identity().reference_profile_digest(),
+        frame_profile.reference_profile_digest()
     );
     let pdf = pdf_text(pdf.artifact().bytes());
     // The manifest is the `artifact-manifest.json` attachment (ADR-0021).

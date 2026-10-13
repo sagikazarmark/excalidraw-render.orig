@@ -109,7 +109,7 @@ fn assert_outcome_contract(outcome: &RenderOutcome, format: OutputFormat) {
         CompatibilityRevision::REVISION_1
     );
     assert_eq!(profile.excalidraw_release(), "v0.18.1");
-    assert_eq!(profile.profile_digest(), PROFILE_DIGEST);
+    assert_eq!(profile.reference_profile_digest(), PROFILE_DIGEST);
     assert!(outcome.report().is_empty());
 }
 

@@ -41,10 +41,10 @@ proof over all inputs. Existing exact boundary, visual, allocation-refusal and
 no-hidden-I/O architecture gates remain independent authorities. Fatal outcomes
 are observed only through the facade's descriptor/report-only error variant;
 the harness introduces no writer or resource callback. Browser WASM runs the
-same smoke adapter through the fuzz module's `wasm` operation (debug symbols are disabled
+same smoke adapter through `just render-fuzz-wasm` (debug symbols are disabled
 to bound wasm-bindgen's module-processing memory; test assertions remain on).
-The nightly GitHub workflow invokes the separate `tools/ci/render-fuzz` module in
-Dagger with 4,096 cases and a 60-minute job timeout. It retains test-profile
+The nightly GitHub workflow runs `just nightly-render-fuzz` with 4,096 cases and
+a 60-minute job timeout. It retains test-profile
 overflow/debug assertions. Timeout, OOM and abort are failed jobs, never accepted
 outcomes. Tracing flushes the complete reproducer before each render so a native
 trap or hang has a last-input record.
@@ -60,10 +60,8 @@ are retained between passes, not the full population's artifacts.
 
 ```sh
 cargo test --locked -p excalidraw-render --test render_fuzz
-dagger api call --load-module tools/ci/render-fuzz nightly
-dagger api call --load-module tools/ci/render-fuzz wasm
-EXCALIDRAW_RENDER_FUZZ_CASES=4096 cargo test --locked -p excalidraw-render \
-  --test render_fuzz render_fuzz::nightly_complete_render_fuzz -- --ignored --exact
+just nightly-render-fuzz        # 4,096 cases; pass a count to change it
+just render-fuzz-wasm
 ```
 
 ## Reproduce, minimize, retain

@@ -9,7 +9,9 @@ use crate::{
     ResourceLimits, ResourceValue,
 };
 
-use super::{asset, pdf, try_owned};
+#[cfg(feature = "pdf")]
+use super::pdf;
+use super::{asset, try_owned};
 
 /// Orders retained diagnostics the way the final report lists them (spec
 /// §11.3): by the source owner that produced them, then the source member
@@ -372,6 +374,7 @@ pub(super) fn image_animation_flattened_diagnostic(
     )
 }
 
+#[cfg(feature = "pdf")]
 pub(super) fn pdf_raster_fallback_diagnostic(
     closure: &pdf::PdfRasterClosure,
 ) -> Result<PendingDiagnostic, std::collections::TryReserveError> {

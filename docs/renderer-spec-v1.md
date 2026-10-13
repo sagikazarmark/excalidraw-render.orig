@@ -345,7 +345,9 @@ dependency lockfile for exact reproduction. A profile digest is discoverable but
 not a selector.
 
 One target request produces exactly one `OutputFormat`: `Svg`, `Png`, or `Pdf`, spelled
-`svg`, `png`, and `pdf` in serialized forms.
+`svg`, `png`, and `pdf` in serialized forms. Every variant exists in every
+build; a request for a format whose feature is disabled is rejected when it is
+built (section 10).
 
 `SceneDocument::frames()` discovers every live ordinary and magic frame source
 occurrence in source order. A borrowed `FrameRef` exposes its one-based frame
@@ -2069,8 +2071,14 @@ one lockstep semver and exact internal versions.
 Owned ports/assets publish first, then library, then CLI; partial publication
 requires a new version. Production git dependencies are forbidden.
 
-The library always includes SVG, PNG, PDF, every retained compatibility
-revision, and the complete built-in catalog metadata. The default-enabled `cjk`
+The library always includes SVG, every retained compatibility revision, and
+the complete built-in catalog metadata. PNG and PDF output are the
+default-enabled `png` and `pdf` features (ADR-0023). The public API is the
+same in every feature combination: building a request for a disabled format
+fails with `request.format-unavailable` and `request_value` details naming
+the field `format`, before any other request validation, and a frame request
+fails the same way. The PDF raster fallback's rasterizer is part of `pdf`, so
+neither format implies the other. The default-enabled `cjk`
 feature includes both Xiaolai payload crates. Disabling it retains all other
 font payloads, including Noto Emoji and predecoded Excalifont, and preserves
 font selection, declared ranges, ordering, and fallback rules. When glyph
@@ -2080,8 +2088,10 @@ to embed one, rendering fails with `render.font-unavailable`, category
 `asset_identity`. Absence is distinct from corrupt bytes or a loaded font
 lacking a glyph. The CJK trigger alone is not a failure. No replacement font,
 external URL, or partial artifact is emitted to compensate for disabled CJK.
-The CLI includes the default CJK feature. Other public features cannot remove
-required formats or catalog metadata or alter rendering behavior.
+The CLI includes the default features. No public feature can remove SVG or
+catalog metadata, and none alters the bytes of an artifact or report that a
+build produces: a disabled feature only turns the requests that need it into
+typed failures.
 
 Every distributing crate carries applicable notices. The library exposes
 `license_bundle() -> &'static str`; CLI `--licenses` writes exactly those UTF-8
@@ -2103,8 +2113,8 @@ recorded, pure Rust, deterministic, offline, and independent of host time,
 locale, path, and randomness; it cannot download, compile C/C++, probe optional
 system libraries, or generate production assets.
 
-A checked tool manifest pins every Rust CI executable by exact version and
-checksum. WASM runner and `wasm-bindgen-test` versions are exact and compatible.
+`devenv.lock` pins every CI executable (ADR-0024). The WASM runner is the
+exact `wasm-bindgen` version in `Cargo.lock`.
 Third-party GitHub Actions use full commit pins; downloaded tools use exact
 version plus checksum or immutable image digest. Workflows use least privilege,
 never expose release secrets to untrusted pull requests, and update pins only
@@ -2113,11 +2123,11 @@ through ordinary reviewed dependency changes.
 Supported targets are exactly:
 
 - `x86_64-unknown-linux-gnu`.
-- `wasm32-unknown-unknown` in the pinned Chromium harness.
+- `wasm32-unknown-unknown` in a browser (ADR-0024).
 
 Every target executes renderer and deterministic-output tests. Cross-compilation
 alone is insufficient. Adding a target is a spec amendment that requires the
-target to execute the qualification with the pinned tool identities and agree
+target to execute the qualification with the devenv tool identities and agree
 on the committed cross-target measurement first (ADR-0006). `rust-version`
 equals the official stable compiler. The
 first release promises no explicit native deployment floor beyond the target OS
@@ -2431,6 +2441,7 @@ request.duplicate-asset-id
 request.invalid-asset-media-type
 request.incompatible-format-options
 request.invalid-resource-limit
+request.format-unavailable
 revision.unsupported
 ```
 

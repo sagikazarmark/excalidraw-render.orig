@@ -207,7 +207,7 @@ pinned by exact values. A `layer` row may name registered candidate cases;
 ## Commands and checks
 
 ```sh
-dagger check conformance:coverage-ownership
+just conformance
 dagger api call evidence ownership-catalog --output target/ownership-catalog.json
 cargo run --locked -p xtask -- conformance verify-ownership
 # Record explicit reviewed gap selections:

@@ -34,8 +34,8 @@
 
 use crate::portable_math;
 
+use super::super::png_encoder::png_size_error;
 use super::super::FormatEncodeError;
-use super::encoder::png_size_error;
 
 /// Skia's `SkScalarRoundToInt` / `SkRect::round`: `floor(v + 0.5)`.
 fn round_half_up(value: f32) -> i64 {

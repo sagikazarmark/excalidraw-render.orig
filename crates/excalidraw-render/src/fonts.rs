@@ -49,6 +49,7 @@ pub(crate) fn font_notice(identity: &str) -> Option<&'static FontNotice> {
 
 /// The family of a manifested identity, resolved as exactly as `font_notice`
 /// resolves it; the complete Noto Emoji face is its own family.
+#[cfg(feature = "pdf")]
 pub(crate) fn font_family(identity: &str) -> Option<FamilyId> {
     if identity == excalidraw_fonts::NOTO_EMOJI_IDENTITY {
         return Some(FamilyId::NotoEmoji);

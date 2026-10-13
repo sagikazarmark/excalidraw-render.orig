@@ -2,8 +2,10 @@
 // MIT licensed; its notice is included in the renderer license bundle.
 
 use super::geometry::Point;
+#[cfg(any(feature = "png", feature = "pdf"))]
 use super::number_format::ecmascript_number;
 use super::rough::{GenerationBudget, GenerationError};
+#[cfg(any(feature = "png", feature = "pdf"))]
 use super::FormatEncodeError;
 use crate::normalization::NormalizedFreedraw;
 use crate::portable_math::{hypot, sin, sin_cos, square};
@@ -17,6 +19,8 @@ pub(super) struct Path {
     pub(super) operations: Vec<PathOperation>,
 }
 
+/// A path with its coordinates reduced as the raster formats draw it.
+#[cfg(any(feature = "png", feature = "pdf"))]
 #[derive(Debug, PartialEq)]
 pub(super) struct ProjectedPath {
     pub(super) operations: Vec<PathOperation>,
@@ -36,6 +40,7 @@ impl Path {
     }
 }
 
+#[cfg(feature = "png")]
 fn operation_bounds(operations: &[PathOperation]) -> Option<(f64, f64, f64, f64)> {
     let mut current = None;
     let mut bounds = None;
@@ -56,7 +61,9 @@ fn operation_bounds(operations: &[PathOperation]) -> Option<(f64, f64, f64, f64)
     bounds
 }
 
+#[cfg(any(feature = "png", feature = "pdf"))]
 impl ProjectedPath {
+    #[cfg(feature = "png")]
     pub(super) fn bounds(&self) -> Option<(f64, f64, f64, f64)> {
         operation_bounds(&self.operations)
     }
@@ -490,6 +497,7 @@ fn path_from_outline(
     Ok(Path { operations })
 }
 
+#[cfg(any(feature = "png", feature = "pdf"))]
 pub(super) fn project(path: Path) -> Result<ProjectedPath, FormatEncodeError> {
     let mut operations = Vec::new();
     operations
@@ -518,6 +526,7 @@ pub(super) fn project(path: Path) -> Result<ProjectedPath, FormatEncodeError> {
     Ok(ProjectedPath { operations })
 }
 
+#[cfg(any(feature = "png", feature = "pdf"))]
 fn push_reduced_number(output: &mut String, value: f64) -> Result<(), FormatEncodeError> {
     if !value.is_finite() {
         return Err(FormatEncodeError::Encoding(
@@ -538,6 +547,7 @@ fn push_reduced_number(output: &mut String, value: f64) -> Result<(), FormatEnco
     Ok(())
 }
 
+#[cfg(any(feature = "png", feature = "pdf"))]
 fn projected_point(value: Point) -> Result<Point, FormatEncodeError> {
     Ok(point(
         projected_number(value.x)?,
@@ -545,6 +555,7 @@ fn projected_point(value: Point) -> Result<Point, FormatEncodeError> {
     ))
 }
 
+#[cfg(any(feature = "png", feature = "pdf"))]
 fn projected_number(value: f64) -> Result<f64, FormatEncodeError> {
     let mut token = String::new();
     token
@@ -559,6 +570,7 @@ fn projected_number(value: f64) -> Result<f64, FormatEncodeError> {
     })
 }
 
+#[cfg(feature = "png")]
 fn include_point(bounds: &mut Option<(f64, f64, f64, f64)>, point: Point) {
     *bounds = Some(
         bounds.map_or((point.x, point.y, point.x, point.y), |current| {
@@ -572,6 +584,7 @@ fn include_point(bounds: &mut Option<(f64, f64, f64, f64)>, point: Point) {
     );
 }
 
+#[cfg(feature = "png")]
 fn include_quadratic_bounds(
     bounds: &mut Option<(f64, f64, f64, f64)>,
     start: Point,

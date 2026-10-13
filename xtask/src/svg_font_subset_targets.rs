@@ -1102,7 +1102,18 @@ mod tests {
                 _ => {}
             }
         }
+        // The producer slots are historical: verification checks their form, not
+        // the files, which may no longer exist.
+        let target = manifest["targetEvidence"].as_object_mut().unwrap();
+        let producers: Vec<_> = ["workflow", "generatorAndAggregator", "runnerInputs"]
+            .into_iter()
+            .filter_map(|key| target.remove(key).map(|value| (key, value)))
+            .collect();
         refresh(&mut manifest, &root, &copy);
+        let target = manifest["targetEvidence"].as_object_mut().unwrap();
+        for (key, value) in producers {
+            target.insert(key.to_owned(), value);
+        }
         super::write_json(&root.join(RELEASE_PATH), &manifest).unwrap();
         root
     }
@@ -1141,7 +1152,10 @@ mod tests {
             .iter()
             .chain([&target["workflow"], &target["generatorAndAggregator"]])
         {
-            fs::remove_file(root.join(descriptor["path"].as_str().unwrap())).unwrap();
+            let path = root.join(descriptor["path"].as_str().unwrap());
+            if path.exists() {
+                fs::remove_file(path).unwrap();
+            }
         }
         assert_eq!(verify_release_in(&root), Ok(TargetEvidenceState::PendingCi));
         let corpus = root.join(manifest["corpus"]["path"].as_str().unwrap());

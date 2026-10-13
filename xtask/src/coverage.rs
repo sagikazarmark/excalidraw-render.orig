@@ -464,8 +464,11 @@ struct ResultBundle {
     compatibility_revision: u64,
     commit: String,
     inventory_sha256: String,
-    tool_manifest_sha256: String,
-    dagger_lock_sha256: String,
+    // The retired Dagger runner's pin files, which older bundles record (ADR-0024).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tool_manifest_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    dagger_lock_sha256: Option<String>,
     runs: Vec<ProcessRun>,
 }
 
@@ -481,8 +484,10 @@ fn validate_results(inventory: &Inventory, bundle: &ResultBundle) -> Result<(), 
         || bundle.compatibility_revision != 1
         || !hex(&bundle.commit, 40)
         || bundle.inventory_sha256 != digest(inventory)?
-        || !hex(&bundle.tool_manifest_sha256, 64)
-        || !hex(&bundle.dagger_lock_sha256, 64)
+        || [&bundle.tool_manifest_sha256, &bundle.dagger_lock_sha256]
+            .into_iter()
+            .flatten()
+            .any(|digest| !hex(digest, 64))
     {
         return Err("invalid result identity or inventory binding".into());
     }
@@ -550,12 +555,6 @@ fn validate_results(inventory: &Inventory, bundle: &ResultBundle) -> Result<(), 
 pub fn verify_results(path: &str) -> Result<(), String> {
     let inventory = load_inventory()?;
     let bundle: ResultBundle = parse(&fs::read(path).map_err(|e| e.to_string())?)?;
-    if bundle.tool_manifest_sha256
-        != descriptor("tests/package-consumer/tool-manifest.json")?.sha256
-        || bundle.dagger_lock_sha256 != descriptor("dagger.lock")?.sha256
-    {
-        return Err("result tooling differs from the current pinned tools".into());
-    }
     validate_results(&inventory, &bundle)?;
     println!("verified result equality for the draft inventory; native baseline replay and release closure remain separate checks");
     Ok(())

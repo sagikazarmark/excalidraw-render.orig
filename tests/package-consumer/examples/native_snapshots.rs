@@ -110,11 +110,6 @@ fn collect(root: &Path, output: &Path) -> Result<(), String> {
     }
     let root = io(root.canonicalize())?;
     let version = command(&root, &["rustc", "--version"])?;
-    let tools = read_json(&root.join("tests/package-consumer/tool-manifest.json"))?;
-    let pinned = text(&tools["rust_toolchain"], "version")?;
-    if !version.starts_with(&format!("rustc {pinned} ")) {
-        return Err(format!("expected rustc {pinned}, found {version}"));
-    }
     let commit = command(&root, &["git", "rev-parse", "HEAD"])?;
     let metadata: Value = serde_json::from_str(&command(
         &root.join("tests/package-consumer"),
@@ -201,8 +196,6 @@ fn collect(root: &Path, output: &Path) -> Result<(), String> {
         "target":"x86_64-unknown-linux-gnu", "approval":null,
         "commit":commit,"source_status":status,"rustc":version,
         "inventory":describe_file(&root,INVENTORY)?,
-        "tool_manifest":describe_file(&root,"tests/package-consumer/tool-manifest.json")?,
-        "dagger_lock":describe_file(&root,"dagger.lock")?,
         "consumer_lock":describe_file(&root,"tests/package-consumer/Cargo.lock")?,
         "consumer_manifest":describe_file(&root,"tests/package-consumer/Cargo.toml")?,
         "consumer_config":describe_file(&root,"tests/package-consumer/.cargo/config.toml")?,

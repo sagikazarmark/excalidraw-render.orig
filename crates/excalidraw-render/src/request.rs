@@ -15,20 +15,13 @@ use crate::{DiagnosticDetails, ErrorCode, ErrorDescriptor, ResourceLimits};
 pub struct RequestError {
     code: ErrorCode,
     message: Box<str>,
-    field: &'static str,
-    asset_id: Option<String>,
-    option: Option<&'static str>,
+    /// Always [`DiagnosticDetails::RequestValue`].
+    details: Box<DiagnosticDetails>,
 }
 
 impl RequestError {
     pub(crate) fn new(code: ErrorCode, message: impl Into<Box<str>>, field: &'static str) -> Self {
-        Self {
-            code,
-            message: message.into(),
-            field,
-            asset_id: None,
-            option: None,
-        }
+        Self::with_value(code, message, field, None, None)
     }
 
     fn for_option(
@@ -37,13 +30,7 @@ impl RequestError {
         field: &'static str,
         option: &'static str,
     ) -> Self {
-        Self {
-            code,
-            message: message.into(),
-            field,
-            asset_id: None,
-            option: Some(option),
-        }
+        Self::with_value(code, message, field, None, Some(option))
     }
 
     fn for_asset(
@@ -52,12 +39,36 @@ impl RequestError {
         asset_id: String,
         option: Option<&'static str>,
     ) -> Self {
+        Self::with_value(code, message, "supplemental_assets", Some(asset_id), option)
+    }
+
+    fn with_value(
+        code: ErrorCode,
+        message: impl Into<Box<str>>,
+        field: &'static str,
+        asset_id: Option<String>,
+        option: Option<&'static str>,
+    ) -> Self {
         Self {
             code,
             message: message.into(),
-            field: "supplemental_assets",
-            asset_id: Some(asset_id),
-            option,
+            details: Box::new(DiagnosticDetails::RequestValue {
+                field,
+                asset_id,
+                option,
+            }),
+        }
+    }
+
+    /// The rejected field, supplemental asset ID and format option.
+    const fn request_value(&self) -> (&'static str, Option<&String>, Option<&'static str>) {
+        match &*self.details {
+            DiagnosticDetails::RequestValue {
+                field,
+                asset_id,
+                option,
+            } => (field, asset_id.as_ref(), *option),
+            _ => unreachable!(),
         }
     }
 
@@ -68,30 +79,29 @@ impl RequestError {
 
     /// Returns the rejected canonical request field.
     pub const fn field(&self) -> &str {
-        self.field
+        self.request_value().0
     }
 
     /// Returns the applicable supplemental asset ID.
     pub fn asset_id(&self) -> Option<&str> {
-        self.asset_id.as_deref()
+        self.request_value().1.map(String::as_str)
     }
 
     /// Returns the applicable format-option name.
     pub const fn option(&self) -> Option<&str> {
-        self.option
+        self.request_value().2
+    }
+
+    /// Returns typed details of this failure: always
+    /// [`DiagnosticDetails::RequestValue`], naming the rejected field and,
+    /// where they apply, the supplemental asset and format option.
+    pub fn details(&self) -> Option<&DiagnosticDetails> {
+        Some(&self.details)
     }
 
     /// Returns this failure's stable serializable descriptor.
     pub fn descriptor(&self) -> ErrorDescriptor {
-        ErrorDescriptor::request(
-            self.code,
-            self.to_string(),
-            DiagnosticDetails::RequestValue {
-                field: self.field,
-                asset_id: self.asset_id.clone(),
-                option: self.option,
-            },
-        )
+        ErrorDescriptor::request(self.code, self.to_string(), (*self.details).clone())
     }
 }
 
@@ -108,11 +118,11 @@ impl Error for RequestError {}
 #[non_exhaustive]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
-    /// A semantic SVG document.
+    /// A semantic SVG document. Every build supports it.
     Svg,
-    /// A canvas-equivalent PNG image.
+    /// A canvas-equivalent PNG image. Needs the default `png` feature.
     Png,
-    /// A one-page vector-first PDF document.
+    /// A one-page vector-first PDF document. Needs the default `pdf` feature.
     Pdf,
 }
 
@@ -134,6 +144,33 @@ impl OutputFormat {
             Self::Pdf => "pdf",
         }
     }
+
+    /// The Cargo feature that compiles this format in, when it is not part of
+    /// every build, and whether this build enables it.
+    const fn feature(self) -> Option<(&'static str, bool)> {
+        match self {
+            Self::Svg => None,
+            Self::Png => Some(("png", cfg!(feature = "png"))),
+            Self::Pdf => Some(("pdf", cfg!(feature = "pdf"))),
+        }
+    }
+
+    /// Rejects a format whose Cargo feature this build leaves out, before any
+    /// other request validation: no option of the request could be honored.
+    fn require_enabled(self) -> Result<(), RequestError> {
+        match self.feature() {
+            Some((feature, false)) => Err(RequestError::new(
+                ErrorCode::REQUEST_FORMAT_UNAVAILABLE,
+                format!(
+                    "{} output is not enabled in this build; enable the `{feature}` feature \
+                     of excalidraw-render",
+                    self.as_str().to_ascii_uppercase()
+                ),
+                "format",
+            )),
+            Some((_, true)) | None => Ok(()),
+        }
+    }
 }
 
 impl fmt::Display for OutputFormat {
@@ -148,7 +185,13 @@ impl fmt::Display for OutputFormat {
 pub enum Sizing {
     /// Multiplies logical output dimensions by the supplied scale.
     Scale(f64),
-    /// Downscales output to at most the supplied largest dimension.
+    /// Downscales PNG and PDF output so its larger side is at most the
+    /// supplied number of logical pixels; never enlarges.
+    ///
+    /// PNG output then measures at most this many pixels on its larger side.
+    /// A PDF page maps one logical pixel to 0.75 points, so its larger side
+    /// is at most three quarters of this many points. SVG output ignores it
+    /// and keeps its logical size; use [`Sizing::Scale`] to resize SVG.
     MaxDimension(f64),
 }
 
@@ -710,8 +753,8 @@ impl FrameRenderRequestBuilder {
     ///
     /// # Errors
     ///
-    /// Returns a [`RequestError`] for the same invalid sizing and format
-    /// options as [`RenderRequestBuilder::build`].
+    /// Returns a [`RequestError`] for the same disabled format, invalid
+    /// sizing and format options as [`RenderRequestBuilder::build`].
     pub fn build(self) -> Result<FrameRenderRequest, RequestError> {
         self.inner.build().map(|inner| FrameRenderRequest { inner })
     }
@@ -777,12 +820,16 @@ impl RenderRequestBuilder {
     ///
     /// # Errors
     ///
-    /// Returns a [`RequestError`] when the padding is negative or not finite
-    /// (`request.invalid-padding`), the [`Sizing`] scale or maximum dimension
-    /// is not finite and positive (`request.invalid-scale`,
+    /// Returns a [`RequestError`] when the output format's Cargo feature is
+    /// not enabled in this build (`request.format-unavailable`; see the
+    /// [crate documentation](crate#cargo-features)), the padding is negative
+    /// or not finite (`request.invalid-padding`), the [`Sizing`] scale or
+    /// maximum dimension is not finite and positive (`request.invalid-scale`,
     /// `request.invalid-max-dimension`), or [`PdfOptions`] were supplied for
     /// another output format (`request.incompatible-format-options`).
     pub fn build(self) -> Result<RenderRequest, RequestError> {
+        self.request.format.require_enabled()?;
+
         if !self.request.padding.is_finite() || self.request.padding < 0.0 {
             return Err(RequestError::new(
                 ErrorCode::REQUEST_INVALID_PADDING,

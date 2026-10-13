@@ -1,6 +1,6 @@
 use std::collections::TryReserveError;
 
-use crate::normalization::{NormalizedElement, NormalizedFileRecord};
+use crate::normalization::NormalizedElement;
 use crate::scene::{member_value, pointer_child, pointer_index, JsonValue};
 use crate::{SceneDocument, SupplementalAssets};
 
@@ -19,47 +19,34 @@ pub(crate) enum RelationshipKind {
 }
 
 #[derive(Clone, Debug)]
-#[allow(dead_code)]
 pub(crate) struct RelationshipNode {
     pub(crate) id: String,
     pub(crate) source_index: usize,
     pub(crate) source_order: u64,
-    pub(crate) paint_order: u64,
-    pub(crate) json_pointer: String,
     pub(crate) hit_bounds: Option<[f64; 4]>,
 }
 
 #[derive(Clone, Debug)]
-#[allow(dead_code)]
 pub(crate) enum RelationshipTarget {
     Element(usize),
-    Group(String),
-    Asset {
-        id: String,
-        authority: AssetAuthority,
-    },
-    Link {
-        url: String,
-        hit_bounds: Option<[f64; 4]>,
-    },
+    Group,
+    Asset { authority: AssetAuthority },
+    Link,
 }
 
 #[derive(Clone, Copy, Debug)]
-#[allow(dead_code)]
 pub(crate) enum AssetAuthority {
-    SceneFile(usize),
+    SceneFile,
     Supplemental,
     Missing,
 }
 
 #[derive(Clone, Debug)]
-#[allow(dead_code)]
 pub(crate) struct RelationshipEdge {
     pub(crate) source: usize,
     pub(crate) target: RelationshipTarget,
     pub(crate) kind: RelationshipKind,
     pub(crate) json_pointer: String,
-    pub(crate) source_position: u64,
 }
 
 #[derive(Clone, Debug)]
@@ -171,15 +158,14 @@ struct CandidateOwner {
 
 enum CandidateTarget {
     Element(usize),
-    Group(String),
-    Asset(String, AssetAuthority),
-    Link(String),
+    Group,
+    Asset(AssetAuthority),
+    Link,
 }
 
 pub(crate) fn resolve<E>(
     scene: &SceneDocument,
     elements: &[NormalizedElement],
-    files: &[NormalizedFileRecord],
     supplemental_assets: &SupplementalAssets,
     mut observe: impl FnMut(RelationshipEvent<'_>) -> Result<(), E>,
 ) -> Result<RelationshipOutcome, RelationshipError<E>> {
@@ -226,8 +212,6 @@ pub(crate) fn resolve<E>(
             id: try_owned(id)?,
             source_index,
             source_order: scene.source_owner_order("elements", source_index),
-            paint_order: u64::try_from(source_index).unwrap_or(u64::MAX),
-            json_pointer: pointer_index("/elements", source_index)?,
             hit_bounds: element_at(source_index)
                 .map(|element| [element.x, element.y, element.width, element.height]),
         });
@@ -274,7 +258,6 @@ pub(crate) fn resolve<E>(
                 source_order: node.source_order,
             },
             &aliases,
-            files,
             &scene_file_ids,
             supplemental_assets,
             &mut candidates,
@@ -413,19 +396,15 @@ pub(crate) fn resolve<E>(
         }
         let target = match candidate.target {
             CandidateTarget::Element(target) => RelationshipTarget::Element(target),
-            CandidateTarget::Group(id) => RelationshipTarget::Group(id),
-            CandidateTarget::Asset(id, authority) => RelationshipTarget::Asset { id, authority },
-            CandidateTarget::Link(url) => RelationshipTarget::Link {
-                url,
-                hit_bounds: owner.hit_bounds,
-            },
+            CandidateTarget::Group => RelationshipTarget::Group,
+            CandidateTarget::Asset(authority) => RelationshipTarget::Asset { authority },
+            CandidateTarget::Link => RelationshipTarget::Link,
         };
         edges.push(RelationshipEdge {
             source: candidate.source,
             target,
             kind: candidate.kind,
             json_pointer: candidate.json_pointer,
-            source_position: candidate.source_position,
         });
     }
 
@@ -457,7 +436,6 @@ fn collect_element_candidates(
     members: &[crate::scene::JsonMember],
     owner: CandidateOwner,
     aliases: &[(String, usize)],
-    files: &[NormalizedFileRecord],
     scene_file_ids: &[&str],
     supplemental_assets: &SupplementalAssets,
     candidates: &mut Vec<Candidate>,
@@ -491,7 +469,7 @@ fn collect_element_candidates(
                     "groupIds",
                     Some(index),
                     owner,
-                    CandidateTarget::Group(try_owned(group)?),
+                    CandidateTarget::Group,
                     RelationshipKind::Group,
                     u64::MAX,
                     candidates,
@@ -539,7 +517,6 @@ fn collect_element_candidates(
             owner,
             RelationshipKind::Asset,
             TerminalAssetSources {
-                files,
                 scene_file_ids,
                 supplemental_assets,
             },
@@ -552,7 +529,6 @@ fn collect_element_candidates(
         owner,
         RelationshipKind::Link,
         TerminalAssetSources {
-            files,
             scene_file_ids,
             supplemental_assets,
         },
@@ -712,7 +688,6 @@ fn push_bound_element_candidate(
 
 #[derive(Clone, Copy)]
 struct TerminalAssetSources<'a> {
-    files: &'a [NormalizedFileRecord],
     scene_file_ids: &'a [&'a str],
     supplemental_assets: &'a SupplementalAssets,
 }
@@ -738,23 +713,15 @@ fn collect_terminal(
                 .binary_search(&value.as_ref())
                 .is_ok()
             {
-                AssetAuthority::SceneFile(
-                    asset_sources
-                        .files
-                        .iter()
-                        .position(|file| file.key == value.as_ref())
-                        .unwrap_or(usize::MAX),
-                )
+                AssetAuthority::SceneFile
             } else if asset_sources.supplemental_assets.get(value).is_some() {
                 AssetAuthority::Supplemental
             } else {
                 AssetAuthority::Missing
             };
-            CandidateTarget::Asset(try_owned(value)?, authority)
+            CandidateTarget::Asset(authority)
         }
-        RelationshipKind::Link if crate::scene_surface::safe_link(value) => {
-            CandidateTarget::Link(try_owned(value)?)
-        }
+        RelationshipKind::Link if crate::scene_surface::safe_link(value) => CandidateTarget::Link,
         RelationshipKind::Link => return Ok(()),
         _ => unreachable!("terminal relationship kind is asset or link"),
     };
@@ -980,7 +947,6 @@ mod tests {
         let outcome = resolve(
             &scene,
             &normalized.elements,
-            &normalized.files,
             &SupplementalAssets::default(),
             |_| Ok::<(), ()>(()),
         )
@@ -1029,13 +995,9 @@ mod tests {
             .asset("supplement", vec![1])
             .build()
             .expect("supplement is valid");
-        let outcome = resolve(
-            &scene,
-            &normalized.elements,
-            &normalized.files,
-            &supplemental,
-            |_| Ok::<(), ()>(()),
-        )
+        let outcome = resolve(&scene, &normalized.elements, &supplemental, |_| {
+            Ok::<(), ()>(())
+        })
         .expect("relationships resolve");
 
         assert!(!outcome.graph.edges.iter().any(|edge| {

@@ -24,8 +24,11 @@ struct Provenance {
     commit: String,
     rustc: String,
     candidate_sha256: String,
-    tool_manifest: FileRecord,
-    dagger_lock: FileRecord,
+    // The retired Dagger runner's pin files, which older runs record (ADR-0024).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tool_manifest: Option<FileRecord>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    dagger_lock: Option<FileRecord>,
     consumer_lock: FileRecord,
     consumer_manifest: FileRecord,
     consumer_config: FileRecord,
@@ -119,14 +122,17 @@ fn validate_baseline(
     // Fresh snapshot candidates still bind their current collector and inputs;
     // the baseline is checked by execution keys and exact output bytes below.
     for record in [
-        &baseline.implementation,
-        &provenance.tool_manifest,
-        &provenance.dagger_lock,
-        &provenance.consumer_lock,
-        &provenance.consumer_manifest,
-        &provenance.consumer_config,
-        &provenance.collector,
-    ] {
+        Some(&baseline.implementation),
+        provenance.tool_manifest.as_ref(),
+        provenance.dagger_lock.as_ref(),
+        Some(&provenance.consumer_lock),
+        Some(&provenance.consumer_manifest),
+        Some(&provenance.consumer_config),
+        Some(&provenance.collector),
+    ]
+    .into_iter()
+    .flatten()
+    {
         if !hex(&record.sha256, 64)
             || record.byte_length == 0
             || record.path.is_empty()
@@ -470,8 +476,8 @@ mod tests {
                 commit: "1".repeat(40),
                 rustc: "rustc 1.97.1".into(),
                 candidate_sha256: "b".repeat(64),
-                tool_manifest: file.clone(),
-                dagger_lock: file.clone(),
+                tool_manifest: Some(file.clone()),
+                dagger_lock: Some(file.clone()),
                 consumer_lock: file.clone(),
                 consumer_manifest: file.clone(),
                 consumer_config: file.clone(),

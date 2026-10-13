@@ -69,6 +69,21 @@
         "type": "github"
       }
     },
+    "nixpkgs-multiverse": {
+      "locked": {
+        "lastModified": 1791717379,
+        "narHash": "sha256-XjLeQEmbSPfvQd7dW2MNL9ni4VNeszEp2UbXucGkMvU=",
+        "owner": "fzakaria",
+        "repo": "nixpkgs-multiverse",
+        "rev": "9c3fa4d86d65237a69640fca305d444d199b28cc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fzakaria",
+        "repo": "nixpkgs-multiverse",
+        "type": "github"
+      }
+    },
     "nixpkgs-src": {
       "flake": false,
       "locked": {
@@ -147,6 +162,7 @@
         "devenv": "devenv",
         "extras": "extras",
         "nixpkgs": "nixpkgs_3",
+        "nixpkgs-multiverse": "nixpkgs-multiverse",
         "rust-overlay": "rust-overlay"
       }
     },

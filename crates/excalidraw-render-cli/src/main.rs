@@ -19,9 +19,11 @@ use tempfile::TempPath;
 
 mod frames;
 mod human;
+mod pixel_limit;
 
 use frames::{run_frames, FramesCli};
 use human::HumanReport;
+use pixel_limit::{PixelLimit, SceneSize};
 
 const EXIT_OPERATIONAL: u8 = 1;
 const EXIT_USAGE: u8 = 2;
@@ -270,21 +272,25 @@ impl ReportError {
     }
 
     /// Advice the code alone does not imply: only the message tells a PNG or
-    /// PDF the sizing shrank to nothing from other encoding failures.
-    fn sizing_hint(&self) -> Option<&'static str> {
+    /// PDF the sizing shrank to nothing from other encoding failures, and
+    /// only the details how far a PNG is over the pixel limit.
+    fn specific_hint(&self) -> Option<String> {
         match self {
-            Self::Library(error) => human::sizing_hint(error.code().as_str(), error.message()),
+            Self::Library(error) => human::sizing_hint(error.code().as_str(), error.message())
+                .map(str::to_owned)
+                .or_else(|| PixelLimit::of(error).map(|limit| limit.hint(None))),
             Self::Cli(_) => None,
         }
     }
 
     /// The message a person reads: the report message, with the element a
-    /// library failure names.
+    /// library failure names, or a PNG over the pixel limit in pixels.
     fn human_message(&self) -> String {
         match self {
-            Self::Library(error) => match error.element_id() {
-                Some(element) => format!("{} (element {element})", error.message()),
-                None => error.message().to_owned(),
+            Self::Library(error) => match (PixelLimit::of(error), error.element_id()) {
+                (Some(limit), _) => limit.message(None),
+                (None, Some(element)) => format!("{} (element {element})", error.message()),
+                (None, None) => error.message().to_owned(),
             },
             Self::Cli(error) => error.message.clone(),
         }
@@ -676,7 +682,7 @@ fn run_standalone(cli: &Cli) -> u8 {
             text.push_str(&format!(
                 "compatibility revision {}\nreference profile {}\n",
                 profile.compatibility_revision(),
-                profile.profile_digest()
+                profile.reference_profile_digest()
             ));
         }
         return write_stdout(text.as_bytes());
@@ -689,7 +695,7 @@ fn run_standalone(cli: &Cli) -> u8 {
     let revisions = vec![RevisionEntry {
         compatibility_revision: profile.compatibility_revision(),
         excalidraw_release: profile.excalidraw_release(),
-        reference_profile_digest: profile.profile_digest(),
+        reference_profile_digest: profile.reference_profile_digest(),
         default: true,
     }];
     let bytes = match cli.report_format {
@@ -725,7 +731,7 @@ fn run_standalone(cli: &Cli) -> u8 {
             )
         }
     };
-    if report_output(cli) != "stderr" && path_entry_exists(Path::new(report_output(cli))) {
+    if report_output(cli) != "stderr" && destination_is_taken(Path::new(report_output(cli))) {
         return emit_failure(
             cli,
             None,
@@ -780,6 +786,7 @@ fn run_render(
             None,
             EXIT_USAGE,
         )
+        .with_hint("name the scene file, or pass - to read it from standard input")
     })?;
     let output = cli.output.as_deref().ok_or_else(|| {
         Failure::cli(
@@ -796,7 +803,7 @@ fn run_render(
     *identity = Some(SelectedIdentity {
         revision: profile.compatibility_revision(),
         release: profile.excalidraw_release(),
-        digest: profile.profile_digest(),
+        digest: profile.reference_profile_digest(),
     });
 
     let format = select_format(cli.format, output)?;
@@ -850,12 +857,43 @@ fn run_render(
     let request = build_request(cli, format, assets)?;
     let outcome = renderer.render(&scene, &request).map_err(|error| {
         let diagnostics = error.report().diagnostics().to_vec();
-        let mut failure = Failure::library(error.descriptor(), EXIT_OPERATIONAL);
+        let descriptor = error.descriptor();
+        let pixel_limit = PixelLimit::of(&descriptor);
+        let mut failure = Failure::library(descriptor, EXIT_OPERATIONAL);
         failure.diagnostics = diagnostics;
+        // A person is told the PNG's size and the largest that fits, which
+        // takes the scene's size; programs get the report as it is.
+        if let Some(limit) = pixel_limit.filter(|_| cli.report_format != ReportFormat::Json) {
+            let scene = scene_size(&renderer, &scene, &request);
+            failure.human_message = Some(limit.message(scene));
+            failure.hints.push(limit.hint(scene));
+        }
         failure
     })?;
     let (artifact, report) = outcome.into_parts();
     Ok((artifact.into_bytes(), report.diagnostics().to_vec()))
+}
+
+/// The size of `scene` before `request`'s sizing (its padding and frame
+/// options applied), from the view box of a plain SVG export of it, which
+/// costs a fraction of the PNG; `None` when that export fails.
+fn scene_size(
+    renderer: &Renderer,
+    scene: &SceneDocument,
+    request: &RenderRequest,
+) -> Option<SceneSize> {
+    let probe = RenderRequest::builder(OutputFormat::Svg)
+        .padding(request.padding())
+        .frame_options(request.frame_options().clone())
+        .build()
+        .ok()?;
+    let svg = renderer.render(scene, &probe).ok()?;
+    let (width, height) = pixel_limit::svg_logical_size(svg.artifact().bytes())?;
+    Some(SceneSize {
+        width,
+        height,
+        sizing: request.sizing(),
+    })
 }
 
 /// The renderer for `--compatibility-revision`, which accepts only the one
@@ -1168,6 +1206,32 @@ fn path_entry_exists(path: &Path) -> bool {
     fs::symlink_metadata(path).is_ok()
 }
 
+/// Whether writing to `path` would destroy something only `--force` may
+/// replace: any existing entry, a dangling symlink included, except a device
+/// or pipe, which is written in place.
+fn destination_is_taken(path: &Path) -> bool {
+    path_entry_exists(path) && !is_stream_destination(path)
+}
+
+/// Whether `path` is, or links to, a character device or a pipe (such as
+/// `/dev/null`): a stream the artifact is written into, never a file to
+/// stage beside and replace.
+fn is_stream_destination(path: &Path) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::FileTypeExt;
+        fs::metadata(path).is_ok_and(|metadata| {
+            let kind = metadata.file_type();
+            kind.is_char_device() || kind.is_fifo()
+        })
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = path;
+        false
+    }
+}
+
 fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Failure> {
     if output != "-" {
         check_output_file_location(output)?;
@@ -1181,7 +1245,7 @@ fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Fai
         {
             continue;
         }
-        if path_entry_exists(Path::new(path)) && !force {
+        if destination_is_taken(Path::new(path)) && !force {
             return Err(destination_exists(role, path));
         }
     }
@@ -1635,7 +1699,7 @@ fn report_destination_is_safe(cli: &Cli) -> bool {
     if report == "-" {
         return false;
     }
-    if report == "stderr" || (path_entry_exists(Path::new(report)) && !cli.force) {
+    if report == "stderr" || (destination_is_taken(Path::new(report)) && !cli.force) {
         return report == "stderr";
     }
     if cli
@@ -1677,13 +1741,20 @@ fn failure_report_bytes(
         }
         text.push_str(&human::error_line(&message, code));
         if mode == ReportFormat::Human {
+            // Advice the CLI worked out for this failure comes first; the
+            // error's own details, then its code, are the fallbacks.
+            let specific = failure
+                .hints
+                .is_empty()
+                .then(|| failure.error.specific_hint())
+                .flatten();
             text.push_str(&human::hint_lines(
                 code,
                 failure
                     .hints
                     .iter()
                     .map(String::as_str)
-                    .chain(failure.error.sizing_hint()),
+                    .chain(specific.as_deref()),
             ));
         }
         return text.into_bytes();
@@ -1900,11 +1971,18 @@ fn write_stream_tracked(
 }
 
 /// A fully written, synced temporary sibling of one destination. Only its path
-/// is held, so staging many frames never holds one descriptor per frame.
+/// is held, so staging many frames never holds one descriptor per frame. A
+/// device or pipe destination has no sibling to stage: its bytes are held and
+/// written in place on delivery.
 struct StagedFile {
-    temporary: TempPath,
+    staged: Staged,
     destination: PathBuf,
     replace: bool,
+}
+
+enum Staged {
+    Temporary(TempPath),
+    Stream(Vec<u8>),
 }
 
 impl StagedFile {
@@ -1922,6 +2000,13 @@ impl StagedFile {
         bytes: &[u8],
         replace: bool,
     ) -> Result<Self, DeliveryError> {
+        if is_stream_destination(destination) {
+            return Ok(Self {
+                staged: Staged::Stream(bytes.to_vec()),
+                destination: destination.to_path_buf(),
+                replace,
+            });
+        }
         let name = destination
             .file_name()
             .and_then(|name| name.to_str())
@@ -1941,23 +2026,30 @@ impl StagedFile {
             .and_then(|()| file.as_file().sync_all())
             .map_err(|error| DeliveryError::new(CliOperation::Flush, &error))?;
         Ok(Self {
-            temporary: file.into_temp_path(),
+            staged: Staged::Temporary(file.into_temp_path()),
             destination: destination.to_path_buf(),
             replace,
         })
     }
 
     /// Atomically publishes the staged file; without `replace` an existing
-    /// destination, even one created after staging, is never overwritten.
+    /// destination, even one created after staging, is never overwritten. A
+    /// device or pipe is opened and written instead.
     fn deliver(self) -> Result<(), DeliveryError> {
-        if self.replace {
-            self.temporary
+        match self.staged {
+            Staged::Stream(bytes) => {
+                let mut stream = fs::OpenOptions::new()
+                    .write(true)
+                    .open(&self.destination)
+                    .map_err(|error| DeliveryError::new(CliOperation::Open, &error))?;
+                write_stream(&mut stream, &bytes)
+            }
+            Staged::Temporary(temporary) if self.replace => temporary
                 .persist(&self.destination)
-                .map_err(|error| DeliveryError::new(CliOperation::Replace, &error.error))
-        } else {
-            self.temporary
+                .map_err(|error| DeliveryError::new(CliOperation::Replace, &error.error)),
+            Staged::Temporary(temporary) => temporary
                 .persist_noclobber(&self.destination)
-                .map_err(|error| DeliveryError::new(CliOperation::Create, &error.error))
+                .map_err(|error| DeliveryError::new(CliOperation::Create, &error.error)),
         }
     }
 }

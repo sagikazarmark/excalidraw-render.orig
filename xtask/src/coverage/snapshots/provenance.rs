@@ -47,14 +47,17 @@ fn external_readme(commit: &str, crate_name: &str) -> Result<Option<(String, Str
 
 pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String> {
     for source in [
-        &bundle.inventory,
-        &bundle.tool_manifest,
-        &bundle.dagger_lock,
-        &bundle.consumer_lock,
-        &bundle.consumer_manifest,
-        &bundle.consumer_config,
-        &bundle.collector,
-    ] {
+        Some(&bundle.inventory),
+        bundle.tool_manifest.as_ref(),
+        bundle.dagger_lock.as_ref(),
+        Some(&bundle.consumer_lock),
+        Some(&bundle.consumer_manifest),
+        Some(&bundle.consumer_config),
+        Some(&bundle.collector),
+    ]
+    .into_iter()
+    .flatten()
+    {
         let bytes = git_bytes(&bundle.commit, &source.path)?;
         if sha256(&bytes) != source.sha256 || bytes.len() as u64 != source.byte_length {
             return Err(format!(

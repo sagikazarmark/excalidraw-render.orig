@@ -482,9 +482,8 @@ Every `#[ignore]`d gate that needs this harness lives in the
 `harness_pdf_viewers` test binary of `crates/excalidraw-render` (the backend
 qualification's structural gates, the rectangle-outline, Excalifont text and
 frame-export viewer gates, and the viewer adapter contract), and the `harness`
-nextest profile selects that binary by name, so the gates run in CI on every
-push to `main` and nightly through `.github/workflows/pdf-harness-gates.yml`
-without being listed there, and a change that moves a structural digest or a
+nextest profile selects that binary by name, so `dagger api call evidence pdf`
+runs them without listing them, and a change that moves a structural digest or a
 viewer raster fails visibly rather than leaving the expectation files stale
 (#109). The adapter contract (`harness_pdf_viewers::adapters`) pins the viewer
 adapters' own behavior: a page is admitted when each of its 96 DPI dimensions

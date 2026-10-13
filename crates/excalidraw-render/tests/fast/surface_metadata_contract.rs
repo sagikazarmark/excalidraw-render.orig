@@ -214,48 +214,62 @@ fn editor_values(field: &str) -> Vec<Value> {
     probes
 }
 
+// One test per format, so the slow matrix spreads across cores; each owns its
+// format's rows in the coverage ledger.
 #[test]
-fn editor_state_is_silent_preserved_and_independent_of_scene_and_frame_exports() {
+fn editor_state_is_silent_preserved_and_independent_of_scene_and_frame_exports_svg() {
+    editor_state_contract(OutputFormat::Svg);
+}
+
+#[test]
+fn editor_state_is_silent_preserved_and_independent_of_scene_and_frame_exports_png() {
+    editor_state_contract(OutputFormat::Png);
+}
+
+#[test]
+fn editor_state_is_silent_preserved_and_independent_of_scene_and_frame_exports_pdf() {
+    editor_state_contract(OutputFormat::Pdf);
+}
+
+fn editor_state_contract(format: OutputFormat) {
     let baseline = editor_scene();
-    for format in FORMATS {
-        let renderer = Renderer::new();
-        let request = RenderRequest::builder(format).build().unwrap();
-        let plain = renderer.render(&parse(&baseline), &request).unwrap();
-        assert!(plain.report().is_empty());
-        // One field at a time: a later ignored field cannot mask an earlier
-        // field accidentally consumed by normalization or projection.
-        for field in EDITOR_FIELDS {
-            for value in editor_values(field) {
-                let mut changed = baseline.clone();
-                changed["appState"][field] = value;
-                let result = Renderer::new().render(&parse(&changed), &request).unwrap();
-                assert_eq!(
-                    result.artifact().bytes(),
-                    plain.artifact().bytes(),
-                    "{format:?} {field}: {changed}"
-                );
-                assert_eq!(
-                    serde_json::to_vec(result.report()).unwrap(),
-                    serde_json::to_vec(plain.report()).unwrap(),
-                    "{format:?} {field}"
-                );
-                // Generic values are covered in the combined preservation/frame
-                // matrix below. Exercise additional field-specific valid values
-                // here too, where their active editor meaning could matter.
-                if !values().contains(&changed["appState"][field]) {
-                    assert_preservation_and_frames(&baseline, &changed, format);
-                }
-            }
-        }
-        // Exercise preservation and frame selection with the whole editor state
-        // present, including descendants that would warn at a consumed boundary.
-        for value in values() {
+    let renderer = Renderer::new();
+    let request = RenderRequest::builder(format).build().unwrap();
+    let plain = renderer.render(&parse(&baseline), &request).unwrap();
+    assert!(plain.report().is_empty());
+    // One field at a time: a later ignored field cannot mask an earlier
+    // field accidentally consumed by normalization or projection.
+    for field in EDITOR_FIELDS {
+        for value in editor_values(field) {
             let mut changed = baseline.clone();
-            for field in EDITOR_FIELDS {
-                changed["appState"][field] = value.clone();
+            changed["appState"][field] = value;
+            let result = Renderer::new().render(&parse(&changed), &request).unwrap();
+            assert_eq!(
+                result.artifact().bytes(),
+                plain.artifact().bytes(),
+                "{format:?} {field}: {changed}"
+            );
+            assert_eq!(
+                serde_json::to_vec(result.report()).unwrap(),
+                serde_json::to_vec(plain.report()).unwrap(),
+                "{format:?} {field}"
+            );
+            // Generic values are covered in the combined preservation/frame
+            // matrix below. Exercise additional field-specific valid values
+            // here too, where their active editor meaning could matter.
+            if !values().contains(&changed["appState"][field]) {
+                assert_preservation_and_frames(&baseline, &changed, format);
             }
-            assert_preservation_and_frames(&baseline, &changed, format);
         }
+    }
+    // Exercise preservation and frame selection with the whole editor state
+    // present, including descendants that would warn at a consumed boundary.
+    for value in values() {
+        let mut changed = baseline.clone();
+        for field in EDITOR_FIELDS {
+            changed["appState"][field] = value.clone();
+        }
+        assert_preservation_and_frames(&baseline, &changed, format);
     }
 }
 

@@ -32,8 +32,9 @@ this release does not claim to have completed every requirement in it.
 
 ## Release gates
 
-1. `dagger --engine cloud check` passes on the candidate tree. Dagger success
-   means green CI; Actions status is not a release prerequisite.
+1. `just ci`, `just msrv` on the workspace `rust-version`, and `just release`
+   pass on the candidate tree on Linux x86-64 (ADR-0024); Actions status is not
+   a release prerequisite.
 2. SVG/PDF viewer gates pass using the pinned harnesses.
 3. Packaged library and CLI build and execute; dependency order, archive sizes,
    bundled assets, and licenses are verified. Publication is rehearsed before
