@@ -56,3 +56,7 @@ lock, command, reports and digests, plus a trace URL when available. The existin
 `pending_ci` manifest state means pending target aggregation on any runner.
 See `docs/ci.md` for the canonical operation inventory. This changes orchestration,
 not the supported target set or ADR-0003's serialized evidence-refresh policy.
+
+Amended 2026-10-13: ADR-0024 replaces Dagger with recipes in the devenv shell
+as the runner, retires the tool manifest for `devenv.lock`, and lets the
+browser-WASM target run in any browser. The supported target set is unchanged.

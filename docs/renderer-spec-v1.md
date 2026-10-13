@@ -2113,8 +2113,8 @@ recorded, pure Rust, deterministic, offline, and independent of host time,
 locale, path, and randomness; it cannot download, compile C/C++, probe optional
 system libraries, or generate production assets.
 
-A checked tool manifest pins every Rust CI executable by exact version and
-checksum. WASM runner and `wasm-bindgen-test` versions are exact and compatible.
+`devenv.lock` pins every CI executable (ADR-0024). The WASM runner is the
+exact `wasm-bindgen` version in `Cargo.lock`.
 Third-party GitHub Actions use full commit pins; downloaded tools use exact
 version plus checksum or immutable image digest. Workflows use least privilege,
 never expose release secrets to untrusted pull requests, and update pins only
@@ -2123,11 +2123,11 @@ through ordinary reviewed dependency changes.
 Supported targets are exactly:
 
 - `x86_64-unknown-linux-gnu`.
-- `wasm32-unknown-unknown` in the pinned Chromium harness.
+- `wasm32-unknown-unknown` in a browser (ADR-0024).
 
 Every target executes renderer and deterministic-output tests. Cross-compilation
 alone is insufficient. Adding a target is a spec amendment that requires the
-target to execute the qualification with the pinned tool identities and agree
+target to execute the qualification with the devenv tool identities and agree
 on the committed cross-target measurement first (ADR-0006). `rust-version`
 equals the official stable compiler. The
 first release promises no explicit native deployment floor beyond the target OS
