@@ -22,8 +22,17 @@ with the same tools; GitHub Actions is a caller, not the authority.
 | `just nightly-*` | Scheduled | The bounded randomized expansions |
 
 `just` lists every recipe. The per-change gates run on any host the devenv shell
-supports; CI runs each as its own job (`.github/workflows/ci.yaml`). Cargo's own
-fingerprints decide what a recipe rebuilds.
+supports; CI runs each as its own job (`.github/workflows/ci.yaml`), except that
+the fast and render tiers share one job and one compilation. Cargo's own
+fingerprints decide what a recipe rebuilds; rust-cache keeps the dependencies
+between runs, saved from `main`. Each job pulls the devenv shell from the
+`rust-projects` Cachix cache and pushes the paths it builds, chiefly the
+rust-overlay toolchain that cache.nixos.org does not carry.
+
+Some xtask tests run commands that build the qualified release CLI (LTO, one
+codegen unit) on first use. `.config/nextest.toml` puts them in a one-thread
+test group, so they take turns instead of holding test slots while they wait on
+Cargo's build lock.
 
 The release checks run on the supported targets (ADR-0006). Browser WASM runs in
 headless Firefox on any host: the renderer makes no browser calls, and the
