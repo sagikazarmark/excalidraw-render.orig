@@ -1,5 +1,9 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, config, multiverse, ... }:
 
+let
+  # The PDF structure checks require exactly this release.
+  qpdf = multiverse.qpdf."12.3.2";
+in
 {
   dotenv.enable = true;
 
@@ -9,10 +13,27 @@
   # Required by arborium
   env.CC_wasm32_unknown_unknown = "${pkgs.llvmPackages.clang-unwrapped}/bin/clang";
 
+  # xtask reads qpdf from QPDF before target/pdf-harness/qpdf.
+  env.QPDF = "${qpdf}/bin/qpdf";
+
+  # The harness wrappers read qpdf only from target/pdf-harness/qpdf, so link it
+  # there, unless tools/pdf-harness/install.sh unpacked the release there.
+  enterShell = ''
+    harness=${lib.escapeShellArg "${config.devenv.root}/target/pdf-harness"}
+    if [[ -L "$harness/qpdf" || ! -e "$harness/qpdf" ]]; then
+      mkdir -p "$harness"
+      ln -sfn ${qpdf} "$harness/qpdf"
+    fi
+  '';
+
   packages =
     with pkgs;
     [
+      just
+
       lld
+      python3
+      qpdf
       cargo-audit
       cargo-deny
       cargo-dist
@@ -43,7 +64,9 @@
       channel = "stable";
       # The toolchain `dagger.toml` pins for the gates, so local lints and
       # tests match CI. A newer Clippy adds lints the pinned gates do not run.
-      version = "1.97.1";
+      # A default, so `just msrv` can run on another one with
+      # `devenv --option languages.rust.version:string 1.92.0`.
+      version = lib.mkDefault "1.97.1";
       # targets = [ "wasm32-unknown-unknown" ];
     };
     javascript = {
