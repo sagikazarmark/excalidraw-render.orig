@@ -26,12 +26,20 @@ const VISUAL_FAIL_RASTER_DIGEST: &str =
 
 // These producer identities describe the historical Python-era capture.
 // Rust replay checks the same retained bytes with the current adapter.
-// Viewer adapters, parser locks, schemas, comparator and evidence stay live.
+// The PDFium and qpdf adapters, parser locks, schemas, comparator and evidence
+// stay live.
 const HISTORICAL_QUALIFICATION_SOURCES: &[&str] = &[
     "tools/pdf-viewer-qualification.sh",
     "tools/pdf-harness/generate-fixtures.py",
     "xtask/src/pdf_viewers.rs",
     "tools/pdf-harness/pdfium/test_alpha.py",
+];
+// The PDF.js adapter records the release it ran in each receipt (ADR-0019).
+const HISTORICAL_PDFJS_SOURCES: &[&str] = &[
+    "tools/pdf-harness/pdfjs/render.mjs",
+    "tools/pdf-harness/run-pdfjs.sh",
+    "tools/pdf-harness/install.sh",
+    "tools/pdf-harness/pdfjs/package.json",
 ];
 const HISTORICAL_STRUCTURE_SOURCES: &[&str] = &[
     "tools/pdf-harness/structure/inspect.py",
@@ -245,7 +253,9 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
             &profile["implementation"]["lockfile"],
         )?)?;
     } else {
-        verify_descriptor(&profile["implementation"]["lockfile"])?;
+        crate::conformance_candidate_gate::historical_sources(&json!([
+            profile["implementation"]["lockfile"]
+        ]))?;
     }
     if viewer == "pdfium" {
         verify_producer_sources(
@@ -255,7 +265,7 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
     } else {
         verify_producer_sources(
             &profile["implementation"]["sources"],
-            &["tools/pdf-harness/install.sh"],
+            HISTORICAL_PDFJS_SOURCES,
         )?;
     }
     match viewer {

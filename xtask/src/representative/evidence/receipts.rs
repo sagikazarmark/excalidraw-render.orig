@@ -184,7 +184,12 @@ fn validate_receipt(receipt: &Value, raw: &[u8], viewer: &str) -> Result<()> {
             "PDF pixel profile",
         )?;
         if viewer == "native-pdfjs" {
-            require(receipt["pdfjs"] == "6.1.200", "PDF.js identity")?;
+            // The release is provenance (ADR-0019); fresh rasters are judged
+            // against the expectations, not against a pinned PDF.js version.
+            require(
+                receipt["pdfjs"].as_str().is_some_and(|v| !v.is_empty()),
+                "PDF.js identity",
+            )?;
         }
     }
     Ok(())

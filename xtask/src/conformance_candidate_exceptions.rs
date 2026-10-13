@@ -2,8 +2,8 @@
 //! visible; scoped limits are evaluated anew from the captured image bytes.
 use crate::conformance::{canonical_bytes, repo_root, sha256};
 use crate::conformance_candidate_gate::{
-    candidate_root, case_id, comparator_closure_successor, descriptor, read, value,
-    COMPARATOR_PROFILE,
+    candidate_root, case_id, comparator_closure_successor, descriptor, historical_sources, read,
+    value, COMPARATOR_PROFILE, HISTORICAL_PRODUCER_FILES,
 };
 use serde_json::{json, Value};
 use std::path::Path;
@@ -52,6 +52,10 @@ fn proof() -> Result<Value> {
                 | "tools/pdf-harness/pdfium/render.py"
         ) {
             validate_retired_producer(d)?;
+            continue;
+        }
+        if HISTORICAL_PRODUCER_FILES.contains(&path) {
+            historical_sources(&json!([d]))?;
             continue;
         }
         if d != &descriptor(&root, path)? {

@@ -94,7 +94,14 @@ fn verify_profile(descriptor: &Value, viewer: &str) -> Result<(), String> {
     {
         return Err(format!("{viewer} viewer profile identity is invalid"));
     }
-    verify_descriptor(&profile["implementation"]["lockfile"])?;
+    let lockfile = &profile["implementation"]["lockfile"];
+    if lockfile["path"].as_str().is_some_and(|path| {
+        crate::conformance_candidate_gate::HISTORICAL_PRODUCER_FILES.contains(&path)
+    }) {
+        crate::conformance_candidate_gate::historical_sources(&json!([lockfile]))?;
+    } else {
+        verify_descriptor(lockfile)?;
+    }
     crate::conformance_candidate_gate::historical_sources(&profile["implementation"]["sources"])?;
     match viewer {
         "chromium" => verify_chromium_profile(&profile),

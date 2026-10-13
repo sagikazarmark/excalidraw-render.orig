@@ -711,6 +711,9 @@ fn evidence() -> Value {
     assert_eq!(record["sources"].as_array().unwrap().len(), 18);
     for (source, path) in record["sources"].as_array().unwrap().iter().zip(SOURCES) {
         assert_eq!(source["path"], path);
+        if path == crate::common::ORACLE_LOCKFILE {
+            continue;
+        }
         assert_eq!(
             source["sha256"],
             hash(&std::fs::read(crate::common::repository_root().join(path)).unwrap())
