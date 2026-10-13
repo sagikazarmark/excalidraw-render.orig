@@ -51,7 +51,7 @@ fn evidence() -> Value {
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/jpeg-icc-reference/v1");
     for source in record["sources"].as_array().unwrap() {
-        if source["path"] == crate::common::ORACLE_LOCKFILE {
+        if crate::common::is_oracle_producer(source["path"].as_str().unwrap()) {
             continue;
         }
         let bytes =

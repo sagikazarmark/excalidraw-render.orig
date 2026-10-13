@@ -529,6 +529,9 @@ fn check_evidence(evidence: serde_json::Value, group: &str, count: usize) {
     use crate::common::{png_color_reference as reference, png_stage4_reference};
     use sha2::{Digest, Sha256};
     for source in evidence["sources"].as_array().unwrap() {
+        if crate::common::is_oracle_producer(source["path"].as_str().unwrap()) {
+            continue;
+        }
         let bytes =
             std::fs::read(crate::common::repository_root().join(source["path"].as_str().unwrap()))
                 .unwrap();

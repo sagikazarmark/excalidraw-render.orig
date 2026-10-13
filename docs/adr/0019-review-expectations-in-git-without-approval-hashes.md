@@ -22,13 +22,17 @@ This supersedes the approval-gate requirements in ADR-0011, ADR-0015, ADR-0016,
 ADR-0017 and older conformance/specification workflow prose. It does not remove
 their substantive rendering, scope, ownership or evidence-completeness checks.
 
-Amended 2026-10-14: the rule covers the Node producers' dependency pins too.
-Dependabot security updates to `tools/reference-oracle/package-lock.json` and
-`tools/pdf-harness/pdfjs/` failed every PR gate, although no gate runs those
-producers: the WebP sample contract, the frame reference profile, the SVG and
-PDF.js viewer profiles and the candidate and diagnosis chains still compared
-their digests to the live files. Those files are now historical wherever they
-are bound (`HISTORICAL_PRODUCER_FILES` in the candidate gate). `catalog verify`
+Amended 2026-10-14: the rule covers all reference-oracle and PDF.js harness
+code, including their dependency pins. A Dependabot security update to
+`tools/reference-oracle/package-lock.json` and `tools/pdf-harness/pdfjs/` failed
+every PR gate, although no gate runs those producers: about fifteen codec
+contract tests, the frame reference profile, the SVG and PDF.js viewer profiles,
+the conformance runners and the candidate and diagnosis chains still compared
+their digests to the live files, so any edit to a shared oracle script failed
+them too.
+Everything under `tools/reference-oracle/` except the fixtures it reads, and the
+PDF.js harness, is now historical wherever it is bound (`historical_producer` in
+the candidate gate, `is_oracle_producer` in the renderer tests). `catalog verify`
 still reads the Excalidraw release from the oracle lockfile. A PDF.js update
 needs no requalification of its own: the adapter records the release it ran in
 each receipt, and the harness gates judge its fresh rasters against the

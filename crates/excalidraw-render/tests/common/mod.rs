@@ -38,10 +38,14 @@ pub fn repository_root() -> PathBuf {
         .to_owned()
 }
 
-/// The reference oracle's dependency lock. Codec evidence records it as
-/// historical producer provenance (ADR-0019): the tests never run the oracle,
-/// so a dependency update must not stale the frozen reference.
-pub const ORACLE_LOCKFILE: &str = "tools/reference-oracle/package-lock.json";
+/// Whether `path` is reference-oracle code, less the fixtures it reads. Codec
+/// evidence records that code as historical producer provenance (ADR-0019): the
+/// tests never run the oracle, so editing it or updating its dependencies must
+/// not stale the frozen reference.
+pub fn is_oracle_producer(path: &str) -> bool {
+    path.starts_with("tools/reference-oracle/")
+        && !path.starts_with("tools/reference-oracle/fixtures/")
+}
 
 /// The JSON document at `path`, named in the failure when it is absent or
 /// malformed.

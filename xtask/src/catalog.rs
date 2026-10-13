@@ -3353,13 +3353,9 @@ fn verify_frame_file_records(
         {
             return Err(format!("{description} {path} has an invalid byte record"));
         }
-        // Orchestration source and the oracle's dependency lock are
-        // capture-time provenance (ADR-0019). The Excalidraw release, browser
-        // entry, invocation and reference output still bind behavior.
-        if verify_files
-            && path != "tools/reference-oracle/scripts/frame-conformance-case.mjs"
-            && !crate::conformance_candidate_gate::HISTORICAL_PRODUCER_FILES.contains(&path)
-        {
+        // Oracle code is capture-time provenance (ADR-0019). The Excalidraw
+        // release, invocation and reference output still bind behavior.
+        if verify_files && !crate::conformance_candidate_gate::historical_producer(path) {
             let bytes = fs::read(root.join(relative))
                 .map_err(|error| format!("failed to read {description} {path}: {error}"))?;
             if byte_length != bytes.len() as u64 || digest != sha256(&bytes) {

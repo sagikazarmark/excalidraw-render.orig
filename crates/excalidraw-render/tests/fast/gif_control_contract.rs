@@ -711,7 +711,7 @@ fn evidence() -> Value {
     assert_eq!(record["sources"].as_array().unwrap().len(), 18);
     for (source, path) in record["sources"].as_array().unwrap().iter().zip(SOURCES) {
         assert_eq!(source["path"], path);
-        if path == crate::common::ORACLE_LOCKFILE {
+        if crate::common::is_oracle_producer(path) {
             continue;
         }
         assert_eq!(

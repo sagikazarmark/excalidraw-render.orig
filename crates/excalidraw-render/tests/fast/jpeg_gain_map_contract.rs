@@ -77,7 +77,7 @@ fn evidence() -> Value {
         "excalidraw-render/jpeg-gain-map-reference/v1"
     );
     for source in record["sources"].as_array().unwrap() {
-        if source["path"] == crate::common::ORACLE_LOCKFILE {
+        if crate::common::is_oracle_producer(source["path"].as_str().unwrap()) {
             continue;
         }
         let bytes =

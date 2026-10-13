@@ -130,7 +130,7 @@ fn check_descriptor(root: &Path, d: &Value) -> Result<Vec<u8>> {
         if reviewed_vector_move(p, &d["sha256"], &sha256(&b)) {
             return Ok(b);
         }
-        if HISTORICAL_PRODUCER_FILES.contains(&p) {
+        if historical_producer(p) {
             historical_sources(&json!([d]))?;
             return Ok(b);
         }
@@ -138,18 +138,18 @@ fn check_descriptor(root: &Path, d: &Value) -> Result<Vec<u8>> {
     }
     Ok(b)
 }
-/// Producer files whose digests describe only the run that captured evidence
-/// (ADR-0019): the Node producers' dependency pins and the PDF.js adapter. The
-/// gates never run these producers, so a dependency update moves them without
-/// staling evidence. `catalog verify` still reads the Excalidraw release from
-/// the oracle lockfile, and the PDF.js adapter records the release it ran.
-pub(crate) const HISTORICAL_PRODUCER_FILES: &[&str] = &[
-    "tools/reference-oracle/package-lock.json",
-    "tools/pdf-harness/pdfjs/package-lock.json",
-    "tools/pdf-harness/pdfjs/package.json",
-    "tools/pdf-harness/pdfjs/render.mjs",
-    "tools/pdf-harness/run-pdfjs.sh",
-];
+/// Whether `path` is producer code whose digest describes only the run that
+/// captured evidence (ADR-0019): the reference oracle, less the fixtures it
+/// reads, and the PDF.js harness. The gates never run these producers, so
+/// editing one or updating its dependencies does not stale evidence.
+/// `catalog verify` still reads the Excalidraw release from the oracle
+/// lockfile, and the PDF.js adapter records the release it ran.
+pub(crate) fn historical_producer(path: &str) -> bool {
+    (path.starts_with("tools/reference-oracle/")
+        && !path.starts_with("tools/reference-oracle/fixtures/"))
+        || path.starts_with("tools/pdf-harness/pdfjs/")
+        || path == "tools/pdf-harness/run-pdfjs.sh"
+}
 const PURE_RUST_SVG_PROFILE: &str =
     "tests/conformance/viewer-profiles/canonical-svg-pure-rust-v1.json";
 /// The pure-Rust SVG viewer's identity files candidate evidence binds that a

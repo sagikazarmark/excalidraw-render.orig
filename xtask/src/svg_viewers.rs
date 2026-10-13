@@ -94,14 +94,7 @@ fn verify_profile(descriptor: &Value, viewer: &str) -> Result<(), String> {
     {
         return Err(format!("{viewer} viewer profile identity is invalid"));
     }
-    let lockfile = &profile["implementation"]["lockfile"];
-    if lockfile["path"].as_str().is_some_and(|path| {
-        crate::conformance_candidate_gate::HISTORICAL_PRODUCER_FILES.contains(&path)
-    }) {
-        crate::conformance_candidate_gate::historical_sources(&json!([lockfile]))?;
-    } else {
-        verify_descriptor(lockfile)?;
-    }
+    verify_descriptor(&profile["implementation"]["lockfile"])?;
     crate::conformance_candidate_gate::historical_sources(&profile["implementation"]["sources"])?;
     match viewer {
         "chromium" => verify_chromium_profile(&profile),
@@ -299,7 +292,9 @@ fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
     }
     let bytes =
         fs::read(resolved).map_err(|error| format!("failed to read {relative}: {error}"))?;
-    if descriptor["sha256"] != json!(sha256(&bytes)) {
+    if descriptor["sha256"] != json!(sha256(&bytes))
+        && !crate::conformance_candidate_gate::historical_producer(relative)
+    {
         return Err(format!("stale digest for {relative}"));
     }
     Ok(bytes)
