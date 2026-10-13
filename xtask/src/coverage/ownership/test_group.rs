@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn all_unsupported_value_members_are_independently_executable() {
         let group = load(&descriptor(GROUP).unwrap()).unwrap();
-        assert_eq!(group.tests.len(), 33);
+        assert_eq!(group.tests.len(), 35);
         assert!(group
             .tests
             .iter()

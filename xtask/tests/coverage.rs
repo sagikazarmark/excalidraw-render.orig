@@ -88,7 +88,7 @@ fn ownership_recording_rejects_unknown_obligations_without_changing_the_ledger()
         "conformance",
         "record-test-owner",
         "surface_metadata_contract",
-        "editor_state_is_silent_preserved_and_independent_of_scene_and_frame_exports",
+        "editor_state_is_silent_preserved_and_independent_of_scene_and_frame_exports_svg",
         "Explicit reviewed editor-only surface contract",
         "surface:unknown:/unknown:svg",
     ]);
