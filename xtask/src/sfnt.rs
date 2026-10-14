@@ -54,19 +54,25 @@ impl<'a> Sfnt<'a> {
         flagged || slanted
     }
 
-    /// Whether a Unicode subtable maps `c`.
+    /// Whether a Unicode subtable maps `c` to a glyph other than `.notdef`.
     pub(crate) fn maps(&self, c: char) -> bool {
-        self.unicode_subtables()
-            .iter()
-            .any(|subtable| subtable.map_codepoint(c).is_some())
+        self.unicode_subtables().iter().any(|subtable| {
+            subtable
+                .map_codepoint(c)
+                .is_some_and(|glyph| glyph.to_u32() != 0)
+        })
     }
 
-    /// Every code point a Unicode subtable maps.
+    /// Every code point a Unicode subtable maps to a glyph other than
+    /// `.notdef`.
     pub(crate) fn mapped_codepoints(&self) -> BTreeSet<u32> {
         let mut codepoints = BTreeSet::new();
         for subtable in self.unicode_subtables() {
             for (codepoint, _) in subtable.iter() {
-                if subtable.map_codepoint(codepoint).is_some() {
+                if subtable
+                    .map_codepoint(codepoint)
+                    .is_some_and(|glyph| glyph.to_u32() != 0)
+                {
                     codepoints.insert(codepoint);
                 }
             }

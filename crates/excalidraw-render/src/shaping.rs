@@ -146,7 +146,8 @@ impl Face {
 
     /// The glyph that the first Unicode subtable mapping `c` maps it to. Unicode
     /// subtables are the Unicode platform's, Windows BMP, and Windows full
-    /// repertoire in format 12 or 13.
+    /// repertoire in format 12 or 13. A subtable does not map `c` to a glyph
+    /// ID past `u16`, nor to a format 0 subtable's zero.
     pub(crate) fn glyph_index(&self, c: char) -> Option<GlyphId> {
         let cmap = self.tables().cmap().ok()?;
         let data = cmap.offset_data();
@@ -165,8 +166,12 @@ impl Face {
             if !unicode {
                 continue;
             }
-            if let Some(glyph) = subtable.map_codepoint(c) {
-                return u16::try_from(glyph.to_u32()).ok().map(GlyphId);
+            let glyph = subtable
+                .map_codepoint(c)
+                .filter(|glyph| subtable.format() != 0 || glyph.to_u32() != 0)
+                .and_then(|glyph| u16::try_from(glyph.to_u32()).ok());
+            if let Some(glyph) = glyph {
+                return Some(GlyphId(glyph));
             }
         }
         None

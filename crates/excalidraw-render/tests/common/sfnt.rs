@@ -17,11 +17,13 @@ impl<'a> Sfnt<'a> {
         Some(Self(font))
     }
 
-    /// The glyph the font's best character map subtable, the one HarfBuzz
-    /// shapes with, maps `c` to.
+    /// The glyph other than `.notdef` that the font's best character map
+    /// subtable, the one HarfBuzz shapes with, maps `c` to.
     pub fn glyph(&self, c: char) -> Option<GlyphId> {
         let (_, _, subtable) = self.0.cmap().ok()?.best_subtable()?;
-        subtable.map_codepoint(c)
+        subtable
+            .map_codepoint(c)
+            .filter(|glyph| glyph.to_u32() != 0)
     }
 
     pub fn advance(&self, glyph: GlyphId) -> Option<u16> {
