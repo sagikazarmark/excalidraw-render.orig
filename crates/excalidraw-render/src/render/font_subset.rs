@@ -1010,15 +1010,7 @@ fn validate_shaping_probe(
     text: &str,
     direction: Option<crate::shaping::Direction>,
 ) -> Result<(), Error> {
-    let shape = |face: &crate::shaping::Face<'_>| {
-        let mut buffer = crate::shaping::UnicodeBuffer::new();
-        buffer.push_str(text);
-        if let Some(direction) = direction {
-            buffer.set_direction(direction);
-        }
-        buffer.guess_segment_properties();
-        crate::shaping::shape(face, &[], buffer)
-    };
+    let shape = |face: &crate::shaping::Face<'_>| crate::shaping::shape(face, &[], text, direction);
     let source_shape = shape(source);
     let subset_shape = shape(subset);
     if source_shape.glyph_infos().len() != subset_shape.glyph_infos().len()
@@ -1748,10 +1740,7 @@ mod tests {
             ] {
                 validate_shaping_probe(&source, &subset, text, Some(direction)).unwrap();
             }
-            let mut buffer = crate::shaping::UnicodeBuffer::new();
-            buffer.push_str(text);
-            buffer.guess_segment_properties();
-            let shaped = crate::shaping::shape(&subset, &[], buffer);
+            let shaped = crate::shaping::shape(&subset, &[], text, None);
             assert_eq!(shaped.glyph_infos().len(), text.chars().count());
             if let Some(offset) = text.find(super::super::text::is_default_ignorable) {
                 // A joiner can merge into its preceding grapheme cluster;

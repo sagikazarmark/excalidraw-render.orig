@@ -38,7 +38,7 @@ pub(super) struct FrameName {
 
 pub(super) struct FallbackFont {
     woff2: Vec<u8>,
-    sfnt: Vec<u8>,
+    sfnt: Arc<[u8]>,
 }
 
 /// One official face glyph selection loaded for a target: a family chunk's
@@ -333,12 +333,9 @@ impl FallbackFont {
         let mut woff2 = Vec::new();
         woff2.try_reserve_exact(source.len())?;
         woff2.extend_from_slice(&source);
-        let decoded = loader
+        let sfnt = loader
             .load_sfnt(id)
             .map_err(|error| font_error(id, error))?;
-        let mut sfnt = Vec::new();
-        sfnt.try_reserve_exact(decoded.len())?;
-        sfnt.extend_from_slice(&decoded);
         Ok(Self { woff2, sfnt })
     }
 
@@ -358,7 +355,7 @@ impl FallbackFont {
         self.shape("\u{2026}", width, height)
     }
 
-    pub(super) fn into_parts(self) -> (Vec<u8>, Vec<u8>) {
+    pub(super) fn into_parts(self) -> (Vec<u8>, Arc<[u8]>) {
         (self.woff2, self.sfnt)
     }
 
@@ -380,7 +377,7 @@ impl FallbackFont {
         frame_width: f64,
     ) -> Result<FrameName, LabelError> {
         let face =
-            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+            crate::shaping::Face::from_shared(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let scale = FRAME_NAME_FONT_SIZE / f64::from(face.units_per_em());
         let baseline = FamilyMetrics::for_source_family(FRAME_NAME_FONT_FAMILY)
             .ok_or(LabelError::InvalidFont)?
@@ -455,7 +452,7 @@ impl FallbackFont {
         height: f64,
     ) -> Result<Option<ResolvedLabel>, LabelError> {
         let face =
-            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+            crate::shaping::Face::from_shared(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let (display_text, missing_codepoints) = fallback_display_text(&face, text)?;
         let glyphs = shape_text(&face, &display_text, ShapeDirection::Guessed);
         let units_per_em = f64::from(face.units_per_em());
@@ -505,11 +502,11 @@ fn fallback_display_text(
 }
 
 /// Whether `character` is a default-ignorable code point as the pinned shaper
-/// (`harfrust 0.13.3`, HarfBuzz's `is_default_ignorable`) classifies it: the
+/// (`harfrust 0.14.0`, HarfBuzz's `is_default_ignorable`) classifies it: the
 /// bidi controls U+200E, U+200F, U+202A–U+202E and U+2066–U+2069 with the
 /// rest of U+2060–U+206F, the joiners U+200B–U+200D, the soft hyphen U+00AD,
 /// the combining grapheme joiner U+034F, the Arabic letter mark U+061C, the
-/// Khmer and Mongolian format controls U+17B4–U+17B5 and U+180B–U+180E, the
+/// Khmer and Mongolian format controls U+17B4–U+17B5 and U+180B–U+180F, the
 /// variation selectors U+FE00–U+FE0F, U+FEFF, U+FFF0–U+FFF8, the musical
 /// format controls U+1D173–U+1D17A and the tag and variation selector plane
 /// U+E0000–U+E0FFF. This is HarfBuzz's modified Default_Ignorable_Code_Point,
@@ -528,7 +525,7 @@ pub(super) fn is_default_ignorable(character: char) -> bool {
             0x03 => scalar == 0x034f,
             0x06 => scalar == 0x061c,
             0x17 => (0x17b4..=0x17b5).contains(&scalar),
-            0x18 => (0x180b..=0x180e).contains(&scalar),
+            0x18 => (0x180b..=0x180f).contains(&scalar),
             0x20 => {
                 (0x200b..=0x200f).contains(&scalar)
                     || (0x202a..=0x202e).contains(&scalar)
@@ -544,7 +541,7 @@ pub(super) fn is_default_ignorable(character: char) -> bool {
     }
 }
 
-fn shaped_advance_units(glyphs: &crate::shaping::GlyphBuffer) -> i64 {
+fn shaped_advance_units(glyphs: &crate::shaping::Buffer) -> i64 {
     glyphs
         .glyph_positions()
         .iter()
@@ -563,7 +560,7 @@ fn shaped_advance(face: &crate::shaping::Face<'_>, text: &str, scale: f64) -> f6
 /// prefix that contains the character its cluster starts at, so the widths
 /// keep the kerning the shaper applied inside each prefix.
 fn shaped_prefix_widths(
-    glyphs: &crate::shaping::GlyphBuffer,
+    glyphs: &crate::shaping::Buffer,
     display_text: &str,
     scale: f64,
 ) -> Result<Vec<f64>, LabelError> {
@@ -605,7 +602,7 @@ fn char_boundary(text: &str, count: usize) -> Result<usize, LabelError> {
 #[allow(clippy::too_many_arguments)]
 fn build_label(
     face: &crate::shaping::Face<'_>,
-    glyphs: &crate::shaping::GlyphBuffer,
+    glyphs: &crate::shaping::Buffer,
     text: &str,
     display_text: String,
     missing_codepoints: Vec<u32>,
@@ -744,7 +741,7 @@ impl OfficialFont {
         layout: TextLayout<'_>,
     ) -> Result<ResolvedText, LabelError> {
         let face =
-            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+            crate::shaping::Face::from_shared(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let text_align = ResolvedTextAlign::from_normalized(layout.text_align);
         let mut missing_codepoints = Vec::new();
         let mut stored_lines = Vec::new();
@@ -807,7 +804,7 @@ impl OfficialFont {
             return try_owned(text);
         }
         let face =
-            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+            crate::shaping::Face::from_shared(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let scale = font_size / f64::from(face.units_per_em());
         let mut wrapped = String::new();
         wrapped.try_reserve_exact(text.len().saturating_add(text.chars().count()))?;
@@ -850,7 +847,7 @@ impl OfficialFont {
     }
 
     fn supports(&self, character: char) -> bool {
-        crate::shaping::Face::from_slice(&self.sfnt, 0)
+        crate::shaping::Face::from_shared(&self.sfnt, 0)
             .and_then(|face| face.glyph_index(character))
             .is_some()
     }
@@ -862,7 +859,7 @@ impl OfficialFont {
         direction: ShapeDirection,
     ) -> Result<f64, LabelError> {
         let face =
-            crate::shaping::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+            crate::shaping::Face::from_shared(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let units = shape_text(&face, text, direction)
             .glyph_positions()
             .iter()
@@ -880,7 +877,7 @@ impl OfficialFont {
         let sfnt = loader
             .load_sfnt(id)
             .map_err(|error| font_error(id, error))?;
-        let face = crate::shaping::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let face = crate::shaping::Face::from_shared(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
         if face.glyph_index(character).is_none() {
             return Ok(None);
         }
@@ -1053,7 +1050,7 @@ pub(super) fn layout_with_loader(
         for (_, rtl, font_index, run_text) in grouped {
             let font = fonts.get(font_index).ok_or(LabelError::InvalidFont)?;
             let face =
-                crate::shaping::Face::from_slice(&font.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+                crate::shaping::Face::from_shared(&font.sfnt, 0).ok_or(LabelError::InvalidFont)?;
             let direction = ShapeDirection::Run { rtl };
             let mut run = shape_official_line(
                 &face,
@@ -1362,8 +1359,8 @@ fn select_catalog_font(
 }
 
 /// Whether one decoded face maps a scalar to a glyph.
-fn sfnt_maps(sfnt: &[u8], character: char) -> bool {
-    crate::shaping::Face::from_slice(sfnt, 0)
+fn sfnt_maps(sfnt: &Arc<[u8]>, character: char) -> bool {
+    crate::shaping::Face::from_shared(sfnt, 0)
         .and_then(|face| face.glyph_index(character))
         .is_some()
 }
@@ -1799,23 +1796,17 @@ fn shape_text(
     face: &crate::shaping::Face<'_>,
     text: &str,
     direction: ShapeDirection,
-) -> crate::shaping::GlyphBuffer {
-    let mut buffer = crate::shaping::UnicodeBuffer::new();
-    buffer.push_str(text);
-    if let ShapeDirection::Run { rtl } = direction {
-        buffer.set_direction(if rtl {
-            crate::shaping::Direction::RightToLeft
-        } else {
-            crate::shaping::Direction::LeftToRight
-        });
-    }
-    // Guesses the script (and the direction when none is set) from the text.
-    buffer.guess_segment_properties();
+) -> crate::shaping::Buffer {
+    let direction = match direction {
+        ShapeDirection::Run { rtl: true } => Some(crate::shaping::Direction::RightToLeft),
+        ShapeDirection::Run { rtl: false } => Some(crate::shaping::Direction::LeftToRight),
+        ShapeDirection::Guessed => None,
+    };
     let features = [
         crate::shaping::Feature::new(crate::shaping::Tag::new(b"liga"), 0, ..),
         crate::shaping::Feature::new(crate::shaping::Tag::new(b"clig"), 0, ..),
     ];
-    crate::shaping::shape(face, &features, buffer)
+    crate::shaping::shape(face, &features, text, direction)
 }
 
 /// The direction text is shaped in.
@@ -1870,7 +1861,7 @@ fn cluster_unicode(
 struct ClusterStarts(Vec<usize>);
 
 impl ClusterStarts {
-    fn of(glyphs: &crate::shaping::GlyphBuffer) -> Result<Self, LabelError> {
+    fn of(glyphs: &crate::shaping::Buffer) -> Result<Self, LabelError> {
         Self::new(glyphs.glyph_infos().iter().map(|info| info.cluster))
     }
 

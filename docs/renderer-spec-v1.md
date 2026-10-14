@@ -1111,12 +1111,12 @@ Emoji substitution is reported with one informational
 scene text or generated embeddable label. Missing codepoints use the
 bundled deterministic replacement glyph at defined metrics and identify the
 element and codepoint. A default-ignorable code point is not a missing
-codepoint (#167): the class is the pinned shaper's (`harfrust 0.13.3`,
+codepoint (#167): the class is the pinned shaper's (`harfrust 0.14.0`,
 HarfBuzz's `is_default_ignorable`, the Unicode `Default_Ignorable_Code_Point`
 property less the Hangul fillers U+115F, U+1160, U+3164 and U+FFA0) — the
 bidi controls U+200E, U+200F, U+202A–U+202E and U+2060–U+206F, the joiners
 U+200B–U+200D, the soft hyphen U+00AD, U+034F, U+061C, U+17B4–U+17B5,
-U+180B–U+180E, the variation selectors U+FE00–U+FE0F, U+FEFF, U+FFF0–U+FFF8,
+U+180B–U+180F, the variation selectors U+FE00–U+FE0F, U+FEFF, U+FFF0–U+FFF8,
 U+1D173–U+1D17A and U+E0000–U+E0FFF. The browser draws nothing for any of
 them, whether or not a face has a glyph, and so does revision 1 in every
 format: such a scalar stays in the display text and in its bidi visual run
