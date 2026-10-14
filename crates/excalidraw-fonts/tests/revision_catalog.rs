@@ -275,7 +275,7 @@ fn predecoded_excalifont_basic_latin_sfnt_is_checked_in_and_digest_verified() {
     );
     let face = ttf_parser::Face::parse(sfnt.bytes(), 0).expect("output is a valid sfnt");
     assert!(face.glyph_index('A').is_some());
-    assert_eq!(transformation.tool, "wuff 0.2.8");
+    assert_eq!(transformation.tool, "wuff 0.2.9");
     assert_eq!(
         transformation.invocation,
         "wuff::decompress_woff2(source_bytes)"
