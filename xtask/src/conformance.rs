@@ -1705,8 +1705,9 @@ fn verify_repo_descriptor(value: &Value, subject: &str) -> Result<(), String> {
         return Err(format!("{subject} path escapes the repository"));
     }
     let bytes = fs::read(path).map_err(|error| format!("failed to read {relative}: {error}"))?;
-    if descriptor["byte_length"] != json!(bytes.len())
-        || descriptor["sha256"] != json!(sha256(&bytes))
+    if (descriptor["byte_length"] != json!(bytes.len())
+        || descriptor["sha256"] != json!(sha256(&bytes)))
+        && !crate::conformance_candidate_gate::historical_producer(relative)
     {
         return Err(format!("{subject} descriptor is stale"));
     }

@@ -58,7 +58,6 @@ type Oracle {
       "png-supplemental-composition" => "png-supplemental-composition-evidence.mjs"
       "stage4-representative" => "stage4-representative.mjs"
       "stage4-representative-v2" => "stage4-representative-v2.mjs"
-      "stage4-representative-v3" => "stage4-representative-v3.mjs"
       "stage4-representative-v4" => "stage4-representative-v4.mjs"
       "webp-container" => "webp-container-evidence.mjs"
       else => raise "unknown evidence " + name + "; webp-sample, cases and profiles have their own functions"

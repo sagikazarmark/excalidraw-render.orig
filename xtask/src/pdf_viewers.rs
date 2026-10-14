@@ -26,7 +26,8 @@ const VISUAL_FAIL_RASTER_DIGEST: &str =
 
 // These producer identities describe the historical Python-era capture.
 // Rust replay checks the same retained bytes with the current adapter.
-// Viewer adapters, parser locks, schemas, comparator and evidence stay live.
+// Other viewer adapters, parser locks, schemas, comparator and evidence stay
+// live; the PDF.js harness is historical producer code (ADR-0019).
 const HISTORICAL_QUALIFICATION_SOURCES: &[&str] = &[
     "tools/pdf-viewer-qualification.sh",
     "tools/pdf-harness/generate-fixtures.py",
@@ -53,21 +54,6 @@ pub(crate) fn rust_pdfium_sources() -> Result<Vec<String>, String> {
         "../../tools/pdf-harness/pdfium-rust/sources.json"
     ))
     .map_err(|error| format!("invalid Rust PDFium source inventory: {error}"))
-}
-
-pub(crate) fn archived_pdfium_lock(lock: &Value) -> Result<Value, String> {
-    if lock
-        != &json!({
-            "path": "tools/pdf-harness/pdfium.lock.json",
-            "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90",
-        })
-    {
-        return Err("invalid historical PDFium lock identity".into());
-    }
-    Ok(json!({
-        "path": "tools/pdf-harness/history/pypdfium2.lock.json",
-        "sha256": lock["sha256"],
-    }))
 }
 
 pub fn verify() -> Result<(), String> {
@@ -239,11 +225,11 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
         return Err(format!("{viewer} PDF viewer profile identity is invalid"));
     }
     if viewer == "pdfium" {
-        // The approved profile describes its original producer. Authenticate the
-        // relocated archive without rewriting the approval-bound descriptor.
-        verify_descriptor(&archived_pdfium_lock(
+        // The approved profile names the retired Python-era lock; the Rust
+        // adapter's runtime is verified on its own (ADR-0019).
+        crate::conformance_candidate_gate::historical_binding(
             &profile["implementation"]["lockfile"],
-        )?)?;
+        )?;
     } else {
         verify_descriptor(&profile["implementation"]["lockfile"])?;
     }
@@ -603,7 +589,9 @@ fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
     let descriptor = object(descriptor, "file descriptor")?;
     let relative = string(&descriptor["path"], "file descriptor path")?;
     let bytes = read_repository_file(&repo_root(), relative)?;
-    if descriptor["sha256"] != json!(sha256(&bytes)) {
+    if descriptor["sha256"] != json!(sha256(&bytes))
+        && !crate::conformance_candidate_gate::historical_producer(relative)
+    {
         return Err(format!("stale digest for {relative}"));
     }
     Ok(bytes)

@@ -584,7 +584,7 @@ fn evidence() -> (Value, Value) {
         // REFERENCE_HASH authenticates historical producer provenance (including
         // the retired Python bridge). Fixture/profile data still bind live bytes;
         // producer evolution must not require rewriting expected codec evidence.
-        if [SOURCES[10], SOURCES[15], SOURCES[16]].contains(&s["path"].as_str().unwrap()) {
+        if crate::common::is_oracle_producer(s["path"].as_str().unwrap()) {
             continue;
         }
         assert_eq!(

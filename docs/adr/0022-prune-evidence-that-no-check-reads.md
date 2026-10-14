@@ -70,6 +70,18 @@ a version loop and so escaped the search; the test now reads only `-v2`, whose
 approved PDFs and reports are byte-identical to the removed ones. `tests/conformance/.gitattributes` went too: every
 path it named had been removed.
 
+On 2026-10-14, after ADR-0019's amendment made producer code and measurement
+records historical, the same rule removed twelve more directories (about
+12 MB, the tree at `63736a3` has them). It also retired the scripts that were
+their only readers, finished-round producers that nothing runs:
+
+- candidates: `stage4-frames-text-assets-v3`, `-v5`, `-v7` through `-v12` and
+  `-v26`;
+- proposals: the superseded `slides84-evidence-v1`, `varmq84-evidence-v1` and
+  `varmq84-evidence-v2`, whose retention tests now read the current versions;
+- scripts: the eight `tools/reference-oracle/scripts/*-ownership.mjs` and the
+  v3 producer (`stage4-representative-v3.mjs`, its runner and Dagger entry).
+
 ## Consequences
 
 - A future round deletes its own collection once the gate no longer reads it,

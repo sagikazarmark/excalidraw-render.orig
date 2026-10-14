@@ -292,7 +292,9 @@ fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
     }
     let bytes =
         fs::read(resolved).map_err(|error| format!("failed to read {relative}: {error}"))?;
-    if descriptor["sha256"] != json!(sha256(&bytes)) {
+    if descriptor["sha256"] != json!(sha256(&bytes))
+        && !crate::conformance_candidate_gate::historical_producer(relative)
+    {
         return Err(format!("stale digest for {relative}"));
     }
     Ok(bytes)

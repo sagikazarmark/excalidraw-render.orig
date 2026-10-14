@@ -35,6 +35,9 @@ fn reference() -> Value {
     assert_eq!(sources.len(), paths.len());
     for (source, path) in sources.iter().zip(paths) {
         assert_eq!(source["path"], path);
+        if crate::common::is_oracle_producer(path) {
+            continue;
+        }
         let bytes = std::fs::read(
             std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("../..")

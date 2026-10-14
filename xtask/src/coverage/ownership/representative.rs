@@ -299,7 +299,8 @@ mod tests {
         }
         for field in ["sources", "profiles", "assets"] {
             for d in collection[field].as_array_mut().unwrap() {
-                if field == "sources" && d["path"] == "tools/pdf-harness/pdfium/render.py" {
+                // Retired producers keep their captured record.
+                if field == "sources" && !repo_root().join(d["path"].as_str().unwrap()).exists() {
                     continue;
                 }
                 *d = gate::descriptor(&repo_root(), &rebase(d["path"].as_str().unwrap())).unwrap();

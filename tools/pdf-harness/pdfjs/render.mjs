@@ -6,6 +6,7 @@ import {
   AnnotationMode,
   getDocument,
   VerbosityLevel,
+  version,
 } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 if (process.argv.length !== 6) {
@@ -93,7 +94,7 @@ try {
       byte_length: rgba.length,
       height: expectedHeight,
       layout: "top-left-row-major",
-      pdfjs: "6.1.200",
+      pdfjs: version,
       pixel_format: "straight-alpha-srgb-rgba8",
       sha256: createHash("sha256").update(rgba).digest("hex"),
       width: expectedWidth,

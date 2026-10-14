@@ -38,6 +38,15 @@ pub fn repository_root() -> PathBuf {
         .to_owned()
 }
 
+/// Whether `path` is reference-oracle code, less the fixtures it reads. Codec
+/// evidence records that code as historical producer provenance (ADR-0019): the
+/// tests never run the oracle, so editing it or updating its dependencies must
+/// not stale the frozen reference.
+pub fn is_oracle_producer(path: &str) -> bool {
+    path.starts_with("tools/reference-oracle/")
+        && !path.starts_with("tools/reference-oracle/fixtures/")
+}
+
 /// The JSON document at `path`, named in the failure when it is absent or
 /// malformed.
 pub fn read_json(path: &Path) -> Value {

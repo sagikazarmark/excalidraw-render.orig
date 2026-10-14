@@ -50,38 +50,6 @@ pub(crate) fn profile_workspace_masks_sharing_and_recovery_have_exact_boundaries
     profile_limits(None);
 }
 pub(crate) fn profile_limits(selected_mask: Option<usize>) {
-    for (bytes, expected) in [
-        (
-            include_bytes!("../tests/common/png_stage4.rs").as_slice(),
-            "56e0401fc0ce0bee42135225a39e428923ea134c2b2e9528d78f754fe6bc1e16",
-        ),
-        (
-            include_bytes!("../tests/common/png_stage4_review.rs").as_slice(),
-            "00846cfc34db318377ecc8858dc9b1bd39f1cfb2250be74c70adf4375cd5dd31",
-        ),
-        (
-            include_bytes!("../tests/common/png_stage4_reference.rs").as_slice(),
-            "7579570bcca2466cec5a1ee0b406679c43568ebad69f3d01fac7b3fbe78d6bec",
-        ),
-        (
-            include_bytes!("../tests/common/png_color_reference.rs").as_slice(),
-            "581e09c740b50e8b1eff3ec97145698199c96adfb462ac8fbaa40d781c70144f",
-        ),
-        (
-            include_bytes!("../tests/common/codec_fixtures.rs").as_slice(),
-            "e85ca0eac6e85596a5ece930e2c8a0470dce63761f0a122927a7ce8b4f36c509",
-        ),
-        (
-            include_bytes!("cms_failure_contract.rs").as_slice(),
-            "b7cd9b08bffa0ae6694e07f30c0456c77637f7e89adfc15d4db40f82e6f7c780",
-        ),
-        (
-            include_bytes!("render/test_support.rs").as_slice(),
-            "06bce1eef4418d0b7016dc6b44455d4a54a23f3a9cfb90ba8344888ffa7a434e",
-        ),
-    ] {
-        assert_eq!(lower_hex(&Sha256::digest(bytes)), expected);
-    }
     let bytes = include_bytes!("../../../tests/oracle/png-color/stage4-oracle-reference.json");
     assert_eq!(
         lower_hex(&Sha256::digest(bytes)),

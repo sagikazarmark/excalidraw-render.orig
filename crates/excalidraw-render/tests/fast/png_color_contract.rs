@@ -63,6 +63,9 @@ fn check_group(group: &str, count: usize) {
 
 fn check_rows(evidence: &serde_json::Value, group: &str, count: usize) {
     for source in evidence["sources"].as_array().unwrap() {
+        if crate::common::is_oracle_producer(source["path"].as_str().unwrap()) {
+            continue;
+        }
         let bytes =
             std::fs::read(crate::common::repository_root().join(source["path"].as_str().unwrap()))
                 .unwrap();

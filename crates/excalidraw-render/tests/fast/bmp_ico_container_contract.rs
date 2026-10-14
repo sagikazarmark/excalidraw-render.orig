@@ -62,6 +62,9 @@ fn evidence() -> Value {
         "excalidraw-render/bmp-ico-container-reference/v1"
     );
     for source in record["sources"].as_array().unwrap() {
+        if crate::common::is_oracle_producer(source["path"].as_str().unwrap()) {
+            continue;
+        }
         let bytes =
             std::fs::read(crate::common::repository_root().join(source["path"].as_str().unwrap()))
                 .unwrap();

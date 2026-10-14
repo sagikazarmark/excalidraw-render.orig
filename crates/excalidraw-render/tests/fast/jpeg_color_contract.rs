@@ -51,18 +51,12 @@ fn evidence() -> Value {
         // The pinned record authenticates capture-time producer identities.
         // Today's code and dependency graph are checked by rendering below;
         // refactoring a collector/helper is not a change to reference pixels.
+        let path = source["path"].as_str().unwrap();
         if matches!(
-            source["path"].as_str().unwrap(),
-            "Cargo.lock"
-                | "crates/excalidraw-render/tests/jpeg_matrix_inputs.rs"
-                | "tools/reference-oracle/src/browser-entry.js"
-                | "tools/reference-oracle/package.json"
-                | "tools/reference-oracle/vite.config.mjs"
-                | "tools/reference-oracle/index.html"
-                | "tools/reference-oracle/scripts/jpeg-color-evidence.mjs"
-                | "tools/reference-oracle/run-jpeg-color.sh"
-                | "tools/reference-oracle/package-lock.json"
-        ) {
+            path,
+            "Cargo.lock" | "crates/excalidraw-render/tests/jpeg_matrix_inputs.rs"
+        ) || crate::common::is_oracle_producer(path)
+        {
             continue;
         }
         let bytes =

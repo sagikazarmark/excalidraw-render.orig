@@ -293,24 +293,13 @@ refresh never rewrites them. A proposal or candidate that no check, test or
 script reads is deleted instead of kept (ADR-0022); kept records may still name
 deleted ones, which resolve against Git history.
 
-Evidence measured under a superseded profile, such as the stage4 typography
-diagnosis and the current candidate, stays valid only through the successor in
-`xtask/src/conformance_candidate_gate.rs`. The successor requires an archived
-preimage. After the reviewed digest migrations its refresh lists, the archived
-profile must equal the live one once `implementation.closure` is removed.
-`COMPARATOR_REFRESHES` holds one row per refresh:
-
-- `proposals/comparator-closure-refresh-v1/`: #206.
-- `v2/`: the #208 sha2 upgrade.
-- `v3/`: the #208 sha1 upgrade.
-- `v4/`: the #208 png upgrade.
-- `v5/`: the #211 serde_json upgrade.
-- `v6/`: the jsonschema 0.58 upgrade.
-- `v7/`: the wasm-bindgen 0.2.129 upgrade.
-- `v8/`: #212, which removed the closure from the profile and its schema.
-
-v8 is the last closure refresh. A future comparator change that moves the
-profile needs its own review and its own successor decision.
+Kept evidence records the comparator profile, viewer profiles and viewer
+adapters it was measured with. Those records are historical (ADR-0019): the
+candidate gate checks their shape, not today's files, and recomputes every
+judgment from the stored rasters with the live comparator. A comparator or
+viewer move therefore needs no successor or archived preimage; one that changes
+a judgment fails that recomputation, and the new judgments are reviewed like
+any other change.
 
 ## Canonical SVG viewers
 

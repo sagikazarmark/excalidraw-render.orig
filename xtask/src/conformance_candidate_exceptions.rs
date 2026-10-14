@@ -2,7 +2,7 @@
 //! visible; scoped limits are evaluated anew from the captured image bytes.
 use crate::conformance::{canonical_bytes, repo_root, sha256};
 use crate::conformance_candidate_gate::{
-    candidate_root, case_id, comparator_closure_successor, descriptor, read, value,
+    candidate_root, case_id, descriptor, historical_binding, historical_record, read, value,
     COMPARATOR_PROFILE,
 };
 use serde_json::{json, Value};
@@ -46,63 +46,13 @@ fn proof() -> Result<Value> {
         .ok_or("diagnosis producer chain")?
     {
         let path = d["path"].as_str().ok_or("proof path")?;
-        if matches!(
-            path,
-            "tools/pdf-harness/diagnostics/stage4-typography.py"
-                | "tools/pdf-harness/pdfium/render.py"
-        ) {
-            validate_retired_producer(d)?;
-            continue;
-        }
-        if d != &descriptor(&root, path)? {
-            if path == COMPARATOR_PROFILE {
-                comparator_closure_successor(d)?;
-            } else {
-                validate_pdfium_alpha_successor(d)?;
-            }
+        if historical_record(path) {
+            historical_binding(d)?;
+        } else if d != &descriptor(&root, path)? {
+            return Err(format!("stale diagnosis input {path}"));
         }
     }
     Ok(evidence)
-}
-fn validate_retired_producer(binding: &Value) -> Result<()> {
-    let expected = match binding["path"].as_str() {
-        Some("tools/pdf-harness/diagnostics/stage4-typography.py") => (
-            15075,
-            "dd168deb66a8027c3088a24eaabc68f204bd391193c72c5c564527e005b6791b",
-        ),
-        Some("tools/pdf-harness/pdfium/render.py") => (
-            6188,
-            "2b3f28ba7633f739cdd1b8617361f8d1a82f51f62204286598e38a5d29ad1c6d",
-        ),
-        _ => return Err("unknown retired diagnosis producer".into()),
-    };
-    if binding["byte_length"] != expected.0 || binding["sha256"] != expected.1 {
-        return Err("retired diagnosis producer identity changed".into());
-    }
-    Ok(())
-}
-// Preserve the diagnosed producer bytes. Only the explicitly approved #192
-// adapter/profile pair may supersede these two historical bindings; candidate
-// input equality and the fresh colour bridge still gate every exception below.
-fn validate_pdfium_alpha_successor(historical: &Value) -> Result<()> {
-    let path = historical["path"].as_str().ok_or("proof path")?;
-    let expected = match path {
-        "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json" => {
-            "789ddac1a15ce0342ca376df946b37f43be4da3ba7c6c0022436690bcc4765f6"
-        }
-        _ => return Err(format!("stale diagnosis producer {path}")),
-    };
-    let archived =
-        format!("tests/conformance/proposals/pdfium192-alpha-requalification-v1/before/{path}");
-    let bytes = read(&repo_root(), &archived)?;
-    if historical["sha256"] != sha256(&bytes)
-        || historical["byte_length"] != bytes.len()
-        || descriptor(&repo_root(), path)?["sha256"] != expected
-    {
-        return Err("unreviewed PDFium diagnosis producer transition".into());
-    }
-    crate::pdf_viewers::verify()?;
-    Ok(())
 }
 /// The backend successor record for `pdf`, the reviewed Krilla render of the
 /// diagnosed scene. It covers only the PDF bytes: `expected` still requires
@@ -179,11 +129,12 @@ fn validate(proposal: &Value, wanted: &Value) -> Result<()> {
     }
     Ok(())
 }
-/// A proposal measured under a comparator profile that a reviewed refresh
-/// superseded keeps that comparator; any other difference still fails.
+/// A proposal keeps the record of the comparator it was measured under; the
+/// gate recomputes its measurements with the live comparator (ADR-0019).
 fn with_measured_comparator(mut wanted: Value, proposal: &Value) -> Value {
-    if comparator_closure_successor(&proposal["comparator"]).is_ok() {
-        wanted["comparator"] = proposal["comparator"].clone();
+    let comparator = &proposal["comparator"];
+    if comparator["path"] == COMPARATOR_PROFILE && historical_binding(comparator).is_ok() {
+        wanted["comparator"] = comparator.clone();
     }
     wanted
 }
@@ -277,17 +228,9 @@ pub fn evaluate(directory: &str) -> Result<Value> {
 mod tests {
     use super::*;
     #[test]
-    fn proposals_keep_the_comparator_they_were_measured_under_only_through_the_successor() {
-        let archived = read(
-            &repo_root(),
-            &format!(
-                "{}/{COMPARATOR_PROFILE}",
-                crate::conformance_candidate_gate::COMPARATOR_REFRESHES[0].before
-            ),
-        )
-        .unwrap();
+    fn proposals_keep_the_comparator_record_they_were_measured_under() {
         let live = descriptor(&repo_root(), COMPARATOR_PROFILE).unwrap();
-        let measured = json!({"path":COMPARATOR_PROFILE,"byte_length":archived.len(),"sha256":sha256(&archived)});
+        let measured = json!({"path":COMPARATOR_PROFILE,"byte_length":1,"sha256":"0".repeat(64)});
         let wanted = json!({"comparator": live, "exceptions": []});
         let proposal = json!({"comparator": measured, "exceptions": []});
         validate(
@@ -296,55 +239,10 @@ mod tests {
         )
         .unwrap();
         validate(&wanted, &with_measured_comparator(wanted.clone(), &wanted)).unwrap();
-        let mut forged = proposal;
-        forged["comparator"]["sha256"] = json!("00");
-        assert!(validate(&forged, &with_measured_comparator(wanted, &forged)).is_err());
-    }
-    #[test]
-    fn comparator_successor_accepts_only_the_reviewed_closure_refresh() {
-        let bytes = read(&repo_root(), EVIDENCE).unwrap();
-        let evidence: Value = serde_json::from_slice(&bytes).unwrap();
-        let historical = evidence["repository_bindings"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|d| d["path"] == COMPARATOR_PROFILE)
-            .unwrap();
-        comparator_closure_successor(historical).unwrap();
-        for key in ["path", "sha256", "byte_length"] {
-            let mut bad = historical.clone();
-            bad[key] = json!("unreviewed");
-            assert!(comparator_closure_successor(&bad).is_err());
-        }
-    }
-    #[test]
-    fn diagnosis_producer_successors_accept_only_their_reviewed_identities() {
-        let evidence = proof().unwrap();
-        for historical in evidence["repository_bindings"].as_array().unwrap() {
-            if historical["path"]
-                == "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json"
-            {
-                validate_pdfium_alpha_successor(historical).unwrap();
-                for key in ["path", "sha256", "byte_length"] {
-                    let mut bad = historical.clone();
-                    bad[key] = json!("unreviewed");
-                    assert!(validate_pdfium_alpha_successor(&bad).is_err());
-                }
-            }
-            if matches!(
-                historical["path"].as_str(),
-                Some(
-                    "tools/pdf-harness/pdfium/render.py"
-                        | "tools/pdf-harness/diagnostics/stage4-typography.py"
-                )
-            ) {
-                validate_retired_producer(historical).unwrap();
-                for key in ["path", "sha256", "byte_length"] {
-                    let mut bad = historical.clone();
-                    bad[key] = json!("changed");
-                    assert!(validate_retired_producer(&bad).is_err());
-                }
-            }
+        for (key, bad) in [("sha256", json!("00")), ("path", json!("Cargo.toml"))] {
+            let mut forged = proposal.clone();
+            forged["comparator"][key] = bad;
+            assert!(validate(&forged, &with_measured_comparator(wanted.clone(), &forged)).is_err());
         }
     }
     #[test]
