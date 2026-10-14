@@ -69,7 +69,7 @@ pub(super) struct ResolvedScene {
     pub(super) fallback_colors: FallbackColors,
     pub(super) elements: Vec<ResolvedElement>,
     pub(super) fallback_font_woff2: Option<Vec<u8>>,
-    pub(super) fallback_font_sfnt: Option<Vec<u8>>,
+    pub(super) fallback_font_sfnt: Option<std::sync::Arc<[u8]>>,
     pub(super) official_fonts: Vec<ResolvedFont>,
     pub(super) mandatory_notices: Option<notices::MandatoryNotices>,
     /// The CJK subset trigger's outcome, shared by glyph selection and the SVG

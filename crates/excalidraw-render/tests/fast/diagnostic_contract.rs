@@ -2160,7 +2160,7 @@ pub(super) fn font_diagnostics_cover_text_generated_labels_and_silence() {
             '\u{17b4}',
             '\u{17b5}',
             '\u{180b}',
-            '\u{180e}',
+            '\u{180f}',
             '\u{200b}',
             '\u{200f}',
             '\u{202a}',

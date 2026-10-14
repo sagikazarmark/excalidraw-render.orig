@@ -91,9 +91,9 @@ sha2 = "0.11.0"
 # profile token stays at 0.5.1 until ADR-0003's single evidence refresh.
 skera = { version = "0.7.0", default-features = false }
 # Shaping only (#202). Parsing and measurement stay on ttf-parser; HarfRust
-# 0.13 builds on read-fonts 0.43, which doesn't share types with write-fonts'
+# 0.14 builds on read-fonts 0.45, which doesn't share types with write-fonts'
 # 0.44, so a parser move waits until they share a read-fonts line.
-harfrust = { version = "0.13.3", default-features = false, features = ["std"] }
+harfrust = { version = "0.14.0", default-features = false, features = ["std"] }
 # The version and features rustybuzz 0.20.1 used, minus its layout tables.
 ttf-parser = { version = "0.25.1", default-features = false, features = ["std", "variable-fonts", "glyph-names", "no-std-float"] }
 ryu-js = { version = "1.0.3", default-features = false }

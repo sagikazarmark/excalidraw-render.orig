@@ -990,10 +990,7 @@ fn probe_exercises_layout(face: &crate::shaping::Face<'_>, probe: &str) -> bool 
         .chars()
         .filter_map(|character| face.glyph_index(character))
         .collect::<Vec<_>>();
-    let mut buffer = crate::shaping::UnicodeBuffer::new();
-    buffer.push_str(probe);
-    buffer.guess_segment_properties();
-    let shaped = crate::shaping::shape(face, &[], buffer);
+    let shaped = crate::shaping::shape(face, &[], probe, None);
     if shaped.glyph_infos().len() != mapped.len()
         || shaped
             .glyph_infos()
@@ -1669,10 +1666,7 @@ fn layout_probe_detects_horizontal_advance_only_gpos() {
             if mapped.len() != probe.chars().count() {
                 continue;
             }
-            let mut buffer = crate::shaping::UnicodeBuffer::new();
-            buffer.push_str(probe);
-            buffer.guess_segment_properties();
-            let shaped = crate::shaping::shape(&face, &[], buffer);
+            let shaped = crate::shaping::shape(&face, &[], probe, None);
             let glyphs_unchanged = shaped.glyph_infos().len() == mapped.len()
                 && shaped
                     .glyph_infos()
