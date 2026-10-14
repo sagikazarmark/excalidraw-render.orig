@@ -54,7 +54,7 @@ const EXCALIFONT_BASIC_LATIN_SFNT_PATH: &str =
 /// chunk's reviewed decode (spec 8.6). `verify` holds the version to the
 /// lockfile, so a decoder bump cannot leave the record describing stale bytes.
 const DECODER_NAME: &str = "wuff";
-const DECODER_VERSION: &str = "0.2.8";
+const DECODER_VERSION: &str = "0.2.9";
 const DECODER_INVOCATION: &str = "wuff::decompress_woff2(source_bytes)";
 const REVIEWED_DECODES_PATH: &str =
     "crates/excalidraw-fonts/catalog/reviewed-decodes/revision-1.json";
@@ -997,7 +997,7 @@ fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String
             "scope": "independent automated byte-level and SFNT structural review"
         },
         "comparison": {
-            "container_decode": "wuff 0.2.8 output and checked SFNT are byte-identical",
+            "container_decode": "wuff 0.2.9 output and checked SFNT are byte-identical",
             "glyphs": "217 glyphs; complete glyf, loca, bounds, outlines, and horizontal metrics are identical",
             "license_metadata": "embedded copyright and legal name records are identical; catalog OFL identity and combined Excalifont/Virgil package notice verified",
             "metrics": "units-per-em, global bounds, ascender, descender, line gap, weight, width, advances, and side bearings are identical",
@@ -1018,7 +1018,7 @@ fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String
         "tool": {
             "invocation": "wuff::decompress_woff2(source_bytes)",
             "name": "wuff",
-            "version": "0.2.8"
+            "version": "0.2.9"
         }
     });
     let mut metadata = metadata;

@@ -1391,8 +1391,8 @@ before decode or subset work.
 
 #### 8.3.3 Derivation and Validation
 
-The decoder is pinned `wuff 0.2.8`. The sfnt subset adapter MUST first qualify
-`skera 0.7.0`; otherwise a pinned controlled fork is required. The encoder MUST
+The decoder is pinned `wuff 0.2.9`. The sfnt subset adapter MUST first qualify
+`skera 0.8.0`; otherwise a pinned controlled fork is required. The encoder MUST
 first qualify `ttf2woff2 0.13.3` with `brotli 9.0.0` and `portable-float` enabled;
 otherwise a pinned controlled fork is required.
 WOFF2 encoding uses quality 11, `glyf`/`loca` transformation, one thread, and no
@@ -1843,7 +1843,7 @@ effective alias, and the renamed program's length and SHA-256. This replaces
 #120's rule that PDF embeds only the reviewed decodes byte for byte, and #150's
 choice to embed the emoji fallback whole (ADR-0021).
 
-An official font chunk's reviewed decode is the sfnt the pinned `wuff 0.2.8`
+An official font chunk's reviewed decode is the sfnt the pinned `wuff 0.2.9`
 decode of the chunk's exact manifested WOFF2 bytes produces (#120). The revision
 catalog records every chunk's reviewed decode beside its source digests, as a
 decoded length and SHA-256, and the reviewed-decodes record

@@ -201,7 +201,7 @@ An official font chunk whose digest, table inventory, subset behavior, safety, a
 _Avoid_: Parseable font, supported font family
 
 **Reviewed decode**:
-The sfnt the pinned `wuff 0.2.8` decode of one official font chunk's exact manifested bytes produces, identified by the decoded length and SHA-256 the revision catalog records for the chunk and bound, for all 230 chunks at once, by the maintainer approval on the reviewed-decodes record. The review is the decoder's qualification over every chunk on every supported target; a decode may additionally be reviewed independently and checked in byte for byte, as the Excalifont basic-Latin decode is. `xtask catalog verify` re-derives every decode against the record, and PDF derives the program it embeds from a decode only after matching it.
+The sfnt the pinned `wuff 0.2.9` decode of one official font chunk's exact manifested bytes produces, identified by the decoded length and SHA-256 the revision catalog records for the chunk and bound, for all 230 chunks at once, by the maintainer approval on the reviewed-decodes record. The review is the decoder's qualification over every chunk on every supported target; a decode may additionally be reviewed independently and checked in byte for byte, as the Excalifont basic-Latin decode is. `xtask catalog verify` re-derives every decode against the record, and PDF derives the program it embeds from a decode only after matching it.
 _Avoid_: Predecoded chunk (for the 229 that are not checked in), runtime decode, cached sfnt, per-chunk review record
 
 **Semantic font subset identity**:

@@ -266,7 +266,7 @@ pub struct AssetSegment {
 /// One entry in the complete built-in asset catalog, including unbundled assets.
 ///
 /// `decoded_length` and `decoded_sha256` identify the chunk's reviewed decode:
-/// the sfnt the pinned `wuff 0.2.8` decode of the exact stored bytes produces,
+/// the sfnt the pinned `wuff 0.2.9` decode of the exact stored bytes produces,
 /// as `catalog/reviewed-decodes/revision-1.json` records and its approval binds
 /// (spec 8.6). [`verify_reviewed_decode`] is the only way a decode becomes
 /// embeddable bytes.
@@ -858,7 +858,7 @@ pub const fn excalifont_basic_latin_sfnt_transformation() -> PredecodedFontTrans
             "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
         source_sha256: "e4423b318e11432aff2e6e865e300b7ca270f92321a3f56632268fede01c1b48",
         output_sha256: "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb",
-        tool: "wuff 0.2.8",
+        tool: "wuff 0.2.9",
         invocation: "wuff::decompress_woff2(source_bytes)",
         reviewer: "OpenAI gpt-5.6-sol",
         review_date: "2026-07-22",
