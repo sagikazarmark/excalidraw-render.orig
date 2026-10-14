@@ -8,6 +8,7 @@ use excalidraw_render_fonts::{
     NOTO_EMOJI_FAMILY, NOTO_EMOJI_IDENTITY,
 };
 use sha2::{Digest, Sha256};
+use write_fonts::read::{FontRef, TableProvider};
 
 /// The `+excalidraw.x.y.z` build metadata names the release the bundled fonts
 /// come from, so the label cannot drift from the catalog.
@@ -273,8 +274,13 @@ fn predecoded_excalifont_basic_latin_sfnt_is_checked_in_and_digest_verified() {
         wuff::decompress_woff2(source.bytes()).expect("source decodes"),
         sfnt.bytes()
     );
-    let face = ttf_parser::Face::parse(sfnt.bytes(), 0).expect("output is a valid sfnt");
-    assert!(face.glyph_index('A').is_some());
+    let face = FontRef::new(sfnt.bytes()).expect("output is a valid sfnt");
+    let (_, _, cmap) = face
+        .cmap()
+        .ok()
+        .and_then(|cmap| cmap.best_subtable())
+        .expect("output maps characters");
+    assert!(cmap.map_codepoint('A').is_some());
     assert_eq!(transformation.tool, "wuff 0.2.9");
     assert_eq!(
         transformation.invocation,
@@ -293,10 +299,19 @@ fn noto_emoji_3003_fallback_is_digest_verified_and_parseable() {
     let asset = excalidraw_render_fonts::load_noto_emoji_sfnt()
         .expect("approved Noto Emoji fallback verifies");
     assert_eq!(asset.bytes().len(), 862_680);
-    let face = ttf_parser::Face::parse(asset.bytes(), 0).expect("Noto Emoji is valid SFNT");
-    assert_eq!(face.units_per_em(), 1_000);
-    assert!(face.glyph_index('\u{1f600}').is_some());
-    assert!(face.glyph_index('A').is_none());
+    let face = FontRef::new(asset.bytes()).expect("Noto Emoji is valid SFNT");
+    assert_eq!(
+        face.head().expect("Noto Emoji has a head").units_per_em(),
+        1_000
+    );
+    // Its best subtable, a Unicode one: a Mac Roman subtable also maps Latin.
+    let (_, _, cmap) = face
+        .cmap()
+        .ok()
+        .and_then(|cmap| cmap.best_subtable())
+        .expect("Noto Emoji maps characters");
+    assert!(cmap.map_codepoint('\u{1f600}').is_some());
+    assert!(cmap.map_codepoint('A').is_none());
 
     let metadata = include_str!("../catalog/fallback/NotoEmoji-Regular.ttf.json");
     assert!(metadata.contains("Version 3.003"));

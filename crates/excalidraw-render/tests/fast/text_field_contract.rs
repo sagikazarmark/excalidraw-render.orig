@@ -5,6 +5,8 @@ use excalidraw_render::{
     SceneDocument,
 };
 use serde_json::{json, Value};
+
+use crate::common::sfnt::Sfnt;
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 fn scene() -> Value {
     json!({"type":"excalidraw","version":2,"elements":[
@@ -299,17 +301,15 @@ fn original_text_demands_extra_subset_characters_without_changing_display_text()
     assert!(!fonts.is_empty());
     for character in ['A', 'B', 'C', 'D', 'Z'] {
         assert!(
-            fonts.iter().any(|bytes| ttf_parser::Face::parse(bytes, 0)
-                .unwrap()
-                .glyph_index(character)
-                .is_some()),
+            fonts
+                .iter()
+                .any(|bytes| Sfnt::parse(bytes).unwrap().glyph(character).is_some()),
             "demanded {character}"
         );
     }
-    assert!(fonts.iter().all(|bytes| ttf_parser::Face::parse(bytes, 0)
-        .unwrap()
-        .glyph_index('Q')
-        .is_none()));
+    assert!(fonts
+        .iter()
+        .all(|bytes| Sfnt::parse(bytes).unwrap().glyph('Q').is_none()));
     assert!(svg.contains("data-source-text=\"AB"));
     assert!(!svg.contains("data-source-text=\"AB\nCDZ"));
 }

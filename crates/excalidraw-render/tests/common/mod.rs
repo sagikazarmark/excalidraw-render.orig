@@ -26,6 +26,7 @@ pub mod registered_cases;
 pub mod render;
 pub mod reports;
 pub mod scratch;
+pub mod sfnt;
 pub mod svg;
 pub mod svg_baselines;
 

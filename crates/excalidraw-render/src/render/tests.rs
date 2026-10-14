@@ -1708,31 +1708,6 @@ fn same_outlines(left: &text::LabelPath, right: &text::LabelPath) -> bool {
                         y: by,
                     },
                 ) => close(*acx, *bcx) && close(*acy, *bcy) && close(*ax, *bx) && close(*ay, *by),
-                (
-                    Op::Cubic {
-                        control_1_x: a1x,
-                        control_1_y: a1y,
-                        control_2_x: a2x,
-                        control_2_y: a2y,
-                        x: ax,
-                        y: ay,
-                    },
-                    Op::Cubic {
-                        control_1_x: b1x,
-                        control_1_y: b1y,
-                        control_2_x: b2x,
-                        control_2_y: b2y,
-                        x: bx,
-                        y: by,
-                    },
-                ) => {
-                    close(*a1x, *b1x)
-                        && close(*a1y, *b1y)
-                        && close(*a2x, *b2x)
-                        && close(*a2y, *b2y)
-                        && close(*ax, *bx)
-                        && close(*ay, *by)
-                }
                 (Op::Close, Op::Close) => true,
                 _ => false,
             })

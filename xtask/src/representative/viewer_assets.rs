@@ -310,7 +310,7 @@ fn unicode_ranges(css: &Value) -> Result<Vec<std::ops::RangeInclusive<u32>>> {
 }
 
 struct CoverageFace<'a> {
-    face: ttf_parser::Face<'a>,
+    face: crate::sfnt::Sfnt<'a>,
     ranges: Vec<std::ops::RangeInclusive<u32>>,
 }
 
@@ -462,7 +462,7 @@ fn derive(directory: &Path) -> Result<Files> {
             decoded.insert(
                 family,
                 CoverageFace {
-                    face: ttf_parser::Face::parse(sfnt, 0).map_err(|_| "invalid SFNT")?,
+                    face: crate::sfnt::Sfnt::parse(sfnt).ok_or("invalid SFNT")?,
                     ranges: unicode_ranges(css)?,
                 },
             );
@@ -476,7 +476,7 @@ fn derive(directory: &Path) -> Result<Files> {
             require(
                 text_decode(&text).chars().all(|ch| {
                     face.ranges.iter().any(|range| range.contains(&(ch as u32)))
-                        && face.face.glyph_index(ch).is_some()
+                        && face.face.maps(ch)
                 }),
                 "text face does not cover every character",
             )?;

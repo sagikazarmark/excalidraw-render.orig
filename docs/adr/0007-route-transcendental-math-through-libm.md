@@ -72,8 +72,10 @@ the run-time expansion bit for bit with the base hidden behind `black_box`.
 `libm 0.2.16` was already compiled into the renderer on both targets through
 `rustybuzz → core_maths`, so the direct dependency adds an edge to `Cargo.lock`
 and no package; the comparator closure ADR-0005 pins is unchanged.
-(Since #202 the path is `ttf-parser → core_maths`, through ttf-parser's
-`no-std-float` feature; rustybuzz is no longer a dependency.) Its default
+(Since #202 the path was `ttf-parser → core_maths`, through ttf-parser's
+`no-std-float` feature. Since the renderer parses fonts with read-fonts it is
+`krilla → float-cmp → num-traits`, under the `pdf` feature; neither rustybuzz
+nor ttf-parser is a dependency.) Its default
 `arch` feature is unified on by that path regardless of what the renderer asks
 for; the only architecture-specific routines it selects are `sqrt`, `fma` and
 the rounding functions, each correctly rounded, so no libm result depends on

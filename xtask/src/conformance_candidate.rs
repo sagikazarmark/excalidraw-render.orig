@@ -77,18 +77,8 @@ fn derived_assets(directory: &str, verify: bool) -> Result<(), String> {
                 return Err("stale WOFF2".into());
             }
             let sfnt = wuff::decompress_woff2(&woff).map_err(|e| format!("WOFF2 decode: {e:?}"))?;
-            let face = ttf_parser::Face::parse(&sfnt, 0)
-                .ok()
-                .ok_or("invalid decoded SFNT")?;
-            let family = [16, 1]
-                .into_iter()
-                .find_map(|id| {
-                    face.names()
-                        .into_iter()
-                        .filter(|n| n.name_id == id)
-                        .find_map(|n| n.to_string())
-                })
-                .ok_or("missing font family")?;
+            let face = crate::sfnt::Sfnt::parse(&sfnt).ok_or("invalid decoded SFNT")?;
+            let family = face.family().ok_or("missing font family")?;
             {
                 if plan["fonts"].as_array().ok_or("missing font faces")?.len() != 1 {
                     return Err(
@@ -115,7 +105,7 @@ fn derived_assets(directory: &str, verify: bool) -> Result<(), String> {
                     }
                     for node in text.descendants().filter(|n| n.is_text()) {
                         for ch in node.text().unwrap_or("").chars() {
-                            if face.glyph_index(ch).is_none() {
+                            if !face.maps(ch) {
                                 return Err(format!("official primary face does not cover {ch:?}"));
                             }
                         }
@@ -134,7 +124,7 @@ fn derived_assets(directory: &str, verify: bool) -> Result<(), String> {
                     normalized.as_bytes(),
                 )?;
             }
-            let stretch = match face.width().to_number() {
+            let stretch = match face.width_class() {
                 1 => "ultra-condensed",
                 2 => "extra-condensed",
                 3 => "condensed",
@@ -148,7 +138,7 @@ fn derived_assets(directory: &str, verify: bool) -> Result<(), String> {
             };
             let path = format!("{directory}/assets/{kind}-font-{i}.sfnt");
             emit(&repo_root().join(&path), &sfnt)?;
-            fonts.push(json!({"source":font["source"],"css":font["css"],"sfnt":{"path":path,"media_type":if sfnt.starts_with(b"OTTO"){"font/otf"}else{"font/ttf"},"sha256":sha256(&sfnt),"face_index":0,"family":family,"style":if face.is_italic(){"italic"}else{"normal"},"weight":face.weight().to_number(),"stretch":stretch}}));
+            fonts.push(json!({"source":font["source"],"css":font["css"],"sfnt":{"path":path,"media_type":if sfnt.starts_with(b"OTTO"){"font/otf"}else{"font/ttf"},"sha256":sha256(&sfnt),"face_index":0,"family":family,"style":if face.is_italic(){"italic"}else{"normal"},"weight":face.weight(),"stretch":stretch}}));
         }
         let declaration = json!({"schema":"excalidraw-render/svg-viewer-asset-declaration/v1","fonts":fonts,"images":plan["images"]});
         emit(

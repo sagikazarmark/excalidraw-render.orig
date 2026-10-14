@@ -1366,9 +1366,18 @@ fn text_scene(text: &str, width: u64) -> Value {
     source
 }
 
-// Count the pinned face's A directly through the font outline API, independently
-// of renderer shaping/accounting and without learning the count from a report.
+// Count the pinned face's A directly through read-fonts' path conversion,
+// independently of renderer shaping/accounting and without learning the count
+// from a report. The renderer emits ttf-parser 0.25's command stream, which
+// closes a contour that starts and ends on-curve with an explicit line back to
+// its start; read-fonts closes it without one, so each such contour adds one.
 fn official_a_geometry() -> (u64, u64) {
+    use write_fonts::read::model::glyph::outline::OutlinePen;
+    use write_fonts::read::tables::glyf::outline::{outline_to_path, PathContourStart};
+    use write_fonts::read::tables::glyf::{Glyph, PointFlags};
+    use write_fonts::read::types::Point;
+    use write_fonts::read::{FontRef, TableProvider};
+
     struct Count {
         commands: u64,
         bounds: [f64; 4],
@@ -1385,7 +1394,7 @@ fn official_a_geometry() -> (u64, u64) {
             self.bounds[3] = self.bounds[3].max(y);
         }
     }
-    impl ttf_parser::OutlineBuilder for Count {
+    impl OutlinePen for Count {
         fn move_to(&mut self, x: f32, y: f32) {
             self.commands += 1;
             self.point(x, y);
@@ -1415,8 +1424,33 @@ fn official_a_geometry() -> (u64, u64) {
     .unwrap()
     .unwrap();
     let sfnt = wuff::decompress_woff2(asset.bytes()).unwrap();
-    let face = ttf_parser::Face::parse(&sfnt, 0).unwrap();
-    assert_eq!(face.units_per_em(), 1000);
+    let font = FontRef::new(&sfnt).unwrap();
+    assert_eq!(font.head().unwrap().units_per_em(), 1000);
+    let glyph = font.cmap().unwrap().map_codepoint('A').unwrap();
+    let Some(Glyph::Simple(a)) = font
+        .loca(None)
+        .unwrap()
+        .get_glyf(glyph, &font.glyf().unwrap())
+        .unwrap()
+    else {
+        panic!("Excalifont's A is a simple glyph");
+    };
+    let (points, flags): (Vec<_>, Vec<_>) = a
+        .points()
+        .map(|point| {
+            let flag = if point.on_curve {
+                PointFlags::on_curve()
+            } else {
+                PointFlags::off_curve_quad()
+            };
+            (Point::new(f32::from(point.x), f32::from(point.y)), flag)
+        })
+        .unzip();
+    let ends: Vec<u16> = a
+        .end_pts_of_contours()
+        .iter()
+        .map(|end| end.get())
+        .collect();
     let mut count = Count {
         commands: 0,
         bounds: [
@@ -1426,8 +1460,19 @@ fn official_a_geometry() -> (u64, u64) {
             f64::NEG_INFINITY,
         ],
     };
-    face.outline_glyph(face.glyph_index('A').unwrap(), &mut count)
-        .unwrap();
+    assert!(outline_to_path(
+        &points,
+        &flags,
+        &ends,
+        PathContourStart::ScanForward,
+        &mut count
+    ));
+    let mut start = 0;
+    for end in ends {
+        let end = usize::from(end);
+        count.commands += u64::from(flags[start].is_on_curve() && flags[end].is_on_curve());
+        start = end + 1;
+    }
     let area = (count.bounds[2].ceil() - count.bounds[0].floor())
         * (count.bounds[3].ceil() - count.bounds[1].floor());
     (count.commands, area as u64)

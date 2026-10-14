@@ -1005,12 +1005,12 @@ const fn validate_error() -> Error {
 }
 
 fn validate_shaping_probe(
-    source: &crate::shaping::Face<'_>,
-    subset: &crate::shaping::Face<'_>,
+    source: &crate::shaping::Face,
+    subset: &crate::shaping::Face,
     text: &str,
     direction: Option<crate::shaping::Direction>,
 ) -> Result<(), Error> {
-    let shape = |face: &crate::shaping::Face<'_>| crate::shaping::shape(face, &[], text, direction);
+    let shape = |face: &crate::shaping::Face| crate::shaping::shape(face, &[], text, direction);
     let source_shape = shape(source);
     let subset_shape = shape(subset);
     if source_shape.glyph_infos().len() != subset_shape.glyph_infos().len()
@@ -1048,9 +1048,9 @@ fn validate_shaping_probe(
         let mut source_outline = Outline::default();
         let mut subset_outline = Outline::default();
         let source_bounds =
-            source.outline_glyph(ttf_parser::GlyphId(source_id), &mut source_outline);
+            source.outline_glyph(crate::shaping::GlyphId(source_id), &mut source_outline);
         let subset_bounds =
-            subset.outline_glyph(ttf_parser::GlyphId(subset_id), &mut subset_outline);
+            subset.outline_glyph(crate::shaping::GlyphId(subset_id), &mut subset_outline);
         if source_bounds != subset_bounds || source_outline != subset_outline {
             return Err(Error {
                 stage: crate::SvgFontSubsetStage::Validate,
@@ -1337,11 +1337,10 @@ enum OutlineCommand {
     Move(f32, f32),
     Line(f32, f32),
     Quad(f32, f32, f32, f32),
-    Curve(f32, f32, f32, f32, f32, f32),
     Close,
 }
 
-impl ttf_parser::OutlineBuilder for Outline {
+impl crate::shaping::OutlineBuilder for Outline {
     fn move_to(&mut self, x: f32, y: f32) {
         self.0.push(OutlineCommand::Move(x, y));
     }
@@ -1352,10 +1351,6 @@ impl ttf_parser::OutlineBuilder for Outline {
 
     fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
         self.0.push(OutlineCommand::Quad(x1, y1, x, y));
-    }
-
-    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
-        self.0.push(OutlineCommand::Curve(x1, y1, x2, y2, x, y));
     }
 
     fn close(&mut self) {
@@ -1753,7 +1748,7 @@ mod tests {
                     .unwrap();
                 assert!(shaped.glyph_infos()[index].cluster <= offset as u32);
                 assert_eq!(shaped.glyph_positions()[index].x_advance, 0);
-                let id = ttf_parser::GlyphId(shaped.glyph_infos()[index].glyph_id as u16);
+                let id = crate::shaping::GlyphId(shaped.glyph_infos()[index].glyph_id as u16);
                 assert!(subset.outline_glyph(id, &mut Outline::default()).is_none());
             }
         }
