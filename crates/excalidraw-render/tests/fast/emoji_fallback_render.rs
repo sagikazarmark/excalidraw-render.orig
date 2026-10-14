@@ -12,14 +12,15 @@ use std::fs;
 
 use crate::common::render::render;
 use crate::common::repository_root;
+use crate::common::sfnt::{family_name, Sfnt};
 use crate::common::svg::{font_family_attribute, EXCALIFONT_FAMILIES, LIBERATION_FAMILIES};
 use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
 use crate::common::lower_hex;
 use crate::common::pdf_inspect::{
-    declares_base_font, embedded_pdf_fonts, family_name, font_resource, marked_content_line,
-    pdf_actual_text, pdf_text, to_unicode_cmap,
+    declares_base_font, embedded_pdf_fonts, font_resource, marked_content_line, pdf_actual_text,
+    pdf_text, to_unicode_cmap,
 };
 
 const CASE: &str = "tests/conformance/cases/focused/emoji-fallback";
@@ -191,23 +192,21 @@ fn svg_sets_the_emoji_from_a_noto_emoji_subset_and_keeps_the_stored_text() {
     assert_eq!(media_type, "font/woff2");
     assert!(payload.len() < source.len() / 64, "{} bytes", payload.len());
     let subset_sfnt = wuff::decompress_woff2(&payload).expect("the emoji subset decodes");
-    let subset = ttf_parser::Face::parse(&subset_sfnt, 0).expect("the emoji subset parses");
-    let complete = ttf_parser::Face::parse(&source, 0).expect("Noto Emoji parses");
+    let subset = Sfnt::parse(&subset_sfnt).expect("the emoji subset parses");
+    let complete = Sfnt::parse(&source).expect("Noto Emoji parses");
     for emoji in ['\u{1f600}', '\u{1f389}'] {
         let subset_glyph = subset
-            .glyph_index(emoji)
+            .glyph(emoji)
             .unwrap_or_else(|| panic!("the subset maps {emoji}"));
-        let complete_glyph = complete
-            .glyph_index(emoji)
-            .expect("Noto Emoji maps the emoji");
+        let complete_glyph = complete.glyph(emoji).expect("Noto Emoji maps the emoji");
         assert_eq!(
-            subset.glyph_hor_advance(subset_glyph),
-            complete.glyph_hor_advance(complete_glyph)
+            subset.advance(subset_glyph),
+            complete.advance(complete_glyph)
         );
     }
     for latin in ['L', 'a', ' ', 't'] {
         assert!(
-            subset.glyph_index(latin).is_none(),
+            subset.glyph(latin).is_none(),
             "{latin:?} was shaped by a family face and is not in the emoji subset"
         );
     }
@@ -303,13 +302,12 @@ fn pdf_embeds_the_complete_noto_emoji_face_for_the_emoji_runs_and_carries_the_st
             ),
         "an embedded program is derived from the manifested Noto Emoji asset"
     );
-    assert!(fonts.iter().any(|font| {
-        family_name(&ttf_parser::Face::parse(font, 0).expect("embedded sfnt parses"))
-            == "Noto Emoji"
-    }));
-    let noto_face = ttf_parser::Face::parse(&noto_emoji, 0).expect("Noto Emoji parses");
+    assert!(fonts
+        .iter()
+        .any(|font| { family_name(font) == "Noto Emoji" }));
+    let noto_face = Sfnt::parse(&noto_emoji).expect("Noto Emoji parses");
     for scalar in ['\u{1f600}', '\u{1f389}'] {
-        assert!(noto_face.glyph_index(scalar).is_some());
+        assert!(noto_face.glyph(scalar).is_some());
     }
     // A subset carries no cmap; the family CMaps say both shape Latin.
     for family in ["Excalifont", "LiberationSans"] {

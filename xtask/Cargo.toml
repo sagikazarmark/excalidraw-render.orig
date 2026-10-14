@@ -20,7 +20,6 @@ miniz_oxide.workspace = true
 png.workspace = true
 roxmltree.workspace = true
 regex.workspace = true
-ttf-parser.workspace = true
 # svg_font_subset_runner drives the controlled pure-Rust SVG viewer
 # (tools/svg-viewer-rust, its own lock on resvg/usvg 0.48.1) and reads and
 # shapes fonts as that viewer's usvg does: skrifa 0.44 and HarfRust 0.12, as
@@ -35,6 +34,7 @@ tempfile.workspace = true
 syn = { version = "=3.0.7", features = ["full"] }
 toml = "=1.1.8"
 wuff.workspace = true
+write-fonts.workspace = true
 
 [target.'cfg(unix)'.dependencies]
 rustix.workspace = true

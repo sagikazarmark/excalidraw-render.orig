@@ -9,13 +9,14 @@ use std::fs;
 
 use crate::common::render::render;
 use crate::common::repository_root;
+use crate::common::sfnt::{family_name, Sfnt};
 use crate::common::svg::{font_family_attribute, EXCALIFONT_FAMILIES, LIBERATION_FAMILIES};
 use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
 use crate::common::lower_hex;
 use crate::common::pdf_inspect::{
-    declares_base_font, embedded_pdf_fonts, family_name, font_resource, pdf_actual_text, pdf_text,
+    declares_base_font, embedded_pdf_fonts, font_resource, pdf_actual_text, pdf_text,
     to_unicode_cmap,
 };
 
@@ -183,17 +184,13 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
             ),
         "an embedded program is derived from the manifested Liberation Sans asset"
     );
-    let faces: Vec<_> = fonts
+    let liberation_face =
+        Sfnt::parse(&liberation_program).expect("the Liberation Sans program parses");
+    assert!(liberation_face.glyph('?').is_some());
+    assert!(fonts.iter().any(|font| family_name(font) == "Excalifont"));
+    assert!(fonts
         .iter()
-        .map(|font| ttf_parser::Face::parse(font, 0).expect("embedded sfnt parses"))
-        .collect();
-    let liberation_face = ttf_parser::Face::parse(&liberation_program, 0)
-        .expect("the Liberation Sans program parses");
-    assert!(liberation_face.glyph_index('?').is_some());
-    assert!(faces.iter().any(|face| family_name(face) == "Excalifont"));
-    assert!(faces
-        .iter()
-        .any(|face| family_name(face) == "ExcalidrawRender-9"));
+        .any(|font| family_name(font) == "ExcalidrawRender-9"));
     // A subset carries no cmap; the ToUnicode CMaps say what each maps.
     for family in ["Excalifont", "LiberationSans"] {
         let cmap = to_unicode_cmap(&pdf, family);

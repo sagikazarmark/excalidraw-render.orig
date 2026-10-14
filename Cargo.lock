@@ -347,15 +347,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
 
 [[package]]
-name = "core_maths"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77745e017f5edba1a9c1d854f6f3a52dac8a12dd5af5d2f54aecf61e43d80d30"
-dependencies = [
- "libm",
-]
-
-[[package]]
 name = "cpufeatures"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -528,7 +519,6 @@ dependencies = [
  "skera",
  "svgtypes",
  "tiny-skia",
- "ttf-parser",
  "ttf2woff2",
  "unicode-bidi",
  "unicode-normalization",
@@ -574,7 +564,7 @@ dependencies = [
  "excalidraw-render-fonts-xiaolai-extended",
  "serde_json",
  "sha2",
- "ttf-parser",
+ "write-fonts 0.54.0",
  "wuff",
 ]
 
@@ -1896,15 +1886,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
 
 [[package]]
-name = "ttf-parser"
-version = "0.25.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
-dependencies = [
- "core_maths",
-]
-
-[[package]]
 name = "ttf2woff2"
 version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2257,7 +2238,7 @@ dependencies = [
  "syn 3.0.7",
  "tempfile",
  "toml",
- "ttf-parser",
+ "write-fonts 0.54.0",
  "wuff",
 ]
 

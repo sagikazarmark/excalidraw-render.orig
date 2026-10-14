@@ -294,19 +294,6 @@ pub(super) fn append_label_path(
                 let (x, y) = point(*x, *y)?;
                 builder.quad_to(cx, cy, x, y);
             }
-            LabelPathOperation::Cubic {
-                control_1_x,
-                control_1_y,
-                control_2_x,
-                control_2_y,
-                x,
-                y,
-            } => {
-                let (c1x, c1y) = point(*control_1_x, *control_1_y)?;
-                let (c2x, c2y) = point(*control_2_x, *control_2_y)?;
-                let (x, y) = point(*x, *y)?;
-                builder.cubic_to(c1x, c1y, c2x, c2y, x, y);
-            }
             LabelPathOperation::Close => builder.close(),
         }
     }

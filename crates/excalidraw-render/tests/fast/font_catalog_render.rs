@@ -5,6 +5,7 @@ use excalidraw_render::{
 };
 
 use crate::common::pdf_inspect::{declares_base_font, embedded_pdf_fonts, pdf_text};
+use crate::common::sfnt::Sfnt;
 use crate::common::svg::{
     font_family_attribute, CASCADIA_FAMILIES, COMIC_SHANNS_FAMILIES, EXCALIFONT_FAMILIES,
     LIBERATION_FAMILIES, LILITA_FAMILIES, NOTO_EMOJI_FAMILIES, NUNITO_FAMILIES, VIRGIL_FAMILIES,
@@ -375,17 +376,16 @@ fn pdf_embeds_a_renamed_subset_of_each_selected_chunks_reviewed_decode() {
                 .expect("the chunk verifies")
                 .expect("the chunk is manifested");
             let decode = wuff::decompress_woff2(decode.bytes()).expect("the chunk decodes");
-            let source = ttf_parser::Face::parse(&decode, 0).expect("the decode parses");
+            let source = Sfnt::parse(&decode).expect("the decode parses");
             let program = programs
                 .iter()
-                .map(|program| ttf_parser::Face::parse(program, 0).expect("program parses"))
+                .map(|program| Sfnt::parse(program).expect("program parses"))
                 .find(|face| {
-                    name(face, 0) == name(&source, 0)
-                        && program_alias(record.family) == name(face, 1)
+                    face.name(0) == source.name(0) && program_alias(record.family) == face.name(1)
                 })
                 .unwrap_or_else(|| panic!("{} is embedded renamed", record.upstream_path));
-            assert_eq!(name(&program, 13), name(&source, 13), "license record kept");
-            assert!(program.number_of_glyphs() < source.number_of_glyphs());
+            assert_eq!(program.name(13), source.name(13), "license record kept");
+            assert!(program.glyph_count() < source.glyph_count());
         }
         sources
     };
@@ -475,14 +475,6 @@ fn program_alias(family: &str) -> Option<String> {
         }
         .to_owned(),
     )
-}
-
-/// The English Windows name record `id` of a face.
-fn name(face: &ttf_parser::Face<'_>, id: u16) -> Option<String> {
-    face.names()
-        .into_iter()
-        .find(|name| name.name_id == id && name.language_id == 0x0409)
-        .and_then(|name| name.to_string())
 }
 
 #[test]
@@ -803,15 +795,15 @@ fn embedded_subsets_retain_demanded_mappings_and_drop_unrelated_cmap_entries() {
         .iter()
         .map(|font| wuff::decompress_woff2(font).expect("generated WOFF2 decodes"))
         .collect::<Vec<_>>();
-    assert!(faces.iter().any(|font| {
-        ttf_parser::Face::parse(font, 0).is_ok_and(|face| face.glyph_index('A').is_some())
-    }));
-    assert!(faces.iter().any(|font| {
-        ttf_parser::Face::parse(font, 0).is_ok_and(|face| face.glyph_index('Ж').is_some())
-    }));
-    assert!(faces.iter().all(|font| {
-        ttf_parser::Face::parse(font, 0).is_ok_and(|face| face.glyph_index('Ω').is_none())
-    }));
+    assert!(faces
+        .iter()
+        .any(|font| { Sfnt::parse(font).is_some_and(|face| face.glyph('A').is_some()) }));
+    assert!(faces
+        .iter()
+        .any(|font| { Sfnt::parse(font).is_some_and(|face| face.glyph('Ж').is_some()) }));
+    assert!(faces
+        .iter()
+        .all(|font| { Sfnt::parse(font).is_some_and(|face| face.glyph('Ω').is_none()) }));
 }
 
 #[test]
@@ -829,12 +821,9 @@ fn reserved_font_names_are_rewritten_inside_embedded_subsets() {
         panic!("one Virgil subset is embedded");
     };
     let sfnt = wuff::decompress_woff2(font).expect("generated WOFF2 decodes");
-    let face = ttf_parser::Face::parse(&sfnt, 0).expect("generated sfnt parses");
+    let face = Sfnt::parse(&sfnt).expect("generated sfnt parses");
     let name = |id| {
-        face.names()
-            .into_iter()
-            .find(|name| name.name_id == id && name.language_id == 0x0409)
-            .and_then(|name| name.to_string())
+        face.name(id)
             .unwrap_or_else(|| panic!("name ID {id} is retained"))
     };
 

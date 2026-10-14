@@ -709,15 +709,6 @@ pub fn to_unicode_cmap<'a>(pdf: &'a str, cmap_name: &str) -> &'a str {
     body.split("endcmap").next().unwrap_or(body)
 }
 
-/// The English family name (name ID 1) of an embedded face.
-pub fn family_name(face: &ttf_parser::Face<'_>) -> String {
-    face.names()
-        .into_iter()
-        .find(|name| name.name_id == 1 && name.language_id == 0x0409)
-        .and_then(|name| name.to_string())
-        .expect("embedded face keeps its English family name")
-}
-
 /// The page resource name (`/F<n>`) of the Type0 font whose base font is
 /// `pdf_name`, with or without its subset tag.
 pub fn font_resource(pdf: &str, pdf_name: &str) -> String {

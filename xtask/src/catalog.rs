@@ -3,6 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::conformance::sha256;
+use crate::sfnt::Sfnt;
 use excalidraw_fonts::FontLicense;
 use serde_json::{json, Value};
 
@@ -956,8 +957,7 @@ fn materialize_predecoded_excalifont(root: &Path, assets: &[ImportedAsset]) -> R
             "predecoded Excalifont basic-Latin bytes do not match the sealed identity".to_owned(),
         );
     }
-    ttf_parser::Face::parse(&sfnt, 0)
-        .ok()
+    Sfnt::parse(&sfnt)
         .ok_or_else(|| "predecoded Excalifont basic Latin is not a valid sfnt".to_owned())?;
     let destination = root
         .join("crates/excalidraw-fonts")
@@ -976,8 +976,7 @@ fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String
     {
         return Err("checked-in Excalifont basic-Latin sfnt digest is invalid".to_owned());
     }
-    ttf_parser::Face::parse(&sfnt, 0)
-        .ok()
+    Sfnt::parse(&sfnt)
         .ok_or_else(|| "checked-in Excalifont basic Latin is not a valid sfnt".to_owned())?;
     let metadata_path = path.with_extension("sfnt.json");
     let metadata: Value = serde_json::from_slice(
@@ -1074,8 +1073,7 @@ fn review_decode(upstream_path: &str, source: &[u8]) -> Result<ReviewedDecode, S
             decoded.len()
         ));
     }
-    ttf_parser::Face::parse(&decoded, 0)
-        .ok()
+    Sfnt::parse(&decoded)
         .ok_or_else(|| format!("{upstream_path} does not decode to a valid sfnt"))?;
     let source_sha256 = sha256(source);
     Ok(ReviewedDecode {
@@ -1349,13 +1347,9 @@ fn verify_noto_emoji(root: &Path) -> Result<(), String> {
     if sfnt.len() != NOTO_EMOJI_LENGTH || sha256(&sfnt) != NOTO_EMOJI_SHA256 {
         return Err("checked-in Noto Emoji 3.003 fallback digest is invalid".to_owned());
     }
-    let face = ttf_parser::Face::parse(&sfnt, 0)
-        .ok()
+    let face = Sfnt::parse(&sfnt)
         .ok_or_else(|| "checked-in Noto Emoji fallback is not a valid sfnt".to_owned())?;
-    if face.units_per_em() != 1_000
-        || face.glyph_index('\u{1f600}').is_none()
-        || face.glyph_index('A').is_some()
-    {
+    if face.units_per_em() != 1_000 || !face.maps('\u{1f600}') || face.maps('A') {
         return Err("checked-in Noto Emoji fallback metrics or mappings are invalid".to_owned());
     }
     let metadata_path = path.with_extension("ttf.json");
@@ -1651,22 +1645,8 @@ fn assign_layout(assets: &mut [ImportedAsset]) -> Result<(), String> {
 fn xiaolai_shard(source: &[u8]) -> Result<usize, String> {
     let decoded = wuff::decompress_woff2(source)
         .map_err(|error| format!("Xiaolai classification decode failed: {error}"))?;
-    let face = ttf_parser::Face::parse(&decoded, 0)
-        .map_err(|error| format!("Xiaolai classification cmap parse failed: {error}"))?;
-    let cmap = face.tables().cmap.ok_or("Xiaolai has no cmap")?;
-    let mut codepoints = BTreeSet::new();
-    for table in cmap
-        .subtables
-        .into_iter()
-        .filter(|table| table.is_unicode())
-    {
-        table.codepoints(|cp| {
-            if table.glyph_index(cp).is_some() {
-                codepoints.insert(cp);
-            }
-        });
-    }
-    dominant_xiaolai_shard(codepoints)
+    let face = Sfnt::parse(&decoded).ok_or("Xiaolai classification sfnt parse failed")?;
+    dominant_xiaolai_shard(face.mapped_codepoints())
 }
 
 fn dominant_xiaolai_shard(codepoints: BTreeSet<u32>) -> Result<usize, String> {

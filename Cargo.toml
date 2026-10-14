@@ -65,8 +65,7 @@ krilla = { version = "0.8.2", default-features = false, features = ["raster-imag
 # Rendering math calls every transcendental function through this crate
 # (`crates/excalidraw-render/src/portable_math.rs`, ADR-0007) so that both
 # supported targets compute the same doubles. It is already in the lock through
-# `ttf-parser -> core_maths` (the `no-std-float` feature); the direct edge adds
-# no package.
+# `num-traits`; the direct edge adds no package.
 libm = "0.2.16"
 # The IDAT compressor (ADR-0004). 0.9.1 emits the same level-6 stream as 0.8.9:
 # every PNG digest held across the move. png 0.18.1 requires `^0.8`, so 0.8.9
@@ -91,12 +90,9 @@ sha2 = "0.11.0"
 # and wuff-0.2.8; renaming it moves the profile digest every font-bearing SVG
 # carries, which waits for the next evidence refresh (ADR-0003).
 skera = { version = "0.8.0", default-features = false }
-# Shaping only (#202). Parsing and measurement stay on ttf-parser; HarfRust
-# 0.14 builds on read-fonts 0.45, the line write-fonts 0.54 and skera 0.8 now
-# share, which unblocks the parser move.
+# Shaping (#202). Its font is read-fonts 0.45's, which the renderer also
+# measures, maps and outlines with (`shaping.rs`).
 harfrust = { version = "0.14.0", default-features = false, features = ["std"] }
-# The version and features rustybuzz 0.20.1 used, minus its layout tables.
-ttf-parser = { version = "0.25.1", default-features = false, features = ["std", "variable-fonts", "glyph-names", "no-std-float"] }
 ryu-js = { version = "1.0.3", default-features = false }
 unicode-bidi = "0.3.18"
 unicode-normalization = "=0.1.25"
@@ -118,10 +114,10 @@ tiny-skia = { version = "0.12.0", default-features = false, features = ["png-for
 ttf2woff2 = { version = "0.13.3", default-features = false, features = ["portable-float"] }
 usvg = { version = "0.48.1", default-features = false, features = ["text"] }
 wuff = { version = "0.2.9", default-features = false, features = ["brotli"] }
-# `write_fonts::read` is the renderer's only font parser: read-fonts 0.45,
-# the version skera plans over. Name handling and the typed layout validator
-# (ADR-0020) read subsets through it, so the workspace has no direct read-fonts
-# dependency.
+# `write_fonts::read` is the workspace's only font parser: read-fonts 0.45,
+# the version skera plans over and HarfRust shapes with. Metrics, character
+# maps, outlines, name handling and the typed layout validator (ADR-0020) read
+# through it, so the workspace has no direct read-fonts dependency.
 write-fonts = { version = "0.54.0", default-features = false, features = ["read", "tables"] }
 zune-jpeg = { version = "0.5.15", default-features = false, features = ["std"] }
 

@@ -2,7 +2,7 @@ use std::collections::{HashMap, TryReserveError};
 use std::sync::Arc;
 
 use crate::fonts::{Face, FaceId, FamilyId};
-use ttf_parser::{GlyphId, OutlineBuilder};
+use crate::shaping::{GlyphId, OutlineBuilder};
 
 use crate::font_metadata::FamilyMetrics;
 use crate::fonts::{FontError, FontLoader};
@@ -285,14 +285,6 @@ pub(super) enum LabelPathOperation {
         x: f64,
         y: f64,
     },
-    Cubic {
-        control_1_x: f64,
-        control_1_y: f64,
-        control_2_x: f64,
-        control_2_y: f64,
-        x: f64,
-        y: f64,
-    },
     Close,
 }
 
@@ -483,7 +475,7 @@ impl FallbackFont {
 /// reported (spec 8.3, #167): the shaper hides it, as the browser does. `text`
 /// is one line's content; a line terminator never reaches this.
 fn fallback_display_text(
-    face: &crate::shaping::Face<'_>,
+    face: &crate::shaping::Face,
     text: &str,
 ) -> Result<(String, Vec<u32>), LabelError> {
     let mut display_text = String::new();
@@ -551,7 +543,7 @@ fn shaped_advance_units(glyphs: &crate::shaping::Buffer) -> i64 {
 }
 
 /// The advance of `text` shaped with `face`, in logical pixels at `scale`.
-fn shaped_advance(face: &crate::shaping::Face<'_>, text: &str, scale: f64) -> f64 {
+fn shaped_advance(face: &crate::shaping::Face, text: &str, scale: f64) -> f64 {
     shaped_advance_units(&shape_text(face, text, ShapeDirection::Guessed)) as f64 * scale
 }
 
@@ -601,7 +593,7 @@ fn char_boundary(text: &str, count: usize) -> Result<usize, LabelError> {
 /// origin at `origin_x` on `baseline`.
 #[allow(clippy::too_many_arguments)]
 fn build_label(
-    face: &crate::shaping::Face<'_>,
+    face: &crate::shaping::Face,
     glyphs: &crate::shaping::Buffer,
     text: &str,
     display_text: String,
@@ -1501,16 +1493,6 @@ fn shift_label_x(label: &mut ResolvedLabel, delta: f64) {
                 *control_x += delta;
                 *x += delta;
             }
-            LabelPathOperation::Cubic {
-                control_1_x,
-                control_2_x,
-                x,
-                ..
-            } => {
-                *control_1_x += delta;
-                *control_2_x += delta;
-                *x += delta;
-            }
             LabelPathOperation::Close => {}
         }
     }
@@ -1687,7 +1669,7 @@ impl ResolvedText {
 
 #[allow(clippy::too_many_arguments)]
 fn shape_official_line(
-    face: &crate::shaping::Face<'_>,
+    face: &crate::shaping::Face,
     source_text: &str,
     display_text: &str,
     width: f64,
@@ -1793,7 +1775,7 @@ fn shape_official_line(
 }
 
 fn shape_text(
-    face: &crate::shaping::Face<'_>,
+    face: &crate::shaping::Face,
     text: &str,
     direction: ShapeDirection,
 ) -> crate::shaping::Buffer {
@@ -1989,28 +1971,6 @@ impl OutlineBuilder for GlyphOutlineBuilder<'_> {
         self.push(LabelPathOperation::Quadratic {
             control_x,
             control_y,
-            x,
-            y,
-        });
-    }
-
-    fn curve_to(
-        &mut self,
-        control_1_x: f32,
-        control_1_y: f32,
-        control_2_x: f32,
-        control_2_y: f32,
-        x: f32,
-        y: f32,
-    ) {
-        let (control_1_x, control_1_y) = self.point(control_1_x, control_1_y);
-        let (control_2_x, control_2_y) = self.point(control_2_x, control_2_y);
-        let (x, y) = self.point(x, y);
-        self.push(LabelPathOperation::Cubic {
-            control_1_x,
-            control_1_y,
-            control_2_x,
-            control_2_y,
             x,
             y,
         });

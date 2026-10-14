@@ -366,30 +366,6 @@ impl CoordinateRange {
                     )?;
                     self.placed(Point { x, y }, t)?;
                 }
-                Op::Cubic {
-                    control_1_x,
-                    control_1_y,
-                    control_2_x,
-                    control_2_y,
-                    x,
-                    y,
-                } => {
-                    self.placed(
-                        Point {
-                            x: control_1_x,
-                            y: control_1_y,
-                        },
-                        t,
-                    )?;
-                    self.placed(
-                        Point {
-                            x: control_2_x,
-                            y: control_2_y,
-                        },
-                        t,
-                    )?;
-                    self.placed(Point { x, y }, t)?;
-                }
                 Op::Close => {}
             }
         }

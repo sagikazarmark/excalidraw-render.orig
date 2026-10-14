@@ -264,18 +264,6 @@ pub(super) fn conservative_text_coverage_area(
                 include(control_x, control_y);
                 include(x, y);
             }
-            LabelPathOperation::Cubic {
-                control_1_x,
-                control_1_y,
-                control_2_x,
-                control_2_y,
-                x,
-                y,
-            } => {
-                include(control_1_x, control_1_y);
-                include(control_2_x, control_2_y);
-                include(x, y);
-            }
             LabelPathOperation::Close => {}
         }
     }

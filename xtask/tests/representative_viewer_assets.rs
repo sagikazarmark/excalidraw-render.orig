@@ -6,6 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicU64, Ordering};
+use write_fonts::read::{FontRef, TableProvider};
 
 const RETAINED: &str = "tests/conformance/proposals/velox84-evidence-v1/viewers/light";
 
@@ -161,14 +162,16 @@ fn complementary_same_family_faces_are_rejected_in_either_order() {
     let decoded = fonts
         .each_ref()
         .map(|bytes| wuff::decompress_woff2(bytes).unwrap());
-    let faces = decoded
-        .each_ref()
-        .map(|bytes| ttf_parser::Face::parse(bytes, 0).unwrap());
+    let faces = decoded.each_ref().map(|bytes| {
+        let cmap = FontRef::new(bytes).unwrap().cmap().unwrap();
+        cmap.best_subtable().unwrap().2
+    });
     let exclusive = [0, 1].map(|index| {
         (0x80..=0xffff)
             .filter_map(char::from_u32)
             .find(|&ch| {
-                faces[index].glyph_index(ch).is_some() && faces[1 - index].glyph_index(ch).is_none()
+                faces[index].map_codepoint(ch).is_some()
+                    && faces[1 - index].map_codepoint(ch).is_none()
             })
             .expect("official chunks have complementary glyph maps")
     });

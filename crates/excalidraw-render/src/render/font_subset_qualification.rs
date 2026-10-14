@@ -436,7 +436,7 @@ fn canonical_tables(sfnt: &[u8]) -> BTreeMap<String, Vec<u8>> {
     let glyph_count = face.number_of_glyphs();
     let mut glyphs = Vec::new();
     for glyph in 0..glyph_count {
-        let glyph = ttf_parser::GlyphId(glyph);
+        let glyph = crate::shaping::GlyphId(glyph);
         let mut outline = OutlineDigest::default();
         let bounds = face.outline_glyph(glyph, &mut outline);
         glyphs.extend_from_slice(
@@ -468,7 +468,7 @@ struct OutlineDigest {
     bytes: Vec<u8>,
 }
 
-impl ttf_parser::OutlineBuilder for OutlineDigest {
+impl crate::shaping::OutlineBuilder for OutlineDigest {
     fn move_to(&mut self, x: f32, y: f32) {
         self.bytes.push(b'M');
         self.bytes.extend_from_slice(&x.to_bits().to_le_bytes());
@@ -484,13 +484,6 @@ impl ttf_parser::OutlineBuilder for OutlineDigest {
     fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
         self.bytes.push(b'Q');
         for value in [x1, y1, x, y] {
-            self.bytes.extend_from_slice(&value.to_bits().to_le_bytes());
-        }
-    }
-
-    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
-        self.bytes.push(b'C');
-        for value in [x1, y1, x2, y2, x, y] {
             self.bytes.extend_from_slice(&value.to_bits().to_le_bytes());
         }
     }
@@ -772,7 +765,7 @@ fn not_applicable(reason: &'static str) -> ClassifiedCell {
 }
 
 fn first_mapped(
-    face: &crate::shaping::Face<'_>,
+    face: &crate::shaping::Face,
     ranges: &[(u32, u32)],
     predicate: impl Fn(u32) -> bool,
 ) -> Option<u32> {
@@ -789,7 +782,7 @@ fn first_mapped(
     None
 }
 
-fn range_boundaries(face: &crate::shaping::Face<'_>, ranges: &[(u32, u32)]) -> Vec<u32> {
+fn range_boundaries(face: &crate::shaping::Face, ranges: &[(u32, u32)]) -> Vec<u32> {
     let mut scalars = Vec::new();
     let range = ranges.first().copied().expect("source declares a range");
     if let Some(scalar) = first_mapped(face, &[range], |scalar| !is_combining_mark(scalar)) {
@@ -811,7 +804,7 @@ fn range_boundaries(face: &crate::shaping::Face<'_>, ranges: &[(u32, u32)]) -> V
     scalars
 }
 
-fn full_intersection(face: &crate::shaping::Face<'_>, ranges: &[(u32, u32)]) -> Vec<u32> {
+fn full_intersection(face: &crate::shaping::Face, ranges: &[(u32, u32)]) -> Vec<u32> {
     let mut scalars =
         vec![first_mapped(face, ranges, |_| true).expect("source declares a mapped scalar")];
     for (start, end) in ranges {
@@ -875,11 +868,7 @@ fn qualification_character(scalar: u32) -> Option<char> {
     }
 }
 
-fn mapped_glyph_is_composite(
-    face: &crate::shaping::Face<'_>,
-    font: &FontRef<'_>,
-    scalar: u32,
-) -> bool {
+fn mapped_glyph_is_composite(face: &crate::shaping::Face, font: &FontRef<'_>, scalar: u32) -> bool {
     let Some(character) = char::from_u32(scalar) else {
         return false;
     };
@@ -898,7 +887,7 @@ fn mapped_glyph_is_composite(
     )
 }
 
-fn layout_probe(face: &crate::shaping::Face<'_>, font: &FontRef<'_>) -> Option<Vec<u32>> {
+fn layout_probe(face: &crate::shaping::Face, font: &FontRef<'_>) -> Option<Vec<u32>> {
     if font.gsub().is_err() && font.gpos().is_err() {
         return None;
     }
@@ -985,7 +974,7 @@ fn probe_scalars(probe: &str) -> Vec<u32> {
     scalars
 }
 
-fn probe_exercises_layout(face: &crate::shaping::Face<'_>, probe: &str) -> bool {
+fn probe_exercises_layout(face: &crate::shaping::Face, probe: &str) -> bool {
     let mapped = probe
         .chars()
         .filter_map(|character| face.glyph_index(character))
