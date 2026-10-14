@@ -1,9 +1,0 @@
-{
-  "whole_class":"geometry-image",
-  "crops":[
-    {"id":"typography","x":10,"y":12,"width":124,"height":41,"class":"typography"},
-    {"id":"raster","x":178,"y":38,"width":22,"height":44,"class":"geometry-image"},
-    {"id":"nested-svg","x":38,"y":53,"width":36,"height":28,"class":"geometry-image"}
-  ],
-  "exceptions":[]
-}

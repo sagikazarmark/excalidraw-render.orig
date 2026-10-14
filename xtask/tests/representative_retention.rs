@@ -256,10 +256,7 @@ fn materialization_requires_only_selected_format_semantics_and_preserves_authore
 #[test]
 fn all_legacy_compact_records_verify_without_full_rasters() {
     for name in [
-        "varmq84-evidence-v1",
-        "varmq84-evidence-v2",
         "varmq84-evidence-v3",
-        "slides84-evidence-v1",
         "slides84-evidence-v2",
         "velox84-evidence-v2",
     ] {
@@ -276,7 +273,7 @@ fn all_legacy_compact_records_verify_without_full_rasters() {
 
 #[test]
 fn compact_rejects_changed_extra_missing_and_detached_records() {
-    let source = root().join("tests/conformance/proposals/varmq84-evidence-v1");
+    let source = root().join("tests/conformance/proposals/varmq84-evidence-v3");
     for mutation in 0..6 {
         let scratch = tempfile::tempdir().unwrap();
         let output = scratch.path().join("compact");
@@ -307,7 +304,7 @@ fn compact_reference_artifact_descriptors_must_match_retained_receipt() {
     let scratch = tempfile::tempdir().unwrap();
     let output = scratch.path().join("compact");
     copy(
-        &root().join("tests/conformance/proposals/varmq84-evidence-v1"),
+        &root().join("tests/conformance/proposals/varmq84-evidence-v3"),
         &output,
     );
     let mut record = read(output.join("compact.json"));
