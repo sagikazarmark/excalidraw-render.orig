@@ -44,3 +44,12 @@ The same amendment drops the digest pins that eight codec contract tests and
 `png_profile_contract.rs` and others). A pinned helper failed unrelated tests on
 any edit; what a helper computes is checked by the assertions that use it, as
 ADR-0017 already holds for source anchors.
+
+It also covers what kept evidence was measured with: the comparator profile,
+the viewer profiles and the viewer adapters (`historical_record` in the
+candidate gate). The gate recomputes every judgment from the stored rasters
+with the live comparator, and the live viewers and comparator are qualified on
+their own, so those records describe the measurement only. That retires the
+successor chains that authenticated them against archived preimages (eight
+comparator refreshes, the resvg 0.48 viewer requalification, the PDFium #192
+alpha successor and the relocated pypdfium2 lock) and the archives they read.

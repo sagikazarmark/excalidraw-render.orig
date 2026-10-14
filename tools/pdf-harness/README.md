@@ -103,10 +103,10 @@ Python inspector, fixture generator and PDFium adapter/alpha tests, migrated
 wrappers, installer and `xtask/src/pdf_viewers.rs`. Their descriptor shape and
 required membership are checked; approval metadata is historical (ADR-0019).
 Parser/viewer locks, schemas, comparator, fixtures, expectations, reports and
-other live bindings are still verified against current bytes. The historical
-wheel lock is archived at `history/pypdfium2.lock.json`; its original descriptor
-is resolved there without altering approved captures. The Rust worker's native
-library identity is recorded in `pdfium-native.lock.json`.
+other live bindings are still verified against current bytes. The PDFium
+profile still names the retired pypdfium2 wheel lock; that record is historical
+and checked for shape only. The Rust worker's native library identity is
+recorded in `pdfium-native.lock.json`.
 
 The Rust inspector also validates the expectation object before invoking qpdf;
 missing or malformed fields are configuration errors, even when the requested
@@ -155,7 +155,7 @@ verification; meaningful historical pin-transition assertions remain Rust tests.
 with an isolated target directory so it can be called from workspace tests.
 It verifies the exact library SHA-256, selects AGG/FreeType explicitly, and uses
 the controlled empty font directory. `pdfium-native.lock.json` records native
-archive/library identity separately from `history/pypdfium2.lock.json`.
+archive/library identity.
 `pdfium-rust/sources.json` is the shared producer-file inventory consumed by the
 Rust and Node collection paths.
 

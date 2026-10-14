@@ -41,11 +41,6 @@ pub(crate) fn descriptor_set(root: &Path, descriptors: &Value, required: &[Strin
     Ok(())
 }
 pub(crate) fn read(root: &Path, path: &str) -> Result<Vec<u8>> {
-    let path = if path == "tools/pdf-harness/pdfium.lock.json" && root == repo_root() {
-        "tools/pdf-harness/history/pypdfium2.lock.json"
-    } else {
-        path
-    };
     if Path::new(path)
         .components()
         .any(|c| !matches!(c, Component::Normal(_)))
@@ -115,28 +110,21 @@ pub(crate) fn descriptor(root: &Path, path: &str) -> Result<Value> {
     let b = read(root, path)?;
     Ok(json!({"path":path,"byte_length":b.len(),"sha256":sha256(&b)}))
 }
-fn check_descriptor(root: &Path, d: &Value) -> Result<Vec<u8>> {
+/// Checks a record against today's file and returns its bytes. A historical
+/// record (`historical_record`) is checked for shape only and yields none.
+fn check_descriptor(root: &Path, d: &Value) -> Result<Option<Vec<u8>>> {
     let p = d["path"].as_str().ok_or("descriptor lacks path")?;
+    if historical_record(p) {
+        historical_binding(d)?;
+        return Ok(None);
+    }
     let b = read(root, p)?;
     if d["sha256"] != json!(sha256(&b))
         || d.get("byte_length").is_some_and(|n| n != &json!(b.len()))
     {
-        if p == COMPARATOR_PROFILE || p == COMPARATOR_CLOSURE {
-            return comparator_closure_successor(d);
-        }
-        if PURE_RUST_SVG_VIEWER_FILES.contains(&p) {
-            return pure_rust_svg_viewer_successor(d);
-        }
-        if reviewed_vector_move(p, &d["sha256"], &sha256(&b)) {
-            return Ok(b);
-        }
-        if historical_producer(p) {
-            historical_sources(&json!([d]))?;
-            return Ok(b);
-        }
         return Err(format!("stale candidate evidence {p}"));
     }
-    Ok(b)
+    Ok(Some(b))
 }
 /// Whether `path` is producer code whose digest describes only the run that
 /// captured evidence (ADR-0019): the reference oracle, less the fixtures it
@@ -150,198 +138,32 @@ pub(crate) fn historical_producer(path: &str) -> bool {
         || path.starts_with("tools/pdf-harness/pdfjs/")
         || path == "tools/pdf-harness/run-pdfjs.sh"
 }
-const PURE_RUST_SVG_PROFILE: &str =
-    "tests/conformance/viewer-profiles/canonical-svg-pure-rust-v1.json";
-/// The pure-Rust SVG viewer's identity files candidate evidence binds that a
-/// requalification may move; each requalification archives all of them.
-const PURE_RUST_SVG_VIEWER_FILES: &[&str] = &[
-    PURE_RUST_SVG_PROFILE,
-    "tools/svg-viewer-rust/Cargo.toml",
-    "tools/svg-viewer-rust/Cargo.lock",
-];
-/// Every reviewed requalification of the pure-Rust SVG viewer, oldest first:
-/// the archive holding the profile it superseded, and the profile digest it
-/// approved.
-const PURE_RUST_SVG_REQUALIFICATIONS: &[(&str, &str)] = &[
-    // resvg/usvg 0.47.0 -> 0.48.1: the viewer reads and shapes with skrifa
-    // and HarfRust instead of ttf-parser and rustybuzz.
-    (
-        "tests/conformance/proposals/svg-viewer-pure-rust-resvg-0.48-v1/before",
-        "3ffb9edeb9f02ccb8fe6e18ad714017bacee1af06cfffbda36568dc765bee674",
-    ),
-];
-/// Frozen candidate evidence was measured under the pure-Rust SVG viewer of
-/// its time. Its binding of a viewer identity file stays valid only when it
-/// names, byte for byte, the file a reviewed requalification archived, and
-/// the live profile is the one the last requalification approved; new
-/// evidence measures under the live viewer. Returns the archived file.
-fn pure_rust_svg_viewer_successor(historical: &Value) -> Result<Vec<u8>> {
-    let path = historical["path"].as_str().ok_or("descriptor lacks path")?;
-    let approved = PURE_RUST_SVG_REQUALIFICATIONS
-        .last()
-        .map(|(_, approved)| *approved)
-        .ok_or("no pure-Rust SVG viewer requalification")?;
-    if sha256(&read(&repo_root(), PURE_RUST_SVG_PROFILE)?) != approved {
-        return Err("unreviewed pure-Rust SVG viewer profile".into());
-    }
-    for (before, _) in PURE_RUST_SVG_REQUALIFICATIONS {
-        let archived = read(&repo_root(), &format!("{before}/{path}"))?;
-        if historical["sha256"] == sha256(&archived)
-            && historical
-                .get("byte_length")
-                .is_none_or(|n| n == &json!(archived.len()))
-        {
-            return Ok(archived);
-        }
-    }
-    Err(format!("stale candidate evidence {path}"))
-}
 pub(crate) const COMPARATOR_PROFILE: &str =
     "tests/conformance/comparator-profiles/canonical-visual-v1.json";
 const COMPARATOR_CLOSURE: &str =
     "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json";
-/// One reviewed refresh that moved the comparator profile: the preimages of
-/// the comparator files it superseded, and the file digests it migrated
-/// without changing what they assert, as `(path, before, after)`: adversarial
-/// vector sources, and for the #212 split the profile schema.
-pub(crate) struct ComparatorRefresh {
-    pub(crate) before: &'static str,
-    vectors: &'static [(&'static str, &'static str, &'static str)],
+/// Whether a record in kept evidence names something that describes only how
+/// the evidence was produced or measured (ADR-0019): producer code, a viewer
+/// profile or adapter, or the comparator profile. The gate recomputes every
+/// judgment from the stored rasters with the live comparator, and the live
+/// viewers and comparator are qualified on their own, so these records are
+/// checked for shape, not against today's files, which may have moved on or
+/// gone.
+pub(crate) fn historical_record(path: &str) -> bool {
+    historical_producer(path)
+        || path == COMPARATOR_PROFILE
+        || path == COMPARATOR_CLOSURE
+        || path.starts_with("tests/conformance/viewer-profiles/")
+        || path.starts_with("tools/pdf-harness/")
+        || path.starts_with("tools/svg-viewer-rust/")
 }
-/// Every reviewed comparator refresh, oldest first.
-pub(crate) const COMPARATOR_REFRESHES: &[ComparatorRefresh] = &[
-    // #206: the lock refresh moved only the closure.
-    ComparatorRefresh {
-        before: "tests/conformance/proposals/comparator-closure-refresh-v1/before",
-        vectors: &[],
-    },
-    // #208: sha2 0.11 digests no longer format as hex, so the SSIM vectors
-    // spell their kernel digests through a helper; the asserted digests stay.
-    ComparatorRefresh {
-        before: "tests/conformance/proposals/comparator-closure-refresh-v2/before",
-        vectors: &[(
-            "crates/excalidraw-render-compare/tests/ssim_vectors.rs",
-            "40da83781c7d784201cb003817ec0c0f64c0deeca0263c2d56932824431a3439",
-            "76dfd706a784ceb19ee304f15994afbd5130ad20df4fee55948ff8a6dd25855c",
-        )],
-    },
-    // #208: sha1 0.11 moved only the closure.
-    ComparatorRefresh {
-        before: "tests/conformance/proposals/comparator-closure-refresh-v3/before",
-        vectors: &[],
-    },
-    // #208: png 0.18 returns decoder buffer sizes as options, so the
-    // Pixelmatch upstream harness unwraps its fixture's; the fixtures and the
-    // comparisons are unchanged.
-    ComparatorRefresh {
-        before: "tests/conformance/proposals/comparator-closure-refresh-v4/before",
-        vectors: &[(
-            "crates/excalidraw-render-compare/tests/pixelmatch_upstream.rs",
-            "55f131abcef6da2f1c9be21420d4f747e9acc7a7b944736996a5f01faadc8433",
-            "dfe0a102ec425fe01c027ac5e2eb409a804f810bdb3780ac379dc6b01eba4ca9",
-        )],
-    },
-    // #211: serde_json 1.0.151 moved only the closure.
-    ComparatorRefresh {
-        before: "tests/conformance/proposals/comparator-closure-refresh-v5/before",
-        vectors: &[],
-    },
-    // #208: jsonschema 0.58 moved only the closure.
-    ComparatorRefresh {
-        before: "tests/conformance/proposals/comparator-closure-refresh-v6/before",
-        vectors: &[],
-    },
-    // #207: wasm-bindgen 0.2.129 moved only the closure.
-    ComparatorRefresh {
-        before: "tests/conformance/proposals/comparator-closure-refresh-v7/before",
-        vectors: &[],
-    },
-    // #212 (ADR-0005 amendment): the profile stops binding the closure, and its schema
-    // drops `implementation.closure`. This is the last row: the closure is
-    // no longer part of the profile, so a dependency move leaves it as it is.
-    ComparatorRefresh {
-        before: "tests/conformance/proposals/comparator-closure-refresh-v8/before",
-        vectors: &[(
-            "tests/conformance/comparator-profile-v1.schema.json",
-            "8070979db5c71227a163a73c320c553d5ff5bb30da2a99876be614fdd5b81ac6",
-            "dc954fe044214d560b1bfa57a4b9f1d2488d769034f5dac8ad34ccd78cb30ca6",
-        )],
-    },
-];
-/// Evidence measured under a comparator profile (or its closure) that a
-/// reviewed refresh superseded. Those refreshes moved the comparator's
-/// dependency closure (until #212 removed it from the profile) and, where
-/// listed, migrated vector sources or the schema without changing what they
-/// assert, so its sources, protocol and fixtures are unchanged and those
-/// measurements stand; any other profile move needs its own review. Returns
-/// the archived file the evidence was measured under.
-pub(crate) fn comparator_closure_successor(historical: &Value) -> Result<Vec<u8>> {
-    let path = historical["path"].as_str().ok_or("descriptor lacks path")?;
-    if path != COMPARATOR_PROFILE && path != COMPARATOR_CLOSURE {
-        return Err(format!("stale candidate evidence {path}"));
+/// Checks a historical record's shape: a safe path and a SHA-256 digest.
+pub(crate) fn historical_binding(d: &Value) -> Result<()> {
+    let mut binding = json!({"path": d["path"], "sha256": d["sha256"]});
+    if let Some(n) = d.get("byte_length") {
+        binding["byte_length"] = n.clone();
     }
-    let root = repo_root();
-    let parse = |bytes: &[u8]| serde_json::from_slice::<Value>(bytes).map_err(|e| e.to_string());
-    for (index, refresh) in COMPARATOR_REFRESHES.iter().enumerate() {
-        let archived = read(&root, &format!("{}/{path}", refresh.before))?;
-        if historical["sha256"] != sha256(&archived)
-            || historical
-                .get("byte_length")
-                .is_some_and(|n| n != &json!(archived.len()))
-        {
-            continue;
-        }
-        let mut before = parse(&read(
-            &root,
-            &format!("{}/{COMPARATOR_PROFILE}", refresh.before),
-        )?)?;
-        for later in &COMPARATOR_REFRESHES[index..] {
-            migrate_descriptors(&mut before, later.vectors);
-        }
-        let after = read(&root, COMPARATOR_PROFILE)?;
-        if sha256(&after) != crate::pdf_viewers::COMPARATOR_DIGEST
-            || !differs_only_in_closure(&before, &parse(&after)?)
-        {
-            return Err("unreviewed comparator profile transition".into());
-        }
-        return Ok(archived);
-    }
-    Err(format!("stale candidate evidence {path}"))
-}
-/// Applies one refresh's reviewed digest migrations to a superseded profile's
-/// vector and schema descriptors.
-fn migrate_descriptors(profile: &mut Value, moves: &[(&str, &str, &str)]) {
-    let migrate = |descriptor: &mut Value| {
-        for (path, before, after) in moves {
-            if descriptor["path"] == *path && descriptor["sha256"] == *before {
-                descriptor["sha256"] = json!(after);
-            }
-        }
-    };
-    if let Some(schema) = profile.get_mut("schema") {
-        migrate(schema);
-    }
-    if let Some(vectors) = profile.get_mut("vectors").and_then(Value::as_array_mut) {
-        vectors.iter_mut().for_each(migrate);
-    }
-}
-/// A superseded profile names its vector sources by digest; a source a
-/// reviewed refresh migrated stays valid only at exactly that transition.
-fn reviewed_vector_move(path: &str, historical: &Value, live: &str) -> bool {
-    COMPARATOR_REFRESHES
-        .iter()
-        .flat_map(|refresh| refresh.vectors)
-        .any(|(moved, before, after)| path == *moved && historical == before && live == *after)
-}
-fn differs_only_in_closure(before: &Value, after: &Value) -> bool {
-    let without_closure = |profile: &Value| {
-        let mut profile = profile.clone();
-        if let Some(implementation) = profile["implementation"].as_object_mut() {
-            implementation.remove("closure");
-        }
-        profile
-    };
-    without_closure(before) == without_closure(after)
+    historical_sources(&json!([binding]))
 }
 fn repo_chain(v: &Value, visited: &mut BTreeSet<String>) -> Result<()> {
     repo_chain_at(v, visited, &repo_root())
@@ -349,6 +171,10 @@ fn repo_chain(v: &Value, visited: &mut BTreeSet<String>) -> Result<()> {
 fn repo_chain_at(v: &Value, visited: &mut BTreeSet<String>, context: &Path) -> Result<()> {
     if let Some(o) = v.as_object() {
         if let (Some(path), Some(_)) = (o.get("path").and_then(Value::as_str), o.get("sha256")) {
+            if historical_record(path) {
+                historical_binding(v)?;
+                return Ok(());
+            }
             // Producer records use repository paths; vendored vector manifests
             // use paths relative to their own directory. Resolve both within
             // the repository, and reject ambiguous references.
@@ -370,7 +196,8 @@ fn repo_chain_at(v: &Value, visited: &mut BTreeSet<String>, context: &Path) -> R
                 .ok_or("non-UTF8 producer path")?;
             let mut resolved_descriptor = v.clone();
             resolved_descriptor["path"] = json!(relative);
-            let bytes = check_descriptor(&root, &resolved_descriptor)?;
+            let bytes = check_descriptor(&root, &resolved_descriptor)?
+                .ok_or("descriptor resolves to a historical record")?;
             // Reference profiles also inventory paths *inside the canonical
             // OCI image* (including its system fonts). Their immutable bytes
             // are bound here; the collector's profile:verify validates those
@@ -388,54 +215,6 @@ fn repo_chain_at(v: &Value, visited: &mut BTreeSet<String>, context: &Path) -> R
             }
         }
         for (name, child) in o {
-            // Approved viewer profiles describe their generating adapters.
-            // The PDFium Rust migration changed only the launcher/installer;
-            // profile bytes and every non-producer binding remain live.
-            if name == "implementation"
-                && matches!(
-                    v["id"].as_str(),
-                    Some(
-                        "canonical-pdf.pdfium.v1"
-                            | "canonical-pdf.pdfjs.v1"
-                            | "canonical-pdf-structure.qpdf.v1"
-                    )
-                )
-            {
-                let mut current = child.clone();
-                if v["id"] == "canonical-pdf.pdfium.v1" {
-                    current["lockfile"] =
-                        crate::pdf_viewers::archived_pdfium_lock(&current["lockfile"])?;
-                }
-                if let Some(sources) = current["sources"].as_array_mut() {
-                    let mut retained = Vec::new();
-                    for source in sources.iter() {
-                        let path = source["path"].as_str().unwrap_or_default();
-                        if path == "tools/pdf-harness/install.sh"
-                            || (v["id"] == "canonical-pdf-structure.qpdf.v1"
-                                && matches!(
-                                    path,
-                                    "tools/pdf-harness/structure/inspect.py"
-                                        | "tools/pdf-harness/generate-fixtures.py"
-                                        | "tools/pdf-harness/run-structure.sh"
-                                ))
-                            || (v["id"] == "canonical-pdf.pdfium.v1"
-                                && matches!(
-                                    path,
-                                    "tools/pdf-harness/run-pdfium.sh"
-                                        | "tools/pdf-harness/pdfium/render.py"
-                                        | "tools/pdf-harness/pdfium/test_alpha.py"
-                                ))
-                        {
-                            historical_sources(&json!([source]))?;
-                        } else {
-                            retained.push(source.clone());
-                        }
-                    }
-                    *sources = retained;
-                }
-                repo_chain_at(&current, visited, context)?;
-                continue;
-            }
             if name == "sources"
                 && o.get("schema").and_then(Value::as_str)
                     == Some("excalidraw-render/candidate-svg-text-audit-profile/v1")
@@ -690,7 +469,8 @@ fn collection(directory: &str) -> Result<Value> {
             return Err("capture input/profile/output binding mismatch".into());
         }
         check_descriptor(&root, &c["input"])?;
-        let bytes = check_descriptor(&root, &c["raster"])?;
+        let bytes =
+            check_descriptor(&root, &c["raster"])?.ok_or("raster is a historical record")?;
         if bytes.len() != 200 * 120 * 4 {
             return Err("wrong viewer dimensions".into());
         }
@@ -1135,7 +915,8 @@ mod tests {
                 paths
                     .iter()
                     .map(|p| {
-                        if p == "tools/pdf-harness/pdfium/render.py" {
+                        // Retired producers keep their captured record.
+                        if !repo_root().join(p).exists() {
                             captured["sources"]
                                 .as_array()
                                 .unwrap()
@@ -1249,14 +1030,15 @@ mod tests {
         assert_eq!(read(&root, "manifest.json").unwrap(), before);
     }
     #[test]
-    fn pdfium_launcher_migration_preserves_nonproducer_profile_checks() {
+    fn historical_records_are_checked_for_shape_not_against_live_files() {
+        let root = repo_root();
         let profile = value(
-            &repo_root(),
+            &root,
             "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
         )
         .unwrap();
         repo_chain(&profile, &mut BTreeSet::new()).unwrap();
-        let mut malformed = profile.clone();
+        let mut malformed = profile;
         let source = malformed["implementation"]["sources"]
             .as_array_mut()
             .unwrap()
@@ -1265,11 +1047,23 @@ mod tests {
             .unwrap();
         source["sha256"] = json!("invalid");
         assert!(repo_chain(&malformed, &mut BTreeSet::new()).is_err());
-        let mut changed = profile;
-        changed["implementation"]["lockfile"]["sha256"] = json!("0".repeat(64));
-        assert!(repo_chain(&changed, &mut BTreeSet::new())
-            .unwrap_err()
-            .contains("invalid historical PDFium lock identity"));
+        // A measurement record need not match, or name, a live file.
+        for path in [
+            COMPARATOR_PROFILE,
+            "tests/conformance/viewer-profiles/canonical-svg-pure-rust-v1.json",
+            "tools/pdf-harness/pdfium.lock.json",
+        ] {
+            let record = json!({"path": path, "byte_length": 1, "sha256": "0".repeat(64)});
+            assert_eq!(check_descriptor(&root, &record).unwrap(), None);
+            for (key, bad) in [("sha256", json!("00")), ("byte_length", json!("1"))] {
+                let mut malformed = record.clone();
+                malformed[key] = bad;
+                assert!(check_descriptor(&root, &malformed).is_err());
+            }
+        }
+        // Evidence itself stays live.
+        let stale = json!({"path": "Cargo.toml", "sha256": "0".repeat(64)});
+        assert!(check_descriptor(&root, &stale).is_err());
     }
 
     #[test]
@@ -1286,88 +1080,6 @@ mod tests {
             json!([descriptor(&root, "Cargo.toml").unwrap()]),
         ] {
             assert!(descriptor_set(&root, &bad, &required).is_err());
-        }
-    }
-    #[test]
-    fn comparator_successor_admits_no_change_outside_the_closure() {
-        let before = json!({
-            "id": "canonical-visual-comparator.v1",
-            "implementation": {"sources": ["a"], "closure": {"sha256": "old"}}
-        });
-        let mut closure_only = before.clone();
-        closure_only["implementation"]["closure"]["sha256"] = json!("new");
-        assert!(differs_only_in_closure(&before, &closure_only));
-        let mut sources = closure_only.clone();
-        sources["implementation"]["sources"] = json!(["b"]);
-        assert!(!differs_only_in_closure(&before, &sources));
-        let mut protocol = closure_only;
-        protocol["id"] = json!("canonical-visual-comparator.v2");
-        assert!(!differs_only_in_closure(&before, &protocol));
-    }
-    #[test]
-    fn comparator_successor_migrates_only_the_reviewed_vector_digests() {
-        let profile = json!({"vectors": [
-            {"path": "ssim.rs", "sha256": "old"},
-            {"path": "pixelmatch.rs", "sha256": "old"}
-        ]});
-        let mut migrated = profile.clone();
-        migrate_descriptors(&mut migrated, &[("ssim.rs", "old", "new")]);
-        assert_eq!(migrated["vectors"][0]["sha256"], "new");
-        assert_eq!(migrated["vectors"][1]["sha256"], "old");
-        let mut unreviewed = profile;
-        migrate_descriptors(&mut unreviewed, &[("ssim.rs", "other", "new")]);
-        assert_eq!(unreviewed["vectors"][0]["sha256"], "old");
-        let (path, before, after) = COMPARATOR_REFRESHES[1].vectors[0];
-        assert!(reviewed_vector_move(path, &json!(before), after));
-        assert!(!reviewed_vector_move(path, &json!(before), "00"));
-        assert!(!reviewed_vector_move(path, &json!("00"), after));
-        assert!(!reviewed_vector_move("other.rs", &json!(before), after));
-    }
-    #[test]
-    fn stale_comparator_bindings_pass_only_through_the_reviewed_closure_successor() {
-        let root = repo_root();
-        for refresh in COMPARATOR_REFRESHES {
-            let archived =
-                read(&root, &format!("{}/{COMPARATOR_PROFILE}", refresh.before)).unwrap();
-            let historical = json!({"path":COMPARATOR_PROFILE,"byte_length":archived.len(),"sha256":sha256(&archived)});
-            assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
-            let required = vec![COMPARATOR_PROFILE.into()];
-            descriptor_set(&root, &json!([historical]), &required).unwrap();
-            for (key, bad) in [("sha256", json!("00")), ("byte_length", json!(1))] {
-                let mut stale = historical.clone();
-                stale[key] = bad;
-                assert!(check_descriptor(&root, &stale).is_err());
-            }
-        }
-    }
-    #[test]
-    fn stale_comparator_closure_bindings_follow_the_same_successor() {
-        let root = repo_root();
-        for refresh in COMPARATOR_REFRESHES {
-            let archived =
-                read(&root, &format!("{}/{COMPARATOR_CLOSURE}", refresh.before)).unwrap();
-            let historical = json!({"path":COMPARATOR_CLOSURE,"sha256":sha256(&archived)});
-            assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
-            let mut stale = historical;
-            stale["sha256"] = json!("00");
-            assert!(check_descriptor(&root, &stale).is_err());
-        }
-    }
-    #[test]
-    fn stale_pure_rust_svg_viewer_bindings_pass_only_through_a_reviewed_requalification() {
-        let root = repo_root();
-        for (before, _) in PURE_RUST_SVG_REQUALIFICATIONS {
-            for path in PURE_RUST_SVG_VIEWER_FILES {
-                let archived = read(&root, &format!("{before}/{path}")).unwrap();
-                let historical =
-                    json!({"path":path,"byte_length":archived.len(),"sha256":sha256(&archived)});
-                assert_eq!(check_descriptor(&root, &historical).unwrap(), archived);
-                for (key, bad) in [("sha256", json!("00")), ("byte_length", json!(1))] {
-                    let mut stale = historical.clone();
-                    stale[key] = bad;
-                    assert!(check_descriptor(&root, &stale).is_err());
-                }
-            }
         }
     }
     #[test]

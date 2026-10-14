@@ -56,21 +56,6 @@ pub(crate) fn rust_pdfium_sources() -> Result<Vec<String>, String> {
     .map_err(|error| format!("invalid Rust PDFium source inventory: {error}"))
 }
 
-pub(crate) fn archived_pdfium_lock(lock: &Value) -> Result<Value, String> {
-    if lock
-        != &json!({
-            "path": "tools/pdf-harness/pdfium.lock.json",
-            "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90",
-        })
-    {
-        return Err("invalid historical PDFium lock identity".into());
-    }
-    Ok(json!({
-        "path": "tools/pdf-harness/history/pypdfium2.lock.json",
-        "sha256": lock["sha256"],
-    }))
-}
-
 pub fn verify() -> Result<(), String> {
     runtime::verify()?;
     let manifest_bytes = fs::read(repo_root().join(MANIFEST_PATH))
@@ -240,11 +225,11 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
         return Err(format!("{viewer} PDF viewer profile identity is invalid"));
     }
     if viewer == "pdfium" {
-        // The approved profile describes its original producer. Authenticate the
-        // relocated archive without rewriting the approval-bound descriptor.
-        verify_descriptor(&archived_pdfium_lock(
+        // The approved profile names the retired Python-era lock; the Rust
+        // adapter's runtime is verified on its own (ADR-0019).
+        crate::conformance_candidate_gate::historical_binding(
             &profile["implementation"]["lockfile"],
-        )?)?;
+        )?;
     } else {
         verify_descriptor(&profile["implementation"]["lockfile"])?;
     }
