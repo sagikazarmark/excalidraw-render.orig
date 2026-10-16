@@ -81,7 +81,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 # Formats floats through zmij: positive exponents are signed (`1e+20`), the
 # spelling spec 11.1 requires (#211). Only the CLI and tests serialize JSON;
 # the renderer's dependency on it is test-only.
-serde_json = "=1.0.152"
+serde_json = "=1.0.154"
 simplecss = "0.2.2"
 sha1 = "=0.11.0"
 sha2 = "0.11.0"
