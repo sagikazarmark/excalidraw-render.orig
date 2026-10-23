@@ -52,7 +52,7 @@ image-webp = "0.2.4"
 # the comparator's tests. The renderer parses scene numbers itself, and xtask's
 # `arbitrary_precision` keeps each `Value` number's source token, so only typed
 # float deserialization would see the correctly rounded parse; nothing here does.
-jsonschema = { version = "=0.58.6", default-features = false }
+jsonschema = { version = "=0.59.0", default-features = false }
 # The PDF writer (ADR-0021). A Krilla bump is a byte-affecting change for every
 # PDF, as svg2pdf's was, so the lock moves it deliberately. Krilla shapes nothing (every glyph
 # arrives positioned). `raster-images` only compiles its image module: every
@@ -81,7 +81,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 # Formats floats through zmij: positive exponents are signed (`1e+20`), the
 # spelling spec 11.1 requires (#211). Only the CLI and tests serialize JSON;
 # the renderer's dependency on it is test-only.
-serde_json = "=1.0.152"
+serde_json = "=1.0.154"
 simplecss = "0.2.2"
 sha1 = "=0.11.0"
 sha2 = "0.11.0"
@@ -95,7 +95,7 @@ skera = { version = "0.8.0", default-features = false }
 harfrust = { version = "0.14.0", default-features = false, features = ["std"] }
 ryu-js = { version = "1.0.3", default-features = false }
 unicode-bidi = "0.3.18"
-unicode-normalization = "=0.1.25"
+unicode-normalization = "=0.1.26"
 unicase = "=2.10.0"
 svgtypes = "0.16.1"
 # Host-only: CLI delivery staging and xtask scratch directories. Never a
@@ -111,7 +111,7 @@ tiny-skia = { version = "0.12.0", default-features = false, features = ["png-for
 # quality-11 WOFF2 bytes identical between native and wasm32 (ADR-0003). The
 # identity token in `excalidraw-fonts` still names the retired
 # fork until the single evidence refresh ADR-0003 schedules.
-ttf2woff2 = { version = "0.13.3", default-features = false, features = ["portable-float"] }
+ttf2woff2 = { version = "0.14.1", default-features = false, features = ["portable-float"] }
 usvg = { version = "0.48.1", default-features = false, features = ["text"] }
 wuff = { version = "0.2.9", default-features = false, features = ["brotli"] }
 # `write_fonts::read` is the workspace's only font parser: read-fonts 0.45,
