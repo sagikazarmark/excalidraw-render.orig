@@ -31,7 +31,7 @@ serde.workspace = true
 serde_json = { workspace = true, features = ["raw_value", "arbitrary_precision"] }
 sha2.workspace = true
 tempfile.workspace = true
-syn = { version = "=3.0.7", features = ["full"] }
+syn = { version = "=3.0.9", features = ["full"] }
 toml = "=1.1.8"
 wuff.workspace = true
 write-fonts.workspace = true
