@@ -82,6 +82,16 @@ their only readers, finished-round producers that nothing runs:
 - scripts: the eight `tools/reference-oracle/scripts/*-ownership.mjs` and the
   v3 producer (`stage4-representative-v3.mjs`, its runner and Dagger entry).
 
+On 2026-10-28, after the subset profile refresh requalified the
+representative as V28, the same rule removed `stage4-frames-text-assets-v6`
+and `-v27` (about 3 MB, the tree at `83960b50` has them). V27's readers now
+read V28, whose PDF, scene, judgment plan and judged rasters are
+byte-identical; one of them built its path from a version number and so
+escaped the literal search. V6 was the tree's only dev-profile native capture,
+kept as the negative fixture its README asked to preserve; the two tests that
+refused it now carry that build identity themselves and stage the capture
+under `target/`.
+
 ## Consequences
 
 - A future round deletes its own collection once the gate no longer reads it,

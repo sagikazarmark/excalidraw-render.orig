@@ -605,14 +605,23 @@ mod tests {
                 "mutation {mutation}"
             );
         }
-        let old = value(
-            &repo_root(),
-            "tests/conformance/candidates/stage4-frames-text-assets-v6/native-capture.json",
-        )
-        .unwrap();
-        assert!(validate_build_identity(&old["build"])
+        assert!(validate_build_identity(&dev_capture_build())
             .unwrap_err()
             .contains("release --locked"));
+    }
+    /// The build identity the superseded V6 candidate recorded (the tree at
+    /// 83960b50 has it): a dev-profile capture with no build command or
+    /// release profile, which the gate must refuse before building anything.
+    fn dev_capture_build() -> Value {
+        json!({
+            "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+            "debug": 0,
+            "executable_sha256": "a75c02357470eed503db7d54573d08257e7a996166409d450c9a808bb22d0289",
+            "incremental": false,
+            "profile": "dev",
+            "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+            "rustflags": []
+        })
     }
     #[test]
     fn fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds() {

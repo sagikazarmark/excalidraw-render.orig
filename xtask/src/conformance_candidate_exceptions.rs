@@ -248,14 +248,14 @@ mod tests {
     #[test]
     fn krilla_successor_covers_only_the_reviewed_pdf_with_identical_rasters() {
         use std::fs;
-        const V27: &str = "tests/conformance/candidates/stage4-frames-text-assets-v27";
-        let pdf = read(&repo_root(), &format!("{V27}/native.pdf")).unwrap();
+        const V28: &str = "tests/conformance/candidates/stage4-frames-text-assets-v28";
+        let pdf = read(&repo_root(), &format!("{V28}/native.pdf")).unwrap();
         let record = backend_successor(&pdf).unwrap();
         assert_eq!(record["successor_pdf"]["sha256"], KRILLA_SUCCESSOR_PDF.1);
         let mut changed = pdf.clone();
         changed[100] ^= 1;
         assert!(backend_successor(&changed).is_err());
-        let live = expected(V27).unwrap();
+        let live = expected(V28).unwrap();
         assert_eq!(live["backend_successor"], record);
         assert!(live["colour_binding_bridge"].is_null());
         // The successor covers the PDF bytes only: a moved viewer raster is
@@ -265,7 +265,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let dir = format!(
-            "target/krilla-successor-{}-{nonce}/stage4-frames-text-assets-v27",
+            "target/krilla-successor-{}-{nonce}/stage4-frames-text-assets-v28",
             std::process::id()
         );
         let root = repo_root().join(&dir);
@@ -281,7 +281,7 @@ mod tests {
         ] {
             fs::write(
                 root.join(name),
-                read(&repo_root(), &format!("{V27}/{name}")).unwrap(),
+                read(&repo_root(), &format!("{V28}/{name}")).unwrap(),
             )
             .unwrap();
         }

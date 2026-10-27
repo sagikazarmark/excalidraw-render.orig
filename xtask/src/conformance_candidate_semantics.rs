@@ -558,7 +558,7 @@ mod tests {
     }
     #[test]
     fn detached_or_corrupted_semantic_objects_never_pass() {
-        let root = candidate(27);
+        let root = candidate(28);
         let source: Value =
             serde_json::from_slice(&fs::read(root.join("scene.json")).unwrap()).unwrap();
         let expected: Value =

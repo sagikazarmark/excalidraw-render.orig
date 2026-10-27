@@ -201,9 +201,9 @@ x86-64 Linux. This does not block the release, but it slows patch releases.
       font-subset viewer qualification, collects a representative successor
       and reproduces the SVG/PDF viewer qualifications, as artifacts;
       `release-evidence.yaml` already ran `just release`. Gates 1, 2 and 4
-      are closed by it. The V27 directory
-      and the ownership positive-path test's V6 reference were the only
-      consumers of the superseded candidates; pruning them is open.
+      are closed by it. The superseded V6 and V27 candidates were pruned once
+      their last readers moved to V28 or carried their fixture themselves
+      (ADR-0022).
 - [ ] Combined with rule 3, refresh evidence once per minor release instead of
       piecemeal.
 - Continue pruning in the direction of ADR-0022: when a digest pin forces a
