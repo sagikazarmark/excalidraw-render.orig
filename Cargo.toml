@@ -86,9 +86,7 @@ simplecss = "0.2.2"
 sha1 = "=0.11.0"
 sha2 = "0.11.0"
 # The upstream malformed-name fix replaces the safety adapter. 0.8.0 reproduces
-# every pinned 0.7.0 subset, so the subset profile token still names skera-0.7.0
-# and wuff-0.2.8; renaming it moves the profile digest every font-bearing SVG
-# carries, which waits for the next evidence refresh (ADR-0003).
+# every pinned 0.7.0 subset; the subset profile token names it (ADR-0003).
 skera = { version = "0.8.0", default-features = false }
 # Shaping (#202). Its font is read-fonts 0.45's, which the renderer also
 # measures, maps and outlines with (`shaping.rs`).

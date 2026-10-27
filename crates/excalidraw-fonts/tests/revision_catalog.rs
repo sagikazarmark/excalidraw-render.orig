@@ -450,7 +450,7 @@ fn svg_font_subset_profile_classifies_each_table_once() {
         .collect::<String>();
     assert_eq!(
         digest,
-        "522b5b9a6f1ae71af1ce72ddda9db2c6aca6607fc7567b1362ec449c2339abd0"
+        "62934d9d02ac34fcd7c4ef3c973689a4f76da52632fd7c109f0f19d4fabc34ae"
     );
 }
 
@@ -524,7 +524,7 @@ fn svg_font_compatibility_artifacts_are_incorporated_into_revision_1() {
     );
     assert_eq!(
         profile["semanticDigest"],
-        "sha256:522b5b9a6f1ae71af1ce72ddda9db2c6aca6607fc7567b1362ec449c2339abd0"
+        "sha256:62934d9d02ac34fcd7c4ef3c973689a4f76da52632fd7c109f0f19d4fabc34ae"
     );
     let rules = profile["tableRules"]
         .as_array()
