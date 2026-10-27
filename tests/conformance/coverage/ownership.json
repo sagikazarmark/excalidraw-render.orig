@@ -50450,14 +50450,14 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v27",
+            "case": "representative.stage4-frames-text-assets.v28",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "35ed30b3177f048b2c22c2c813bae723d67bf749842ee85ab4ecf4e84578377c"
+              "sha256": "f26c5560b9ea076175fa4f49aacbb4365b0824dd8e59470d663548a283bbcf71"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v27/manifest.json",
-              "sha256": "a3e68d5f65aad8d4071c205b256b82ab59d29603edf2e72da35b36640fbfffb0"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v28/manifest.json",
+              "sha256": "3b36a2ff239cf181890b5184c56e979a8c61c804dfed5794ed288a48b74b0afc"
             },
             "approval_subject_sha256": "",
             "command": [
@@ -50470,7 +50470,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v27"
+              "tests/conformance/candidates/stage4-frames-text-assets-v28"
             ]
           }
         },

@@ -1,0 +1,63 @@
+{
+  "schema": "excalidraw-render/candidate-svg-text-audit-profile/v1",
+  "id": "canonical-svg.chromium.text-audit.v1",
+  "base_profile": "canonical-svg.chromium.v1",
+  "reference_profile_sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
+  "changes": [
+    "Audit DOM text localName; CDP DOM.Node has no namespaceURI field",
+    "Accept absent optional format hint only for a declared WOFF2 data URL",
+    "Record container namespace with browser PID"
+  ],
+  "sources": [
+    {
+      "path": "tools/reference-oracle/scripts/svg-viewer.mjs",
+      "sha256": "61968d7bca7fef68fa29af22368b5d7dfddda9be1c9a34e53f479cdb14c1a11b"
+    },
+    {
+      "path": "tools/reference-oracle/scripts/svg-viewer-text-audit.mjs",
+      "sha256": "cd2d7ca343af832df656871eac9e8e1091c971e93a502d27777b46594a1eb73f"
+    },
+    {
+      "path": "tools/reference-oracle/run-svg-text-audit.sh",
+      "sha256": "fe7a3d188f2ccd42a471013b683a2b03a4c48bee9563ed874303fff400fd57b3"
+    },
+    {
+      "path": "tools/reference-oracle/scripts/stage4-font-audit-qualification.mjs",
+      "sha256": "6e1523a40a91e3cf11f09396100baafc1c3068d150dce4eed09a2d310159c55d"
+    },
+    {
+      "path": "tests/conformance/viewer-profiles/canonical-svg-chromium-v1.json",
+      "sha256": "be1664b3ad79c09b99680ff5e8ca0e56a98fce703c94a13e19e889097c90426b"
+    },
+    {
+      "path": "tools/reference-oracle/package-lock.json",
+      "sha256": "03927db055b5d8936e7a61a1a41201b91fa959d46715152cc13f0910ba0a1763"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-frames-text-assets-v28/native.svg",
+      "sha256": "7621f84e84b984ac4c1c8b33b62d63eed610b194317a99543e675afa5d586581"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-frames-text-assets-v28/native-assets.json",
+      "sha256": "ffeb7ada62e13e4ee11d20a5961c54fa55abb38a2d421e58256be5a88f40e647"
+    }
+  ],
+  "qualification": {
+    "text_present": true,
+    "all_used_fonts_custom": true,
+    "positive_raster_sha256": "100d99704264561daea15731b1809b5f1a3ea52b700235957faa2c22d7bb6f27",
+    "negative_controls": [
+      {
+        "id": "ambient-font",
+        "rejected": true,
+        "reason": "ambient platform font used"
+      },
+      {
+        "id": "invalid-format",
+        "rejected": true,
+        "reason": "@font-face src must be one WOFF2"
+      }
+    ]
+  },
+  "approval": null
+}
