@@ -36,11 +36,12 @@ These are open regardless of code quality.
    recorded. The restage run before it found that the baseline stager's
    provenance check had been broken since the 2026-10-04 crate rename
    (`d905b604`).
-2. **The SVG/PDF viewer checks (gate 2) have not run since the Dagger module was
-   trimmed.** `just viewer-evidence svg reproduce` and `pdf reproduce` now run
-   the scripts against the host's Docker, and `restage.yaml` runs both on
-   demand (`viewer-checks`). The committed evidence verifies; the reproduction
-   run is pending.
+2. **Closed 2026-10-27.** `just viewer-evidence svg reproduce` and
+   `pdf reproduce` run the scripts against the host's Docker, and
+   `restage.yaml` runs both on demand (`viewer-checks`). Both reproduced the
+   committed evidence byte for byte on Linux x86-64 at `290c3dde`
+   ([run 40598881895](https://github.com/sagikazarmark/excalidraw-render.orig/actions/runs/40598881895)),
+   after HarfRust 0.14, the read-fonts parser and the token refresh.
 3. **The repository is not renamed.** The remote is still
    `excalidraw-render.orig`, and `sagikazarmark/excalidraw-render` does not
    exist. The `repository` field in `Cargo.toml`, the changelog and the
@@ -199,9 +200,8 @@ x86-64 Linux. This does not block the release, but it slows patch releases.
       Done 2026-10-27: `restage.yaml` stages the baseline, regenerates the
       font-subset viewer qualification, collects a representative successor
       and reproduces the SVG/PDF viewer qualifications, as artifacts;
-      `release-evidence.yaml` already ran `just release`. Gates 1 and 4 are
-      closed by it; gate 2 waits on its first green viewer-checks run (the
-      SVG script still used rustup's `+1.97.1` syntax). The V27 directory
+      `release-evidence.yaml` already ran `just release`. Gates 1, 2 and 4
+      are closed by it. The V27 directory
       and the ownership positive-path test's V6 reference were the only
       consumers of the superseded candidates; pruning them is open.
 - [ ] Combined with rule 3, refresh evidence once per minor release instead of
