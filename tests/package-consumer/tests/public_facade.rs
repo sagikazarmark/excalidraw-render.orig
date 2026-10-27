@@ -37,10 +37,12 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
         // `pointRotateRads` order, which lands the scene's bottom edge and
         // the layout origin one ulp away (`viewBox` height
         // 118.53786082948673, `translate(... 29.268930414743366)`); the PNG
-        // truncates to the same rows and is unchanged. The report is
-        // unchanged.
+        // truncates to the same rows and is unchanged. Then with the subset
+        // profile token naming wuff 0.2.9, skera 0.8.0 and ttf2woff2 0.14.1,
+        // which moves the embedded subset's identity and notice. The report
+        // is unchanged.
         OutputFormat::Svg,
-        "2d8873e946d60367340123e5bc789740c90f98bba6c4d0cfc6dc8a1e9318a3f0",
+        "ec2d24bd1a2b26f1ae9a2c6db2110b9b47d00135a6218374474552b5e4fa806e",
         "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
     ),
     (
@@ -211,10 +213,11 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     // `Excalifont, Xiaolai, Segoe UI Emoji, sans-serif`, and with #151 item 1,
     // when `<metadata>` began carrying the Excalifont attribution and the OFL
     // body as two notices. ADR-0003's identity refresh changes the embedded
-    // subset's name table and its profile-derived identity/notice.
+    // subset's name table and its profile-derived identity/notice, as does
+    // the token naming wuff 0.2.9, skera 0.8.0 and ttf2woff2 0.14.1.
     assert_eq!(
         lower_hex(&Sha256::digest(first.artifact().bytes())),
-        "e124ad8add5d237a75d5a506c68c062977f8d0ecbbb484d02acd2446ffc78307"
+        "873045d84773e82b639e7bd319b0ef751ab438e237228107a79d5404d1cdee0b"
     );
     assert!(svg.contains("\"asset_identity\":\"license.ofl-1.1\""));
     assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
