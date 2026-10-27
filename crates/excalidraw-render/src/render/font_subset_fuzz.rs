@@ -15,7 +15,7 @@ const MAX_SOURCE_WOFF2_BYTES: usize = 100_000;
 const MAX_DECODED_SFNT_BYTES: usize = 10_000_000;
 const MAX_DERIVED_WOFF2_BYTES: usize = 1_000_000;
 const REGRESSION_SCHEMA: &str = "excalidraw-render/svg-font-subset-fuzz-regressions/v1";
-const PROFILE_SHA256: &str = "522b5b9a6f1ae71af1ce72ddda9db2c6aca6607fc7567b1362ec449c2339abd0";
+const PROFILE_SHA256: &str = "62934d9d02ac34fcd7c4ef3c973689a4f76da52632fd7c109f0f19d4fabc34ae";
 const REQUIRED_RISKS: [Risk; 7] = [
     Risk::MalformedSourceWoff2,
     Risk::MalformedGeneratedSfnt,
@@ -30,6 +30,22 @@ const REQUIRED_RISKS: [Risk; 7] = [
 enum Outcome {
     Valid([u8; 32]),
     Failure(crate::SvgFontSubsetStage),
+}
+
+/// Encodes a harness-built sfnt as the WOFF2 the renderer's decode stage sees:
+/// the same `glyf`/`loca` transformation as the encode stage, at the fastest
+/// Brotli quality. The source-size guard in [`derive_outcome`] is calibrated
+/// against the transformed container; `ttf2woff2` 0.14 stopped transforming
+/// by default, so the option is explicit here.
+fn encode_fuzz_woff2(sfnt: &[u8]) -> Result<Vec<u8>, ttf2woff2::Error> {
+    ttf2woff2::encode_with_options(
+        sfnt,
+        ttf2woff2::EncodeOptions {
+            quality: ttf2woff2::BrotliQuality::from(1),
+            transform_glyf_loca: true,
+            threads: std::num::NonZeroUsize::new(1),
+        },
+    )
 }
 
 struct Context {
@@ -377,8 +393,7 @@ fn generated_sfnt_outcome(context: &Context, generated_sfnt: &[u8]) -> Outcome {
     {
         return Outcome::Failure(crate::SvgFontSubsetStage::Validate);
     }
-    let generated_woff2 = match ttf2woff2::encode(generated_sfnt, ttf2woff2::BrotliQuality::from(1))
-    {
+    let generated_woff2 = match encode_fuzz_woff2(generated_sfnt) {
         Ok(generated_woff2) => generated_woff2,
         Err(_) => return Outcome::Failure(crate::SvgFontSubsetStage::Validate),
     };
@@ -419,7 +434,7 @@ fn name_records_outcome(context: &Context, payload: &[u8]) -> Outcome {
     builder.add_raw(Tag::new(b"name"), name);
     builder.copy_missing_tables(source);
     let source_sfnt = builder.build();
-    let source_woff2 = match ttf2woff2::encode(&source_sfnt, ttf2woff2::BrotliQuality::from(1)) {
+    let source_woff2 = match encode_fuzz_woff2(&source_sfnt) {
         Ok(source_woff2) => source_woff2,
         Err(_) => return Outcome::Failure(crate::SvgFontSubsetStage::Sfnt),
     };
@@ -449,7 +464,7 @@ fn table_policy_outcome(context: &Context, payload: &[u8]) -> Outcome {
         }
     }
     let source_sfnt = builder.build();
-    let source_woff2 = match ttf2woff2::encode(&source_sfnt, ttf2woff2::BrotliQuality::from(1)) {
+    let source_woff2 = match encode_fuzz_woff2(&source_sfnt) {
         Ok(source_woff2) => source_woff2,
         Err(_) => return Outcome::Failure(crate::SvgFontSubsetStage::Encode),
     };

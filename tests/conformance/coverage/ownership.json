@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "20f1a42cd1e7470c698443ca829f52816d0c922f587df240b550dc51054a0d47",
+  "catalog_sha256": "169b808dcac400f1e32b647f75f7a2cbb08055cb559aaea4913704f1ec6fd788",
   "approval": null,
   "assignments": [
     {
@@ -1806,7 +1806,7 @@
           "kind": "record",
           "record": {
             "path": "tests/conformance/coverage/pdf-judgments.json",
-            "sha256": "8bf9790e2e6ae888c96beb071db617e295f73b3600e83d4f65fd88ce2b8fe5bc"
+            "sha256": "575f1329f3c2c1c992c760c63edcdb6d4d85e96ce53a35c78346d0efdc7e4baa"
           },
           "approval_subject_sha256": "sha256:f0b9119f08e53d2d51873960722d4ab15619f6e2510291aa0389e6ad2f390f4a",
           "verifier": "pdf-judgments"

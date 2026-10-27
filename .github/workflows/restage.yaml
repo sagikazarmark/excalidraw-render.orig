@@ -1,0 +1,147 @@
+name: Restage
+
+# Regenerates the Linux-only evidence a change can move and exports it for
+# review. Nothing here commits: download the artifacts, adopt them in a
+# commit, and run the verifiers (docs/ci.md).
+on:
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: Stage a native baseline candidate from this commit
+        type: boolean
+        default: true
+      viewer:
+        description: Regenerate the font-subset viewer qualification
+        type: boolean
+        default: true
+      candidate:
+        description: Representative candidate successor to collect (a directory name under tests/conformance/candidates; empty skips)
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    shell: devenv shell -- bash -e {0}
+
+jobs:
+  baseline:
+    name: Native baseline
+    if: ${{ inputs.baseline }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+          workspaces: |
+            . -> target
+            tests/package-consumer -> ../../target/package-consumer
+
+      # The collector records the tree's status and the staging step refuses a
+      # dirty one, so this job runs nothing else first.
+      - name: Stage the native baseline
+        run: just stage-native-baseline
+
+      - name: Upload the native baseline candidate
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-baseline
+          path: |
+            target/release-evidence/native-baseline
+            target/release-evidence/native-snapshots
+
+  viewer:
+    name: Font-subset viewer qualification
+    if: ${{ inputs.viewer }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+
+      # Generation refuses to replace manifested evidence; retiring it is the
+      # explicit act here, and the manifest is adopted from the artifact.
+      - name: Retire the manifested qualification
+        run: rm tests/conformance/svg-font-subset-viewer-qualification/revision-1.json
+
+      - name: Generate the dual-viewer qualification
+        run: just viewer-evidence font-subset generate
+
+      - name: Upload the qualification
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: svg-font-subset-viewer-qualification
+          path: tests/conformance/svg-font-subset-viewer-qualification
+
+  candidate:
+    name: Representative candidate
+    if: ${{ inputs.candidate != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      CANDIDATE: ${{ inputs.candidate }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+
+      - name: Collect the successor
+        run: just candidate-successor "tests/conformance/candidates/$CANDIDATE"
+
+      - name: Upload the candidate
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: candidate
+          path: tests/conformance/candidates/${{ inputs.candidate }}

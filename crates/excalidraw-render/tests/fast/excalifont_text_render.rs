@@ -82,7 +82,7 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 // name table and its profile-derived identity/notice.
                 assert_eq!(
                     artifact_sha256(&first),
-                    "25ce18f298281f6a899de079bd4e065d3f0e62d0e863fb431f8e55cc3350a90c"
+                    "e7eb8d2445a8bee5c94e2df0e8ab1bef7510d49a4809dee3ecd8deeb8e334e4f"
                 );
             }
             OutputFormat::Png => {

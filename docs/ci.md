@@ -63,18 +63,25 @@ target directory, so the staged sources never touch the checkout.
 | PDF harness gates | PDFium/PDF.js rendering and qpdf structure tests | `dagger api call evidence pdf` |
 | Reference profile | Pinned official Excalidraw wrapper, assets, environment and smoke test | `dagger api call evidence reference --mode verify` |
 | Registered case | Expected reference SVG/PNG output for one scene | `dagger api call evidence case --case-id focused.rectangle-outline.v1` |
-| Viewer qualification | Reproducibility and correctness of the tools used to judge rendered output | `dagger api call evidence viewers --kind svg` (also `pdf`, `font-subset`) |
+| Viewer qualification | Reproducibility and correctness of the tools used to judge rendered output | `just viewer-evidence svg` (also `pdf`, `font-subset`; `generate` as the second argument regenerates) |
 | Font corpus | Per-cell generated WOFF2 byte pins and packaged corpus copy | `dagger api call evidence font-corpus` |
+| Native baseline | The canonical native artifact and report bytes for the inventory's 168 keys | `just stage-native-baseline` |
+| Representative candidate | A numbered successor of the stage-4 representative case, collected from its frozen authoring | `just candidate-successor tests/conformance/candidates/<directory>` |
 | Target aggregate | Both supported targets agree on generated font bytes and resource traces | `just target-evidence` |
 | Catalog / manifests | Derived catalog records and evidence bindings | `dagger api call evidence xtask --args catalog,materialize` |
 
-The reference oracle and the viewer harnesses stay in the Dagger module
-(`dagger.dang`, `dagger-evidence.dang`, `dagger-oracle.dang`): they run
-approval-pinned Docker images, and Dagger executes them verbatim in a private
-nested Docker daemon, preserving their exact image digests, bind mounts and
-`--network none` rendering. This needs a Dagger engine that permits
-`insecureRootCapabilities`; it never mounts the host Docker socket. Acquisition
-can use the network. The devenv shell carries the Dagger CLI.
+The viewer scripts (`tools/svg-font-subset-qualification.sh`,
+`tools/svg-viewer-qualification.sh`, `tools/pdf-viewer-qualification.sh`) and
+the candidate viewers run approval-pinned Docker images by digest, bind-mount
+the checkout and render with `--network none`. `just viewer-evidence` and
+`just candidate-successor` acquire what the scripts need first (the oracle's
+`npm ci`, the PDF harness, the pure-Rust viewer's crates) and then run them
+verbatim against the host's Docker. The reference oracle stays in the Dagger
+module (`dagger.dang`, `dagger-evidence.dang`, `dagger-oracle.dang`), which
+runs the same scripts in a private nested Docker daemon for hosts without a
+suitable Docker; it needs a Dagger engine that permits
+`insecureRootCapabilities` and never mounts the host Docker socket.
+Acquisition can use the network. The devenv shell carries the Dagger CLI.
 
 Directory-returning calls take `--output PATH`. Use a staging directory, inspect
 the output, then copy the intended generated files into the checkout. For example:
@@ -185,9 +192,35 @@ report export and a pass.
 
 GitHub Actions runs only recipes in the devenv shell: `ci.yaml` the per-change
 gates, `nightly.yaml` the `just nightly-*` expansions and the browser-WASM
-release checks, and `release-evidence.yaml`, on demand, `just target-evidence`
-with its output as an artifact. The PDF harness gates are not scheduled; run
-them with `dagger api call evidence pdf`.
+release checks, `release-evidence.yaml`, on demand, `just target-evidence`
+with its output as an artifact, and `restage.yaml`, on demand, the restaging
+recipes below. The PDF harness gates are not scheduled; run them with
+`dagger api call evidence pdf`.
+
+## Restaging
+
+A change that moves approved evidence (a dependency that changes output bytes,
+a subset profile token, a catalog descriptor) stales several records at once.
+The restaging recipes regenerate them on `x86_64-unknown-linux-gnu` and write
+candidates for review; none edits a manifest or the registry, and
+`restage.yaml` runs them with `contents: read` and exports the results as
+artifacts. Adopt each in a commit, then run the verifiers:
+
+| Recipe | Writes | Adopt by |
+| --- | --- | --- |
+| `just stage-native-baseline` | `target/release-evidence/native-baseline` from a clean commit | replacing `tests/conformance/coverage/native-baseline`; `verify-native-baseline`, `verify-pdf-judgments`, `verify-ownership` |
+| `just viewer-evidence font-subset generate` | the four files under `tests/conformance/svg-font-subset-viewer-qualification` (delete `revision-1.json` first; generation refuses to replace it) | `verify-svg-font-subsets` |
+| `just candidate-successor tests/conformance/candidates/<dir>` | the successor directory through `candidate-materialize` | pointing `registry.json` at it, `record-representative-owner`, `verify-ownership`, `candidate-executions` |
+
+The baseline job runs nothing before the collector: it records the tree's
+status, and staging refuses a dirty tree, so the other two recipes (which
+write into the checkout) belong in their own jobs. The candidate recipe
+pre-builds the pure-Rust viewer and the PDFium worker because the views
+script gives each viewer run 180 seconds. After adopting, set the release
+manifest back to `pending_target_aggregation`, remove the stale target
+aggregate, and run `release-evidence.yaml` from the resulting commit to
+record a new one (above). The 0.1.0 refresh of the subset profile token
+followed this order.
 
 Codec and nested-SVG mutation fuzzing runs through `just nightly-asset-fuzz`;
 its PR smoke, seed matrix, resource envelope and failure-replay procedure are

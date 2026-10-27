@@ -279,6 +279,10 @@ cargo run --locked -p xtask -- conformance verify-native-baseline
 just snapshot-replay
 ```
 
+`just stage-native-baseline` collects the snapshots from a clean commit and
+stages them in one step, into `target/release-evidence/native-baseline`; the
+`restage.yaml` workflow runs it on Linux x86-64 and uploads the result.
+
 Staging refuses existing output directories and modified-source candidates. It
 checks source descriptors against the named Git tree and every authored archive
 payload against that tree, including original manifests and VCS identity.

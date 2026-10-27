@@ -1393,7 +1393,7 @@ before decode or subset work.
 
 The decoder is pinned `wuff 0.2.9`. The sfnt subset adapter MUST first qualify
 `skera 0.8.0`; otherwise a pinned controlled fork is required. The encoder MUST
-first qualify `ttf2woff2 0.13.3` with `brotli 9.0.0` and `portable-float` enabled;
+first qualify `ttf2woff2 0.14.1` with `brotli 9.0.0` and `portable-float` enabled;
 otherwise a pinned controlled fork is required.
 WOFF2 encoding uses quality 11, `glyf`/`loca` transformation, one thread, and no
 metadata or private block. Families and faces are processed sequentially in

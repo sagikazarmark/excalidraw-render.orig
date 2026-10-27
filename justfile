@@ -110,7 +110,13 @@ qualification target: xtask
         "{{ evidence }}/{{ target }}/qualification.log" "{{ evidence }}/{{ target }}/{{ target }}.json"
 
 # Collect native snapshots of the packaged facade and replay them against the approved baseline (packaging:snapshot-replay).
-snapshot-replay: require-native package xtask
+snapshot-replay: collect-native-snapshots
+    target/debug/xtask conformance verify-native-baseline
+    target/debug/xtask conformance replay-native-snapshots "{{ evidence }}/native-snapshots"
+
+# Collect native snapshots of the packaged facade for the inventory's keys and check their form.
+[private]
+collect-native-snapshots: require-native package xtask
     target/debug/xtask conformance verify-inventory
     rm -rf "{{ evidence }}/native-snapshots"
     mkdir -p "{{ evidence }}"
@@ -118,8 +124,6 @@ snapshot-replay: require-native package xtask
     cd tests/package-consumer && cargo run --locked --release --target "{{ native }}" --example native_snapshots \
         -- collect ../.. "../../{{ evidence }}/native-snapshots"
     target/debug/xtask conformance verify-native-snapshots "{{ evidence }}/native-snapshots"
-    target/debug/xtask conformance verify-native-baseline
-    target/debug/xtask conformance replay-native-snapshots "{{ evidence }}/native-snapshots"
 
 # Render every snapshot key in browser WASM and compare with the approved native baseline (wasm:snapshot-replay).
 wasm-snapshot-replay: package xtask
@@ -191,6 +195,63 @@ release-archive version: require-native
         --mtime=@0 -cf - "$name" | gzip -9n > "dist/$name.tar.gz"
     rm -rf "dist/$name"
     cd dist && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
+
+# Restaging. These recipes regenerate approved evidence after a change that moves
+# it. They write candidates for review; nothing here edits a manifest or the
+# registry, and CI exports their output as artifacts (docs/ci.md).
+
+# Stage a native baseline candidate from a clean commit into target/release-evidence/native-baseline.
+stage-native-baseline: require-native
+    bash tools/ci/require-clean-source.sh
+    just collect-native-snapshots
+    rm -rf "{{ evidence }}/native-baseline"
+    target/debug/xtask conformance stage-native-baseline "{{ evidence }}/native-snapshots" "{{ evidence }}/native-baseline"
+
+# Reproduce or generate the font-subset, SVG or PDF viewer qualification in its pinned containers.
+viewer-evidence kind mode="reproduce":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ kind }}" in
+        font-subset) script=tools/svg-font-subset-qualification.sh ;;
+        svg) script=tools/svg-viewer-qualification.sh ;;
+        pdf) script=tools/pdf-viewer-qualification.sh ;;
+        *) echo "viewer evidence covers font-subset, svg and pdf, not {{ kind }}" >&2; exit 2 ;;
+    esac
+    case "{{ mode }}" in
+        reproduce|generate) ;;
+        *) echo "viewer evidence is reproduced or generated, not {{ mode }}" >&2; exit 2 ;;
+    esac
+    # The scripts render with the network off, so everything they need is acquired first.
+    if [[ "{{ kind }}" == pdf ]]; then
+        bash tools/pdf-harness/install.sh
+    else
+        bash tools/reference-oracle/run-container.sh install
+        # The pure-Rust viewer builds offline from this host's registry, so both lockfiles are fetched.
+        cargo fetch --locked
+        cargo fetch --locked --manifest-path tools/svg-viewer-rust/Cargo.toml
+    fi
+    bash "$script" "{{ mode }}"
+
+# Collect a representative candidate successor from the frozen V4 authoring with the current renderer.
+candidate-successor dir: require-native xtask
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bash tools/reference-oracle/run-container.sh install
+    bash tools/pdf-harness/install.sh
+    cargo fetch --locked --manifest-path tools/svg-viewer-rust/Cargo.toml
+    # Each viewer run has a 180-second deadline, so nothing may compile under it. The
+    # views script sets these two variables, and a different pair would rebuild.
+    CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 cargo build --locked --manifest-path tools/svg-viewer-rust/Cargo.toml
+    target/debug/xtask conformance candidate-revise "{{ dir }}"
+    mkdir "{{ dir }}/assets" "{{ dir }}/viewer-evidence"
+    target/debug/xtask conformance candidate-native-capture "{{ dir }}"
+    node tools/reference-oracle/scripts/stage4-viewer-assets.mjs "{{ dir }}"
+    target/debug/xtask conformance candidate-prepare-assets "{{ dir }}"
+    node tools/reference-oracle/scripts/stage4-font-audit-qualification.mjs "{{ dir }}" collect
+    node tools/reference-oracle/scripts/stage4-candidate-views.mjs collect "{{ dir }}"
+    target/debug/xtask conformance candidate-propose-exceptions "{{ dir }}"
+    target/debug/xtask conformance candidate-inspect "{{ dir }}"
+    target/debug/xtask conformance candidate-materialize "{{ dir }}"
 
 # The randomized expansions the nightly schedule runs. They are bounded but long,
 # so no per-change gate carries them.
