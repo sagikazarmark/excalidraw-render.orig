@@ -16,8 +16,8 @@ fn git_bytes(commit: &str, path: &str) -> Result<Vec<u8>, String> {
 
 /// The repository path of a manifest-declared `readme` that lies outside the
 /// crate directory, keyed by the file name Cargo archives it under.
-fn external_readme(commit: &str, crate_name: &str) -> Result<Option<(String, String)>, String> {
-    let manifest = git_bytes(commit, &format!("crates/{crate_name}/Cargo.toml"))?;
+fn external_readme(commit: &str, crate_dir: &str) -> Result<Option<(String, String)>, String> {
+    let manifest = git_bytes(commit, &format!("{crate_dir}/Cargo.toml"))?;
     let manifest: toml::Value =
         toml::from_str(std::str::from_utf8(&manifest).map_err(|e| e.to_string())?)
             .map_err(|e| e.to_string())?;
@@ -28,7 +28,8 @@ fn external_readme(commit: &str, crate_name: &str) -> Result<Option<(String, Str
     else {
         return Ok(None);
     };
-    let mut parts = vec!["crates", crate_name];
+    let crate_parts: Vec<&str> = crate_dir.split('/').collect();
+    let mut parts = crate_parts.clone();
     for component in readme.split('/') {
         match component {
             ".." => {
@@ -38,11 +39,60 @@ fn external_readme(commit: &str, crate_name: &str) -> Result<Option<(String, Str
             name => parts.push(name),
         }
     }
-    if parts.first() == Some(&"crates") && parts.get(1) == Some(&crate_name) {
+    if parts.len() > crate_parts.len() && parts.starts_with(&crate_parts) {
         return Ok(None);
     }
     let name = parts.last().ok_or("empty readme path")?.to_string();
     Ok(Some((name, parts.join("/"))))
+}
+
+/// The crate directory the archive was packaged from, as Cargo recorded it,
+/// checked against the commit: the manifest there must name this package.
+/// Package names and directories differ (`excalidraw-render-fonts` lives in
+/// `crates/excalidraw-fonts`), so the archive's own record is the source.
+fn archived_crate_dir(
+    archive: &Path,
+    prefix: &str,
+    commit: &str,
+    crate_name: &str,
+) -> Result<String, String> {
+    let output = Command::new("tar")
+        .arg("-xOzf")
+        .arg(archive)
+        .arg(format!("{prefix}/.cargo_vcs_info.json"))
+        .output()
+        .map_err(|e| e.to_string())?;
+    if !output.status.success() {
+        return Err("snapshot archive lacks manifest/VCS provenance".into());
+    }
+    let value: Value = parse(&output.stdout)?;
+    let dir = value["path_in_vcs"]
+        .as_str()
+        .ok_or("archived VCS provenance lacks path_in_vcs")?;
+    if value["git"]["sha1"] != commit
+        || value["git"]["dirty"] == true
+        || dir.is_empty()
+        || Path::new(dir)
+            .components()
+            .any(|c| !matches!(c, std::path::Component::Normal(_)))
+    {
+        return Err("archived VCS provenance disagrees with commit".into());
+    }
+    let manifest = git_bytes(commit, &format!("{dir}/Cargo.toml"))?;
+    let manifest: toml::Value =
+        toml::from_str(std::str::from_utf8(&manifest).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+    if manifest
+        .get("package")
+        .and_then(|p| p.get("name"))
+        .and_then(|n| n.as_str())
+        != Some(crate_name)
+    {
+        return Err(format!(
+            "archived VCS provenance names {dir}, which does not hold {crate_name} in the commit"
+        ));
+    }
+    Ok(dir.to_owned())
 }
 
 pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String> {
@@ -80,8 +130,9 @@ pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String>
             .iter()
             .find(|(name, version)| prefix == format!("{name}-{version}"))
             .ok_or("unexpected package version")?;
-        let readme = external_readme(&bundle.commit, crate_name)?;
         let archive = candidate.join("packages").join(name);
+        let crate_dir = archived_crate_dir(&archive, prefix, &bundle.commit, crate_name)?;
+        let readme = external_readme(&bundle.commit, &crate_dir)?;
         let listing = Command::new("tar")
             .arg("-tzf")
             .arg(&archive)
@@ -103,6 +154,12 @@ pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String>
             {
                 return Err("duplicate or unsafe snapshot archive entry".into());
             }
+            if matches!(
+                relative,
+                ".cargo_vcs_info.json" | "Cargo.toml" | "Cargo.lock"
+            ) {
+                continue;
+            }
             let output = Command::new("tar")
                 .arg("-xOzf")
                 .arg(&archive)
@@ -112,29 +169,19 @@ pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String>
             if !output.status.success() {
                 return Err(format!("cannot read archived {entry}"));
             }
-            if relative == ".cargo_vcs_info.json" {
-                let value: Value = parse(&output.stdout)?;
-                if value["git"]["sha1"] != bundle.commit
-                    || value["git"]["dirty"] == true
-                    || value["path_in_vcs"] != format!("crates/{crate_name}")
-                {
-                    return Err("archived VCS provenance disagrees with commit".into());
-                }
-            } else if !matches!(relative, "Cargo.toml" | "Cargo.lock") {
-                let authored = if relative == "Cargo.toml.orig" {
-                    "Cargo.toml"
-                } else {
-                    relative
-                };
-                // Cargo archives a readme from outside the crate under its
-                // file name at the package root.
-                let path = match &readme {
-                    Some((name, path)) if name == authored => path.clone(),
-                    _ => format!("crates/{crate_name}/{authored}"),
-                };
-                if output.stdout != git_bytes(&bundle.commit, &path)? {
-                    return Err(format!("archived source disagrees with commit: {entry}"));
-                }
+            let authored = if relative == "Cargo.toml.orig" {
+                "Cargo.toml"
+            } else {
+                relative
+            };
+            // Cargo archives a readme from outside the crate under its
+            // file name at the package root.
+            let path = match &readme {
+                Some((name, path)) if name == authored => path.clone(),
+                _ => format!("{crate_dir}/{authored}"),
+            };
+            if output.stdout != git_bytes(&bundle.commit, &path)? {
+                return Err(format!("archived source disagrees with commit: {entry}"));
             }
         }
         if !["Cargo.toml", "Cargo.toml.orig", ".cargo_vcs_info.json"]
