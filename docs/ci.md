@@ -103,7 +103,8 @@ argument list, including materialization and approval-recording commands.
 
 ## Target evidence and provenance
 
-After committing the source to be qualified, on Linux x86-64:
+After committing the source to be qualified, run `release-evidence.yaml` from
+that commit, or on Linux x86-64:
 
 ```sh
 just target-evidence
@@ -118,16 +119,19 @@ identities/measurements, and drift from the committed cross-target measurement.
 Exported evidence requires a clean tracked and untracked source tree; the other
 recipes support edits.
 
-Record the tested commit, `devenv.lock`, command and output digests in a
-maintainer attestation comment on the originating issue. The ADR-0006
-provenance format accepts that comment without an Actions run URL. To bind the
-aggregate to release evidence, run:
+To bind the aggregate to release evidence, download the workflow's
+`target-evidence` artifact and record it with the run as its provenance:
 
 ```sh
 cargo run --locked -p xtask -- conformance record-svg-font-subset-target-aggregate \
   target/release-evidence/aggregate.json \
-  https://github.com/sagikazarmark/excalidraw-render.orig/issues/ISSUE#issuecomment-COMMENT
+  https://github.com/sagikazarmark/excalidraw-render.orig/actions/runs/RUN
 ```
+
+When the aggregate was produced outside Actions, record the tested commit,
+`devenv.lock`, command and output digests in a maintainer attestation comment
+on the originating issue instead, and pass that comment's URL; the ADR-0006
+provenance format accepts either.
 
 The recorder still accepts only URLs under the development repository's
 pre-rename name, `excalidraw-render.orig`, which the recorded aggregate's

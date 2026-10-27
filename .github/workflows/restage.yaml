@@ -18,6 +18,10 @@ on:
         description: Representative candidate successor to collect (a directory name under tests/conformance/candidates; empty skips)
         type: string
         default: ""
+      viewer-checks:
+        description: Reproduce the SVG and PDF viewer qualifications (release gate 2)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -145,3 +149,35 @@ jobs:
         with:
           name: candidate
           path: tests/conformance/candidates/${{ inputs.candidate }}
+
+  viewer-checks:
+    name: Viewer checks (${{ matrix.kind }})
+    if: ${{ inputs.viewer-checks }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [svg, pdf]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+
+      - name: Reproduce the qualification
+        run: just viewer-evidence ${{ matrix.kind }} reproduce

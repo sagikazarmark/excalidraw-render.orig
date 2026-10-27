@@ -1,6 +1,6 @@
 # 0.1.0 Release Readiness Plan
 
-Status: proposed. Date: 2026-10-18. Owner: Mark Sagi-Kazar.
+Status: in progress. Date: 2026-10-18, updated 2026-10-27. Owner: Mark Sagi-Kazar.
 
 This plan records what stands between `main` (at `239934a7`) and the first
 release, and what to do about each item. The [release policy](release-0.1.0.md)
@@ -28,27 +28,33 @@ below close both.
 
 These are open regardless of code quality.
 
-1. **`just release` has never run on Linux x86-64 since the move to devenv and
-   just (#234).** Release gate 1 requires it, and no workflow runs it: the
-   nightly covers only the WASM half. The native qualification, snapshot replay
-   and full equality last passed under Dagger.
+1. **Closed 2026-10-27.** `just release` ran on Linux x86-64 under devenv for
+   the first time since #234, through `release-evidence.yaml`
+   ([run 40592579157](https://github.com/sagikazarmark/excalidraw-render.orig/actions/runs/40592579157)
+   on `fb855f6d`): native qualification 496 passed, 5 ignored; WASM 19
+   passed; snapshot replay and full equality passed; the aggregate is
+   recorded. Its first attempt also found that the baseline stager's
+   provenance check had been broken since the 2026-10-04 crate rename
+   (`d905b604`).
 2. **The SVG/PDF viewer checks (gate 2) have not run since the Dagger module was
-   trimmed.** The trimmed module has never been loaded on Linux, and the last
-   viewer pass predates HarfRust 0.14 and the read-fonts parser move (#241).
+   trimmed.** `just viewer-evidence svg reproduce` and `pdf reproduce` now run
+   the scripts against the host's Docker, and `restage.yaml` runs both on
+   demand (`viewer-checks`). The committed evidence verifies; the reproduction
+   run is pending.
 3. **The repository is not renamed.** The remote is still
    `excalidraw-render.orig`, and `sagikazarmark/excalidraw-render` does not
    exist. The `repository` field in `Cargo.toml`, the changelog and the
    known-limitations links already point at the new name. `.orig` is public, so
    the five crate names are visible while unclaimed: rename and publish close
    together.
-4. **Decision: the SVG font-subset profile token is out of date.** Every
-   font-bearing SVG carries a token naming wuff 0.2.8 and skera 0.7.0, while the
-   renderer runs 0.2.9 and 0.8.0 (`dad592ee` deferred the rename). Releasing now
-   ships the wrong token, and correcting it later moves output bytes. The local
-   branch `fonts/subset-profile-refresh` (WIP `33b439f`) holds the Mac half of
-   the refresh. The committed cross-target trace digest `87f274e7` is also stale
-   (the current value is `68e5f0f9`), so `just target-evidence` and
-   `release-evidence.yaml` fail until that branch lands.
+4. **Closed 2026-10-27.** The profile token names wuff 0.2.9, skera 0.8.0 and
+   ttf2woff2 0.14.1 (`f347f6af`; #246 was folded in because it bumped the
+   named encoder). The corpus, catalog, inventory, native baseline, viewer
+   qualification, representative candidate (V28) and release evidence were
+   regenerated in that order (`da99eba6`..`fb855f6d`). Chromium and resvg
+   rendered all 662 qualification executions pixel-identically to the
+   retired set, and V28's PDF and PNG equal V27's: the rename moved
+   identifiers, not glyphs.
 
 Already in place: CI passes on `main` (all nine jobs, including MSRV), the
 nightly passes, the changelog entry is written, private vulnerability reporting
@@ -186,9 +192,15 @@ The verification code (about 140k lines across tests, xtask and tools) is larger
 than the renderer (about 78k). Any change that moves evidence means restaging on
 x86-64 Linux. This does not block the release, but it slows patch releases.
 
-- [ ] Add a `workflow_dispatch` "restage" workflow that runs the Linux-only steps
+- [x] Add a `workflow_dispatch` "restage" workflow that runs the Linux-only steps
       (baseline restage, `just release`, viewer checks) and uploads the results
       as an artifact or a commit. It also closes gates 1, 2 and 4 above.
+      Done 2026-10-27: `restage.yaml` stages the baseline, regenerates the
+      font-subset viewer qualification, collects a representative successor
+      and reproduces the SVG/PDF viewer qualifications, as artifacts;
+      `release-evidence.yaml` already ran `just release`. The V27 directory
+      and the ownership positive-path test's V6 reference were the only
+      consumers of the superseded candidates; pruning them is open.
 - [ ] Combined with rule 3, refresh evidence once per minor release instead of
       piecemeal.
 - Continue pruning in the direction of ADR-0022: when a digest pin forces a
