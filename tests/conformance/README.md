@@ -384,6 +384,10 @@ bash tools/svg-font-subset-qualification.sh generate
 bash tools/svg-font-subset-qualification.sh reproduce
 ```
 
+`just viewer-evidence font-subset generate` acquires what the script needs
+and runs it; the `restage.yaml` workflow does so on Linux x86-64 and uploads
+the evidence directory.
+
 The manifest's `implementation` list records historical producer provenance:
 the subsetter, the qualification module that produced the corpus and viewer
 inputs, the two viewer drivers, the report runner, the materializer and the
