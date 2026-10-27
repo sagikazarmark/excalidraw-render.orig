@@ -88,16 +88,15 @@ the output, then copy the intended generated files into the checkout. For exampl
 
 ```sh
 dagger api call evidence reference --mode verify --output target/dagger-reference
-dagger api call evidence viewers --kind font-subset --output target/dagger-viewers
 dagger api call evidence font-corpus --output target/dagger-corpus
 ```
 
 `font-corpus` returns the staged JSON and digest sidecar, not an edited checkout.
 The corpus JSON also belongs at
 `crates/excalidraw-render/tests/qualification/font-subset-corpus.json`.
-Reference calls accept `--frame` for the frame profile. Case and viewer calls
-default to `reproduce`; use `--mode generate` for explicit generation. Reference
-profile changes use `--mode update`. Existing generators retain their refusal
+Reference calls accept `--frame` for the frame profile. Case calls default to
+`reproduce`; use `--mode generate` for explicit generation. Reference profile
+changes use `--mode update`. Existing generators retain their refusal
 to overwrite manifested evidence. The `xtask` entry point accepts its ordinary
 argument list, including materialization and approval-recording commands.
 

@@ -107,8 +107,8 @@ tiny-skia = { version = "0.12.0", default-features = false, features = ["png-for
 # `default-features = false` drops upstream's `cli` feature (and `clap`);
 # `portable-float` passes through to `brotli/portable-float`, which is what keeps
 # quality-11 WOFF2 bytes identical between native and wasm32 (ADR-0003). The
-# identity token in `excalidraw-fonts` still names the retired
-# fork until the single evidence refresh ADR-0003 schedules.
+# subset profile token in `excalidraw-fonts` names this version; 0.14 stopped
+# transforming glyf/loca by default, which the encode stage asks for explicitly.
 ttf2woff2 = { version = "0.14.1", default-features = false, features = ["portable-float"] }
 usvg = { version = "0.48.1", default-features = false, features = ["text"] }
 wuff = { version = "0.2.9", default-features = false, features = ["brotli"] }

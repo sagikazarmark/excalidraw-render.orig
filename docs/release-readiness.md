@@ -33,7 +33,7 @@ These are open regardless of code quality.
    ([run 40592579157](https://github.com/sagikazarmark/excalidraw-render.orig/actions/runs/40592579157)
    on `fb855f6d`): native qualification 496 passed, 5 ignored; WASM 19
    passed; snapshot replay and full equality passed; the aggregate is
-   recorded. Its first attempt also found that the baseline stager's
+   recorded. The restage run before it found that the baseline stager's
    provenance check had been broken since the 2026-10-04 crate rename
    (`d905b604`).
 2. **The SVG/PDF viewer checks (gate 2) have not run since the Dagger module was
@@ -49,9 +49,10 @@ These are open regardless of code quality.
    together.
 4. **Closed 2026-10-27.** The profile token names wuff 0.2.9, skera 0.8.0 and
    ttf2woff2 0.14.1 (`f347f6af`; #246 was folded in because it bumped the
-   named encoder). The corpus, catalog, inventory, native baseline, viewer
-   qualification, representative candidate (V28) and release evidence were
-   regenerated in that order (`da99eba6`..`fb855f6d`). Chromium and resvg
+   named encoder). The corpus, catalog and inventory were regenerated with
+   it, and the native baseline, viewer qualification, representative
+   candidate (V28) and release evidence from the restage workflow's
+   artifacts (`d905b604`..`2e2a537b`). Chromium and resvg
    rendered all 662 qualification executions pixel-identically to the
    retired set, and V28's PDF and PNG equal V27's: the rename moved
    identifiers, not glyphs.
@@ -198,7 +199,9 @@ x86-64 Linux. This does not block the release, but it slows patch releases.
       Done 2026-10-27: `restage.yaml` stages the baseline, regenerates the
       font-subset viewer qualification, collects a representative successor
       and reproduces the SVG/PDF viewer qualifications, as artifacts;
-      `release-evidence.yaml` already ran `just release`. The V27 directory
+      `release-evidence.yaml` already ran `just release`. Gates 1 and 4 are
+      closed by it; gate 2 waits on its first green viewer-checks run (the
+      SVG script still used rustup's `+1.97.1` syntax). The V27 directory
       and the ownership positive-path test's V6 reference were the only
       consumers of the superseded candidates; pruning them is open.
 - [ ] Combined with rule 3, refresh evidence once per minor release instead of

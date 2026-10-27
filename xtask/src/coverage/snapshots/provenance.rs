@@ -14,13 +14,19 @@ fn git_bytes(commit: &str, path: &str) -> Result<Vec<u8>, String> {
     Ok(output.stdout)
 }
 
+/// The crate manifest at `crate_dir` in the commit.
+fn manifest(commit: &str, crate_dir: &str) -> Result<toml::Value, String> {
+    let bytes = git_bytes(commit, &format!("{crate_dir}/Cargo.toml"))?;
+    toml::from_str(std::str::from_utf8(&bytes).map_err(|e| e.to_string())?)
+        .map_err(|e| e.to_string())
+}
+
 /// The repository path of a manifest-declared `readme` that lies outside the
 /// crate directory, keyed by the file name Cargo archives it under.
-fn external_readme(commit: &str, crate_dir: &str) -> Result<Option<(String, String)>, String> {
-    let manifest = git_bytes(commit, &format!("{crate_dir}/Cargo.toml"))?;
-    let manifest: toml::Value =
-        toml::from_str(std::str::from_utf8(&manifest).map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?;
+fn external_readme(
+    manifest: &toml::Value,
+    crate_dir: &str,
+) -> Result<Option<(String, String)>, String> {
     let Some(readme) = manifest
         .get("package")
         .and_then(|p| p.get("readme"))
@@ -55,7 +61,7 @@ fn archived_crate_dir(
     prefix: &str,
     commit: &str,
     crate_name: &str,
-) -> Result<String, String> {
+) -> Result<(String, toml::Value), String> {
     let output = Command::new("tar")
         .arg("-xOzf")
         .arg(archive)
@@ -78,10 +84,7 @@ fn archived_crate_dir(
     {
         return Err("archived VCS provenance disagrees with commit".into());
     }
-    let manifest = git_bytes(commit, &format!("{dir}/Cargo.toml"))?;
-    let manifest: toml::Value =
-        toml::from_str(std::str::from_utf8(&manifest).map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?;
+    let manifest = manifest(commit, dir)?;
     if manifest
         .get("package")
         .and_then(|p| p.get("name"))
@@ -92,7 +95,7 @@ fn archived_crate_dir(
             "archived VCS provenance names {dir}, which does not hold {crate_name} in the commit"
         ));
     }
-    Ok(dir.to_owned())
+    Ok((dir.to_owned(), manifest))
 }
 
 pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String> {
@@ -131,8 +134,9 @@ pub(super) fn verify(candidate: &Path, bundle: &Snapshots) -> Result<(), String>
             .find(|(name, version)| prefix == format!("{name}-{version}"))
             .ok_or("unexpected package version")?;
         let archive = candidate.join("packages").join(name);
-        let crate_dir = archived_crate_dir(&archive, prefix, &bundle.commit, crate_name)?;
-        let readme = external_readme(&bundle.commit, &crate_dir)?;
+        let (crate_dir, manifest) =
+            archived_crate_dir(&archive, prefix, &bundle.commit, crate_name)?;
+        let readme = external_readme(&manifest, &crate_dir)?;
         let listing = Command::new("tar")
             .arg("-tzf")
             .arg(&archive)

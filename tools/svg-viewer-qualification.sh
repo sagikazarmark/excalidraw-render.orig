@@ -15,7 +15,9 @@ if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
   echo "pure-Rust SVG viewer qualification requires Linux x86_64" >&2
   exit 1
 fi
-if [[ "$(rustc +1.97.1 --version)" != "rustc 1.97.1 (8bab26f4f 2026-07-14)" ]]; then
+# The devenv shell provides the pinned toolchain as rustc and cargo (ADR-0024);
+# the exact build is still asserted here.
+if [[ "$(rustc --version)" != "rustc 1.97.1 (8bab26f4f 2026-07-14)" ]]; then
   echo "pure-Rust SVG viewer qualification requires rustc 1.97.1 (8bab26f4f 2026-07-14)" >&2
   exit 1
 fi
@@ -74,7 +76,7 @@ render_chromium chromium-candidate "${CANDIDATE}"
 render_chromium chromium-reference-repeat "${OFFICIAL}"
 render_chromium chromium-candidate-repeat "${CANDIDATE}"
 
-CARGO_TARGET_DIR="${RUST_TARGET}" cargo +1.97.1 build --frozen --release \
+CARGO_TARGET_DIR="${RUST_TARGET}" cargo build --frozen --release \
   --target x86_64-unknown-linux-gnu \
   --manifest-path "${REPO_ROOT}/tools/svg-viewer-rust/Cargo.toml"
 RUST_VIEWER="${RUST_TARGET}/x86_64-unknown-linux-gnu/release/excalidraw-render-svg-viewer"
