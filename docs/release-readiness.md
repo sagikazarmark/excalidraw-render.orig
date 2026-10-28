@@ -44,8 +44,8 @@ These are open regardless of code quality.
    after HarfRust 0.14, the read-fonts parser and the token refresh.
 3. **The repository is not renamed.** The remote is still
    `excalidraw-render.orig`, and `sagikazarmark/excalidraw-render` does not
-   exist. The `repository` field in `Cargo.toml`, the changelog and the
-   known-limitations links already point at the new name. `.orig` is public, so
+   exist. The `repository` field in `Cargo.toml` and the known-limitations
+   links already point at the new name. `.orig` is public, so
    the five crate names are visible while unclaimed: rename and publish close
    together.
 4. **Closed 2026-10-27.** The profile token names wuff 0.2.9, skera 0.8.0 and
@@ -59,10 +59,10 @@ These are open regardless of code quality.
    identifiers, not glyphs.
 
 Already in place: CI passes on `main` (all nine jobs, including MSRV), the
-nightly passes, the changelog entry is written, private vulnerability reporting
-is on, and all five crate names are free on crates.io. Every open issue is
-either a follow-up listed in the release policy or an enhancement (#233, #199);
-#213 is untriaged but looks like follow-up work too.
+nightly passes, private vulnerability reporting is on, and all five crate names
+are free on crates.io. Every open issue is either a follow-up listed in the
+release policy or an enhancement (#233, #199); #213 is untriaged but looks
+like follow-up work too.
 
 ## Code findings and recommendations
 
@@ -94,7 +94,7 @@ Before 0.1.0:
       render (SVG, PNG and PDF) under the default limits, seeded from the
       regression corpus and the conformance scenes. Commit the target, but
       leave it out of CI for now.
-- [ ] Document in the README and `SECURITY.md` that hosts rendering untrusted
+- [ ] Document in the README that hosts rendering untrusted
       files should use a separate process with a timeout and a memory limit.
       `catch_unwind` does not help against out-of-memory, or when the host builds
       with `panic = "abort"`.
@@ -125,8 +125,8 @@ After: promote interesting scenes to conformance cases over time.
 ### 3. Dependency bumps still move output
 
 Krilla, HarfRust, usvg and read-fonts are all pre-1.0, and their recent bumps
-moved output. The changelog already scopes determinism to "the same …
-dependency versions".
+moved output. The README already tells users to pin the version and keep
+their lockfile when exact output bytes matter.
 
 - [ ] Add a versioning rule to `release.md`: a patch release never moves the
       approved baseline. A bump that moves it waits for the next minor release.

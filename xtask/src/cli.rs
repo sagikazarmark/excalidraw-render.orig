@@ -9,7 +9,7 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
     name = "xtask",
     bin_name = "cargo run --locked -p xtask --",
     about = "Repository evidence, catalog, and conformance maintenance",
-    after_help = "See CONTRIBUTING.md for tests and expectation updates.",
+    after_help = "See docs/development.md for tests and expectation updates.",
     disable_version_flag = true
 )]
 pub struct Cli {

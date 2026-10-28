@@ -37,5 +37,6 @@ method and not run by anything.
   retained evidence is checked by current Rust consumers.
 
 See [historical tooling](historical-tooling.md) for earlier audit snapshots.
-[CONTRIBUTING.md](../CONTRIBUTING.md) is the current test and expectation-update
-guide; historical command transcripts are not maintenance instructions.
+[Development operations](../docs/development.md) is the current test and
+expectation-update guide; historical command transcripts are not maintenance
+instructions.

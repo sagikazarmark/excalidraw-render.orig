@@ -25,9 +25,9 @@ number, not only new metadata.
 - The [known limitations](docs/known-limitations.md) link their tracking
   issues by full URL under the new repository name, so they resolve only after
   the rename. Check them once the repository is public.
-- Enable private vulnerability reporting (Settings → Security). It is the only
-  reporting route [SECURITY.md](SECURITY.md) names, and the Security tab offers
-  no "Report a vulnerability" button until it is on.
+- Enable private vulnerability reporting (Settings → Security): the README
+  points reporters at the Security tab, which offers no "Report a
+  vulnerability" button until it is on.
 - Publish the crates soon after the repository goes public: the five crate
   names are free on crates.io until then, and the public repository names them.
 - The crates.io token needs the `publish-new` scope for the first publication,
@@ -35,13 +35,10 @@ number, not only new metadata.
 
 ## 1. Prepare the candidate
 
-1. Update `CHANGELOG.md`: replace "Unreleased" with the date and summarize the
-   release. Step 5 publishes this section as the GitHub release notes, so link
-   repository files by full URL and leave no placeholder text in it.
-2. Bump `version` in `[workspace.package]`, every font crate's `version`
+1. Bump `version` in `[workspace.package]`, every font crate's `version`
    (keeping its `+excalidraw.X.Y.Z` metadata), and the `=X.Y.Z` requirements in
    `[workspace.dependencies]`. Run `cargo update --workspace`.
-3. Commit, and make sure the tree is clean: release provenance must not come
+2. Commit, and make sure the tree is clean: release provenance must not come
    from an edited working tree.
 
 ## 2. Verify
@@ -96,12 +93,12 @@ and its `.sha256` file. The archive holds the binary, README, and every license.
 ## 5. Create the GitHub release
 
 ```sh
-gh release create vX.Y.Z dist/* --title "excalidraw-render X.Y.Z" \
-  --notes-file <(awk '/^## /{p=($2=="X.Y.Z")} p' CHANGELOG.md | tail -n +2)
+gh release create vX.Y.Z dist/* --title "excalidraw-render X.Y.Z" --generate-notes
 ```
 
-The notes are the body of the `## X.Y.Z — <date>` section, without its
-heading, up to the next `## ` heading or the end of the file.
+The generated notes list the merged pull requests since the previous tag; edit
+them before publishing so they summarize the release, link repository files by
+full URL and carry no placeholder text.
 
 ## 6. Smoke-test the published artifacts
 
@@ -112,6 +109,6 @@ excalidraw-render tests/conformance/cases/focused/bound-text-containers/scene.ex
 
 Also unpack the GitHub archive on Linux x86-64, verify its checksum, and run
 `excalidraw-render --version`, which prints
-`excalidraw-render X.Y.Z (Excalidraw 0.18.1)`. Then record the release commit,
-crate checksums, and the release-check logs in the changelog entry, in a follow-up
-commit on `main`: the tag and the GitHub release notes are already fixed.
+`excalidraw-render X.Y.Z (Excalidraw 0.18.1)`. Then add the release commit,
+crate checksums, and the release-check logs to the GitHub release notes
+(`gh release edit`): the tag is already fixed.

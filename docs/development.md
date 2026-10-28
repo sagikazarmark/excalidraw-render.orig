@@ -221,9 +221,9 @@ browser-hosted `wasm32-unknown-unknown` harness (ADR-0006).
 
 ## Tests
 
-Start with [CONTRIBUTING.md](../CONTRIBUTING.md) for test commands, interpreting
-failures, generating references and changing expectations. The details below
-explain the tiers and release-only checks behind that workflow.
+`just test` runs the fast tier and `just ci` every per-change gate
+([CI and evidence operations](ci.md)). The details below explain the tiers and
+release-only checks behind that workflow.
 
 The suite is tiered, and `.config/nextest.toml` gives each tier a
 [cargo-nextest](https://nexte.st) profile that selects it by binary name and
