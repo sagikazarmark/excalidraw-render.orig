@@ -102,24 +102,26 @@ registry integration as described below.
 
 ## Verification
 
+The seven `xtask/tests/representative_*` suites run under `just test`. The
+real-renderer tests in `representative_intake` and `representative_case`,
+which capture and verify all six Velox executions twice, need a freshly built
+CLI and are `#[ignore]`d in the ordinary tiers; run them from the devenv shell:
+
 ```sh
-cargo test --locked -p xtask --test representative_intake
-cargo test --locked -p xtask --test representative_numeric
-cargo build --locked -p excalidraw-render-cli
+cargo build --locked -p excalidraw-render-cli -p xtask
 REPRESENTATIVE_RENDERER="$PWD/target/debug/excalidraw-render" \
-  cargo test --locked -p xtask --test representative_intake -- --include-ignored
+  cargo test --locked -p xtask --test representative_intake --test representative_case -- --include-ignored
+target/debug/xtask representative verify tests/conformance/intake/velox-design-v1
+target/debug/xtask representative capture tests/conformance/intake/velox-design-v1 target/debug/excalidraw-render target/velox-intake-capture
+target/debug/xtask representative verify-capture tests/conformance/intake/velox-design-v1 target/velox-intake-capture
+target/debug/xtask representative case verify-registry --renderer target/debug/excalidraw-render
 ```
 
-The real-renderer capture tests are opt-in and require `REPRESENTATIVE_RENDERER`;
-`--include-ignored` runs them alongside the ordinary intake integrity tests.
-Numeric tests are active Rust command-boundary checks with literal expectations;
-the optional Python parity tests have been removed.
+Numeric tests are active Rust command-boundary checks with literal expectations.
 The process-boundary observer delegates to the real CLI, records invocation
 order and injects post-render drift/failure/delay to verify refusal and cleanup.
-No tests call private helpers or substitute fake renderer output. The
-real-renderer tests, which capture and verify all six Velox executions twice,
-need `REPRESENTATIVE_RENDERER` and are `#[ignore]`d in the ordinary tiers; see
-[the real-renderer checks](ci/README.md) for the commands.
+No tests call private helpers or substitute fake renderer output. Optional
+pinned-font and Docker viewer-harness tests stay ignored.
 
 ## Reference and viewer proposal
 
@@ -169,7 +171,7 @@ choices require qualification/review before becoming canonical authority.
 Current evidence tests are listed under [Rust viewer evidence](#rust-viewer-evidence).
 Completed typography, paint-isolation and stroke investigations are historical
 research. Their diagnostic drivers have been deleted; archived results and
-research prose remain. See [diagnostic retirement](diagnostic-retirement.md).
+research prose remain, and Git history has the drivers.
 
 ### Viewer font resources
 
@@ -375,6 +377,3 @@ REPRESENTATIVE_RENDERER="$PWD/target/debug/excalidraw-render" \
 
 The ignored case tests exercise fresh native renders, semantics and resource
 failures. There are no Python parity tests in the Rust representative suite.
-
-See the [Python inventory and completed CI handoff](../python-inventory.md) for
-the repository's remaining Python tools and the representative migration summary.

@@ -92,6 +92,13 @@ kept as the negative fixture its README asked to preserve; the two tests that
 refused it now carry that build identity themselves and stage the capture
 under `target/`.
 
+On 2026-10-29 the same rule removed the six `tests/oracle/*/prior-catalog.json`
+captures (about 7.7 MB, the tree at `7173a673` has them), the `extend-ownership`
+inputs of the GIF, JPEG EXIF, JPEG gain-map and WebP sample migrations, which
+authenticate only the migration that applied them and are read by nothing
+afterwards; and the V7 representative's owner-transition record and its
+approval comment under `coverage/`, whose owner V28 replaced.
+
 ## Consequences
 
 - A future round deletes its own collection once the gate no longer reads it,

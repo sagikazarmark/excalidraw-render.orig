@@ -138,18 +138,15 @@ To bind the aggregate to release evidence, download the workflow's
 ```sh
 cargo run --locked -p xtask -- conformance record-svg-font-subset-target-aggregate \
   target/release-evidence/aggregate.json \
-  https://github.com/sagikazarmark/excalidraw-render.orig/actions/runs/RUN
+  https://github.com/sagikazarmark/excalidraw-render/actions/runs/RUN
 ```
 
 When the aggregate was produced outside Actions, record the tested commit,
 `devenv.lock`, command and output digests in a maintainer attestation comment
 on the originating issue instead, and pass that comment's URL; the ADR-0006
-provenance format accepts either.
-
-The recorder still accepts only URLs under the development repository's
-pre-rename name, `excalidraw-render.orig`, which the recorded aggregate's
-provenance uses; GitHub redirects those URLs to `excalidraw-render`. Use that
-spelling until the recorder learns the new name.
+provenance format accepts either. The recorder accepts the repository under
+its current name and under its pre-rename name, `excalidraw-render.orig`,
+which the recorded evidence uses and GitHub redirects.
 
 This recording step also checks Git ancestry. Keep it in the checkout carrying
 the exported report and history. `pending_ci` is the existing manifest spelling

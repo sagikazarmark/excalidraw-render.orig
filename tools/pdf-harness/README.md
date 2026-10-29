@@ -127,8 +127,7 @@ and exact pin-transition checks. Fixture reproduction, structural report replay,
 wrapper checks and independent Rust PDFium alpha controls remain active.
 
 Deleted diagnostic and proposal drivers described in archived research are
-historical reproduction recipes, with source available in Git history. See
-[historical tooling](../historical-tooling.md) for the retirement record.
+historical reproduction recipes, with source available in Git history.
 `node tools/pdf-harness/diagnostics/webp191-verify-boundary.mjs` is the offline
 WebP evidence audit. It checks retained artifact hashes, all 144 paired viewer
 observations, and 672 negative buffer/semantic mutations. It also runs as

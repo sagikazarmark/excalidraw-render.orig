@@ -22,11 +22,15 @@ const RELEASE_PATH: &str = "tests/conformance/svg-font-subset-release-evidence/r
 const AGGREGATE_PATH: &str = "tests/conformance/svg-font-subset-target-aggregate/revision-1.json";
 /// The aggregate's provenance is either one run of this repository's workflow
 /// or, while GitHub Actions is unavailable, the maintainer's attestation
-/// comment on an issue of this repository (ADR-0006).
-const RUN_URL_PREFIX: &str =
-    "https://github.com/sagikazarmark/excalidraw-render.orig/actions/runs/";
-const ATTESTATION_URL_PREFIX: &str =
-    "https://github.com/sagikazarmark/excalidraw-render.orig/issues/";
+/// comment on an issue of this repository (ADR-0006). The repository is
+/// `excalidraw-render`; `excalidraw-render.orig` is its name before the
+/// 0.1.0 rename, which the recorded evidence uses and GitHub redirects.
+const REPOSITORY_URLS: [&str; 2] = [
+    "https://github.com/sagikazarmark/excalidraw-render",
+    "https://github.com/sagikazarmark/excalidraw-render.orig",
+];
+const RUN_URL_PREFIX: &str = "/actions/runs/";
+const ATTESTATION_URL_PREFIX: &str = "/issues/";
 const MEASUREMENT_PREFIX: &str = "SVG_FONT_SUBSET_TARGET_MEASUREMENT=";
 /// The corpus sources the release evidence qualifies: the 230 official chunks
 /// and the Noto Emoji fallback (#150).
@@ -276,22 +280,29 @@ fn validate_aggregate(aggregate: &Value) -> Result<(), String> {
 
 /// One workflow run — `<run id>` or `<run id>/attempts/<attempt>` under the
 /// Actions prefix — or one attestation comment, `<issue>#issuecomment-<id>`
-/// under the issues prefix; nothing that merely starts with either.
+/// under the issues prefix, of this repository under either of its names;
+/// nothing that merely starts with one.
 fn valid_provenance_url(url: &str) -> bool {
     let digits = |value: &str| !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit());
-    if let Some(rest) = url.strip_prefix(RUN_URL_PREFIX) {
-        return match rest.split_once("/attempts/") {
-            None => digits(rest),
-            Some((run, attempt)) => digits(run) && digits(attempt),
+    // One name is a prefix of the other, so each is tried with its own path.
+    REPOSITORY_URLS.iter().any(|repository| {
+        let Some(rest) = url.strip_prefix(repository) else {
+            return false;
         };
-    }
-    if let Some(rest) = url.strip_prefix(ATTESTATION_URL_PREFIX) {
-        return match rest.split_once("#issuecomment-") {
-            Some((issue, comment)) => digits(issue) && digits(comment),
-            None => false,
-        };
-    }
-    false
+        if let Some(rest) = rest.strip_prefix(RUN_URL_PREFIX) {
+            match rest.split_once("/attempts/") {
+                None => digits(rest),
+                Some((run, attempt)) => digits(run) && digits(attempt),
+            }
+        } else if let Some(rest) = rest.strip_prefix(ATTESTATION_URL_PREFIX) {
+            match rest.split_once("#issuecomment-") {
+                Some((issue, comment)) => digits(issue) && digits(comment),
+                None => false,
+            }
+        } else {
+            false
+        }
+    })
 }
 
 /// The release evidence bundle together with the font subset profile
@@ -388,8 +399,9 @@ impl ReleaseEvidence {
         )?;
         if !valid_provenance_url(required_string(recorded, "provenanceUrl")?) {
             return Err(format!(
-                "recorded aggregate provenance URL is neither a {RUN_URL_PREFIX}<run> \
-                 nor a {ATTESTATION_URL_PREFIX}<issue>#issuecomment-<id> URL"
+                "recorded aggregate provenance URL is neither a {}{RUN_URL_PREFIX}<run> \
+                 nor a {}{ATTESTATION_URL_PREFIX}<issue>#issuecomment-<id> URL",
+                REPOSITORY_URLS[0], REPOSITORY_URLS[0]
             ));
         }
         validate_aggregate(aggregate)?;
@@ -750,7 +762,7 @@ mod tests {
         record_aggregate_in, valid_provenance_url, verify_release_in, ReleaseEvidence,
         TargetEvidenceState, AGGREGATE_PATH, AGGREGATE_SCHEMA, ATTESTATION_URL_PREFIX,
         CROSS_TARGET_PATH, CROSS_TARGET_SCHEMA, QUALIFIED_SOURCES, RELEASE_PATH, REPORT_SCHEMA,
-        RUN_URL_PREFIX, TARGETS, TRACED_CELLS,
+        REPOSITORY_URLS, RUN_URL_PREFIX, TARGETS, TRACED_CELLS,
     };
     use crate::conformance::{repo_root, sha256};
     use serde_json::{json, Value};
@@ -1022,27 +1034,38 @@ mod tests {
     /// shares a prefix.
     #[test]
     fn provenance_is_one_workflow_run_or_one_attestation_comment_of_this_repository() {
-        assert!(valid_provenance_url(&format!("{RUN_URL_PREFIX}123456789")));
-        assert!(valid_provenance_url(&format!(
-            "{RUN_URL_PREFIX}123456789/attempts/2"
-        )));
-        assert!(valid_provenance_url(&format!(
-            "{ATTESTATION_URL_PREFIX}101#issuecomment-5562204641"
-        )));
+        for repository in REPOSITORY_URLS {
+            let run = format!("{repository}{RUN_URL_PREFIX}");
+            let issue = format!("{repository}{ATTESTATION_URL_PREFIX}");
+            assert!(valid_provenance_url(&format!("{run}123456789")));
+            assert!(valid_provenance_url(&format!("{run}123456789/attempts/2")));
+            assert!(valid_provenance_url(&format!(
+                "{issue}101#issuecomment-5562204641"
+            )));
+            for rejected in [
+                run.clone(),
+                format!("{run}abc"),
+                format!("{run}1/../../../other/repo/actions/runs/1"),
+                format!("{run}1?check_suite_focus=true"),
+                format!("{run}1/attempts/"),
+                format!("{issue}101"),
+                format!("{issue}101#issuecomment-"),
+                format!("{issue}abc#issuecomment-1"),
+            ] {
+                assert!(
+                    !valid_provenance_url(&rejected),
+                    "{rejected} must be rejected"
+                );
+            }
+        }
         for rejected in [
-            RUN_URL_PREFIX.to_owned(),
-            format!("{RUN_URL_PREFIX}abc"),
-            format!("{RUN_URL_PREFIX}1/../../../other/repo/actions/runs/1"),
-            format!("{RUN_URL_PREFIX}1?check_suite_focus=true"),
-            format!("{RUN_URL_PREFIX}1/attempts/"),
-            format!("{ATTESTATION_URL_PREFIX}101"),
-            format!("{ATTESTATION_URL_PREFIX}101#issuecomment-"),
-            format!("{ATTESTATION_URL_PREFIX}abc#issuecomment-1"),
-            "https://github.com/someone-else/fork/actions/runs/1".to_owned(),
-            "https://github.com/someone-else/fork/issues/1#issuecomment-1".to_owned(),
+            "https://github.com/someone-else/fork/actions/runs/1",
+            "https://github.com/someone-else/fork/issues/1#issuecomment-1",
+            "https://github.com/sagikazarmark/excalidraw-render-fork/actions/runs/1",
+            "https://github.com/sagikazarmark/excalidraw-render.origin/issues/1#issuecomment-1",
         ] {
             assert!(
-                !valid_provenance_url(&rejected),
+                !valid_provenance_url(rejected),
                 "{rejected} must be rejected"
             );
         }
