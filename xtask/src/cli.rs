@@ -144,7 +144,7 @@ pub enum ConformanceCommand {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         obligations: Vec<String>,
     },
-    /// Print reconciled stage 4 bindings.
+    /// Print the reconciled representative PNG binding record.
     ReconcileStage4Bindings {
         /// Qualified native canary record.
         proof: String,

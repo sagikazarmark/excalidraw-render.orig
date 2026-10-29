@@ -5,15 +5,17 @@ structure, external libwebp encoding, and official Excalidraw v0.18.1 / Chromium
 149 observations. Authored hypotheses and observed differences remain separate.
 
 ```sh
-bash tools/reference-oracle/run-webp-sample.sh prepare  # create-only inputs.json
-bash tools/reference-oracle/run-webp-sample.sh generate # create-only reference.json
-bash tools/reference-oracle/run-webp-sample.sh verify   # read-only re-encode/recollect
+bash tools/reference-oracle/run-webp-sample.sh build-helper # one-time native libwebp helper image
+bash tools/reference-oracle/run-webp-sample.sh prepare      # create-only inputs.json
+bash tools/reference-oracle/run-webp-sample.sh generate     # create-only reference.json
+bash tools/reference-oracle/run-webp-sample.sh verify       # read-only re-encode/recollect
 ```
 
-All stages use the existing digest-pinned linux/amd64 Playwright container with
-network disabled. Preparation uses its preinstalled Ubuntu libwebp 1.3.2 through
-Python ctypes; no apt, download, compiler, Pillow, browser encoder or production
-Rust codec is involved. The input manifest pins encoder ABI calls, quality,
+All stages use the digest-pinned linux/amd64 Playwright container with network
+disabled. Preparation encodes through a small native C helper built once
+against the container's preinstalled Ubuntu libwebp 1.3.2
+(`tools/reference-oracle/webp-helper.Dockerfile`); no Pillow, browser encoder
+or production Rust codec is involved. The input manifest pins encoder ABI calls, quality,
 library/interpreter hashes, distribution version, OCI identity, and author source
 closure. Its native libwebp decode is diagnostic, not an independent encoder
 validation. Original RGBA and compressed frame bytes are frozen independently of

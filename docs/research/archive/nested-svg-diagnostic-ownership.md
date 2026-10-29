@@ -41,4 +41,4 @@ Verification: the new ordering and category regressions pass, along with all 15 
 
 The maintainer explicitly approved this follow-up on 2026-09-14, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5657363810) against commit `d9901e6f28bf2ff37dafa875b1b972b2375c7572`. The approval covers the fixes and partial test evidence, not complete ownership of the remaining nested SVG obligations.
 
-Next follow-up: the user selected a new typed nested MIME detail. The implementation now separates media repairs from removals and preserves full paths and MIME values; see [the implementation and reapproval subjects](archive/nested-claim-reapproval.md). Preparse boundary identity remains to be reviewed.
+Next follow-up: the user selected a new typed nested MIME detail. The implementation now separates media repairs from removals and preserves full paths and MIME values; see [the implementation and reapproval subjects](nested-claim-reapproval.md). Preparse boundary identity remains to be reviewed.

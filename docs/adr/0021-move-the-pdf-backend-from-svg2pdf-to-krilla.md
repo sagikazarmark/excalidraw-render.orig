@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: implemented
 ---
 
 # Move the PDF backend from svg2pdf to Krilla
@@ -97,7 +97,7 @@ process or worker, as it already does for deadlines. Injected allocator refusal
 is exercised up to the writer; the conformance suite does not inject refusal
 inside it.
 
-
+## Consequences
 
 - Line-level `/ActualText` (spec §8.6) needs Krilla's tagging on, which gives
   each span an MCID. The port therefore writes a real tag tree, and every PDF
@@ -109,14 +109,15 @@ inside it.
   in page coordinates, so no PDF number or operator sequence survives from the
   svg2pdf writer. Tests that matched colour or coordinate spellings match
   Krilla's shortest single-precision spellings.
-- ADR-0008's Flate level survives (Krilla uses level 6), but its compressor is
-  flate2 over miniz_oxide 0.9.1, not the pinned 0.8.9 the PNG encoder uses.
+- ADR-0008's Flate level survives (Krilla uses level 6); its compressor is
+  flate2 over miniz_oxide 0.9.1, which the PNG encoder has since moved to as
+  well (ADR-0004).
   Krilla needs its `raster-images` feature for its image module; images
   arrive as sample planes, so it decodes nothing, and the `zune-jpeg` features
   it enables are already enabled through resvg. Krilla is pinned exactly,
   and a Krilla bump is a byte-affecting change, as svg2pdf's was.
 - The spike's output was byte-identical between native and wasm32 and across
-  two Rust releases. The ported backend still has to pass the full
-  cross-target canary (ADR-0002).
+  two Rust releases, and the ported backend passes the full cross-target
+  canary (ADR-0002) in `just release`.
 - The structural inspector learns Krilla's resource naming, and every
   structure expectation is rewritten, with an output intent count of zero.

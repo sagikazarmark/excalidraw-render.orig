@@ -12,7 +12,7 @@ the selected transfer/range/depth matrix now covers all eleven primary codes.
 Other transfer characteristics, HDR/gain maps and cross-axis composition remain
 separate qualification work.
 
-The [existing SDR collector and gates](png-sdr-color-ownership.md) retain the
+The [existing SDR collector and gates](../png-sdr-color-ownership.md) retain the
 maintainer-selected canonical Geometry/image budgets plus exact invariants and
 semantic anchors. No comparison limit changed. Every cell renders SVG/PNG/PDF
 twice through fresh facade sessions, checking complete reports, preserved SVG

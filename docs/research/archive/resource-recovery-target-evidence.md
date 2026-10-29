@@ -44,7 +44,7 @@ comparison contains 16 artifact/report difference records and 12 trace
 difference records because each key repeats across sessions and orders.
 
 This is the same affected key set documented under upstream-blocked **#178** in
-[trace-collection.md](trace-collection.md#release-order-diagnosis-and-fix).
+[trace-collection.md](../trace-collection.md#release-order-diagnosis-and-fix).
 No new differing key was observed. Successful collection and packaged-facade
 tests do not turn that equality failure into a passing release gate. No baseline,
 comparison tolerance, or exception pin was changed.

@@ -31,7 +31,7 @@ if(mode==="verify")assert.deepEqual(bytes,readFileSync(output));
 else if(mode==="extend") {
   const previous=readFileSync(output);assert.equal(sha256(previous),process.argv[3]);
   for(const old of JSON.parse(previous).cases){
-    // Correct only the authored outcome of the unaligned stage4 mAB vector;
+    // Correct only the authored outcome of the two unaligned mAB LUT vectors;
     // source PNGs, scenes and independently collected reference bytes stay exact.
     if(["lut-mab-matrix-m-curves-c6-d8","lut-mab-matrix-m-curves-c6-d16"].includes(old.id))old.expected_outcome="unsupported-format";
     assert.deepEqual(record.cases.find(r=>r.id===old.id),old,`changed prior case ${old.id}`);

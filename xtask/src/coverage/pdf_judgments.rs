@@ -434,7 +434,7 @@ pub(super) fn verify_owned_record() -> Result<(), String> {
     cross_check_baseline(&repo, &record).map(|_| ())
 }
 
-/// The record's own approval subject computation, without the `sha256:` prefix.
+/// The record's canonical subject digest, without the `sha256:` prefix.
 #[cfg(test)]
 pub(super) fn record_subject(record: &Value) -> Result<String, String> {
     subject_of(record)

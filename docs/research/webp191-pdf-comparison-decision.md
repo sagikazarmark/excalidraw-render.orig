@@ -1,6 +1,4 @@
-# #191 PDF partial-alpha comparison boundary — decision proposal
-
-Status: proposed, no policy/spec/owner changes and no closure claimed.
+# #191 PDF partial-alpha comparison boundary
 
 **Decision (2026-09-23):** the user chose exact-ceiling tolerance exceptions
 instead of keeping the gaps. The 48 failing black/white PDF views of the 24
@@ -10,26 +8,15 @@ gains the small-artifact exception form, and
 `webp_sample_contract::partial_alpha_cells_match_reference_under_approved_pdf_exceptions`
 owns the twelve cells. It rejects growth and dead exceptions. No comparator,
 budget or production change.
-Base: `1776fc6`; approved PDFium profile subject `c393a0dd…`, representative V14.
 
-## Recommendation
+## The alternative that was not taken
 
-**Separate demonstrated codec/sample correctness from unresolved visual parity.**
-Keep the twelve existing all-format partial-alpha obligations as gaps. Retain
-their exact failure pins and the canonical small-artifact rule. If narrower
-coverage is useful, append separately named PDF sample/alpha obligations using
-the new independent controls, through ADR-0011's authenticated append-only flow.
-Those owners must explicitly exclude browser visual parity; they cannot replace
-or silently narrow the twelve existing criteria.
-
-This completes the diagnosis, not the visual promise. Closing the twelve cells
-without a production change would require an explicit revision to the current
-compatibility contract or a demonstrated compliant production fix. The fixed
-straight samples cannot match browser composites under the current §14.3
-projection; the two measured PDF representations and pinned viewers reproduce
-that mismatch. This does not exclude every possible PDF rendering construction.
-No compliant alternative fix is demonstrated, and no contract revision is
-implemented here.
+Keeping the twelve all-format partial-alpha obligations as gaps, with their
+exact failure pins and the canonical small-artifact rule, would have separated
+demonstrated codec/sample correctness from unresolved visual parity. The fixed
+straight samples cannot match browser composites under the §14.3 projection;
+the two measured PDF representations and pinned viewers reproduce that
+mismatch. The exceptions above record that cause at its exact ceilings instead.
 
 ## Fresh approved-profile evidence
 
@@ -83,43 +70,5 @@ finite score to relax here.
 | Apply floor projection to both sides | Changes the prescribed comparator and may double-quantize readback; not an authorized correction. |
 | Add a general ±1 RGB tolerance | Weakens every covered comparison, hides unrelated defects, and contradicts the issue's constraints. Rejected. |
 | Resize/pad these fixtures to obtain SSIM | Does not resolve the existing complete-artifact criterion and can dilute error. Rejected as a way to close these cells. |
-| Explicit case-bound non-defect disposition | Requires a new reviewed contract/disposition mechanism for this small-artifact incompatibility, not an ordinary tolerance exception or automatic pin refresh. Possible policy choice, not currently authorized. |
-| Preserve gaps; separately qualify exact codec semantics | Recommended under the current contract. Honest coverage without changing the visual promise. |
-
-## Proposed narrower obligation, if approved for implementation
-
-For each existing partial-alpha cell, require both patterns and:
-
-1. Authenticated original bytes, external decoder samples, browser reference and
-   exact fixture reconstruction.
-2. Source-bound PDF image/SMask extraction with exact canonical samples and alpha
-   for VP8L **and VP8**, correct dimensions/orientation/placement, complete reports
-   and deterministic replay. Lossy samples mean external decoded pixels, not the
-   pre-encoding authored pixels.
-3. Actual production PDF output equals the independently authored sample-control
-   PDF in each approved viewer, separately, across repeated processes.
-4. Original browser comparisons continue to run and fail with exact observations;
-   improvements or regressions require diagnosis. They remain separate parity
-   gaps and never become ignored pixels or passing judgments.
-
-No new owners are assigned by this proposal. It does not establish general WebP,
-ICC, arbitrary scale/background, layered composition or full-scene PDF parity.
-The ledger remains 2,418 obligations / 2,321 assigned-excluded / 97 gaps.
-
-## Checks
-
-`node tools/pdf-harness/diagnostics/webp191-verify-boundary.mjs` checks approved
-PDF viewer profile dependencies and both
-evidence sets, reconstructs independent placement, checks all
-three canonical views and actual failure outcomes, and rejects **336 mutations**
-(RGB drift, alpha drift, and substitution with passing browser pixels). These
-mutations exercise the independent-buffer guard; additional paired mutations
-exercise the alpha, exact-sample and failure-preservation guards separately.
-The Node audit replaces the retired Python verifier and runs in the xtask suite.
-Collector/CLI identities describe the historical capture; inputs, profiles and
-output bytes remain live checks. There are 336 independent-buffer and 336 paired
-semantic rejections, with all 48 partial-alpha viewer comparisons still failing
-their canonical browser comparison.
-All seven existing WebP contract tests pass. Production, approved profiles, spec,
-comparator, frozen historical records and the ledger are unchanged. No full
-workspace rerun was needed for this evidence-only decision preparation.
+| Exact-ceiling tolerance exceptions with a diagnosed non-defect cause | **Chosen.** Records the small-artifact incompatibility at its exact observed ceilings; rejects growth and dead exceptions. |
+| Preserve gaps; separately qualify exact codec semantics | Honest coverage without changing the visual promise; not taken. |

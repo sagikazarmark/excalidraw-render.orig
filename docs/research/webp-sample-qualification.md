@@ -83,12 +83,12 @@ is not substituted as straight PDF RGB. Canonical visual gates use separately
 observed black/white composites. No ±RGB tolerance is introduced, including for
 small artifacts where projected identity is required.
 
-**13 sample cells / 26 vectors pass every gate**. **23 sample cells / 46 vectors
-remain gaps under [#191](https://github.com/sagikazarmark/excalidraw-render.orig/issues/191)**.
-Across all 72 vectors, SVG passes 72, PNG 26 and PDF 26. Exact reports/replay pass.
-Failures include 48/63 alpha mismatches outside opaque-source subrectangles,
-lossless blend color differences, and partial-alpha PNG/lossy PDF composite
-`SmallArtifactMismatch` despite zero Pixelmatch changed pixels.
+When first collected, 13 sample cells / 26 vectors passed every gate and 23
+cells / 46 vectors were gaps: alpha mismatches outside opaque-source
+subrectangles, lossless blend color differences, and partial-alpha PNG/lossy
+PDF composite `SmallArtifactMismatch` despite zero Pixelmatch changed pixels.
+Those gaps were closed by the exceptions recorded in
+[`webp191-pdf-comparison-decision.md`](webp191-pdf-comparison-decision.md).
 
 Known-defect assertions bind actual/expected pixel hashes, alpha mismatch counts,
 straight-sample discrepancies, comparator result/changed count/SSIM bits where
@@ -103,24 +103,6 @@ do not qualify the underlying partial-alpha scene's pixels. The frozen author's
 initial rejection intent remains recorded; the executable contract distinguishes
 it from the normative ignore rule. Reserved ANMF rejection is explicitly a
 strict current characterization, not an independently observed browser rejection.
-
-## Append-only ownership
-
-The predecessor catalog authenticates against the `2fa700f` ledger. All 2,370
-prior dispositions/criteria, three exclusions, 168 keys and V12 remain exact.
-
-| Measure | Count |
-| --- | ---: |
-| Obligations | 2,418 |
-| Primary owners | 2,307 |
-| Approved exclusions | 3 |
-| Assigned/excluded | **2,310** |
-| Explicit gaps | **108** |
-| New owners | 25 |
-| New #191 gaps | 23 |
-
-No WebP umbrella facet is closed. Broader profiles, ICC/EXIF, animation, resource
-and fuzz qualification remain open, as do the deferred JPEG and #178 work.
 
 ## Reproduction
 
@@ -139,23 +121,3 @@ reference generation are create-only; verification re-encodes/recollects read-on
 `test-helper` needs no npm packages, browser launch or Python: it exercises native
 framing/options/length errors, Node request/response validation, rehashed-byte
 drift rejection, all frozen frames in opposite orders, and fixture reconstruction.
-
-## Final verification and review
-
-- Independent preparation and recollection reproduced all 28 encoded frames and
-  the complete frozen browser record byte-for-byte.
-- Full workspace: **1,261 passed, zero failures, 19 existing ignored tests**,
-  including all 625 fast tests, before the final oracle correction below.
-- Spec review identified an omitted independent visual gate: lossless PDF used
-  exact straight samples instead of additionally checking browser black/white
-  composites. Both are now required. Eight already-unqualified partial-alpha
-  vectors pass straight samples but fail both composites (10–39 differing pixels,
-  maximum RGB delta one, canonical `SmallArtifactMismatch`). All four focused
-  tests pass after strengthening; qualified-cell selections are unchanged.
-- The uncommitted native measurement record changed from `d8b85832...` to the
-  digest above solely to add the omitted gates and update aggregate judgments.
-  Removing those additions and restoring earlier flags reproduces the exact old
-  hash; no pre-existing pixel measurement or frozen reference changed.
-- Formatting and Clippy pass. Standards review found no hard violations; typed
-  configuration fields and shared view construction remain advisory suggestions.
-  The long workspace suite was not redundantly repeated after the test-only fix.

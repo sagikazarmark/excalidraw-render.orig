@@ -2,7 +2,7 @@
 
 Status: in progress. Date: 2026-10-18, updated 2026-10-27. Owner: Mark Sagi-Kazar.
 
-This plan records what stands between `main` (at `239934a7`) and the first
+This plan records what stands between `main` and the first
 release, and what to do about each item. The [release policy](release-0.1.0.md)
 defines the gates and the [runbook](../release.md) the procedure; this
 document does not change either.
@@ -94,7 +94,7 @@ Before 0.1.0:
       render (SVG, PNG and PDF) under the default limits, seeded from the
       regression corpus and the conformance scenes. Commit the target, but
       leave it out of CI for now.
-- [ ] Document in the README that hosts rendering untrusted
+- [x] Document in the README that hosts rendering untrusted
       files should use a separate process with a timeout and a memory limit.
       `catch_unwind` does not help against out-of-memory, or when the host builds
       with `panic = "abort"`.

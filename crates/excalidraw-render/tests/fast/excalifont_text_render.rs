@@ -91,7 +91,7 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert!(png.rgba.as_chunks::<4>().0.iter().any(|pixel| {
                     pixel[2] > pixel[0] && pixel[2] > pixel[1] && pixel[3] == 255
                 }));
-                // User-approved draft §8.5 per-glyph device phases. Independent
+                // Spec §8.5 per-glyph device phases. Independent
                 // pinned Chromium replay of this same rotated scene: 0 changed
                 // pixels, SSIM bits 3feffa5b1c4f155c; SVG/PDF canaries unchanged.
                 // See docs/research/archive/png-stage4-binding-reconciliation.md.

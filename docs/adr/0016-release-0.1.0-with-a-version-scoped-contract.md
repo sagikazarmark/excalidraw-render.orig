@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; approval tooling superseded by ADR-0019, Dagger authority by ADR-0024
 ---
 
 # Release 0.1.0 with a version-scoped contract
@@ -20,7 +20,7 @@ The exact scope and release gates are in [the release policy](../release-0.1.0.m
 
 Known WASM differences remain executed and narrowly tracked, not hidden by
 skipping cases or increasing visual tolerances. Strict equality remains available
-as a qualification goal. The existing evidence approval tooling stays for this
-release, with the targeted representative-provenance simplification subsequently
-accepted in ADR-0017. Broader workflow replacement is follow-up work. Dagger is the CI authority,
-including when GitHub Actions cannot run.
+as a qualification goal. Evidence is accepted through Git/PR review and
+reproducible tests (ADR-0019), with representative provenance separated from
+expectations (ADR-0017). The gates run from the justfile in the devenv shell
+(ADR-0024).

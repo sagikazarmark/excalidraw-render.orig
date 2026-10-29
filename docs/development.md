@@ -1,9 +1,5 @@
 # Development and evidence operations
 
-Expectation updates use Git/PR review and reproducible tests (ADR-0019).
-Approval-subject and approval-recording commands in older workflow examples are
-retired. Tool/download checksums and actual input/output comparisons still apply.
-
 This repository contains a pure-Rust rendering library and native CLI targeting
 compatibility revision 1 of the static-renderer design. The
 [0.1.0 release policy](release-0.1.0.md) defines the initial public scope.
@@ -138,6 +134,12 @@ is offline and read-only:
 cargo run --locked -p xtask -- catalog verify
 ```
 
+The catalog also records every official font chunk's reviewed decode, the sfnt
+the pinned `wuff 0.2.9` decode of its exact bytes produces and the only bytes
+PDF may embed for it (spec 8.6). `catalog verify` re-derives all 230 decodes
+and compares the actual decoded bytes; `import` and `materialize` regenerate the
+record.
+
 Maintainers can reproduce the checked font files from an explicit local
 `@excalidraw/excalidraw` `dist/prod` directory. The importer verifies every
 source byte against the approved reference asset manifest and never downloads
@@ -145,16 +147,6 @@ or generates production data during a build:
 
 ```sh
 cargo run --locked -p xtask -- catalog import <local-dist-prod>
-```
-
-The catalog also records every official font chunk's reviewed decode, the sfnt
-the pinned `wuff 0.2.9` decode of its exact bytes produces and the only bytes
-PDF may embed for it (spec 8.6). `catalog verify` re-derives all 230 decodes
-and compares the actual decoded bytes; `import` and `materialize` regenerate the
-record. Review the generated diff and verify it:
-
-```sh
-cargo run --locked -p xtask -- catalog verify
 ```
 
 ## Font catalog and loading
@@ -203,7 +195,9 @@ Excalifont/Liberation font database.
 `tests/package-consumer` depends on Cargo's unpacked package output rather than
 the workspace crate. It renders the approved rectangle through the public Rust
 facade to SVG, PNG, and PDF twice and compares complete artifact and report
-bytes with the checked native expectations.
+bytes with the checked native expectations. `just package` packages the
+workspace, `just package-cli` checks the packaged CLI and `just package-facade`
+runs the consumer:
 
 ```sh
 cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
@@ -216,8 +210,7 @@ directory, WASM test runner) applies, and clean it first: `cargo package`
 stamps the unpacked sources with a fixed mtime, so a consumer build left over
 from an earlier package never notices that the crate changed.
 
-The target workflow executes this consumer on Linux and in the pinned
-browser-hosted `wasm32-unknown-unknown` harness (ADR-0006).
+`just wasm-packaging` runs the same consumer in browser WASM (ADR-0024).
 
 ## Tests
 
@@ -294,42 +287,16 @@ laptop and CI run the same commands with the same tools:
 just              # list the recipes
 just ci           # every per-change gate
 just test         # one of them
+just release      # the release checks, on the supported targets
 ```
 
-The per-change gates are `fmt`, `clippy`, `features`, `msrv`, the `test`,
-`test-render`, `test-features` and `test-doc` tiers, `conformance` and
-`packaging`. They run on any host the shell supports. `msrv` is meant for the
-workspace `rust-version`:
+The reference oracle and the viewer harnesses run digest-pinned Docker images,
+from the host's Docker through `just viewer-evidence` and
+`just candidate-successor`, or through Dagger (`dagger api call evidence pdf`)
+for hosts without a suitable Docker; the devenv shell carries the Dagger CLI.
+GitHub workflows run the recipes in the devenv shell and handle scheduling and
+artifact upload.
 
-```sh
-devenv --option languages.rust.version:string 1.92.0 shell -- just msrv
-```
-
-The release checks run on the supported targets. Browser WASM runs in headless
-Firefox through geckodriver on any host; native evidence needs
-`x86_64-unknown-linux-gnu`:
-
-```sh
-just release                          # everything below
-just qualification wasm32-unknown-unknown
-just wasm-packaging                   # packaged facade and no-CJK consumer in WASM
-just wasm-snapshot-replay
-just snapshot-replay                  # native; Linux x86-64
-just full-equality                    # traces and the joined comparison
-```
-
-The nightly expansions take a case count:
-
-```sh
-just nightly-font-subset-fuzz
-just nightly-frame-batch-property 64
-just nightly-scene-fuzz 512
-```
-
-The reference oracle and the viewer harnesses run approval-pinned Docker
-images, through Dagger (`dagger api call evidence pdf`); the devenv shell
-carries the Dagger CLI. GitHub workflows run the recipes in the devenv shell
-and handle scheduling and artifact upload.
-
-See [CI operations](ci.md) for evidence reproduction, generation and the
-two-target aggregate.
+See [CI operations](ci.md) for the gate inventory, the release checks, the
+nightly expansions, evidence reproduction and generation, and the two-target
+aggregate.

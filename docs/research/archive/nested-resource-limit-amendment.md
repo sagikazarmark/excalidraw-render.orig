@@ -270,7 +270,7 @@ No coordinate assignment is claimed by this checkpoint: totals stay 792/136.
 ### Derived-coordinate recovery follow-up
 
 The source-only checkpoint is superseded by the admission and recovery work
-documented in [coordinate-admission.md](coordinate-admission.md). It covers
+documented in [coordinate-admission.md](../coordinate-admission.md). It covers
 generated controls and scanlines, source and rotated bounds, export transforms,
 image crops/intrinsic dimensions, text and generated labels, nested SVG paths
 and clip transforms, and the clipping-envelope invariant. Coordinate omissions

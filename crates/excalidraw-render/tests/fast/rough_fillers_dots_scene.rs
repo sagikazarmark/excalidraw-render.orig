@@ -2,8 +2,8 @@
 //! scatters each dot's centre with the unseeded `Math.random()`, so the pinned
 //! reference profile cannot produce official evidence for it: the generator's
 //! own repeatability gate rejects the export because two fresh browser
-//! processes never agree on the bytes, and the focused case evidence round A
-//! drafted (`focused.rough-fillers-dots.v1`) was withdrawn on that ground.
+//! processes never agree on the bytes, and the focused case drafted for it
+//! (`focused.rough-fillers-dots.v1`) was withdrawn on that ground.
 //! Revision 1 draws the scatter from a second Rough.js generator seeded with
 //! the element seed, so its output is one deterministic sample of the
 //! reference's jitter, and the JS-derived vectors are its evidence: this test
@@ -19,7 +19,7 @@ use crate::common::lower_hex;
 use crate::common::render::render_artifact;
 use crate::common::svg::path_data;
 
-/// The scene evidence round A registered and this round withdrew: dots fills
+/// The withdrawn case's scene: dots fills
 /// on a rectangle, an ellipse and a diamond at strokeWidth 2 / roughness 1,
 /// strokeWidth 1 / roughness 0 and strokeWidth 4 / roughness 1.
 const SCENE: &[u8] = include_bytes!("../fixtures/rough-fillers-dots.excalidraw");

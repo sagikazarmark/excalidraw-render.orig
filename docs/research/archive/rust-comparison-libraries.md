@@ -245,14 +245,14 @@ run. No claim of cross-target compatibility or measured speedup is made.
 
 ### Local contract and executable evidence
 
-- **L1:** [Renderer spec §14.3](../renderer-spec-v1.md#143-canonical-raster-and-comparators).
-- **L2:** [Canonical raster and projections](../../crates/excalidraw-render-compare/src/lib.rs), [Pixelmatch kernel](../../crates/excalidraw-render-compare/src/pixelmatch.rs).
-- **L3:** [SSIM kernel](../../crates/excalidraw-render-compare/src/ssim.rs), [comparison orchestration](../../crates/excalidraw-render-compare/src/comparison.rs).
-- **L4:** [Pinned upstream Pixelmatch tests](../../crates/excalidraw-render-compare/tests/pixelmatch_upstream.rs), [adversarial vectors](../../crates/excalidraw-render-compare/tests/pixelmatch_vectors.rs).
-- **L5:** [Exact SSIM vectors](../../crates/excalidraw-render-compare/tests/ssim_vectors.rs).
-- **L6:** [Comparison protocol tests](../../crates/excalidraw-render-compare/tests/comparison_protocol.rs), [canonical raster tests](../../crates/excalidraw-render-compare/tests/canonical_raster.rs).
-- **L7:** [Canonical profile](../../tests/conformance/comparator-profiles/canonical-visual-v1.json), [profile validation](../../crates/excalidraw-render-compare/tests/profile.rs), [ADR-0005](../adr/0005-pin-the-comparator-to-its-own-dependency-closure.md).
-- **L8:** [Comparator Cargo manifest](../../crates/excalidraw-render-compare/Cargo.toml).
+- **L1:** [Renderer spec §14.3](../../renderer-spec-v1.md#143-canonical-raster-and-comparators).
+- **L2:** [Canonical raster and projections](../../../crates/excalidraw-render-compare/src/lib.rs), [Pixelmatch kernel](../../../crates/excalidraw-render-compare/src/pixelmatch.rs).
+- **L3:** [SSIM kernel](../../../crates/excalidraw-render-compare/src/ssim.rs), [comparison orchestration](../../../crates/excalidraw-render-compare/src/comparison.rs).
+- **L4:** [Pinned upstream Pixelmatch tests](../../../crates/excalidraw-render-compare/tests/pixelmatch_upstream.rs), [adversarial vectors](../../../crates/excalidraw-render-compare/tests/pixelmatch_vectors.rs).
+- **L5:** [Exact SSIM vectors](../../../crates/excalidraw-render-compare/tests/ssim_vectors.rs).
+- **L6:** [Comparison protocol tests](../../../crates/excalidraw-render-compare/tests/comparison_protocol.rs), [canonical raster tests](../../../crates/excalidraw-render-compare/tests/canonical_raster.rs).
+- **L7:** [Canonical profile](../../../tests/conformance/comparator-profiles/canonical-visual-v1.json), [profile validation](../../../crates/excalidraw-render-compare/tests/profile.rs), [ADR-0005](../../adr/0005-pin-the-comparator-to-its-own-dependency-closure.md).
+- **L8:** [Comparator Cargo manifest](../../../crates/excalidraw-render-compare/Cargo.toml).
 
 ### Pixelmatch
 

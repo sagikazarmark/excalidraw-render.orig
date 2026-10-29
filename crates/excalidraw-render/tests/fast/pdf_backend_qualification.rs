@@ -55,7 +55,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     // Moved with #171: the scene's arrow has a `circle` start and a `triangle`
     // end at roughness 1, and the triangle is now drawn at 1, not at the
     // start head's 0.5, so the content stream and `operation_sha256` moved.
-    // Moved with #209 (ADR-0021 slice 1): trees reach svg2pdf through the
+    // Moved with #209 (ADR-0021): trees reach svg2pdf through the
     // usvg 0.47 -> 0.45 SVG bridge, and one pattern coordinate rounds
     // differently in the last `f32` digit; the viewer gates hold. Moved again
     // when Krilla became the PDF writer (ADR-0021): every structure is
@@ -101,7 +101,7 @@ fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
 
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     assert_eq!(first.report(), second.report());
-    // Moved with #209 (ADR-0021 slice 1): the reparsed tree wraps the
+    // Moved with #209 (ADR-0021): the reparsed tree wraps the
     // fallback image in an identity `q 1 0 0 1 0 0 cm Q` group; the image
     // bytes and the viewer gates are unchanged. Moved again when Krilla became
     // the PDF writer (ADR-0021); the fallback's pixels are unchanged.
@@ -206,7 +206,7 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
 
     assert_eq!(outcome.artifact().bytes(), repeated.artifact().bytes());
     assert_eq!(outcome.report(), repeated.report());
-    // Moved with #209 (ADR-0021 slice 1): after the usvg 0.47 -> 0.45 SVG
+    // Moved with #209 (ADR-0021): after the usvg 0.47 -> 0.45 SVG
     // bridge, path coordinates differ in the last `f32` digit, `-0` and
     // `4.4e-16` residues print as `0`, and one identity group is added
     // (three operators); the viewer gates hold. Moved again when Krilla became

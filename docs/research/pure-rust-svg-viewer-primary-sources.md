@@ -148,5 +148,6 @@ and `sha2` and their dependencies.
     filler. Shaping those lines is identical under rustybuzz 0.20.1 and HarfRust
     0.12.0 and 0.13.3, so the changes come from usvg 0.48's layout and outline
     code, not from the shaper.
-  - The earlier evidence is archived in
-    `tests/conformance/proposals/svg-viewer-pure-rust-resvg-0.48-v1/`.
+  - The earlier evidence was pruned under ADR-0022 and is in Git history
+    (`tests/conformance/proposals/svg-viewer-pure-rust-resvg-0.48-v1/` at
+    `63736a3`).

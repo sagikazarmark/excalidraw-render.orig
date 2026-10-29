@@ -1,9 +1,7 @@
 # PNG SDR color qualification (#85)
 
-Base: `a9bac8be3caea91c25fbda4d467349f01e750969`.
-
 This records the initial SDR tranche. The subsequent
-[remaining-primary extension](png-cicp-primary-ownership.md) preserves all 340
+[remaining-primary extension](archive/png-cicp-primary-ownership.md) preserves all 340
 cases below and adds 160, bringing the current record to 500 cases and the cICP
 selection to 220 cells. `verify` now reproduces that extended record.
 
@@ -130,35 +128,3 @@ separately and is not silently substituted for the project's rejection policy.
 No valid profile is classified unsupported merely to avoid a visual mismatch.
 The stricter recovery cases have exact complete diagnostics and artifact controls;
 they are not exclusions or approximate visual comparisons.
-
-## Verification checkpoint
-
-Both review findings were addressed with a valid D50 white-point matrix and
-distinguishable cHRM conflicts under sRGB/ICC/cICP. Final Spec review confirms all
-**67** owners are eligible; Standards review has no hard breaches or actionable
-smell findings. Source bindings for the existing sample oracles were refreshed
-after their binding-aware PDF extractor was shared with these tests.
-
-- All **nine** native SDR contract tests and **66** existing asset-codec tests pass.
-- Workspace/all-target Clippy with warnings denied passes.
-- Browser-WASM executes all **340** cases twice with the shared appearance,
-  exact report/alpha and recovery gates: pass. The local worker uses installed
-  Chrome/ChromeDriver 151.0.7922.173, separately from the pinned Chromium149
-  reference collection. The 315 MB debug module timed out during runner
-  processing; `CARGO_PROFILE_TEST_DEBUG=0` produced the passing optimized test
-  module, without changing the asserted gates.
-- Ownership validation passes: **1,096 assigned/excluded and 780 gaps**
-  (1,093 proposed owners and three approved exclusions), **1,876** total.
-- Final `cargo test --locked --workspace --no-fail-fast` with Rust 1.97.1:
-  **1,106 passed, 18 ignored**. All 532 fast tests passed in 910.69 seconds;
-  registered SVG/PNG parity, ownership and coverage CLI tests also passed.
-  Ignored external-harness/materialization tests remain outside this local run.
-- `bash tools/reference-oracle/run-png-color.sh verify` reproduced all **340**
-  cases and the complete recorded digest byte-for-byte.
-- `conformance verify-all` verified all **37** registered cases;
-  `verify-inventory` verified the existing **168** executions. Formatting and
-  diff checks pass. The temporary failing diagnostic probe was removed from the
-  test suite; exploratory output remains clearly labeled under `target/`.
-
-#178 and global release closure remain separate. No new exclusion, tolerance
-exception, completed-ledger approval or target-equality claim is recorded.

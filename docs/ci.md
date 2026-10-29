@@ -1,10 +1,5 @@
 # CI and evidence operations
 
-Acceptance uses Git/PR review and reproducible tests for all evidence families
-(ADR-0019). Older approval-subject and approval-recording examples are historical;
-those commands are retired. CI retains input/output integrity checks, exact
-tolerances, target completeness and fresh replay.
-
 ## The gates
 
 Every gate is a recipe in the [justfile](../justfile), run in the devenv shell
@@ -21,7 +16,9 @@ with the same tools; GitHub Actions is a caller, not the authority.
 | `just target-evidence` | Release | Both targets' qualification reports and their aggregate, from a clean commit |
 | `just nightly-*` | Scheduled | The bounded randomized expansions |
 
-`just` lists every recipe. The per-change gates run on any host the devenv shell
+`just` lists every recipe. The per-change gates are `fmt`, `clippy`,
+`features`, `msrv`, the `test`, `test-render`, `test-features` and `test-doc`
+tiers, `conformance` and `packaging`. They run on any host the devenv shell
 supports; CI runs each as its own job (`.github/workflows/ci.yaml`), except that
 the fast and render tiers share one job and one compilation. Cargo's own
 fingerprints decide what a recipe rebuilds; rust-cache keeps the dependencies
@@ -35,17 +32,34 @@ test group, so they take turns instead of holding test slots while they wait on
 Cargo's build lock.
 
 The release checks run on the supported targets (ADR-0006). Browser WASM runs in
-headless Firefox on any host: the renderer makes no browser calls, and the
-browser build cannot change artifact bytes. Native evidence needs
+headless Firefox through geckodriver on any host: the renderer makes no browser
+calls, and the browser build cannot change artifact bytes. Native evidence needs
 `x86_64-unknown-linux-gnu`; its recipes refuse other hosts. A run on another host
 is a check, not target evidence.
+
+```sh
+just release                          # everything below
+just qualification wasm32-unknown-unknown
+just wasm-packaging                   # packaged facade and no-CJK consumer in WASM
+just wasm-snapshot-replay
+just snapshot-replay                  # native; Linux x86-64
+just full-equality                    # traces and the joined comparison
+```
+
+The nightly expansions take a case count:
+
+```sh
+just nightly-font-subset-fuzz
+just nightly-frame-batch-property 64
+just nightly-scene-fuzz 512
+```
 
 The [release policy](release-0.1.0.md) and [runbook](../release.md) define the
 initial scope. Experimental-WASM checks execute every key but accept only the
 exact #178 differences in `tests/package-consumer/experimental-wasm.json`.
 `target/debug/xtask conformance verify-joined-results target/release-evidence/results`
 after `just full-equality` retains the strict qualification goal.
-Representative evidence uses fresh replay against approved outputs with
+Representative evidence uses fresh replay against expected outputs with
 historical source provenance (ADR-0017), so source-only edits do not require
 another numbered case. Existing accepted evidence is not rewritten.
 
@@ -98,7 +112,7 @@ Reference calls accept `--frame` for the frame profile. Case calls default to
 `reproduce`; use `--mode generate` for explicit generation. Reference profile
 changes use `--mode update`. Existing generators retain their refusal
 to overwrite manifested evidence. The `xtask` entry point accepts its ordinary
-argument list, including materialization and approval-recording commands.
+argument list, including the materialization commands.
 
 ## Target evidence and provenance
 
@@ -147,27 +161,15 @@ qualification was produced (the Dagger module at the time). They are historical
 provenance: the verifier checks their form, not today's files, so retiring a
 runner file leaves the recorded evidence valid.
 
-## Completed single refresh (ADR-0003)
-
-The brotli, ttf2woff2 and skera forks have all retired. The serialized refresh
-is complete: all three tokens name their upstream implementations (brotli 9.0.0,
-ttf2woff2 0.13.3, skera 0.7.0), the spec and WASM logging are updated, and the
-regenerated catalog/profile, 977 font pins and 857 viewer executions are approved.
-Dagger's clean-commit aggregate on `3f06c91` is bound into release evidence as
-`aggregated` / `pass`. The round's publication block and evidence freeze are
-lifted. See [the refresh record](font-identity-refresh.md) for approvals,
-measurements and run provenance.
-
 ## Coverage, snapshots and traces
 
-The shared #85/#86 draft inventory is checked by `just conformance`
+The shared #85/#86 inventory is checked by `just conformance`
 (`conformance verify-inventory`). See
 [the inventory/result contract](../tests/conformance/coverage/README.md).
 Its consistency check does not grant release closure: `conformance verify-closure`
-rejects the draft until ownership and canonical snapshot evidence are complete.
-The adjacent global ledger is checked by `conformance verify-ownership`; its 928
-obligations have 777 proposed owners and 151 explicit gaps. See
-[ownership semantics](../tests/conformance/coverage/OWNERSHIP.md). These counts
+rejects the inventory until ownership and canonical snapshot evidence are complete.
+The adjacent global ledger is checked by `conformance verify-ownership`; see
+[ownership semantics](../tests/conformance/coverage/OWNERSHIP.md). Its counts
 describe assignments, not an approved coverage percentage.
 
 `just snapshot-replay` collects native snapshot candidates for the inventory's
@@ -175,21 +177,19 @@ describe assignments, not an approved coverage percentage.
 public facade twice per key in separate forward/reverse processes, keeps
 complete artifact/report bytes and package provenance for review, validates the
 baseline and rerenders the current package against all canonical native
-expectations. The initial #85 baseline is approved and its full replay passes;
-see the coverage README for the approval record and exact workflow.
-`just wasm-snapshot-replay` executes all 168 keys in browser WASM and compares
-them with the approved native baseline. Its initial run exposed seven
-mismatches; the ICO accounting fix resolves three, and four PNG mismatches
-remain tracked in #178. See
+expectations (`verify-native-baseline`); see the coverage README for the exact
+workflow. `just wasm-snapshot-replay` executes all 168 keys in browser WASM and
+compares them with the native baseline. Four PNG keys differ by the tiny-skia
+rounding tracked in #178 and are accepted exactly as recorded in
+`tests/package-consumer/experimental-wasm.json`; see
 [the investigation record](research/wasm-snapshot-mismatches.md). Its logs stay
 in `target/release-evidence/wasm-snapshots`.
 
 Test-only traces cover all 168 keys on both targets: `just trace-logs <target>`
 collects them into `target/release-evidence/results/{native,wasm}`, and
 `just full-equality` joins them to the packaged artifact/report runs and gates
-the combined comparison. Initial collection found 30 differing trace keys.
-Deterministic release-record tie breaks fix 27; the remaining three follow PNG
-output lengths under #178. The public join has zero disagreements. See
+the combined comparison. Three WASM trace keys follow the #178 PNG output
+lengths; the public join has zero disagreements. See
 [trace collection](research/trace-collection.md) for the distinction between
 report export and a pass.
 
@@ -222,28 +222,9 @@ pre-builds the pure-Rust viewer and the PDFium worker because the views
 script gives each viewer run 180 seconds. After adopting, set the release
 manifest back to `pending_target_aggregation`, remove the stale target
 aggregate, and run `release-evidence.yaml` from the resulting commit to
-record a new one (above). The 0.1.0 refresh of the subset profile token
-followed this order.
+record a new one (above).
 
-Codec and nested-SVG mutation fuzzing runs through `just nightly-asset-fuzz`;
-its PR smoke, seed matrix, resource envelope and failure-replay procedure are
-documented in [asset fuzzing](asset-fuzzing.md).
-
-## History: the Dagger runner
-
-From 2026-09-11 to ADR-0024 the Dagger module was the canonical CI and
-evidence runner, and the checks above were `dagger check` functions with the
-same commands. Its records stay valid; the
-[performance notes](ci-performance.md) describe that runner. Before retiring
-it, its checks passed on the working tree based on `11c1901`, and its
-end-to-end export passed on `2cb598e2b53fa87448bc5ebe8933dbf353501f78` in
-27m46s: native qualification passed 358 tests (5 ignored), pinned Chromium
-WASM qualification passed all 6 selected tests, and both reports agreed on 977
-successful cells and 1204 traced cells, matching the committed cross-target
-measurement at the time:
-
-- Generated bytes: `bb4e7dcdc4793db511aa7d75e77d54bd6b739477cc6e064153f9609e02fa9283`.
-- Resource traces: `79ea93cdb58f7f348a14df21358be0066360fde67aa3b0cbbd7c6556bccf90fa`.
-- Exported `aggregate.json` SHA-256: `1eeb31f3e01b58bbb2133bfd213d872552cb77d661ddfebfcfabeeba21876beb`.
-- Native report SHA-256: `234a2cf8cf7124fc2a62d6a591a13136a64d7edec0b1f0db4c32050da93a7121`.
-- WASM report SHA-256: `cb2451fdd0027aef220cbb3e4701cbf06ad38447d1ef4511196a7eaaba73e1ad`.
+Codec and nested-SVG mutation fuzzing runs through `just nightly-asset-fuzz`,
+and complete-render fuzzing through `just nightly-render-fuzz`; their PR smoke,
+seed matrix, resource envelope and failure-replay procedure are documented in
+[asset fuzzing](asset-fuzzing.md) and [render fuzzing](render-fuzzing.md).

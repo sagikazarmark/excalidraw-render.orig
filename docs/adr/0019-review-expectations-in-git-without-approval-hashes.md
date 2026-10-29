@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended 2026-10-14 (producer code and measurement records are historical)
 ---
 
 # Review expectations in Git without approval hashes

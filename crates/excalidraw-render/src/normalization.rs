@@ -1,4 +1,4 @@
-//! Compatibility normalization (stage 2): the deterministic preprocessing that
+//! Compatibility normalization: the deterministic preprocessing that
 //! reproduces the rendering-affecting behavior of the reference renderer's
 //! restore path. This file owns the normalized types, the scene-level pass
 //! (`normalize_scene_impl`) with its journal of preflight, commit and diagnostic

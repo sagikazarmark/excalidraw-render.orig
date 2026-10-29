@@ -105,8 +105,8 @@ shortest round-tripping rendering of the binary64 score, so its `f64::to_bits`
 `minimum_ssim_bits`. Because PDF.js runs first, also run
 `bash tools/pdf-harness/run-pdfium.sh render target/pdf-fallback-viewers-<pid>.pdf <output.rgba> 40 30`
 on the PDF the test wrote and confirm both viewers emit the same canonical RGBA
-before re-approving; if they differ, record both measurements on the issue
-instead of choosing a floor. Re-approval sets `minimum_ssim_bits` to the
+before re-pinning; if they differ, record both measurements on the issue
+instead of choosing a floor. A re-pin sets `minimum_ssim_bits` to the
 observed binary64 bits, `max_changed_pixels` to the observed count,
 `approved_issue` to the issue carrying the decision, and `reason` to the
 diagnosed cause, then updates the pinned sha256 of the exception file in
@@ -123,10 +123,10 @@ procedure: `cases/focused/excalifont-text/expected-pdf-structure.json` is
 pinned by sha256 in `harness_pdf_viewers/excalifont_text.rs`, and
 `cases/focused/rectangle-outline/expected-pdf-structure.json` is a bound
 dependency of that case's `pdf-renderer-expectations.json` (issue #44), so a
-digest that moves there moves the expectations' approval subject and needs a
-fresh approval on #44. The report's readable checks tell a re-pin from a
-defect the same way: the #133/#150 round, for instance, moved only
-`inventory_sha256`, for the trailer `/ID` and the tagged `base_font` names,
+digest that moves there needs the expectation file re-pinned and reviewed in
+Git. The report's readable checks tell a re-pin from a
+defect the same way: ADR-0008's deflate and chunk-tagging change (#133/#150),
+for instance, moved only `inventory_sha256`, for the trailer `/ID` and the tagged `base_font` names,
 while `operation_sha256` and every count held.
 
 The frame PDF visual gate compares every frame-export target rendered by both

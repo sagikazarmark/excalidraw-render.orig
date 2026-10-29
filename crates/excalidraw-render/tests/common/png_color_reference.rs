@@ -43,8 +43,9 @@ pub fn evidence() -> Value {
     record
 }
 
-/// Valid stage-2 signaling which the pinned decoder ignores. These source
-/// fields have no lower metadata, so they must match the untagged control.
+/// Valid cICP transfer signaling (the non-PQ/HLG transfers 7, 9, 10, 12 and
+/// 16-18) which the pinned decoder ignores. These source fields have no lower
+/// metadata, so they must match the untagged control.
 pub fn ignored_cicp_equivalent<'a>(record: &'a Value, row: &Value) -> Option<&'a Value> {
     if row["group"] != "cicp" {
         return None;

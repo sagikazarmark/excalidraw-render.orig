@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; the profile-binding paragraph is superseded by ADR-0005 and the approval round by ADR-0019
 ---
 
 # Compress PNG `IDAT` with `miniz_oxide` behind an owned scanline filter
@@ -121,9 +121,7 @@ are byte-identical. The `codec_measurement_input` work charge stays at the
 raster size because filtering and deflate remain linear in it.
 
 Adding the direct dependency edge changes the root `Cargo.toml` and
-`Cargo.lock`, whose digests the canonical comparator profile binds. As with
-every earlier dependency refresh, the profile and the three artifacts that bind
-its digest — the SVG viewer qualification (#34), the PDF harness qualification
-(#35), and the rectangle PDF renderer expectations (#44) — are refreshed with
-`approval: null`, and their gates stay red until the maintainer records the
-approvals against the subjects posted with the change.
+`Cargo.lock`, which the canonical comparator profile recorded at the time
+(ADR-0005 has since made the closure a recorded, not bound, fact, and
+ADR-0019 retired the approval round that accompanied every dependency
+refresh).

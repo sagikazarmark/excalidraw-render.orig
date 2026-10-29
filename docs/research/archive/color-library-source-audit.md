@@ -92,7 +92,7 @@ cssparser-color = "=0.5.0"
   also enables it. For the requested x86_64/WASM targets, inspected architecture
   dispatch concerns sqrt/FMA/rounding-class operations, not an alternative fast
   power/cube-root feature. `arch` is not a std-provider switch. This is consistent
-  with [ADR-0007](../adr/0007-route-transcendental-math-through-libm.md), but still
+  with [ADR-0007](../../adr/0007-route-transcendental-math-through-libm.md), but still
   requires browser equality evidence. [M1]
 - **Fast approximations:** Palette's scalar float→same-float sRGB path uses
   power, not `fast-srgb8`. Its specialized float-linear→sRGB-`u8` path uses

@@ -8,21 +8,21 @@
 > This document remains the rendering design and conformance target, not a claim
 > that 0.1.0 has completed every obligation.
 
-Document version: `1.2.1`
+Document version: `1.2.2`
 
 Compatibility revision: `1`
 
-Status: Draft amendment approved; implementation and qualification pending
-
-Approval: Revision-1 frame-export and SVG-font-subsetting decisions approved; final evidence approval required before publication
+Status: Draft revision; the 0.1.0 release ships it under the version-scoped
+contract of ADR-0016. Expectations and evidence are accepted through Git/PR
+review and reproducible tests (ADR-0019).
 
 ## 1. Authority
 
 This document is the normative approved design contract for compatibility
 revision 1 of `excalidraw-render`. It becomes implementation-ready when the
 closed artifacts required by Section 16 are incorporated. It supersedes
-conflicting wording in research notes, issue bodies, resolution comments, the
-current MVP, and the repository README. Those sources remain rationale and
+conflicting wording in research notes, issue bodies, resolution comments, and
+the repository README. Those sources remain rationale and
 evidence, not parallel specifications.
 
 The keywords MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are normative.
@@ -1847,8 +1847,8 @@ An official font chunk's reviewed decode is the sfnt the pinned `wuff 0.2.9`
 decode of the chunk's exact manifested WOFF2 bytes produces (#120). The revision
 catalog records every chunk's reviewed decode beside its source digests, as a
 decoded length and SHA-256, and the reviewed-decodes record
-(`catalog/reviewed-decodes/revision-1.json`) binds all 230 under one maintainer
-approval on the Section 14.4 subject pattern: the decoder's name, version, and
+(`catalog/reviewed-decodes/revision-1.json`) binds all 230 in one reviewed
+record: the decoder's name, version, and
 invocation; the reference asset manifest and 8.3.3 qualification-corpus
 digests; each chunk's source and decoded length and digest in catalog order;
 and the decodes that are additionally checked in byte for byte. The review is
@@ -1861,8 +1861,8 @@ container declares, requires the record and catalog to state exactly those
 decodes, and holds the decoder version to the lockfile. The renderer admits a
 decode for shaping or embedding only after matching its recorded length and
 digest; any other bytes are a sealed-asset failure, never a font. A decoder
-change, a moved decode, or a chunk added or removed moves the subject and
-requires a new approval.
+change, a moved decode, or a chunk added or removed moves the record and is
+a reviewed change.
 
 Every safe linked element generates one borderless URI annotation from
 deterministic transformed-bound quadrilaterals, clipped to the page and frame
@@ -2017,7 +2017,7 @@ renaming are forbidden. Each qualified source decode and subset toolchain record
 source, intermediate, and output digests; exact versions and invocation; complete
 profile and corpus-table-manifest digest; table/name/metric/license comparison;
 workspace bounds; reviewer; and date. Any unprofiled content, metric, table, or
-name change needs new approval. For the source decode that record is the Section
+name change is a reviewed change. For the source decode that record is the Section
 8.6 reviewed-decodes record. The subsetting Krilla performs on the renamed
 programs PDF embeds (Section 8.6) has no such record: ADR-0021 leaves its output
 to the PDF viewer and text-extraction gates, and pins Krilla exactly so that a
@@ -2027,7 +2027,7 @@ beyond the 8.3.3 qualification corpus whose digest it binds; its table, name,
 metric, and license comparison is byte identity with the recorded decode, which
 `xtask catalog verify` re-derives on the verifying host and which the 8.3.3
 corpus carries across supported targets through the subsets derived from it;
-and its reviewer and date are the approval's.
+and its reviewer and date are the record's.
 
 Reserved Font Names `Virgil`, `Cascadia Code`, `Lilita`, and `Liberation` remain
 only on exact official source bytes and approved lossless decoding equivalents,
@@ -3396,7 +3396,7 @@ equality property: each target computes its trace measurement fresh, the
 aggregation compares every supported target, and the agreed measurement is
 committed as a reviewable artifact that every aggregation re-asserts. The
 supported-target aggregate itself is recorded verbatim into the release evidence
-bundle, bound to the corpus, font subset profile, viewer approval, and committed
+bundle, bound to the corpus, font subset profile, viewer qualification, and committed
 measurement it was produced for; the bundle's decision stays pending until it is
 recorded and fails closed once any of those four bindings moves. Per-cell trace
 digests MUST NOT be pinned. Canonical Chromium and the controlled pure-Rust
@@ -3587,27 +3587,26 @@ root-minimal, and unisolatable forms. Source images and statically empty or full
 clipped effects succeed under `Forbid`. Required-vector backend failures remain
 distinct fatal failures and never become fallback.
 
-### 14.4 Approval and Determinism
+### 14.4 Review and Determinism
 
 One designated compatibility maintainer judges case class, crops, coverage,
-exclusions, tolerance exceptions, and reference-evidence acceptance. Recorded
-self-approval is allowed when there is one maintainer. Approval records GitHub
-identity, UTC date, issue/PR URL, and SHA-256 of a canonical approval subject.
+exclusions, tolerance exceptions, and reference-evidence acceptance, through
+ordinary Git/PR review of the committed expectations (ADR-0019).
 
 The subject is a canonical bundle containing the case manifest without its
-approval object, every evidence/raw-buffer hash, semantic and complete ordered
+`approval` object, every evidence/raw-buffer hash, semantic and complete ordered
 report expectations, whole/crop classes, crops, coverage records, exceptions,
-and all reference/comparator/viewer profile identities. The approval object has
-only `approved_by`, `approved_at`, `approval_url`, and
-`approval_subject_sha256`; it is excluded from its own digest. Any
-judgment-bearing or referenced-byte change invalidates approval. Multi-case
-approval lists every case and digest. Coverage-ledger changes additionally
-approve the ledger digest. CI validates schema, hashes, identities, links,
-reproducibility, approval presence, and scope but makes no judgment or rewrite.
+and all reference/comparator/viewer profile identities; its digest identifies
+what was reviewed, and any judgment-bearing or referenced-byte change moves it
+and is a reviewed change. A manifest MAY carry an `approval` object
+(`approved_by`, `approved_at`, `approval_url`, `approval_subject_sha256`) as
+historical metadata; it is excluded from the subject and is not a gate. CI
+validates schema, hashes, identities, links, reproducibility, and scope but
+makes no judgment or rewrite.
 
 A tolerance exception names one case, variant, format, viewer, and region;
-documents a non-defect cause and immutable approval; and sets ceilings to the
-exact observed count and binary64 score with no margin. A complete artifact
+documents a non-defect cause and the issue that carries the decision; and sets
+ceilings to the exact observed count and binary64 score with no margin. A complete artifact
 smaller than 11x11 has no score (Section 14.3); its exception instead records,
 per failing view, the exact Pixelmatch count, the exact count of differing
 view pixels and the exact maximum channel difference, and holds the
@@ -3657,7 +3656,8 @@ executes tests rather than only cross-compiling. Release CI repeats the complete
 and packaged crate sources.
 
 The browser WASM smoke uses a non-published `wasm-bindgen-test` adapter calling
-only public Rust API in exact-pinned headless Chromium. One checked scene renders
+only public Rust API in a headless browser whose version the run records
+(ADR-0024). One checked scene renders
 through SVG, PNG, and PDF and exercises rough geometry, bundled and fallback
 text, an image, frames/clipping, and ordered diagnostics. Complete artifact bytes
 and serialized report data match checked native expectations from the same
@@ -3673,12 +3673,12 @@ release.
 Every non-prerelease stable Excalidraw release is evaluated by release-note and
 source-diff review. When needed, create a complete candidate reference profile,
 regenerate affected evidence, classify all changes, prove two-process stability,
-make renderer behavior and diagnostics conform, obtain explicit approval, and
+make renderer behavior and diagnostics conform, review the result, and
 activate atomically with conformance and release documentation.
 
 Before first publication, a draft revision MAY incorporate reviewed
 contract-relevant changes, including disjoint export targets, by updating its
-complete specification, profile, manifests, evidence, approvals, and expected
+complete specification, profile, manifests, evidence, and expected
 bytes together. First publication of any package containing the revision makes
 it retained. After that point, every contract-relevant change, including a new
 target, creates the next monotonic compatibility revision; the retained bundle
@@ -3724,8 +3724,8 @@ and its run-direction and per-character SVG position clauses by
 The 8.6 definition of the reviewed decode PDF embeds for every official font
 chunk is specified by
 [Decide how PDF satisfies "reviewed predecoded sfnt chunks" for the 229 runtime-decoded chunks](https://github.com/sagikazarmark/excalidraw-render/issues/120).
-Changing these bytes invalidates the original adjacent approval subject; a new
-maintainer approval is required before release.
+Changing these bytes is a reviewed change to the incorporated artifacts
+(ADR-0019).
 
 The specification is implementation-ready when all of these remain true:
 

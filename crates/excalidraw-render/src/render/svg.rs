@@ -1,4 +1,4 @@
-//! The direct SVG backend (stage 5 and 6): `SvgPlan` lowers the resolved scene
+//! The direct SVG backend: `SvgPlan` lowers the resolved scene
 //! into `SvgElement`s in the units SVG emits, `measure` and `encode_exact` run
 //! the writer twice through a counting and a real `SvgSink` so the artifact is
 //! sized before it is allocated, and the plan carries the font bundle, the

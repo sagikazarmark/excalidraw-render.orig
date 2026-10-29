@@ -6,8 +6,7 @@ and reproducible tests. Historical approval workflows below are transcripts.
 Baseline bytes, diagnostic derivation, exact input keys, completeness and owner
 selection still verify; approval metadata does not grant or block ownership.
 
-This is a **draft inventory**, not a release approval or a claim of complete
-revision-1 coverage. It gives corpus closure and target collectors one checked
+This inventory is not a claim of complete revision-1 coverage. It gives corpus closure and target collectors one checked
 input set and one result key. The current inventory has:
 
 - 202 scene-surface field rows and 118 distinct existing case coverage labels;
@@ -15,22 +14,23 @@ input set and one result key. The current inventory has:
 - 168 execution keys: each scene variant/frame target in SVG, PNG and PDF;
 - 112 reference artifact descriptors and 56 explicit absent PDF reference
   descriptors (specialized PDF evidence is still a separate integration task);
-- 27 labels with multiple candidate cases and eight unresolved milestones.
+- 27 labels with multiple candidate cases and eight open closure requirements.
 
 ## Inventory lifecycle
 
-The expanded global ownership proposal is in `ownership.json`, with derivation
-and semantics documented in [OWNERSHIP.md](OWNERSHIP.md). It adds 928 format-scoped
-obligations alongside this execution inventory and proposes single owners for the
-27 collided labels. The ledger consistency check is separate from final approved
-coverage closure; explicit gaps remain blocking.
+The global ownership ledger is `ownership.json`, with derivation and
+semantics documented in [OWNERSHIP.md](OWNERSHIP.md). It assigns one owner to
+every format-scoped obligation alongside this execution inventory and selects
+a single primary case for each of the 27 collided labels. The ledger
+consistency check is separate from coverage closure; explicit gaps remain
+blocking.
 
 `requirements.json` names the outstanding work and retains historical links to
 tests/other evidence by source digest and textual anchor. Those links describe
 where code existed when recorded, **not that it ran or completely covers a
 requirement**. Inventory derivation validates their metadata but does not read the
 linked source files or require the old anchors to exist. Editing or moving linked
-code therefore needs no source-hash refresh. The fixed milestone set cannot
+code therefore needs no source-hash refresh. The fixed requirement set cannot
 silently shrink.
 
 `inventory.json` is derived from those requirements, the case registry, current
@@ -213,7 +213,7 @@ which now draws untransformed as the reference draws it. It was approved on
 2026-09-24 in
 [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5808265754),
 subject `sha256:9dfb7dc101a5bf5350248bee33028aa17e8b0b8228fb622f10839bb13985c2e7`.
-See [the JPEG facet record](../../../docs/research/jpeg-umbrella-facets.md).
+See [the JPEG facet record](../../../docs/research/archive/jpeg-umbrella-facets.md).
 
 The preceding baseline contains the approved clean `4713c2e` recollection
 after PDF began lowering dark mode into nested-SVG content (ADR-0013, #154).
@@ -236,7 +236,7 @@ after the nested resource-limit amendment. All 168 artifact/report pairs and 187
 blobs match the prior baseline exactly; refreshed input bindings and provenance
 were approved on 2026-09-14 in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5671646910),
 subject `sha256:177a9f4a2f901659189dac9b10e6e766e061cee2023024905a860f5bb51783aa`.
-Canonical packaged replay passes. See [the amendment record](../../../docs/research/nested-resource-limit-amendment.md#native-baseline-refresh).
+Canonical packaged replay passes. See [the amendment record](../../../docs/research/archive/nested-resource-limit-amendment.md#native-baseline-refresh).
 
 The preceding baseline contains the approved clean `73a1560` recollection
 after nested-claim registry reapproval. All 168 artifact/report pairs and 187
@@ -519,7 +519,7 @@ prove semantic parity with official evidence: it stages reproducible candidates
 for that review. Typed render failures retain their error descriptor and full
 report instead of inventing an artifact.
 
-Initial Dagger execution on the working tree based on `cf4f64d` passed all 168
+The initial execution on the working tree based on `cf4f64d` passed all 168
 keys (56 each of SVG, PNG and PDF), with 672 successful render calls across
 the two process orders and no render failures. The candidate manifest has null
 approval. The staged output in `target/native-snapshots` includes about 22 MB

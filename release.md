@@ -2,8 +2,8 @@
 
 The [0.1.0 scope](docs/release-0.1.0.md) and
 [known limitations](docs/known-limitations.md) describe what a release
-promises. The [preparation record](docs/release-preparation.md) is historical;
-this runbook is the current procedure.
+promises; [release readiness](docs/release-readiness.md) tracks the open
+items for the first release. This runbook is the procedure.
 
 The workspace publishes five crates in lockstep, in this dependency order:
 `excalidraw-render-fonts-xiaolai`, `excalidraw-render-fonts-xiaolai-extended`,
@@ -25,9 +25,9 @@ number, not only new metadata.
 - The [known limitations](docs/known-limitations.md) link their tracking
   issues by full URL under the new repository name, so they resolve only after
   the rename. Check them once the repository is public.
-- Enable private vulnerability reporting (Settings → Security): the README
-  points reporters at the Security tab, which offers no "Report a
-  vulnerability" button until it is on.
+- Private vulnerability reporting (Settings → Security) is on; confirm it
+  survived the rename. The README points reporters at the Security tab, which
+  offers no "Report a vulnerability" button until it is on.
 - Publish the crates soon after the repository goes public: the five crate
   names are free on crates.io until then, and the public repository names them.
 - The crates.io token needs the `publish-new` scope for the first publication,

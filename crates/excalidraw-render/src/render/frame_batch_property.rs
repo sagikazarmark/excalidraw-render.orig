@@ -663,8 +663,7 @@ fn push_element(elements: &mut String, element: &str) {
 /// Every generated case renders each frame, in each format, once cold and once
 /// through a shared batch preparation across a ladder of resource limits: several
 /// hundred renders that take minutes unoptimized. The push gate therefore skips
-/// it; the packaged-facade workflow's native leg and the Dagger
-/// `packaging:qualification` check run it in `--release` with
+/// it; `just qualification <target>` runs it in `--release` with
 /// `EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1` and no name filter, so a rename
 /// cannot drop it silently.
 #[test]

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: implemented (#210)
 ---
 
 # Validate subset layout structurally with a typed walker
@@ -9,7 +9,7 @@ read-fonts' untyped `traversal` API, which read-fonts 0.44 removed
 (googlefonts/fontations#2087) with no replacement. That pin held the renderer on
 a second parser version (ADR-0003, 2026-09-10 amendment). The validator moves to
 a typed walker over `write_fonts::read`, and the direct read-fonts dependency
-goes. Implementation is tracked in #210.
+goes (#210).
 
 The validator is structural: every glyph ID, lookup index, feature index, class
 value and offset in GSUB, GPOS and GDEF must refer to something that exists,
@@ -39,7 +39,7 @@ includes it, counting whole ranges. Traversal's accidental definition (range
 endpoints only, GDEF classes included) is not preserved; the resulting corpus
 change is reviewed under ADR-0019.
 
-The traversal walker survives only as a temporary test oracle on read-fonts
-0.43.3, the last release with traversal, until the typed walker matches it over
-bundled fonts, corpus subsets, fixtures and seeded mutations. Mutations that
+The traversal walker served as a test oracle on read-fonts 0.43.3, the last
+release with traversal, until the typed walker matched it over bundled fonts,
+corpus subsets, fixtures and seeded mutations; it is retired. Mutations that
 exposed a disagreement remain as fixed fuzz regressions.

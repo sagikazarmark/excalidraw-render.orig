@@ -72,10 +72,10 @@ features.
   is, and the one owner among it asserts the refusal instead. Gating the
   rest would only turn those failures into skips.
 - The reduced builds are tested for what they promise instead. The
-  `test:features` check (`tools/ci/check-format-features.sh`) verifies that
+  `just test-features` recipe (`tools/ci/check-format-features.sh`) verifies that
   their dependency graphs leave out the formats' libraries, runs the
   `format_features` refusal tests, and compares the artifact and report
   digests of every format a reduced build keeps against the default build,
   over the public scene corpus (the `format_digests` example).
-- The `lint:features` check runs clippy on the renderer without default
+- The `just features` recipe runs clippy on the renderer without default
   features and with each one alone, so a reduced build cannot rot unnoticed.

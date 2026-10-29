@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; owner verification superseded by ADR-0017, approval binding by ADR-0019
 ---
 
 # Own closure obligations with approved judgment records
@@ -50,14 +50,13 @@ enforces them, and any failure is stale or unbound ownership:
   checks every bound digest and the completeness rule, and compares against
   the approved native baseline.
 
-Rebinding a record owner is like rebinding a representative. A changed record
-needs a fresh approval, and the new binding goes into the ledger through an
+Rebinding a record owner is like rebinding a representative: a changed record
+is a reviewed change, and the new binding goes into the ledger through an
 applied proposal. Nothing refreshes it automatically.
 
-The global approval gets a recorder, `record-ownership-approval <login> <date>
-<#85 comment URL> <subject>`. The rules stay as they are: the subject covers
-the catalog and every disposition, it refuses while any gap remains, and once
-approved the ledger is frozen.
+(The approval binding and the `record-ownership-approval` recorder this
+decision introduced are retired by ADR-0019; the ledger's `approval` member
+and the records' `approval_subject_sha256` fields are historical metadata.)
 
 ## Consequences
 

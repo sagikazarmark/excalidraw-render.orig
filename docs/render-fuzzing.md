@@ -44,7 +44,7 @@ the harness introduces no writer or resource callback. Browser WASM runs the
 same smoke adapter through `just render-fuzz-wasm` (debug symbols are disabled
 to bound wasm-bindgen's module-processing memory; test assertions remain on).
 The nightly GitHub workflow runs `just nightly-render-fuzz` with 4,096 cases and
-a 60-minute job timeout. It retains test-profile
+a 90-minute job timeout. It retains test-profile
 overflow/debug assertions. Timeout, OOM and abort are failed jobs, never accepted
 outcomes. Tracing flushes the complete reproducer before each render so a native
 trap or hang has a last-input record.

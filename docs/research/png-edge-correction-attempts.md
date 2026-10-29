@@ -1,6 +1,7 @@
 # PNG edge correction attempts and upstream reuse
 
-Base: `7754d9b`. Investigation continues the Velox diagnosis under #84.
+Investigation under #84; concluded by ADR-0014 (judge representative regions
+against identical-input controls).
 
 ## Outcome
 
@@ -33,13 +34,13 @@ registered as a passing test or a new tolerance.
 The narrow flattened candidate's 12-case independent browser matrix passed
 only scale 1.5 and the unchanged rotated-path control; ten small-rectangle
 cases failed geometry/image SSIM despite meeting changed-pixel ceilings.
-`qualify_edges.py` retains the deterministic collection recipe: widths
-1.5/2/3/4 at phases 0.125 and 0.632993081447, a negative phase, scale 1.5,
-50% opacity and rotation 0.25. Outputs from rejected implementations are not
-promoted to expected renderer results. Terminal logs remain in
-`/tmp/opencode/png-edge-qualification-v2.log` and
-`/tmp/opencode/velox-edge-parity.log`; this narrative is manually recorded
-experimental provenance, not an immutable implementation qualification.
+The deterministic collection recipe was widths 1.5/2/3/4 at phases 0.125 and
+0.632993081447, a negative phase, scale 1.5, 50% opacity and rotation 0.25
+(the `qualify_edges.py` collector is retired; see
+`tools/representative-intake/diagnostic-retirement.md`). Outputs from rejected
+implementations are not promoted to expected renderer results. This narrative
+is manually recorded experimental provenance, not an implementation
+qualification.
 
 ## Upstream reuse result
 

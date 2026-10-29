@@ -1,11 +1,10 @@
 # Conformance corpus
 
-**Current acceptance policy:** [ADR-0019](../../docs/adr/0019-review-expectations-in-git-without-approval-hashes.md)
-uses Git/PR review and reproducible tests for every evidence family. Approval
-hashes, reviewer metadata and issue-comment recording commands described in older
-sections below are historical; approval commands now report their retirement.
-Input/output and tool-integrity digests, tolerance scopes and completeness checks
-remain enforced. Producer-source identities are historical observations.
+Acceptance is Git/PR review plus reproducible tests for every evidence family
+([ADR-0019](../../docs/adr/0019-review-expectations-in-git-without-approval-hashes.md));
+approval hashes and their recording commands are retired. Input/output and
+tool-integrity digests, tolerance scopes and completeness checks remain
+enforced. Producer-source identities are historical observations.
 
 This directory contains versioned scene documents and reference
 evidence used to judge format-specific parity. Ordinary verification is offline:
@@ -252,7 +251,10 @@ and reproduction.
 RGBA8 projection, Pixelmatch, SSIM, crop, and visual-budget protocol. Its
 adjacent digest binds the profile. The profile in turn binds what can change a
 measurement: the unpublished Rust implementation, adversarial vectors, and
-imported Pixelmatch 7.2.0 fixtures. Verify all of them offline with:
+imported Pixelmatch 7.2.0 fixtures. The upstream behaviour the implementation
+reproduces is documented in
+[the comparator primary sources](../../docs/research/conformance-comparator-primary-sources.md).
+Verify all of them offline with:
 
 ```sh
 cargo test --locked -p excalidraw-render-compare
@@ -286,8 +288,7 @@ turn:
   `coverage/ownership.json`.
 
 Follow each moved digest until nothing live changes. Historical records stay
-as they were: `proposals/`, `candidates/`, `coverage/*-application-v*/`,
-`docs/research/`, `coverage/font-packaging-reconciliation-2.json`, and the
+as they were: `proposals/`, `candidates/`, `docs/research/`, `coverage/font-packaging-reconciliation-2.json`, and the
 `source` digests of test-owned rows in `coverage/ownership.json`. A digest
 refresh never rewrites them. A proposal or candidate that no check, test or
 script reads is deleted instead of kept (ADR-0022); kept records may still name

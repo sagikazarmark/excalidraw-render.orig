@@ -1,6 +1,7 @@
 //! Font container operations for representative viewer assets (#84).
 //! Uses the renderer's pinned decoder, encoder and face parser so derived
-//! viewer resources match the Stage-4 adapter's single-face output exactly.
+//! viewer resources match the representative viewer adapter's
+//! (`stage4-viewer-assets.mjs`) single-face output exactly.
 use std::io::Read;
 
 use serde_json::json;

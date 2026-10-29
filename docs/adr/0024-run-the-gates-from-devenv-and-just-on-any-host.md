@@ -81,8 +81,8 @@ pinned Docker images, until they move. `input-boundaries` and
   browser-WASM target is "in a browser". ADR-0006 gains a pointer here.
 - A laptop runs the same per-change gates as CI, natively. Cargo's own
   fingerprints decide rebuilds, so a check compiles only what it reads.
-- `docs/ci.md`, `CONTRIBUTING.md`, `docs/development.md` and the release
-  runbook describe recipes instead of Dagger calls.
+- `docs/ci.md`, `docs/development.md` and the release runbook describe
+  recipes instead of Dagger calls.
 - New snapshot, trace and result bundles change schema to record tool
   identities. The native baseline is replayed, not regenerated: its expected
   bytes do not depend on the pin files.

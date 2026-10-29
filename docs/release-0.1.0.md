@@ -1,7 +1,7 @@
 # 0.1.0 release policy
 
-Status: accepted scope; [release preparation verified](release-preparation.md). No publication is
-implied by this document. The code is published at
+Status: accepted scope. No publication is implied by this document. The code
+is published at
 [`sagikazarmark/excalidraw-render`](https://github.com/sagikazarmark/excalidraw-render)
 before the crates are.
 
@@ -47,10 +47,10 @@ this release does not claim to have completed every requirement in it.
 6. The final release is built from an identified clean tag. Publication uses the
    tested packages; installed public artifacts receive a final smoke test.
 
-Current approval-bearing evidence remains checked. Representative producer
+Committed evidence remains verified by the gates. Representative producer
 identities are historical provenance under [ADR-0017](adr/0017-separate-representative-expectations-from-producer-provenance.md);
-fresh renderer replay must still match the approved outputs exactly. This changes
-no historical approval record or reference output. Exported run
+fresh renderer replay must still match the expected outputs exactly. This changes
+no historical record or reference output. Exported run
 provenance must distinguish an edited working tree from a clean tagged candidate.
 
 ## Follow-up work
@@ -74,4 +74,4 @@ commits, ADRs and docs, keep pointing at the same issues.
 
 Build/install failures, missing required license/assets, unexpected output drift,
 and demonstrated panics or unbounded processing in accepted inputs remain
-release blockers. Global coverage closure and an approval-system redesign do not.
+release blockers. Global coverage closure does not.

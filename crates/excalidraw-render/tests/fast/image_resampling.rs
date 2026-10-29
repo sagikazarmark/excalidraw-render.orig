@@ -97,7 +97,7 @@ fn an_upscaled_image_has_the_canvas_bilinear_ramp_between_texel_centres() {
     // first texel row) reads black then white. Here every texel centre and
     // every clamp boundary falls on a subpixel boundary, so the four subpixel
     // samples averaged to nearly the same values. The exact bytes below were
-    // checked in two fresh Chromium 149.0.7827.55 processes during Stage 4:
+    // checked in two fresh Chromium 149.0.7827.55 processes:
     // the canvas truncates 255 * 1/8 and 255 * 3/8 rather than rounding them.
     let png = render_png(&checker_scene(
         r#""x":0,"y":0,"width":8,"height":8,"angle":0,"opacity":100,"scale":[1,1]"#,

@@ -64,7 +64,6 @@ const REVIEWED_DECODES_DIGEST_PATH: &str =
 const REVIEWED_DECODES_SCHEMA: &str = "excalidraw-render/reviewed-decodes/v1";
 const REVIEWED_DECODES_APPROVAL_SUBJECT_SCHEMA: &str =
     "excalidraw-render/reviewed-decodes-approval-subject/v1";
-/// The issue whose comment thread carries the reviewed-decodes approval.
 const NOTO_EMOJI_SHA256: &str = "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634";
 const NOTO_EMOJI_LENGTH: usize = 862_680;
 const XIAOLAI_ORDER_SHA256: &str =
@@ -1088,8 +1087,8 @@ fn review_decode(upstream_path: &str, source: &[u8]) -> Result<ReviewedDecode, S
 
 /// The reviewed-decodes record: the decoder identity, the manifests that
 /// qualified it, every chunk's reviewed decode in catalog order, the one decode
-/// that is additionally checked in byte for byte, and the maintainer approval
-/// that binds all of it.
+/// that is additionally checked in byte for byte, and the historical approval
+/// metadata it carries.
 fn reviewed_decodes_record(decodes: &[ReviewedDecode], approval: Value) -> Value {
     json!({
         "approval": approval,
@@ -1119,8 +1118,8 @@ fn reviewed_decodes_record(decodes: &[ReviewedDecode], approval: Value) -> Value
     })
 }
 
-/// The approval subject of a reviewed-decodes record: the record without its
-/// approval object, so recording the approval does not move it.
+/// The subject digest of a reviewed-decodes record: the record without its
+/// `approval` member, so that member never moves it.
 fn reviewed_decodes_subject(record: &Value) -> Result<String, String> {
     let mut record = record.clone();
     record
@@ -1287,8 +1286,7 @@ fn verify_font_package_versions(root: &Path) -> Result<(), String> {
 /// Verifies the record's content against fresh decodes of every reassembled
 /// chunk: the decoder is the pinned one, every chunk's decode re-derives to the
 /// recorded length and digest in catalog order, and each checked-in decode is
-/// one of them byte for byte. The approval itself is checked separately, after
-/// everything it binds.
+/// one of them byte for byte.
 fn verify_reviewed_decodes(
     root: &Path,
     record: &Value,

@@ -30,8 +30,8 @@ not adding libraries around compatibility code that must remain.
 | Optional batch | Fontations checksums; base64 algorithms | 35–50; 40–55 lines | Small, credible existing-dependency reuse |
 | Conditional | weezl LZW; moxcms ICC execution | 35–70; 350–500 lines | Allocation/numerical contracts unresolved |
 
-[ADR-0016](../adr/0016-release-0.1.0-with-a-version-scoped-contract.md) permits reviewed
-output/diagnostic changes between 0.x releases. [ADR-0019](../adr/0019-review-expectations-in-git-without-approval-hashes.md)
+[ADR-0016](../../adr/0016-release-0.1.0-with-a-version-scoped-contract.md) permits reviewed
+output/diagnostic changes between 0.x releases. [ADR-0019](../../adr/0019-review-expectations-in-git-without-approval-hashes.md)
 retires executable approval hashes in favor of Git review and reproducible tests.
 Old byte identity is a differential control, **not an immutable adoption gate**.
 Visual/textual correctness, bounded rendering, diagnostics, metadata recovery, and
@@ -64,8 +64,8 @@ Closed experiments remain useful evidence, with sharply bounded conclusions:
 - [#186 pdf-writer](https://github.com/sagikazarmark/excalidraw-render.orig/issues/186), [7a1b4a1](https://github.com/sagikazarmark/excalidraw-render.orig/commit/7a1b4a1): the 0.12 exact-f64 probe is not applicable unchanged to 0.15, which seals `Primitive`.
 - [#198 resampling](https://github.com/sagikazarmark/excalidraw-render.orig/issues/198), [bee5165](https://github.com/sagikazarmark/excalidraw-render.orig/commit/bee5165)/[c5fec02](https://github.com/sagikazarmark/excalidraw-render.orig/commit/c5fec02): the 73-row oracle is reference-specific evidence, not a generic resizing contract.
 
-See [prior rendering review](rendering-library-review.md), [Fontations name evaluation](fontations-name-tables.md),
-[PDF-writer study](pdf-writer-integration.md), and [CSS compatibility](../css-tokenization.md).
+See [prior rendering review](rendering-library-review.md), [Fontations name evaluation](../fontations-name-tables.md),
+[PDF-writer study](pdf-writer-integration.md), and [CSS compatibility](../../css-tokenization.md).
 
 ## 2. Immediate: replace CLI JSON assembly with Serde
 
@@ -174,11 +174,11 @@ still supplies the bounded layout validator's removed traversal API.
 | Notices, recoverable scene/manifest, metadata atomicity | Exact XMP whitespace/carrier spelling, with consumer compatibility reviewed |
 | Bounded rendering, no hidden resources, typed failures and occurrence diagnostics | Internal allocation/layout/cache strategy, never uncharged semantic work |
 
-Normative locations: [spec §8.6](../renderer-spec-v1.md#86-vector-first-pdf), especially
-lines 1704–1719, 1721–1805 and 1834–1874; [§12.2–12.3](../renderer-spec-v1.md#122-format-carriers);
-[§13.2](../renderer-spec-v1.md#132-semantic-accounting) and [§13.3](../renderer-spec-v1.md#133-safety-and-recovery).
+Normative locations: [spec §8.6](../../renderer-spec-v1.md#86-vector-first-pdf), especially
+lines 1704–1719, 1721–1805 and 1834–1874; [§12.2–12.3](../../renderer-spec-v1.md#122-format-carriers);
+[§13.2](../../renderer-spec-v1.md#132-semantic-accounting) and [§13.3](../../renderer-spec-v1.md#133-safety-and-recovery).
 These are proposed revisions, not permission to silently disregard today's contract.
-PDF subsetting also needs [ADR-0001](../adr/0001-treat-font-subsets-as-modified-versions.md)
+PDF subsetting also needs [ADR-0001](../../adr/0001-treat-font-subsets-as-modified-versions.md)
 legal-record, Reserved Font Name and notice treatment; selectability does not require whole programs.
 
 ### Focused Krilla experiment: recommended
@@ -214,8 +214,8 @@ Potentially replaced production boundaries: `crates/excalidraw-render/src/render
 `pdf/nested_svg.rs:629–884`. These contain hundreds of specialized PDF lines,
 but new lowering remains; there is no verified net total. Preserve scene semantics,
 closure planning, diagnostics and accounting. The normalized SVG bridge is not
-automatically removable; [ADR-0009](../adr/0009-share-pdf-raster-closure-planning-and-encoding.md)
-and implemented [ADR-0013 dark lowering](../adr/0013-lower-dark-mode-into-nested-svg-content-in-pdf.md) still matter.
+automatically removable; [ADR-0009](../../adr/0009-share-pdf-raster-closure-planning-and-encoding.md)
+and implemented [ADR-0013 dark lowering](../../adr/0013-lower-dark-mode-into-nested-svg-content-in-pdf.md) still matter.
 
 Krilla 0.8.2 / krilla-svg 0.8.1 were released June 4, MIT OR Apache-2.0;
 upstream was active September 24. Its [released testing description](https://github.com/LaurenzV/krilla/blob/krilla-v0.8.2/README.md)

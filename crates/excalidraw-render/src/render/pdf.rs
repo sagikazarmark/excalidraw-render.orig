@@ -1,4 +1,4 @@
-//! The vector-first PDF backend (stage 5 and 6): `PdfPlan` lowers the resolved
+//! The vector-first PDF backend: `PdfPlan` lowers the resolved
 //! scene into paint-ordered `PdfElement`s and `encode` writes them through
 //! Krilla (ADR-0021) — one page, its link annotations, the embedded scene and
 //! the artifact manifest as attachments, and the tag tree the page's text

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; approval-subject validation superseded by ADR-0019
 ---
 
 # Separate representative expectations from producer provenance

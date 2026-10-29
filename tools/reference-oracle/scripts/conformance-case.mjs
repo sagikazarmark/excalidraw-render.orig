@@ -410,7 +410,7 @@ function buildManifest(scenePath, provenancePath, outputRoot, renders) {
     determinism: CASE.determinism,
     // Tolerance exceptions are a maintainer judgment recorded in the registry,
     // like coverage and semantic expectations; the generator carries them into
-    // the manifest so the approval subject binds them.
+    // the manifest so the case record binds them.
     exceptions: CASE.exceptions ?? [],
     feature_tags: CASE.feature_tags,
     layer: CASE.layer,

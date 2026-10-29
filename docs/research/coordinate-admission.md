@@ -1,7 +1,7 @@
 # Derived coordinate admission
 
 This audit follows the coordinate checkpoint in
-[`nested-resource-limit-amendment.md`](nested-resource-limit-amendment.md#coordinate-admission-checkpoint-ownership-still-open).
+[`nested-resource-limit-amendment.md`](archive/nested-resource-limit-amendment.md#coordinate-admission-checkpoint-ownership-still-open).
 The governing contract is renderer spec §13: admitted source components alone
 do not admit their derived geometry.
 
@@ -100,21 +100,3 @@ derived crossings, nested clipping, and direct/prepared frame outcomes.
 `render/resolve_tests.rs` covers the pre-recovery CJK trigger; the geometry unit
 test checks the clipping-envelope invariant independently of the admission
 predicate.
-
-## Verification record
-
-Validated with the repository's Rust 1.97.1 toolchain:
-
-- The complete default workspace test set: 1,036 cases. The full run passed
-  1,032; an obsolete source-overflow expectation and three stale ownership
-  source-binding failures were corrected and all four reruns passed.
-- After the final SVG filter-region guard: all 12 coordinate-recovery tests,
-  31 nested-SVG integration tests and 18 backend-plan tests passed.
-- Workspace formatting, Clippy with warnings denied, documentation tests and
-  `wasm32-unknown-unknown` type-checking passed.
-- All 37 registered conformance cases and all eight catalog, inventory,
-  ownership and viewer/font-evidence verification gates passed. The existing
-  draft ownership source digests were refreshed with the repository tool.
-- Standards and Spec closure reviews confirmed that their identified blockers
-  were addressed. Browser execution was not part of this verification run;
-  the WASM check above is compilation, not cross-target artifact evidence.

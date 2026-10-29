@@ -8,7 +8,7 @@ pub(super) struct Verifier {
     name: &'static str,
     schema: &'static str,
     record: &'static str,
-    /// The record's own approval subject computation (no `sha256:` prefix).
+    /// The record's canonical subject digest (no `sha256:` prefix).
     #[cfg(test)]
     subject: fn(&Value) -> Result<String, String>,
     /// Full in-process verification of the repository's record.

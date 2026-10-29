@@ -9,7 +9,7 @@ This stage qualifies **176 additional cells**: transfer codes **6, 11, 14 and
 **0/1**, and **RGBA8/16**. The earlier 220 cells retain their ownership, bringing
 the qualified cICP selection to **396 of 704 cells**.
 
-The [initial SDR qualification](png-sdr-color-ownership.md) and
+The [initial SDR qualification](../png-sdr-color-ownership.md) and
 [remaining-primary qualification](png-cicp-primary-ownership.md) establish the
 collector and judgment. The maintainer-selected canonical Geometry/image limits
 remain **1/400 changed pixels and minimum SSIM 0.999**, with exact semantic
@@ -269,7 +269,7 @@ Global ownership remains incomplete and unapproved,
 
 ## Stage 3 — PQ/HLG and PNG gain maps
 
-The [Stage 3 audit](png-hdr-gain-map-ownership.md) records the subsequent 88
+The [Stage 3 audit](../png-hdr-gain-map-ownership.md) records the subsequent 88
 PQ/HLG cells, bringing this cICP selection to **704**, and three PNG gain-map
 obligations. The main record now contains **984 cases**, preserving all 896
 Stage 2 cases exactly. A separately bound supplemental producer captures **108

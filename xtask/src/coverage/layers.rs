@@ -143,7 +143,7 @@ pub(super) fn verify_owned_record() -> Result<(), String> {
     verify_record(&Repo::real(), &LedgerView::load()?).map(|_| ())
 }
 
-/// The record's own approval subject computation, without the `sha256:` prefix.
+/// The record's canonical subject digest, without the `sha256:` prefix.
 #[cfg(test)]
 pub(super) fn record_subject(record: &Value) -> Result<String, String> {
     subject_of(record)
@@ -385,7 +385,7 @@ mod tests {
     #[test]
     #[ignore = "optional historical five-layer audit"]
     fn successors_spec_edits_and_catalog_growth_do_not_stale_the_record() {
-        // A representative successor, as the V25 apply moves the registry,
+        // A representative successor moving the registry to a new revision,
         // plus its collection directory and a new intake bundle and public
         // scene, all excluded or checked by rule.
         let mut fixture = Fixture::new();

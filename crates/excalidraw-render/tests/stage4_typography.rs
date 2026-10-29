@@ -1,5 +1,6 @@
-//! The fixed Stage-4 typography crop is also a focused PNG regression. This
-//! checks reference pixels, independently of the candidate's approval status.
+//! The representative candidate's fixed typography crop
+//! (`stage4-frames-text-assets-v4`) is also a focused PNG regression: this
+//! checks its reference pixels directly.
 use std::io::Cursor;
 
 use excalidraw_render::{

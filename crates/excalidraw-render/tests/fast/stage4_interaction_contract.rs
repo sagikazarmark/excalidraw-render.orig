@@ -1,5 +1,5 @@
-//! Stage-4 interaction contracts. Representative-scene approval is a separate
-//! obligation: this authored tracer deliberately makes no approval claim.
+//! Interaction contracts over the representative frames/text/assets scene,
+//! as an authored tracer independent of the registered candidate.
 use base64::Engine as _;
 use excalidraw_render::{
     ColorMode, ErrorCode, FrameOptions, FrameRenderRequest, MetadataOptions, OutputFormat,
@@ -55,9 +55,8 @@ fn source_image_projection_keeps_top_rows_and_canvas_filter_weights() {
     }
 }
 
-// The retired v1 artifact/manifest test was not an approval-aware corpus
-// consumer. Its replacement is xtask's candidate-executions command, exercised
-// by xtask/tests/representative_candidate.rs: approved cases replay fresh native
+// Corpus replay lives in xtask's candidate-executions command, exercised by
+// xtask/tests/representative_candidate.rs: registered cases replay fresh native
 // SVG/PNG/PDF and bind the reports, independent semantics and viewer judgments.
 fn parse(source: &Value) -> SceneDocument {
     SceneDocument::parse(&serde_json::to_vec(source).unwrap()).unwrap()

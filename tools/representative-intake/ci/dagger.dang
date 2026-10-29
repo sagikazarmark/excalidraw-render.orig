@@ -1,5 +1,5 @@
 """
-Verify representative intake independently of approval-pinned release machinery.
+Run the representative-intake real-renderer tests in a sealed container (optional; not a gate, ADR-0024).
 """
 type RepresentativeIntake {
   let container: Container!

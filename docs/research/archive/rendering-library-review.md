@@ -54,7 +54,7 @@ bit-at-a-time checksum loop. Effort: very small.**
 [`render/png/encoder.rs:407–427`](../../crates/excalidraw-render/src/render/png/encoder.rs#L407)
 assembles PNG chunks and implements IEEE CRC-32 with eight bit steps per byte.
 The crate already directly depends on `crc32fast`, and
-[`render/asset/png.rs:148`](../../crates/excalidraw-render/src/render/asset/png.rs#L148)
+[`render/asset/png.rs:148`](../../../crates/excalidraw-render/src/render/asset/png.rs#L148)
 uses its `Hasher` for input chunks. Use `crc32fast::hash` for the encoder's
 same type-and-payload byte slice. [A1]
 
@@ -70,7 +70,7 @@ end-to-end speedup is claimed.
 **Confidence: high that this is the right boundary; parity is unqualified.
 Benefit: specialized correctness. Effort: small.**
 
-[`render/number_format.rs:99–119`](../../crates/excalidraw-render/src/render/number_format.rs#L99)
+[`render/number_format.rs:99–119`](../../../crates/excalidraw-render/src/render/number_format.rs#L99)
 implements JavaScript number spelling using Rust formatting plus exponent
 threshold/sign adjustments. The same module implements `toFixed(2)` rounding
 by decomposing IEEE bits into integer arithmetic (`:25–93`). These are language
@@ -106,12 +106,12 @@ Benefit: fewer custom grammar edge cases. Effort: medium.**
 
 There are concrete sites, beyond the already-delegated ordinary color parser:
 
-- [`color.rs:372–523`](../../crates/excalidraw-render/src/color.rs#L372):
+- [`color.rs:372–523`](../../../crates/excalidraw-render/src/color.rs#L372):
   `color-mix()` handling manually finds parentheses, splits commas by a depth
   counter, and finds a trailing percentage through string scanning.
-- [`render/asset/svg.rs:353–395`](../../crates/excalidraw-render/src/render/asset/svg.rs#L353):
+- [`render/asset/svg.rs:353–395`](../../../crates/excalidraw-render/src/render/asset/svg.rs#L353):
   stylesheet admission splits on `{`, `}`, `;`, and `:`.
-- [`render/asset/svg/css.rs:52`](../../crates/excalidraw-render/src/render/asset/svg/css.rs#L52):
+- [`render/asset/svg/css.rs:52`](../../../crates/excalidraw-render/src/render/asset/svg/css.rs#L52):
   PDF stylesheet lowering splits blocks on `}` before handing them to simplecss.
 
 The directly pinned `cssparser` has `parse_nested_block`, delimiter-aware
@@ -141,7 +141,7 @@ checks source doubles before the viewer can narrow or discard them.
 **Confidence: medium-high. Benefit: remove manual binary offset handling.
 Effort: small-to-medium plus font qualification.**
 
-[`render/font_subset.rs:367–490`](../../crates/excalidraw-render/src/render/font_subset.rs#L367)
+[`render/font_subset.rs:367–490`](../../../crates/excalidraw-render/src/render/font_subset.rs#L367)
 builds name-table records, lengths, offsets, and UTF-16 payloads by hand;
 `english_name` manually parses the same binary format. Most surrounding font
 work already uses Fontations and skera.
@@ -165,10 +165,10 @@ versions; its reason is documented explicitly in `Cargo.toml`.
 **Confidence: medium that this can pay off; low that it is a drop-in swap.
 Benefit: potentially the largest self-contained codec reduction. Effort: medium.**
 
-[`render/asset/bmp.rs`](../../crates/excalidraw-render/src/render/asset/bmp.rs)
+[`render/asset/bmp.rs`](../../../crates/excalidraw-render/src/render/asset/bmp.rs)
 is a complete custom 487-line validator/decoder: packed palettes, row layout,
 bitfields, alpha, and RLE4/RLE8. The 439-line
-[`ico.rs`](../../crates/excalidraw-render/src/render/asset/ico.rs)
+[`ico.rs`](../../../crates/excalidraw-render/src/render/asset/ico.rs)
 contains related DIB pixel logic. Those file sizes describe the opportunity
 surface, not promised deletions.
 
@@ -198,7 +198,7 @@ is preferable to a large private fork. Do not switch all existing codecs behind
 diagnostics, color management, and compressed-source preservation.
 
 A smaller companion opportunity is
-[`asset/color.rs:94–137`](../../crates/excalidraw-render/src/render/asset/color.rs#L94):
+[`asset/color.rs:94–137`](../../../crates/excalidraw-render/src/render/asset/color.rs#L94):
 `image::metadata::Orientation::from_exif_chunk` already exposes orientation
 extraction from an independently obtained EXIF block. Compare malformed tags,
 endianness, duplicates, and first-match behavior before replacing the manual
@@ -209,7 +209,7 @@ reader. A full EXIF package is unnecessary for that one field. [A5]
 **Confidence: medium. Benefit: modest. Effort: small code change, potentially
 substantial numeric qualification.**
 
-[`render/geometry.rs:40–164`](../../crates/excalidraw-render/src/render/geometry.rs#L40)
+[`render/geometry.rs:40–164`](../../../crates/excalidraw-render/src/render/geometry.rs#L40)
 implements generic cubic extrema/evaluation. `kurbo::CubicBez` and
 `ParamCurveExtrema::bounding_box` are plausible replacements. The existing
 `Path::cubic_bounds` treats only cubic segments as bounds contributors; passing
@@ -221,7 +221,7 @@ the reference's coefficient spelling, exact-zero test, evaluation order, and
 once-rounded cubes, with issue #173 explaining the one-ulp sensitivity.
 `reference_curve_bounds` also intentionally ignores line operations.
 
-Similarly, [`bound_text.rs:123–188`](../../crates/excalidraw-render/src/render/bound_text.rs#L123)
+Similarly, [`bound_text.rs:123–188`](../../../crates/excalidraw-render/src/render/bound_text.rs#L123)
 places rounded-arrow labels using a fixed 21-sample length approximation.
 Replacing it with kurbo's more accurate adaptive arc length changes the placement
 algorithm. Keep that reference path. The generic bounds candidate is much
@@ -233,7 +233,7 @@ adding kurbo's `libm` feature alone does not settle portable math.
 **Confidence: high that there is duplicated PDF machinery; medium-low that
 current library APIs reduce it cleanly. Benefit: potentially high. Effort: high.**
 
-[`render/pdf.rs:520–785`](../../crates/excalidraw-render/src/render/pdf.rs#L520)
+[`render/pdf.rs:520–785`](../../../crates/excalidraw-render/src/render/pdf.rs#L520)
 shows manual object layout, buffer sizing, dictionaries, references, and offsets;
 the rest of `encode` writes fonts/images, xref, and the trailer. `pdf-writer`
 is currently used for nested SVG chunks, so its presence in the manifest does
@@ -255,7 +255,7 @@ This is not a ready-made migration:
   is not the necessary hook.
 - `pdf-writer` does not allocate or validate reference IDs for the caller, and
   `finish` panics on duplicate IDs. Semantic object planning remains necessary.
-- [`pdf/nested_svg.rs:690–898`](../../crates/excalidraw-render/src/render/pdf/nested_svg.rs#L690)
+- [`pdf/nested_svg.rs:690–898`](../../../crates/excalidraw-render/src/render/pdf/nested_svg.rs#L690)
   rewrites serialized chunks, dictionaries, and image wrappers. A higher-level
   writer alone does not remove that precision/compression adaptation.
 
@@ -276,7 +276,7 @@ already-useful nested-SVG role.
 
 **Confidence: medium. Benefit: medium potential. Effort: medium-to-high.**
 
-[`color.rs`](../../crates/excalidraw-render/src/color.rs) combines three existing
+[`color.rs`](../../../crates/excalidraw-render/src/color.rs) combines three existing
 CSS-related dependencies with hand-coded RGB/XYZ/Lab conversions, adaptation
 matrices, transfer functions, hue interpolation, and gamut handling. This is
 generic color science that could benefit from maintained library implementations.
@@ -320,7 +320,7 @@ native/WASM equality. Raster ICC handling already correctly delegates to
 - **The conformance comparator:** the pinned Pixelmatch and SSIM arithmetic are
   the measurement protocol. An arbitrary `imageproc`/SSIM implementation is not
   interchangeable; see the existing
-  [comparator research](conformance-comparator-primary-sources.md) and ADR-0005.
+  [comparator research](../conformance-comparator-primary-sources.md) and ADR-0005.
 
 ## Recommended execution order
 
@@ -369,30 +369,30 @@ not evidence that all inspected behavior is available in a published release.
 
 ## 2. Project constraints that decide suitability
 
-Read for this inventory: [README](../../README.md), [workspace manifest](../../Cargo.toml),
-[renderer manifest](../../crates/excalidraw-render/Cargo.toml),
-[CONTEXT](../../CONTEXT.md), [domain guidance](../agents/domain.md),
+Read for this inventory: [README](../../../README.md), [workspace manifest](../../../Cargo.toml),
+[renderer manifest](../../../crates/excalidraw-render/Cargo.toml),
+[CONTEXT](../../../CONTEXT.md), [domain guidance](../../agents/domain.md),
 ADRs 0001–0004 and 0006–0009, and pertinent sections of the
-[renderer specification](../renderer-spec-v1.md).
+[renderer specification](../../renderer-spec-v1.md).
 
 | Constraint | Consequence for recommendations |
 | --- | --- |
 | Spec §§3, 10: Excalidraw `v0.18.1`, Rough.js `4.6.4`, Perfect Freehand `1.2.0` | A crate implementing the same general algorithm is not automatically the pinned reference algorithm. Spec §10 explicitly excludes `roughr` as compatibility authority. |
 | Spec §§8.2, 10: pure Rust, offline, no production JavaScript/OS services/host fonts; deny-all external resource access | In-memory APIs and explicitly controlled feature/resolver configurations are necessary. A library's filesystem convenience examples are not suitable production configuration. |
-| [ADR-0006](../adr/0006-narrow-supported-targets-to-linux-and-browser-wasm.md), [ADR-0007](../adr/0007-route-transcendental-math-through-libm.md) | Linux x86-64 and browser-hosted `wasm32-unknown-unknown` must produce identical artifact bytes. `std` math, SIMD, feature unification, numeric reduction, and encoding all need scrutiny. WASM compilation alone proves little. |
+| [ADR-0006](../../adr/0006-narrow-supported-targets-to-linux-and-browser-wasm.md), [ADR-0007](../../adr/0007-route-transcendental-math-through-libm.md) | Linux x86-64 and browser-hosted `wasm32-unknown-unknown` must produce identical artifact bytes. `std` math, SIMD, feature unification, numeric reduction, and encoding all need scrutiny. WASM compilation alone proves little. |
 | CONTEXT: perceptual parity versus artifact byte stability | Reference visual parity is tolerance-based; native-versus-WASM artifact equality is exact. These are separate qualification questions. |
-| CONTEXT and spec §13: semantic resource accounting; [ADR-0002](../adr/0002-scope-the-determinism-promise-to-artifact-bytes.md) | Preserve canonical events, charge order, first-crossing outcome, per-target ledgers, and cache/batch replay. Library allocations or operation counts cannot replace them. Physical boundedness/panic freedom is a separate obligation. |
+| CONTEXT and spec §13: semantic resource accounting; [ADR-0002](../../adr/0002-scope-the-determinism-promise-to-artifact-bytes.md) | Preserve canonical events, charge order, first-crossing outcome, per-target ledgers, and cache/batch replay. Library allocations or operation counts cannot replace them. Physical boundedness/panic freedom is a separate obligation. |
 | Spec §8.2: direct SVG preserves validated compressed raster octets | A decoder replacement must not turn direct SVG into a decode/re-encode path. Validation and pixel derivation are distinct responsibilities. |
 | Spec §8.6: direct semantic vector-first PDF, full `f64` except named reductions, selectable text, complete reviewed font programs | Reject whole-scene serialized-SVG pivots and backends that necessarily narrow geometry or subset those programs. |
-| [ADR-0009](../adr/0009-share-pdf-raster-closure-planning-and-encoding.md) | One occurrence-specific PDF raster closure plan owns input/output grids, admission, diagnostics, rasterization, and embedding. A converter's private raster scale is not an alternative authority. |
-| [ADR-0004](../adr/0004-compress-png-idat-with-miniz-oxide.md), [ADR-0008](../adr/0008-deflate-pdf-streams-tag-chunk-programs-and-derive-the-file-identifier.md) | PNG filtering/assembly and PDF streams, identifiers, and font naming have explicit byte policies. A generic encoder is not automatically a simplification. |
-| [ADR-0001](../adr/0001-treat-font-subsets-as-modified-versions.md), [ADR-0003](../adr/0003-retire-the-brotli-fork-for-upstream-portable-float.md) | SVG subset names, legal records, and deterministic WOFF2 encoding remain profile-controlled. ADR-0003's final amendment records the coordinated refresh completed on 2026-09-11; earlier pending language is historical. |
+| [ADR-0009](../../adr/0009-share-pdf-raster-closure-planning-and-encoding.md) | One occurrence-specific PDF raster closure plan owns input/output grids, admission, diagnostics, rasterization, and embedding. A converter's private raster scale is not an alternative authority. |
+| [ADR-0004](../../adr/0004-compress-png-idat-with-miniz-oxide.md), [ADR-0008](../../adr/0008-deflate-pdf-streams-tag-chunk-programs-and-derive-the-file-identifier.md) | PNG filtering/assembly and PDF streams, identifiers, and font naming have explicit byte policies. A generic encoder is not automatically a simplification. |
+| [ADR-0001](../../adr/0001-treat-font-subsets-as-modified-versions.md), [ADR-0003](../../adr/0003-retire-the-brotli-fork-for-upstream-portable-float.md) | SVG subset names, legal records, and deterministic WOFF2 encoding remain profile-controlled. ADR-0003's final amendment records the coordinated refresh completed on 2026-09-11; earlier pending language is historical. |
 
 **Confirmed dependency context.** The manifests already directly select
 `svgtypes 0.15.3`, `usvg/resvg 0.45.1`, `tiny-skia 0.11.4`, `simplecss 0.2.2`,
 `cssparser 0.37.0`, `svg2pdf 0.13.0`, `pdf-writer 0.12.0`, `rustybuzz 0.20.1`,
 `unicode-bidi 0.3.18`, `read-fonts 0.42.1`, `write-fonts 0.53.0`, and `skera 0.7.0`.
-The [lockfile](../../Cargo.lock) also contains `image 0.25.10` and kurbo
+The [lockfile](../../../Cargo.lock) also contains `image 0.25.10` and kurbo
 `0.11.3` / `0.13.1`. Read-only dependency queries confirmed that the renderer
 already reaches `image 0.25.10` through svg2pdf, with GIF/JPEG/PNG features, and
 kurbo `0.11.3` through svgtypes/usvg with `std` enabled:

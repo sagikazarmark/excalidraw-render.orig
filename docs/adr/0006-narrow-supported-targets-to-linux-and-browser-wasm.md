@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended 2026-09-11 (Dagger) and 2026-10-13 (ADR-0024 supersedes the Dagger amendment)
 ---
 
 # Narrow supported targets to Linux and browser WASM

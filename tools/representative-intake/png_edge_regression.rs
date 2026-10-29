@@ -1,5 +1,6 @@
-//! Pending red regression template. Copy to crates/excalidraw-render/tests/
-//! when qualifying a production adapter; the unchanged renderer fails it.
+//! Red regression template for the PNG edge-coverage proposal
+//! (`velox84-png-isolation-v1`): the current renderer fails it. Copy it into
+//! `crates/excalidraw-render/tests/` if a production adapter is ever qualified.
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 
 #[test]

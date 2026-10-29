@@ -1,7 +1,8 @@
 // GIF container, metadata, palette, bounds, animation and partial-data
 // variants (#85 GIF facets). Every row edits the blocks of a frozen GIF vector
 // (tests/oracle/gif-first-frame/reference.json) or re-encodes a frame with the
-// same palette; the 48 frozen controls of the three GIF tranches are included
+// same palette; the 48 frozen controls of the three GIF oracles (first-frame,
+// LZW, control) are included
 // as they are. Each row declares its expectation:
 //   match            - the renderer must equal the reference exactly;
 //   partial          - the reference paints a partial first frame; the

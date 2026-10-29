@@ -1,6 +1,6 @@
 // Scoped qualification adapter over the immutable canonical viewer. Exactly two
 // admission/audit corrections; capture, virtual time, origin and browser stay
-// the same. Keep the original source/profile/approval untouched.
+// the same. Keep the original source and profile untouched.
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createHash} from "node:crypto";

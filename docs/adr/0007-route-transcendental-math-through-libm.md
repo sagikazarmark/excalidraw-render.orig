@@ -69,13 +69,10 @@ had exactly that constant. Every `powi` site squared or cubed, so `square` and
 optimizer decision — replace it. The module's unit test checks them against
 the run-time expansion bit for bit with the base hidden behind `black_box`.
 
-`libm 0.2.16` was already compiled into the renderer on both targets through
-`rustybuzz → core_maths`, so the direct dependency adds an edge to `Cargo.lock`
-and no package; the comparator closure ADR-0005 pins is unchanged.
-(Since #202 the path was `ttf-parser → core_maths`, through ttf-parser's
-`no-std-float` feature. Since the renderer parses fonts with read-fonts it is
-`krilla → float-cmp → num-traits`, under the `pdf` feature; neither rustybuzz
-nor ttf-parser is a dependency.) Its default
+`libm 0.2.16` was already compiled into the renderer on both targets, so the
+direct dependency adds an edge to `Cargo.lock` and no package; the comparator
+closure ADR-0005 pins is unchanged. (Today the path is `num-traits`, reached
+through `csscolorparser` on every feature set.) Its default
 `arch` feature is unified on by that path regardless of what the renderer asks
 for; the only architecture-specific routines it selects are `sqrt`, `fma` and
 the rounding functions, each correctly rounded, so no libm result depends on
@@ -128,7 +125,7 @@ rasterization and deflate dominate a render, not the trigonometry.
 - The residual exposure is inside dependencies, where the rule does not reach:
   `csscolorparser`'s OKLab/OKLCH, HSL and HWB conversions in `f32`, which
   `color-mix()` and gamut mapping in `color.rs` call, and whatever `tiny-skia`,
-  `resvg`/`usvg`, `svg2pdf`, `rustybuzz`, `harfrust` (the shaper since #202,
+  `resvg`/`usvg`, `krilla`, `harfrust` (the shaper since #202,
   whose own float use is IEEE-exact rounding) and `moxcms` compute internally. Those
   stay under the empirical two-target pins as before; a divergence found there
   is handled as ADR-0003 handled brotli — adapter, pinned controlled fork,

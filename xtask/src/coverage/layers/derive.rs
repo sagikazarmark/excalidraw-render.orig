@@ -341,12 +341,13 @@ pub(super) fn required_risks(sources: &[(String, String)]) -> Result<Vec<String>
     }
 }
 
-// Approval subjects use the same Python-compatible serialization as intake.
+// Case subjects use the same Python-compatible serialization as intake.
 pub(super) use crate::representative::json::compact_into as python_json;
 #[cfg(test)]
 pub(super) use crate::representative::json::python_float;
 
-/// `case.py subject`: SHA-256 of the canonical case record without its approval.
+/// SHA-256 of the canonical case record without its `approval` member (what the
+/// historical `case.py subject` computed).
 pub(super) fn case_subject(case: &Value) -> Result<String, String> {
     let mut body = case.clone();
     body.as_object_mut()

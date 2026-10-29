@@ -1,6 +1,6 @@
 # Stage 4 — parent-review remediation (qualification incomplete)
 
-**Current checkpoint:** [follow-up validation and remaining blockers](archive/png-stage4-followup.md).
+**Current checkpoint:** [follow-up validation and remaining blockers](png-stage4-followup.md).
 The earlier completion claims below are historical, not the current disposition.
 
 > **Follow-up review hold:** the common-header and matrix/TRC allocation paths,

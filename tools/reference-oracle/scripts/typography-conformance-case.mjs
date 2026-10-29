@@ -18,7 +18,7 @@ import { canonicalize } from "./canonical-json.mjs";
 //
 // It imports nothing conformance-case.mjs owns, on purpose. Every scene case's
 // provenance pins that generator's bytes, so a change made for font-bearing
-// evidence must not invalidate the scene approvals; and this case's provenance
+// evidence must not move the scene cases' provenance; and this case's provenance
 // pins this file, so the case stays reproducible through its declared generator
 // alone. The one module both share, canonical-json.mjs, is bound by the
 // reference profile whose digest every provenance pins. An earlier version

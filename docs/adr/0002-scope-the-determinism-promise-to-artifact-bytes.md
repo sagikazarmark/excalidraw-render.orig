@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; the target set is two since ADR-0006
 ---
 
 # Scope the determinism promise to artifact bytes and diagnostics

@@ -20,7 +20,7 @@ method and not run by anything.
 
 - Representative intake, case replay, comparison, viewers, evidence and retention
   run in Rust xtask. See [the workflow](representative-intake/README.md) and
-  [Dagger check](representative-intake/ci/README.md).
+  [the real-renderer checks](representative-intake/ci/README.md).
 - PDF fixtures/inspection and PDFium rendering use Rust; WebP input encoding uses
   the native libwebp helper. See [PDF harness](pdf-harness/README.md) and
   [reference oracle](reference-oracle/README.md).

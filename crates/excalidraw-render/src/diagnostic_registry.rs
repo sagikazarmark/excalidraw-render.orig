@@ -902,7 +902,7 @@ mod tests {
 
     /// The recipes the registry can name are exactly the manifest's: the
     /// renderer-owned references and the official recipes the asset catalog
-    /// seals, except nested-resource, which this typed subset does not yet name.
+    /// seals, except nested-resource, which this typed subset does not name.
     #[test]
     fn recipe_identities_are_the_manifests() {
         let manifest = scene_surface_manifest();

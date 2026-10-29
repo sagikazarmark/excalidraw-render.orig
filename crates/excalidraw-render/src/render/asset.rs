@@ -1,4 +1,4 @@
-//! Image assets (stage 3): `Cache` is the deep module — one semantic asset
+//! Image assets: `Cache` is the deep module — one semantic asset
 //! identity per compatibility revision, media kind and byte string; validation,
 //! color normalization and decoding each charged once through the caller's
 //! `IntrinsicTransaction`s and shared across every occurrence and every target

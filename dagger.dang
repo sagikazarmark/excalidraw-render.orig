@@ -1,5 +1,5 @@
 """
-The evidence operations that run approval-pinned Docker images: the reference
+The evidence operations that run digest-pinned Docker images: the reference
 oracle and the viewer harnesses. The gates run from the justfile in the devenv
 shell (ADR-0024).
 """

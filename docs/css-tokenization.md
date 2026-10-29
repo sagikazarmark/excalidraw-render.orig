@@ -1,6 +1,6 @@
 # CSS tokenization compatibility (#181)
 
-`cssparser 0.37.0` owns ordinary color-mix function/comma boundaries and static
+`cssparser` owns ordinary color-mix function/comma boundaries and static
 nested-SVG stylesheet rule/declaration boundaries. Source slices, rather than
 reserialized tokens, cross into color evaluation and the pinned `simplecss`
 selector/cascade interpreter used by usvg. PDF resolves those selectors on the
@@ -75,71 +75,8 @@ The agreed seams are `parse_css` and public rendering (SVG/PNG/PDF artifacts,
 reports, failures and resource admission). Tests cover nested functions,
 percentage precision, quoted delimiters, malformed/unclosed blocks, rejected
 constructs, deep uninterpreted values, exact stylesheet effect causes and
-forbidden-fallback errors. The focused tests are also executable in the browser
-WASM worker; qualification results are recorded after execution below.
-
-### Completed qualification
-
-Starting commit: `e08fc5214345ed74375ede135b5a10fc2e037fcb`.
-
-- Regular `cargo check --locked --workspace --all-targets` and focused native
-  color, nested-SVG and PDF effect tests passed.
-- The workspace suite was run once with `cargo test --locked --workspace`:
-  385 renderer unit tests, all 535 fast integration tests, parity, resource
-  ceilings, CLI and comparator tests passed. Two ownership checks caught the
-  placement of the browser configuration macro and an edit to a hash-bound PDF
-  test file. The configuration now lives in its own module; the new effect test
-  lives in the unbound nested-SVG test module. Ownership checks and the complete
-  xtask suite passed on targeted follow-up, including the remaining integration
-  and documentation checks. No ownership digest was refreshed.
-- The manifest-pinned Rust **1.97.1**, Chrome/ChromeDriver **149.0.7827.55** and
-  wasm-bindgen runner **0.2.126** executed the two color tests and three
-  stylesheet tests in the dedicated browser worker. These cover precision,
-  recursion, admitted/rejected syntax, source attribution, Forbid failures,
-  selector behavior, PNG appearance and asset-work admission. The focused
-  browser build used unoptimized tests to avoid the cost of whole-library fat
-  LTO; release artifact collection below uses the normal release profile.
-- `dagger check excalidraw-render:lint:clippy` passed with the pinned toolchain.
-  Formatting and diff whitespace checks passed.
-- Parallel Standards and Spec reviews against the starting commit found and
-  drove fixes for vertical-tab admission, Unicode selector prefixes, library
-  cleanup allocation and repeated trailing-whitespace scans. Rechecks closed
-  all implementation findings.
-
-The focused browser commands inside the pinned browser container were:
-
-```sh
-CARGO_PROFILE_TEST_DEBUG=0 CARGO_PROFILE_TEST_OPT_LEVEL=0 \
-  cargo --config 'profile.dev.package."*".opt-level=0' test --locked \
-  --target wasm32-unknown-unknown -p excalidraw-render --lib color::tests
-CARGO_PROFILE_TEST_DEBUG=0 CARGO_PROFILE_TEST_OPT_LEVEL=0 \
-  cargo --config 'profile.dev.package."*".opt-level=0' test --locked \
-  --target wasm32-unknown-unknown -p excalidraw-render --test fast stylesheet_
-```
-
-Final release-profile packaged collections:
-
-```sh
-dagger api call packaging snapshots --output target/issue-181-checked-native-snapshots
-dagger api call wasm browser-snapshot-logs --output target/issue-181-checked-wasm-snapshots
-```
-
-Both collections cover **168 keys**, two renders per key in each of two fresh
-forward/reverse processes (**672 renders per target**). Every ordered native
-key/sample array equals the saved `target/issue-180-results/native-snapshots`
-collection. Browser `runs` and `differences` arrays likewise equal the saved
-`target/issue-180-results/wasm-snapshots/replay.json`. No artifact or report delta
-was introduced on either target. Temporary Dagger hooks allowed working-tree
-packaging and focused browser execution; they were removed afterward, and the
-metadata checks binding `dagger.dang` passed. These are working-tree
-qualification results, not clean-commit release attestations.
-
-**The approved-baseline equality gate is still not green.** Direct comparison
-between the current targets retains exactly #178's four PNG keys:
-`freedraw-loop-fills`, `legacy-stroke-sharpness`, `rotated-shape-bounds`, and
-`rough-fillers-dashed-zigzag-line`. All 168 reports agree across targets. The
-three additional stale approved expectations already recorded under #85 are
-unchanged on both targets: image-codecs PNG/PDF and transform-opacity-groups
-no-background PNG. See the
-[pre-existing measurements](research/ecmascript-number-formatting.md#packaged-artifactreport-results).
-No approved expectation or tolerance was repinned.
+forbidden-fallback errors. The focused tests also run in the browser WASM
+worker (`just qualification wasm32-unknown-unknown`), and the packaged
+snapshot replays on both targets (`just snapshot-replay`,
+`just wasm-snapshot-replay`) showed no artifact or report delta from the
+change.

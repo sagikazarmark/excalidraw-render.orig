@@ -1,4 +1,4 @@
-//! The PNG backend (stage 5 and 6): `PngPlan` lowers the resolved scene into
+//! The PNG backend: `PngPlan` lowers the resolved scene into
 //! paint-ordered `PngElement`s in device space, `rasterize` paints them with
 //! tiny-skia at a fixed 4x supersample and box-filters the result down, and
 //! `compress` hands the straight-alpha raster to the owned encoder. The

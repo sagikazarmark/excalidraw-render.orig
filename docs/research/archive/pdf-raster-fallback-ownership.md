@@ -139,7 +139,7 @@ Adapted content streams are requested uncompressed and compressed by the owned
 PDF stream writer, including tiling patterns, eliminating an allocating inflate
 pass. Only XMP retains its permitted stored-stream exception.
 
-See [ADR-0009](../adr/0009-share-pdf-raster-closure-planning-and-encoding.md) for
+See [ADR-0009](../../adr/0009-share-pdf-raster-closure-planning-and-encoding.md) for
 the chosen interface and qualification responsibilities.
 
 ## Reproduction commands

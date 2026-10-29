@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; the svg2pdf adapter paragraphs are superseded by ADR-0021, the closure plan stands
 ---
 
 # Share PDF raster closure planning and encoding

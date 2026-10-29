@@ -1,4 +1,4 @@
-//! Shared draft inventory and execution-result boundary for #85 / #86.
+//! Shared coverage inventory and execution-result boundary (#85 / #86).
 //! Candidate evidence is not an ownership decision or an execution result.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -199,9 +199,10 @@ fn derive_inventory_with_catalog(
             return Err("invalid or duplicate coverage requirement".into());
         }
         for evidence in &requirement.evidence {
-            // Milestone links describe the backlog at the time it was recorded,
-            // not inputs to a render. Preserve them without opening today's
-            // source files: edits and moves must not invalidate execution keys.
+            // Evidence links describe where code existed when the requirement
+            // was recorded, not inputs to a render. Preserve them without opening
+            // today's source files: edits and moves must not invalidate
+            // execution keys.
             if evidence.source.path.trim().is_empty()
                 || !hex(&evidence.source.sha256, 64)
                 || evidence.anchor.trim().is_empty()
@@ -213,7 +214,7 @@ fn derive_inventory_with_catalog(
             }
         }
     }
-    // Fixed pending milestones cannot disappear merely by removing a policy row.
+    // The fixed requirement set cannot shrink merely by removing a policy row.
     let expected = [
         "corpus.five-layers",
         "coverage.global-ownership",
@@ -225,7 +226,7 @@ fn derive_inventory_with_catalog(
         "smoke.mixed-scene",
     ];
     if seen != expected.into_iter().collect() {
-        return Err("coverage requirements must retain the complete milestone set".into());
+        return Err("coverage requirements must retain the complete requirement set".into());
     }
     let registry: Value = parse(&read(REGISTRY)?)?;
     let surface: Value = parse(&read(SURFACE)?)?;
@@ -391,7 +392,7 @@ pub fn verify_inventory() -> Result<(), String> {
     for id in crate::conformance::case_ids()? {
         crate::conformance::verify(&id)?;
     }
-    println!("verified draft inventory: {} coverage rows, {} executions, {} unresolved milestones; release closure is pending",
+    println!("verified coverage inventory: {} coverage rows, {} executions, {} open requirements; release closure is pending",
         inventory.coverage.len(), inventory.executions.len(), inventory.requirements.len());
     Ok(())
 }
@@ -565,14 +566,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn historical_milestone_links_do_not_gate_execution_inventory() {
+    fn historical_evidence_links_do_not_gate_execution_inventory() {
         let stored: Inventory = parse(&read(INVENTORY).unwrap()).unwrap();
         let mut requirements: Requirements = parse(&read(REQUIREMENTS).unwrap()).unwrap();
         // Model a linked implementation that has changed, and another whose
         // old path/anchor disappeared in a refactor. Neither is a render input.
         requirements.requirements[0].evidence[0].source.sha256 = "0".repeat(64);
         requirements.requirements[1].evidence[0].source.path =
-            "xtask/src/retired-milestone-location.rs".into();
+            "xtask/src/retired-evidence-location.rs".into();
         requirements.requirements[1].evidence[0].anchor = "fn retired_name()".into();
         let derived = derive_inventory_with_requirements(
             requirements.clone(),

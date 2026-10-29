@@ -44,7 +44,7 @@ cargo test --locked -p excalidraw-render --test asset_fuzz
 just nightly-asset-fuzz        # 4,096 cases; pass a count to change it
 ```
 
-GitHub's nightly scheduler runs the same recipe. Its 60-minute
+GitHub's nightly scheduler runs the same recipe. Its 90-minute
 job timeout is a backstop for hangs; timeout, abort and OOM are failed runs, never
 typed successes. Inputs are bounded independently: payloads ≤256 KiB, ≤6 linear
 wrappers or ≤2 repeated wrappers, scenes ≤8 MiB, ≤8 byte mutations. Semantic

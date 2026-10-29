@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended 2026-09-30 (#212), the closure is recorded, not bound
 ---
 
 # Pin the canonical comparator to its own dependency closure

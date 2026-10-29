@@ -1,6 +1,6 @@
 """
 The pinned reference oracle run natively in Dagger, without a Docker daemon.
-Each function runs what the matching approval-pinned
+Each function runs what the matching digest-pinned
 `tools/reference-oracle/run-*.sh` runner runs, with the same image, platform,
 user and environment, on Dagger's own copy of the source: the oracle cannot
 write to the checkout. Collection runs in an empty network namespace

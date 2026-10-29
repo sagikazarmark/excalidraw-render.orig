@@ -71,7 +71,7 @@ Exact payload reports/artifacts cover slash, tilde, Unicode and suffix-like IDs.
 ## Generic known-element fallback
 
 The current generic diagnostic is unreachable by the argument and executable
-guards in [known-element-replacement-reachability.md](known-element-replacement-reachability.md).
+guards in [known-element-replacement-reachability.md](../known-element-replacement-reachability.md).
 Its three entries received explicit, digest-bound [#85 exclusion approval](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166)
 on 2026-09-16. The approval binds the control-flow proof and exact per-format
 subjects below; negative tests alone are not substituted for an exclusion.

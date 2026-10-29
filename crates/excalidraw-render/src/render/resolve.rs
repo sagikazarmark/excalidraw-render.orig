@@ -1,4 +1,4 @@
-//! Stage 4: the format-neutral semantic graph. `ResolvedScene::elements`
+//! The format-neutral semantic graph. `ResolvedScene::elements`
 //! orchestrates one scene's resolution — bound-text placement and masks, the
 //! fallback font and frame names, the scene bounds, the semantic frames, one
 //! resolved element per surviving source element in source order, the painted
@@ -8,7 +8,7 @@
 //! crossings.
 //!
 //! `bounds` is the layout pass; `frame`, `text`, `image`, `outline` and
-//! `fallback` each resolve one element family. This stage is not charged, but
+//! `fallback` each resolve one element family. Resolution is not charged, but
 //! `account_fallback_semantics` charges the graph it produces in paint order
 //! (ADR-0002), so the element loop's order and every early return are the
 //! contract.

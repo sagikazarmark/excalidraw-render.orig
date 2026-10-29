@@ -231,7 +231,7 @@ is repinned by this evaluation.
 - [Cubic implementation](https://github.com/linebender/kurbo/blob/v0.11.3/kurbo/src/cubicbez.rs)
 - [Quadratic solver](https://github.com/linebender/kurbo/blob/v0.11.3/kurbo/src/common.rs)
 - [Feature selection](https://github.com/linebender/kurbo/blob/v0.11.3/kurbo/src/lib.rs)
-- [ADR-0007](../adr/0007-route-transcendental-math-through-libm.md),
+- [ADR-0007](../../adr/0007-route-transcendental-math-through-libm.md),
   [#172](https://github.com/sagikazarmark/excalidraw-render.orig/issues/172),
   [#173](https://github.com/sagikazarmark/excalidraw-render.orig/issues/173),
   [#178](https://github.com/sagikazarmark/excalidraw-render.orig/issues/178).

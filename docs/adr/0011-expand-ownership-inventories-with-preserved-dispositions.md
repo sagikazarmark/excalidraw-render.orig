@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; the approval-gate requirements are superseded by ADR-0019
 ---
 
 # Expand ownership inventories with preserved dispositions

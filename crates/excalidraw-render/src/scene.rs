@@ -1,5 +1,5 @@
-//! Scene documents (stage 1): admission of the version-2 envelope and the
-//! typed `*Source` accessors the later stages read through. `json` owns the
+//! Scene documents: admission of the version-2 envelope and the typed
+//! `*Source` accessors the rest of the pipeline reads through. `json` owns the
 //! bounded, lossless parser that produces the preserved tree, the RFC 6901
 //! pointer builders and the canonical writer; this file adds the envelope
 //! check, the public `SceneDocument` and `SceneParseError`, and the original-

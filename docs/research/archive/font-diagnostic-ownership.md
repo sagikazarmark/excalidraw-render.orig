@@ -49,7 +49,7 @@ Verification of the follow-up:
 - Dagger workspace tests: render and doctest checks pass; fast runs 865 tests with 864 passing and one failure, the same offline viewer-qualification stale-digest check (eight tests skipped by the configured tier).
 - Temporary diagnostic probes were removed; `git diff --check` passes.
 
-The expanded corpus and both viewer reports have now been regenerated and approved, with matching clean-commit native/browser-WASM qualification and packaged-consumer evidence bound as `aggregated` / `pass`. See [the completed refresh record](archive/soft-hyphen-qualification-refresh.md). The soft-hyphen qualification blocker is resolved.
+The expanded corpus and both viewer reports have now been regenerated and approved, with matching clean-commit native/browser-WASM qualification and packaged-consumer evidence bound as `aggregated` / `pass`. See [the completed refresh record](soft-hyphen-qualification-refresh.md). The soft-hyphen qualification blocker is resolved.
 
 ## Work identified at the initial checkpoint
 
@@ -80,7 +80,7 @@ The scene-surface digest is bound by **36 approved focused-case manifests**, the
 
 Generated-label work/geometry rejection and zero-width branches also remain to be combined with the passing matrix. No new owner assignments are made in this follow-up.
 
-Subsequent follow-up: generated-label geometry/work rejection and zero-width assertions are now included and pass. The registry correction and all 36 affected case subjects have been explicitly approved and recorded; see [the reapproval record](archive/font-registry-reapproval.md). The native snapshot reconciliation is also separately approved with canonical packaged replay passing. Final ownership assessment and assignment remain.
+Subsequent follow-up: generated-label geometry/work rejection and zero-width assertions are now included and pass. The registry correction and all 36 affected case subjects have been explicitly approved and recorded; see [the reapproval record](font-registry-reapproval.md). The native snapshot reconciliation is also separately approved with canonical packaged replay passing. Final ownership assessment and assignment remain.
 
 Verification: all 13 `diagnostic_contract` tests pass; ownership validation passes with 137 assigned/excluded and 791 gaps; all ten Dagger conformance/lint checks and all three Dagger workspace test checks pass. The empty-label regression failed before the fix with an extra Liberation diagnostic. `git diff --check` passes and temporary measurement logging was removed.
 

@@ -1,5 +1,6 @@
-//! One explicitly authorized Stage-4 metadata transition, never a general hash
-//! override. It preserves execution/criterion/disposition semantics and approvals.
+//! One explicitly authorized representative-binding metadata transition, never
+//! a general hash override. It preserves execution/criterion/disposition
+//! semantics and the historical approval metadata.
 use super::*;
 const RECORD: &str = "tests/conformance/coverage/stage4-binding-reconciliation.json";
 const SPEC: &str = "docs/renderer-spec-v1.md";

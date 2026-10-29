@@ -1,5 +1,5 @@
-//! Read-only derivation of the catalog rebind caused by the reviewed draft PNG
-//! text-placement amendment. It does not update a ledger or reuse an approval.
+//! Read-only derivation of the catalog rebind caused by the PNG text-placement
+//! amendment (#169). It does not update a ledger.
 use super::*;
 const SPEC: &str = "docs/renderer-spec-v1.md";
 fn amendment_only(before: &[u8], after: &[u8]) -> Result<(), String> {

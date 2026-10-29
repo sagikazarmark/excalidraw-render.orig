@@ -50,7 +50,7 @@ authority, frame-subtree and effect tests with exact derived-value cases:
   direct/prepared frame success and typed viewport failure.
 
 The implementation and clipping invariant remain documented in
-[coordinate-admission.md](coordinate-admission.md).
+[coordinate-admission.md](../coordinate-admission.md).
 
 ### Asset bytes
 

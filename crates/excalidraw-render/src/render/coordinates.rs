@@ -1,6 +1,8 @@
 //! Coordinate admission at semantic boundaries. A source box is not a bound on
 //! its rotated corners, a curve's controls, or an image's uncropped placement.
-//! Check those values independently, before bounds/painting consume them.
+//! Check those values independently, before bounds/painting consume them
+//! (spec §13; the invariant is derived in
+//! `docs/research/coordinate-admission.md`).
 
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::portable_math::sin_cos;

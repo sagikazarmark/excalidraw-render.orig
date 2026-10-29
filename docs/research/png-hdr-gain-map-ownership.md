@@ -228,85 +228,13 @@ The two Standards fixes are:
    Two new private tests exercise curve bounds, NaN/infinity/out-of-domain input,
    missing intervals, invalid coefficients and projection-failure propagation.
 
-### Consuming bindings and remaining baseline action
+### Downstream bindings
 
-The public bundle's intentional addition changes its exact license-only hash.
-The fast license test additionally requires the entire new license part. The
-packaged public-facade source changes **only that license hash**, preserving all
-artifact/report pins and test bodies. Its three evidence-source anchors in the
-coverage requirements, their derived inventory copies, the requirements source
-descriptor, and the ownership catalog digest are refreshed explicitly. The
-read-only Stage 3 audit checks these exact changes and proves all **168 execution
-keys**, coverage criteria, milestones and ownership dispositions are preserved.
-No owner-source refresh is needed: `png_color_contract.rs` and its shared helper
-are unchanged by the review corrections. All **91 owners** remain assigned.
-
-The additional `verify-native-baseline` check now fails with
-`stale snapshot source tests/conformance/coverage/inventory.json`: the approved
-baseline binds the previous complete inventory descriptor. **Its record,
-artifact/report expectations and approval have not been rewritten.** Parent
-clean-commit collection, binding review and baseline reapproval are required;
-the workflow is documented in [the earlier baseline reconciliation][baseline].
-This downstream binding requirement is distinct from the passing Stage 3
-color/gain-map qualification. Packaged-consumer replay and baseline reapproval
-remain a release follow-up. The parent full workspace run passed **1,136 tests,
-with 18 ignored**, including all 543 fast tests in 938.74 seconds. All 37
-registered conformance cases, inventory and ownership validation also passed.
-
-### Verification after corrections
-
-Using the same Rust/toolchain/WASM environment documented above:
-
-```sh
-cargo test --locked -p excalidraw-render --lib render::asset::hdr::tests::
-cargo test --locked -p excalidraw-render --lib portable_math::tests::
-cargo test --locked -p excalidraw-render --test fast png_color_contract::
-cargo test --locked -p excalidraw-render --lib render::asset::tests::
-cargo test --locked -p excalidraw-render --test fast license_bundle::
-cargo test --locked -p excalidraw-render-cli --test render_cli \
-  standalone_commands_expose_revision_identity_and_exact_licenses -- --exact
-cargo test --locked --target wasm32-unknown-unknown -p excalidraw-render \
-  --lib wasm_tests::png_sdr_color_reference_in_wasm -- --exact
-cargo test --locked --target wasm32-unknown-unknown -p excalidraw-render \
-  --lib wasm_tests::png_gain_map_reference_in_wasm -- --exact
-cargo clippy --locked --workspace --all-targets -- -D warnings
-cargo run --locked -p xtask -- catalog verify
-node tools/reference-oracle/scripts/verify-png-stage3.mjs
-cargo run --locked -p xtask -- conformance verify-ownership
-cargo run --locked -p xtask -- conformance verify-inventory
-# Explicit outstanding parent action; currently rejects the old source binding:
-cargo run --locked -p xtask -- conformance verify-native-baseline
-cargo fmt --all -- --check
-git diff --check
-```
-
-Passed: **2 HDR failure/boundary tests**, **4 portable-math regressions**, all
-**17 color/gain-map contracts** (9.67s), **66 asset regressions**, **1 public
-license test**, **1 CLI license test**, and both executed WASM workers (**1 test
-each**, 6.81s/0.61s). Workspace/all-target Clippy, catalog verification,
-inventory verification (320 coverage rows/168 executions/8 pending milestones),
-ownership validation, read-only preservation audit, formatting and diff checks
-pass. The native-baseline failure is recorded above. No reference record,
-producer, comparator or rendering expectation was regenerated for these fixes.
-
-Correction hashes:
-
-| Source/binding | SHA-256 |
-| --- | --- |
-| `src/portable_math.rs` | `46e6f48f745239c94597abf9e1053a44e750dc93d74a7744364d9fccbb3cc0b5` |
-| `src/render/asset/hdr.rs` | `03d21c699554e351ce44a6bfeb036890b8a8bf38533a7607639f99a3eec1f6ac` |
-| `src/render/asset/png.rs` | `f6de3ed9261c8d198b20da6347a4323efdb0aa8c32c9f402f64f3fa674ee4872` |
-| All five `LICENSE-BUNDLE.txt` copies | `cadd243b2228954efb8f61f62d492bcde65a23f8e7e96a2db5a6cc42ce78a9f2` |
-| `license-parts/skia-BSD-3-Clause.txt` | `ad9374feb42087da25889dbee8a46c54e190f2e2aac993064e4e99f83c1a3a58` |
-| Packaged public-facade source | `bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed` |
-| Coverage requirements | `806d3fa98354cab1cff3b4103b4c262f47cfcd440805fe0fbdc709a7b6b53b44` |
-| Coverage inventory | `9db3087526fc25ca1a68ab5f3270ef863765e7f009684fe66d41446747869245` |
-| Ownership catalog subject | `fb90d519e1ddb2a21b40357df48ab47f02efdce02403705f8890e9e1e7ef5001` |
-| Ownership ledger file | `914b97af9cdc082bb3d650a272cf6bcada69c319b79080deddff771348b33b46` |
-| `verify-png-stage3.mjs` | `6d03b2dfcfef82ff5927b1752bbac809cb76c19276e604ab65ce4271abb45ea7` |
+The owner-source edits re-bound the inventory, PDF judgments and native
+baseline descriptors; those records were restaged afterwards and the
+consuming checks pass.
 
 [skia-license]: https://github.com/google/skia/blob/53348aa333da02b77c4b5797e2de722f5abde7d0/LICENSE
-[baseline]: font-registry-snapshot-reconciliation.md
 
 ## SHA-256 bindings
 

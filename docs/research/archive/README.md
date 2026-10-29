@@ -5,28 +5,63 @@ superseded evaluations and past reviews. Their conclusions are carried by the
 code, the spec, the ADRs and the notes one level up; these files are kept as
 history and are not maintained.
 
-Everything here moved from `docs/research/` on 2026-09-30. Frozen evidence
-(proposal freezes, approval comments, check logs) still cites the old
-`docs/research/<name>` paths; read those as `docs/research/archive/<name>`.
+The first set moved from `docs/research/` on 2026-09-30; the completed
+ownership-tranche, codec-qualification and library-evaluation notes followed
+on 2026-10-28. Frozen evidence (proposal freezes, approval comments, check
+logs, `rationale` strings in `tests/conformance/coverage/ownership.json`) still
+cites the old `docs/research/<name>` paths; read those as
+`docs/research/archive/<name>`.
 
-Research that is still cited by live evidence stays in `docs/research/`, in
-particular the four notes the xtask gate reads and digest-checks:
-`stage4-pdf-typography-diagnosis.md`, `stage4-pdf-typography-evidence.json`,
+Research that is still cited by live code or evidence stays in
+`docs/research/`, in particular the four notes the xtask gate reads and
+digest-checks: `stage4-pdf-typography-diagnosis.md`,
+`stage4-pdf-typography-evidence.json`,
 `stage4-png-device-phase-assessment.md` and
 `known-element-replacement-reachability.md`.
 
 ## Contents
 
+- [`admission-identity-ownership.md`](admission-identity-ownership.md)
+- [`animation-diagnostic-ownership.md`](animation-diagnostic-ownership.md)
+- [`asset-claim-diagnostic-ownership.md`](asset-claim-diagnostic-ownership.md)
+- [`bmp-ico-umbrella-facets.md`](bmp-ico-umbrella-facets.md)
+- [`bmp-image-evaluation.md`](bmp-image-evaluation.md)
+- [`color-conversion-evaluation.md`](color-conversion-evaluation.md)
+- [`color-library-source-audit.md`](color-library-source-audit.md)
+- [`compatibility-recovery-ownership.md`](compatibility-recovery-ownership.md)
 - [`dark-mode-root-filter-requalification.md`](dark-mode-root-filter-requalification.md)
+- [`decode-diagnostic-ownership.md`](decode-diagnostic-ownership.md)
+- [`diagnostic-ownership.md`](diagnostic-ownership.md)
+- [`duplicate-identity-ownership.md`](duplicate-identity-ownership.md)
+- [`final-surface-ownership.md`](final-surface-ownership.md)
 - [`five-layer-integration.md`](five-layer-integration.md)
+- [`font-diagnostic-ownership.md`](font-diagnostic-ownership.md)
+- [`font-distribution-and-loading.md`](font-distribution-and-loading.md)
 - [`font-registry-reapproval.json`](font-registry-reapproval.json)
 - [`font-registry-reapproval.md`](font-registry-reapproval.md)
 - [`font-registry-snapshot-reconciliation.md`](font-registry-snapshot-reconciliation.md)
+- [`font-subsetting-module-ecosystem.md`](font-subsetting-module-ecosystem.md)
+- [`font-subsetting-primary-sources.md`](font-subsetting-primary-sources.md)
+- [`frame-field-ownership.md`](frame-field-ownership.md)
+- [`geometry-style-ownership.md`](geometry-style-ownership.md)
+- [`gif-control-qualification.md`](gif-control-qualification.md)
+- [`gif-first-frame-qualification.md`](gif-first-frame-qualification.md)
+- [`gif-lzw-qualification.md`](gif-lzw-qualification.md)
+- [`gif-umbrella-facets.md`](gif-umbrella-facets.md)
+- [`harfrust-qualification.md`](harfrust-qualification.md)
 - [`image-diagnostic-contract-proposal.json`](image-diagnostic-contract-proposal.json)
+- [`image-diagnostic-decisions.md`](image-diagnostic-decisions.md)
+- [`image-diagnostic-ownership.md`](image-diagnostic-ownership.md)
+- [`image-field-ownership.md`](image-field-ownership.md)
 - [`image-registry-binding-refresh.md`](image-registry-binding-refresh.md)
 - [`image-registry-reapproval.json`](image-registry-reapproval.json)
 - [`image-registry-reapproval.md`](image-registry-reapproval.md)
+- [`jpeg-color-sampling-qualification.md`](jpeg-color-sampling-qualification.md)
 - [`jpeg-exact-vector-tranche.md`](jpeg-exact-vector-tranche.md)
+- [`jpeg-exif-precedence-qualification.md`](jpeg-exif-precedence-qualification.md)
+- [`jpeg-gain-map-qualification.md`](jpeg-gain-map-qualification.md)
+- [`jpeg-icc-qualification.md`](jpeg-icc-qualification.md)
+- [`jpeg-umbrella-facets.md`](jpeg-umbrella-facets.md)
 - [`jpeg187-color-completion.md`](jpeg187-color-completion.md)
 - [`jpeg187-sampling-diagnosis.md`](jpeg187-sampling-diagnosis.md)
 - [`jpeg187-sampling-hardening.md`](jpeg187-sampling-hardening.md)
@@ -36,28 +71,55 @@ particular the four notes the xtask gate reads and digest-checks:
 - [`krilla-pdf-backend-gap-audit`](krilla-pdf-backend-gap-audit)
 - [`krilla-pdf-backend-gap-audit.md`](krilla-pdf-backend-gap-audit.md)
 - [`krilla-pdf-feasibility.md`](krilla-pdf-feasibility.md)
+- [`kurbo-cubic-bounds-evaluation.md`](kurbo-cubic-bounds-evaluation.md)
 - [`layout-probe-split-qualification-refresh.md`](layout-probe-split-qualification-refresh.md)
+- [`library-replacement-review-2026-09-26.md`](library-replacement-review-2026-09-26.md)
+- [`metadata-failure-ownership.md`](metadata-failure-ownership.md)
 - [`nested-claim-binding-refresh.md`](nested-claim-binding-refresh.md)
 - [`nested-claim-reapproval.json`](nested-claim-reapproval.json)
 - [`nested-claim-reapproval.md`](nested-claim-reapproval.md)
+- [`nested-resource-limit-amendment.md`](nested-resource-limit-amendment.md)
+- [`nested-svg-diagnostic-ownership.md`](nested-svg-diagnostic-ownership.md)
+- [`nested-svg-umbrella-facets.md`](nested-svg-umbrella-facets.md)
 - [`ownership-executable-validation.md`](ownership-executable-validation.md)
+- [`pdf-raster-fallback-ownership.md`](pdf-raster-fallback-ownership.md)
+- [`pdf-writer-integration.md`](pdf-writer-integration.md)
+- [`png-cicp-primary-ownership.md`](png-cicp-primary-ownership.md)
+- [`png-cicp-transfer-ownership.md`](png-cicp-transfer-ownership.md)
+- [`png-precision-ownership.md`](png-precision-ownership.md)
+- [`png-profile-ownership.md`](png-profile-ownership.md)
 - [`png-stage4-binding-reconciliation.md`](png-stage4-binding-reconciliation.md)
 - [`png-stage4-completion.md`](png-stage4-completion.md)
 - [`png-stage4-final-metadata-application.md`](png-stage4-final-metadata-application.md)
 - [`png-stage4-followup.md`](png-stage4-followup.md)
 - [`png-stage4-integration-provenance.md`](png-stage4-integration-provenance.md)
+- [`png-stage4-ownership.md`](png-stage4-ownership.md)
 - [`png-stage4-release-owner-adapter.md`](png-stage4-release-owner-adapter.md)
+- [`png-stage4-review.md`](png-stage4-review.md)
 - [`png-stage4-scoped-proposals.md`](png-stage4-scoped-proposals.md)
+- [`png-stage4-v6-collection.md`](png-stage4-v6-collection.md)
+- [`png-stage4-v7-approved-owner.md`](png-stage4-v7-approved-owner.md)
 - [`png-stage4-v7-release-capture.md`](png-stage4-v7-release-capture.md)
+- [`png-umbrella-facets.md`](png-umbrella-facets.md)
+- [`point-stroke-ownership.md`](point-stroke-ownership.md)
 - [`rectangle-pdf-binding-refresh.md`](rectangle-pdf-binding-refresh.md)
+- [`relationship-field-ownership.md`](relationship-field-ownership.md)
 - [`release-readiness-85-86.md`](release-readiness-85-86.md)
+- [`rendering-library-review.md`](rendering-library-review.md)
 - [`representative-corpus-84-gap-audit.md`](representative-corpus-84-gap-audit.md)
+- [`resource-diagnostic-ownership.md`](resource-diagnostic-ownership.md)
+- [`resource-recovery-target-evidence.md`](resource-recovery-target-evidence.md)
 - [`review-2026-09-07`](review-2026-09-07)
+- [`rust-comparison-libraries.md`](rust-comparison-libraries.md)
 - [`rust-pdfium-crates.md`](rust-pdfium-crates.md)
+- [`skera-upstream-name-record-fix.md`](skera-upstream-name-record-fix.md)
 - [`soft-hyphen-qualification-refresh.md`](soft-hyphen-qualification-refresh.md)
 - [`stage4-image-colour-diagnosis.md`](stage4-image-colour-diagnosis.md)
 - [`stage4-image-icc-fix.md`](stage4-image-icc-fix.md)
 - [`stage4-pdf-approved-transition.md`](stage4-pdf-approved-transition.md)
 - [`stage4-pdf-backend-requalification.md`](stage4-pdf-backend-requalification.md)
+- [`surface-field-ownership.md`](surface-field-ownership.md)
+- [`svg-link-diagnostic-ownership.md`](svg-link-diagnostic-ownership.md)
+- [`text-field-ownership.md`](text-field-ownership.md)
 - [`webp191-composition-completion.md`](webp191-composition-completion.md)
 - [`webp191-partial-alpha.md`](webp191-partial-alpha.md)

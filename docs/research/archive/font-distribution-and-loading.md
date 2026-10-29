@@ -105,9 +105,9 @@ Excalifont chunks get priority in glyph selection; Xiaolai is consulted when the
 do not cover a character and the trigger is active. SVG chunk selection uses
 semantic demand, so the required inputs cannot be inferred only from which font
 eventually shaped each glyph.
-[Trigger](../../crates/excalidraw-render/src/render/resolve/text.rs)
-[Glyph selection](../../crates/excalidraw-render/src/render/text.rs)
-[SVG demand](../../crates/excalidraw-render/src/render/font_demand.rs)
+[Trigger](../../../crates/excalidraw-render/src/render/resolve/text.rs)
+[Glyph selection](../../../crates/excalidraw-render/src/render/text.rs)
+[SVG demand](../../../crates/excalidraw-render/src/render/font_demand.rs)
 
 **Conclusion:** Xiaolai is needed for compatible behavior in the relevant scenes,
 but bundling every Xiaolai chunk into every renderer build is this project's
@@ -214,7 +214,7 @@ Currently data-000 holds 131 Xiaolai chunks plus all 21 other official chunks;
 data-001 holds the remaining 78 Xiaolai chunks. Storage order follows upstream
 path, including hashed filename order, and has no linguistic meaning.
 [Catalog](../../crates/excalidraw-render-assets-base/catalog/revision-1.json)
-[Importer](../../xtask/src/catalog.rs)
+[Importer](../../../xtask/src/catalog.rs)
 
 ## Arbitrary fonts: format capability and implementation scope
 
@@ -260,11 +260,11 @@ cross-cutting feature rather than just changing the byte loader:
 | PDF embedding | TrueType `FontFile2`/`CIDFontType2`, face index zero, fixed style assumptions | Support chosen custom-font scope; different handling for CFF, collections, or other formats. |
 | Identity/accounting | Known lengths, digests, decoded inputs, notices | Preparation-time validation and bounded accounting for supplied fonts. |
 
-Sources: [Normalization](../../crates/excalidraw-render/src/normalization/kinds.rs),
-[metrics](../../crates/excalidraw-render/src/font_metadata.rs),
-[text](../../crates/excalidraw-render/src/render/text.rs),
-[SVG sources](../../crates/excalidraw-render/src/render/svg_fonts.rs),
-[PDF fonts](../../crates/excalidraw-render/src/render/pdf/fonts.rs).
+Sources: [Normalization](../../../crates/excalidraw-render/src/normalization/kinds.rs),
+[metrics](../../../crates/excalidraw-render/src/font_metadata.rs),
+[text](../../../crates/excalidraw-render/src/render/text.rs),
+[SVG sources](../../../crates/excalidraw-render/src/render/svg_fonts.rs),
+[PDF fonts](../../../crates/excalidraw-render/src/render/pdf/fonts.rs).
 
 The current SVG subset path requires `glyf` and uses a sealed table policy;
 rewritten font names assume a Regular face. A font parser being able to open a
@@ -272,14 +272,14 @@ file does not establish that all output formats can embed/subset it correctly.
 Start with explicitly supported static TrueType-outline fonts. CFF/CFF2 outlines,
 variable instances, collections, and color/bitmap fonts need additional decisions
 and qualification rather than an unbounded promise of every OpenType font.
-[Subset implementation](../../crates/excalidraw-render/src/render/font_subset.rs)
+[Subset implementation](../../../crates/excalidraw-render/src/render/font_subset.rs)
 [Table policy](../../crates/excalidraw-render-assets-base/src/lib.rs)
 
 Replacing a font also changes widths and fit inside the scene's stored text
 geometry. Define whether a custom-font extension preserves existing line breaks
 and boxes or performs new layout; loading the font does not settle that behavior.
 Existing source-line and baseline logic can still be reused.
-[Text layout](../../crates/excalidraw-render/src/render/text.rs)
+[Text layout](../../../crates/excalidraw-render/src/render/text.rs)
 
 ### What metadata is actually needed upfront?
 
@@ -393,11 +393,11 @@ It does not require custom-family registration or an external-provider API.
    Latin/emoji/generated labels, CJK demand errors, dependency omission, and both
    native and browser-Wasm compilation.
 
-Sources: [Importer](../../xtask/src/catalog.rs),
+Sources: [Importer](../../../xtask/src/catalog.rs),
 [asset representation and metadata helpers](../../crates/excalidraw-render-assets-base/src/lib.rs),
-[SVG loading](../../crates/excalidraw-render/src/render/svg_fonts.rs),
-[shaping](../../crates/excalidraw-render/src/render/text.rs),
-[specification](../renderer-spec-v1.md#L2025-L2038).
+[SVG loading](../../../crates/excalidraw-render/src/render/svg_fonts.rs),
+[shaping](../../../crates/excalidraw-render/src/render/text.rs),
+[specification](../../renderer-spec-v1.md#L2025-L2038).
 
 ### Missing-CJK behavior remains a decision
 
@@ -570,7 +570,7 @@ Two additional qualifications:
 A matching family name is not sufficient evidence of equivalent bytes. Replacing
 the catalog's Unicode-range WOFF2 chunks with a full TTF is also not automatically
 equivalent: declared ranges, precedence, source identities, and subsetting inputs
-matter. [Current typography and asset rules](../renderer-spec-v1.md)
+matter. [Current typography and asset rules](../../renderer-spec-v1.md)
 
 Suggested responsibilities:
 
@@ -655,13 +655,13 @@ forbids features removing it, requires checked-in imported bytes, and prohibits
 internal package versions. Optional payloads, independent font package versions,
 and build-time acquisition therefore need deliberate amendments to those rules.
 These are existing project choices, not Rust requirements.
-[Specification, dependency and asset contract](../renderer-spec-v1.md#L1983-L2058)
+[Specification, dependency and asset contract](../../renderer-spec-v1.md#L1983-L2058)
 
 ADR-0016 permits reviewed changes between 0.x releases and makes browser Wasm
 experimental; publication does not automatically freeze a compatibility revision.
 Accordingly, this proposal need not assume permanent historical-revision support
 or promise unqualified native/Wasm byte equality.
-[ADR-0016](../adr/0016-release-0.1.0-with-a-version-scoped-contract.md)
+[ADR-0016](../../adr/0016-release-0.1.0-with-a-version-scoped-contract.md)
 
 The implementation needs more than optional Cargo flags:
 
@@ -671,21 +671,21 @@ The implementation needs more than optional Cargo flags:
   [Generated records](../../crates/excalidraw-render-assets-base/src/generated/revision_1.rs)
 - `Renderer` currently contains only a static catalog reference and has a
   `const` constructor. Provider ownership and constructor behavior need an explicit
-  design. [Renderer](../../crates/excalidraw-render/src/compatibility.rs)
+  design. [Renderer](../../../crates/excalidraw-render/src/compatibility.rs)
 - Font loading occurs in ordinary/generated text, SVG subset loading, and nested
   SVG handling. Noto Emoji and predecoded Excalifont use specialized loading paths.
   A provider must cover these as well as official WOFF2 chunks.
-  [Text](../../crates/excalidraw-render/src/render/text.rs)
-  [SVG fonts](../../crates/excalidraw-render/src/render/svg_fonts.rs)
-  [Nested SVG](../../crates/excalidraw-render/src/render/asset/svg.rs)
+  [Text](../../../crates/excalidraw-render/src/render/text.rs)
+  [SVG fonts](../../../crates/excalidraw-render/src/render/svg_fonts.rs)
+  [Nested SVG](../../../crates/excalidraw-render/src/render/asset/svg.rs)
 - Keep cache-independent resource accounting and test externally supplied exact
   assets against bundled assets on each target: artifact bytes, reports, missing
   and corrupt assets, fallback cases, and cold/warm/frame-batch behavior.
   This is provider equivalence on a target, not a stronger cross-target promise.
-  [Accounting decision](../adr/0002-scope-the-determinism-promise-to-artifact-bytes.md)
+  [Accounting decision](../../adr/0002-scope-the-determinism-promise-to-artifact-bytes.md)
 - Distribution changes do not remove font notices or subset naming rules.
   Preserve the existing treatment of modified OFL subsets and each font's actual
-  license. [ADR-0001](../adr/0001-treat-font-subsets-as-modified-versions.md)
+  license. [ADR-0001](../../adr/0001-treat-font-subsets-as-modified-versions.md)
   [Official OFL text][ofl]
 
 ## Suggested next decision

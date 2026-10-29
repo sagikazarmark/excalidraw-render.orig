@@ -10,12 +10,13 @@ concrete tool versions as implementation evidence.
 
 | Role | Exact identity | Immutable acquisition |
 | --- | --- | --- |
-| PDFium viewer | PDFium `152.0.7947.0`, build `7947`, default `pdfium-binaries` flags, through pypdfium2 `5.12.1` at commit [`b3e7e67a1e35c9436b52cb043d476b89ec8c38cb`](https://github.com/pypdfium2-team/pypdfium2/tree/b3e7e67a1e35c9436b52cb043d476b89ec8c38cb) | manylinux x86_64 wheel SHA-256 `e10cbf41b21233ec5e20adfc170cf60edd77abead86a97dc708fff55a8a886c7` |
-| PDF.js viewer | `pdfjs-dist` `6.1.200` at commit [`6353acefe5007cd4899247a8c4e83cb7c9435a54`](https://github.com/mozilla/pdf.js/tree/6353acefe5007cd4899247a8c4e83cb7c9435a54), `@napi-rs/canvas` `1.0.2` | npm lock plus canonical Playwright image digest `sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9` |
+| PDFium viewer | PDFium `152.0.7947.0`, build `7947`, default `pdfium-binaries` flags, driven through the `pdfium-render` Rust bindings (`tools/pdf-harness/pdfium-rust`); the pypdfium2 `5.12.1` wheel at commit [`b3e7e67a1e35c9436b52cb043d476b89ec8c38cb`](https://github.com/pypdfium2-team/pypdfium2/tree/b3e7e67a1e35c9436b52cb043d476b89ec8c38cb) was the historical Python adapter and remains the source of the engine identity | upstream `pdfium-binaries` archive, checksum-pinned by `tools/pdf-harness/install.sh` |
+| PDF.js viewer | `pdfjs-dist` at the version in `tools/pdf-harness/pdfjs/package-lock.json` (`6.1.200` at commit [`6353acefe5007cd4899247a8c4e83cb7c9435a54`](https://github.com/mozilla/pdf.js/tree/6353acefe5007cd4899247a8c4e83cb7c9435a54) when this was written; a PDF.js update needs no requalification of its own, ADR-0019), `@napi-rs/canvas` `1.0.2` | npm lock plus canonical Playwright image digest `sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9` |
 | Structural parser | qpdf `12.3.2` at signed tag commit [`a898bb3a7289d1d05789d6d3f0d5dd534943a8da`](https://github.com/qpdf/qpdf/tree/a898bb3a7289d1d05789d6d3f0d5dd534943a8da) | relocatable Linux x86_64 archive SHA-256 `44f2c53bf784c0143128d80d2b9946e9793962c5bb403b75c0024cb4d8e346b9` |
 
 The pypdfium2 wheel records PDFium's origin, build, version, and enabled flags in
-its packaged `pypdfium2_raw/version.json`. Its API documentation says the build
+its packaged `pypdfium2_raw/version.json`; the Rust worker records the same
+identity from the installed library. pypdfium2's API documentation says the build
 number uniquely identifies the PDFium version and warns that PDFium is not
 thread-safe, which supports a fresh single-threaded process per render.
 [Source: pypdfium2 version and threading documentation](https://pypdfium2.readthedocs.io/en/stable/python_api.html)

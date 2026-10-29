@@ -9,9 +9,9 @@ already installed:
 
 ```sh
 bash tools/pdf-harness/install.sh --pdfium-only
-rustup run 1.97.1 cargo build --locked --manifest-path tools/pdf-harness/pdfium-rust/Cargo.toml --target-dir target/pdf-harness/pdfium-rust
+cargo build --locked --manifest-path tools/pdf-harness/pdfium-rust/Cargo.toml --target-dir target/pdf-harness/pdfium-rust
 target/pdf-harness/pdfium-rust/debug/excalidraw-render-pdfium input.pdf output.rgba 112 84
-rustup run 1.97.1 cargo test --locked --manifest-path tools/pdf-harness/pdfium-rust/Cargo.toml --target-dir target/pdf-harness/pdfium-rust
+cargo test --locked --manifest-path tools/pdf-harness/pdfium-rust/Cargo.toml --target-dir target/pdf-harness/pdfium-rust
 ```
 
 ## Contract

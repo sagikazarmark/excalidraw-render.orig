@@ -116,15 +116,10 @@ Numeric tests are active Rust command-boundary checks with literal expectations;
 the optional Python parity tests have been removed.
 The process-boundary observer delegates to the real CLI, records invocation
 order and injects post-render drift/failure/delay to verify refusal and cleanup.
-No tests call private helpers or substitute fake renderer output. The independent
-Dagger check also captures and verifies all six Velox executions, each twice:
-
-```sh
-dagger api call --load-module tools/representative-intake/ci verify
-```
-
-The module uses Rust tests and smoke commands. Its dedicated GitHub Actions
-workflow has been removed. See [representative CI](ci/README.md) for check scope.
+No tests call private helpers or substitute fake renderer output. The
+real-renderer tests, which capture and verify all six Velox executions twice,
+need `REPRESENTATIVE_RENDERER` and are `#[ignore]`d in the ordinary tiers; see
+[the real-renderer checks](ci/README.md) for the commands.
 
 ## Reference and viewer proposal
 
@@ -192,8 +187,8 @@ undeclared official family is admitted only through an observed substitute.
 records the platform font CDP reports for each text node, alongside
 `fc-match`. Collection requires both to agree and the file to be a pinned
 reference-profile system font, retains those exact bytes, wraps them as WOFF2
-with the renderer's encoder settings (`viewer-fonts`, which uses the renderer's
-pinned `wuff`, `rustybuzz` and `ttf2woff2`), and injects one `@font-face` for the
+with the renderer's encoder settings (`viewer-fonts`, which pins its own
+`wuff`, `rustybuzz` and `ttf2woff2` as bound evidence), and injects one `@font-face` for the
 requested family into `official-substituted.svg`. Chromium renders that file;
 the Rust viewer inputs derive from it. In the pinned container, `Helvetica`
 resolves to Liberation Sans (`LiberationSans-Regular.ttf`). This substitution is

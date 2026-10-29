@@ -1,4 +1,4 @@
-//! The shape every format plan's elements share (stage 5). Each backend lowers
+//! The shape every format plan's elements share. Each backend lowers
 //! the resolved scene into its own element list in its own units, but what an
 //! element carries besides its kind is the same everywhere: the paint-order
 //! contract of spec section 11.4 that every fallback and every ordinary element

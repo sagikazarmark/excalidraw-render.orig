@@ -1,4 +1,5 @@
-// Read-only Stage 3 preservation/ownership audit; no refresh or collection.
+// Read-only PQ/HLG and gain-map preservation/ownership audit
+// (docs/research/png-hdr-gain-map-ownership.md); no refresh or collection.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";

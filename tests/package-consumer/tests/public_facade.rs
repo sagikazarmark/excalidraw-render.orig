@@ -67,7 +67,7 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
 // #133/#150 (ADR-0008: Flate streams, subset-tagged chunk programs, the
 // trailer /ID); the one font-bearing PDF here moved again with #151 item 1
 // (the XMP manifest's attribution and license body notices). The nested-SVG
-// PDFs moved again with #209 (ADR-0021 slice 1): after the usvg 0.47 -> 0.45
+// PDFs moved again with #209 (ADR-0021): after the usvg 0.47 -> 0.45
 // bridge each fallback image sits in an identity `q 1 0 0 1 0 0 cm Q` group,
 // and a `8.9e-16` residue in the native nested SVG prints as `0`. Every PDF
 // digest here and `expected/rectangle.pdf` moved again when Krilla became the
@@ -128,9 +128,8 @@ const PDF_FALLBACK_FAMILIES: &[(&str, &str, &str, &str)] = &[
     (
         "turbulence",
         r#"<feTurbulence baseFrequency="0.1" numOctaves="1"/>"#,
-        // The old pin predates the shared raster-closure pipeline (9712833).
-        // Reconfirmed against the starting release tree, c5fec02; see the
-        // packaged-consumer diagnosis in docs/release-preparation.md.
+        // The old pin predated the shared raster-closure pipeline (9712833);
+        // the current one was reconfirmed at c5fec02.
         "174f12465f67aa2146e1b97ddf988640d5f3822b319f7f1198f004005c9611d9",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
