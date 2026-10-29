@@ -28,10 +28,6 @@ use cli::{CatalogCommand, Cli, ConformanceCommand, Family};
 
 fn main() -> ExitCode {
     let args = env::args().collect::<Vec<_>>();
-    if let Some(guidance) = cli::retired(&args[1..]) {
-        eprintln!("error: {guidance}");
-        return ExitCode::FAILURE;
-    }
     let cli = match Cli::try_parse_from(args) {
         Ok(cli) => cli,
         Err(error) => {
@@ -99,9 +95,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
     match command {
         C::Inventory => println!("{}", coverage::inventory_json()?),
         C::OwnershipCatalog => println!("{}", coverage::ownership_catalog()?),
-        C::OwnershipAuthorityMigration { base, hash, note } => print_json(
-            &coverage::ownership_authority_migration(&base, &hash, &note)?,
-        )?,
         C::SeedOwnership => println!("{}", coverage::seed_ownership()?),
         C::VerifyOwnership => coverage::verify_ownership()?,
         C::ExtendOwnership {
@@ -129,9 +122,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
             rationale,
             obligations,
         } => coverage::record_case_owner(&case, &rationale, &obligations)?,
-        C::ReconcileStage4Bindings { proof } => {
-            print_json(&coverage::reconcile_stage4_bindings(&proof)?)?
-        }
         C::VerifyRepresentativeOwner { case } => {
             coverage::verify_representative_owner(&case)?;
             println!("verified representative owner {case}");
@@ -161,16 +151,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         } => coverage::record_closure_owner(&obligation, &verifier, &rationale)?,
         C::InventoryDigest => println!("{}", coverage::inventory_digest()?),
         C::VerifyInventory => coverage::verify_inventory()?,
-        C::RebindFontPackaging {
-            base,
-            candidate,
-            receipt,
-        } => coverage::rebind_font_packaging(&base, &candidate, receipt.as_deref())?,
-        C::RebindFontPackagingOwnership {
-            base,
-            spec,
-            receipt,
-        } => coverage::rebind_font_packaging_ownership(&base, &spec, receipt.as_deref())?,
         C::VerifyResults { report } => coverage::verify_results(&report)?,
         C::VerifyNativeSnapshots { directory } => coverage::verify_snapshots(&directory)?,
         C::StageWasmSnapshots => coverage::stage_wasm_snapshots()?,

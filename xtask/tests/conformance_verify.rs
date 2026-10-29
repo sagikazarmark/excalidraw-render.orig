@@ -13,15 +13,3 @@ fn verifies_the_approved_rectangle_reference_case_offline() {
         String::from_utf8_lossy(&output.stderr)
     );
 }
-
-#[test]
-fn approval_commands_are_retired() {
-    let output = Command::new(env!("CARGO_BIN_EXE_xtask"))
-        .args(["conformance", "approval-subject", "focused.frame-export.v1"])
-        .output()
-        .expect("invoke retired approval command");
-
-    assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("approval commands are retired"));
-    assert!(output.stdout.is_empty());
-}

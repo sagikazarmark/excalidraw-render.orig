@@ -58,7 +58,7 @@ These are open regardless of code quality.
    retired set, and V28's PDF and PNG equal V27's: the rename moved
    identifiers, not glyphs.
 
-Already in place: CI passes on `main` (all nine jobs, including MSRV), the
+Already in place: CI passes on `main` (all ten jobs, including MSRV), the
 nightly passes, private vulnerability reporting is on, and all five crate names
 are free on crates.io. Every open issue is either a follow-up listed in the
 release policy or an enhancement (#233, #199); #213 is untriaged but looks
@@ -211,8 +211,7 @@ x86-64 Linux. This does not block the release, but it slows patch releases.
 
 ## Deferred
 
-- [ ] cargo-deny (advisories and licenses) in CI. It is cheap, so it can land
-      before 0.1.0.
+- [x] cargo-deny (advisories and licenses) in CI: `just deny`, `deny.toml`.
 - [ ] `cargo-semver-checks` after the first publication, once a baseline exists.
 - [ ] An umbrella error type, consistent option builders (`builder()` versus
       `Default` plus `with_*`), and splitting the CLI's 3,000-line `main.rs`.

@@ -14,45 +14,49 @@ default:
     @just --list --unsorted
 
 # Run every per-change gate except msrv, which needs its own toolchain.
-ci: fmt clippy features test test-render test-features test-doc conformance packaging
+ci: fmt clippy features deny test test-render test-features test-doc conformance packaging
 
-# Check the formatting of every repo-authored crate (lint:fmt).
+# Check the formatting of every repo-authored crate.
 fmt:
     cargo fmt --check {{ packages }}
 
-# Lint the renderer, the CLI, and xtask (lint:clippy).
+# Lint the renderer, the CLI, and xtask.
 clippy:
     cargo clippy --locked --no-deps --all-targets -p excalidraw-render -p excalidraw-render-cli -p xtask -- -D warnings
 
-# Lint the renderer without its default features and with each one alone (lint:features).
+# Lint the renderer without its default features and with each one alone.
 features:
     for features in '' png pdf cjk; do \
         cargo clippy --locked --no-deps --all-targets -p excalidraw-render --no-default-features --features "$features" -- -D warnings; \
     done
 
 # Run it on that toolchain: devenv --option languages.rust.version:string 1.92.0 shell -- just msrv
-# Check the published crates on the workspace rust-version (lint:msrv).
+# Check advisories, licenses and sources of every dependency (deny.toml).
+deny:
+    cargo deny --locked check
+
+# Check the published crates on the workspace rust-version.
 msrv:
     cargo check --locked -p excalidraw-render -p excalidraw-render-cli
 
-# Run the fast tier: every test outside the parity, limits, and harness binaries (test:fast).
+# Run the fast tier: every test outside the parity, limits, and harness binaries.
 test:
     python3 -m unittest discover -s tools/ci -p 'test_*.py'
     cargo nextest run --locked --workspace --profile ci-fast
 
-# Run the render tier: the parity harnesses and the fixed parser ceilings (test:render).
+# Run the render tier: the parity harnesses and the fixed parser ceilings.
 test-render:
     cargo nextest run --locked --workspace --profile ci-render
 
-# Test the builds that leave out the png or pdf feature (test:features).
+# Test the builds that leave out the png or pdf feature.
 test-features:
     bash tools/ci/check-format-features.sh
 
-# Run every documentation test in the workspace (test:doc).
+# Run every documentation test in the workspace.
 test-doc:
     cargo test --locked --workspace --doc
 
-# Verify the cases, the coverage ledgers, the sealed catalog, and the approved evidence (conformance:*).
+# Verify the cases, the coverage ledgers, the sealed catalog, and the committed evidence.
 conformance: xtask
     target/debug/xtask conformance verify-all
     target/debug/xtask conformance verify-inventory
@@ -63,7 +67,7 @@ conformance: xtask
     target/debug/xtask conformance verify-svg-viewers
     target/debug/xtask conformance verify-pdf-viewers
 
-# Check the published crates the way a downstream consumer uses them (packaging:*).
+# Check the published crates the way a downstream consumer uses them.
 packaging: package-cli package-facade package-no-cjk
 
 # Package the published crates and unpack them under target/package.
@@ -73,16 +77,16 @@ package:
         --allow-dirty --no-verify --target-dir target
     for archive in target/package/*.crate; do tar -xzf "$archive" -C target/package; done
 
-# Check the packaged CLI against the packaged renderer (packaging:cli).
+# Check the packaged CLI against the packaged renderer.
 package-cli: package
     bash tests/package-consumer/check-packaged-cli.sh "{{ host }}"
 
-# Run the public facade against the packaged renderer (packaging:public-facade, wasm:public-facade).
+# Run the public facade against the packaged renderer.
 package-facade target=host: package
     cd tests/package-consumer && cargo test --locked --release --target "{{ target }}" \
         --test public_facade --test optional_cjk
 
-# Check that a packaged dependency can leave out the CJK payloads (packaging:no-cjk, wasm:no-cjk).
+# Check that a packaged dependency can leave out the CJK payloads.
 package-no-cjk target=host: package
     bash tests/package-consumer/check-no-cjk.sh "{{ target }}"
 
@@ -98,10 +102,10 @@ wasm := "wasm32-unknown-unknown"
 # Run every release check on both supported targets.
 release: (qualification native) (qualification wasm) packaging wasm-packaging full-equality
 
-# Run the packaged facade and the no-CJK consumer in browser WASM (wasm:public-facade, wasm:no-cjk).
+# Run the packaged facade and the no-CJK consumer in browser WASM.
 wasm-packaging: (package-facade wasm) (package-no-cjk wasm)
 
-# Run a target's release qualification and materialize its report (packaging:qualification, wasm:qualification).
+# Run a target's release qualification and materialize its report.
 qualification target: xtask
     {{ if target == native { "just require-native" } else { "" } }}
     mkdir -p "{{ evidence }}/{{ target }}"
@@ -109,7 +113,7 @@ qualification target: xtask
     target/debug/xtask conformance materialize-svg-font-subset-target "{{ target }}" \
         "{{ evidence }}/{{ target }}/qualification.log" "{{ evidence }}/{{ target }}/{{ target }}.json"
 
-# Collect native snapshots of the packaged facade and replay them against the approved baseline (packaging:snapshot-replay).
+# Collect native snapshots of the packaged facade and replay them against the native baseline.
 snapshot-replay: collect-native-snapshots
     target/debug/xtask conformance verify-native-baseline
     target/debug/xtask conformance replay-native-snapshots "{{ evidence }}/native-snapshots"
@@ -125,7 +129,7 @@ collect-native-snapshots: require-native package xtask
         -- collect ../.. "../../{{ evidence }}/native-snapshots"
     target/debug/xtask conformance verify-native-snapshots "{{ evidence }}/native-snapshots"
 
-# Render every snapshot key in browser WASM and compare with the approved native baseline (wasm:snapshot-replay).
+# Render every snapshot key in browser WASM and compare with the approved native baseline.
 wasm-snapshot-replay: package xtask
     target/debug/xtask conformance stage-wasm-snapshots
     rm -rf "{{ evidence }}/wasm-snapshots"
@@ -158,7 +162,7 @@ trace-logs target:
     cargo run --locked -q -p xtask -- conformance stage-traces
     bash tools/ci/trace-snapshots.sh "{{ target }}" "$out"
 
-# Join both targets' traces to the packaged runs and check their equality (full-equality).
+# Join both targets' traces to the packaged runs and check their equality.
 full-equality: (trace-logs native) (trace-logs wasm) snapshot-replay wasm-snapshot-replay xtask
     target/debug/xtask conformance aggregate-traces "{{ evidence }}/results"
     rm -rf "{{ evidence }}/results/native-snapshots" "{{ evidence }}/results/wasm-snapshots"
@@ -167,7 +171,7 @@ full-equality: (trace-logs native) (trace-logs wasm) snapshot-replay wasm-snapsh
     target/debug/xtask conformance join-trace-results "{{ evidence }}/results"
     python3 tools/ci/release-results.py joined "{{ evidence }}/results"
 
-# Export both targets' qualification reports and their aggregate from a clean commit (target-evidence).
+# Export both targets' qualification reports and their aggregate from a clean commit.
 target-evidence: require-native
     bash tools/ci/require-clean-source.sh
     just release
@@ -196,7 +200,7 @@ release-archive version: require-native
     rm -rf "dist/$name"
     cd dist && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
 
-# Restaging. These recipes regenerate approved evidence after a change that moves
+# Restaging. These recipes regenerate committed evidence after a change that moves
 # it. They write candidates for review; nothing here edits a manifest or the
 # registry, and CI exports their output as artifacts (docs/ci.md).
 

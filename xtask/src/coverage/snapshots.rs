@@ -341,7 +341,6 @@ fn verified_bundle(root: &Path, inventory: &Inventory) -> Result<Snapshots, Stri
 mod baseline;
 mod provenance;
 pub(super) mod wasm;
-pub(super) use baseline::storage_rebind;
 pub use baseline::{replay_snapshots, stage_baseline, verify_baseline};
 pub use wasm::{report_wasm_snapshots, stage_wasm_snapshots, verify_wasm_snapshots};
 

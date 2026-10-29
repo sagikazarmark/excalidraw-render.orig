@@ -265,65 +265,6 @@ fn compare(baseline: &Baseline, candidate: &Snapshots) -> Result<(), String> {
     Ok(())
 }
 
-/// Prepare only new execution keys. Historical run provenance and every accepted
-/// artifact/report descriptor are preserved; both physical blob copies are read.
-pub(in crate::coverage) fn storage_rebind(
-    old: &Inventory,
-    current: &Inventory,
-    candidate: &Path,
-) -> Result<(Vec<u8>, Vec<u8>, Value), String> {
-    let root = repo_root().join(BASELINE);
-    let mut baseline = load(&root)?;
-    if baseline
-        .expectations
-        .iter()
-        .map(|e| &e.key)
-        .collect::<Vec<_>>()
-        != old.executions.iter().map(|e| &e.key).collect::<Vec<_>>()
-    {
-        return Err("storage migration requires the exact previous baseline keys".into());
-    }
-    let bundle = verified_bundle(candidate, current)?;
-    let mut referenced = BTreeSet::new();
-    for ((entry, execution), result) in baseline
-        .expectations
-        .iter_mut()
-        .zip(&current.executions)
-        .zip(&bundle.runs[0].results)
-    {
-        if entry.sample != result.samples[0] {
-            return Err(format!("storage migration output drift: {:?}", entry.key));
-        }
-        let outcome = match &entry.sample.outcome {
-            SnapshotOutcome::Artifact { bytes } => bytes,
-            SnapshotOutcome::Failure { descriptor, .. } => descriptor,
-        };
-        for bytes in [&entry.sample.report, outcome] {
-            if blob(&root, bytes, &mut referenced)? != blob(candidate, bytes, &mut BTreeSet::new())?
-            {
-                return Err("storage migration blob bytes differ".into());
-            }
-        }
-        entry.key = execution.key.clone();
-    }
-    compare(&baseline, &bundle)?;
-    let bytes = json_bytes(&baseline)?;
-    let receipt = json!({
-        "candidate_sha256": sha256(&read_repository_file(candidate, "snapshots.json")?),
-        "rustc": bundle.rustc, "source_status": bundle.source_status,
-        "packages": bundle.packages,
-        "executions": baseline.expectations.len(), "sessions_per_process": 2,
-        "processes": bundle.runs.iter().map(|r| &r.process_id).collect::<Vec<_>>(),
-        "unchanged_samples_sha256": digest(&baseline.expectations.iter().map(|e| &e.sample).collect::<Vec<_>>())?,
-        "artifact_and_report_bytes_equal": true
-    });
-    Ok((
-        [&bytes[..], b"\n"].concat(),
-        format!("{}\n", sha256(&bytes)).into_bytes(),
-        receipt,
-    ))
-}
-
 pub fn replay_snapshots(candidate: &str) -> Result<(), String> {
     verify_baseline()?;
     verify_snapshots(candidate)?;

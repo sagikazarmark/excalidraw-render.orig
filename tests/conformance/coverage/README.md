@@ -93,8 +93,8 @@ spelling, and (xtask enables `arbitrary_precision`) each parsed number's own
 source spelling. It is independent of pretty printing but **not RFC8785
 number normalization** (for example, `1.0` remains distinct from `1`). Collectors
 must use `inventory-digest` rather than reserialize with another JSON library.
-The approved closure/snapshot transition must settle RFC8785 number handling;
-this draft digest must not be used as a canonical human approval subject.
+A future closure/snapshot transition must settle RFC8785 number handling
+before this digest can serve as a canonical identity.
 
 Execution `options` preserve the reference manifest's request vocabulary. A
 future public-facade collector must implement and validate its deterministic
@@ -417,11 +417,8 @@ means the report was produced, not that coverage or renderer correctness passed.
 `verify-layers` without flags is a compatibility alias for this report.
 `verify-layers --strict` and explicit global closure audits retain
 strict historical verification for inspection only; a stale historical record
-can fail those opt-in audits. The generation/approval commands
-`layers-generate`, `layers-approval-subject`, `record-layers-approval`, and
-`record-closure-owner ... layers ...` are retired and return guidance to use the
-report. No CI configuration change is needed for the existing
-`verify-ownership` caller.
+can fail those opt-in audits. The record's generation commands are retired
+(ADR-0019); the report is the maintained form.
 
 The description below documents the historical record format, not a required
 update procedure.

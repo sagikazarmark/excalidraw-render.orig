@@ -1,0 +1,45 @@
+# cargo-deny configuration: `just deny` (ADR-0016 release gates; every change
+# in CI). Advisories, licenses and dependency sources gate. Duplicate crate
+# versions are reported, not refused: collapsing them means byte-affecting
+# bumps, which move together in a minor release.
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+
+[licenses]
+version = 2
+# Every license expression in Cargo.lock resolves to one of these. The
+# workspace's own crates add OFL-1.1 (bundled fonts) and CC-BY-4.0 (the
+# placeholder icons).
+allow = [
+    "0BSD",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "CC-BY-4.0",
+    "MIT",
+    "MIT-0",
+    "MPL-2.0",
+    "OFL-1.1",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# The unpublished comparator is a version-less path dependency of the
+# renderer's tests and of xtask; neither edge reaches a published crate.
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

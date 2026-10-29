@@ -288,7 +288,7 @@ turn:
   `coverage/ownership.json`.
 
 Follow each moved digest until nothing live changes. Historical records stay
-as they were: `proposals/`, `candidates/`, `docs/research/`, `coverage/font-packaging-reconciliation-2.json`, and the
+as they were: `proposals/`, `candidates/`, `docs/research/`, and the
 `source` digests of test-owned rows in `coverage/ownership.json`. A digest
 refresh never rewrites them. A proposal or candidate that no check, test or
 script reads is deleted instead of kept (ADR-0022); kept records may still name

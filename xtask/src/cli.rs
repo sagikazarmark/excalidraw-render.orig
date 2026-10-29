@@ -36,35 +36,6 @@ pub enum Family {
     Demo(DemoCommand),
 }
 
-/// Rejects retired invocations with their migration guidance before parsing,
-/// so arguments that no longer match any grammar still get a useful answer.
-pub fn retired(args: &[String]) -> Option<&'static str> {
-    let [family, command, ..] = args else {
-        return None;
-    };
-    match (family.as_str(), command.as_str()) {
-        ("catalog", command) if command.contains("approval") => {
-            Some("approval commands are retired; review expectation changes in Git and run catalog verify")
-        }
-        ("conformance", command) if command.contains("approval") => {
-            Some("approval commands are retired; review expectation changes in Git and run the corresponding verifier")
-        }
-        ("conformance", "layers-generate") => {
-            Some("five-layer maintenance is retired; use conformance layers-report (read-only, advisory)")
-        }
-        ("conformance", "candidate-pdf-requalify") => {
-            Some("completed PDF backend requalification workflow retired; use current PDF harness and native snapshot checks")
-        }
-        ("conformance", "pdf-requalification-subject") => {
-            Some("historical PDF requalification subject command retired; retained evidence remains available")
-        }
-        ("conformance", "refresh-pdf-viewer-dependencies") => {
-            Some("historical PDF viewer dependency refresh retired; use conformance verify-pdf-viewers to check retained qualification evidence")
-        }
-        _ => None,
-    }
-}
-
 #[derive(Debug, Subcommand)]
 pub enum CatalogCommand {
     /// Verify the committed catalog.
@@ -89,15 +60,6 @@ pub enum ConformanceCommand {
     Inventory,
     /// Print the ownership catalog.
     OwnershipCatalog,
-    /// Print an ownership authority migration record.
-    OwnershipAuthorityMigration {
-        /// Previous spec commit hash.
-        base: String,
-        /// Reviewed new spec SHA-256.
-        hash: String,
-        /// Review note repository path.
-        note: String,
-    },
     /// Print a seeded ownership catalog.
     SeedOwnership,
     /// Verify the ownership ledger.
@@ -143,11 +105,6 @@ pub enum ConformanceCommand {
         /// Owned obligation IDs.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         obligations: Vec<String>,
-    },
-    /// Print the reconciled representative PNG binding record.
-    ReconcileStage4Bindings {
-        /// Qualified native canary record.
-        proof: String,
     },
     /// Verify a representative case owner.
     VerifyRepresentativeOwner {
@@ -210,24 +167,6 @@ pub enum ConformanceCommand {
     InventoryDigest,
     /// Verify the obligation inventory.
     VerifyInventory,
-    /// Rebind font packaging evidence.
-    RebindFontPackaging {
-        /// Previous commit.
-        base: String,
-        /// Current snapshot directory.
-        candidate: String,
-        /// Receipt.
-        receipt: Option<String>,
-    },
-    /// Rebind font packaging ownership.
-    RebindFontPackagingOwnership {
-        /// Previous commit.
-        base: String,
-        /// Final spec SHA-256.
-        spec: String,
-        /// Receipt.
-        receipt: Option<String>,
-    },
     /// Verify a result bundle.
     VerifyResults {
         /// Result bundle path.
@@ -522,7 +461,7 @@ pub enum CaseCommand {
         /// Case directory.
         directory: PathBuf,
     },
-    /// Create an unapproved case from explicit expectations.
+    /// Create a case from explicit expectations.
     Materialize(MaterializeArgs),
 }
 
@@ -710,13 +649,11 @@ mod tests {
             [
                 "inventory",
                 "ownership-catalog",
-                "ownership-authority-migration",
                 "seed-ownership",
                 "verify-ownership",
                 "extend-ownership",
                 "record-test-owner",
                 "record-case-owner",
-                "reconcile-stage4-bindings",
                 "verify-representative-owner",
                 "record-representative-owner",
                 "record-exception-test-owner",
@@ -727,8 +664,6 @@ mod tests {
                 "record-closure-owner",
                 "inventory-digest",
                 "verify-inventory",
-                "rebind-font-packaging",
-                "rebind-font-packaging-ownership",
                 "verify-results",
                 "verify-native-snapshots",
                 "stage-wasm-snapshots",
@@ -841,12 +776,10 @@ mod tests {
 
     #[test]
     fn optional_and_repeated_values_are_preserved() {
-        let Family::Conformance(ConformanceCommand::RebindFontPackaging { receipt, .. }) =
-            parse(&["conformance", "rebind-font-packaging", "a", "b"])
-        else {
+        let Family::Demo(DemoCommand::Build { out }) = parse(&["demo", "build"]) else {
             panic!()
         };
-        assert_eq!(receipt, None);
+        assert_eq!(out, None);
         let Family::Representative(RepresentativeCommand::Controls(controls)) = parse(&[
             "representative",
             "controls",
@@ -883,15 +816,5 @@ mod tests {
             assert!(replay.viewers);
             assert_eq!(replay.renderer, Some(PathBuf::from("cli")));
         }
-    }
-
-    #[test]
-    fn retired_guidance_precedes_parsing() {
-        let args = |a: &[&str]| a.iter().map(|s| s.to_string()).collect::<Vec<_>>();
-        assert!(retired(&args(&["conformance", "record-layers-approval"]))
-            .unwrap()
-            .starts_with("approval commands are retired"));
-        assert!(retired(&args(&["representative", "approval"])).is_none());
-        assert!(retired(&args(&["conformance"])).is_none());
     }
 }

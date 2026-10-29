@@ -1,16 +1,12 @@
 //! Global obligation/owner boundary. The execution inventory remains unchanged:
 //! selecting ownership never silently regenerates approved renderer snapshots.
 use super::*;
-mod authority_migration;
 mod executable;
 mod png_profiles;
-mod reconciliation;
 mod record;
 mod representative;
 mod test_group;
 mod view;
-pub use authority_migration::ownership_authority_migration;
-pub use reconciliation::reconcile_stage4_bindings;
 pub use test_group::filter as test_group_filter;
 pub(super) use view::{LedgerView, PrimaryOwner};
 
@@ -738,120 +734,6 @@ fn subject(catalog: &Catalog, ledger: &Ledger) -> Result<String, String> {
 
 fn load() -> Result<(Catalog, Ledger), String> {
     Ok((catalog()?, parse(&read(LEDGER)?)?))
-}
-
-/// Apply the reviewed packaging transition only after its exact replay passes.
-/// The final spec digest is supplied explicitly because docs may be edited in
-/// parallel. Criteria, candidates, selectors and dispositions cannot change.
-pub(super) fn storage_rebind(
-    base: &str,
-    expected_spec: &str,
-    old_inventory: Inventory,
-    inventory: Inventory,
-    receipt_path: &str,
-) -> Result<(), String> {
-    let historical = |path| super::storage_migration::previous(base, path);
-    let old_inventory_bytes = historical(INVENTORY)?;
-    let spec = read("docs/renderer-spec-v1.md")?;
-    if sha256(&spec) != expected_spec {
-        return Err("final reviewed spec digest differs from current spec".into());
-    }
-    let old_spec = historical("docs/renderer-spec-v1.md")?;
-    let before = catalog_from_inventory(
-        &old_spec,
-        old_inventory,
-        Descriptor {
-            path: INVENTORY.into(),
-            sha256: sha256(&old_inventory_bytes),
-        },
-    )?;
-    let after = catalog_from_inventory(&spec, inventory, descriptor(INVENTORY)?)?;
-    let before_bytes = read(LEDGER)?;
-    let original_bytes = historical(LEDGER)?;
-    let (receipt_bytes, mut receipt) = super::storage_migration::Receipt::load(receipt_path)?;
-    let mut ledger: Ledger = parse(&original_bytes)?;
-    if ledger.catalog_sha256 != digest(&before)? {
-        return Err(
-            "packaging ownership migration requires its authenticated previous ledger".into(),
-        );
-    }
-    let mut normalized = after.clone();
-    for source in &mut normalized.sources {
-        if matches!(source.path.as_str(), INVENTORY | "docs/renderer-spec-v1.md") {
-            *source = before
-                .sources
-                .iter()
-                .find(|s| s.path == source.path)
-                .ok_or("missing previous authority")?
-                .clone();
-        }
-    }
-    for row in &mut normalized.obligations {
-        if matches!(
-            row.authority.path.as_str(),
-            INVENTORY | "docs/renderer-spec-v1.md"
-        ) {
-            row.authority = before
-                .obligations
-                .iter()
-                .find(|r| r.id == row.id)
-                .ok_or("changed obligation identity")?
-                .authority
-                .clone();
-        }
-    }
-    if digest(&normalized)? != digest(&before)? {
-        return Err(
-            "packaging migration changed obligation criteria, candidates or other authorities"
-                .into(),
-        );
-    }
-    let old_pdf_hash = sha256(&historical(pdf_judgments::RECORD)?);
-    for assignment in &mut ledger.assignments {
-        if let Disposition::Owned {
-            owner: Owner::Record { record, .. },
-            ..
-        } = &mut assignment.disposition
-        {
-            if record.path == pdf_judgments::RECORD {
-                if record.sha256 != old_pdf_hash {
-                    return Err("unexpected previous PDF judgment owner".into());
-                }
-                *record = descriptor(pdf_judgments::RECORD)?;
-            }
-        }
-    }
-    ledger.catalog_sha256 = digest(&after)?;
-    validate(&after, &ledger, false)?;
-    if read("docs/renderer-spec-v1.md")? != spec || read(LEDGER)? != before_bytes {
-        return Err("spec or ledger changed during packaging migration".into());
-    }
-    let mut bytes = serde_json::to_vec_pretty(&ledger).map_err(|e| e.to_string())?;
-    bytes.push(b'\n');
-    if before_bytes != original_bytes
-        && before_bytes != bytes
-        && !receipt
-            .ownership
-            .as_ref()
-            .is_some_and(|owner| owner.ledger_after_sha256 == sha256(&before_bytes))
-    {
-        return Err("ownership ledger changed beyond the recorded packaging migration".into());
-    }
-    receipt.ownership = Some(super::storage_migration::OwnershipReceipt {
-        original_ledger_sha256: sha256(&original_bytes),
-        ledger_after_sha256: sha256(&bytes),
-        original_spec_sha256: sha256(&old_spec),
-        spec_sha256: expected_spec.into(),
-        criteria_candidates_selectors_dispositions_unchanged: true,
-        pdf_record_digest_rebound: true,
-    });
-    if read(receipt_path)? != receipt_bytes {
-        return Err("packaging receipt changed during ownership migration".into());
-    }
-    fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())?;
-    fs::write(repo_root().join(receipt_path), receipt.bytes()?).map_err(|e| e.to_string())?;
-    println!("rebound ownership inventory/spec authorities and PDF record digest; all dispositions preserved");
-    Ok(())
 }
 
 /// An append-only inventory expansion: the prior catalog is authenticated by

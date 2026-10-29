@@ -80,17 +80,6 @@ fn extra_arguments_are_rejected() {
         "unexpected argument",
     );
     rejects(
-        &[
-            "conformance",
-            "rebind-font-packaging",
-            "a",
-            MISSING,
-            "receipt",
-            "extra",
-        ],
-        "unexpected argument",
-    );
-    rejects(
         &["conformance", "verify-layers", "--bogus"],
         "unexpected argument",
     );
@@ -222,44 +211,10 @@ fn repeated_conflicting_and_dependent_options_are_rejected() {
 }
 
 #[test]
-fn retired_commands_keep_their_guidance() {
-    for family in ["catalog", "conformance"] {
-        for command in ["approval-subject", "record-approval", "x-approval-y"] {
-            rejects(&[family, command, "extra"], "approval commands are retired");
-        }
-    }
-    rejects(&["catalog", "approval"], "run catalog verify");
-    rejects(
-        &["conformance", "approval"],
-        "run the corresponding verifier",
-    );
-    rejects(
-        &["conformance", "layers-generate", "extra"],
-        "five-layer maintenance is retired",
-    );
-    rejects(
-        &["conformance", "candidate-pdf-requalify", "x"],
-        "requalification workflow retired",
-    );
-    rejects(
-        &["conformance", "pdf-requalification-subject"],
-        "subject command retired",
-    );
-    rejects(
-        &["conformance", "refresh-pdf-viewer-dependencies"],
-        "dependency refresh retired",
-    );
-}
-
-#[test]
 fn help_is_derived_from_the_grammar_and_succeeds() {
     let (code, stdout, stderr) = xtask(&["conformance", "--help"]);
     assert_eq!(code, Some(0), "{stderr}");
-    for command in [
-        "candidate-verify",
-        "rebind-font-packaging",
-        "record-test-owner",
-    ] {
+    for command in ["candidate-verify", "record-test-owner", "verify-ownership"] {
         assert!(stdout.contains(command), "{command} missing from {stdout}");
     }
     let (code, stdout, _) = xtask(&["representative", "case", "verify", "--help"]);

@@ -10,15 +10,16 @@ with the same tools; GitHub Actions is a caller, not the authority.
 
 | Recipe | When | What it establishes |
 | --- | --- | --- |
-| `just ci` | Every change | Formatting, lints and the feature matrix, every test tier, the conformance verifiers and the packaged consumers |
+| `just ci` | Every change | Formatting, lints, the feature matrix and the dependency checks, every test tier, the conformance verifiers and the packaged consumers |
 | `just msrv` | Every change | The published crates build on the workspace `rust-version`; run it as `devenv --option languages.rust.version:string 1.92.0 shell -- just msrv` |
 | `just release` | Release | Native and browser-WASM qualification, packaged consumers in WASM, native and WASM snapshot replay, traces and full equality |
 | `just target-evidence` | Release | Both targets' qualification reports and their aggregate, from a clean commit |
 | `just nightly-*` | Scheduled | The bounded randomized expansions |
 
 `just` lists every recipe. The per-change gates are `fmt`, `clippy`,
-`features`, `msrv`, the `test`, `test-render`, `test-features` and `test-doc`
-tiers, `conformance` and `packaging`. They run on any host the devenv shell
+`features`, `deny` (advisories, licenses and sources of every dependency,
+`deny.toml`), `msrv`, the `test`, `test-render`, `test-features` and
+`test-doc` tiers, `conformance` and `packaging`. They run on any host the devenv shell
 supports; CI runs each as its own job (`.github/workflows/ci.yaml`), except that
 the fast and render tiers share one job and one compilation. Cargo's own
 fingerprints decide what a recipe rebuilds; rust-cache keeps the dependencies

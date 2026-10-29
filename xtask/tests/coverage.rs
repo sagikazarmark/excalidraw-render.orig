@@ -281,7 +281,7 @@ fn rejects_incomplete_stale_or_divergent_collector_results() {
 }
 
 #[test]
-fn layer_reporting_is_read_only_and_maintenance_commands_are_retired() {
+fn layer_reporting_is_read_only() {
     let path = root().join("tests/conformance/coverage/layers.json");
     let before = fs::read(&path).unwrap();
     let output = command(&["conformance", "layers-report"]);
@@ -308,15 +308,6 @@ fn layer_reporting_is_read_only_and_maintenance_commands_are_retired() {
         let obsolete = command(&["conformance", verifier, "--require-approval"]);
         assert!(!obsolete.status.success());
         assert!(String::from_utf8_lossy(&obsolete.stderr).contains("unexpected argument"));
-    }
-    for retired in [
-        "layers-generate",
-        "layers-approval-subject",
-        "record-layers-approval",
-    ] {
-        let output = command(&["conformance", retired]);
-        assert!(!output.status.success());
-        assert!(String::from_utf8_lossy(&output.stderr).contains("retired"));
     }
     assert_eq!(fs::read(path).unwrap(), before);
 }

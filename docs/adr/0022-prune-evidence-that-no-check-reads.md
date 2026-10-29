@@ -99,6 +99,19 @@ authenticate only the migration that applied them and are read by nothing
 afterwards; and the V7 representative's owner-transition record and its
 approval comment under `coverage/`, whose owner V28 replaced.
 
+Later the same day it removed the four one-shot migration commands whose
+preconditions can no longer hold — `reconcile-stage4-bindings`,
+`rebind-font-packaging`, `rebind-font-packaging-ownership` and
+`ownership-authority-migration` each authenticated one past ledger or spec
+state and refused every input since — together with the four
+`coverage/*-reconciliation*.json` records only they read (about 230 KB, the
+tree at `303a9110` has them) and five finished-round producer and diagnostic
+scripts that no runner, script or test named (`encode-codec-fixtures.mjs`,
+`stage4-excalifont-canary.mjs`, `verify-png-stage3.mjs`,
+`stage4-image-decoded.mjs`, `stage4-typography-compare.rs`). Frozen
+provenance still names two of the scripts under paths the gate treats as
+historical, so nothing reachable from a check observes their absence.
+
 ## Consequences
 
 - A future round deletes its own collection once the gate no longer reads it,

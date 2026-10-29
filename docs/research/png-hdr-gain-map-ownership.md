@@ -32,13 +32,13 @@ bash tools/reference-oracle/run-png-color.sh extend \
 bash tools/reference-oracle/run-png-gain-map.sh generate
 bash tools/reference-oracle/run-png-color.sh verify
 bash tools/reference-oracle/run-png-gain-map.sh verify
-node tools/reference-oracle/scripts/verify-png-stage3.mjs
 ```
 
-The read-only Stage 3 audit authenticates the base record, the exact new cell
-set, frozen producer bindings, all prior cases, all live source descriptors,
-exactly 91 gap-to-owner changes and source-hash-only refreshes for **623** earlier
-owners. Every other disposition, selector, rationale, exclusion and approval
+The read-only tranche audit (`verify-png-stage3.mjs`, retired once the tranche
+was applied; Git history has it) authenticated the base record, the exact new
+cell set, frozen producer bindings, all prior cases, all live source
+descriptors, exactly 91 gap-to-owner changes and source-hash-only refreshes for
+**623** earlier owners. Every other disposition, selector, rationale, exclusion and approval
 remains equal to Stage 2. The parent-review license correction below additionally
 refreshes the inventory/catalog's packaged-consumer source bindings; the audit
 authenticates the exact one-line license-pin change and permits only its three

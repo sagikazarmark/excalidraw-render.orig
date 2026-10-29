@@ -5,12 +5,11 @@ use super::*;
 
 pub(super) const OBLIGATION: &str = "interaction:frames-text-assets";
 const REGISTRY_PATH: &str = "tests/conformance/candidates/registry.json";
-const ADAPTER_SOURCES: [&str; 7] = [
+const ADAPTER_SOURCES: [&str; 6] = [
     "xtask/src/main.rs",
     "xtask/src/coverage.rs",
     "xtask/src/coverage/ownership.rs",
     "xtask/src/coverage/ownership/representative.rs",
-    "xtask/src/coverage/ownership/authority_migration.rs",
     "xtask/src/conformance_candidate_gate.rs",
     "xtask/src/conformance_candidate_native.rs",
 ];

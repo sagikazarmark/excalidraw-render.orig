@@ -1,6 +1,5 @@
 //! Negative public contracts: never assign the interaction from a pending case,
 //! a dev-profile historical capture, or an unreviewed authority digest.
-use sha2::{Digest, Sha256};
 use std::{fs, path::Path, process::Command};
 fn root() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -91,75 +90,4 @@ fn release_owner_cli_rejects_dev_capture_before_attempting_native_build() {
     assert!(!out.status.success());
     assert!(String::from_utf8_lossy(&out.stderr).contains("release --locked"));
     let _ = fs::remove_dir_all(scratch.parent().unwrap());
-}
-#[test]
-fn authority_migration_cli_refuses_unreviewed_spec_digest_without_writing() {
-    let path = root().join("tests/conformance/coverage/ownership.json");
-    let before = fs::read(&path).unwrap();
-    let out = run(&[
-        "conformance",
-        "ownership-authority-migration",
-        "629930b",
-        &"0".repeat(64),
-        "docs/research/png-stage4-v6-collection.md",
-    ]);
-    assert!(!out.status.success());
-    assert!(String::from_utf8_lossy(&out.stderr).contains("reviewed new spec digest"));
-    assert_eq!(fs::read(path).unwrap(), before);
-}
-
-#[test]
-fn authority_migration_cli_only_previews_authenticated_metadata_and_preserves_live_gates() {
-    let path = root().join("tests/conformance/coverage/ownership.json");
-    let before = fs::read(&path).unwrap();
-    let ledger: serde_json::Value = serde_json::from_slice(&before).unwrap();
-    let hash = lower_hex(&Sha256::digest(
-        fs::read(root().join("docs/renderer-spec-v1.md")).unwrap(),
-    ));
-    let output = run(&[
-        "conformance",
-        "ownership-authority-migration",
-        "629930b",
-        &hash,
-        "docs/research/stage4-png-device-phase-assessment.md",
-    ]);
-    if !output.status.success() {
-        // Once a reviewed rebind is applied, the old base no longer authenticates
-        // the ledger, and once the spec moves past the reviewed amendment the
-        // transition is no longer confined to it. The planner must refuse both.
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        assert!(
-            stderr.contains("previous catalog is not authenticated")
-                || stderr.contains("authority migration must be confined"),
-            "{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        assert_eq!(fs::read(path).unwrap(), before);
-        return;
-    }
-    let proposal: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(proposal["status"], "review-required-not-applied");
-    assert!(proposal["approval"].is_null());
-    assert_eq!(proposal["old_catalog_sha256"], ledger["catalog_sha256"]);
-    assert_eq!(
-        proposal["preserved_exclusions"].as_array().unwrap().len(),
-        3
-    );
-    if proposal["live_inventory_validation"]["passed"] == false {
-        let normal = run(&["conformance", "verify-inventory"]);
-        assert!(
-            !normal.status.success(),
-            "planning may not bypass the live inventory gate"
-        );
-        assert!(String::from_utf8_lossy(&normal.stderr).contains(
-            proposal["live_inventory_validation"]["error"]
-                .as_str()
-                .unwrap()
-        ));
-    }
-    assert_eq!(fs::read(path).unwrap(), before);
-}
-
-fn lower_hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
