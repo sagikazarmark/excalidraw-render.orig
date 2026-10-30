@@ -52,7 +52,7 @@ image-webp = "0.2.4"
 # the comparator's tests. The renderer parses scene numbers itself, and xtask's
 # `arbitrary_precision` keeps each `Value` number's source token, so only typed
 # float deserialization would see the correctly rounded parse; nothing here does.
-jsonschema = { version = "=0.59.0", default-features = false }
+jsonschema = { version = "=0.60.2", default-features = false }
 # The PDF writer (ADR-0021). A Krilla bump is a byte-affecting change for every
 # PDF, as svg2pdf's was, so the lock moves it deliberately. Krilla shapes nothing (every glyph
 # arrives positioned). `raster-images` only compiles its image module: every
@@ -74,7 +74,7 @@ miniz_oxide = "0.9.1"
 moxcms = { version = "0.9.1", default-features = false }
 png = "0.18.1"
 jpeg-encoder = "=0.7.1"
-resvg = { version = "0.48.1", default-features = false, features = ["raster-images"] }
+resvg = { version = "0.49.0", default-features = false, features = ["raster-images"] }
 roxmltree = "0.21.1"
 regex = "=1.13.1"
 serde = { version = "1.0.229", features = ["derive"] }
@@ -87,10 +87,10 @@ sha1 = "=0.11.0"
 sha2 = "0.11.0"
 # The upstream malformed-name fix replaces the safety adapter. 0.8.0 reproduces
 # every pinned 0.7.0 subset; the subset profile token names it (ADR-0003).
-skera = { version = "0.8.0", default-features = false }
+skera = { version = "0.9.0", default-features = false }
 # Shaping (#202). Its font is read-fonts 0.45's, which the renderer also
 # measures, maps and outlines with (`shaping.rs`).
-harfrust = { version = "0.14.0", default-features = false, features = ["std"] }
+harfrust = { version = "0.15.0", default-features = false, features = ["std"] }
 ryu-js = { version = "1.0.3", default-features = false }
 unicode-bidi = "0.3.18"
 unicode-normalization = "=0.1.26"
@@ -102,7 +102,7 @@ tempfile = "=3.27.0"
 # Host-only: xtask signals a capture wrapper's process group through the
 # syscall, since slim images ship no `kill` executable. Already in the lock
 # through tempfile; `process` adds no package.
-rustix = { version = "=1.1.5", features = ["process"] }
+rustix = { version = "=1.1.6", features = ["process"] }
 tiny-skia = { version = "0.12.0", default-features = false, features = ["png-format", "std"] }
 # `default-features = false` drops upstream's `cli` feature (and `clap`);
 # `portable-float` passes through to `brotli/portable-float`, which is what keeps
@@ -110,13 +110,13 @@ tiny-skia = { version = "0.12.0", default-features = false, features = ["png-for
 # subset profile token in `excalidraw-fonts` names this version; 0.14 stopped
 # transforming glyf/loca by default, which the encode stage asks for explicitly.
 ttf2woff2 = { version = "0.14.1", default-features = false, features = ["portable-float"] }
-usvg = { version = "0.48.1", default-features = false, features = ["text"] }
+usvg = { version = "0.49.0", default-features = false, features = ["text"] }
 wuff = { version = "0.2.9", default-features = false, features = ["brotli"] }
 # `write_fonts::read` is the workspace's only font parser: read-fonts 0.45,
 # the version skera plans over and HarfRust shapes with. Metrics, character
 # maps, outlines, name handling and the typed layout validator (ADR-0020) read
 # through it, so the workspace has no direct read-fonts dependency.
-write-fonts = { version = "0.54.0", default-features = false, features = ["read", "tables"] }
+write-fonts = { version = "0.55.0", default-features = false, features = ["read", "tables"] }
 zune-jpeg = { version = "0.5.15", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
