@@ -1203,7 +1203,13 @@ order and placement are the deterministic shaper's for the run's display text
 shaped in the run's direction (#126): a right-to-left run's glyphs are placed
 in visual order, leftmost first, so an asymmetric neutral inside it sits at
 its visual end, and a mirrored character shows its mirror glyph (UAX #9 L4)
-when the face has one. The text a format carries beside the glyphs stays in
+when the face has one. Inside a cluster, the shaper keeps a right-to-left
+run's glyphs in logical order unless the run's script is natively right to
+left or has no single native direction; a run with no script (only Common and
+Inherited scalars) reverses its graphemes instead, so a combining mark follows
+its base. The i-th character of a cluster takes the i-th glyph in logical
+order, and characters past its glyphs take its last. The text a format
+carries beside the glyphs stays in
 logical order (`data-source-text`, `ActualText`, and each run's `<tspan>`
 content), as do missing-codepoint diagnostics. A left-to-right occurrence with
 no right-to-left content whose shaped scalars the whole-text face all maps is
