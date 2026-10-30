@@ -1,0 +1,46 @@
+{
+  "commit": "c5c4118c51c3dac82237ed7fd359b33906a178be",
+  "compatibility_revision": 1,
+  "corpus_sha256": "7c9ee4417835a19f4ec6b644a521c304399dbf8481e4d3f92c061af5261fdbb7",
+  "decision": "pass",
+  "measurement": {
+    "generatedBytesSha256": "45736bd413dcd3ff6325c5768f9f6480e3db88f4dcb2a05e1a769473d2be843a",
+    "resourceTracesSha256": "68e5f0f9f6df1bcb1daa56b4b29d0c6630c53b274e6364f270cd3a9d5e17f394",
+    "successfulCells": 780,
+    "tracedCells": 1007
+  },
+  "schema": "excalidraw-render/svg-font-subset-target-aggregate/v4",
+  "subset_profile_sha256": "0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4",
+  "targets": [
+    {
+      "commit": "c5c4118c51c3dac82237ed7fd359b33906a178be",
+      "compatibility_revision": 1,
+      "corpus_sha256": "7c9ee4417835a19f4ec6b644a521c304399dbf8481e4d3f92c061af5261fdbb7",
+      "measurement": {
+        "generatedBytesSha256": "45736bd413dcd3ff6325c5768f9f6480e3db88f4dcb2a05e1a769473d2be843a",
+        "resourceTracesSha256": "68e5f0f9f6df1bcb1daa56b4b29d0c6630c53b274e6364f270cd3a9d5e17f394",
+        "successfulCells": 780,
+        "tracedCells": 1007
+      },
+      "schema": "excalidraw-render/svg-font-subset-target-evidence/v4",
+      "status": "pass",
+      "subset_profile_sha256": "0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4",
+      "target": "wasm32-unknown-unknown"
+    },
+    {
+      "commit": "c5c4118c51c3dac82237ed7fd359b33906a178be",
+      "compatibility_revision": 1,
+      "corpus_sha256": "7c9ee4417835a19f4ec6b644a521c304399dbf8481e4d3f92c061af5261fdbb7",
+      "measurement": {
+        "generatedBytesSha256": "45736bd413dcd3ff6325c5768f9f6480e3db88f4dcb2a05e1a769473d2be843a",
+        "resourceTracesSha256": "68e5f0f9f6df1bcb1daa56b4b29d0c6630c53b274e6364f270cd3a9d5e17f394",
+        "successfulCells": 780,
+        "tracedCells": 1007
+      },
+      "schema": "excalidraw-render/svg-font-subset-target-evidence/v4",
+      "status": "pass",
+      "subset_profile_sha256": "0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4",
+      "target": "x86_64-unknown-linux-gnu"
+    }
+  ]
+}
