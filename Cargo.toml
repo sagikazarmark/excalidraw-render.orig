@@ -85,8 +85,10 @@ serde_json = "=1.0.154"
 simplecss = "0.2.2"
 sha1 = "=0.11.0"
 sha2 = "0.11.0"
-# The upstream malformed-name fix replaces the safety adapter. 0.8.0 reproduces
-# every pinned 0.7.0 subset; the subset profile token names it (ADR-0003).
+# The upstream malformed-name fix replaces the safety adapter. 0.9.0 serializes
+# a subset's GSUB and GPOS lists in declaration order rather than reversed, so
+# their offsets and every WOFF2 move; the subset profile token names it
+# (ADR-0003).
 skera = { version = "0.9.0", default-features = false }
 # Shaping (#202). Its font is read-fonts 0.46's, which the renderer also
 # measures, maps and outlines with (`shaping.rs`).

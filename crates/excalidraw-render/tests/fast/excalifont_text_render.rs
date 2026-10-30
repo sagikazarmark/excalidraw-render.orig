@@ -79,10 +79,12 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 // ulp away (`translate(14.137185427188001 ...)`); the extent,
                 // the PNG and the PDF are unchanged.
                 // ADR-0003's identity refresh changes the embedded subset's
-                // name table and its profile-derived identity/notice.
+                // name table and its profile-derived identity/notice. skera
+                // 0.9 moved it again: the subset's GSUB and GPOS lists are
+                // serialized in declaration order, with the same lengths.
                 assert_eq!(
                     artifact_sha256(&first),
-                    "e7eb8d2445a8bee5c94e2df0e8ab1bef7510d49a4809dee3ecd8deeb8e334e4f"
+                    "42ec6e1a04f09a61fa90162a0aa33fe662179fea8a0195aefd5ec76891320081"
                 );
             }
             OutputFormat::Png => {

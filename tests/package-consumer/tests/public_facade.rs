@@ -40,9 +40,10 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
         // truncates to the same rows and is unchanged. Then with the subset
         // profile token naming wuff 0.2.9, skera 0.8.0 and ttf2woff2 0.14.1,
         // which moves the embedded subset's identity and notice. The report
-        // is unchanged.
+        // is unchanged. Again with skera 0.9.0, which also serializes the
+        // subset's GSUB and GPOS lists in declaration order.
         OutputFormat::Svg,
-        "ec2d24bd1a2b26f1ae9a2c6db2110b9b47d00135a6218374474552b5e4fa806e",
+        "d6c1b917a2ac69c7028566d972668b40014095cb18d892af6692c51f8dfc4146",
         "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
     ),
     (
@@ -213,10 +214,11 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     // when `<metadata>` began carrying the Excalifont attribution and the OFL
     // body as two notices. ADR-0003's identity refresh changes the embedded
     // subset's name table and its profile-derived identity/notice, as does
-    // the token naming wuff 0.2.9, skera 0.8.0 and ttf2woff2 0.14.1.
+    // the token naming wuff 0.2.9, skera 0.8.0 and ttf2woff2 0.14.1, and
+    // again with skera 0.9.0, which also reorders the subset's GSUB and GPOS.
     assert_eq!(
         lower_hex(&Sha256::digest(first.artifact().bytes())),
-        "873045d84773e82b639e7bd319b0ef751ab438e237228107a79d5404d1cdee0b"
+        "026bc58c2305dfbd15f5e468e17bb32b31dd4559f2f61049a6e0f509a735b564"
     );
     assert!(svg.contains("\"asset_identity\":\"license.ofl-1.1\""));
     assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
