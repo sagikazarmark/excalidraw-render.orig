@@ -1967,9 +1967,10 @@ fn unsafe_attribute(element_name: &str, name: &str, namespace: Option<&str>, val
         || contains_nonlocal_url(&lowercase)
 }
 
-/// Whether usvg 0.48's `convert_convolve_matrix` would multiply this `order`
-/// past `u32`, which panics where overflow checks are on (and wraps into a
-/// kernel resvg indexes out of bounds where they are off). It reads the
+/// Whether usvg's `convert_convolve_matrix` (unchanged from 0.48 to 0.49)
+/// would multiply this `order` past `u32`, which panics where overflow checks
+/// are on (and wraps into a kernel resvg indexes out of bounds where they are
+/// off). It reads the
 /// value as usvg does: two numbers, each truncated to `i32`, the second
 /// defaulting to the first, either one non-positive leaving the 3x3 default.
 /// No kernel matrix an asset could carry has that many cells, so dropping

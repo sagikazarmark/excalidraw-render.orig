@@ -944,8 +944,12 @@ fn every_native_blend_mode_remains_vector_pdf_content() {
         ("saturation", "/BM /Saturation"),
         ("color", "/BM /Color"),
         ("luminosity", "/BM /Luminosity"),
+        // PDF has no additive blend. usvg before 0.49 parsed `plus-lighter`
+        // as `normal`, and the PDF still draws what it drew then.
+        ("plus-lighter", ""),
     ];
 
+    let mut normal_pdf = None;
     for (blend, pdf_name) in blends {
         let nested = format!(
             r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/><g style="mix-blend-mode:{blend};isolation:isolate"><circle cx="10" cy="5" r="5" fill="#0000ff"/></g></svg>"##
@@ -959,6 +963,15 @@ fn every_native_blend_mode_remains_vector_pdf_content() {
             .render(&scene, &request)
             .expect("native blend renders without fallback");
         let pdf = pdf_text(outcome.artifact().bytes());
+        match blend {
+            "normal" => normal_pdf = Some(outcome.artifact().bytes().to_vec()),
+            "plus-lighter" => assert_eq!(
+                Some(outcome.artifact().bytes()),
+                normal_pdf.as_deref(),
+                "plus-lighter draws the normal-blend PDF"
+            ),
+            _ => {}
+        }
 
         if pdf_name.is_empty() {
             assert!(!pdf.contains("/BM "), "unexpected PDF blend for {blend}");
