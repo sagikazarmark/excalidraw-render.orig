@@ -68,7 +68,7 @@ fn release_owner_cli_rejects_dev_capture_before_attempting_native_build() {
     );
     let scratch = root().join(&directory);
     fs::create_dir_all(&scratch).unwrap();
-    let live = root().join("tests/conformance/candidates/stage4-frames-text-assets-v28");
+    let live = root().join("tests/conformance/candidates/stage4-frames-text-assets-v29");
     fs::copy(live.join("scene.json"), scratch.join("scene.json")).unwrap();
     let mut capture: serde_json::Value =
         serde_json::from_slice(&fs::read(live.join("native-capture.json")).unwrap()).unwrap();

@@ -32,7 +32,7 @@ zero-gap claim for the current inventory, and `verify-closure` fails until
 they are complete.
 
 The representative interaction is owned through the strict adapter by
-`representative.stage4-frames-text-assets.v28`, the registered candidate.
+`representative.stage4-frames-text-assets.v29`, the registered candidate.
 Earlier representative revisions were pruned under ADR-0022.
 
 Five-layer mappings are advisory. Ordinary `verify-ownership` does not
