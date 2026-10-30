@@ -7,23 +7,28 @@
 //! everything present, including lookups no feature reaches, because it
 //! judges the subsetter's bytes rather than shaping. Only bundled,
 //! digest-verified fonts reach it, so a lookup type or format the walker
-//! cannot model fails closed like any parse error.
+//! cannot model fails closed like any parse error. That includes the 24-bit
+//! glyph ID formats and wide-offset lists ISO/IEC 14496-22:2026 adds, which
+//! read-fonts parses but no bundled font carries.
 //!
 //! Typed nesting has a fixed shape and nested lookups are referenced by index
 //! rather than followed, so the walk needs no depth limit. Shared offsets can
 //! still make it visit the same bytes repeatedly; [`MAX_LAYOUT_WORK`] bounds
 //! that.
 
-use write_fonts::read::tables::gdef::{CaretValue, Gdef};
+use write_fonts::read::tables::gdef::{CaretValue, Gdef, LigCaretList, SelectedLigCaretList};
 use write_fonts::read::tables::gpos::{
-    AnchorTable, DeviceOrVariationIndex, Gpos, MarkArray, PairPos, PositionLookup, SinglePos,
-    ValueRecord,
+    AnchorTable, CursivePos, DeviceOrVariationIndex, Gpos, MarkArray, MarkBasePos, MarkLigPos,
+    MarkMarkPos, PairPos, PositionLookup, SinglePos, ValueRecord,
 };
-use write_fonts::read::tables::gsub::{Gsub, SingleSubst, SubstitutionLookup};
+use write_fonts::read::tables::gsub::{
+    AlternateSubst, Gsub, LigatureSubst, MultipleSubst, ReverseChainSingleSubst, SingleSubst,
+    SubstitutionLookup,
+};
 use write_fonts::read::tables::layout::{
     ChainedSequenceContext, ClassDef, Condition, CoverageTable, Feature, FeatureList,
-    FeatureParams, FeatureVariations, LangSys, Lookup, ScriptList, SequenceContext,
-    SequenceLookupRecord,
+    FeatureParams, FeatureVariations, LangSys, Lookup, LookupList, ScriptList, SelectedLookupList,
+    SequenceContext, SequenceLookupRecord,
 };
 use write_fonts::read::tables::variations::ItemVariationStore;
 use write_fonts::read::types::{BigEndian, GlyphId16, Tag};
@@ -171,6 +176,11 @@ impl Walker {
         }
     }
 
+    /// A format the walker does not model, which parsed.
+    const fn unmodelled<T>(&self) -> Walk<T> {
+        Err(self.fail(LayoutCheck::UnknownFormat))
+    }
+
     fn read<T>(&self, result: Result<T, ReadError>) -> Walk<T> {
         result.map_err(|error| {
             self.fail(match error {
@@ -263,6 +273,7 @@ impl Walker {
                 }
                 Ok(extent)
             }
+            CoverageTable::Format3(_) | CoverageTable::Format4(_) => self.unmodelled(),
         }
     }
 
@@ -295,6 +306,7 @@ impl Walker {
                 }
                 Ok(largest)
             }
+            ClassDef::Format3(_) | ClassDef::Format4(_) => self.unmodelled(),
         }
     }
 
@@ -487,6 +499,21 @@ impl Walker {
         self.work(1 + lookup.subtable_offsets().len())
     }
 
+    /// The lookup list a GSUB or GPOS header selects. A LookupList2, with
+    /// 32-bit offsets, is not modelled.
+    fn lookup_list<'a, T: FontRead<'a, Args = ()>>(
+        &self,
+        list: Result<SelectedLookupList<'a, T>, ReadError>,
+    ) -> Walk<LookupList<'a, T>> {
+        match self.read(list)? {
+            SelectedLookupList::Original(list) => {
+                self.whole(&list)?;
+                Ok(list)
+            }
+            SelectedLookupList::Extended(_) => self.unmodelled(),
+        }
+    }
+
     /// Nested lookup records of a contextual rule whose input is `input`
     /// glyphs long, the first included.
     fn lookup_records(&mut self, records: &[SequenceLookupRecord], input: usize) -> Walk {
@@ -552,6 +579,9 @@ impl Walker {
                 }
                 self.lookup_records(table.seq_lookup_records(), table.coverages().len())?;
             }
+            SequenceContext::Format4(_)
+            | SequenceContext::Format5(_)
+            | SequenceContext::Format6(_) => return self.unmodelled(),
         }
         Ok(())
     }
@@ -622,6 +652,9 @@ impl Walker {
                 }
                 self.lookup_records(table.seq_lookup_records(), table.input_coverages().len())?;
             }
+            ChainedSequenceContext::Format4(_) | ChainedSequenceContext::Format5(_) => {
+                return self.unmodelled();
+            }
         }
         Ok(())
     }
@@ -629,7 +662,7 @@ impl Walker {
     fn gsub(&mut self, gsub: &Gsub<'_>) -> Walk {
         self.work(1)?;
         self.whole(gsub)?;
-        let lookups = self.table(gsub.lookup_list())?;
+        let lookups = self.lookup_list(gsub.lookup_list())?;
         let features = self.table(gsub.feature_list())?;
         self.lookup_count = lookups.lookup_count();
         self.feature_count = features.feature_count();
@@ -746,12 +779,12 @@ impl Walker {
                 self.visit("gsub-1-format-1");
                 let coverage = self.table(table.coverage())?;
                 self.coverage(Ok(coverage.clone()))?;
-                let delta = i32::from(table.delta_glyph_id());
+                let delta = i64::from(table.delta_glyph_id());
                 for glyph in coverage.iter() {
                     self.work(1)?;
-                    let substitute = (i32::from(glyph.to_u16()) + delta) & 0xffff;
+                    let substitute = (i64::from(glyph.to_u32()) + delta) & 0xffff;
                     self.ensure(
-                        substitute.unsigned_abs() < self.glyph_count,
+                        substitute < i64::from(self.glyph_count),
                         LayoutCheck::SingleSubstDelta,
                     )?;
                 }
@@ -762,16 +795,16 @@ impl Walker {
                 self.indexed(extent, table.substitute_glyph_ids().len())?;
                 self.glyphs(table.substitute_glyph_ids())?;
             }
+            SingleSubst::Format3(_) | SingleSubst::Format4(_) => return self.unmodelled(),
         }
         Ok(())
     }
 
-    fn multiple_subst(
-        &mut self,
-        subtable: Result<write_fonts::read::tables::gsub::MultipleSubstFormat1<'_>, ReadError>,
-    ) -> Walk {
+    fn multiple_subst(&mut self, subtable: Result<MultipleSubst<'_>, ReadError>) -> Walk {
         self.work(1)?;
-        let table = self.table(subtable)?;
+        let MultipleSubst::Format1(table) = self.table(subtable)? else {
+            return self.unmodelled();
+        };
         let extent = self.coverage(table.coverage())?;
         self.indexed(extent, table.sequences().len())?;
         self.work(table.sequences().len())?;
@@ -782,12 +815,11 @@ impl Walker {
         Ok(())
     }
 
-    fn alternate_subst(
-        &mut self,
-        subtable: Result<write_fonts::read::tables::gsub::AlternateSubstFormat1<'_>, ReadError>,
-    ) -> Walk {
+    fn alternate_subst(&mut self, subtable: Result<AlternateSubst<'_>, ReadError>) -> Walk {
         self.work(1)?;
-        let table = self.table(subtable)?;
+        let AlternateSubst::Format1(table) = self.table(subtable)? else {
+            return self.unmodelled();
+        };
         let extent = self.coverage(table.coverage())?;
         self.indexed(extent, table.alternate_sets().len())?;
         self.work(table.alternate_sets().len())?;
@@ -798,12 +830,11 @@ impl Walker {
         Ok(())
     }
 
-    fn ligature_subst(
-        &mut self,
-        subtable: Result<write_fonts::read::tables::gsub::LigatureSubstFormat1<'_>, ReadError>,
-    ) -> Walk {
+    fn ligature_subst(&mut self, subtable: Result<LigatureSubst<'_>, ReadError>) -> Walk {
         self.work(1)?;
-        let table = self.table(subtable)?;
+        let LigatureSubst::Format1(table) = self.table(subtable)? else {
+            return self.unmodelled();
+        };
         let extent = self.coverage(table.coverage())?;
         self.indexed(extent, table.ligature_sets().len())?;
         self.work(table.ligature_sets().len())?;
@@ -822,13 +853,12 @@ impl Walker {
 
     fn reverse_chain_subst(
         &mut self,
-        subtable: Result<
-            write_fonts::read::tables::gsub::ReverseChainSingleSubstFormat1<'_>,
-            ReadError,
-        >,
+        subtable: Result<ReverseChainSingleSubst<'_>, ReadError>,
     ) -> Walk {
         self.work(1)?;
-        let table = self.table(subtable)?;
+        let ReverseChainSingleSubst::Format1(table) = self.table(subtable)? else {
+            return self.unmodelled();
+        };
         let extent = self.coverage(table.coverage())?;
         self.indexed(extent, table.substitute_glyph_ids().len())?;
         for coverages in [table.backtrack_coverages(), table.lookahead_coverages()] {
@@ -843,7 +873,7 @@ impl Walker {
     fn gpos(&mut self, gpos: &Gpos<'_>) -> Walk {
         self.work(1)?;
         self.whole(gpos)?;
-        let lookups = self.table(gpos.lookup_list())?;
+        let lookups = self.lookup_list(gpos.lookup_list())?;
         let features = self.table(gpos.feature_list())?;
         self.lookup_count = lookups.lookup_count();
         self.feature_count = features.feature_count();
@@ -983,6 +1013,7 @@ impl Walker {
                 }
                 Ok(())
             }
+            SinglePos::Format3(_) | SinglePos::Format4(_) => self.unmodelled(),
         }
     }
 
@@ -1027,16 +1058,16 @@ impl Walker {
                     }
                 }
             }
+            PairPos::Format3(_) | PairPos::Format4(_) => return self.unmodelled(),
         }
         Ok(())
     }
 
-    fn cursive_pos(
-        &mut self,
-        subtable: Result<write_fonts::read::tables::gpos::CursivePosFormat1<'_>, ReadError>,
-    ) -> Walk {
+    fn cursive_pos(&mut self, subtable: Result<CursivePos<'_>, ReadError>) -> Walk {
         self.work(1)?;
-        let table = self.table(subtable)?;
+        let CursivePos::Format1(table) = self.table(subtable)? else {
+            return self.unmodelled();
+        };
         let extent = self.coverage(table.coverage())?;
         let records = table.entry_exit_record();
         self.indexed(extent, records.len())?;
@@ -1078,12 +1109,11 @@ impl Walker {
         Ok(())
     }
 
-    fn mark_base_pos(
-        &mut self,
-        subtable: Result<write_fonts::read::tables::gpos::MarkBasePosFormat1<'_>, ReadError>,
-    ) -> Walk {
+    fn mark_base_pos(&mut self, subtable: Result<MarkBasePos<'_>, ReadError>) -> Walk {
         self.work(1)?;
-        let table = self.table(subtable)?;
+        let MarkBasePos::Format1(table) = self.table(subtable)? else {
+            return self.unmodelled();
+        };
         let marks = self.coverage(table.mark_coverage())?;
         let bases = self.coverage(table.base_coverage())?;
         self.mark_array(table.mark_array(), marks, table.mark_class_count())?;
@@ -1099,12 +1129,11 @@ impl Walker {
         Ok(())
     }
 
-    fn mark_lig_pos(
-        &mut self,
-        subtable: Result<write_fonts::read::tables::gpos::MarkLigPosFormat1<'_>, ReadError>,
-    ) -> Walk {
+    fn mark_lig_pos(&mut self, subtable: Result<MarkLigPos<'_>, ReadError>) -> Walk {
         self.work(1)?;
-        let table = self.table(subtable)?;
+        let MarkLigPos::Format1(table) = self.table(subtable)? else {
+            return self.unmodelled();
+        };
         let marks = self.coverage(table.mark_coverage())?;
         let ligatures = self.coverage(table.ligature_coverage())?;
         self.mark_array(table.mark_array(), marks, table.mark_class_count())?;
@@ -1125,12 +1154,11 @@ impl Walker {
         Ok(())
     }
 
-    fn mark_mark_pos(
-        &mut self,
-        subtable: Result<write_fonts::read::tables::gpos::MarkMarkPosFormat1<'_>, ReadError>,
-    ) -> Walk {
+    fn mark_mark_pos(&mut self, subtable: Result<MarkMarkPos<'_>, ReadError>) -> Walk {
         self.work(1)?;
-        let table = self.table(subtable)?;
+        let MarkMarkPos::Format1(table) = self.table(subtable)? else {
+            return self.unmodelled();
+        };
         let marks = self.coverage(table.mark1_coverage())?;
         let bases = self.coverage(table.mark2_coverage())?;
         self.mark_array(table.mark1_array(), marks, table.mark_class_count())?;
@@ -1163,8 +1191,9 @@ impl Walker {
                 self.work(points.point_indices().len())?;
             }
         }
-        if let Some(carets) = self.nullable_table(gdef.lig_caret_list())? {
+        if let Some(carets) = self.read_nullable(gdef.lig_caret_list())? {
             self.visit("gdef-lig-caret-list");
+            let carets = self.lig_caret_list(carets)?;
             let extent = self.coverage(carets.coverage())?;
             self.indexed(extent, carets.lig_glyphs().len())?;
             self.work(1 + carets.lig_glyphs().len())?;
@@ -1199,6 +1228,18 @@ impl Walker {
             self.item_variation_store(&store)?;
         }
         Ok(())
+    }
+
+    /// The ligature caret list a GDEF header selects. A LigCaretList2, with
+    /// 24-bit offsets, is not modelled.
+    fn lig_caret_list<'a>(&self, carets: SelectedLigCaretList<'a>) -> Walk<LigCaretList<'a>> {
+        match carets {
+            SelectedLigCaretList::Original(carets) => {
+                self.whole(&carets)?;
+                Ok(carets)
+            }
+            SelectedLigCaretList::Extended(_) => self.unmodelled(),
+        }
     }
 
     fn item_variation_store(&mut self, store: &ItemVariationStore<'_>) -> Walk {

@@ -1372,7 +1372,7 @@ fn text_scene(text: &str, width: u64) -> Value {
 // closes a contour that starts and ends on-curve with an explicit line back to
 // its start; read-fonts closes it without one, so each such contour adds one.
 fn official_a_geometry() -> (u64, u64) {
-    use write_fonts::read::model::glyph::outline::OutlinePen;
+    use write_fonts::read::model::glyph::outline::PathSink;
     use write_fonts::read::tables::glyf::outline::{outline_to_path, PathContourStart};
     use write_fonts::read::tables::glyf::{Glyph, PointFlags};
     use write_fonts::read::types::Point;
@@ -1394,7 +1394,7 @@ fn official_a_geometry() -> (u64, u64) {
             self.bounds[3] = self.bounds[3].max(y);
         }
     }
-    impl OutlinePen for Count {
+    impl PathSink for Count {
         fn move_to(&mut self, x: f32, y: f32) {
             self.commands += 1;
             self.point(x, y);

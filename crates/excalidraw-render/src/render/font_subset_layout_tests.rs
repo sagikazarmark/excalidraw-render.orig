@@ -286,13 +286,25 @@ fn layout_failures_carry_the_table_and_check() {
         check(&raw_font(b"GSUB", unknown_lookup)),
         gsub_failure(LayoutCheck::UnknownFormat)
     );
-    // A GDEF 1.0 whose glyph ClassDef has format 3.
+    // A GDEF 1.0 whose glyph ClassDef has format 5, which the specification
+    // does not define.
     let unknown_class_format = vec![
-        0x00, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00,
+        0x00, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x00,
         0x00,
     ];
     assert_eq!(
         check(&raw_font(b"GDEF", unknown_class_format)),
+        failure(LayoutTable::Gdef, LayoutCheck::UnknownFormat)
+    );
+    // A GDEF 1.0 whose glyph ClassDef is a well-formed format 3, the 24-bit
+    // glyph ID form ISO/IEC 14496-22:2026 adds, classifying glyph 1 as 1.
+    // read-fonts parses it; the walker does not model it.
+    let wide_class_format = vec![
+        0x00, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00,
+        0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01,
+    ];
+    assert_eq!(
+        check(&raw_font(b"GDEF", wide_class_format)),
         failure(LayoutTable::Gdef, LayoutCheck::UnknownFormat)
     );
     // A GDEF 1.0 whose glyph ClassDef format 1 starts at glyph 2 and
