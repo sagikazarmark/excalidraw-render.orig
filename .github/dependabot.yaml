@@ -11,6 +11,16 @@ updates:
       cargo:
         patterns:
           - "*"
+    # Moves that change output and need evidence restaged are adopted on
+    # their own branches; each removes its entries when it lands.
+    ignore:
+      # fontations and HarfRust share one read-fonts and move together.
+      - dependency-name: harfrust
+      - dependency-name: skera
+      - dependency-name: write-fonts
+      # resvg and usvg move with the pure-Rust SVG viewer.
+      - dependency-name: resvg
+      - dependency-name: usvg
 
   - package-ecosystem: github-actions
     directory: /
