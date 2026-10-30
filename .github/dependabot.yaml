@@ -18,9 +18,6 @@ updates:
       - dependency-name: harfrust
       - dependency-name: skera
       - dependency-name: write-fonts
-      # resvg and usvg move with the pure-Rust SVG viewer.
-      - dependency-name: resvg
-      - dependency-name: usvg
 
   - package-ecosystem: github-actions
     directory: /
