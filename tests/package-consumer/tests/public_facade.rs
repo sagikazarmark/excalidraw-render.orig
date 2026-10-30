@@ -43,7 +43,7 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
         // is unchanged. Again with skera 0.9.0, which also serializes the
         // subset's GSUB and GPOS lists in declaration order.
         OutputFormat::Svg,
-        "d6c1b917a2ac69c7028566d972668b40014095cb18d892af6692c51f8dfc4146",
+        "ca6b8973eb9b53a928b1be8a29cefb0c54d9d46e0f56ffa90a365996e51f63c0",
         "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
     ),
     (
@@ -218,7 +218,7 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     // again with skera 0.9.0, which also reorders the subset's GSUB and GPOS.
     assert_eq!(
         lower_hex(&Sha256::digest(first.artifact().bytes())),
-        "026bc58c2305dfbd15f5e468e17bb32b31dd4559f2f61049a6e0f509a735b564"
+        "abae5fa96e2fe6449bfd5307b5682e2b11ebbce0ec3013c9ba2ab98b09ad7fac"
     );
     assert!(svg.contains("\"asset_identity\":\"license.ofl-1.1\""));
     assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
