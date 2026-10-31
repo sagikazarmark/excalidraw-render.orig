@@ -1124,9 +1124,34 @@ pub(super) fn verify_closed() -> Result<(), String> {
 mod tests {
     use super::*;
 
+    /// The live catalog and ledger, with the representative's assignment held as
+    /// an explicit gap. Checking that owner runs the representative release gate,
+    /// which builds the LTO release CLI (minutes on a CI runner); these tests judge
+    /// the rest of the ledger, and the gate keeps its own isolated test.
+    fn live() -> (Catalog, Ledger) {
+        let (catalog, mut ledger) = load().unwrap();
+        let row = ledger
+            .assignments
+            .iter_mut()
+            .find(|a| a.id == representative::OBLIGATION)
+            .unwrap();
+        assert!(matches!(
+            row.disposition,
+            Disposition::Owned {
+                owner: Owner::Representative { .. },
+                ..
+            }
+        ));
+        row.disposition = Disposition::Gap {
+            issue: 85,
+            reason: "in-memory gap".into(),
+        };
+        (catalog, ledger)
+    }
+
     #[test]
     fn five_layer_mapping_is_optional_but_pdf_judgments_remain_required() {
-        let (catalog, mut ledger) = load().unwrap();
+        let (catalog, mut ledger) = live();
         for assignment in &mut ledger.assignments {
             if assignment.id == "closure:all-five-layers" || assignment.id.starts_with("layer:") {
                 assignment.disposition = Disposition::Owned {
@@ -1213,7 +1238,7 @@ mod tests {
 
     #[test]
     fn inventory_extension_preserves_live_owners_and_approved_exclusions() {
-        let (before, ledger) = load().unwrap();
+        let (before, ledger) = live();
         let mut after = before.clone();
         let mut row = before
             .obligations
@@ -1327,7 +1352,7 @@ mod tests {
 
     #[test]
     fn tolerance_exceptions_are_owned_only_by_the_direct_png_exception_test() {
-        let (catalog, ledger) = load().unwrap();
+        let (catalog, ledger) = live();
         let exception = catalog
             .obligations
             .iter()
@@ -1829,7 +1854,7 @@ mod tests {
 
     #[test]
     fn test_owner_checks_compiled_module_and_selector_not_historical_source_digest() {
-        let (catalog, mut ledger) = load().unwrap();
+        let (catalog, mut ledger) = live();
         validate(&catalog, &ledger, false).unwrap();
         let row = ledger
             .assignments
@@ -1847,7 +1872,7 @@ mod tests {
         assert!(validate(&catalog, &ledger, false)
             .unwrap_err()
             .contains("exact executable test"));
-        let (_, mut ledger) = load().unwrap();
+        let (_, mut ledger) = live();
         let row = ledger
             .assignments
             .iter_mut()
