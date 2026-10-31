@@ -2,7 +2,9 @@ name: CI (sharded prototype)
 
 # Prototype of the Test job as one build and four test shards: the test targets
 # compile once into a nextest archive, and each shard downloads it and runs a
-# quarter of the tests. Compare its wall time with the Test job of CI.
+# quarter of the tests. The `release-cli` test group builds the release CLI, so
+# it runs in its own job, from the start, rather than once per shard. Compare
+# the wall time with the Test job of CI.
 
 on:
   pull_request:
@@ -92,7 +94,8 @@ jobs:
           cachix-cache: rust-projects
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      # The release-CLI tests build `excalidraw-render-cli` in release mode.
+      # Some xtask tests build helper tools (the viewer font tool, the PDF
+      # harness wrappers) with Cargo.
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
@@ -116,3 +119,42 @@ jobs:
           --profile default
           --no-fail-fast
           --partition slice:${{ matrix.shard }}/4
+          -E 'not group(release-cli)'
+
+  release-cli:
+    name: Test (release CLI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Some checks read files from earlier commits.
+          fetch-depth: 0
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: sharded-release-cli
+          cmd-format: devenv shell -- {0}
+
+      # The command the representative gate runs; the tests then find it fresh.
+      - name: Build the release CLI
+        run: cargo build --release --locked -p excalidraw-render-cli
+
+      - name: Run the release-CLI tests
+        run: >-
+          cargo nextest run
+          --locked
+          --workspace
+          --profile default
+          --no-fail-fast
+          -E 'group(release-cli)'
