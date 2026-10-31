@@ -81,7 +81,7 @@ fn draw_group(surface: &mut Surface<'_>, group: &usvg::Group) -> Result<(), Form
         if group.isolate()
             || group.opacity() != usvg::Opacity::ONE
             || group.mask().is_some()
-            || group.blend_mode() != usvg::BlendMode::Normal
+            || blend_mode(group.blend_mode()) != BlendMode::Normal
         {
             surface.push_isolated();
             pushes += 1;
@@ -755,6 +755,9 @@ fn blend_mode(mode: usvg::BlendMode) -> BlendMode {
         usvg::BlendMode::Saturation => BlendMode::Saturation,
         usvg::BlendMode::Color => BlendMode::Color,
         usvg::BlendMode::Luminosity => BlendMode::Luminosity,
+        // PDF has no additive blend mode. usvg before 0.49 parsed
+        // `plus-lighter` as `normal`, so this keeps the PDF it drew then.
+        usvg::BlendMode::PlusLighter => BlendMode::Normal,
     }
 }
 

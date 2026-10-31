@@ -82,6 +82,13 @@ pub(crate) fn hypot(x: f64, y: f64) -> f64 {
     libm::hypot(x, y)
 }
 
+/// Euclidean length of the `f32` vector `(x, y)`, for geometry that follows
+/// a dependency's own `f32` arithmetic.
+#[cfg(any(feature = "png", feature = "pdf"))]
+pub(crate) fn hypotf(x: f32, y: f32) -> f32 {
+    libm::hypotf(x, y)
+}
+
 /// Cube root.
 pub(crate) fn cbrt(value: f64) -> f64 {
     libm::cbrt(value)

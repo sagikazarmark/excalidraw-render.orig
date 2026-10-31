@@ -505,6 +505,7 @@ fn input_group<'a>(
         usvg::BlendMode::Saturation => "saturation",
         usvg::BlendMode::Color => "color",
         usvg::BlendMode::Luminosity => "luminosity",
+        usvg::BlendMode::PlusLighter => "plus-lighter",
     };
     attr(
         out,

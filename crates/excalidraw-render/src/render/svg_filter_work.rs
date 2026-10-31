@@ -9,10 +9,12 @@
 //! fallback, measure the tree with the transform and surface they are about to
 //! hand resvg, and charge that before it runs.
 //!
-//! The walk follows `resvg::render`'s own traversal (resvg 0.48): the same
-//! group isolation, layer bounds clamped to the filter context, pattern tiles,
-//! masks, `feImage` subtrees and nested SVG images, with the same `f32`
-//! geometry, so a layer's size is resvg's. Where resvg could do less (an empty
+//! The walk follows `resvg::render`'s own traversal (resvg 0.49): the same
+//! group isolation, a filtered layer laid out without its transform's
+//! rotation and skew, layer bounds clamped to the filter context, filter
+//! regions cropped out of their layer, pattern tiles, masks, `feImage`
+//! subtrees and nested SVG images, with the same `f32` geometry, so a layer's
+//! size is resvg's. Where resvg could do less (an empty
 //! input, a failed allocation, a zero blur) the walk still charges, so the
 //! measure is an upper bound. Costs are integer and saturating.
 
@@ -49,6 +51,9 @@ const SIMPLE_PIXEL_WORK: u64 = 16;
 /// Additional work units per pixel and kernel cell of `feConvolveMatrix` and
 /// per pixel and neighbourhood cell of `feMorphology`.
 const KERNEL_CELL_WORK: u64 = 4;
+/// Work units per pixel of a filter region resvg copies out of a layer it
+/// does not fill: one read and one write per channel.
+const REGION_COPY_PIXEL_WORK: u64 = 8;
 
 /// What resvg spends on the filter effects of one rasterization.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -234,6 +239,9 @@ impl Walk {
             self.nodes(group, context, transform, surface);
             return;
         }
+        let Some((context, transform)) = layer_frame(group, context, transform) else {
+            return;
+        };
         let Some((layer, transform)) = group_layer(group, context, transform) else {
             return;
         };
@@ -259,16 +267,24 @@ impl Walk {
     }
 
     /// `filter::apply`: every primitive's input and result is the size of
-    /// the layer `source`, or of the filter region the layer bounds.
+    /// the filter region the layer `source` bounds, at most the layer's.
     fn filter(&mut self, filter: &usvg::filter::Filter, transform: Transform, source: (u32, u32)) {
         let Some(region) = filter.rect().transform(transform).map(|r| r.to_int_rect()) else {
             return;
         };
-        let Some(region) = IntRect::from_xywh(0, 0, source.0, source.1)
-            .and_then(|source| fit_to_rect(region, source))
-        else {
+        let Some(source_rect) = IntRect::from_xywh(0, 0, source.0, source.1) else {
             return;
         };
+        let Some(region) = fit_to_rect(region, source_rect) else {
+            return;
+        };
+        // A region that does not fill the layer is copied out of it, and the
+        // primitives work in the copy's coordinates.
+        if region != source_rect {
+            let copied = u64::from(region.width()).saturating_mul(u64::from(region.height()));
+            self.charge(copied, copied.saturating_mul(REGION_COPY_PIXEL_WORK));
+        }
+        let transform = transform.post_translate(-region.x() as f32, -region.y() as f32);
         let pixels = u64::from(source.0).saturating_mul(u64::from(source.1));
         for primitive in filter.primitives() {
             if self.exhausted() {
@@ -324,16 +340,18 @@ fn primitive_pixel_work(kind: &Kind, transform: Transform, source: (u32, u32)) -
                 .saturating_mul(TURBULENCE_OCTAVE_WORK)
         }
         Kind::Morphology(morphology) => {
-            // resvg scans a `2 * ceil(r)` neighbourhood per pixel, clamped to
-            // the input, so its cost grows with the radius squared.
+            // resvg scans a `2 * round(r) + 1` neighbourhood per pixel,
+            // clamped to the input, so its cost grows with the radius squared.
             let (sx, sy) = transform.get_scale();
             let (rx, ry) = (
                 morphology.radius_x().get() * sx,
                 morphology.radius_y().get() * sy,
             );
             if rx > 0.0 && ry > 0.0 {
-                let columns = (rx.ceil() as u32).saturating_mul(2).min(source.0);
-                let rows = (ry.ceil() as u32).saturating_mul(2).min(source.1);
+                let span =
+                    |radius: f32| (radius.round() as u32).saturating_mul(2).saturating_add(1);
+                let columns = span(rx).min(source.0);
+                let rows = span(ry).min(source.1);
                 u64::from(columns)
                     .saturating_mul(u64::from(rows))
                     .saturating_mul(KERNEL_CELL_WORK)
@@ -387,7 +405,39 @@ fn blur_pixel_work(
     }
 }
 
-/// `render_group`'s layer: the group's layer bounds on the device grid,
+/// `render_group`'s layer frame: a filtered group's layer is painted without
+/// the transform's rotation and skew (`rest`), which compositing the layer
+/// back applies, so the filter context is carried into that frame. A layer
+/// without filters keeps the device frame.
+fn layer_frame(
+    group: &usvg::Group,
+    context: IntRect,
+    transform: Transform,
+) -> Option<(IntRect, Transform)> {
+    let rest = if group.filters().is_empty() {
+        Transform::identity()
+    } else {
+        // resvg takes the platform's `f32::hypot`, which is not correctly
+        // rounded; the portable one keeps the charge the same on every
+        // target, and the two can only part at a layer edge one ulp from an
+        // integer.
+        let sx = crate::portable_math::hypotf(transform.sx, transform.ky);
+        let sy = crate::portable_math::hypotf(transform.kx, transform.sy);
+        Transform::from_row(
+            transform.sx / sx,
+            transform.ky / sx,
+            transform.kx / sy,
+            transform.sy / sy,
+            0.0,
+            0.0,
+        )
+    };
+    let inverse = rest.invert()?;
+    let context = context.to_rect().transform(inverse)?.round_out()?;
+    Some((context, inverse.pre_concat(transform)))
+}
+
+/// `render_layer`'s layer: the group's layer bounds on the device grid,
 /// clamped to the filter context, and the transform content is painted into
 /// the layer with.
 fn group_layer(
@@ -511,10 +561,15 @@ mod tests {
             measure(&filtered(r#"<feTurbulence numOctaves="1000"/>"#)).work_units,
             one_primitive(4 * 1000 * TURBULENCE_OCTAVE_WORK)
         );
-        // resvg clamps the morphology neighbourhood to the input.
+        // resvg clamps the morphology neighbourhood to the input, and rounds
+        // the radius: 1.4 scans a 3x3 neighbourhood.
         assert_eq!(
             measure(&filtered(r#"<feMorphology radius="100000"/>"#)).work_units,
             one_primitive(10 * 10 * KERNEL_CELL_WORK)
+        );
+        assert_eq!(
+            measure(&filtered(r#"<feMorphology radius="1.4"/>"#)).work_units,
+            one_primitive(3 * 3 * KERNEL_CELL_WORK)
         );
         assert_eq!(
             measure(&filtered(
@@ -531,6 +586,37 @@ mod tests {
         // size on each side, as resvg cuts it.
         let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><filter id="f" filterUnits="userSpaceOnUse" x="-500" y="-500" width="1000" height="1000"><feFlood/></filter><rect width="10" height="10" filter="url(#f)"/></svg>"#;
         assert_eq!(measure(svg).surface_pixels, 2 * 50 * 50);
+    }
+
+    #[test]
+    fn a_filtered_layer_is_laid_out_without_its_rotation() {
+        // resvg paints a filtered layer in the group's own frame and rotates
+        // the result back, so a square rotated 45 degrees keeps a 10x10 layer
+        // and result, not the 15x15 device box around them.
+        let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><filter id="f" x="0" y="0" width="1" height="1"><feFlood/></filter><g transform="rotate(45 5 5)"><rect width="10" height="10" filter="url(#f)"/></g></svg>"#;
+        assert_eq!(
+            measure(svg),
+            FilterWork {
+                work_units: one_primitive(0),
+                surface_pixels: 200,
+            }
+        );
+    }
+
+    #[test]
+    fn a_region_short_of_its_layer_is_copied_out() {
+        // The layer covers both filter regions; the second, half as wide, is
+        // copied out of it before its flood runs.
+        let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><filter id="a" x="0" y="0" width="1" height="1"><feFlood/></filter><filter id="b" x="0" y="0" width="0.5" height="1"><feFlood/></filter><rect width="10" height="10" filter="url(#a) url(#b)"/></svg>"#;
+        assert_eq!(
+            measure(svg),
+            FilterWork {
+                work_units: one_primitive(0)
+                    + 50 * REGION_COPY_PIXEL_WORK
+                    + 100 * PRIMITIVE_PIXEL_WORK,
+                surface_pixels: 100 + 100 + 50 + 100,
+            }
+        );
     }
 
     #[test]

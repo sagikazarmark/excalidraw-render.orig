@@ -228,9 +228,11 @@ const RASTERIZER_LIMITATIONS: &[RasterizerLimitation] = &[
 /// measured with, as the lockfile names them.
 ///
 /// Re-derived for resvg 0.48.1 and fontdb 0.24.0 (#209): every pin above
-/// measured exactly as it did under resvg 0.47.0 and fontdb 0.23.0.
+/// measured exactly as it did under resvg 0.47.0 and fontdb 0.23.0. Re-derived
+/// again for resvg 0.49.0, with the same tiny-skia and fontdb: every pin
+/// measured exactly as under 0.48.1.
 const PINNED_RASTERIZER: &[(&str, &str)] = &[
-    ("resvg", "0.48.1"),
+    ("resvg", "0.49.0"),
     ("tiny-skia", "0.12.0"),
     ("fontdb", "0.24.0"),
 ];
