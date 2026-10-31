@@ -20,8 +20,11 @@ with the same tools; GitHub Actions is a caller, not the authority.
 `features`, `deny` (advisories, licenses and sources of every dependency,
 `deny.toml`), `msrv`, the `test`, `test-render`, `test-features` and
 `test-doc` tiers, `conformance` and `packaging`. They run on any host the devenv shell
-supports; CI runs each as its own job (`.github/workflows/ci.yaml`), except that
-the fast and render tiers share one job and one compilation. Cargo's own
+supports; CI runs each as its own job (`.github/workflows/ci.yaml`), except the
+fast and render tiers. Those compile once into a nextest archive
+(`just test-archive`, with line-table debuginfo only), which four jobs run a
+slice of each (`just test-shard 1/4` and so on); a `Test` job joins their
+results into one check. Cargo's own
 fingerprints decide what a recipe rebuilds; rust-cache keeps the dependencies
 between runs, saved from `main`. Each job pulls the devenv shell from the
 `rust-projects` Cachix cache and pushes the paths it builds, chiefly the
@@ -30,7 +33,9 @@ rust-overlay toolchain that cache.nixos.org does not carry.
 Some xtask tests run commands that build the qualified release CLI (LTO, one
 codegen unit) on first use. `.config/nextest.toml` puts them in a one-thread
 test group, so they take turns instead of holding test slots while they wait on
-Cargo's build lock.
+Cargo's build lock, and starts the group first. CI runs the group in a job of
+its own (`just test-release-cli`), which builds the CLI once, rather than in
+every shard.
 
 The release checks run on the supported targets (ADR-0006). Browser WASM runs in
 headless Firefox through geckodriver on any host: the renderer makes no browser

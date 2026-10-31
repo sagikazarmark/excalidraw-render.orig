@@ -40,13 +40,35 @@ msrv:
     cargo check --locked -p excalidraw-render -p excalidraw-render-cli
 
 # Run the fast tier: every test outside the parity, limits, and harness binaries.
-test:
-    python3 -m unittest discover -s tools/ci -p 'test_*.py'
+test: test-tools
     cargo nextest run --locked --workspace --profile ci-fast
 
 # Run the render tier: the parity harnesses and the fixed parser ceilings.
 test-render:
     cargo nextest run --locked --workspace --profile ci-render
+
+# Test the CI helper scripts.
+test-tools:
+    python3 -m unittest discover -s tools/ci -p 'test_*.py'
+
+# CI runs the fast and render tiers as one archived build and several shards,
+# with the release-CLI test group in a job of its own.
+
+# Build every test target once into a nextest archive.
+test-archive archive="target/nextest-archive.tar.zst":
+    cargo nextest archive --locked --workspace --archive-file {{ archive }}
+
+# Run one shard, such as 1/4, of the fast and render tiers from an archive,
+# without the release-CLI group. It extracts into the checkout, where every
+# binary is at the path its build compiled in.
+test-shard shard archive="target/nextest-archive.tar.zst":
+    cargo nextest run --archive-file {{ archive }} --extract-to . --extract-overwrite \
+        --profile default --no-fail-fast --partition slice:{{ shard }} -E 'not group(release-cli)'
+
+# Run the tests that build the release CLI, building it first.
+test-release-cli:
+    cargo build --release --locked -p excalidraw-render-cli
+    cargo nextest run --locked --workspace --profile default --no-fail-fast -E 'group(release-cli)'
 
 # Test the builds that leave out the png or pdf feature.
 test-features:

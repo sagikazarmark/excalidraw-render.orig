@@ -51,14 +51,13 @@ fn assert_report(outcome: &RenderOutcome, format: OutputFormat, mut rows: Value)
 }
 fn assert_contract(source: &Value, clean: &Value, format: OutputFormat, rows: Value) {
     let document = parse(source);
-    let clean_document = parse(clean);
+    let baseline = crate::common::clean_baselines::baseline(clean, format);
     let request = RenderRequest::builder(format).build().unwrap();
     let first = Renderer::new().render(&document, &request).unwrap();
     let second = Renderer::new().render(&document, &request).unwrap();
-    let baseline = Renderer::new().render(&clean_document, &request).unwrap();
     assert_eq!(
         first.artifact().bytes(),
-        baseline.artifact().bytes(),
+        baseline.scene().artifact().bytes(),
         "{format:?}: {source}"
     );
     assert_report(&first, format, rows.clone());
@@ -80,15 +79,13 @@ fn assert_contract(source: &Value, clean: &Value, format: OutputFormat, rows: Va
     let renderer = Renderer::new();
     let request = FrameRenderRequest::builder(format).build().unwrap();
     let frames: Vec<_> = document.frames().collect();
-    let clean_frames: Vec<_> = clean_document.frames().collect();
     let mut batch = renderer
         .render_frames(&document, frames.iter().copied(), &request)
         .unwrap();
-    for (index, (frame, clean_frame)) in frames.iter().zip(clean_frames).enumerate() {
+    for (index, (frame, clean_frame)) in frames.iter().zip(baseline.frames()).enumerate() {
         let direct = renderer.render_frame(*frame, &request).unwrap();
-        let baseline = renderer.render_frame(clean_frame, &request).unwrap();
         let replay = batch.next().unwrap().into_result().unwrap();
-        assert_eq!(direct.artifact().bytes(), baseline.artifact().bytes());
+        assert_eq!(direct.artifact().bytes(), clean_frame.artifact().bytes());
         assert_eq!(direct.artifact().bytes(), replay.artifact().bytes());
         assert_eq!(direct.report(), replay.report());
         assert_report(

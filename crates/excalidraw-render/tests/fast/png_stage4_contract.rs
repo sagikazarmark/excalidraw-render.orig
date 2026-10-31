@@ -2,6 +2,7 @@ use crate::common::lower_hex;
 use crate::common::png_stage4::{self as vectors, Case, Outcome};
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use serde_json::json;
+use std::collections::HashMap;
 
 #[test]
 fn review_adam7_narrow_multiline_subframes_preserve_rows_and_validate_later_indexes() {
@@ -177,6 +178,9 @@ fn authored_case_cardinalities_are_explicit() {
 }
 
 fn check(rows: Vec<Case>) {
+    // Rows that fail recover to their scene without the image file; many rows
+    // share that scene, so each recovery renders once per format.
+    let mut recoveries = HashMap::new();
     for row in rows {
         let source = vectors::scene(&row);
         let scene = SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap();
@@ -208,11 +212,16 @@ fn check(rows: Vec<Case>) {
             {
                 let mut removed = source.clone();
                 removed["files"] = json!({});
-                let removed = SceneDocument::parse(&serde_json::to_vec(&removed).unwrap()).unwrap();
-                let recovery = Renderer::new().render(&removed, &request).unwrap();
+                let recovery = recoveries
+                    .entry((serde_json::to_vec(&removed).unwrap(), format))
+                    .or_insert_with_key(|(removed, _)| {
+                        let removed = SceneDocument::parse(removed).unwrap();
+                        let recovery = Renderer::new().render(&removed, &request).unwrap();
+                        recovery.artifact().bytes().to_vec()
+                    });
                 assert_eq!(
                     first.artifact().bytes(),
-                    recovery.artifact().bytes(),
+                    recovery.as_slice(),
                     "{} recovery {format:?}",
                     row.id
                 );
