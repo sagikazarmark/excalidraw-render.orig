@@ -31,9 +31,10 @@
 # nextest does not run doc tests; the workflows keep a `cargo test --doc` step.
 #
 # The devenv shell provides nextest, and a developer is pointed at the
-# recommended release; the floor is the release that introduced test
-# priorities, the newest setting this file uses.
-nextest-version = { required = "0.9.91", recommended = "0.9.143" }
+# recommended release. The floor is the release that introduced the `group()`
+# filterset predicate, which the CI recipes `test-shard` and `test-release-cli`
+# use; it also covers test priorities (0.9.91) and sliced partitions (0.9.127).
+nextest-version = { required = "0.9.133", recommended = "0.9.143" }
 
 [profile.default]
 # What a developer runs: everything that needs neither an external harness nor
