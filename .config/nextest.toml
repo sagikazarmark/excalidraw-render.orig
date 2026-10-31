@@ -30,9 +30,9 @@
 # nextest does not run doc tests; the workflows keep a `cargo test --doc` step.
 #
 # The devenv shell provides nextest, and a developer is pointed at the
-# recommended release; the floor is the release that introduced
-# `default-filter`, which is all this file needs.
-nextest-version = { required = "0.9.75", recommended = "0.9.143" }
+# recommended release; the floor is the release that introduced test
+# priorities, the newest setting this file uses.
+nextest-version = { required = "0.9.91", recommended = "0.9.143" }
 
 [profile.default]
 # What a developer runs: everything that needs neither an external harness nor
@@ -67,6 +67,19 @@ package(xtask) & (
 )
 '''
 test-group = "release-cli"
+# Start the group first, so the build overlaps the rest of the run instead of
+# ending it on one busy slot.
+priority = 100
+
+# The field-contract matrices and the PNG profile contracts each run for one to
+# five minutes on a CI runner. Starting them early lets the many short tests
+# fill the other slots around them, rather than a few of them ending the run.
+[[profile.default.overrides]]
+filter = '''
+binary_id(excalidraw-render) & test(/^png_projection_contract::/)
+| binary_id(excalidraw-render::fast) & test(/^(geometry_style_contract|surface_metadata_contract|text_field_contract|relationship_field_contract|png_stage4_contract)::/)
+'''
+priority = 50
 
 # The PR gate's fast leg: the `default` set without the parity and limits
 # tiers. Together with `ci-render` it covers the `default` set exactly once.
