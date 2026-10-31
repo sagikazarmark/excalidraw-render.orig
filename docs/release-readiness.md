@@ -1,6 +1,6 @@
 # 0.1.0 Release Readiness Plan
 
-Status: in progress. Date: 2026-10-18, updated 2026-10-27. Owner: Mark Sagi-Kazar.
+Status: in progress. Date: 2026-10-18, updated 2026-10-30. Owner: Mark Sagi-Kazar.
 
 This plan records what stands between `main` and the first
 release, and what to do about each item. The [release policy](release-0.1.0.md)
@@ -35,7 +35,10 @@ These are open regardless of code quality.
    passed; snapshot replay and full equality passed; the aggregate is
    recorded. The restage run before it found that the baseline stager's
    provenance check had been broken since the 2026-10-04 crate rename
-   (`d905b604`).
+   (`d905b604`). It held again for the skera 0.9 profile
+   ([run 41077154714](https://github.com/sagikazarmark/excalidraw-render.orig/actions/runs/41077154714)
+   on `c5c4118c`): native qualification 497 passed, 5 ignored; WASM 19
+   passed; snapshot replay and full equality passed.
 2. **Closed 2026-10-27.** `just viewer-evidence svg reproduce` and
    `pdf reproduce` run the scripts against the host's Docker, and
    `restage.yaml` runs both on demand (`viewer-checks`). Both reproduced the
@@ -56,7 +59,10 @@ These are open regardless of code quality.
    artifacts (`d905b604`..`2e2a537b`). Chromium and resvg
    rendered all 662 qualification executions pixel-identically to the
    retired set, and V28's PDF and PNG equal V27's: the rename moved
-   identifiers, not glyphs.
+   identifiers, not glyphs. skera 0.9.0 renamed it again (`f12a5843`), also
+   laying out each subset's GSUB and GPOS lists in declaration order; the
+   restage at `d4686803` found every qualification raster unchanged and V29's
+   PDF and PNG equal to V28's.
 
 Already in place: CI passes on `main` (all ten jobs, including MSRV), the
 nightly passes, private vulnerability reporting is on, and all five crate names

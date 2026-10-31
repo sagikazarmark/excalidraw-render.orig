@@ -112,6 +112,11 @@ scripts that no runner, script or test named (`encode-codec-fixtures.mjs`,
 provenance still names two of the scripts under paths the gate treats as
 historical, so nothing reachable from a check observes their absence.
 
+On 2026-10-30, after the skera 0.9 restage requalified the representative as
+V29, the same rule removed `stage4-frames-text-assets-v28` (about 1.6 MB, the
+tree at `c388d460` has it). Its four readers now read V29, whose PDF, scene,
+judgment plan and judged rasters are byte-identical.
+
 ## Consequences
 
 - A future round deletes its own collection once the gate no longer reads it,

@@ -325,18 +325,20 @@ fn gsub_lookups() -> Vec<(&'static str, SubstitutionLookup)> {
             SubstitutionLookup::Multiple(lookup(vec![MultipleSubstFormat1::new(
                 coverage(&[1]),
                 vec![Sequence::new(vec![g(2), g(3)])],
-            )])),
+            )
+            .into()])),
         ),
         (
             "gsub-alternate",
             SubstitutionLookup::Alternate(lookup(vec![AlternateSubstFormat1::new(
                 coverage(&[1]),
                 vec![AlternateSet::new(vec![g(2), g(3)])],
-            )])),
+            )
+            .into()])),
         ),
         (
             "gsub-ligature",
-            SubstitutionLookup::Ligature(lookup(vec![ligature_subst()])),
+            SubstitutionLookup::Ligature(lookup(vec![ligature_subst().into()])),
         ),
         (
             "gsub-reverse-chain",
@@ -345,7 +347,8 @@ fn gsub_lookups() -> Vec<(&'static str, SubstitutionLookup)> {
                 vec![coverage(&[3])],
                 vec![range_coverage(1, 3)],
                 vec![g(3), g(3)],
-            )])),
+            )
+            .into()])),
         ),
         (
             "gsub-extension",
@@ -363,7 +366,7 @@ fn gsub_lookups() -> Vec<(&'static str, SubstitutionLookup)> {
         (
             "gsub-extension-ligature",
             SubstitutionLookup::Extension(lookup(vec![gsub::ExtensionSubtable::Ligature(
-                ExtensionSubstFormat1::new(4, ligature_subst()),
+                ExtensionSubstFormat1::new(4, ligature_subst().into()),
             )])),
         ),
     ];
@@ -489,11 +492,12 @@ fn gpos_lookups() -> Vec<(&'static str, PositionLookup)> {
                     EntryExitRecord::new(None, Some(anchor2.clone())),
                     EntryExitRecord::new(Some(anchor3.clone()), Some(anchor1.clone())),
                 ],
-            )])),
+            )
+            .into()])),
         ),
         (
             "gpos-mark-to-base",
-            PositionLookup::MarkToBase(lookup(vec![mark_to_base()])),
+            PositionLookup::MarkToBase(lookup(vec![mark_to_base().into()])),
         ),
         (
             "gpos-mark-to-ligature",
@@ -505,7 +509,8 @@ fn gpos_lookups() -> Vec<(&'static str, PositionLookup)> {
                     ComponentRecord::new(vec![Some(anchor1.clone()), None]),
                     ComponentRecord::new(vec![Some(anchor2.clone()), Some(anchor3.clone())]),
                 ])]),
-            )])),
+            )
+            .into()])),
         ),
         (
             "gpos-mark-to-mark",
@@ -514,12 +519,16 @@ fn gpos_lookups() -> Vec<(&'static str, PositionLookup)> {
                 coverage(&[3]),
                 mark_array(),
                 Mark2Array::new(vec![Mark2Record::new(vec![Some(anchor3), None])]),
-            )])),
+            )
+            .into()])),
         ),
         (
             "gpos-extension",
             PositionLookup::Extension(lookup(vec![
-                gpos::ExtensionSubtable::MarkToBase(ExtensionPosFormat1::new(4, mark_to_base())),
+                gpos::ExtensionSubtable::MarkToBase(ExtensionPosFormat1::new(
+                    4,
+                    mark_to_base().into(),
+                )),
                 gpos::ExtensionSubtable::Single(ExtensionPosFormat1::new(
                     1,
                     SinglePos::format_1(coverage(&[3]), ValueRecord::new().with_x_advance(1)),

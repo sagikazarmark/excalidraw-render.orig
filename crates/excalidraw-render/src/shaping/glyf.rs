@@ -78,7 +78,7 @@ fn outline_glyph(
         Glyph::Composite(composite) => {
             for component in composite.components() {
                 // A component that is missing or empty draws nothing.
-                let Ok(Some(data)) = loca.get_glyf(component.glyph.into(), glyf) else {
+                let Ok(Some(data)) = loca.get_glyf(component.glyph, glyf) else {
                     continue;
                 };
                 let transform = Transform::combine(builder.transform, Transform::of(&component));

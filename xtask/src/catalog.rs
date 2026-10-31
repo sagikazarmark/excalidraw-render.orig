@@ -69,7 +69,7 @@ const NOTO_EMOJI_LENGTH: usize = 862_680;
 const XIAOLAI_ORDER_SHA256: &str =
     "c2cbbbfa669404795527e06cf596ab4b1b851f9bb993c608c8ab9c3c2aabe9d3";
 const SVG_FONT_SUBSET_PROFILE_DIGEST: &str =
-    "00976faf54c31a497e0816cc621efcc5df8205accb407fc07b12a041e3905f6a";
+    "f23470d703abde83ac59cd7408d8114fa6128f9069ae63d53b1a83092d85ba15";
 const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
     "fc4e8ce56cb7bf4bca9dfd6f3495c9ae9f5440a5818aa3e6f645d5303265ff85";
 /// The SVG font subset qualification corpus covers every official chunk and
@@ -77,7 +77,7 @@ const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
 const QUALIFICATION_SOURCES: usize = 231;
 const NOTO_EMOJI_UPSTREAM_PATH: &str = "scripts/woff2/assets/NotoEmoji-Regular.ttf";
 const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST: &str =
-    "4c8766c2ae2935183664a7bc2197e630b912b01f7aad179b5b71791ad9e61aed";
+    "7c9ee4417835a19f4ec6b644a521c304399dbf8481e4d3f92c061af5261fdbb7";
 const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST: &str =
     "db0e54e516bd82bdc5733d6e950c36bd975bdd7d2a766e89e73804fe21d30264";
 
@@ -2505,7 +2505,7 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
         || corpus["originatingIssue"] != json!(98)
         || corpus["sourceManifestSha256"] != json!(ASSET_MANIFEST_DIGEST)
         || corpus["subsetProfileSha256"]
-            != json!("62934d9d02ac34fcd7c4ef3c973689a4f76da52632fd7c109f0f19d4fabc34ae")
+            != json!("0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4")
     {
         return Err("font subset qualification corpus identity is invalid".to_owned());
     }

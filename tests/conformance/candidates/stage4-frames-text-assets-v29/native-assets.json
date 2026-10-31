@@ -1,0 +1,54 @@
+{
+  "fonts": [
+    {
+      "css": {
+        "family": "Excalifont",
+        "stretch": "normal",
+        "style": "normal",
+        "unicode_range": [
+          "U+0-10FFFF"
+        ],
+        "weight": 400
+      },
+      "sfnt": {
+        "face_index": 0,
+        "family": "Excalifont",
+        "media_type": "font/ttf",
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v29/assets/native-font-0.sfnt",
+        "sha256": "cb468b1a5831847eb4c112850fc55b5ef777afcd318a952e229ed5e7df14076c",
+        "stretch": "normal",
+        "style": "normal",
+        "weight": 400
+      },
+      "source": {
+        "media_type": "font/woff2",
+        "sha256": "b305d1828e3c55d6bf32039303a876d9cf25ff554ff68c57e26abb2c3b49c107"
+      }
+    }
+  ],
+  "images": [
+    {
+      "canonical": {
+        "media_type": "image/png",
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v29/assets/native-image-0.png",
+        "sha256": "7601625e03d39d2afebfa4e8e2f4788313fad8a287a0f554de15a4ceafdc61f1"
+      },
+      "source": {
+        "media_type": "image/png",
+        "sha256": "7601625e03d39d2afebfa4e8e2f4788313fad8a287a0f554de15a4ceafdc61f1"
+      }
+    },
+    {
+      "canonical": {
+        "media_type": "image/svg+xml",
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v29/assets/native-image-1.svg",
+        "sha256": "f09b029a642e733c4687e764730fcb2a9eb3e9807e9f947ab653a13407014cb7"
+      },
+      "source": {
+        "media_type": "image/svg+xml",
+        "sha256": "f09b029a642e733c4687e764730fcb2a9eb3e9807e9f947ab653a13407014cb7"
+      }
+    }
+  ],
+  "schema": "excalidraw-render/svg-viewer-asset-declaration/v1"
+}

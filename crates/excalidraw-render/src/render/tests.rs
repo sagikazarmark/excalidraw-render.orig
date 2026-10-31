@@ -1970,10 +1970,12 @@ fn face_sub_runs_of_a_right_to_left_run_are_placed_right_to_left() {
 #[test]
 fn every_scalar_of_a_run_is_positioned_by_its_own_glyph_in_either_direction() {
     // SVG assigns the nth x/y of a run's tspan to its nth logical character.
-    // The shaper merges a combining mark into its base's cluster, and a
-    // right-to-left run comes back reversed, marks included; each scalar is
-    // still positioned by the glyph that shows it, so the mark keeps the
-    // offset the shaper gave it over the base rather than the base's origin.
+    // The shaper merges a combining mark into its base's cluster. A
+    // right-to-left run comes back in visual order, but whether each
+    // cluster's glyphs are reversed too depends on its script
+    // (`shaping::reverses_cluster_glyphs`); each scalar is still positioned
+    // by the glyph that shows it, so the mark keeps the offset the shaper
+    // gave it over the base rather than the base's origin.
     // Nunito's Latin chunk maps the combining dot below and keeps it a glyph
     // of its own; Liberation's chunk maps no combining mark.
     let [e, question, dot_below] = glyph_ids(6, "e?\u{323}")[..] else {
@@ -2000,13 +2002,32 @@ fn every_scalar_of_a_run_is_positioned_by_its_own_glyph_in_either_direction() {
 
     // Right to left: a dot below a question mark inside a Hebrew paragraph.
     // The Hebrew is a Liberation Sans replacement glyph, the rest Nunito's,
-    // so the visual run is two glyph runs placed right to left.
+    // so the visual run is two glyph runs placed right to left. Nunito's run
+    // has no script, so the shaper reverses its graphemes, shapes them left
+    // to right, and keeps the mark after its base: the mark sits where it
+    // does left to right, not one advance before the base.
     let line = fallback_line(6, "\u{5d0}?\u{323}");
     assert_eq!(
         faced_runs_of(&line),
         [("?\u{323}", true, "Nunito"), ("?", true, "Liberation Sans")]
     );
+    let run = &line.runs[0];
+    assert_eq!(
+        line.glyphs[run.glyph_start..run.glyph_end]
+            .iter()
+            .map(|glyph| glyph.id)
+            .collect::<Vec<_>>(),
+        [question, dot_below],
+        "the cluster's glyphs stay in logical order"
+    );
     assert_eq!(logical_glyph_ids(&line, 0), [question, dot_below]);
+    let [base, mark] = run.logical_glyphs[..] else {
+        panic!("two scalars");
+    };
+    assert!(
+        line.glyphs[mark].x > line.glyphs[base].x,
+        "the mark follows its base"
+    );
     let mut positioned = line.runs[0].logical_glyphs.clone();
     positioned.sort_unstable();
     assert_eq!(
@@ -2024,6 +2045,54 @@ fn every_scalar_of_a_run_is_positioned_by_its_own_glyph_in_either_direction() {
     assert_eq!(runs_of(&line), [("e\u{301}", false), ("?", true)]);
     assert_eq!(logical_glyph_ids(&line, 0), [e_acute, e_acute]);
     assert_eq!(line.runs[0].glyph_end - line.runs[0].glyph_start, 1);
+}
+
+#[test]
+fn the_mirrored_backward_scripts_are_those_the_shaper_reverses_clusters_in() {
+    // `shaping::BACKWARD_SCRIPTS` mirrors HarfRust's private table. Shape one
+    // base-and-mark cluster right to left in each of its scripts, in a sample
+    // of natively left-to-right ones, and with no script: the cluster's
+    // glyphs come back reversed exactly when the mirror says so. Glyphs the
+    // shaper adds (a dotted circle) are left out of the comparison.
+    use crate::shaping::{reverses_cluster_glyphs, shape_in_script, Direction, BACKWARD_SCRIPTS};
+    use harfrust::Script;
+    let [question, dot_below] = glyph_ids(6, "?\u{323}")[..] else {
+        panic!("two glyphs");
+    };
+    let (_, sfnt) = text::OfficialFont::load(6, "?\u{323}")
+        .ok()
+        .unwrap_or_else(|| panic!("Nunito loads"))
+        .into_parts();
+    let face = crate::shaping::Face::from_slice(&sfnt, 0).expect("face parses");
+    let forward = [
+        None,
+        Some(Script::LATIN),
+        Some(Script::CYRILLIC),
+        Some(Script::GREEK),
+        Some(Script::ARMENIAN),
+        Some(Script::GEORGIAN),
+    ];
+    let backward = BACKWARD_SCRIPTS.map(Some);
+    for (script, reversed) in forward
+        .iter()
+        .map(|script| (*script, false))
+        .chain(backward.iter().map(|script| (*script, true)))
+    {
+        let buffer = shape_in_script(&face, "?\u{323}", Direction::RightToLeft, script);
+        let glyphs: Vec<u32> = buffer
+            .glyph_infos()
+            .iter()
+            .map(|info| info.glyph_id)
+            .filter(|glyph| [question, dot_below].map(u32::from).contains(glyph))
+            .collect();
+        let expected = if reversed {
+            [dot_below, question]
+        } else {
+            [question, dot_below]
+        };
+        assert_eq!(glyphs, expected.map(u32::from), "{script:?}");
+        assert_eq!(reverses_cluster_glyphs(&buffer), reversed, "{script:?}");
+    }
 }
 
 #[test]

@@ -755,17 +755,20 @@ impl OfficialFont {
         let mut budget = OutlineBudget::new(layout.outline_limit);
         for (index, line) in stored_lines.into_iter().enumerate() {
             let baseline = first_baseline + index as f64 * line_step;
-            lines.push(shape_official_line(
-                &face,
-                &line.source,
-                &line.display,
-                layout.width,
-                layout.font_size,
-                baseline,
-                text_align,
-                ShapeDirection::Guessed,
-                &mut budget,
-            )?);
+            lines.push(
+                shape_official_line(
+                    &face,
+                    &line.source,
+                    &line.display,
+                    layout.width,
+                    layout.font_size,
+                    baseline,
+                    text_align,
+                    ShapeDirection::Guessed,
+                    &mut budget,
+                )?
+                .label,
+            );
         }
         let discarded_outline_segments = budget.settle(&mut lines);
         Ok(ResolvedText {
@@ -1044,7 +1047,10 @@ pub(super) fn layout_with_loader(
             let face =
                 crate::shaping::Face::from_shared(&font.sfnt, 0).ok_or(LabelError::InvalidFont)?;
             let direction = ShapeDirection::Run { rtl };
-            let mut run = shape_official_line(
+            let ShapedLine {
+                label: mut run,
+                reverses_cluster_glyphs,
+            } = shape_official_line(
                 &face,
                 &run_text,
                 &run_text,
@@ -1057,7 +1063,12 @@ pub(super) fn layout_with_loader(
             )?;
             shift_label_x(&mut run, pen_x);
             let glyph_start = glyphs.len();
-            let logical_glyphs = logical_glyph_indexes(&run.glyphs, &run_text, rtl, glyph_start)?;
+            let logical_glyphs = logical_glyph_indexes(
+                &run.glyphs,
+                &run_text,
+                reverses_cluster_glyphs,
+                glyph_start,
+            )?;
             let outline_start = operations.len();
             for glyph in &mut run.glyphs {
                 glyph.outline.start += outline_start;
@@ -1431,12 +1442,14 @@ impl<'a> OfficialFontChunks<'a> {
 /// last cluster starting before it. A one-glyph-per-scalar run therefore maps
 /// each scalar to its own glyph, and a mark keeps the position the shaper gave
 /// it over its base. `glyphs` are in the order the line places them: buffer
-/// order, which for a right-to-left run (`rtl`) is visual order, reversed from
-/// logical order clusters included.
+/// order, which for a right-to-left run is visual order. Clusters are found by
+/// their keys whatever their order; `reversed` says whether each cluster's
+/// glyphs are reversed from logical order as well, which the shaper decides
+/// ([`crate::shaping::reverses_cluster_glyphs`]).
 fn logical_glyph_indexes(
     glyphs: &[ResolvedGlyph],
     display_text: &str,
-    rtl: bool,
+    reversed: bool,
     first_index: usize,
 ) -> Result<Vec<usize>, LabelError> {
     // `(cluster, logical position)` per glyph; sorting by that total key
@@ -1444,7 +1457,7 @@ fn logical_glyph_indexes(
     let mut ordered = Vec::<(usize, usize, usize)>::new();
     ordered.try_reserve_exact(glyphs.len())?;
     for (index, glyph) in glyphs.iter().enumerate() {
-        let logical = if rtl {
+        let logical = if reversed {
             glyphs.len().saturating_sub(1).saturating_sub(index)
         } else {
             index
@@ -1667,6 +1680,13 @@ impl ResolvedText {
     }
 }
 
+/// One shaped line, and whether the shaper returned each of its clusters'
+/// glyphs in reverse logical order ([`crate::shaping::reverses_cluster_glyphs`]).
+struct ShapedLine {
+    label: ResolvedLabel,
+    reverses_cluster_glyphs: bool,
+}
+
 #[allow(clippy::too_many_arguments)]
 fn shape_official_line(
     face: &crate::shaping::Face,
@@ -1678,7 +1698,7 @@ fn shape_official_line(
     text_align: ResolvedTextAlign,
     direction: ShapeDirection,
     budget: &mut OutlineBudget,
-) -> Result<ResolvedLabel, LabelError> {
+) -> Result<ShapedLine, LabelError> {
     let glyphs = shape_text(face, display_text, direction);
     let scale = font_size / f64::from(face.units_per_em());
     let advance = glyphs
@@ -1762,15 +1782,18 @@ fn shape_official_line(
     let mut owned_display_text = String::new();
     owned_display_text.try_reserve_exact(display_text.len())?;
     owned_display_text.push_str(display_text);
-    Ok(ResolvedLabel {
-        text: owned_text,
-        display_text: owned_display_text,
-        baseline,
-        path: LabelPath { operations },
-        glyph_count: u64::try_from(glyphs.glyph_infos().len()).unwrap_or(u64::MAX),
-        missing_codepoints,
-        glyphs: resolved_glyphs,
-        runs: Vec::new(),
+    Ok(ShapedLine {
+        label: ResolvedLabel {
+            text: owned_text,
+            display_text: owned_display_text,
+            baseline,
+            path: LabelPath { operations },
+            glyph_count: u64::try_from(glyphs.glyph_infos().len()).unwrap_or(u64::MAX),
+            missing_codepoints,
+            glyphs: resolved_glyphs,
+            runs: Vec::new(),
+        },
+        reverses_cluster_glyphs: crate::shaping::reverses_cluster_glyphs(&glyphs),
     })
 }
 

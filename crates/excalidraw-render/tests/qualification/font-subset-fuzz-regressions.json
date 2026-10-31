@@ -9,7 +9,7 @@
       "sceneJson": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"fuzz-office\",\"type\":\"text\",\"width\":160,\"height\":40,\"fontSize\":20,\"fontFamily\":2,\"text\":\"office\",\"updated\":1}],\"appState\":{},\"files\":{}}"
     }
   ],
-  "subsetProfileSha256": "62934d9d02ac34fcd7c4ef3c973689a4f76da52632fd7c109f0f19d4fabc34ae",
+  "subsetProfileSha256": "0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4",
   "sourceIdentity": "fonts/Liberation/LiberationSans-Regular.woff2@sha256:006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8",
   "sourceSha256": "006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8",
   "fixedSeedHex": "6a09e667f3bcc908",
@@ -50,7 +50,7 @@
       "partialOutput": false,
       "expected": {
         "kind": "valid",
-        "woff2_sha256": "5ba3d18dc7adb2fcdb81ba87a45801e60a435db9117c02ad38a88460f16ec0be"
+        "woff2_sha256": "230ab62f8f4af1a70d1ee38403ac88e661017e55ce5c05b9b4b9c42934970cf7"
       }
     },
     {
@@ -62,7 +62,7 @@
       "partialOutput": false,
       "expected": {
         "kind": "valid",
-        "woff2_sha256": "5ba3d18dc7adb2fcdb81ba87a45801e60a435db9117c02ad38a88460f16ec0be"
+        "woff2_sha256": "230ab62f8f4af1a70d1ee38403ac88e661017e55ce5c05b9b4b9c42934970cf7"
       }
     },
     {
@@ -137,7 +137,7 @@
       "partialOutput": false,
       "expected": {
         "kind": "valid",
-        "woff2_sha256": "5ba3d18dc7adb2fcdb81ba87a45801e60a435db9117c02ad38a88460f16ec0be"
+        "woff2_sha256": "230ab62f8f4af1a70d1ee38403ac88e661017e55ce5c05b9b4b9c42934970cf7"
       }
     }
   ],

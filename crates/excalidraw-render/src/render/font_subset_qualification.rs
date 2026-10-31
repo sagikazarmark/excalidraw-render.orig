@@ -19,7 +19,7 @@ const PACKAGED_CORPUS_PATH: &str =
 const CORPUS_SCHEMA: &str = "excalidraw-render/svg-font-subset-qualification-corpus/v1";
 const SOURCE_MANIFEST_SHA256: &str =
     "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const PROFILE_SHA256: &str = "62934d9d02ac34fcd7c4ef3c973689a4f76da52632fd7c109f0f19d4fabc34ae";
+const PROFILE_SHA256: &str = "0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4";
 /// Per-cell trace digests are not pinned: cross-target equality of the
 /// aggregate `resourceTracesSha256` is the determinism property (ADR-0002).
 /// Building with `EXCALIDRAW_FONT_SUBSET_TRACE_DIGESTS` set dumps one digest

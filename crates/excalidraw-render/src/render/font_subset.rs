@@ -692,7 +692,8 @@ fn fallible_probe(characters: &[char]) -> Result<String, Error> {
 /// The glyphs the qualification corpus treats as layout-referenced
 /// (ADR-0020): those in a Coverage table of a GSUB or GPOS lookup subtable,
 /// whole ranges included. GDEF and class definitions do not count. `None`
-/// when a layout table does not parse or covers a glyph past `numGlyphs`.
+/// when a layout table does not parse, covers a glyph past `numGlyphs`, or
+/// uses a 24-bit glyph ID subtable format the walker does not model either.
 #[cfg(test)]
 pub(super) fn layout_glyph_ids(font: &FontRef<'_>) -> Option<Vec<bool>> {
     use write_fonts::read::tables::{gpos::PositionLookup, gsub::SubstitutionLookup};
@@ -724,7 +725,7 @@ pub(super) fn layout_glyph_ids(font: &FontRef<'_>) -> Option<Vec<bool>> {
     }
     for coverage in coverages {
         for glyph in coverage.iter() {
-            *glyphs.get_mut(usize::from(glyph.to_u16()))? = true;
+            *glyphs.get_mut(usize::try_from(glyph.to_u32()).ok()?)? = true;
         }
     }
     Some(glyphs)
@@ -738,57 +739,52 @@ fn gsub_lookup_coverages<'a>(
     lookup: &write_fonts::read::tables::gsub::SubstitutionLookup<'a>,
     coverages: &mut Coverages<'a>,
 ) -> Option<()> {
-    use write_fonts::read::tables::gsub::{SingleSubst, SubstitutionLookup};
+    use write_fonts::read::tables::gsub::SubstitutionLookup;
+    fn each<'a, T>(
+        subtables: impl Iterator<Item = Result<T, write_fonts::read::ReadError>>,
+        coverages: &mut Coverages<'a>,
+        push: impl Fn(&T, &mut Coverages<'a>) -> Option<()>,
+    ) -> Option<()> {
+        subtables
+            .map(|subtable| push(&subtable.ok()?, coverages))
+            .collect()
+    }
     match lookup {
         SubstitutionLookup::Single(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                coverages.push(match subtable.ok()? {
-                    SingleSubst::Format1(table) => table.coverage().ok()?,
-                    SingleSubst::Format2(table) => table.coverage().ok()?,
-                });
-            }
+            each(lookup.subtables().iter(), coverages, single_subst_coverages)
         }
-        SubstitutionLookup::Multiple(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                coverages.push(subtable.ok()?.coverage().ok()?);
-            }
-        }
-        SubstitutionLookup::Alternate(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                coverages.push(subtable.ok()?.coverage().ok()?);
-            }
-        }
-        SubstitutionLookup::Ligature(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                coverages.push(subtable.ok()?.coverage().ok()?);
-            }
-        }
-        SubstitutionLookup::Contextual(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                sequence_context_coverages(&subtable.ok()?, coverages)?;
-            }
-        }
-        SubstitutionLookup::ChainContextual(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                chained_context_coverages(&subtable.ok()?, coverages)?;
-            }
-        }
-        SubstitutionLookup::Reverse(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                let table = subtable.ok()?;
-                coverages.push(table.coverage().ok()?);
-                for coverage in table
-                    .backtrack_coverages()
-                    .iter()
-                    .chain(table.lookahead_coverages().iter())
-                {
-                    coverages.push(coverage.ok()?);
-                }
-            }
-        }
-        SubstitutionLookup::Extension(_) => return None,
+        SubstitutionLookup::Multiple(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            multiple_subst_coverages,
+        ),
+        SubstitutionLookup::Alternate(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            alternate_subst_coverages,
+        ),
+        SubstitutionLookup::Ligature(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            ligature_subst_coverages,
+        ),
+        SubstitutionLookup::Contextual(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            sequence_context_coverages,
+        ),
+        SubstitutionLookup::ChainContextual(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            chained_context_coverages,
+        ),
+        SubstitutionLookup::Reverse(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            reverse_chain_subst_coverages,
+        ),
+        SubstitutionLookup::Extension(_) => None,
     }
-    Some(())
 }
 
 #[cfg(test)]
@@ -796,38 +792,101 @@ fn gsub_extension_coverages<'a>(
     extension: &write_fonts::read::tables::gsub::ExtensionSubtable<'a>,
     coverages: &mut Coverages<'a>,
 ) -> Option<()> {
-    use write_fonts::read::tables::gsub::{ExtensionSubtable, SingleSubst};
+    use write_fonts::read::tables::gsub::ExtensionSubtable;
     match extension {
-        ExtensionSubtable::Single(table) => coverages.push(match table.extension().ok()? {
-            SingleSubst::Format1(table) => table.coverage().ok()?,
-            SingleSubst::Format2(table) => table.coverage().ok()?,
-        }),
+        ExtensionSubtable::Single(table) => {
+            single_subst_coverages(&table.extension().ok()?, coverages)
+        }
         ExtensionSubtable::Multiple(table) => {
-            coverages.push(table.extension().ok()?.coverage().ok()?);
+            multiple_subst_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::Alternate(table) => {
-            coverages.push(table.extension().ok()?.coverage().ok()?);
+            alternate_subst_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::Ligature(table) => {
-            coverages.push(table.extension().ok()?.coverage().ok()?);
+            ligature_subst_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::Contextual(table) => {
-            sequence_context_coverages(&table.extension().ok()?, coverages)?;
+            sequence_context_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::ChainContextual(table) => {
-            chained_context_coverages(&table.extension().ok()?, coverages)?;
+            chained_context_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::Reverse(table) => {
-            let table = table.extension().ok()?;
-            coverages.push(table.coverage().ok()?);
-            for coverage in table
-                .backtrack_coverages()
-                .iter()
-                .chain(table.lookahead_coverages().iter())
-            {
-                coverages.push(coverage.ok()?);
-            }
+            reverse_chain_subst_coverages(&table.extension().ok()?, coverages)
         }
+    }
+}
+
+#[cfg(test)]
+fn single_subst_coverages<'a>(
+    subtable: &write_fonts::read::tables::gsub::SingleSubst<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gsub::SingleSubst;
+    coverages.push(match subtable {
+        SingleSubst::Format1(table) => table.coverage().ok()?,
+        SingleSubst::Format2(table) => table.coverage().ok()?,
+        SingleSubst::Format3(_) | SingleSubst::Format4(_) => return None,
+    });
+    Some(())
+}
+
+#[cfg(test)]
+fn multiple_subst_coverages<'a>(
+    subtable: &write_fonts::read::tables::gsub::MultipleSubst<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gsub::MultipleSubst;
+    let MultipleSubst::Format1(table) = subtable else {
+        return None;
+    };
+    coverages.push(table.coverage().ok()?);
+    Some(())
+}
+
+#[cfg(test)]
+fn alternate_subst_coverages<'a>(
+    subtable: &write_fonts::read::tables::gsub::AlternateSubst<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gsub::AlternateSubst;
+    let AlternateSubst::Format1(table) = subtable else {
+        return None;
+    };
+    coverages.push(table.coverage().ok()?);
+    Some(())
+}
+
+#[cfg(test)]
+fn ligature_subst_coverages<'a>(
+    subtable: &write_fonts::read::tables::gsub::LigatureSubst<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gsub::LigatureSubst;
+    let LigatureSubst::Format1(table) = subtable else {
+        return None;
+    };
+    coverages.push(table.coverage().ok()?);
+    Some(())
+}
+
+#[cfg(test)]
+fn reverse_chain_subst_coverages<'a>(
+    subtable: &write_fonts::read::tables::gsub::ReverseChainSingleSubst<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gsub::ReverseChainSingleSubst;
+    let ReverseChainSingleSubst::Format1(table) = subtable else {
+        return None;
+    };
+    coverages.push(table.coverage().ok()?);
+    for coverage in table
+        .backtrack_coverages()
+        .iter()
+        .chain(table.lookahead_coverages().iter())
+    {
+        coverages.push(coverage.ok()?);
     }
     Some(())
 }
@@ -838,56 +897,50 @@ fn gpos_lookup_coverages<'a>(
     coverages: &mut Coverages<'a>,
 ) -> Option<()> {
     use write_fonts::read::tables::gpos::PositionLookup;
+    fn each<'a, T>(
+        subtables: impl Iterator<Item = Result<T, write_fonts::read::ReadError>>,
+        coverages: &mut Coverages<'a>,
+        push: impl Fn(&T, &mut Coverages<'a>) -> Option<()>,
+    ) -> Option<()> {
+        subtables
+            .map(|subtable| push(&subtable.ok()?, coverages))
+            .collect()
+    }
     match lookup {
         PositionLookup::Single(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                single_pos_coverages(&subtable.ok()?, coverages)?;
-            }
+            each(lookup.subtables().iter(), coverages, single_pos_coverages)
         }
         PositionLookup::Pair(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                pair_pos_coverages(&subtable.ok()?, coverages)?;
-            }
+            each(lookup.subtables().iter(), coverages, pair_pos_coverages)
         }
         PositionLookup::Cursive(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                coverages.push(subtable.ok()?.coverage().ok()?);
-            }
+            each(lookup.subtables().iter(), coverages, cursive_pos_coverages)
         }
-        PositionLookup::MarkToBase(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                let table = subtable.ok()?;
-                coverages.push(table.mark_coverage().ok()?);
-                coverages.push(table.base_coverage().ok()?);
-            }
-        }
+        PositionLookup::MarkToBase(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            mark_base_pos_coverages,
+        ),
         PositionLookup::MarkToLig(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                let table = subtable.ok()?;
-                coverages.push(table.mark_coverage().ok()?);
-                coverages.push(table.ligature_coverage().ok()?);
-            }
+            each(lookup.subtables().iter(), coverages, mark_lig_pos_coverages)
         }
-        PositionLookup::MarkToMark(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                let table = subtable.ok()?;
-                coverages.push(table.mark1_coverage().ok()?);
-                coverages.push(table.mark2_coverage().ok()?);
-            }
-        }
-        PositionLookup::Contextual(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                sequence_context_coverages(&subtable.ok()?, coverages)?;
-            }
-        }
-        PositionLookup::ChainContextual(lookup) => {
-            for subtable in lookup.subtables().iter() {
-                chained_context_coverages(&subtable.ok()?, coverages)?;
-            }
-        }
-        PositionLookup::Extension(_) => return None,
+        PositionLookup::MarkToMark(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            mark_mark_pos_coverages,
+        ),
+        PositionLookup::Contextual(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            sequence_context_coverages,
+        ),
+        PositionLookup::ChainContextual(lookup) => each(
+            lookup.subtables().iter(),
+            coverages,
+            chained_context_coverages,
+        ),
+        PositionLookup::Extension(_) => None,
     }
-    Some(())
 }
 
 #[cfg(test)]
@@ -898,37 +951,28 @@ fn gpos_extension_coverages<'a>(
     use write_fonts::read::tables::gpos::ExtensionSubtable;
     match extension {
         ExtensionSubtable::Single(table) => {
-            single_pos_coverages(&table.extension().ok()?, coverages)?;
+            single_pos_coverages(&table.extension().ok()?, coverages)
         }
-        ExtensionSubtable::Pair(table) => {
-            pair_pos_coverages(&table.extension().ok()?, coverages)?;
-        }
+        ExtensionSubtable::Pair(table) => pair_pos_coverages(&table.extension().ok()?, coverages),
         ExtensionSubtable::Cursive(table) => {
-            coverages.push(table.extension().ok()?.coverage().ok()?);
+            cursive_pos_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::MarkToBase(table) => {
-            let table = table.extension().ok()?;
-            coverages.push(table.mark_coverage().ok()?);
-            coverages.push(table.base_coverage().ok()?);
+            mark_base_pos_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::MarkToLig(table) => {
-            let table = table.extension().ok()?;
-            coverages.push(table.mark_coverage().ok()?);
-            coverages.push(table.ligature_coverage().ok()?);
+            mark_lig_pos_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::MarkToMark(table) => {
-            let table = table.extension().ok()?;
-            coverages.push(table.mark1_coverage().ok()?);
-            coverages.push(table.mark2_coverage().ok()?);
+            mark_mark_pos_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::Contextual(table) => {
-            sequence_context_coverages(&table.extension().ok()?, coverages)?;
+            sequence_context_coverages(&table.extension().ok()?, coverages)
         }
         ExtensionSubtable::ChainContextual(table) => {
-            chained_context_coverages(&table.extension().ok()?, coverages)?;
+            chained_context_coverages(&table.extension().ok()?, coverages)
         }
     }
-    Some(())
 }
 
 #[cfg(test)]
@@ -940,6 +984,7 @@ fn single_pos_coverages<'a>(
     coverages.push(match subtable {
         SinglePos::Format1(table) => table.coverage().ok()?,
         SinglePos::Format2(table) => table.coverage().ok()?,
+        SinglePos::Format3(_) | SinglePos::Format4(_) => return None,
     });
     Some(())
 }
@@ -953,7 +998,63 @@ fn pair_pos_coverages<'a>(
     coverages.push(match subtable {
         PairPos::Format1(table) => table.coverage().ok()?,
         PairPos::Format2(table) => table.coverage().ok()?,
+        PairPos::Format3(_) | PairPos::Format4(_) => return None,
     });
+    Some(())
+}
+
+#[cfg(test)]
+fn cursive_pos_coverages<'a>(
+    subtable: &write_fonts::read::tables::gpos::CursivePos<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gpos::CursivePos;
+    let CursivePos::Format1(table) = subtable else {
+        return None;
+    };
+    coverages.push(table.coverage().ok()?);
+    Some(())
+}
+
+#[cfg(test)]
+fn mark_base_pos_coverages<'a>(
+    subtable: &write_fonts::read::tables::gpos::MarkBasePos<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gpos::MarkBasePos;
+    let MarkBasePos::Format1(table) = subtable else {
+        return None;
+    };
+    coverages.push(table.mark_coverage().ok()?);
+    coverages.push(table.base_coverage().ok()?);
+    Some(())
+}
+
+#[cfg(test)]
+fn mark_lig_pos_coverages<'a>(
+    subtable: &write_fonts::read::tables::gpos::MarkLigPos<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gpos::MarkLigPos;
+    let MarkLigPos::Format1(table) = subtable else {
+        return None;
+    };
+    coverages.push(table.mark_coverage().ok()?);
+    coverages.push(table.ligature_coverage().ok()?);
+    Some(())
+}
+
+#[cfg(test)]
+fn mark_mark_pos_coverages<'a>(
+    subtable: &write_fonts::read::tables::gpos::MarkMarkPos<'a>,
+    coverages: &mut Coverages<'a>,
+) -> Option<()> {
+    use write_fonts::read::tables::gpos::MarkMarkPos;
+    let MarkMarkPos::Format1(table) = subtable else {
+        return None;
+    };
+    coverages.push(table.mark1_coverage().ok()?);
+    coverages.push(table.mark2_coverage().ok()?);
     Some(())
 }
 
@@ -970,6 +1071,9 @@ fn sequence_context_coverages<'a>(
             for coverage in table.coverages().iter() {
                 coverages.push(coverage.ok()?);
             }
+        }
+        SequenceContext::Format4(_) | SequenceContext::Format5(_) | SequenceContext::Format6(_) => {
+            return None
         }
     }
     Some(())
@@ -994,6 +1098,7 @@ fn chained_context_coverages<'a>(
                 coverages.push(coverage.ok()?);
             }
         }
+        ChainedSequenceContext::Format4(_) | ChainedSequenceContext::Format5(_) => return None,
     }
     Some(())
 }
@@ -1104,7 +1209,7 @@ fn validate_source_profile(font: &FontRef<'_>) -> Result<(), Error> {
             })?;
         if let Some(write_fonts::read::tables::glyf::Glyph::Composite(composite)) = glyph {
             for component in composite.components() {
-                if usize::from(component.glyph.to_u16()) >= glyph_count
+                if usize::try_from(component.glyph.to_u32()).map_or(true, |id| id >= glyph_count)
                     || loca
                         .get_glyf(GlyphId::new(component.glyph.to_u32()), &glyf)
                         .map_err(|_| Error {

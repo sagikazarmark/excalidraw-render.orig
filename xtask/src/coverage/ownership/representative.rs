@@ -247,7 +247,7 @@ mod tests {
             fs::create_dir(root.join(name)).unwrap();
         }
         native::capture(&dir).unwrap();
-        let old = "tests/conformance/candidates/stage4-frames-text-assets-v28";
+        let old = "tests/conformance/candidates/stage4-frames-text-assets-v29";
         assert_eq!(
             gate::read(&root, "native.svg").unwrap(),
             read(&format!("{old}/native.svg")).unwrap()

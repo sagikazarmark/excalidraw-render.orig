@@ -253,3 +253,100 @@ pub(crate) fn shape(
     .expect("a guessed text buffer shapes");
     buffer
 }
+
+/// Whether a shaped right-to-left `buffer` holds each cluster's glyphs in
+/// reverse logical order, as well as the clusters themselves.
+///
+/// A right-to-left buffer always comes back in visual order. HarfRust 0.15,
+/// as HarfBuzz, shapes it backward and reverses it whole, so a cluster's
+/// glyphs come back reversed too, only when its script is natively right to
+/// left or has no single native direction. With no script (only Common and
+/// Inherited scalars, as a run of punctuation and marks) or a natively
+/// left-to-right one, it reverses the grapheme order, shapes left to right,
+/// and keeps each cluster's glyphs in logical order. HarfRust keeps its
+/// script table private (`Direction::from_script`); [`BACKWARD_SCRIPTS`]
+/// mirrors it.
+///
+/// A left-to-right buffer is taken to keep logical order. It does unless it
+/// holds letters of a natively right-to-left script, which only an explicit
+/// bidi override sets left to right; that case is not modelled.
+pub(crate) fn reverses_cluster_glyphs(buffer: &Buffer) -> bool {
+    buffer.direction() == Direction::RightToLeft && buffer.script().is_some_and(backward_script)
+}
+
+/// Whether HarfRust 0.15 shapes `script` backward when asked for right to
+/// left.
+fn backward_script(script: harfrust::Script) -> bool {
+    BACKWARD_SCRIPTS.contains(&script)
+}
+
+/// HarfRust 0.15's natively right-to-left scripts, then the four whose native
+/// direction it leaves open (HarfBuzz issue 1000): those it shapes backward
+/// when asked for right to left.
+pub(crate) const BACKWARD_SCRIPTS: [harfrust::Script; 40] = {
+    use harfrust::Script;
+    [
+        Script::ARABIC,
+        Script::HEBREW,
+        Script::SYRIAC,
+        Script::THAANA,
+        Script::CYPRIOT,
+        Script::KHAROSHTHI,
+        Script::PHOENICIAN,
+        Script::NKO,
+        Script::LYDIAN,
+        Script::AVESTAN,
+        Script::IMPERIAL_ARAMAIC,
+        Script::INSCRIPTIONAL_PAHLAVI,
+        Script::INSCRIPTIONAL_PARTHIAN,
+        Script::OLD_SOUTH_ARABIAN,
+        Script::OLD_TURKIC,
+        Script::SAMARITAN,
+        Script::MANDAIC,
+        Script::MEROITIC_CURSIVE,
+        Script::MEROITIC_HIEROGLYPHS,
+        Script::MANICHAEAN,
+        Script::MENDE_KIKAKUI,
+        Script::NABATAEAN,
+        Script::OLD_NORTH_ARABIAN,
+        Script::PALMYRENE,
+        Script::PSALTER_PAHLAVI,
+        Script::HATRAN,
+        Script::ADLAM,
+        Script::HANIFI_ROHINGYA,
+        Script::OLD_SOGDIAN,
+        Script::SOGDIAN,
+        Script::ELYMAIC,
+        Script::CHORASMIAN,
+        Script::YEZIDI,
+        Script::OLD_UYGHUR,
+        Script::GARAY,
+        Script::SIDETIC,
+        Script::OLD_HUNGARIAN,
+        Script::OLD_ITALIC,
+        Script::RUNIC,
+        Script::TIFINAGH,
+    ]
+};
+
+/// [`shape`] with no features and the buffer's script set to `script` rather
+/// than guessed.
+#[cfg(test)]
+pub(crate) fn shape_in_script(
+    face: &Face,
+    text: &str,
+    direction: Direction,
+    script: Option<harfrust::Script>,
+) -> Buffer {
+    let mut buffer = Buffer::new();
+    buffer.push_str(text);
+    buffer.set_direction(direction);
+    buffer.set_script(script);
+    harfrust::shape(
+        &harfrust::ShaperFont::new(&face.font),
+        &mut buffer,
+        harfrust::ShapeOptions::new(),
+    )
+    .expect("a buffer with a direction shapes");
+    buffer
+}

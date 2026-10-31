@@ -85,12 +85,14 @@ serde_json = "=1.0.154"
 simplecss = "0.2.2"
 sha1 = "=0.11.0"
 sha2 = "0.11.0"
-# The upstream malformed-name fix replaces the safety adapter. 0.8.0 reproduces
-# every pinned 0.7.0 subset; the subset profile token names it (ADR-0003).
-skera = { version = "0.8.0", default-features = false }
-# Shaping (#202). Its font is read-fonts 0.45's, which the renderer also
+# The upstream malformed-name fix replaces the safety adapter. 0.9.0 serializes
+# a subset's GSUB and GPOS lists in declaration order rather than reversed, so
+# their offsets and every WOFF2 move; the subset profile token names it
+# (ADR-0003).
+skera = { version = "0.9.0", default-features = false }
+# Shaping (#202). Its font is read-fonts 0.46's, which the renderer also
 # measures, maps and outlines with (`shaping.rs`).
-harfrust = { version = "0.14.0", default-features = false, features = ["std"] }
+harfrust = { version = "0.15.0", default-features = false, features = ["std"] }
 ryu-js = { version = "1.0.3", default-features = false }
 unicode-bidi = "0.3.18"
 unicode-normalization = "=0.1.26"
@@ -112,11 +114,11 @@ tiny-skia = { version = "0.12.0", default-features = false, features = ["png-for
 ttf2woff2 = { version = "0.14.1", default-features = false, features = ["portable-float"] }
 usvg = { version = "0.49.0", default-features = false, features = ["text"] }
 wuff = { version = "0.2.9", default-features = false, features = ["brotli"] }
-# `write_fonts::read` is the workspace's only font parser: read-fonts 0.45,
+# `write_fonts::read` is the workspace's only font parser: read-fonts 0.46,
 # the version skera plans over and HarfRust shapes with. Metrics, character
 # maps, outlines, name handling and the typed layout validator (ADR-0020) read
 # through it, so the workspace has no direct read-fonts dependency.
-write-fonts = { version = "0.54.0", default-features = false, features = ["read", "tables"] }
+write-fonts = { version = "0.55.0", default-features = false, features = ["read", "tables"] }
 zune-jpeg = { version = "0.5.15", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
