@@ -140,10 +140,99 @@ jobs:
         shell: devenv --option languages.rust.version:string 1.92.0 shell -- bash -e {0}
         run: just msrv
 
-  test:
-    name: Test
+  # The fast and render tiers compile once into a nextest archive, which four
+  # shards run; the tests that build the release CLI run beside them. `Test`
+  # joins the results into the one check that branch protection requires.
+  test-build:
+    name: Test (build)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
+    env:
+      # Backtraces keep file and line, without the full debuginfo that
+      # dominates link time and the archive size.
+      CARGO_PROFILE_TEST_DEBUG: line-tables-only
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+
+      - name: Test the CI helper scripts
+        run: just test-tools
+
+      - name: Build and archive the test targets
+        run: just test-archive
+
+      - name: Upload the archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nextest-archive
+          path: target/nextest-archive.tar.zst
+          retention-days: 1
+          # The archive is already zstd-compressed.
+          compression-level: 0
+
+  test-shard:
+    name: Test (shard ${{ matrix.shard }}/4)
+    needs: test-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Some checks read files from earlier commits.
+          fetch-depth: 0
+
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      # Some xtask tests build helper tools (the viewer font tool, the PDF
+      # harness wrappers) with Cargo.
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' && matrix.shard == 1 }}
+          cmd-format: devenv shell -- {0}
+
+      - name: Download the archive
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: nextest-archive
+          path: target
+
+      - name: Run shard ${{ matrix.shard }}
+        run: just test-shard ${{ matrix.shard }}/4
+
+  test-release-cli:
+    name: Test (release CLI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CARGO_PROFILE_TEST_DEBUG: line-tables-only
 
     steps:
       - name: Checkout repository
@@ -165,12 +254,28 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
 
-      # The fast and render tiers share one compilation of the test targets.
-      - name: Fast tier
-        run: just test
+      - name: Run the release-CLI tests
+        run: just test-release-cli
 
-      - name: Render tier
-        run: just test-render
+  test:
+    name: Test
+    needs: [test-build, test-shard, test-release-cli]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require every test job to pass
+        shell: bash
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            if [[ "$result" != success ]]; then
+              echo "a test job finished with: $result" >&2
+              exit 1
+            fi
+          done
 
   test-doc:
     name: Test (doc)

@@ -17,9 +17,10 @@
 #   harness_*   #[ignore]d gates that need the pinned Chromium, PDFium, PDF.js
 #               and qpdf harnesses; a harness binary holds nothing else
 #
-# The `parity_*` and `limits_*` binaries are the render tier of the PR gate,
-# `ci-render`; everything else that runs without a harness is its fast leg,
-# `ci-fast`.
+# The `parity_*` and `limits_*` binaries are the render tier, `ci-render`;
+# everything else that runs without a harness is the fast tier, `ci-fast`.
+# `just ci` runs them as `just test` and `just test-render`. CI runs both from
+# one archive, as slices of the `default` profile (`just test-shard`).
 #
 # The two release-mode qualification tests are not a tier of their own: the
 # frame batch property test and the SVG font subset qualification corpus both
@@ -81,13 +82,13 @@ binary_id(excalidraw-render) & test(/^png_projection_contract::/)
 '''
 priority = 50
 
-# The PR gate's fast leg: the `default` set without the parity and limits
-# tiers. Together with `ci-render` it covers the `default` set exactly once.
+# The fast tier: the `default` set without the parity and limits tiers.
+# Together with `ci-render` it covers the `default` set exactly once.
 [profile.ci-fast]
 default-filter = 'not binary(/^(harness|parity|limits)_/)'
 fail-fast = false
 
-# The PR gate's render leg: the parity harnesses and the fixed parser ceilings.
+# The render tier: the parity harnesses and the fixed parser ceilings.
 [profile.ci-render]
 default-filter = 'binary(/^(parity|limits)_/)'
 fail-fast = false
