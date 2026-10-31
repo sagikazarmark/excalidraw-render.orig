@@ -54,6 +54,23 @@ fn parse(source: &Value) -> SceneDocument {
     SceneDocument::parse(&serde_json::to_vec(source).unwrap()).unwrap()
 }
 
+/// The artifact of a clean scene, or of its last frame, which must render
+/// without diagnostics.
+fn baseline(clean: &Value, format: OutputFormat, frame: bool) -> Vec<u8> {
+    let baseline = crate::common::clean_baselines::baseline(clean, format);
+    let outcome = if frame {
+        baseline.last_frame()
+    } else {
+        baseline.scene()
+    };
+    assert!(
+        outcome.report().is_empty(),
+        "clean {format:?} (frame: {frame}): {:?}",
+        outcome.report()
+    );
+    outcome.artifact().bytes().to_vec()
+}
+
 fn wrong_types() -> Vec<Value> {
     vec![
         Value::Null,
@@ -128,17 +145,19 @@ fn assert_equivalent(source: &Value, clean: &Value, format: OutputFormat, rows: 
     let request = RenderRequest::builder(format).build().unwrap();
     let document = parse(source);
     let first = Renderer::new().render(&document, &request).unwrap();
-    let baseline = Renderer::new().render(&parse(clean), &request).unwrap();
-    assert!(
-        baseline.report().is_empty(),
-        "clean: {:?}",
-        baseline.report()
-    );
-    assert_eq!(
-        first.artifact().bytes(),
-        baseline.artifact().bytes(),
-        "{format:?}: {source}"
-    );
+    if source == clean {
+        assert!(
+            first.report().is_empty(),
+            "{format:?} {source}: {:?}",
+            first.report()
+        );
+    } else {
+        assert_eq!(
+            first.artifact().bytes(),
+            baseline(clean, format, false),
+            "{format:?}: {source}"
+        );
+    }
     assert_report(&first, rows.clone());
     let second = Renderer::new().render(&document, &request).unwrap();
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
@@ -173,15 +192,11 @@ fn assert_frame_equivalent(source: &Value, clean: &Value, format: OutputFormat, 
     source["elements"][1]["frameId"] = json!("outer");
     clean["elements"][1]["frameId"] = json!("outer");
     let document = parse(&source);
-    let clean_document = parse(&clean);
     let request = FrameRenderRequest::builder(format).build().unwrap();
     let frame = document.frames().last().unwrap();
-    let clean_frame = clean_document.frames().last().unwrap();
     let renderer = Renderer::new();
     let direct = renderer.render_frame(frame, &request).unwrap();
-    let baseline = renderer.render_frame(clean_frame, &request).unwrap();
-    assert!(baseline.report().is_empty());
-    assert_eq!(direct.artifact().bytes(), baseline.artifact().bytes());
+    assert_eq!(direct.artifact().bytes(), baseline(&clean, format, true));
     assert_report(&direct, rows);
     let replay = renderer
         .render_frames(&document, [frame], &request)
@@ -382,22 +397,12 @@ fn style_domains_default_recover_and_respect_kind_participation() {
                 for value in &valid {
                     let mut source = original.clone();
                     source["elements"][1][field] = value.clone();
-                    let result = Renderer::new()
-                        .render(
-                            &parse(&source),
-                            &RenderRequest::builder(format).build().unwrap(),
-                        )
-                        .unwrap();
-                    assert!(
-                        result.report().is_empty(),
-                        "{kind} {field}: {:?}",
-                        result.report()
-                    );
+                    // All admitted variants render undiagnosed and preserve
+                    // their actual source.
+                    assert_equivalent(&source, &source, format, json!([]));
                     if ignored(kind, field) {
                         assert_equivalent(&source, &clean, format, json!([]));
                     }
-                    // All admitted variants must preserve their actual source.
-                    assert_equivalent(&source, &source, format, json!([]));
                 }
             }
         }

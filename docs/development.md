@@ -233,8 +233,8 @@ by tier:
 
 ```sh
 cargo nextest run --workspace                      # a developer's run: ci-fast and ci-render together
-cargo nextest run --workspace --profile ci-fast    # the push gate's fast leg
-cargo nextest run --workspace --profile ci-render  # the push gate's render leg
+cargo nextest run --workspace --profile ci-fast    # the fast tier (`just test`)
+cargo nextest run --workspace --profile ci-render  # the render tier (`just test-render`)
 cargo nextest run -p excalidraw-render --profile harness --run-ignored only
 cargo test --workspace --doc                       # nextest runs no doc tests
 ```
