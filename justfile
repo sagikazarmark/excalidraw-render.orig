@@ -40,16 +40,12 @@ msrv:
     cargo check --locked -p excalidraw-render -p excalidraw-render-cli
 
 # Run the fast tier: every test outside the parity, limits, and harness binaries.
-test: test-tools
+test:
     cargo nextest run --locked --workspace --profile ci-fast
 
 # Run the render tier: the parity harnesses and the fixed parser ceilings.
 test-render:
     cargo nextest run --locked --workspace --profile ci-render
-
-# Test the CI helper scripts.
-test-tools:
-    python3 -m unittest discover -s tools/ci -p 'test_*.py'
 
 # CI runs the fast and render tiers as one archived build and several shards.
 
@@ -142,7 +138,7 @@ native := "x86_64-unknown-linux-gnu"
 wasm := "wasm32-unknown-unknown"
 
 # Run every release check on both supported targets.
-release: conformance-release test-release (qualification native) (qualification wasm) packaging wasm-packaging full-equality
+release: conformance-release test-release (qualification native) (qualification wasm) packaging wasm-packaging snapshot-replay wasm-snapshot-replay
 
 # Run the packaged facade and the no-CJK consumer in browser WASM.
 wasm-packaging: (package-facade wasm) (package-no-cjk wasm)
@@ -171,47 +167,14 @@ collect-native-snapshots: require-native package xtask
         -- collect ../.. "../../{{ evidence }}/native-snapshots"
     target/debug/xtask conformance verify-native-snapshots "{{ evidence }}/native-snapshots"
 
-# Render every snapshot key in browser WASM and compare with the approved native baseline.
+# Render every snapshot key in browser WASM and compare with the approved native baseline,
+# accepting only the #178 differences tests/package-consumer/experimental-wasm.json records.
 wasm-snapshot-replay: package xtask
     target/debug/xtask conformance stage-wasm-snapshots
     rm -rf "{{ evidence }}/wasm-snapshots"
     mkdir -p "{{ evidence }}"
     cd tests/package-consumer && bash ../../tools/ci/wasm-snapshots.sh "../../{{ evidence }}/wasm-snapshots"
-    target/debug/xtask conformance report-wasm-snapshots "{{ evidence }}/wasm-snapshots"
-    python3 tools/ci/release-results.py snapshots "{{ evidence }}/wasm-snapshots"
-
-# Collect a target's test-only resource traces from an instrumented copy of the source.
-trace-logs target:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    case "{{ target }}" in
-        {{ native }}) just require-native; dir=native ;;
-        {{ wasm }}) dir=wasm ;;
-        *) echo "traces cover only the supported targets, not {{ target }}" >&2; exit 2 ;;
-    esac
-    # Staging edits tracked sources, so it runs in a worktree of the current tree.
-    # Its build stays apart from the workspace's, which the instrumentation would evict.
-    root="$PWD"
-    stage="$root/target/trace-source"
-    export CARGO_TARGET_DIR="$root/target/trace-build"
-    git worktree remove --force "$stage" 2>/dev/null || rm -rf "$stage"
-    commit="$(git stash create)"
-    git worktree add --quiet --detach "$stage" "${commit:-HEAD}"
-    trap 'git -C "$root" worktree remove --force "$stage"' EXIT
-    out="$root/{{ evidence }}/results/$dir"
-    rm -rf "$out"
-    cd "$stage"
-    cargo run --locked -q -p xtask -- conformance stage-traces
-    bash tools/ci/trace-snapshots.sh "{{ target }}" "$out"
-
-# Join both targets' traces to the packaged runs and check their equality.
-full-equality: (trace-logs native) (trace-logs wasm) snapshot-replay wasm-snapshot-replay xtask
-    target/debug/xtask conformance aggregate-traces "{{ evidence }}/results"
-    rm -rf "{{ evidence }}/results/native-snapshots" "{{ evidence }}/results/wasm-snapshots"
-    cp -R "{{ evidence }}/native-snapshots" "{{ evidence }}/results/native-snapshots"
-    cp -R "{{ evidence }}/wasm-snapshots" "{{ evidence }}/results/wasm-snapshots"
-    target/debug/xtask conformance join-trace-results "{{ evidence }}/results"
-    python3 tools/ci/release-results.py joined "{{ evidence }}/results"
+    target/debug/xtask conformance verify-wasm-snapshots "{{ evidence }}/wasm-snapshots"
 
 # Export both targets' qualification reports and their aggregate from a clean commit.
 target-evidence: require-native

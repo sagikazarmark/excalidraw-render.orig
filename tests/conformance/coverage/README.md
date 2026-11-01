@@ -154,19 +154,15 @@ tests do) proves only the validator's behavior.
 
 ## Next implementation
 
-### Test-only trace collection
+### Test-only trace collection (retired 2026-11-01)
 
-`just trace-logs <target>` collects the same 168 keys through the internal test-only
-trace seam on both targets and orders. `just full-equality` joins those
-measurements to fresh packaged native and WASM artifact/report measurements and
-rejects all combined disagreements.
-The exported trace-collection schema requires `conformance verify-joined-results`,
-not the generic draft `verify-results` command. No public trace API is added.
-See [execution details and findings](../../../docs/research/trace-collection.md).
-The initial run found 30 cross-target trace differences. A total semantic
-release-record ordering fixes 27; three remain because PNG output lengths differ
-under #178. The gate still rejects those differences; this is not a passing #86
-closure or a waiver of the upstream blocker.
+The test-only trace collection (`just trace-logs`, `just full-equality`) once
+joined the semantic resource ledgers of both targets to the packaged artifact
+runs. It proved nothing the artifact and report equality does not already prove
+(ADR-0002) at the cost of two further release builds, and it retired with the
+2026-11-01 testing review. Its one finding, 30 cross-target trace differences
+from an unstable sort fixed by a total order, is recorded in
+[the archived note](../../../docs/research/archive/trace-collection.md).
 
 ### Browser-WASM collection and replay
 
@@ -498,8 +494,7 @@ Output is a separate `excalidraw-render/native-snapshots/v1` candidate bundle:
 `snapshots.json`, forward/reverse result JSON, `blobs/<sha256>` containing full
 artifact/report/failure-descriptor bytes, and `packages/` holding the exact four
 library/asset archives. It reuses inventory execution keys and two-sample result
-shape but omits the unavailable trace field and WASM runs. It must not be fed to
-`verify-results`, which correctly requires both targets and traces.
+shape and holds no WASM runs.
 
 Provenance records rustc, Git HEAD, source status, inventory, consumer
 lock, consumer manifest/configuration, collector source and package digests.

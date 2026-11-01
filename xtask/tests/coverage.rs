@@ -1,5 +1,5 @@
-//! The external contract consumed by future native/WASM snapshot collectors.
-use serde_json::{json, Value};
+//! The coverage inventory, the ownership ledger recorders and the layer report.
+use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -31,53 +31,6 @@ fn inventory() -> Value {
         &fs::read(root().join("tests/conformance/coverage/inventory.json")).unwrap(),
     )
     .unwrap()
-}
-
-/// Use the contract's CLI digest rather than a second JSON serializer.
-fn valid_bundle() -> Value {
-    let inventory = inventory();
-    let identity = command(&["conformance", "inventory-digest"]);
-    assert!(identity.status.success());
-    let identity = String::from_utf8(identity.stdout)
-        .unwrap()
-        .trim()
-        .to_owned();
-    let bytes = json!({"sha256":"a".repeat(64),"byte_length":42});
-    let sample = json!({"outcome":{"kind":"artifact","bytes":bytes},"report":bytes,"trace":bytes});
-    let results: Vec<_> = inventory["executions"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|e| json!({"key":e["key"],"samples":[sample,sample]}))
-        .collect();
-    let mut reverse = results.clone();
-    reverse.reverse();
-    let mut runs = Vec::new();
-    for target in ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"] {
-        for (order, values) in [("forward", &results), ("reverse", &reverse)] {
-            runs.push(json!({"target":target,"order":order,"process_id":format!("{target}-{order}"),"results":values}));
-        }
-    }
-    json!({"schema":"excalidraw-render/coverage-results/v1","compatibility_revision":1,
-        "commit":"1".repeat(40),"inventory_sha256":identity,"runs":runs})
-}
-
-struct Scratch(PathBuf);
-impl Scratch {
-    fn new(name: &str) -> Self {
-        let path =
-            std::env::temp_dir().join(format!("coverage-{name}-{}.json", std::process::id()));
-        Self(path)
-    }
-    fn verify(&self, value: &Value) -> Output {
-        fs::write(&self.0, serde_json::to_vec(value).unwrap()).unwrap();
-        command(&["conformance", "verify-results", self.0.to_str().unwrap()])
-    }
-}
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.0);
-    }
 }
 
 #[test]
@@ -191,98 +144,6 @@ fn release_closure_does_not_pass_for_a_draft() {
     let output = command(&["conformance", "verify-closure"]);
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("release coverage is incomplete"));
-}
-
-#[test]
-fn compares_both_targets_both_orders_and_both_sessions_including_failures() {
-    let scratch = Scratch::new("pass");
-    let mut bundle = valid_bundle();
-    // A typed failure is also a deterministic outcome with a report and trace.
-    for run in bundle["runs"].as_array_mut().unwrap() {
-        for result in run["results"].as_array_mut().unwrap() {
-            for sample in result["samples"].as_array_mut().unwrap() {
-                sample["outcome"] =
-                    json!({"kind":"failure","code":"resource.output-bytes-exceeded"});
-            }
-        }
-    }
-    assert_success(scratch.verify(&bundle));
-    assert_success(scratch.verify(&valid_bundle()));
-}
-
-#[test]
-fn rejects_incomplete_stale_or_divergent_collector_results() {
-    let scratch = Scratch::new("reject");
-    let valid = valid_bundle();
-    // Pin-file digests are provenance, not a binding to today's files (ADR-0024).
-    let mut retired = valid.clone();
-    retired["tool_manifest_sha256"] = json!("0".repeat(64));
-    retired["dagger_lock_sha256"] = json!("0".repeat(64));
-    let result = scratch.verify(&retired);
-    assert!(
-        result.status.success(),
-        "{}",
-        String::from_utf8_lossy(&result.stderr)
-    );
-    type Mutation = (&'static str, fn(&mut Value));
-    let mutations: &[Mutation] = &[
-        ("unknown field", |v| {
-            v["runs"][0]["results"][0]["key"]["export"]["ordinal"] = json!(1);
-        }),
-        ("unknown field", |v| {
-            v["runs"][0]["results"][0]["samples"][0]["outcome"]["extra"] = json!(true);
-        }),
-        ("missing supported target", |v| {
-            v["runs"].as_array_mut().unwrap().pop();
-        }),
-        ("unsupported target", |v| {
-            v["runs"][0]["target"] = json!("aarch64-apple-darwin")
-        }),
-        ("duplicate process order", |v| {
-            v["runs"][1]["order"] = json!("forward")
-        }),
-        ("process identities", |v| {
-            v["runs"][1]["process_id"] = v["runs"][0]["process_id"].clone()
-        }),
-        ("result keys", |v| {
-            v["runs"][0]["results"].as_array_mut().unwrap().pop();
-        }),
-        ("result keys", |v| {
-            v["runs"][0]["results"].as_array_mut().unwrap().swap(0, 1)
-        }),
-        ("result keys", |v| {
-            v["runs"][0]["results"][0]["key"]["inputs_sha256"] = json!("0".repeat(64))
-        }),
-        ("inventory binding", |v| {
-            v["inventory_sha256"] = json!("0".repeat(64))
-        }),
-        ("fresh-session mismatch", |v| {
-            v["runs"][0]["results"][0]["samples"][1]["report"]["sha256"] = json!("b".repeat(64))
-        }),
-        ("cross-target/process mismatch", |v| {
-            for s in v["runs"][2]["results"][0]["samples"]
-                .as_array_mut()
-                .unwrap()
-            {
-                s["trace"]["sha256"] = json!("c".repeat(64));
-            }
-        }),
-        ("invalid artifact/report/trace", |v| {
-            v["runs"][0]["results"][0]["samples"][0]["trace"]["sha256"] = json!("bad")
-        }),
-        ("unknown field", |v| v["claimed_pass"] = json!(true)),
-    ];
-    for (message, mutate) in mutations {
-        let mut value = valid.clone();
-        mutate(&mut value);
-        let result = scratch.verify(&value);
-        assert!(!result.status.success(), "accepted {message}");
-        assert!(
-            String::from_utf8_lossy(&result.stderr).contains(message),
-            "{message}: {}",
-            String::from_utf8_lossy(&result.stderr)
-        );
-    }
 }
 
 #[test]

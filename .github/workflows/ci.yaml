@@ -170,9 +170,6 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
 
-      - name: Test the CI helper scripts
-        run: just test-tools
-
       - name: Build and archive the test targets
         run: just test-archive
 

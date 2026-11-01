@@ -128,15 +128,89 @@ pub(super) fn parse_run(
     })
 }
 
+/// The recorded browser-WASM differences from the native baseline (#178).
+///
+/// Browser WASM is an experimental target for 0.1.0: four PNG keys differ from
+/// native by the tiny-skia cubic-root rounding #178 tracks. The record names
+/// each case with the exact native and WASM artifact bytes; a replay passes
+/// when every other key equals the baseline and these four equal the record
+/// in both directions, so the difference can neither grow nor go stale
+/// unnoticed.
+const EXPERIMENTAL_DIFFERENCES: &str = "tests/package-consumer/experimental-wasm.json";
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExperimentalDifferences {
+    schema: String,
+    issue: u64,
+    measurement: Value,
+    cases: Vec<ExperimentalDifference>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExperimentalDifference {
+    case: String,
+    native: Bytes,
+    wasm: Bytes,
+}
+
+fn experimental_differences() -> Result<ExperimentalDifferences, String> {
+    let record: ExperimentalDifferences = parse(&read(EXPERIMENTAL_DIFFERENCES)?)?;
+    if record.schema != "excalidraw-render/experimental-wasm-differences/v1" || record.issue != 178
+    {
+        return Err("invalid experimental WASM difference record".into());
+    }
+    if !record.measurement.is_object() {
+        return Err("experimental WASM difference record names no measurement".into());
+    }
+    let mut cases: Vec<_> = record.cases.iter().map(|c| &c.case).collect();
+    cases.sort();
+    cases.dedup();
+    if cases.len() != record.cases.len() {
+        return Err("duplicate experimental WASM difference record".into());
+    }
+    Ok(record)
+}
+
+/// Whether `difference` (one `compare_results` entry) is exactly a recorded
+/// #178 pair: the default scene PNG of a recorded case, where the baseline
+/// holds the recorded native bytes and both WASM samples the recorded WASM
+/// bytes.
+fn is_recorded_difference(difference: &Value, record: &ExperimentalDifference) -> bool {
+    let key = &difference["key"];
+    if key["case"] != record.case
+        || key["variant"] != "default"
+        || key["format"] != "png"
+        || key["export"] != json!({"kind":"scene"})
+    {
+        return false;
+    }
+    let native = json!({"kind":"artifact","bytes":record.native});
+    let wasm = json!({"kind":"artifact","bytes":record.wasm});
+    let expected = &difference["expected"];
+    let Some(actual) = difference["actual"].as_array() else {
+        return false;
+    };
+    expected["outcome"] == native
+        && actual.len() == 2
+        && actual
+            .iter()
+            .all(|sample| sample["outcome"] == wasm && sample["report"] == expected["report"])
+}
+
 pub fn verify_wasm_snapshots(directory: &str) -> Result<(), String> {
     let report = wasm_snapshot_report(directory)?;
     if report["decision"] != "pass" {
         return Err(format!(
-            "WASM/native snapshot drift: {} mismatches across both orders; see replay.json",
+            "WASM/native snapshot drift: {} unrecorded mismatches across both orders; see replay.json",
             report["differences"].as_array().unwrap().len()
         ));
     }
-    println!("WASM replay matches the checked-in native artifact/report expectations in both fresh instance orders; traces remain pending");
+    println!(
+        "WASM replay matches the checked-in native artifact/report expectations in both fresh instance orders, with the {} recorded #178 PNG differences exactly as recorded",
+        report["recorded_differences"].as_array().unwrap().len()
+    );
     Ok(())
 }
 
@@ -153,21 +227,44 @@ fn wasm_snapshot_report(directory: &str) -> Result<Value, String> {
     baseline::verify_baseline()?;
     let inventory = load_inventory()?;
     let input = inputs()?;
+    let recorded = experimental_differences()?;
     let root = Path::new(directory);
     let mut runs = Vec::new();
     let mut differences = Vec::new();
+    let mut recorded_differences = Vec::new();
+    let mut used = std::collections::BTreeSet::new();
     for (name, order) in [("forward", Order::Forward), ("reverse", Order::Reverse)] {
         let log = String::from_utf8(read_repository_file(root, &format!("{name}.log"))?)
             .map_err(|e| e.to_string())?;
         let run = parse_run(&log, order, &sha256(&input), &inventory)?;
         for difference in baseline::compare_results(&run.results, name == "reverse")? {
-            differences.push(json!({"order":name,"difference":difference}));
+            match recorded
+                .cases
+                .iter()
+                .find(|record| is_recorded_difference(&difference, record))
+            {
+                Some(record) => {
+                    used.insert(record.case.clone());
+                    recorded_differences.push(json!({"order":name,"difference":difference}));
+                }
+                None => differences.push(json!({"order":name,"difference":difference})),
+            }
         }
         runs.push(serde_json::to_value(&run).map_err(|e| e.to_string())?);
     }
+    // A recorded difference that no longer appears is stale: the record must
+    // move with the measurement, in either direction.
+    let stale: Vec<_> = recorded
+        .cases
+        .iter()
+        .filter(|record| !used.contains(&record.case))
+        .map(|record| json!({"case":record.case,"stale":"recorded #178 difference not observed"}))
+        .collect();
+    differences.extend(stale);
     let report = json!({"schema":"excalidraw-render/wasm-snapshot-replay/v1","compatibility_revision":1,
         "input_sha256":sha256(&input),"baseline_subject":baseline::baseline_subject()?,
         "target":"wasm32-unknown-unknown","runs":runs,
+        "recorded_differences":recorded_differences,
         "differences":differences,"decision":if differences.is_empty(){"pass"}else{"fail"}});
     fs::write(
         root.join("replay.json"),
@@ -180,6 +277,48 @@ fn wasm_snapshot_report(directory: &str) -> Result<Value, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_recorded_differences_are_well_formed_and_match_only_their_exact_pair() {
+        let record = experimental_differences().unwrap();
+        assert_eq!(record.cases.len(), 4);
+        let first = &record.cases[0];
+        let key = |case: &str, variant: &str, format: &str| {
+            json!({"case":case,"variant":variant,"format":format,"export":{"kind":"scene"},
+                "inputs_sha256":"0".repeat(64)})
+        };
+        let report = json!({"sha256":"a".repeat(64),"byte_length":37});
+        let native = json!({"outcome":{"kind":"artifact","bytes":first.native},"report":report});
+        let wasm = json!({"outcome":{"kind":"artifact","bytes":first.wasm},"report":report});
+        let exact =
+            json!({"key":key(&first.case,"default","png"),"expected":native,"actual":[wasm,wasm]});
+        assert!(is_recorded_difference(&exact, first));
+        // Another case, variant, format, a report drift, a one-sample drift, or
+        // the native bytes moving all fall outside the record.
+        let mut other_case = exact.clone();
+        other_case["key"]["case"] = json!("focused.rectangle-outline.v1");
+        let mut other_variant = exact.clone();
+        other_variant["key"]["variant"] = json!("dark-mode");
+        let mut other_format = exact.clone();
+        other_format["key"]["format"] = json!("svg");
+        let mut report_drift = exact.clone();
+        report_drift["actual"][0]["report"]["sha256"] = json!("b".repeat(64));
+        let mut one_sample = exact.clone();
+        one_sample["actual"][1] = native.clone();
+        let mut native_moved = exact.clone();
+        native_moved["expected"]["outcome"]["bytes"]["byte_length"] = json!(1);
+        for outside in [
+            other_case,
+            other_variant,
+            other_format,
+            report_drift,
+            one_sample,
+            native_moved,
+        ] {
+            assert!(!is_recorded_difference(&outside, first));
+        }
+    }
+
     #[test]
     fn rejects_incomplete_and_misbound_browser_logs() {
         let mut inventory = derive_inventory().unwrap();

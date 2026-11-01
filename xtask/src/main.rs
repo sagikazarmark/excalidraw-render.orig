@@ -151,7 +151,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         } => coverage::record_closure_owner(&obligation, &verifier, &rationale)?,
         C::InventoryDigest => println!("{}", coverage::inventory_digest()?),
         C::VerifyInventory => coverage::verify_inventory()?,
-        C::VerifyResults { report } => coverage::verify_results(&report)?,
         C::VerifyNativeSnapshots { directory } => coverage::verify_snapshots(&directory)?,
         C::StageWasmSnapshots => coverage::stage_wasm_snapshots()?,
         C::TestGroupFilter { manifest } => {
@@ -162,10 +161,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
             println!("prepared native release CLI: {}", path.display());
         }
         C::RefreshTestOwnerSources { modules } => coverage::refresh_test_owner_sources(&modules)?,
-        C::StageTraces => coverage::stage_traces()?,
-        C::AggregateTraces { directory } => coverage::aggregate_traces(&directory)?,
-        C::JoinTraceResults { directory } => coverage::join_trace_results(&directory)?,
-        C::VerifyJoinedResults { directory } => coverage::verify_joined_results(&directory)?,
         C::VerifyWasmSnapshots { directory } => coverage::verify_wasm_snapshots(&directory)?,
         C::ReportWasmSnapshots { directory } => coverage::report_wasm_snapshots(&directory)?,
         C::StageNativeBaseline {

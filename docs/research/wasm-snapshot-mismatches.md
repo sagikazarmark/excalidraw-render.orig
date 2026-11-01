@@ -51,10 +51,10 @@ direct edge cannot undo transitive Cargo feature unification.
 
 All four compatibility reports match the native report. The 0.1.0 release
 policy scopes these as a tracked experimental-WASM limitation: `just
-wasm-snapshot-replay` and `just full-equality` accept exactly the differences
-recorded in `tests/package-consumer/experimental-wasm.json` and fail on any
-other, or on a change in these. Strict equality stays available as a
-qualification goal (`verify-joined-results`).
+wasm-snapshot-replay` (`xtask conformance verify-wasm-snapshots`) accepts
+exactly the differences recorded in `tests/package-consumer/experimental-wasm.json`
+and fails on any other, on a change in these, or on a recorded difference
+that no longer appears.
 
 ## Reproduce
 

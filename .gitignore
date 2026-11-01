@@ -7,7 +7,6 @@
 /tools/reference-oracle/frame-dist/
 /tools/reference-oracle/node_modules/
 /tools/pdf-harness/pdfjs/node_modules/
-**/__pycache__/
 /tmp/
 /dist/
 .DS_Store

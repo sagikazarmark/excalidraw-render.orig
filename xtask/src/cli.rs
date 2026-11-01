@@ -167,11 +167,6 @@ pub enum ConformanceCommand {
     InventoryDigest,
     /// Verify the obligation inventory.
     VerifyInventory,
-    /// Verify a result bundle.
-    VerifyResults {
-        /// Result bundle path.
-        report: String,
-    },
     /// Verify native snapshots.
     VerifyNativeSnapshots {
         /// Snapshot directory.
@@ -191,23 +186,6 @@ pub enum ConformanceCommand {
         /// Test modules.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         modules: Vec<String>,
-    },
-    /// Stage trace logs.
-    StageTraces,
-    /// Aggregate trace logs.
-    AggregateTraces {
-        /// Trace log directory.
-        directory: String,
-    },
-    /// Join trace and public results.
-    JoinTraceResults {
-        /// Trace/public result directory.
-        directory: String,
-    },
-    /// Verify joined trace and public results.
-    VerifyJoinedResults {
-        /// Trace/public result directory.
-        directory: String,
     },
     /// Verify WASM snapshots.
     VerifyWasmSnapshots {
@@ -666,16 +644,11 @@ mod tests {
                 "record-closure-owner",
                 "inventory-digest",
                 "verify-inventory",
-                "verify-results",
                 "verify-native-snapshots",
                 "stage-wasm-snapshots",
                 "test-group-filter",
                 "build-native-cli",
                 "refresh-test-owner-sources",
-                "stage-traces",
-                "aggregate-traces",
-                "join-trace-results",
-                "verify-joined-results",
                 "verify-wasm-snapshots",
                 "report-wasm-snapshots",
                 "stage-native-baseline",
