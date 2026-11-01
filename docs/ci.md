@@ -181,7 +181,8 @@ Reproduction writes under `target/`; generation and updates write to the
 checkout. The case generators refuse to overwrite a manifested case unless
 given `--supersede`, which replaces it and keeps its approval block (ADR-0019
 history), so `just reference-cases generate --supersede` regenerates the whole
-registry in one container session for review in Git; `just reference-case <id> generate --supersede` does one case.
+registry in one container session for review in Git;
+`just reference-case <id> generate --supersede` does one case.
 `just reference-case` reproduces into `target/reference-evidence`.
 `just font-corpus` stages the corpus JSON and its digest sidecar in
 `target/font-corpus`; they belong in `tests/oracle/compatibility-artifacts/`,
