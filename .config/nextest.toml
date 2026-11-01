@@ -12,12 +12,14 @@
 #               and `tools/ci/check-format-features.sh` runs it reduced
 #   parity_*    parity against official evidence: the registry-driven scene
 #               harnesses and the frame-export case
+#   golden_*    the golden bytes of every registered export target
+#               (tests/conformance/golden), native and browser WASM
 #   limits_*    fixed parser ceilings that build 64 MiB and 1M-entry scenes,
 #               and scene-scaling guards against quadratic per-element lookups
 #   harness_*   #[ignore]d gates that need the pinned Chromium, PDFium, PDF.js
 #               and qpdf harnesses; a harness binary holds nothing else
 #
-# The `parity_*` and `limits_*` binaries are the render tier, `ci-render`;
+# The `parity_*`, `golden_*` and `limits_*` binaries are the render tier, `ci-render`;
 # everything else that runs without a harness is the fast tier, `ci-fast`.
 # `just ci` runs them as `just test` and `just test-render`. CI runs both from
 # one archive, as slices of the `default` profile (`just test-shard`).
@@ -87,12 +89,12 @@ priority = 50
 # The fast tier: the `default` set without the parity and limits tiers.
 # Together with `ci-render` it covers the `default` set exactly once.
 [profile.ci-fast]
-default-filter = 'not binary(/^(harness|parity|limits)_/)'
+default-filter = 'not binary(/^(harness|parity|golden|limits)_/)'
 fail-fast = false
 
 # The render tier: the parity harnesses and the fixed parser ceilings.
 [profile.ci-render]
-default-filter = 'binary(/^(parity|limits)_/)'
+default-filter = 'binary(/^(parity|golden|limits)_/)'
 fail-fast = false
 
 # The harness gates. Every test in these binaries is #[ignore]d for plain

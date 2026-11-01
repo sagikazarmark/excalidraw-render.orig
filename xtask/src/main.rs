@@ -150,8 +150,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         } => coverage::record_closure_owner(&obligation, &verifier, &rationale)?,
         C::InventoryDigest => println!("{}", coverage::inventory_digest()?),
         C::VerifyInventory => coverage::verify_inventory()?,
-        C::VerifyNativeSnapshots { directory } => coverage::verify_snapshots(&directory)?,
-        C::StageWasmSnapshots => coverage::stage_wasm_snapshots()?,
         C::TestGroupFilter { manifest } => {
             println!("{}", coverage::test_group_filter(&manifest)?)
         }
@@ -160,14 +158,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
             println!("prepared native release CLI: {}", path.display());
         }
         C::RefreshTestOwnerSources { modules } => coverage::refresh_test_owner_sources(&modules)?,
-        C::VerifyWasmSnapshots { directory } => coverage::verify_wasm_snapshots(&directory)?,
-        C::ReportWasmSnapshots { directory } => coverage::report_wasm_snapshots(&directory)?,
-        C::StageNativeBaseline {
-            snapshots,
-            baseline,
-        } => coverage::stage_baseline(&snapshots, &baseline)?,
-        C::VerifyNativeBaseline => coverage::verify_baseline()?,
-        C::ReplayNativeSnapshots { snapshots } => coverage::replay_snapshots(&snapshots)?,
         C::PdfJudgmentsGenerate => coverage::generate_pdf_judgments()?,
         C::VerifyPdfJudgments => coverage::verify_pdf_judgments()?,
         C::LayersReport | C::VerifyLayers { strict: false } => {

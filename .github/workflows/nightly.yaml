@@ -82,8 +82,8 @@ jobs:
       - name: Packaged consumers
         run: just wasm-packaging
 
-      - name: Snapshot replay
-        run: just wasm-snapshot-replay
+      - name: Golden targets
+        run: just golden-wasm
 
       - name: Complete-render fuzz smoke
         run: just render-fuzz-wasm

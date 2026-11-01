@@ -131,17 +131,18 @@ package-facade target=host: package
 package-no-cjk target=host: package
     bash tests/package-consumer/check-no-cjk.sh "{{ target }}"
 
-# The release checks. They run on the supported targets: browser WASM runs on any host, and
-# native evidence needs x86_64-unknown-linux-gnu (ADR-0006, ADR-0024).
+# The release checks. They run on the supported targets (ADR-0006): the native
+# checks on any host, since the bytes do not depend on it (ADR-0024), and the
+# browser-WASM checks in headless Firefox from the `browser` devenv profile.
 
-# Where the release checks write their logs, snapshots and reports
+# Where the release checks write their logs
 evidence := "target/release-evidence"
 
 native := "x86_64-unknown-linux-gnu"
 wasm := "wasm32-unknown-unknown"
 
 # Run every release check on both supported targets.
-release: conformance-release test-release (qualification native) (qualification wasm) packaging wasm-packaging snapshot-replay wasm-snapshot-replay
+release: conformance-release test-release (qualification native) (qualification wasm) packaging wasm-packaging golden-wasm
 
 # Run the packaged facade and the no-CJK consumer in browser WASM.
 wasm-packaging: (package-facade wasm) (package-no-cjk wasm)
@@ -150,34 +151,18 @@ wasm-packaging: (package-facade wasm) (package-no-cjk wasm)
 # mode with the corpus and frame-batch tests admitted, logged under the evidence
 # directory.
 qualification target:
-    {{ if target == native { "just require-native" } else { "" } }}
     mkdir -p "{{ evidence }}/{{ target }}"
     bash tools/ci/qualification.sh "{{ target }}" "{{ evidence }}/{{ target }}/qualification.log"
 
-# Collect native snapshots of the packaged facade and replay them against the native baseline.
-snapshot-replay: collect-native-snapshots
-    target/debug/xtask conformance verify-native-baseline
-    target/debug/xtask conformance replay-native-snapshots "{{ evidence }}/native-snapshots"
+# Render every golden target in browser WASM against the native golden record,
+# accepting only the #178 differences tests/conformance/golden/experimental-wasm.json records.
+golden-wasm:
+    CARGO_PROFILE_TEST_DEBUG=0 cargo test --locked --target {{ wasm }} -p excalidraw-render --test golden_native
 
-# Collect native snapshots of the packaged facade for the inventory's keys and check their form.
-[private]
-collect-native-snapshots: require-native package xtask
-    target/debug/xtask conformance verify-inventory
-    rm -rf "{{ evidence }}/native-snapshots"
-    mkdir -p "{{ evidence }}"
-    cd tests/package-consumer && cargo test --locked --release --target "{{ native }}" --example native_snapshots
-    cd tests/package-consumer && cargo run --locked --release --target "{{ native }}" --example native_snapshots \
-        -- collect ../.. "../../{{ evidence }}/native-snapshots"
-    target/debug/xtask conformance verify-native-snapshots "{{ evidence }}/native-snapshots"
-
-# Render every snapshot key in browser WASM and compare with the approved native baseline,
-# accepting only the #178 differences tests/package-consumer/experimental-wasm.json records.
-wasm-snapshot-replay: package xtask
-    target/debug/xtask conformance stage-wasm-snapshots
-    rm -rf "{{ evidence }}/wasm-snapshots"
-    mkdir -p "{{ evidence }}"
-    cd tests/package-consumer && bash ../../tools/ci/wasm-snapshots.sh "../../{{ evidence }}/wasm-snapshots"
-    target/debug/xtask conformance verify-wasm-snapshots "{{ evidence }}/wasm-snapshots"
+# Adopt an intentional output change: rerender every golden target and rewrite
+# tests/conformance/golden for review (the render tier's golden_native test).
+update-golden:
+    UPDATE_GOLDEN=1 cargo test --locked -p excalidraw-render --test golden_native
 
 # Build the reproducible CLI release archive and its SHA-256 file into dist/.
 release-archive version: require-native
@@ -202,13 +187,6 @@ release-archive version: require-native
 # Restaging. These recipes regenerate committed evidence after a change that moves
 # it. They write candidates for review; nothing here edits a manifest or the
 # registry, and CI exports their output as artifacts (docs/ci.md).
-
-# Stage a native baseline candidate from a clean commit into target/release-evidence/native-baseline.
-stage-native-baseline: require-native
-    bash tools/ci/require-clean-source.sh
-    just collect-native-snapshots
-    rm -rf "{{ evidence }}/native-baseline"
-    target/debug/xtask conformance stage-native-baseline "{{ evidence }}/native-snapshots" "{{ evidence }}/native-baseline"
 
 # Reproduce or generate the font-subset, SVG or PDF viewer qualification in its pinned containers.
 viewer-evidence kind mode="reproduce":
@@ -348,7 +326,9 @@ render-fuzz-wasm:
 xtask:
     cargo build --locked -q -p xtask
 
-# Refuse native release evidence on a host that is not the supported native target.
+# Refuse to produce the native release archive or the representative candidate on a
+# host that is not the supported native target: the archive ships that target's
+# binary, and the candidate's pinned images are linux/amd64.
 [private]
 require-native:
-    [[ "{{ host }}" == "{{ native }}" ]] || { echo "native release evidence needs {{ native }}, not {{ host }}" >&2; exit 1; }
+    [[ "{{ host }}" == "{{ native }}" ]] || { echo "this needs {{ native }}, not {{ host }}" >&2; exit 1; }

@@ -167,13 +167,6 @@ pub enum ConformanceCommand {
     InventoryDigest,
     /// Verify the obligation inventory.
     VerifyInventory,
-    /// Verify native snapshots.
-    VerifyNativeSnapshots {
-        /// Snapshot directory.
-        directory: String,
-    },
-    /// Stage WASM snapshots.
-    StageWasmSnapshots,
     /// Print the test filter for a test group.
     TestGroupFilter {
         /// Test group manifest.
@@ -186,30 +179,6 @@ pub enum ConformanceCommand {
         /// Test modules.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         modules: Vec<String>,
-    },
-    /// Verify WASM snapshots.
-    VerifyWasmSnapshots {
-        /// WASM log directory.
-        directory: String,
-    },
-    /// Report WASM snapshots.
-    ReportWasmSnapshots {
-        /// WASM log directory.
-        directory: String,
-    },
-    /// Stage a new native baseline.
-    StageNativeBaseline {
-        /// Snapshot directory.
-        snapshots: String,
-        /// New baseline directory.
-        baseline: String,
-    },
-    /// Verify the native baseline.
-    VerifyNativeBaseline,
-    /// Replay native snapshots.
-    ReplayNativeSnapshots {
-        /// Snapshot directory.
-        snapshots: String,
     },
     /// Generate PDF judgments.
     PdfJudgmentsGenerate,
@@ -614,16 +583,9 @@ mod tests {
                 "record-closure-owner",
                 "inventory-digest",
                 "verify-inventory",
-                "verify-native-snapshots",
-                "stage-wasm-snapshots",
                 "test-group-filter",
                 "build-native-cli",
                 "refresh-test-owner-sources",
-                "verify-wasm-snapshots",
-                "report-wasm-snapshots",
-                "stage-native-baseline",
-                "verify-native-baseline",
-                "replay-native-snapshots",
                 "pdf-judgments-generate",
                 "verify-pdf-judgments",
                 "layers-report",

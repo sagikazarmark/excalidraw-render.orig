@@ -19,7 +19,6 @@ mod layers;
 mod ownership;
 mod pdf_judgments;
 pub use layers::{report_layers, verify_layers};
-mod snapshots;
 pub use ownership::{
     extend_ownership, ownership_catalog, record_case_owner, record_closure_owner,
     record_exception_test_owner, record_library_test_owner, record_representative_owner,
@@ -28,10 +27,6 @@ pub use ownership::{
     verify_ownership, verify_representative_owner,
 };
 pub use pdf_judgments::{generate_pdf_judgments, verify_pdf_judgments};
-pub use snapshots::{
-    replay_snapshots, report_wasm_snapshots, stage_baseline, stage_wasm_snapshots, verify_baseline,
-    verify_snapshots, verify_wasm_snapshots,
-};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -403,20 +398,6 @@ pub fn verify_closure() -> Result<(), String> {
             .collect::<Vec<_>>()
             .join(", ")
     ))
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-struct Bytes {
-    sha256: String,
-    byte_length: u64,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "snake_case")]
-enum Order {
-    Forward,
-    Reverse,
 }
 
 fn hex(value: &str, length: usize) -> bool {
