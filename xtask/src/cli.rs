@@ -240,11 +240,6 @@ pub enum ConformanceCommand {
         /// Candidate directory.
         directory: String,
     },
-    /// Qualify the Excalifont text canary.
-    QualifyExcalifontCanary {
-        /// Independent canary evidence directory.
-        directory: String,
-    },
     /// Inspect a candidate.
     CandidateInspect {
         /// Candidate directory.
@@ -604,7 +599,6 @@ mod tests {
                 "candidate-verify",
                 "candidate-native-capture",
                 "candidate-native-check",
-                "qualify-excalifont-canary",
                 "candidate-inspect",
                 "candidate-propose-exceptions",
                 "candidate-revise",

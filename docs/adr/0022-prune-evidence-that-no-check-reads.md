@@ -117,6 +117,17 @@ V29, the same rule removed `stage4-frames-text-assets-v28` (about 1.6 MB, the
 tree at `c388d460` has it). Its four readers now read V29, whose PDF, scene,
 judgment plan and judged rasters are byte-identical.
 
+On 2026-11-01 the testing review's follow-up removed three candidate
+directories nothing read (about 1.1 MB, the tree at `39372364` has them):
+`stage4-pdf-colorspace-bridge-v20`, which had no reader;
+`stage4-excalifont-canary`, written by the `qualify-excalifont-canary` command
+and read by no verifier or test, together with that command and its
+`qualify_text_canary` function; and `stage4-frames-text-assets-v2`, read only
+by `tools/reference-oracle/scripts/stage4-representative-v2.mjs` and the
+`-v4.mjs` that rewrites it, which nothing ran, together with those two
+scripts and their `run-stage4-representative-v{2,4}.sh` wrappers. The V4 and
+V29 provenance still names the scripts under a historical producer path.
+
 ## Consequences
 
 - A future round deletes its own collection once the gate no longer reads it,

@@ -203,9 +203,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         C::CandidateNativeCheck { directory } => {
             print_json(&conformance_candidate_native::replay(&directory)?)?
         }
-        C::QualifyExcalifontCanary { directory } => print_json(
-            &conformance_candidate_native::qualify_text_canary(&directory)?,
-        )?,
         C::CandidateInspect { directory } => {
             print_json(&conformance_candidate_gate::inspect(&directory)?)?
         }
