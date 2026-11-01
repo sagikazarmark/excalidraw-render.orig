@@ -15,9 +15,11 @@ const LEDGER: &str = "tests/conformance/coverage/ownership.json";
 const SCHEMA: &str = "excalidraw-render/coverage-ownership/v1";
 /// The one root test target an owner may select: registered-case direct PNG
 /// parity, which holds each whole-artifact PNG tolerance exception at its exact
-/// ceilings and fails a stale one that the canonical budget would pass.
+/// measurement in both directions and fails a stale one that the canonical
+/// budget would pass.
 const EXCEPTION_BINARY: &str = "parity_registered_case_png";
-const EXCEPTION_FUNCTION: &str = "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence";
+const EXCEPTION_FUNCTION: &str =
+    "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence";
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]

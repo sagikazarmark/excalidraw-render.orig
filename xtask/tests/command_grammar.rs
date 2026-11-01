@@ -52,10 +52,7 @@ fn missing_arguments_are_rejected() {
         &["conformance", "record-closure-owner", "a", "b"],
         "rationale",
     );
-    rejects(
-        &["conformance", "record-case-owner", MISSING],
-        "rationale",
-    );
+    rejects(&["conformance", "record-case-owner", MISSING], "rationale");
     rejects(
         &["conformance", "record-test-owner", "--package"],
         "package",

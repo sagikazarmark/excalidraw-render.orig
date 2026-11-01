@@ -411,7 +411,15 @@ fn write_record(record: &Value) -> Result<(), String> {
 
 pub fn generate_pdf_judgments() -> Result<(), String> {
     let repo = Repo::real();
-    let record = generate_in(&repo, &load_inventory()?)?;
+    let mut record = generate_in(&repo, &load_inventory()?)?;
+    // The approval block is historical metadata (ADR-0019): a regeneration
+    // carries the existing one forward rather than nulling it.
+    if let Ok(existing) = repo.read(RECORD) {
+        let existing: Value = parse(&existing)?;
+        if !existing["approval"].is_null() {
+            record["approval"] = existing["approval"].clone();
+        }
+    }
     write_record(&record)?;
     println!(
         "wrote {RECORD}: {} expected PDF reports, {} bound judgment files; review the diff",
