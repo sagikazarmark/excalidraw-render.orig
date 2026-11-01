@@ -7,6 +7,10 @@
     {
       "id": "closure-heavy-office",
       "sceneJson": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"fuzz-office\",\"type\":\"text\",\"width\":160,\"height\":40,\"fontSize\":20,\"fontFamily\":2,\"text\":\"office\",\"updated\":1}],\"appState\":{},\"files\":{}}"
+    },
+    {
+      "id": "nightly-2026-08-05-nul-outlineless-glyph",
+      "sceneJson": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"fuzz-nul\",\"type\":\"text\",\"width\":160,\"height\":40,\"fontSize\":20,\"fontFamily\":2,\"text\":\"A\\u0000B\",\"updated\":1}],\"appState\":{},\"files\":{}}"
     }
   ],
   "subsetProfileSha256": "0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4",
