@@ -1,6 +1,5 @@
 use std::fs;
 
-use crate::common::lower_hex;
 use crate::common::pdf_inspect::{declares_base_font, pdf_actual_text, pdf_text};
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request, trailing_work_charges};
@@ -13,7 +12,6 @@ use excalidraw_render::{
 };
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 
 /// The text of the focused scene: two lines, eighteen scalars.
 const FOCUSED_TEXT: &str = "One two three\nFour";
@@ -26,9 +24,8 @@ fn excalifont_text_renders_semantically_in_every_format() {
         let first = render(&scene, format);
         assert!(first.report().diagnostics().is_empty());
 
-        // One whole-artifact digest per format is the artifact byte stability
-        // canary for shaped text and its embedded font subset; every other
-        // exact measurement of the same bytes would only repeat it.
+        // The golden record holds every format's bytes
+        // (`facade.excalifont-text.v1`); this test holds what they mean.
         match format {
             OutputFormat::Svg => {
                 let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
@@ -67,25 +64,6 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert!(svg.contains(">Four</tspan></text>"));
                 assert_eq!(svg_source_text(svg), FOCUSED_TEXT);
                 assert!(!svg.contains("Unavailable: text"));
-                // Moved with #150/#151: `font-family` carries the consumer
-                // fallback list after the embedded family; then again with
-                // #151 item 1, when `<metadata>` began carrying the Excalifont
-                // attribution and the OFL body as two notices instead of one
-                // OFL text under the family's license identity. Nothing
-                // outside `<metadata>` moved the second time. Moved a third
-                // time with #172: the text element is rotated 0.125 rad and
-                // its box corners now rotate in the reference's
-                // `pointRotateRads` order, which lands the layout origin one
-                // ulp away (`translate(14.137185427188001 ...)`); the extent,
-                // the PNG and the PDF are unchanged.
-                // ADR-0003's identity refresh changes the embedded subset's
-                // name table and its profile-derived identity/notice. skera
-                // 0.9 moved it again: the subset's GSUB and GPOS lists are
-                // serialized in declaration order, with the same lengths.
-                assert_eq!(
-                    artifact_sha256(&first),
-                    "42ec6e1a04f09a61fa90162a0aa33fe662179fea8a0195aefd5ec76891320081"
-                );
             }
             OutputFormat::Png => {
                 let png = decode_png(first.artifact().bytes());
@@ -93,14 +71,10 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert!(png.rgba.as_chunks::<4>().0.iter().any(|pixel| {
                     pixel[2] > pixel[0] && pixel[2] > pixel[1] && pixel[3] == 255
                 }));
-                // Spec §8.5 per-glyph device phases. Independent
-                // pinned Chromium replay of this same rotated scene: 0 changed
-                // pixels, SSIM bits 3feffa5b1c4f155c; SVG/PDF canaries unchanged.
+                // Spec §8.5 per-glyph device phases: an independent pinned
+                // Chromium replay of this rotated scene measured 0 changed
+                // pixels, SSIM bits 3feffa5b1c4f155c, against the golden PNG.
                 // See docs/research/archive/png-stage4-binding-reconciliation.md.
-                assert_eq!(
-                    artifact_sha256(&first),
-                    "9b2da5d13b6a2c672ab80be51edbeeb9491195b57939dea9f48e80e3887f3b95"
-                );
             }
             OutputFormat::Pdf => {
                 let pdf = pdf_text(first.artifact().bytes());
@@ -120,24 +94,10 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert!(!pdf.contains("Unavailable: text"));
                 assert!(pdf.contains("Excalifont and Virgil provenance is retained together"));
                 assert!(pdf.contains("license.ofl-1.1"));
-                // Moved with #151 item 1: the XMP manifest carries the
-                // Excalifont attribution and the OFL body as two notices;
-                // every stream outside the metadata is unchanged. Moved again
-                // when Krilla became the PDF writer (ADR-0021): the renamed
-                // subset program, its notice, and the manifest attachment;
-                // both viewer gates hold.
-                assert_eq!(
-                    artifact_sha256(&first),
-                    "aeb807576e1f72aec4b951f32a2f5da8cc6d535ceab1a30ca6fdaa1e2249ad73"
-                );
             }
             _ => panic!("the test covers the revision-1 format set"),
         }
     }
-}
-
-fn artifact_sha256(outcome: &RenderOutcome) -> String {
-    lower_hex(&Sha256::digest(outcome.artifact().bytes()))
 }
 
 #[test]
@@ -370,12 +330,15 @@ fn pdf_maps_the_same_glyph_id_to_distinct_unicode_character_codes() {
 }
 
 /// The focused Excalifont text: two centered lines, rotated, translucent.
+/// The focused scene: one rotated, translucent, centred Excalifont text. The
+/// golden record holds its bytes in every format (`facade.excalifont-text.v1`).
+const FOCUSED_SCENE: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../tests/conformance/golden/facade-scenes/excalifont-text.excalidraw"
+));
+
 fn focused_scene() -> SceneDocument {
-    let source = format!(
-        r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"text","type":"text","x":20,"y":30,"width":90,"height":72,"angle":0.125,"strokeColor":"#1e66f5","opacity":70,"fontSize":20,"fontFamily":5,"text":{},"textAlign":"center","verticalAlign":"middle","lineHeight":1.2,"frameId":null,"updated":1}}],"appState":{{}},"files":{{}}}}"##,
-        serde_json::to_string(FOCUSED_TEXT).expect("focused text serializes")
-    );
-    SceneDocument::parse(source.as_bytes()).expect("focused text scene is admitted")
+    SceneDocument::parse(FOCUSED_SCENE).expect("focused text scene is admitted")
 }
 
 fn text_scene(text: &str, width: f64, height: f64) -> SceneDocument {

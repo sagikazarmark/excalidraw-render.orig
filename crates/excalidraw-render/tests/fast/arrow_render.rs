@@ -6,21 +6,12 @@ use sha2::{Digest, Sha256};
 use crate::common::lower_hex;
 use crate::common::svg::path_data;
 
-const ARROW_SCENE: &[u8] = br##"{
-  "type":"excalidraw","version":2,
-  "elements":[
-    {"id":"target-a","type":"rectangle","x":0,"y":40,"width":40,"height":40,"boundElements":[{"id":"bound","type":"arrow"}],"seed":1,"updated":1},
-    {"id":"target-b","type":"ellipse","x":180,"y":40,"width":40,"height":40,"boundElements":[{"id":"bound","type":"arrow"}],"seed":2,"updated":1},
-    {"id":"line","type":"line","x":20,"y":230,"width":160,"height":30,"points":[[0,0],[80,30],[160,0]],"angle":0.2617993877991494,"seed":9,"updated":1},
-    {"id":"bound","type":"arrow","x":40,"y":60,"width":140,"height":0,"points":[[0,0],[140,0]],"startBinding":{"elementId":"target-a","focus":0,"gap":1},"endBinding":{"elementId":"target-b","focus":0,"gap":1},"startArrowhead":"bar","endArrowhead":"arrow","seed":3,"updated":1},
-    {"id":"elbow","type":"arrow","x":20,"y":120,"width":160,"height":80,"points":[[0,0],[80,0],[80,80],[160,80]],"elbowed":true,"startArrowhead":"circle_outline","endArrowhead":"triangle","seed":4,"updated":1},
-    {"id":"dot","type":"arrow","x":240,"y":20,"width":80,"height":0,"points":[[0,0],[80,0]],"startArrowhead":"dot","endArrowhead":"circle","seed":5,"updated":1},
-    {"id":"triangle-outline","type":"arrow","x":240,"y":50,"width":80,"height":0,"points":[[0,0],[80,0]],"startArrowhead":"triangle_outline","endArrowhead":"diamond","seed":6,"updated":1},
-    {"id":"diamond-outline","type":"arrow","x":240,"y":80,"width":80,"height":0,"points":[[0,0],[80,0]],"startArrowhead":"diamond_outline","endArrowhead":"crowfoot_one","seed":7,"updated":1},
-    {"id":"crowfeet","type":"arrow","x":240,"y":110,"width":80,"height":0,"points":[[0,0],[80,0]],"strokeStyle":"dashed","startArrowhead":"crowfoot_many","endArrowhead":"crowfoot_one_or_many","seed":8,"updated":1}
-  ],
-  "appState":{"viewBackgroundColor":"#ffffff"},"files":{}
-}"##;
+/// Every arrow family: bound, elbowed, rotated and dashed, with each arrowhead.
+/// The golden record holds its bytes in every format (`facade.arrows.v1`).
+const ARROW_SCENE: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../tests/conformance/golden/facade-scenes/arrows.excalidraw"
+));
 
 pub(super) fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
     let scene = SceneDocument::parse(ARROW_SCENE).expect("arrow scene is admitted");
@@ -31,44 +22,10 @@ pub(super) fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_for
             .render(&scene, &request)
             .expect("complete admitted arrow behavior renders");
 
-        // One pin per artifact. The SVG's is the path-vector digest below, the
-        // geometry this test holds; its whole-artifact digest moved for a
-        // fractional viewBox extent that the vectors never saw. The PNG digest
-        // is the raster canary that caught the `crowfeet` dashed stroke
-        // rendering solid; it moved once more when IDAT switched to
-        // deflate-compressed scanlines (#113) with the pixels unchanged. The
-        // PDF digest moved when every stream became Flate and the trailer
-        // gained its content-derived /ID (#133, #150; ADR-0008), with the
-        // viewer rasters and operator sequence unchanged. All three moved
-        // with #171: the `elbow` arrow's `triangle` end head follows a
-        // `circle_outline` start, and the start head's 0.5 clamp was carried
-        // to it where the reference clamps each head on its own kind, so the
-        // triangle is now drawn at roughness 1 (paths 11 and 12 of the SVG;
-        // every other path is byte-identical). The PNG and PDF moved once more
-        // with #172: the `line` rotated 15 degrees at roughness 1 set the
-        // scene's bottom edge with its rotated box corners, where the
-        // reference rotates the curve's control points about the centre of
-        // the points' box and takes their extrema, 20.7 px less
-        // (`viewBox` height 259.488887394336, the official export's); the
-        // paths are unchanged. The PDF moved again when Krilla became the PDF
-        // writer (ADR-0021), with the same Rough paths.
-        let whole_artifact_digest = match format {
-            OutputFormat::Svg => None,
-            OutputFormat::Png => {
-                Some("94951f079f0d61fb6780f3c98324abb9a3cdf8e1d7a2caa1e1e546eff61b5315")
-            }
-            OutputFormat::Pdf => {
-                Some("d35a2138960c31583967a5c609a6fe5a62a04da9e673ca969ff596846cb20b87")
-            }
-            _ => unreachable!("the test enumerates every revision-1 format"),
-        };
-        if let Some(expected_digest) = whole_artifact_digest {
-            assert_eq!(
-                lower_hex(&Sha256::digest(outcome.artifact().bytes())),
-                expected_digest,
-                "exact {format:?} arrow artifact changed"
-            );
-        }
+        // The golden record holds every format's bytes (`facade.arrows.v1`).
+        // The SVG's path-vector digest below is the geometry this test holds,
+        // so a path change names itself here rather than as a golden byte
+        // difference.
         assert!(
             outcome.report().is_empty(),
             "arrows must not use compatibility recovery for {format:?}: {:?}",

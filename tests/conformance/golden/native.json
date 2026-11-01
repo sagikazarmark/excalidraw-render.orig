@@ -4,6 +4,489 @@
   "expectations": [
     {
       "key": {
+        "case": "facade.arrows.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "024f85c6beaf18920e6a0cf910597b6fb6d9dfce7144bf2f87c04a95181d3393",
+            "byte_length": 11556
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.arrows.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "94951f079f0d61fb6780f3c98324abb9a3cdf8e1d7a2caa1e1e546eff61b5315",
+            "byte_length": 9474
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.arrows.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "d35a2138960c31583967a5c609a6fe5a62a04da9e673ca969ff596846cb20b87",
+            "byte_length": 5032
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.excalifont-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "42ec6e1a04f09a61fa90162a0aa33fe662179fea8a0195aefd5ec76891320081",
+            "byte_length": 9500
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.excalifont-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "9b2da5d13b6a2c672ab80be51edbeeb9491195b57939dea9f48e80e3887f3b95",
+            "byte_length": 2644
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.excalifont-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "aeb807576e1f72aec4b951f32a2f5da8cc6d535ceab1a30ca6fdaa1e2249ad73",
+            "byte_length": 8650
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.isolated-fallback.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "bae89a056745f8f4b718618bcde32da082906d6c98350d85ef7a61f5cb7bb582",
+            "byte_length": 806
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.isolated-fallback.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "2b1105892c9a829a336b6db54538c4f4f27bd25b570a9ef7904bbc1088547696",
+            "byte_length": 190
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.isolated-fallback.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "767770926e5f9f8f0e5eafb9a00e4ae7073a6ca401af589f6d0944a6746e8a23",
+            "byte_length": 1994
+          }
+        },
+        "report": {
+          "sha256": "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
+          "byte_length": 593
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.multi-glyph-clusters.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "16482fe2dad43c81dbdb7db29796a0a76ec74a768f9f5013c41d88559148bfec",
+            "byte_length": 28587
+          }
+        },
+        "report": {
+          "sha256": "173b5f84362099647a6950822ef92a9e4b1c5ae0e421cebe20bceb1268187175",
+          "byte_length": 4111
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.multi-glyph-clusters.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "56a21e356a42417f0d08903776e4c0c2a3ea305e3d0040c251713bfa8591a4f3",
+            "byte_length": 5505
+          }
+        },
+        "report": {
+          "sha256": "ee48fc1c7623f36d6127e2d50f3a92114f57a6645cae8a3b1e95750bb7d88a87",
+          "byte_length": 4111
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.multi-glyph-clusters.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "3437b262048b475c5f4ab140709b6840fabdf73269a055c66d7bd9f57d82226d",
+            "byte_length": 21911
+          }
+        },
+        "report": {
+          "sha256": "801e2b31de96c97ee804df4c9c59a273789e1e77d7cde8785b7d5052f4391930",
+          "byte_length": 4111
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.outline-shapes.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "d8b0c28d9187abc20394e42596ac8c9df44a54d4afee5b182e956de97ba8e623",
+            "byte_length": 4403
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.outline-shapes.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "267d2f7b19997dbc9df1e0b5643a3bfeccfd317b78914428db09ab5a9064f170",
+            "byte_length": 9802
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.outline-shapes.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "906fd0c4b9df540c1f5e59b781c3f36a6f71c3cb8ad662a5eb7dbeb96ba20df6",
+            "byte_length": 2845
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.pdf-nested-native-operations.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "54e1b247d8eba0825a231a17fe1726111ced5ff571daf651515bfc0fea43cba3",
+            "byte_length": 4152
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.pdf-nested-native-operations.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "bb5171b84c8c9bb80b5690e200407e84ac0dd9008bd3aba926ef070b627a82b4",
+            "byte_length": 2066
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.pdf-nested-native-operations.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "271f105c692f15d8970dd10829b3f6ef2bf9b4755bd6783de3e45a65ddcab802",
+            "byte_length": 14950
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.pdf-project-operations.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "1ab682006bc2262bad6315cd812377a701c57370d5684c1594076dd64958b485",
+            "byte_length": 29638
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.pdf-project-operations.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "3794e519413b1095557b6f0db19cb048f287eab05e8fa564857fadd93a207134",
+            "byte_length": 16416
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
+        "case": "facade.pdf-project-operations.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf"
+      },
+      "sample": {
+        "outcome": {
+          "kind": "artifact",
+          "bytes": {
+            "sha256": "7f85f04d3f49585a2b85477c830ee7f69551e7cf6511460cc4e0f5a9cf1e7a31",
+            "byte_length": 25926
+          }
+        },
+        "report": {
+          "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+          "byte_length": 37
+        }
+      }
+    },
+    {
+      "key": {
         "case": "focused.arrow-suite.v1",
         "variant": "default",
         "export": {

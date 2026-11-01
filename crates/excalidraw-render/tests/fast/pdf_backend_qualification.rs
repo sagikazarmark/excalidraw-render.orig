@@ -7,12 +7,10 @@
 use crate::common::pdf_inspect::pdf_text;
 use base64::Engine as _;
 use excalidraw_render::{DiagnosticCode, OutputFormat, RenderRequest, Renderer, SceneDocument};
-use sha2::{Digest, Sha256};
 
 use crate::common::approved_scenes::{
     render_isolated_fallback, render_nested_native_operations, render_project_operations,
 };
-use crate::common::lower_hex;
 
 #[test]
 fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
@@ -26,22 +24,8 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
         .diagnostics()
         .iter()
         .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
-    // Moved with #151 item 1: the XMP manifest carries one attribution notice
-    // per embedded font family and the OFL body once; every other stream is
-    // unchanged, so `operation_sha256` in the structure expectation holds and
-    // only its `inventory_sha256` (which digests the XMP stream) is re-pinned.
-    // Moved with #171: the scene's arrow has a `circle` start and a `triangle`
-    // end at roughness 1, and the triangle is now drawn at 1, not at the
-    // start head's 0.5, so the content stream and `operation_sha256` moved.
-    // Moved with #209 (ADR-0021): trees reach svg2pdf through the
-    // usvg 0.47 -> 0.45 SVG bridge, and one pattern coordinate rounds
-    // differently in the last `f32` digit; the viewer gates hold. Moved again
-    // when Krilla became the PDF writer (ADR-0021): every structure is
-    // Krilla's, and both viewer gates and the structural gate hold.
-    assert_eq!(
-        lower_hex(&Sha256::digest(first.artifact().bytes())),
-        "7f85f04d3f49585a2b85477c830ee7f69551e7cf6511460cc4e0f5a9cf1e7a31"
-    );
+    // The golden record holds the bytes (`facade.pdf-project-operations.v1`),
+    // and `harness_pdf_viewers` holds its operations and viewer rasters.
 
     let pdf = pdf_text(first.artifact().bytes());
     for structure in [
@@ -75,14 +59,7 @@ fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
 
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     assert_eq!(first.report(), second.report());
-    // Moved with #209 (ADR-0021): the reparsed tree wraps the
-    // fallback image in an identity `q 1 0 0 1 0 0 cm Q` group; the image
-    // bytes and the viewer gates are unchanged. Moved again when Krilla became
-    // the PDF writer (ADR-0021); the fallback's pixels are unchanged.
-    assert_eq!(
-        lower_hex(&Sha256::digest(first.artifact().bytes())),
-        "767770926e5f9f8f0e5eafb9a00e4ae7073a6ca401af589f6d0944a6746e8a23"
-    );
+    // The golden record holds the bytes (`facade.isolated-fallback.v1`).
     let [diagnostic] = first.report().diagnostics() else {
         panic!("one isolated closure produces one diagnostic");
     };
@@ -172,20 +149,9 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
 
     assert_eq!(outcome.artifact().bytes(), repeated.artifact().bytes());
     assert_eq!(outcome.report(), repeated.report());
-    // Moved with #209 (ADR-0021): after the usvg 0.47 -> 0.45 SVG
-    // bridge, path coordinates differ in the last `f32` digit, `-0` and
-    // `4.4e-16` residues print as `0`, and one identity group is added
-    // (three operators); the viewer gates hold. Moved again when Krilla became
-    // the PDF writer (ADR-0021): the nested tree is drawn in place, and both
-    // viewer gates and the structural gate hold. Moved with usvg 0.48 (#209):
-    // it outlines the nested text with skrifa instead of ttf-parser, whose
-    // pen closed each glyph contour with an explicit line back to its start
-    // before `h`; one filled glyph path loses that segment, which closepath
-    // draws anyway, so the fill is unchanged.
-    assert_eq!(
-        lower_hex(&Sha256::digest(outcome.artifact().bytes())),
-        "271f105c692f15d8970dd10829b3f6ef2bf9b4755bd6783de3e45a65ddcab802"
-    );
+    // The golden record holds the bytes
+    // (`facade.pdf-nested-native-operations.v1`), and `harness_pdf_viewers`
+    // holds its operations and viewer rasters.
     assert!(outcome.report().diagnostics().is_empty());
     for structure in [
         "/PatternType 1",

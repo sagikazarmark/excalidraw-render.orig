@@ -15,6 +15,8 @@ pub(super) const SCHEMA: &str = "excalidraw-render/pdf-judgments/v1";
 const SUBJECT: &str = "excalidraw-render/pdf-judgments-approval-subject/v1";
 const SPEC: &str = "docs/renderer-spec-v1.md";
 const GOLDEN: &str = "tests/conformance/golden";
+/// The case-id prefix of the golden record's project-authored facade scenes.
+const GOLDEN_FACADE_PREFIX: &str = "facade.";
 
 /// Repository view with test overrides: `Some` replaces or adds a file, `None`
 /// removes one. Production uses no overrides. Shared with the five-layer
@@ -339,6 +341,15 @@ fn cross_check_golden(repo: &Repo, record: &Value) -> Result<usize, String> {
     for entry in golden["expectations"]
         .as_array()
         .ok_or("golden expectations must be an array")?
+        .iter()
+        // A facade scene (`tests/conformance/golden/facade-scenes.json`) is
+        // project-authored and unregistered: it declares no expected report,
+        // and its report is pinned by the golden record alone.
+        .filter(|entry| {
+            !entry["key"]["case"]
+                .as_str()
+                .is_some_and(|case| case.starts_with(GOLDEN_FACADE_PREFIX))
+        })
     {
         let key = canonical_key(&entry["key"])?;
         let sha = string(&entry["sample"]["report"], "sha256")?;
@@ -873,6 +884,17 @@ mod tests {
         let bytes = report_bytes(&expected).unwrap();
         let empty = report_bytes(&[]).unwrap();
         let (repo, record) = golden_fixture(&fixture, &[(&pdf, &bytes), (&png, &empty)]);
+        assert_eq!(cross_check_golden(&repo, &record).unwrap(), 1);
+        // A facade scene is unregistered and declares nothing; its golden
+        // report is not cross-checked, whatever it holds.
+        let mut facade = pdf.clone();
+        facade.case = format!("{GOLDEN_FACADE_PREFIX}example.v1");
+        let mut facade_png = png.clone();
+        facade_png.case = facade.case.clone();
+        let (repo, record) = golden_fixture(
+            &fixture,
+            &[(&pdf, &bytes), (&facade, &empty), (&facade_png, &bytes)],
+        );
         assert_eq!(cross_check_golden(&repo, &record).unwrap(), 1);
         // PDF compares exact bytes: the same value in another member order fails.
         let reordered =

@@ -8,9 +8,15 @@
 use std::time::{Duration, Instant};
 
 use excalidraw_render::{ErrorCode, OutputFormat, RenderRequest, Renderer, SceneDocument};
-use sha2::{Digest, Sha256};
 
-use crate::common::lower_hex;
+/// Five texts whose clusters shape to several glyphs: a 300-joiner run, stacked
+/// combining marks, a ZWJ emoji sequence, vocalized Arabic and a variation
+/// selector. The golden record holds its bytes in every format
+/// (`facade.multi-glyph-clusters.v1`).
+const MULTI_GLYPH_CLUSTERS: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../tests/conformance/golden/facade-scenes/multi-glyph-clusters.excalidraw"
+));
 
 fn text_scene(texts: &[(&str, i32)]) -> SceneDocument {
     let elements = texts
@@ -39,25 +45,18 @@ fn request(format: OutputFormat) -> RenderRequest {
 
 #[test]
 fn multi_glyph_cluster_pdf_bytes_are_unchanged_by_sharing_cluster_text() {
-    let joined = format!("a{}b", "\u{200d}".repeat(300));
-    let scene = text_scene(&[
-        (&joined, 5),
-        ("e\u{301}\u{302} o\u{308}", 1),
-        ("👨\u{200d}👩\u{200d}👧 family", 5),
-        ("مَرْحَبًا", 5),
-        ("a\u{fe0f}\u{200d}b", 2),
-    ]);
+    let scene = SceneDocument::parse(MULTI_GLYPH_CLUSTERS).expect("cluster scene is admitted");
 
     let outcome = Renderer::new()
         .render(&scene, &request(OutputFormat::Pdf))
         .expect("multi-glyph clusters render");
 
-    // The digest of the bytes the writer produced while it still copied the
-    // cluster text once per glyph.
-    assert_eq!(
-        lower_hex(&Sha256::digest(outcome.artifact().bytes())),
-        "3437b262048b475c5f4ab140709b6840fabdf73269a055c66d7bd9f57d82226d"
-    );
+    // The golden record (`facade.multi-glyph-clusters.v1`) holds the bytes
+    // the writer produced while it still copied the cluster text once per
+    // glyph, so sharing it is proved not to move them; here the clusters
+    // still carry their text.
+    let pdf = crate::common::pdf_inspect::pdf_text(outcome.artifact().bytes());
+    assert!(pdf.contains("/ActualText"));
 }
 
 #[test]

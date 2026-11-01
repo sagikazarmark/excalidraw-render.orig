@@ -53,9 +53,13 @@ fast tier and run by `just test-release`.
 ### The golden record
 
 `tests/conformance/golden/native.json` holds the artifact and report bytes of
-every registered case variant and frame target in each format: 168 keys,
-with the bytes under `golden/blobs/`. The render-tier test `golden_native`
-derives the keys from the registry, renders each twice (forward and reverse,
+every registered case variant and frame target in each format, and of the
+project-authored facade scenes in `golden/facade-scenes.json` under the default
+request: 189 keys, with the bytes under `golden/blobs/`. A facade scene is a
+scene with no official evidence whose exact bytes a fast-tier test used to pin
+itself; the test now reads the scene from the same file and keeps only its
+behavioural assertions. The render-tier test `golden_native` derives the keys
+from the registry and the facade list, renders each twice (forward and reverse,
 a fresh renderer each time) and holds them to the record, so artifact byte
 stability (ADR-0002) is a per-change gate. An intentional output change is
 adopted with
@@ -64,8 +68,8 @@ adopted with
 just update-golden
 ```
 
-on any host (ADR-0024: the bytes do not depend on the host; rendering all 168
-keys on macOS arm64 reproduced every Linux-recorded blob) and reviewed as the
+on any host (ADR-0024: the bytes do not depend on the host; rendering the 168
+registered keys on macOS arm64 reproduced every Linux-recorded blob) and reviewed as the
 diff of the record and its blobs. Under wasm32 in Firefox (`just golden-wasm`)
 the same test holds the browser build to the same record, with the four PNG
 differences `golden/experimental-wasm.json` records for #178, which must all
