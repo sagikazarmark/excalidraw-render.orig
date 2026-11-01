@@ -183,6 +183,9 @@ mod font_metadata;
 mod fonts;
 mod frame;
 #[cfg(test)]
+#[path = "../tests/common/fuzz_seed.rs"]
+mod fuzz_seed;
+#[cfg(test)]
 mod metadata_failure_contract;
 mod normalization;
 mod outcome;

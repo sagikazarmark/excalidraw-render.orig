@@ -6,18 +6,25 @@ use super::Case;
 pub(super) const SEED: u64 = 0xa54f_f53a_5f1d_36f1;
 pub(super) const FAMILIES: usize = 9;
 
-pub(super) struct Generator(u64);
+pub(super) struct Generator {
+    state: u64,
+    seed: u64,
+}
 
 impl Generator {
     pub(super) fn new() -> Self {
-        Self(SEED)
+        Self::with_seed(SEED)
+    }
+
+    pub(super) fn with_seed(seed: u64) -> Self {
+        Self { state: seed, seed }
     }
 
     fn next(&mut self) -> usize {
-        self.0 ^= self.0 << 13;
-        self.0 ^= self.0 >> 7;
-        self.0 ^= self.0 << 17;
-        (self.0 as u32) as usize
+        self.state ^= self.state << 13;
+        self.state ^= self.state >> 7;
+        self.state ^= self.state << 17;
+        (self.state as u32) as usize
     }
 
     pub(super) fn case(&mut self, index: usize) -> Case {
@@ -61,7 +68,7 @@ impl Generator {
                     .extend(scene["files"].as_object().unwrap().clone());
             }
             let mut case = from_scene(
-                &format!("seed={SEED:016x} case={index} family=mixed"),
+                &format!("seed={:016x} case={index} family=mixed", self.seed),
                 combined,
             );
             case.options = self.next() as u32;
@@ -159,7 +166,7 @@ impl Generator {
         let scene = json!({"type":"excalidraw","version":2,"elements":elements,
             "appState":{"viewBackgroundColor":"#ffffff"},"files":files});
         Case {
-            id: format!("seed={SEED:016x} case={index} family={family}"),
+            id: format!("seed={:016x} case={index} family={family}", self.seed),
             scene_base64: STANDARD.encode(serde_json::to_vec(&scene).unwrap()),
             options: self.next() as u32,
             limit_mode: 0,

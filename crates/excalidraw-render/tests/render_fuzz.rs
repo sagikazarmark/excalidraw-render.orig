@@ -1,5 +1,8 @@
 //! Complete rendering properties at the public facade confirmed in #30/#83.
 #[allow(dead_code)]
+#[path = "common/fuzz_seed.rs"]
+mod fuzz_seed;
+#[allow(dead_code)]
 #[path = "common/pdf_inspect.rs"]
 mod pdf_inspect;
 #[path = "render_fuzz/mod.rs"]

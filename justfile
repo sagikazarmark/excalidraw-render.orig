@@ -297,6 +297,17 @@ reference-case id mode="reproduce": xtask
     bash tools/reference-oracle/run-container.sh install
     target/debug/xtask conformance "{{ mode }}" "{{ id }}"
 
+# Reproduce every registered case in one container session (the weekly oracle drift check), or generate them all.
+reference-cases mode="reproduce":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ mode }}" in
+        reproduce|generate) ;;
+        *) echo "the registered cases are reproduced or generated, not {{ mode }}" >&2; exit 2 ;;
+    esac
+    bash tools/reference-oracle/run-container.sh install
+    bash tools/reference-oracle/run-all-cases.sh "{{ mode }}"
+
 # Regenerate the per-cell font subset corpus into target/font-corpus for review.
 font-corpus:
     rm -rf target/font-corpus target/tmp/svg-font-subset-qualification-corpus-*
@@ -328,7 +339,13 @@ candidate-successor dir: require-native xtask
     target/debug/xtask conformance candidate-materialize "{{ dir }}"
 
 # The randomized expansions the nightly schedule runs. They are bounded but long,
-# so no per-change gate carries them.
+# so no per-change gate carries them. Each takes a case count; with
+# EXCALIDRAW_FUZZ_SEED set (the workflow passes the run id) a family mixes it
+# into its fixed seed and prints the result, so a night searches new cases and a
+# failure names the seed that replays it. Unset, they replay the fixed seed.
+
+# Run every nightly expansion in one build.
+nightly: nightly-font-subset-fuzz nightly-frame-batch-property nightly-scene-fuzz nightly-asset-fuzz nightly-render-fuzz
 
 # Expand the bounded font subset fuzz.
 nightly-font-subset-fuzz cases="4096":

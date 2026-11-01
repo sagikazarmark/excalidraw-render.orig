@@ -335,8 +335,8 @@ fn sequence(cases: &[Case]) {
     }
 }
 
-fn generated(count: usize) {
-    let mut generator = generator::Generator::new();
+fn generated(seed: u64, count: usize) {
+    let mut generator = generator::Generator::with_seed(seed);
     let cases: Vec<_> = (0..count)
         .map(|index| {
             let mut case = generator.case(index);
@@ -353,7 +353,7 @@ fn generated(count: usize) {
 }
 
 pub(super) fn smoke() {
-    generated(36);
+    generated(generator::SEED, 36);
 }
 
 #[test]
@@ -477,7 +477,7 @@ fn nightly_complete_render_fuzz() {
     assert!((1..=16_384).contains(&count));
     complete_controls_reach_all_projections_and_limit_profiles();
     metadata_omission_and_fatal_output_are_reached();
-    generated(count);
+    generated(crate::fuzz_seed::nightly_seed(generator::SEED), count);
 }
 
 #[test]
