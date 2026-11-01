@@ -34,6 +34,7 @@ fn inventory() -> Value {
 }
 
 #[test]
+#[ignore = "host tools: Node, through the representative owner's candidate gate (just test-release)"]
 fn ownership_recording_rejects_unknown_obligations_without_changing_the_ledger() {
     let path = root().join("tests/conformance/coverage/ownership.json");
     let before = fs::read(&path).unwrap();
@@ -51,6 +52,7 @@ fn ownership_recording_rejects_unknown_obligations_without_changing_the_ledger()
 }
 
 #[test]
+#[ignore = "host tools: Node, through the representative owner's candidate gate (just test-release)"]
 fn ownership_recording_validates_the_entire_batch_before_writing() {
     let path = root().join("tests/conformance/coverage/ownership.json");
     let before = fs::read(&path).unwrap();

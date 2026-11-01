@@ -1,7 +1,8 @@
 # The gates, run in the devenv shell (ADR-0024). The base shell runs every
-# per-change gate and the native release checks; the WASM recipes need the
-# `browser` profile (`devenv --profile browser shell`), which adds the
-# wasm-bindgen runner and headless Firefox.
+# per-change gate; the WASM recipes need the `browser` profile
+# (`devenv --profile browser shell`), which adds the wasm-bindgen runner and
+# headless Firefox, and the release checks and `candidate-successor` the
+# `release` profile, which extends it with Node.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
@@ -64,13 +65,14 @@ test-shard shard archive="target/nextest-archive.tar.zst":
         --profile default --no-fail-fast --partition slice:{{ shard }}
 
 # Run the release-tier tests: the xtask tests that build the qualified release
-# CLI and replay the representative candidate through it, and the ones that
-# judge the live coverage inventory and ownership ledger. Building the CLI first
-# keeps the one-thread group from serializing on Cargo's build lock.
+# CLI and replay the representative candidate through it, the ones that judge
+# the live coverage inventory and ownership ledger, and the ones that run host
+# tools (qpdf, Node; the `release` devenv profile has both). Building the CLI
+# first keeps the one-thread group from serializing on Cargo's build lock.
 test-release:
     cargo build --release --locked -p excalidraw-render-cli
     cargo nextest run --locked --workspace --profile default --no-fail-fast --run-ignored only \
-        -E 'group(release-tier)'
+        -E 'group(release-tier) | group(host-tools)'
 
 # Test the builds that leave out the png or pdf feature.
 test-features:
@@ -134,7 +136,8 @@ package-no-cjk target=host: package
 
 # The release checks. They run on the supported targets (ADR-0006): the native
 # checks on any host, since the bytes do not depend on it (ADR-0024), and the
-# browser-WASM checks in headless Firefox from the `browser` devenv profile.
+# browser-WASM checks in headless Firefox, all from the `release` devenv profile
+# (`devenv --profile release shell -- just release`).
 
 # Where the release checks write their logs
 evidence := "target/release-evidence"

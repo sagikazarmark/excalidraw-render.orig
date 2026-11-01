@@ -5,10 +5,12 @@
 Every gate is a recipe in the [justfile](../justfile), run in the devenv shell
 (ADR-0024). `devenv.lock` pins every tool the recipes use: the Rust toolchain,
 nextest, qpdf 12.3.2 and PDFium build 7947. The base shell runs every
-per-change gate and the native release checks; the `browser` profile
-(`devenv --profile browser shell`) adds the wasm-bindgen runner and headless
-Firefox for the WASM recipes, and the `maintainer` profile the release tooling
-of the [runbook](../release.md). A laptop and CI run the same recipes with the
+per-change gate and holds Rust, just, nextest, cargo-deny, qpdf and PDFium; the
+`browser` profile (`devenv --profile browser shell`) adds the wasm-bindgen
+runner and headless Firefox for the WASM recipes, the `release` profile extends
+it with Node for the release checks (`just release`, whose candidate gate and
+host-tool tests run Node on the host) and `just candidate-successor`, and the
+`maintainer` profile the release tooling of the [runbook](../release.md). A laptop and CI run the same recipes with the
 same tools; GitHub Actions is a caller, not the authority.
 
 | Recipe | When | What it establishes |
@@ -93,7 +95,7 @@ the pinned Rust; a change that moves the candidate's bytes needs a successor
 ## The release checks
 
 ```sh
-devenv --profile browser shell -- just release   # everything below
+devenv --profile release shell -- just release   # everything below
 just conformance-release
 just test-release
 just qualification x86_64-unknown-linux-gnu    # the corpus and frame-batch tests, release mode

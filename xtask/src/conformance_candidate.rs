@@ -342,6 +342,7 @@ mod tests {
         files
     }
     #[test]
+    #[ignore = "host tools: Node (just test-release)"]
     fn provenance_derivation_rejects_mutations_without_repairing_evidence() {
         let nonce = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

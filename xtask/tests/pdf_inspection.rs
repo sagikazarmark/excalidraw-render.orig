@@ -10,6 +10,7 @@ fn root() -> PathBuf {
         .to_owned()
 }
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 fn inspector_matches_all_retained_calibration_reports() {
     let root = root();
     let case = root.join("tests/conformance/pdf-viewer-qualification/rectangle-outline");

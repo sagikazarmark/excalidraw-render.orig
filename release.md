@@ -56,14 +56,14 @@ the change; the review of its diff is the acceptance.
 
 ## 2. Verify
 
-In the devenv shell, on any supported host (the WASM checks need the `browser`
-profile: `devenv --profile browser shell`), or through the `Release` workflow
+In the devenv shell, on any supported host (the release checks need the
+`release` profile: `devenv --profile release shell`), or through the `Release` workflow
 from the release commit:
 
 ```sh
 just ci
 devenv --option languages.rust.version:string 1.92.0 shell -- just msrv
-devenv --profile browser shell -- just release
+devenv --profile release shell -- just release
 cargo publish --workspace --dry-run --locked
 ```
 

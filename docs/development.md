@@ -101,8 +101,9 @@ target/release/excalidraw-render frames drawing.excalidraw --list --report-forma
 
 The pinned official Excalidraw browser renderer is development-only. Normal Rust
 builds and renderer/CLI tests do not need Node, a browser, Docker, or network
-access. The full workspace's `xtask` evidence tests additionally invoke Node
-and pinned qpdf; the devenv shell provides both. See
+access. The `xtask` tests that run Node or the pinned qpdf are `#[ignore]`d
+host-tool tests that `just test-release` runs from the `release` devenv
+profile, which has both; the base shell has qpdf and no Node. See
 [`tools/reference-oracle/README.md`](../tools/reference-oracle/README.md) for the
 opt-in profile verification workflow.
 
@@ -299,7 +300,7 @@ laptop and CI run the same commands with the same tools:
 just              # list the recipes
 just ci           # every per-change gate
 just test         # one of them
-devenv --profile browser shell -- just release   # the release checks, on both supported targets
+devenv --profile release shell -- just release   # the release checks, on both supported targets
 ```
 
 The reference oracle and the viewer harnesses run digest-pinned Docker images

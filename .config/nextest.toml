@@ -63,6 +63,27 @@ threads-required = "num-cpus"
 # while holding test slots, so the group takes one thread.
 [test-groups]
 release-tier = { max-threads = 1 }
+# The xtask tests that run host tools: qpdf 12.3.2, bash and `realpath` for the
+# PDF inspector and harness wrappers, and Node for the WebP viewer boundary, the
+# candidate asset derivation and the ownership recorders, which verify the
+# representative owner through the candidate gate before writing. They are #[ignore]d so the fast tier needs
+# none of them and the base devenv shell no Node; `just test-release` runs them
+# from the `release` profile, which has both.
+host-tools = { max-threads = "num-cpus" }
+
+[[profile.default.overrides]]
+filter = '''
+package(xtask) & (
+    binary(=webp_boundary)
+    | binary(=pdf_inspection)
+    | binary(=pdf_inspection_expectations)
+    | binary(=pdf_inspection_parity)
+    | binary(=pdf_harness_wrappers)
+    | test(=conformance_candidate::tests::provenance_derivation_rejects_mutations_without_repairing_evidence)
+    | (binary(=coverage) & test(/^ownership_recording_/))
+)
+'''
+test-group = "host-tools"
 
 [[profile.default.overrides]]
 filter = '''

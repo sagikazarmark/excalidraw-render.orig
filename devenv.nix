@@ -65,10 +65,11 @@ in
     link_harness_tool ${pdfium} "$harness/pdfium"
   '';
 
-  # The base shell runs every per-change gate (`just ci`) and the native release
-  # checks. The browser stack is the `browser` profile below, so a lint job does
-  # not pull Firefox; the maintainer's release tooling is the `maintainer`
-  # profile.
+  # The base shell runs every per-change gate (`just ci`): Rust, just, nextest,
+  # cargo-deny, qpdf and PDFium. The browser stack is the `browser` profile
+  # below, so a lint job does not pull Firefox; Node, which only the release
+  # checks run on the host, is the `release` profile; the maintainer's release
+  # tooling is the `maintainer` profile.
   packages = with pkgs; [
     just
 
@@ -92,17 +93,14 @@ in
       version = lib.mkDefault "1.97.1";
       targets = [ "wasm32-unknown-unknown" ];
     };
-    javascript = {
-      enable = true;
-      npm.enable = true;
-    };
   };
 
   profiles = {
     # Browser WASM: the wasm-bindgen test runner and headless Firefox over
     # geckodriver (ADR-0024). `devenv --profile browser shell` for the WASM
     # recipes (`just qualification wasm32-unknown-unknown`, `just wasm-packaging`,
-    # `just golden-wasm`, `just render-fuzz-wasm`, `just release`).
+    # `just golden-wasm`, `just render-fuzz-wasm`); `just release` uses the
+    # `release` profile, which extends it.
     browser.module = {
       packages =
         [
@@ -132,6 +130,17 @@ in
           }
         )
       );
+    };
+
+    # The release checks (`devenv --profile release shell -- just release`): the
+    # browser stack, and Node for the representative candidate's asset
+    # derivation and the host-tool tests `just test-release` runs.
+    release = {
+      extends = [ "browser" ];
+      module.languages.javascript = {
+        enable = true;
+        npm.enable = true;
+      };
     };
 
     # The release and audit tooling the runbook (release.md) uses.
