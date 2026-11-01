@@ -4,9 +4,7 @@ use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use jpeg_encoder::{ColorType, Encoder, SamplingFactor};
 
-mod common;
-
-use common::characterization::known_defect;
+use crate::common::characterization::known_defect;
 
 fn scene(jpeg: &[u8]) -> SceneDocument {
     let payload = base64::engine::general_purpose::STANDARD.encode(jpeg);

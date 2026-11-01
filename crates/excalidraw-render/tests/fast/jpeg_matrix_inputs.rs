@@ -172,7 +172,7 @@ fn authored_jpeg_inputs_reproduce_exactly() -> Result<(), Box<dyn std::error::Er
     bytes.push(b'\n');
     assert_eq!(
         bytes,
-        include_bytes!("../../../tests/oracle/jpeg-color/inputs.json")
+        include_bytes!("../../../../tests/oracle/jpeg-color/inputs.json")
     );
     Ok(())
 }

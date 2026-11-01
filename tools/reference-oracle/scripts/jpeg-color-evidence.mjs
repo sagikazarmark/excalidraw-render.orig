@@ -80,7 +80,7 @@ const first = await collect(rows);
 const second = await collect([...rows].reverse());
 for (const row of rows) assert.deepEqual(first[row.id], second[row.id], row.id);
 const paths = [INPUT, PROFILE, "tests/oracle/reference-profiles/revision-1-assets.json",
-  "crates/excalidraw-render/tests/jpeg_matrix_inputs.rs", "Cargo.lock",
+  "crates/excalidraw-render/tests/fast/jpeg_matrix_inputs.rs", "Cargo.lock",
   "tools/reference-oracle/src/browser-entry.js", "tools/reference-oracle/package.json",
   "tools/reference-oracle/vite.config.mjs", "tools/reference-oracle/index.html",
   "tools/reference-oracle/scripts/jpeg-color-evidence.mjs", "tools/reference-oracle/run-jpeg-color.sh",

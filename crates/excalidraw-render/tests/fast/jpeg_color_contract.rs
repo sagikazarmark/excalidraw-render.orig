@@ -50,7 +50,9 @@ fn evidence() -> Value {
         let path = source["path"].as_str().unwrap();
         if matches!(
             path,
-            "Cargo.lock" | "crates/excalidraw-render/tests/jpeg_matrix_inputs.rs"
+            "Cargo.lock"
+                | "crates/excalidraw-render/tests/jpeg_matrix_inputs.rs"
+                | "crates/excalidraw-render/tests/fast/jpeg_matrix_inputs.rs"
         ) || crate::common::is_oracle_producer(path)
         {
             continue;

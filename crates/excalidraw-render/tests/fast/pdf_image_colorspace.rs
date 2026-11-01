@@ -1,11 +1,9 @@
 //! Image-only facade regression: no earlier colour operator may prime a viewer
 //! cache for an illegal image-XObject resource alias (PDF 32000-1 §7.8.3).
+use crate::common::pdf_inspect;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use serde_json::json;
-#[allow(dead_code)]
-#[path = "common/pdf_inspect.rs"]
-mod pdf_inspect;
 
 fn image_pdf(size: u32, partial_alpha: bool) -> Vec<u8> {
     let mut rgba = Vec::new();
