@@ -1542,10 +1542,9 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
         ],
         "provenance",
     )?;
-    if provenance["container_image"]
-        != json!("mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9")
-        || provenance["node_version"] != json!("v24.16.0")
-        || provenance["generated_at"] != json!(generated_at)
+    let reference_profile = reference_profile()?;
+    verify_reference_runtime(&provenance, &reference_profile)?;
+    if provenance["generated_at"] != json!(generated_at)
         || provenance["reference_profile_digest"] != json!(format!("sha256:{PROFILE_DIGEST}"))
         || provenance["generation_invocation"]
             != json!(format!(
@@ -1559,33 +1558,6 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
             ))
     {
         return Err("generation provenance identity is invalid".to_owned());
-    }
-    let browser = object(&provenance["browser"], "browser provenance")?;
-    verify_exact_keys(
-        browser,
-        &["arguments", "context", "version"],
-        "browser provenance",
-    )?;
-    if browser["arguments"]
-        != json!([
-            "--disable-gpu",
-            "--font-render-hinting=none",
-            "--force-color-profile=srgb"
-        ])
-        || browser["context"]
-            != json!({
-                "colorScheme": "light",
-                "deviceScaleFactor": 1,
-                "forcedColors": "none",
-                "locale": "en-US",
-                "reducedMotion": "reduce",
-                "serviceWorkers": "block",
-                "timezoneId": "UTC",
-                "viewport": {"height": 720, "width": 1280},
-            })
-        || browser["version"] != json!("149.0.7827.55")
-    {
-        return Err("browser provenance does not match the approved reference profile".to_owned());
     }
     crate::conformance_candidate_gate::historical_sources(&json!([provenance["generator"]]))?;
     verify_repo_descriptor(&provenance["runner"], "runner")?;
@@ -1619,6 +1591,10 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
     if runs[0]["browser_process_id"] == runs[1]["browser_process_id"] {
         return Err("provenance runs reused a browser process ID".to_owned());
     }
+    let origin = reference_profile["browser"]["origin"]
+        .as_str()
+        .filter(|origin| !origin.is_empty())
+        .ok_or_else(|| "the reference profile names no browser origin".to_owned())?;
     for (index, run) in runs.iter().enumerate() {
         let run = object(run, "run provenance")?;
         verify_exact_keys(
@@ -1650,11 +1626,9 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
             .as_array()
             .ok_or_else(|| "run requests must be an array".to_owned())?;
         if requests.is_empty()
-            || requests.iter().any(|request| {
-                request
-                    .as_str()
-                    .is_none_or(|url| !url.starts_with("http://reference.invalid/"))
-            })
+            || requests
+                .iter()
+                .any(|request| request.as_str().is_none_or(|url| !url.starts_with(origin)))
         {
             return Err("run request set is empty or escapes the fixed origin".to_owned());
         }
@@ -1679,6 +1653,80 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
     }
     if runs[0]["requests"] != runs[1]["requests"] {
         return Err("request sets differ across fresh processes".to_owned());
+    }
+    Ok(())
+}
+
+const REFERENCE_PROFILE_PATH: &str = "tests/oracle/reference-profiles/revision-1.json";
+
+/// The scene reference profile, read only when its bytes are the approved
+/// profile digest: it is the one place the container, Node and Chromium
+/// identities of the reference evidence live.
+fn reference_profile() -> Result<Value, String> {
+    let bytes = fs::read(repo_root().join(REFERENCE_PROFILE_PATH))
+        .map_err(|error| format!("failed to read {REFERENCE_PROFILE_PATH}: {error}"))?;
+    if sha256(&bytes) != PROFILE_DIGEST {
+        return Err(format!(
+            "{REFERENCE_PROFILE_PATH} does not match the approved digest"
+        ));
+    }
+    serde_json::from_slice(&bytes)
+        .map_err(|error| format!("invalid {REFERENCE_PROFILE_PATH}: {error}"))
+}
+
+/// Checks a case's recorded runtime (container, Node, Chromium and its launch
+/// and context) for shape and against the reference profile, rather than
+/// against literals: a regenerated profile moves every identity at once and
+/// needs no edit here.
+fn verify_reference_runtime(provenance: &Value, profile: &Value) -> Result<(), String> {
+    let platform = &profile["canonicalPlatform"];
+    let container = provenance["container_image"].as_str().unwrap_or_default();
+    let digest = container
+        .rsplit_once("@sha256:")
+        .map(|(_, digest)| digest)
+        .unwrap_or_default();
+    if digest.len() != 64
+        || !digest
+            .bytes()
+            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+    {
+        return Err(format!(
+            "provenance container image {container:?} is not pinned by a SHA-256 digest"
+        ));
+    }
+    let profile_container = format!(
+        "{}@{}",
+        platform["container"]["image"].as_str().unwrap_or_default(),
+        platform["container"]["perPlatformDigest"]
+            .as_str()
+            .unwrap_or_default()
+    );
+    if container != profile_container {
+        return Err(format!(
+            "provenance container image {container:?} is not the reference profile's \
+             {profile_container:?}"
+        ));
+    }
+    let node = provenance["node_version"].as_str().unwrap_or_default();
+    let profile_node = platform["runtime"]["node"].as_str().unwrap_or_default();
+    if node.is_empty() || node.strip_prefix('v') != Some(profile_node) {
+        return Err(format!(
+            "provenance Node {node:?} is not the reference profile's v{profile_node}"
+        ));
+    }
+    let browser = object(&provenance["browser"], "browser provenance")?;
+    verify_exact_keys(
+        browser,
+        &["arguments", "context", "version"],
+        "browser provenance",
+    )?;
+    let version = browser["version"].as_str().unwrap_or_default();
+    if version.is_empty()
+        || browser["version"] != platform["runtime"]["chromium"]
+        || browser["arguments"] != profile["browser"]["launch"]["explicitArguments"]
+        || browser["context"] != profile["browser"]["context"]
+    {
+        return Err("browser provenance does not match the approved reference profile".to_owned());
     }
     Ok(())
 }
@@ -2304,9 +2352,60 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::{
-        verify_exceptions, verify_png_extent, verify_png_semantics, verify_svg_metadata,
-        verify_svg_root_extent, Sizing, EMBEDDED_SCENE_MIME_TYPE,
+        reference_profile, verify_exceptions, verify_png_extent, verify_png_semantics,
+        verify_reference_runtime, verify_svg_metadata, verify_svg_root_extent, Sizing,
+        EMBEDDED_SCENE_MIME_TYPE,
     };
+
+    /// A case's runtime provenance as the generator writes it from `profile`.
+    fn runtime_provenance(profile: &Value) -> Value {
+        let platform = &profile["canonicalPlatform"];
+        json!({
+            "container_image": format!(
+                "{}@{}",
+                platform["container"]["image"].as_str().unwrap(),
+                platform["container"]["perPlatformDigest"].as_str().unwrap()
+            ),
+            "node_version": format!("v{}", platform["runtime"]["node"].as_str().unwrap()),
+            "browser": {
+                "arguments": profile["browser"]["launch"]["explicitArguments"],
+                "context": profile["browser"]["context"],
+                "version": platform["runtime"]["chromium"],
+            },
+        })
+    }
+
+    #[test]
+    fn runtime_provenance_is_judged_against_the_reference_profile() {
+        let profile = reference_profile().expect("the reference profile reads");
+        let provenance = runtime_provenance(&profile);
+        verify_reference_runtime(&provenance, &profile)
+            .expect("the profile's own runtime verifies");
+
+        // A regenerated profile with a new Chromium needs no verifier edit: the
+        // provenance written from it verifies.
+        let mut bumped = profile.clone();
+        bumped["canonicalPlatform"]["runtime"]["chromium"] = json!("150.0.0.1");
+        verify_reference_runtime(&runtime_provenance(&bumped), &bumped)
+            .expect("a bumped profile's runtime verifies");
+        assert!(verify_reference_runtime(&provenance, &bumped)
+            .expect_err("evidence from the old Chromium is not the bumped profile's")
+            .contains("browser provenance"));
+
+        let mut unpinned = provenance.clone();
+        unpinned["container_image"] = json!("mcr.microsoft.com/playwright:latest");
+        assert!(verify_reference_runtime(&unpinned, &profile)
+            .expect_err("a tag is not a pinned image")
+            .contains("not pinned by a SHA-256 digest"));
+        let mut other_node = provenance.clone();
+        other_node["node_version"] = json!("v0.0.0");
+        assert!(verify_reference_runtime(&other_node, &profile)
+            .expect_err("another Node is not the profile's")
+            .contains("Node"));
+        let mut empty_version = provenance;
+        empty_version["browser"]["version"] = json!("");
+        assert!(verify_reference_runtime(&empty_version, &profile).is_err());
+    }
 
     /// A one-pixel untagged RGBA8 PNG and its raw raster, with `chunks`
     /// spliced in before `IEND` as the reference's `encodePngMetadata` does.
