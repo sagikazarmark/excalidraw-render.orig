@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 use crate::conformance::{
     canonical_bytes, object, read_repository_file as read_repository_file_in, repo_root, sha256,
 };
+use crate::viewer_identity::{runtime, svg_viewer_profile, ReferenceRuntime};
 
 const MANIFEST_PATH: &str =
     "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json";
@@ -461,6 +462,40 @@ fn verify_execution_coverage<'a>(
     Ok(executions)
 }
 
+/// The host both viewers qualified the subsets on (ADR-0006).
+const QUALIFICATION_HOST: &str = "linux-amd64";
+
+/// The Chromium report's environment: the reference container's runtime and
+/// launch arguments, as the reference profile records them.
+fn chromium_environment(reference: &ReferenceRuntime) -> Value {
+    json!({
+        "browser_arguments": reference.browser_arguments.join(" "),
+        "chromium": reference.chromium,
+        "container": reference.container,
+        "host": QUALIFICATION_HOST,
+        "locale": "en-US",
+        "node": format!("v{}", reference.node),
+        "playwright": reference.playwright,
+        "role_processes": "fresh Chromium process per execution, role, and repeat",
+        "timezone": "UTC",
+    })
+}
+
+/// The pure-Rust report's environment: the canonical pure-Rust SVG viewer's
+/// runtime, as its profile records it (and `verify-svg-viewers` holds that
+/// profile to the viewer's lockfile and toolchain).
+fn pure_rust_environment(profile: &Value) -> Result<Value, String> {
+    let mut environment = json!({
+        "host": QUALIFICATION_HOST,
+        "rustc": format!("rustc {}", runtime(profile, "rustc")?),
+        "target": runtime(profile, "target")?,
+    });
+    for name in ["fontdb", "harfrust", "resvg", "skrifa", "tiny-skia", "usvg"] {
+        environment[name] = json!(runtime(profile, name)?);
+    }
+    Ok(environment)
+}
+
 fn verify_viewer_report(
     descriptor: &Value,
     viewer: &str,
@@ -479,28 +514,8 @@ fn verify_viewer_report(
     }
     let environment = &report["environment"];
     let expected_environment = match viewer {
-        "chromium" => json!({
-            "browser_arguments": "--disable-gpu --font-render-hinting=none --force-color-profile=srgb",
-            "chromium": "149.0.7827.55",
-            "container": "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9",
-            "host": "linux-amd64",
-            "locale": "en-US",
-            "node": "v24.16.0",
-            "playwright": "1.61.0",
-            "role_processes": "fresh Chromium process per execution, role, and repeat",
-            "timezone": "UTC",
-        }),
-        "pure_rust" => json!({
-            "fontdb": "0.24.0",
-            "harfrust": "0.12.0",
-            "host": "linux-amd64",
-            "resvg": "0.48.1",
-            "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
-            "skrifa": "0.44.0",
-            "target": "x86_64-unknown-linux-gnu",
-            "tiny-skia": "0.12.0",
-            "usvg": "0.48.1",
-        }),
+        "chromium" => chromium_environment(&ReferenceRuntime::load()?),
+        "pure_rust" => pure_rust_environment(&svg_viewer_profile("pure-rust")?)?,
         _ => return Err(format!("unknown viewer report {viewer}")),
     };
     if environment != &expected_environment {

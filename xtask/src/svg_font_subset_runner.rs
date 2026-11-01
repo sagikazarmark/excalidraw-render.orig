@@ -9,6 +9,9 @@ use viewer_skrifa::outline::{DrawSettings, OutlinePen};
 use viewer_skrifa::{FontRef, GlyphId, MetadataProvider};
 
 use crate::conformance::{canonical_bytes, repo_root, sha256};
+use crate::viewer_identity::{cargo_locked_version, read_text};
+
+const VIEWER_LOCK: &str = "tools/svg-viewer-rust/Cargo.lock";
 
 pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> {
     let inputs_path = repository_path(inputs)?;
@@ -56,18 +59,18 @@ pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> 
     fs::remove_dir_all(&staging)
         .map_err(|error| format!("failed to remove {}: {error}", staging.display()))?;
 
+    // The viewer's crate versions are the ones its own lockfile resolves.
+    let lockfile = read_text(VIEWER_LOCK)?;
+    let mut environment = json!({
+        "host": "linux-amd64",
+        "rustc": rustc_version()?,
+        "target": crate::svg_viewers::NATIVE_TARGET,
+    });
+    for name in ["fontdb", "harfrust", "resvg", "skrifa", "tiny-skia", "usvg"] {
+        environment[name] = json!(cargo_locked_version(&lockfile, name)?);
+    }
     let report = json!({
-        "environment": {
-            "fontdb": "0.24.0",
-            "host": "linux-amd64",
-            "harfrust": "0.12.0",
-            "resvg": "0.48.1",
-            "rustc": rustc_version()?,
-            "skrifa": "0.44.0",
-            "target": "x86_64-unknown-linux-gnu",
-            "tiny-skia": "0.12.0",
-            "usvg": "0.48.1",
-        },
+        "environment": environment,
         "fresh_state_per_role": true,
         "inputs_sha256": sha256(&bytes),
         "results": results,

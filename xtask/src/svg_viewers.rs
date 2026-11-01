@@ -4,6 +4,9 @@ use std::path::{Component, Path};
 use serde_json::{json, Value};
 
 use crate::conformance::{canonical_bytes, object, repo_root, sha256};
+use crate::viewer_identity::{
+    cargo_locked_version, is_commit, read_text, runtime, toolchain_channel, ReferenceRuntime,
+};
 
 const MANIFEST_PATH: &str =
     "tests/conformance/svg-viewer-qualification/rectangle-outline/manifest.json";
@@ -104,11 +107,9 @@ fn verify_profile(descriptor: &Value, viewer: &str) -> Result<(), String> {
 }
 
 fn verify_chromium_profile(profile: &Value) -> Result<(), String> {
+    verify_chromium_runtime(profile, &ReferenceRuntime::load()?)?;
     if profile["id"] != json!("canonical-svg.chromium.v1")
         || profile["identity"]["viewer"] != json!("chromium")
-        || profile["runtime"]
-            .as_array()
-            .is_none_or(|records| !has_runtime(records, "chromium", "149.0.7827.55"))
         || profile["settings"]["dimensions"]["device_pixel_ratio"] != json!("1")
         || profile["settings"]["locale"]["locale"] != json!("en-US")
         || profile["settings"]["locale"]["timezone"] != json!("UTC")
@@ -123,26 +124,78 @@ fn verify_chromium_profile(profile: &Value) -> Result<(), String> {
     Ok(())
 }
 
-fn verify_rust_profile(profile: &Value) -> Result<(), String> {
-    let runtime = array(&profile["runtime"], "pure-Rust runtime records")?;
-    for (name, version) in [
-        ("resvg", "0.48.1"),
-        ("usvg", "0.48.1"),
-        ("tiny-skia", "0.12.0"),
-        ("fontdb", "0.24.0"),
-        ("harfrust", "0.12.0"),
-        ("skrifa", "0.44.0"),
-        ("simplecss", "0.2.2"),
-        ("rustc", "1.97.1 (8bab26f4f 2026-07-14)"),
-        ("target", "x86_64-unknown-linux-gnu"),
+/// The crates of the pure-Rust viewer whose versions its profile records and
+/// its own lockfile must resolve.
+const PURE_RUST_CRATES: &[&str] = &[
+    "resvg",
+    "usvg",
+    "tiny-skia",
+    "fontdb",
+    "harfrust",
+    "skrifa",
+    "simplecss",
+];
+const PURE_RUST_TOOLCHAIN: &str = "tools/svg-viewer-rust/rust-toolchain.toml";
+/// The supported native target (ADR-0006) the qualified viewers run on.
+pub(crate) const NATIVE_TARGET: &str = "x86_64-unknown-linux-gnu";
+
+/// The Chromium viewer runs in the reference container, so its profile's
+/// runtime records are the reference profile's.
+fn verify_chromium_runtime(profile: &Value, reference: &ReferenceRuntime) -> Result<(), String> {
+    for (name, expected) in [
+        ("architecture", &reference.architecture),
+        ("chromium", &reference.chromium),
+        ("container", &reference.container),
+        ("node", &reference.node),
+        ("playwright", &reference.playwright),
+        ("ubuntu", &reference.ubuntu),
     ] {
-        if !has_runtime(runtime, name, version) {
-            return Err(format!("pure-Rust profile does not pin {name} {version}"));
+        let recorded = runtime(profile, name)?;
+        if recorded != expected {
+            return Err(format!(
+                "Chromium viewer profile records {name} {recorded}, the reference profile \
+                 {expected}"
+            ));
         }
     }
+    Ok(())
+}
+
+/// The pure-Rust viewer's profile records the crate versions its lockfile
+/// resolves and the toolchain its toolchain file pins; the lockfile itself is
+/// bound to the profile by digest.
+fn verify_rust_runtime(profile: &Value, lockfile: &str, toolchain: &str) -> Result<(), String> {
+    for name in PURE_RUST_CRATES {
+        let recorded = runtime(profile, name)?;
+        let locked = cargo_locked_version(lockfile, name)?;
+        if recorded != locked {
+            return Err(format!(
+                "pure-Rust profile records {name} {recorded}, its lockfile resolves {locked}"
+            ));
+        }
+    }
+    let channel = toolchain_channel(toolchain)?;
+    let rustc = runtime(profile, "rustc")?;
+    if !rustc.starts_with(&format!("{channel} (")) {
+        return Err(format!(
+            "pure-Rust profile records rustc {rustc}, its toolchain file pins {channel}"
+        ));
+    }
+    if runtime(profile, "target")? != NATIVE_TARGET {
+        return Err(format!("pure-Rust profile does not run on {NATIVE_TARGET}"));
+    }
+    Ok(())
+}
+
+fn verify_rust_profile(profile: &Value) -> Result<(), String> {
+    let lockfile = read_text(
+        profile["implementation"]["lockfile"]["path"]
+            .as_str()
+            .ok_or("pure-Rust profile names no lockfile")?,
+    )?;
+    verify_rust_runtime(profile, &lockfile, &read_text(PURE_RUST_TOOLCHAIN)?)?;
     if profile["id"] != json!("canonical-svg.pure-rust.v1")
-        || profile["identity"]["upstream_commit"]
-            != json!("68b14c4c3bccdb60344c777406486b54c36ec1a4")
+        || !is_commit(&profile["identity"]["upstream_commit"])
         || profile["implementation"]["features"]
             != json!(["resvg:raster-images", "resvg:text", "usvg:text"])
         || profile["implementation"]["forbidden_features"]
@@ -309,15 +362,60 @@ fn verify_sidecar(relative: &str, bytes: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
-fn has_runtime(records: &[Value], name: &str, value: &str) -> bool {
-    records
-        .iter()
-        .any(|record| record["name"] == json!(name) && record["value"] == json!(value))
-}
-
 fn array<'a>(value: &'a Value, subject: &str) -> Result<&'a [Value], String> {
     value
         .as_array()
         .map(Vec::as_slice)
         .ok_or_else(|| format!("{subject} must be an array"))
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+    use crate::viewer_identity::svg_viewer_profile;
+
+    #[test]
+    fn chromium_runtime_is_the_reference_profiles() {
+        let reference = ReferenceRuntime::load().unwrap();
+        let profile = svg_viewer_profile("chromium").unwrap();
+        verify_chromium_runtime(&profile, &reference).unwrap();
+
+        // A reference bump moves the expectation with it; no literal here does.
+        let mut bumped = reference.clone();
+        bumped.chromium = "150.0.0.1".to_owned();
+        let error = verify_chromium_runtime(&profile, &bumped).unwrap_err();
+        assert!(
+            error.contains("chromium") && error.contains("150.0.0.1"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn pure_rust_runtime_is_its_lockfiles_and_toolchains() {
+        let profile = svg_viewer_profile("pure-rust").unwrap();
+        let lockfile = read_text("tools/svg-viewer-rust/Cargo.lock").unwrap();
+        let toolchain = read_text(PURE_RUST_TOOLCHAIN).unwrap();
+        verify_rust_runtime(&profile, &lockfile, &toolchain).unwrap();
+
+        let resvg = cargo_locked_version(&lockfile, "resvg").unwrap();
+        let bumped = lockfile.replace(
+            &format!("name = \"resvg\"\nversion = \"{resvg}\""),
+            "name = \"resvg\"\nversion = \"9.9.9\"",
+        );
+        let error = verify_rust_runtime(&profile, &bumped, &toolchain).unwrap_err();
+        assert!(
+            error.contains("resvg") && error.contains("9.9.9"),
+            "{error}"
+        );
+
+        let error = verify_rust_runtime(&profile, &lockfile, "[toolchain]\nchannel = \"1.0.0\"\n")
+            .unwrap_err();
+        assert!(error.contains("rustc"), "{error}");
+
+        let mut unpinned = profile.clone();
+        unpinned["runtime"] = json!([]);
+        assert!(verify_rust_runtime(&unpinned, &lockfile, &toolchain).is_err());
+    }
 }

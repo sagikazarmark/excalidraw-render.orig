@@ -3,7 +3,11 @@ use super::{is_library_sha256, repo_root, sha256, verify_descriptor};
 use serde_json::{json, Value};
 use std::{fs, process::Command};
 
+use crate::viewer_identity::{cargo_locked_version, read_text};
+
 const RECORD: &str = "tools/pdf-harness/pdfium-runtime.json";
+const PDFIUM_PROFILE: &str = "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json";
+const WORKER_LOCK: &str = "tools/pdf-harness/pdfium-rust/Cargo.lock";
 const CASE: &str = "tests/conformance/pdf-viewer-qualification/rectangle-outline";
 const ROLES: [(&str, &str); 3] = [
     ("valid", "candidate-control.pdf"),
@@ -16,16 +20,30 @@ fn descriptor(path: &str) -> Result<Value, String> {
     Ok(json!({"path": path, "sha256": sha256(&bytes)}))
 }
 
+/// The worker's adapter and the PDFium it replays: the adapter version its
+/// lockfile resolves and the PDFium version the viewer profile names.
+fn versions() -> Result<(String, String), String> {
+    let adapter = cargo_locked_version(&read_text(WORKER_LOCK)?, "pdfium-render")?;
+    let profile: Value = serde_json::from_str(&read_text(PDFIUM_PROFILE)?)
+        .map_err(|e| format!("{PDFIUM_PROFILE}: {e}"))?;
+    let pdfium = profile["identity"]["upstream_version"]
+        .as_str()
+        .filter(|version| !version.is_empty())
+        .ok_or("the PDFium profile names no version")?;
+    Ok((format!("pdfium-render/{adapter}"), pdfium.to_owned()))
+}
+
 /// The worker configuration every replay shares. The library that ran and the
 /// host it ran on are observations recorded beside it (ADR-0024).
-fn identity() -> Value {
-    json!({
+fn identity() -> Result<Value, String> {
+    let (adapter, pdfium) = versions()?;
+    Ok(json!({
         "schema": "excalidraw-render/pdfium-runtime/v1",
-        "adapter": "pdfium-render/0.9.4",
-        "pdfium": "152.0.7947.0",
+        "adapter": adapter,
+        "pdfium": pdfium,
         "renderer": "AGG",
         "font_backend": "FreeType",
-    })
+    }))
 }
 
 fn sources() -> Result<Value, String> {
@@ -46,13 +64,14 @@ fn host() -> String {
     format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
 }
 
-fn receipt(raster: &Value, library: &Value) -> Value {
-    json!({
-        "adapter": "pdfium-render/0.9.4", "pdfium": "152.0.7947.0",
+fn receipt(raster: &Value, library: &Value) -> Result<Value, String> {
+    let (adapter, pdfium) = versions()?;
+    Ok(json!({
+        "adapter": adapter, "pdfium": pdfium,
         "library_sha256": library, "width": 200, "height": 120,
         "byte_length": 200 * 120 * 4, "layout": "top-left-row-major",
         "pixel_format": "straight-alpha-srgb-rgba8", "sha256": raster["sha256"],
-    })
+    }))
 }
 
 fn validate(record: &Value) -> Result<(), String> {
@@ -73,7 +92,7 @@ fn validate(record: &Value) -> Result<(), String> {
     if !is_library_sha256(&library) || !platform.as_str().is_some_and(|p| !p.trim().is_empty()) {
         return Err("invalid PDFium runtime observation".into());
     }
-    if producer != identity() {
+    if producer != identity()? {
         return Err("stale PDFium runtime identity; run conformance refresh-pdfium-runtime".into());
     }
     let captures = captures.as_array().ok_or("invalid runtime captures")?;
@@ -83,7 +102,7 @@ fn validate(record: &Value) -> Result<(), String> {
     for (capture, (role, fixture)) in captures.iter().zip(ROLES) {
         let input = descriptor(&format!("{CASE}/{fixture}"))?;
         let raster = descriptor(&format!("{CASE}/evidence/pdfium-{role}.rgba"))?;
-        let expected = receipt(&raster, &library);
+        let expected = receipt(&raster, &library)?;
         if capture
             != &json!({
                 "role": role, "input": input, "raster": raster,
@@ -143,7 +162,7 @@ pub fn refresh() -> Result<(), String> {
                 serde_json::from_slice(&output.stdout).map_err(|e| e.to_string())?;
             // Every run of one refresh loads the same library.
             let ran = library.get_or_insert_with(|| actual["library_sha256"].clone());
-            if actual != receipt(&raster, ran) {
+            if actual != receipt(&raster, ran)? {
                 return Err(format!("invalid PDFium {role} receipt"));
             }
             runs.push(actual);
@@ -153,7 +172,7 @@ pub fn refresh() -> Result<(), String> {
     if producers != sources()? {
         return Err("PDFium producers changed during collection".into());
     }
-    let mut record = identity();
+    let mut record = identity()?;
     record["library_sha256"] = library.ok_or("PDFium runtime replay rendered nothing")?;
     record["platform"] = json!(host());
     record["sources"] = producers;

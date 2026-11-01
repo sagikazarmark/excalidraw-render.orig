@@ -4,6 +4,7 @@ use std::path::{Component, Path};
 use serde_json::{json, Value};
 
 use crate::conformance::{canonical_bytes, object, repo_root, sha256};
+use crate::viewer_identity::{is_commit, runtime, ReferenceRuntime};
 
 mod runtime;
 pub use runtime::refresh as refresh_pdfium_runtime;
@@ -263,58 +264,83 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
     }
     match viewer {
         "pdfium" => {
+            // The Python-era runtime records (`pypdfium2`, `python`,
+            // `platform`) describe the historical capture and are checked for
+            // presence; the version the Rust worker replays is the profile's,
+            // which `pdfium-runtime.json` must match (`runtime::verify`).
+            let version = string(&profile["identity"]["upstream_version"], "PDFium version")?;
             if profile["id"] != json!("canonical-pdf.pdfium.v1")
                 || profile["identity"]["viewer"] != json!("pdfium")
-                || profile["identity"]["upstream_version"] != json!("152.0.7947.0")
-                || !has_runtime(
-                    &profile["runtime"],
-                    "pypdfium2",
-                    "5.12.1 at b3e7e67a1e35c9436b52cb043d476b89ec8c38cb",
-                )?
-                || !has_runtime(
-                    &profile["runtime"],
-                    "pdfium",
-                    "152.0.7947.0 build 7947, pdfium-binaries, default flags",
-                )?
-                || !has_runtime(&profile["runtime"], "python", "3.12.3")?
-                || !has_runtime(
-                    &profile["runtime"],
-                    "platform",
-                    "Linux x86_64, manylinux_2_17 glibc ABI",
-                )?
+                || version.is_empty()
+                || !runtime(&profile, "pdfium")?.starts_with(&format!("{version} "))
             {
                 return Err("canonical PDFium profile settings are invalid".to_owned());
             }
+            for historical in ["pypdfium2", "python", "platform"] {
+                runtime(&profile, historical)?;
+            }
             verify_exact_directory("tools/pdf-harness/pdfium/empty-fonts", &[".keep"])?;
         }
-        "pdfjs" => {
-            if profile["id"] != json!("canonical-pdf.pdfjs.v1")
-                || profile["identity"]["viewer"] != json!("pdfjs")
-                || profile["identity"]["upstream_version"] != json!("6.1.200")
-                || profile["identity"]["upstream_commit"]
-                    != json!("6353acefe5007cd4899247a8c4e83cb7c9435a54")
-                || !has_runtime(&profile["runtime"], "node", "24.16.0")?
-                || !has_runtime(
-                    &profile["runtime"],
-                    "pdfjs-dist",
-                    "6.1.200 at 6353acefe5007cd4899247a8c4e83cb7c9435a54",
-                )?
-                || !has_runtime(&profile["runtime"], "npm", "11.13.0")?
-                || !has_runtime(
-                    &profile["runtime"],
-                    "@napi-rs/canvas",
-                    "1.0.2 Linux x64 GNU Skia backend",
-                )?
-                || !has_runtime(
-                    &profile["runtime"],
-                    "container",
-                    "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9, linux/amd64",
-                )?
-            {
-                return Err("canonical PDF.js profile settings are invalid".to_owned());
-            }
-        }
+        "pdfjs" => verify_pdfjs_profile(&profile, &ReferenceRuntime::load()?)?,
         _ => return Err(format!("unknown PDF viewer {viewer}")),
+    }
+    Ok(())
+}
+
+/// The PDF.js profile's identity is self-consistent and its container, Node
+/// and npm are the reference container's, which it runs in. Its lockfile is
+/// historical producer code until the qualification is regenerated under the
+/// installed PDF.js (ADR-0019), so the profile's PDF.js and canvas versions
+/// are not compared with it.
+fn verify_pdfjs_profile(profile: &Value, reference: &ReferenceRuntime) -> Result<(), String> {
+    let version = string(&profile["identity"]["upstream_version"], "PDF.js version")?;
+    let commit = &profile["identity"]["upstream_commit"];
+    if profile["id"] != json!("canonical-pdf.pdfjs.v1")
+        || profile["identity"]["viewer"] != json!("pdfjs")
+        || version.is_empty()
+        || !is_commit(commit)
+        || runtime(profile, "pdfjs-dist")?
+            != format!("{version} at {}", commit.as_str().unwrap_or_default())
+        || runtime(profile, "@napi-rs/canvas")?.is_empty()
+    {
+        return Err("canonical PDF.js profile settings are invalid".to_owned());
+    }
+    for (name, expected) in [
+        ("node", reference.node.clone()),
+        ("npm", reference.npm.clone()),
+        (
+            "container",
+            format!("{}, {}", reference.container, reference.architecture),
+        ),
+    ] {
+        let recorded = runtime(profile, name)?;
+        if recorded != expected {
+            return Err(format!(
+                "PDF.js profile records {name} {recorded}, the reference profile {expected}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// The qpdf structure profile's identity is its lockfile's package, which is
+/// bound to the profile by digest.
+fn verify_qpdf_identity(profile: &Value, lock: &Value) -> Result<(), String> {
+    let version = &lock["package"]["version"];
+    let commit = &lock["package"]["commit"];
+    if lock["package"]["name"] != json!("qpdf")
+        || !version.as_str().is_some_and(|version| !version.is_empty())
+        || !is_commit(commit)
+        || profile["identity"]["upstream_version"] != *version
+        || profile["identity"]["upstream_commit"] != *commit
+        || runtime(profile, "qpdf")?
+            != format!(
+                "{} at {}",
+                version.as_str().unwrap_or_default(),
+                commit.as_str().unwrap_or_default()
+            )
+    {
+        return Err("qpdf structure profile does not name its locked qpdf".to_owned());
     }
     Ok(())
 }
@@ -328,25 +354,17 @@ fn verify_structure_profile(descriptor: &Value) -> Result<(), String> {
     verify_declared_schema(&profile, STRUCTURE_PROFILE_SCHEMA_ID)?;
     if profile["id"] != json!("canonical-pdf-structure.qpdf.v1")
         || profile["identity"]["parser"] != json!("qpdf")
-        || profile["identity"]["upstream_version"] != json!("12.3.2")
-        || profile["identity"]["upstream_commit"]
-            != json!("a898bb3a7289d1d05789d6d3f0d5dd534943a8da")
         || profile["identity"]["reference_profile_digest"] != json!(REFERENCE_PROFILE_DIGEST)
         || profile["qualification"]["case_id"] != json!("focused.rectangle-outline.v1")
-        || !has_runtime(
-            &profile["runtime"],
-            "qpdf",
-            "12.3.2 at a898bb3a7289d1d05789d6d3f0d5dd534943a8da",
-        )?
-        || !has_runtime(
-            &profile["runtime"],
-            "python",
-            "3.12.3 standard library only",
-        )?
+        || runtime(&profile, "python")?.is_empty()
     {
         return Err("canonical PDF structure profile identity is invalid".to_owned());
     }
-    verify_descriptor(&profile["implementation"]["lockfile"])?;
+    let lock = verify_descriptor(&profile["implementation"]["lockfile"])?;
+    verify_qpdf_identity(
+        &profile,
+        &serde_json::from_slice(&lock).map_err(|error| format!("invalid qpdf lock: {error}"))?,
+    )?;
     verify_producer_sources(
         &profile["implementation"]["sources"],
         HISTORICAL_STRUCTURE_SOURCES,
@@ -674,12 +692,6 @@ fn verify_exact_directory(relative: &str, expected: &[&str]) -> Result<(), Strin
     Ok(())
 }
 
-fn has_runtime(records: &Value, name: &str, expected_value: &str) -> Result<bool, String> {
-    Ok(array(records, "runtime records")?.iter().any(|record| {
-        record["name"] == json!(name) && record["value"].as_str() == Some(expected_value)
-    }))
-}
-
 fn array<'a>(value: &'a Value, subject: &str) -> Result<&'a [Value], String> {
     value
         .as_array()
@@ -696,6 +708,44 @@ fn string<'a>(value: &'a Value, subject: &str) -> Result<&'a str, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn profile(path: &str) -> Value {
+        serde_json::from_slice(&fs::read(repo_root().join(path)).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn pdfjs_profile_runs_in_the_reference_container_and_names_itself_consistently() {
+        let pdfjs = profile("tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json");
+        let reference = ReferenceRuntime::load().unwrap();
+        verify_pdfjs_profile(&pdfjs, &reference).unwrap();
+
+        let mut node = reference.clone();
+        node.node = "99.0.0".to_owned();
+        let error = verify_pdfjs_profile(&pdfjs, &node).unwrap_err();
+        assert!(
+            error.contains("node") && error.contains("99.0.0"),
+            "{error}"
+        );
+
+        let mut renamed = pdfjs.clone();
+        renamed["identity"]["upstream_version"] = json!("0.0.1");
+        assert!(verify_pdfjs_profile(&renamed, &reference).is_err());
+    }
+
+    #[test]
+    fn qpdf_profile_names_its_locked_qpdf() {
+        let structure =
+            profile("tests/conformance/structure-profiles/canonical-pdf-structure-v1.json");
+        let lock = profile("tools/pdf-harness/structure/qpdf.lock.json");
+        verify_qpdf_identity(&structure, &lock).unwrap();
+
+        let mut bumped = lock.clone();
+        bumped["package"]["version"] = json!("13.0.0");
+        assert!(verify_qpdf_identity(&structure, &bumped).is_err());
+        let mut recommitted = lock;
+        recommitted["package"]["commit"] = json!("0".repeat(40));
+        assert!(verify_qpdf_identity(&structure, &recommitted).is_err());
+    }
 
     #[test]
     fn historical_producers_require_valid_membership_without_acceptance_hashes() {

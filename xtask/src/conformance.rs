@@ -1542,7 +1542,7 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
         ],
         "provenance",
     )?;
-    let reference_profile = reference_profile()?;
+    let reference_profile = crate::viewer_identity::reference_profile()?;
     verify_reference_runtime(&provenance, &reference_profile)?;
     if provenance["generated_at"] != json!(generated_at)
         || provenance["reference_profile_digest"] != json!(format!("sha256:{PROFILE_DIGEST}"))
@@ -1655,23 +1655,6 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
         return Err("request sets differ across fresh processes".to_owned());
     }
     Ok(())
-}
-
-const REFERENCE_PROFILE_PATH: &str = "tests/oracle/reference-profiles/revision-1.json";
-
-/// The scene reference profile, read only when its bytes are the approved
-/// profile digest: it is the one place the container, Node and Chromium
-/// identities of the reference evidence live.
-fn reference_profile() -> Result<Value, String> {
-    let bytes = fs::read(repo_root().join(REFERENCE_PROFILE_PATH))
-        .map_err(|error| format!("failed to read {REFERENCE_PROFILE_PATH}: {error}"))?;
-    if sha256(&bytes) != PROFILE_DIGEST {
-        return Err(format!(
-            "{REFERENCE_PROFILE_PATH} does not match the approved digest"
-        ));
-    }
-    serde_json::from_slice(&bytes)
-        .map_err(|error| format!("invalid {REFERENCE_PROFILE_PATH}: {error}"))
 }
 
 /// Checks a case's recorded runtime (container, Node, Chromium and its launch
@@ -2352,9 +2335,8 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::{
-        reference_profile, verify_exceptions, verify_png_extent, verify_png_semantics,
-        verify_reference_runtime, verify_svg_metadata, verify_svg_root_extent, Sizing,
-        EMBEDDED_SCENE_MIME_TYPE,
+        verify_exceptions, verify_png_extent, verify_png_semantics, verify_reference_runtime,
+        verify_svg_metadata, verify_svg_root_extent, Sizing, EMBEDDED_SCENE_MIME_TYPE,
     };
 
     /// A case's runtime provenance as the generator writes it from `profile`.
@@ -2377,7 +2359,8 @@ mod tests {
 
     #[test]
     fn runtime_provenance_is_judged_against_the_reference_profile() {
-        let profile = reference_profile().expect("the reference profile reads");
+        let profile =
+            crate::viewer_identity::reference_profile().expect("the reference profile reads");
         let provenance = runtime_provenance(&profile);
         verify_reference_runtime(&provenance, &profile)
             .expect("the profile's own runtime verifies");

@@ -17,6 +17,7 @@ mod sfnt;
 mod svg_font_subset_runner;
 mod svg_font_subsets;
 mod svg_viewers;
+mod viewer_identity;
 
 use std::env;
 use std::process::{Command, ExitCode};
