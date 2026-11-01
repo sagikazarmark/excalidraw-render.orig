@@ -284,9 +284,10 @@ not a Cargo feature, so it stays out of the published interface. Any value other
 than unset, empty, `0` or `1` fails the build. The build script is not
 packaged: the published crate has no build script, so dependents never run it.
 
-The four xtask tests that build the qualified release CLI to replay the
-representative candidate are `#[ignore]`d as the release tier as well;
-`just test-release` runs them.
+The xtask tests that build the qualified release CLI to replay the
+representative candidate, and the ones that judge the live coverage
+inventory and ownership ledger, are `#[ignore]`d as the release tier as
+well; `just test-release` runs them.
 
 ## CI and evidence generation
 

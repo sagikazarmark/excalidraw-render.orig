@@ -45,8 +45,10 @@ name, so neither a workflow nor a developer names individual tests:
 | `limits_scene_admission`, `limits_scene_scaling` | `ci-render` | the fixed parser ceilings and the linear-time guards |
 | `harness_pdf_viewers`, `harness_svg_viewers` | `harness` | `#[ignore]`d gates that need the pinned PDFium, PDF.js, qpdf and Chromium harnesses |
 
-The four xtask tests that build the qualified release CLI are the release
-tier: `#[ignore]`d for the fast tier and run by `just test-release`.
+The xtask tests that build the qualified release CLI, and the ones that
+judge the live coverage inventory and ownership ledger (which re-key on
+every font-catalog or spec edit), are the release tier: `#[ignore]`d for the
+fast tier and run by `just test-release`.
 
 ### The golden record
 

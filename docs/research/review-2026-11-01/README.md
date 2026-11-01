@@ -205,3 +205,37 @@ before it is needed.
    exceptions; the `known-divergence` group.
 6. Fast-tier cleanup; the frame-export fontdb; the relative scaling ceiling.
 7. The dependency-bump policy; the oracle batch recipe.
+
+## Outcome
+
+The seven steps landed on the branch `review/testing-strategy` the same day
+(ADR-0025 records the decision). Rendering all 168 export targets on macOS
+arm64 reproduced every Linux-recorded blob, which settled the golden-record
+question; measuring the identical-input controls for every variant did not
+support deriving the PNG SSIM floor from them, which is recorded in
+[render-tier.md §9](render-tier.md) and left with ADR-0014, while the two-sided
+exceptions it did motivate found eleven stale records.
+
+Recommended and deferred, in rough order of value:
+
+- Exact textual dimensions in the SVG harness for `stroke`, `fill`,
+  `stroke-width`, `opacity` and `<text>` positions (render-tier 3).
+- A harness-only rasterizer pinned apart from the renderer's `resvg`
+  (render-tier 4), or dropping `pins_are_measured_by_the_locked_rasterizer`.
+- Dropping the provenance-literal checks from `verify-all`, folding the
+  viewer version literals into the profiles, and resolving the PDF.js
+  6.1.200/6.2.108 identity mismatch (conformance-verifiers §13,
+  external-harnesses §9).
+- Pruning the unread candidate directories under ADR-0022.
+- Re-keying the font-subset viewer qualification by glyph set, a
+  `--supersede` flag for the generators, and `revision-N` as one
+  configuration value (external-harnesses §9).
+- A `fuzz/` crate with cargo-fuzz targets, one nightly family under the
+  default limits, and promoting the 2026-08-05 finding if it reproduces
+  (fuzz-nightly-ci §10); the comparator closure test and the pdfjs lockfile
+  digest.
+- Demoting the remaining whole-artifact self-pins in the fast tier, folding
+  the four one-test binaries into `fast`, and a characterization marker for
+  known-defect pins (fast-tier 2, 5, 6).
+- The node and qpdf xtask tests to an opt-in profile, and Node out of the
+  base devenv closure.
