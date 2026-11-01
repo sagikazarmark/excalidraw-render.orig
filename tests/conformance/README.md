@@ -88,14 +88,18 @@ dimensions (#170, #171, #172).
 
 A tolerance exception records a maintainer's judgment that one variant's
 observed difference from the official evidence has a non-defect cause. It names
-the variant, format, viewer, and region it governs, sets its ceilings to the
-exact observed changed-pixel count and binary64 SSIM score with no margin,
-documents the cause, and links the issue that carries the decision. The
-generator carries registered exceptions into the manifest for Git review;
-`parity_registered_case_png` then holds an excepted variant to those ceilings
-and fails if the variant starts passing the canonical budget, so a record cannot
-outlive the difference it describes. Today only whole-artifact direct-PNG
-exceptions with no viewer are admitted.
+the variant, format, viewer, and region it governs, records the exact observed
+changed-pixel count and binary64 SSIM score with no margin, documents the
+cause, and links the issue that carries the decision. The generator carries
+registered exceptions into the manifest for Git review;
+`parity_registered_case_png` then holds an excepted variant to that
+measurement in both directions, so a regression fails and so does an
+unrecorded improvement (the record is re-recorded under review, in
+`registry.json` and the case manifest with its sidecar), and fails if the
+variant starts passing the canonical budget, so a record cannot outlive the
+difference it describes. The clean and the excepted variants are judged by
+separate tests. Today only whole-artifact direct-PNG exceptions with no viewer
+are admitted.
 
 A compatibility exception, such as spec 8.3's replacement glyph for a scalar
 no bundled face maps or its Noto Emoji substitution for the local-only emoji
@@ -368,7 +372,6 @@ part of the release-mode qualification set and runs only with
 
 ```sh
 cargo run --locked -p xtask -- conformance verify-svg-font-subsets
-cargo run --locked -p xtask -- conformance verify-svg-font-subset-release
 EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1 cargo test --locked --release -p excalidraw-render --lib \
   complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces
 ```

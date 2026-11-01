@@ -192,12 +192,15 @@ Excalifont/Liberation font database.
 
 ## Artifact byte stability
 
-`tests/package-consumer` depends on Cargo's unpacked package output rather than
-the workspace crate. It renders the approved rectangle through the public Rust
-facade to SVG, PNG, and PDF twice and compares complete artifact and report
-bytes with the checked native expectations. `just package` packages the
-workspace, `just package-cli` checks the packaged CLI and `just package-facade`
-runs the consumer:
+The render-tier test `golden_native` holds every registered export target to
+`tests/conformance/golden/native.json` ([CI operations](ci.md)); an
+intentional output change is adopted with `just update-golden` and reviewed
+as the diff. `tests/package-consumer` depends on Cargo's unpacked package
+output rather than the workspace crate: it renders the approved rectangle
+through the public Rust facade in every format and compares the bytes with the
+golden record, and checks the facade's behavior, the CJK feature gate and the
+packaged archives. `just package` packages the workspace, `just package-cli`
+checks the packaged CLI and `just package-facade` runs the consumer:
 
 ```sh
 cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
@@ -210,7 +213,9 @@ directory, WASM test runner) applies, and clean it first: `cargo package`
 stamps the unpacked sources with a fixed mtime, so a consumer build left over
 from an earlier package never notices that the crate changed.
 
-`just wasm-packaging` runs the same consumer in browser WASM (ADR-0024).
+`just wasm-packaging` runs the same consumer in browser WASM, and
+`just golden-wasm` the golden test, from the `browser` devenv profile
+(ADR-0024).
 
 ## Tests
 
@@ -228,7 +233,8 @@ by tier:
 |---|---|---|
 | `fast` (one module per former binary) and every other crate's targets | every unit, component and full-pipeline test | `ci-fast` |
 | `parity_registered_case_svg`, `parity_registered_case_png`, `parity_frame_export` | parity against official evidence: the registry-driven scene harnesses and the frame-export case | `ci-render` |
-| `limits_scene_admission`, `limits_scene_scaling` | fixed parser ceilings that build 64 MiB and million-entry scenes, and scenes large enough that a quadratic per-element lookup would exceed a time ceiling | `ci-render` |
+| `golden_native` | the golden bytes of every registered export target, native (and browser WASM through `just golden-wasm`) | `ci-render` |
+| `limits_scene_admission`, `limits_scene_scaling` | fixed parser ceilings that build 64 MiB and million-entry scenes, and linear-time guards judged against a same-machine baseline | `ci-render` |
 | `harness_pdf_viewers`, `harness_svg_viewers` | `#[ignore]`d gates that need the pinned PDFium, PDF.js, qpdf and Chromium harnesses | `harness` |
 
 ```sh
@@ -245,7 +251,9 @@ the tiers. The devenv shell provides nextest.
 The two registry parity harnesses render each registered variant once per
 format per run: the SVG harness judges one render on path geometry, root extent
 and the rasterized document, the PNG harness one render against the direct
-official raster, and each spreads its variants over the available cores. The
+official raster, with the variants that carry a tolerance exception judged
+separately from the clean ones and held to their recorded measurement in both
+directions. Each spreads its variants over the available cores; the
 comparator, not the renderer, is what their time goes to.
 
 The root `Cargo.toml` optimizes the `test` profile (`opt-level = 2`, keeping
@@ -260,10 +268,9 @@ part of the push gate: the SVG font subset qualification corpus
 (`render::font_subset_qualification::complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces`)
 and the frame batch property test
 (`render::frame_batch_property::frame_batch_rendering_matches_standalone_around_resource_limits`).
-`just qualification x86_64-unknown-linux-gnu`, which the `Release evidence`
-workflow runs, runs the complete renderer unit target in
-`--release` with the environment variable that admits them, without a name
-filter, so a renamed test cannot drop out silently:
+`just qualification <target>`, which `just release` runs, runs the complete
+renderer unit target in `--release` with the environment variable that admits
+them, without a name filter, so a renamed test cannot drop out silently:
 
 ```sh
 EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1 cargo test --locked --release -p excalidraw-render --lib
@@ -277,6 +284,10 @@ not a Cargo feature, so it stays out of the published interface. Any value other
 than unset, empty, `0` or `1` fails the build. The build script is not
 packaged: the published crate has no build script, so dependents never run it.
 
+The four xtask tests that build the qualified release CLI to replay the
+representative candidate are `#[ignore]`d as the release tier as well;
+`just test-release` runs them.
+
 ## CI and evidence generation
 
 The gates are recipes in the [justfile](../justfile), run in the devenv shell
@@ -287,16 +298,14 @@ laptop and CI run the same commands with the same tools:
 just              # list the recipes
 just ci           # every per-change gate
 just test         # one of them
-just release      # the release checks, on the supported targets
+devenv --profile browser shell -- just release   # the release checks, on both supported targets
 ```
 
 The reference oracle and the viewer harnesses run digest-pinned Docker images
 from the host's Docker, through `just pdf-harness`, `just svg-harness`,
-`just viewer-evidence`, `just reference-profile`, `just reference-case` and
-`just candidate-successor`.
-GitHub workflows run the recipes in the devenv shell and handle scheduling and
-artifact upload.
+`just viewer-evidence`, `just reference-profile`, `just reference-case`,
+`just reference-cases` and `just candidate-successor`. GitHub workflows run
+the recipes in the devenv shell and handle scheduling and artifact upload.
 
 See [CI operations](ci.md) for the gate inventory, the release checks, the
-nightly expansions, evidence reproduction and generation, and the two-target
-aggregate.
+nightly and weekly runs, evidence reproduction and generation, and restaging.

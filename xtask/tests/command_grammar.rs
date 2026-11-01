@@ -53,8 +53,8 @@ fn missing_arguments_are_rejected() {
         "rationale",
     );
     rejects(
-        &["conformance", "stage-native-baseline", MISSING],
-        "baseline",
+        &["conformance", "record-case-owner", MISSING],
+        "rationale",
     );
     rejects(
         &["conformance", "record-test-owner", "--package"],

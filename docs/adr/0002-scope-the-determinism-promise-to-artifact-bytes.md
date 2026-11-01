@@ -1,5 +1,5 @@
 ---
-status: accepted; the target set is two since ADR-0006
+status: accepted; the target set is two since ADR-0006; the trace-equality check retired with ADR-0025
 ---
 
 # Scope the determinism promise to artifact bytes and diagnostics
