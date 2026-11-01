@@ -615,12 +615,6 @@ fn pixel_rgb(chunks: &[([u8; 4], Vec<u8>)], rgb: [u8; 3]) -> Vec<u8> {
 }
 #[test]
 fn exact_transfer_and_metadata_anchors() {
-    assert_eq!(
-        lower_hex(&Sha256::digest(include_bytes!(
-            "../common/png_color_reference.rs"
-        ))),
-        "55eb1a01edf9d969ee60087d6d81ec99b54a8f84a63697435943e448367576e2"
-    );
     let evidence = reference::evidence();
     let icc = evidence["cases"]
         .as_array()

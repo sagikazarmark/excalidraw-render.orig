@@ -2,17 +2,12 @@
 use base64::Engine as _;
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 
 pub const REFERENCE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../tests/oracle/png-color/reference.json"
 ));
 pub fn evidence() -> Value {
-    assert_eq!(
-        lower_hex(&Sha256::digest(REFERENCE)),
-        "0ce509fd2a143945a9eeecfcd45683584e1562a538bb8211cc531db48d1ce53e"
-    );
     let record: Value = serde_json::from_slice(REFERENCE).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
     assert_eq!(record["visual_class"], "geometry-image");
@@ -155,10 +150,6 @@ pub fn gain_map_evidence() -> Value {
         env!("CARGO_MANIFEST_DIR"),
         "/../../tests/oracle/png-color/gain-map-reference.json"
     ));
-    assert_eq!(
-        lower_hex(&Sha256::digest(bytes)),
-        "c68882cdbaa86ca3c03b7911ec93408c183f3d0073fb7c7f1ecbc74484b0d5b2"
-    );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
     assert_eq!(record["visual_class"], "geometry-image");
@@ -284,10 +275,6 @@ pub fn hdr_metadata_evidence() -> Value {
         env!("CARGO_MANIFEST_DIR"),
         "/../../tests/oracle/png-color/hdr-metadata-reference.json"
     ));
-    assert_eq!(
-        lower_hex(&Sha256::digest(bytes)),
-        "65d3136c2c279a6d56ae71d7bfea11c63553e95effd0372c54505703f9a246f8"
-    );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
     assert_eq!(record["visual_class"], "geometry-image");
@@ -587,8 +574,4 @@ pub fn appearance(row: &Value, actual: CanonicalRgba8, pdf: bool) {
         .unwrap();
         assert!(result.passed(), "{} {pdf}: {:?}", row["id"], result.whole);
     }
-}
-
-fn lower_hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

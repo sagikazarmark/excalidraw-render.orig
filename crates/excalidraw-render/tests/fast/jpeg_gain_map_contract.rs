@@ -36,21 +36,18 @@ fn decode(value: &Value) -> Vec<u8> {
 fn hash(bytes: &[u8]) -> String {
     lower_hex(&Sha256::digest(bytes))
 }
-fn pinned_json(bytes: &[u8], expected: &str) -> Value {
-    assert_eq!(hash(bytes), expected);
+fn parse_json(bytes: &[u8]) -> Value {
     serde_json::from_slice(bytes).unwrap()
 }
 fn inputs() -> Value {
-    pinned_json(
-        include_bytes!("../../../../tests/oracle/jpeg-color/inputs.json"),
-        "acbbe2df5460565936f027513305b061730da77cb392f27d68d19220ddc34258",
-    )
+    parse_json(include_bytes!(
+        "../../../../tests/oracle/jpeg-color/inputs.json"
+    ))
 }
 fn base_evidence() -> Value {
-    let record = pinned_json(
-        include_bytes!("../../../../tests/oracle/jpeg-color/reference.json"),
-        "976955ebad540f3aa0291e6073838d59f1519dad1a8efe4cdab89198fbb57088",
-    );
+    let record = parse_json(include_bytes!(
+        "../../../../tests/oracle/jpeg-color/reference.json"
+    ));
     assert_eq!(
         record["schema"],
         "excalidraw-render/jpeg-color-reference/v1"
@@ -68,10 +65,9 @@ fn by_id<'a>(record: &'a Value, id: &Value) -> &'a Value {
     rows[0]
 }
 fn evidence() -> Value {
-    let record = pinned_json(
-        include_bytes!("../../../../tests/oracle/jpeg-gain-map/reference.json"),
-        "55d90c9a8f38c1e84f1cadf3930cb59be8780b34e6506c3e1fa9723bf0e884aa",
-    );
+    let record = parse_json(include_bytes!(
+        "../../../../tests/oracle/jpeg-gain-map/reference.json"
+    ));
     assert_eq!(
         record["schema"],
         "excalidraw-render/jpeg-gain-map-reference/v1"

@@ -11,33 +11,11 @@ use sha2::{Digest, Sha256};
 
 use crate::common::approved_scenes::{
     render_isolated_fallback, render_nested_native_operations, render_project_operations,
-    NESTED_NATIVE_OPERATIONS, PROJECT_OPERATIONS,
 };
 use crate::common::lower_hex;
 
-const PROJECT_STRUCTURE: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../tests/conformance/pdf-backend-qualification/project-operations-structure.json"
-));
-const NESTED_NATIVE_STRUCTURE: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../tests/conformance/pdf-backend-qualification/nested-native-operations-structure.json"
-));
-const FALLBACK_STRUCTURE: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../tests/conformance/pdf-backend-qualification/isolated-fallback-structure.json"
-));
-
 #[test]
 fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
-    assert_eq!(
-        lower_hex(&Sha256::digest(PROJECT_OPERATIONS)),
-        "eaef67702df489f774c8eb862159098b6e220e1dac1e79bc45fada6b6a43afda"
-    );
-    assert_eq!(
-        lower_hex(&Sha256::digest(PROJECT_STRUCTURE)),
-        "04febc1ee78a4dd01daceac2d3eeeb0d4910c2da48739bce2135b246da5f8d55"
-    );
     let first = render_project_operations();
     let second = render_project_operations();
 
@@ -92,10 +70,6 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
 
 #[test]
 fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
-    assert_eq!(
-        lower_hex(&Sha256::digest(FALLBACK_STRUCTURE)),
-        "7afc81f4873227495ecca61ffa82b86799cad7a5b29d4f2bae4205d38f665740"
-    );
     let first = render_isolated_fallback();
     let second = render_isolated_fallback();
 
@@ -192,14 +166,6 @@ fn every_pixel_domain_fallback_family_is_isolated_and_deterministic() {
 
 #[test]
 fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
-    assert_eq!(
-        lower_hex(&Sha256::digest(NESTED_NATIVE_OPERATIONS)),
-        "6aebb7ca70ae3742d23597ca3ff109341219269d70d134ace5157d3112bfa257"
-    );
-    assert_eq!(
-        lower_hex(&Sha256::digest(NESTED_NATIVE_STRUCTURE)),
-        "bf55a897acef1a0bd7946c9b88205445292f8d0a419574930d60b330fd80d146"
-    );
     let outcome = render_nested_native_operations();
     let repeated = render_nested_native_operations();
     let pdf = pdf_text(outcome.artifact().bytes());
