@@ -5,6 +5,7 @@
 //! only failing views, the PDF black/white composites, pass under approved
 //! exact-ceiling tolerance exceptions (spec section 14.4). Synthetic PDF
 //! projection failures are not measurements of any PDF viewer.
+use crate::common::characterization::known_defect;
 use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
@@ -1764,7 +1765,12 @@ fn issue_191_partial_12_cells_exact_native_defects() {
                 assert_eq!(actual["alpha"], old["formats"][i]["alpha"]);
                 corrected += 1;
             } else {
-                assert_eq!(actual, old["formats"][i], "{} {format:?}", row["id"]);
+                known_defect(
+                    "#191",
+                    &format!("{} {format:?}", row["id"]),
+                    &actual,
+                    &old["formats"][i],
+                );
             }
         }
     }

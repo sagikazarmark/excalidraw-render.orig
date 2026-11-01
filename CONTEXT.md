@@ -81,7 +81,7 @@ A reviewed record in a conformance case that one variant's observed difference f
 _Avoid_: Visual exception, known-divergence suppression, test skip, ceiling (for the recorded measurement)
 
 **Known defect**:
-A diagnosed renderer defect whose fix awaits a maintainer decision, recorded in the parity harness that observes it with its exact measurement pinned and the issue that tracks it named. It is not an approved judgment and never enters a case manifest; the pin fails the harness when the divergence moves in either direction, so the entry can neither outlive the defect nor absorb another one.
+A diagnosed renderer defect whose fix awaits a maintainer decision, recorded in the parity harness that observes it with its exact measurement pinned and the issue that tracks it named. It is not an approved judgment and never enters a case manifest; the pin fails the harness when the divergence moves in either direction, so the entry can neither outlive the defect nor absorb another one. Outside the parity harnesses, a fast-tier test that holds the renderer's current wrong output for an open issue does so through `common::characterization::known_defect`, which names the issue when the output moves and says to close it and drop the pin if the output improved; such a pin is a characterization, not parity evidence.
 _Avoid_: Tolerance exception for a defect, suppression list, expected failure
 
 **Compatibility exception pin**:

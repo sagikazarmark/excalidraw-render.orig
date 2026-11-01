@@ -23,6 +23,7 @@ mod artifact_metadata;
 mod bmp_ico_container_contract;
 mod bmp_ico_limit_contract;
 mod bound_text_render;
+mod characterization;
 mod cluster_text_pdf;
 mod compatibility_fallback_render;
 mod compatibility_identity;

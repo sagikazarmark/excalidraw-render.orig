@@ -7,6 +7,7 @@
 //! against browser-rasterized SVG, not a whole-PDF viewer claim.
 //! Optional MPF tags and relocated IFDs are additional native structural
 //! controls; they add no browser evidence or qualified matrix cells.
+use crate::common::characterization::known_defect;
 use crate::common::lower_hex;
 use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
@@ -697,12 +698,12 @@ fn admitted(row: &Value, base: &Value, defect: bool) {
                 ("hdr-edges", "edges") => (1262, 0.8737353963660468),
                 _ => panic!("outside #190 color measurement scope"),
             };
-            assert_eq!(
-                result.whole.changed_pixels, changed,
-                "{}: {format:?}",
-                row["id"]
+            known_defect(
+                "#190",
+                &format!("{}: {format:?}", row["id"]),
+                (result.whole.changed_pixels, score.to_bits()),
+                (changed, ssim.to_bits()),
             );
-            assert_eq!(score.to_bits(), ssim.to_bits(), "{}: {format:?}", row["id"]);
         } else {
             assert!(
                 result.passed(),

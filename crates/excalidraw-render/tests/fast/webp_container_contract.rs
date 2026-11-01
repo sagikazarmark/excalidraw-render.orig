@@ -20,6 +20,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 use super::webp_sample_contract::{render, report, svg};
+use crate::common::characterization::known_defect;
 use crate::common::lower_hex;
 
 const RECORD: &[u8] = include_bytes!(concat!(
@@ -222,7 +223,7 @@ fn check(groups: &[&str], formats: &[OutputFormat]) -> usize {
                 ),
                 OutputFormat::Png => match divergence {
                     Some((_, pinned)) => {
-                        assert_eq!(hash(&bytes), *pinned, "{id}: known divergence moved")
+                        known_defect("#197", &format!("{id} PNG"), hash(&bytes).as_str(), pinned)
                     }
                     None => judge(
                         id,

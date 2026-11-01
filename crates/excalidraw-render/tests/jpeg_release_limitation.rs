@@ -4,6 +4,10 @@ use base64::Engine as _;
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use jpeg_encoder::{ColorType, Encoder, SamplingFactor};
 
+mod common;
+
+use common::characterization::known_defect;
+
 fn scene(jpeg: &[u8]) -> SceneDocument {
     let payload = base64::engine::general_purpose::STANDARD.encode(jpeg);
     let source = serde_json::json!({
@@ -45,12 +49,17 @@ fn issue_193_truncated_scan_is_still_accepted_without_decode_failure() {
         let request = RenderRequest::builder(format).build().unwrap();
         let expected = renderer.render(&valid, &request).unwrap();
         let actual = renderer.render(&malformed, &request).unwrap();
-        assert!(
-            actual.report().diagnostics().is_empty(),
-            "#193 behavior changed; review the known limitation: {:?}",
-            actual.report()
+        // The truncated scan is admitted without a diagnostic and draws
+        // something other than the intact image.
+        known_defect(
+            "#193",
+            &format!("{format:?}"),
+            (
+                actual.report().diagnostics().len(),
+                actual.artifact().bytes() == expected.artifact().bytes(),
+            ),
+            (0, false),
         );
-        assert_ne!(actual.artifact().bytes(), expected.artifact().bytes());
         assert_eq!(
             actual.artifact().bytes(),
             renderer
