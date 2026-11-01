@@ -46,7 +46,7 @@ function loadCase(caseId) {
 const ORIGIN = "http://reference.invalid";
 const PROFILE_DIGEST = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 const ASSET_DIGEST = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const SURFACE_DIGEST = "14309697cdb5bf9ebe660dccf27c4c929c0f5edb7174443dd4f962544fcc4bea";
+const SURFACE_DIGEST = "93029f2dab63c203dee69da4497ea4c2988a72d73f2a0017e62c529a4caac202";
 const CONTAINER_IMAGE = "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9";
 const BROWSER_VERSION = "149.0.7827.55";
 const BROWSER_ARGUMENTS = [
@@ -491,6 +491,11 @@ function compareCheckedEvidence(stagedRoot, manifest) {
   const normalizeProvenance = (value) => {
     const normalized = structuredClone(value);
     for (const run of normalized.runs) delete run.browser_process_id;
+    // Producer code is historical provenance (ADR-0019, ADR-0024): compare
+    // where it lives, not the bytes it had when the evidence was captured.
+    for (const producer of [normalized.generator, normalized.runner]) {
+      if (producer) { delete producer.sha256; delete producer.byte_length; }
+    }
     return normalized;
   };
   if (canonicalize(normalizeProvenance(stagedProvenance))

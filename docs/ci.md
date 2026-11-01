@@ -99,7 +99,21 @@ and render with `--network none`. The recipes acquire what the scripts need
 first (the oracle's `npm ci`, the PDF harness, the pure-Rust viewer's crates)
 and then run them verbatim against the host's Docker, so these recipes need
 Docker. Acquisition can use the network. The images are `linux/amd64`; on an
-ARM host Docker emulates them, which makes the browser runs slow.
+ARM host Docker emulates them, which makes the browser runs slow. Under
+emulation Excalidraw's font-subsetting worker misses its 1000 ms deadline, so
+the reference profile's smoke render and every text-bearing registered case
+fail there: run `just reference-profile` and `just reference-case` on Linux
+x86-64. The `linux/arm64` build of the same image is a different Chromium
+(Playwright's own 149.0.7827.0, not Chrome for Testing 149.0.7827.55) and
+differs in a few blended and resampled pixels, so it cannot stand in.
+
+The reference profile binds the oracle's npm lock and the bundle built from it
+(renderer spec 3.2), so Dependabot does not update `tools/reference-oracle`. A
+dependency change there is a reviewed profile change: regenerate the profile
+with `just reference-profile update` and carry the new digest through the
+revision-1 records that bind it. Reproduction compares the oracle's artifacts
+and its run provenance; the generator and runner descriptors in that
+provenance are historical, compared by path only.
 
 Reproduction writes under `target/`; generation and updates write to the
 checkout, and existing generators retain their refusal to overwrite manifested
