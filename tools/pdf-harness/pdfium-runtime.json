@@ -17,7 +17,7 @@
           "byte_length": 96000,
           "height": 120,
           "layout": "top-left-row-major",
-          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "library_sha256": "8f674979f8457e8a99721412607e878580f8a702ad90d36d37adf571202b4087",
           "pdfium": "152.0.7947.0",
           "pixel_format": "straight-alpha-srgb-rgba8",
           "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a",
@@ -28,7 +28,7 @@
           "byte_length": 96000,
           "height": 120,
           "layout": "top-left-row-major",
-          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "library_sha256": "8f674979f8457e8a99721412607e878580f8a702ad90d36d37adf571202b4087",
           "pdfium": "152.0.7947.0",
           "pixel_format": "straight-alpha-srgb-rgba8",
           "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a",
@@ -52,7 +52,7 @@
           "byte_length": 96000,
           "height": 120,
           "layout": "top-left-row-major",
-          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "library_sha256": "8f674979f8457e8a99721412607e878580f8a702ad90d36d37adf571202b4087",
           "pdfium": "152.0.7947.0",
           "pixel_format": "straight-alpha-srgb-rgba8",
           "sha256": "67aee623b8731045330343370de0dfd30fdbb7a343bf2043d1f36473e4b9b88f",
@@ -63,7 +63,7 @@
           "byte_length": 96000,
           "height": 120,
           "layout": "top-left-row-major",
-          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "library_sha256": "8f674979f8457e8a99721412607e878580f8a702ad90d36d37adf571202b4087",
           "pdfium": "152.0.7947.0",
           "pixel_format": "straight-alpha-srgb-rgba8",
           "sha256": "67aee623b8731045330343370de0dfd30fdbb7a343bf2043d1f36473e4b9b88f",
@@ -87,7 +87,7 @@
           "byte_length": 96000,
           "height": 120,
           "layout": "top-left-row-major",
-          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "library_sha256": "8f674979f8457e8a99721412607e878580f8a702ad90d36d37adf571202b4087",
           "pdfium": "152.0.7947.0",
           "pixel_format": "straight-alpha-srgb-rgba8",
           "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a",
@@ -98,7 +98,7 @@
           "byte_length": 96000,
           "height": 120,
           "layout": "top-left-row-major",
-          "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+          "library_sha256": "8f674979f8457e8a99721412607e878580f8a702ad90d36d37adf571202b4087",
           "pdfium": "152.0.7947.0",
           "pixel_format": "straight-alpha-srgb-rgba8",
           "sha256": "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a",
@@ -108,13 +108,9 @@
     }
   ],
   "font_backend": "FreeType",
-  "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
-  "native_lock": {
-    "path": "tools/pdf-harness/pdfium-native.lock.json",
-    "sha256": "a25ae4e900421f1c8c79ca620d7d6914cbddf391c2f2056f255c4b84b400214a"
-  },
+  "library_sha256": "8f674979f8457e8a99721412607e878580f8a702ad90d36d37adf571202b4087",
   "pdfium": "152.0.7947.0",
-  "platform": "linux-x86_64",
+  "platform": "macos-aarch64",
   "renderer": "AGG",
   "schema": "excalidraw-render/pdfium-runtime/v1",
   "sources": [
@@ -128,19 +124,15 @@
     },
     {
       "path": "tools/pdf-harness/pdfium-rust/src/main.rs",
-      "sha256": "0ceafbc3f85a83c09ab04bb32d6beefcd046c59c15f1b8e70776e2f38b6c7d9e"
+      "sha256": "3eba46607a3077832effab12a34b7b4f7b4c5e47dd8a7f05f023bcb7ab9b857a"
     },
     {
       "path": "tools/pdf-harness/pdfium-rust/src/lib.rs",
       "sha256": "d8ac29a186ade08011b201943c5609b2e5023da33d2dbc50f6c842fbe2c8f460"
     },
     {
-      "path": "tools/pdf-harness/pdfium-native.lock.json",
-      "sha256": "a25ae4e900421f1c8c79ca620d7d6914cbddf391c2f2056f255c4b84b400214a"
-    },
-    {
-      "path": "tools/pdf-harness/install.sh",
-      "sha256": "c82a64b60b35677c55151da98c2e84c119f80e2f5e229fb22067a50cd38db53d"
+      "path": "devenv.nix",
+      "sha256": "2063d655c095ae83611159b5828cd65dca241d243416e2928be8a4f04ea4524b"
     },
     {
       "path": "tools/pdf-harness/run-pdfium.sh",
@@ -148,7 +140,7 @@
     },
     {
       "path": "tools/pdf-harness/pdfium-rust/tests/controls.rs",
-      "sha256": "5ffbcdd9fe81a98beaa61449b7c995596315c209686ae539491a44a2deffc1c3"
+      "sha256": "853b6affedad3feebe927ac4ae0df21350a492fd28ae53bfd9d744f38ee91d27"
     },
     {
       "path": "tools/pdf-harness/pdfium/empty-fonts/.keep",

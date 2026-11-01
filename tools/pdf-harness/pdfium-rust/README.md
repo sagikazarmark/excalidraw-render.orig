@@ -4,11 +4,10 @@ Maintained native PDF harness adapter using the safe `pdfium-render 0.9.4`
 API (`pdfium_7881`, default features disabled). This unpublished crate has its
 own workspace and pinned dependency lock; owned Rust code forbids `unsafe`.
 
-From the repository root, with Rust **1.97.1** and the pinned native library
-already installed:
+From the repository root, in the devenv shell (Rust **1.97.1**, with the pinned
+PDFium distribution linked at `target/pdf-harness/pdfium`):
 
 ```sh
-bash tools/pdf-harness/install.sh --pdfium-only
 cargo build --locked --manifest-path tools/pdf-harness/pdfium-rust/Cargo.toml --target-dir target/pdf-harness/pdfium-rust
 target/pdf-harness/pdfium-rust/debug/excalidraw-render-pdfium input.pdf output.rgba 112 84
 cargo test --locked --manifest-path tools/pdf-harness/pdfium-rust/Cargo.toml --target-dir target/pdf-harness/pdfium-rust
@@ -16,18 +15,19 @@ cargo test --locked --manifest-path tools/pdf-harness/pdfium-rust/Cargo.toml --t
 
 ## Contract
 
-- Linux x86_64 only, one render per fresh worker process. PDFium has global
+- One render per fresh worker process. PDFium has global
   initialization state; integration tests invoke `CARGO_BIN_EXE_excalidraw-render-pdfium`
   rather than initializing PDFium in the test process.
-- Load only `target/pdf-harness/pdfium/lib/libpdfium.so` relative to the
-  build-time crate's repository root (three parents). Its SHA-256 must be
-  `61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33`,
-  identifying PDFium `152.0.7947.0`. The standalone upstream archive supplies
-  exactly the same library bytes as the historical wheel. No Python is installed
-  or executed; `pdfium-render` supplies bindings, not the native library.
+- Load only the host's PDFium library (`libpdfium.so` or `libpdfium.dylib`) from
+  `target/pdf-harness/pdfium/lib/`, relative to the build-time crate's
+  repository root (three parents). The distribution's `VERSION` must declare
+  PDFium `152.0.7947.0`. The receipt records the library's SHA-256; on Linux
+  x86_64 that is the qualified
+  `61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33`. No Python
+  is installed or executed; `pdfium-render` supplies bindings, not the native library.
 - AGG rendering, FreeType, and the existing verified
   `tools/pdf-harness/pdfium/empty-fonts/.keep` directory. Constants are compiled
-  into the worker; the installer owns native artifact acquisition.
+  into the worker; devenv owns native artifact acquisition.
 - Exactly one unrotated PDF 1.7 page. Positive signed-32-bit bitmap dimensions
   (with representable packed stride), each strictly less than one pixel from
   the page's 96-DPI size. Render at exactly `96/72` scale at the origin, clipping

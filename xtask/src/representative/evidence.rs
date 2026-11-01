@@ -348,10 +348,19 @@ fn verify_sources(reference: &Value, record: &Value) -> Result<()> {
             "invalid or duplicate source descriptor",
         )?;
     }
-    let mut legacy_rust = required.clone();
-    legacy_rust.insert("tools/pdf-harness/pdfium.lock.json".into());
+    // Earlier Rust collections also bound the retired native lock, and the
+    // earliest the Python-era wheel lock beside it.
+    let retired = |paths: &[&str]| {
+        let mut inventory = required.clone();
+        inventory.extend(paths.iter().map(|p| (*p).to_owned()));
+        inventory
+    };
+    let native_lock = crate::pdf_viewers::RETIRED_NATIVE_LOCK;
     require(
-        seen == required || (adapter == receipts::PdfiumAdapter::Rust && seen == legacy_rust),
+        seen == required
+            || (adapter == receipts::PdfiumAdapter::Rust
+                && (seen == retired(&[native_lock])
+                    || seen == retired(&[native_lock, "tools/pdf-harness/pdfium.lock.json"]))),
         "incomplete producer inventory",
     )
 }
@@ -729,7 +738,7 @@ mod tests {
         let old_paths = source_paths(&reference, receipts::PdfiumAdapter::Python).unwrap();
         let new_paths = source_paths(&reference, receipts::PdfiumAdapter::Rust).unwrap();
         assert_eq!(old_paths.len(), 22);
-        assert_eq!(new_paths.len(), 25);
+        assert_eq!(new_paths.len(), 24);
         assert_eq!(
             old_paths
                 .difference(&new_paths)
@@ -757,11 +766,26 @@ mod tests {
             ]});
             verify_sources(&reference, &original).unwrap();
             if receipt == &current {
-                let mut earlier_rust = original.clone();
-                earlier_rust["sources"].as_array_mut().unwrap().push(json!({
-                    "path":"tools/pdf-harness/pdfium.lock.json", "bytes":1, "sha256":"0".repeat(64)
-                }));
+                let retired = |path: &str| json!({"path":path, "bytes":1, "sha256":"0".repeat(64)});
+                let mut native_lock = original.clone();
+                native_lock["sources"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(retired(crate::pdf_viewers::RETIRED_NATIVE_LOCK));
+                verify_sources(&reference, &native_lock).unwrap();
+                let mut earlier_rust = native_lock.clone();
+                earlier_rust["sources"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(retired("tools/pdf-harness/pdfium.lock.json"));
                 verify_sources(&reference, &earlier_rust).unwrap();
+                // The wheel lock never appeared without the native lock.
+                let mut wheel_only = original.clone();
+                wheel_only["sources"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(retired("tools/pdf-harness/pdfium.lock.json"));
+                assert!(verify_sources(&reference, &wheel_only).is_err());
             }
             let mut changed = original.clone();
             changed["sources"] = wrong_sources.clone();

@@ -80,7 +80,7 @@ target directory, so the staged sources never touch the checkout.
 | --- | --- | --- |
 | Per-change gates | Formatting, lints, workspace tests, approved-file digests and packaged consumers | `just ci` |
 | Release checks | Native and WASM qualification, snapshot replay and full equality | `just release` |
-| PDF harness gates | PDFium/PDF.js rendering and qpdf structure tests | `dagger api call evidence pdf` |
+| PDF harness gates | PDFium/PDF.js rendering and qpdf structure tests | `just pdf-harness` |
 | Reference profile | Pinned official Excalidraw wrapper, assets, environment and smoke test | `dagger api call evidence reference --mode verify` |
 | Registered case | Expected reference SVG/PNG output for one scene | `dagger api call evidence case --case-id focused.rectangle-outline.v1` |
 | Viewer qualification | Reproducibility and correctness of the tools used to judge rendered output | `just viewer-evidence svg` (also `pdf`, `font-subset`; `generate` as the second argument regenerates) |
@@ -201,7 +201,7 @@ gates, `nightly.yaml` the `just nightly-*` expansions and the browser-WASM
 release checks, `release-evidence.yaml`, on demand, `just target-evidence`
 with its output as an artifact, and `restage.yaml`, on demand, the restaging
 recipes below. The PDF harness gates are not scheduled; run them with
-`dagger api call evidence pdf`.
+`just pdf-harness`.
 
 ## Restaging
 

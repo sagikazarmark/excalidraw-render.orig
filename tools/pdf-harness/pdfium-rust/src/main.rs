@@ -3,15 +3,38 @@ use excalidraw_render_pdfium::canonicalize_rgba;
 use pdfium_render::prelude::*;
 use serde_json::json;
 use sha2::{Digest, Sha256};
-use std::{error::Error, fs, io::ErrorKind, path::PathBuf};
+use std::{
+    collections::BTreeMap,
+    env::consts::{DLL_PREFIX, DLL_SUFFIX},
+    error::Error,
+    fs,
+    io::ErrorKind,
+    path::{Path, PathBuf},
+};
 
-const LIBRARY_SHA256: &str = "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33";
 const PDFIUM_VERSION: &str = "152.0.7947.0";
 const FONT_MARKER_SHA256: &str = "214f294fd6c8df5b4b53d84fd437aee8c30edbee74b929863e40ec2e6b3cf621";
 const SCALE: f64 = 96.0 / 72.0;
 
 fn hash(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+
+/// The `MAJOR.MINOR.BUILD.PATCH` a pdfium-binaries distribution declares.
+fn distribution_version(root: &Path) -> Result<String, Box<dyn Error>> {
+    let text = fs::read_to_string(root.join("VERSION"))?;
+    let fields = text
+        .lines()
+        .filter_map(|line| line.split_once('='))
+        .collect::<BTreeMap<_, _>>();
+    let field = |key| fields.get(key).ok_or("PDFium VERSION is incomplete");
+    Ok(format!(
+        "{}.{}.{}.{}",
+        field("MAJOR")?,
+        field("MINOR")?,
+        field("BUILD")?,
+        field("PATCH")?
+    ))
 }
 
 fn main() {
@@ -27,9 +50,6 @@ fn run() -> Result<(), Box<dyn Error>> {
         return Err(
             "usage: excalidraw-render-pdfium <input.pdf> <output.rgba> <width> <height>".into(),
         );
-    }
-    if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
-        return Err("PDFium profile requires Linux x86_64".into());
     }
     let width: i32 = args[2].to_str().ok_or("invalid width")?.parse()?;
     let height: i32 = args[3].to_str().ok_or("invalid height")?.parse()?;
@@ -57,10 +77,14 @@ fn run() -> Result<(), Box<dyn Error>> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../..")
         .canonicalize()?;
-    let library = root.join("target/pdf-harness/pdfium/lib/libpdfium.so");
-    if hash(&fs::read(&library)?) != LIBRARY_SHA256 {
-        return Err("PDFium library hash mismatch".into());
+    // The devenv shell links the pinned distribution here. The receipt records
+    // the library that ran; the retained rasters decide whether it qualifies.
+    let distribution = root.join("target/pdf-harness/pdfium");
+    if distribution_version(&distribution)? != PDFIUM_VERSION {
+        return Err(format!("PDFium distribution is not {PDFIUM_VERSION}").into());
     }
+    let library = distribution.join(format!("lib/{DLL_PREFIX}pdfium{DLL_SUFFIX}"));
+    let library_sha256 = hash(&fs::read(&library)?);
     let fonts = root.join("tools/pdf-harness/pdfium/empty-fonts");
     let entries = fs::read_dir(&fonts)?.collect::<Result<Vec<_>, _>>()?;
     if entries.len() != 1
@@ -125,7 +149,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let receipt = json!({
         "adapter": "pdfium-render/0.9.4",
         "pdfium": PDFIUM_VERSION,
-        "library_sha256": LIBRARY_SHA256,
+        "library_sha256": library_sha256,
         "width": width,
         "height": height,
         "byte_length": rgba.len(),

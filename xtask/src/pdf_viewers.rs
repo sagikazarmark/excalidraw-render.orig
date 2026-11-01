@@ -48,12 +48,29 @@ const HISTORICAL_PDFIUM_SOURCES: &[&str] = &[
 ];
 
 /// Shared with the Node collector. The declaration itself is not a producer
-/// entry: preserve the five-file inventory used by existing Rust collections.
+/// entry. Collections taken before devenv supplied PDFium also bind
+/// [`RETIRED_NATIVE_LOCK`]; their verifiers accept that inventory too.
 pub(crate) fn rust_pdfium_sources() -> Result<Vec<String>, String> {
     serde_json::from_str(include_str!(
         "../../tools/pdf-harness/pdfium-rust/sources.json"
     ))
     .map_err(|error| format!("invalid Rust PDFium source inventory: {error}"))
+}
+
+/// The pin file the Rust worker's library identity lived in before devenv
+/// supplied PDFium (ADR-0024). Earlier Rust collections still name it.
+pub(crate) const RETIRED_NATIVE_LOCK: &str = "tools/pdf-harness/pdfium-native.lock.json";
+
+/// Whether a receipt's `library_sha256` is a library identity: the lowercase
+/// SHA-256 of whichever pdfium-binaries library ran. Each host's build has its
+/// own; rendered bytes, not this digest, decide whether a run qualifies.
+pub(crate) fn is_library_sha256(value: &Value) -> bool {
+    value.as_str().is_some_and(|digest| {
+        digest.len() == 64
+            && digest
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    })
 }
 
 pub fn verify() -> Result<(), String> {
