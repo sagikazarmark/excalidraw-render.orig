@@ -50,10 +50,10 @@ cargo run --locked -p xtask -- conformance inventory-digest
 just conformance
 ```
 
-Generation through the Dagger evidence operations:
+Generation, staged for review:
 
 ```sh
-dagger api call evidence inventory --output target/inventory.json
+cargo run --locked -p xtask -- conformance inventory > target/inventory.json
 ```
 
 `surface:<recordKind>:<path>` rows come from the existing authority. `case-label:`

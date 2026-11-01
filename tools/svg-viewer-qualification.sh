@@ -11,10 +11,8 @@ CANDIDATE="tests/conformance/svg-viewer-qualification/rectangle-outline/candidat
 ASSETS="tests/conformance/svg-viewer-qualification/rectangle-outline/assets.none.json"
 RUST_TARGET="${REPO_ROOT}/target/svg-viewer-rust"
 
-if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
-  echo "pure-Rust SVG viewer qualification requires Linux x86_64" >&2
-  exit 1
-fi
+# The pure-Rust viewer builds for this host. The approved profile records the
+# x86_64-unknown-linux-gnu qualification; other hosts reproduce its bytes.
 # The devenv shell provides the pinned toolchain as rustc and cargo (ADR-0024);
 # the exact build is still asserted here.
 if [[ "$(rustc --version)" != "rustc 1.97.1 (8bab26f4f 2026-07-14)" ]]; then
@@ -76,10 +74,11 @@ render_chromium chromium-candidate "${CANDIDATE}"
 render_chromium chromium-reference-repeat "${OFFICIAL}"
 render_chromium chromium-candidate-repeat "${CANDIDATE}"
 
+HOST_TARGET="$(rustc -vV | sed -n 's/^host: //p')"
 CARGO_TARGET_DIR="${RUST_TARGET}" cargo build --frozen --release \
-  --target x86_64-unknown-linux-gnu \
+  --target "${HOST_TARGET}" \
   --manifest-path "${REPO_ROOT}/tools/svg-viewer-rust/Cargo.toml"
-RUST_VIEWER="${RUST_TARGET}/x86_64-unknown-linux-gnu/release/excalidraw-render-svg-viewer"
+RUST_VIEWER="${RUST_TARGET}/${HOST_TARGET}/release/excalidraw-render-svg-viewer"
 
 render_rust() {
   local name="$1"

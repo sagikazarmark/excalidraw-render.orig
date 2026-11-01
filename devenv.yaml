@@ -13,10 +13,6 @@ inputs:
     url: github:sagikazarmark/devenv-extras
     overlays:
       - default
-  dagger:
-    url: github:dagger/nix
-    overlays:
-      - default
 
 imports:
   - extras/modules

@@ -46,9 +46,6 @@ in
 {
   dotenv.enable = true;
 
-  dagger.enable = true;
-  env.DAGGER_X_RELEASE = "v1.0.0-beta.14";
-
   # Required by arborium
   env.CC_wasm32_unknown_unknown = "${pkgs.llvmPackages.clang-unwrapped}/bin/clang";
 
@@ -119,8 +116,7 @@ in
     rust = {
       enable = true;
       channel = "stable";
-      # The toolchain the gates build with (ADR-0024); the evidence operations'
-      # Rust image in `dagger.toml` matches it. A newer Clippy adds lints.
+      # The toolchain the gates build with (ADR-0024). A newer Clippy adds lints.
       # A default, so `just msrv` can run on another one with
       # `devenv --option languages.rust.version:string 1.92.0`.
       version = lib.mkDefault "1.97.1";

@@ -84,6 +84,12 @@ pdf-harness:
     cargo nextest run --locked --release -p excalidraw-render --profile harness --run-ignored only \
         -E 'binary(/^harness_pdf_/)'
 
+# Run the SVG gate in Chromium and the pure-Rust viewer. Chromium runs in its pinned image, so this needs Docker.
+svg-harness:
+    bash tools/reference-oracle/run-container.sh install
+    cargo nextest run --locked --release -p excalidraw-render --profile harness --run-ignored only \
+        -E 'binary(/^harness_svg_/)'
+
 # Verify the cases, the coverage ledgers, the sealed catalog, and the committed evidence.
 conformance: xtask
     target/debug/xtask conformance verify-all
@@ -263,6 +269,42 @@ viewer-evidence kind mode="reproduce":
         cargo fetch --locked --manifest-path tools/svg-viewer-rust/Cargo.toml
     fi
     bash "$script" "{{ mode }}"
+
+# Verify or update the scene or frame reference profile in the pinned oracle container.
+reference-profile mode="verify" profile="scene":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ mode }}" in
+        verify|update) ;;
+        *) echo "a reference profile is verified or updated, not {{ mode }}" >&2; exit 2 ;;
+    esac
+    case "{{ profile }}" in
+        scene) script=tools/reference-oracle/run-container.sh ;;
+        frame) script=tools/reference-oracle/run-frame-profile.sh ;;
+        *) echo "the reference profiles are scene and frame, not {{ profile }}" >&2; exit 2 ;;
+    esac
+    bash tools/reference-oracle/run-container.sh install
+    bash "$script" "{{ mode }}"
+
+# Reproduce a registered case with its reference runner into target/reference-evidence, or generate it.
+reference-case id mode="reproduce": xtask
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ mode }}" in
+        reproduce|generate) ;;
+        *) echo "a registered case is reproduced or generated, not {{ mode }}" >&2; exit 2 ;;
+    esac
+    bash tools/reference-oracle/run-container.sh install
+    target/debug/xtask conformance "{{ mode }}" "{{ id }}"
+
+# Regenerate the per-cell font subset corpus into target/font-corpus for review.
+font-corpus:
+    rm -rf target/font-corpus target/tmp/svg-font-subset-qualification-corpus-*
+    cargo test --locked --release -p excalidraw-render --lib \
+        render::font_subset_qualification::materialize_complete_font_subset_qualification_corpus \
+        -- --ignored --exact
+    mkdir -p target/font-corpus
+    cp target/tmp/svg-font-subset-qualification-corpus-*/* target/font-corpus/
 
 # Collect a representative candidate successor from the frozen V4 authoring with the current renderer.
 candidate-successor dir: require-native xtask
