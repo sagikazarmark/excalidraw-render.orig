@@ -42,6 +42,8 @@ struct CaseEntry {
     empty_fields: Vec<String>,
     expected_diagnostics: Value,
     variants: Value,
+    /// The comparator class of each frame target, by ordinal (frame cases).
+    visual_classes: Value,
     exceptions: Value,
 }
 
@@ -101,6 +103,7 @@ fn registry() -> Result<Vec<CaseEntry>, String> {
                 .unwrap_or_default(),
             expected_diagnostics: case["expected_diagnostics"].clone(),
             variants: case["variants"].clone(),
+            visual_classes: case["visual_classes"].clone(),
             // A case that registers no tolerance exceptions carries none; the
             // manifest field is then required to be explicitly empty.
             exceptions: match &case["exceptions"] {
@@ -333,6 +336,22 @@ fn verify_frame_targets(loaded: &LoadedCase, scene: &Value) -> Result<(), String
         .as_array()
         .filter(|targets| targets.len() == frames.len() && targets.len() == 7)
         .ok_or_else(|| "frame manifest must bind all seven live reference targets".to_owned())?;
+    if loaded.entry.visual_classes.as_array().map(Vec::len) != Some(targets.len())
+        || loaded
+            .entry
+            .visual_classes
+            .as_array()
+            .is_some_and(|classes| {
+                classes.iter().any(|class| {
+                    !matches!(
+                        class.as_str(),
+                        Some("exact" | "geometry/image" | "typography" | "mixed/representative")
+                    )
+                })
+            })
+    {
+        return Err("the registry must name a visual class for every frame target".to_owned());
+    }
     for (index, (target, frame)) in targets.iter().zip(frames).enumerate() {
         verify_exact_keys(
             object(target, "frame target")?,
@@ -354,9 +373,15 @@ fn verify_frame_targets(loaded: &LoadedCase, scene: &Value) -> Result<(), String
             let output = &target["outputs"][format];
             verify_exact_keys(
                 object(output, "frame format output")?,
-                &["artifact", "raw_raster"],
+                &["artifact", "raw_raster", "visual_class"],
                 "frame format output",
             )?;
+            if output["visual_class"] != loaded.entry.visual_classes[index] {
+                return Err(format!(
+                    "frame {} {format} visual class is not the registered one",
+                    index + 1
+                ));
+            }
             let artifact = object(&output["artifact"], "frame artifact")?;
             let raw = object(&output["raw_raster"], "frame raw raster")?;
             let width = u32_field(artifact, "width")?;

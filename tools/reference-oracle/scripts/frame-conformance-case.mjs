@@ -19,6 +19,18 @@ const REPO_ROOT = resolve(ORACLE_ROOT, "../..");
 const CASE_ID = "focused.frame-export.v1";
 const CASE_ROOT = resolve(REPO_ROOT, "tests/conformance/cases/focused/frame-export");
 const STAGING_ROOT = resolve(REPO_ROOT, "target/reference-evidence/frame-export");
+// The comparator class of each frame target, by ordinal, as the case registry
+// declares it; the manifest carries it so the parity test reads no table.
+const VISUAL_CLASSES = (() => {
+  const registry = JSON.parse(
+    readFileSync(resolve(REPO_ROOT, "tests/conformance/cases/registry.json"), "utf8"),
+  );
+  const entry = registry.cases.find((candidate) => candidate.id === CASE_ID);
+  if (!entry || !Array.isArray(entry.visual_classes)) {
+    throw new Error(`the case registry names no visual classes for ${CASE_ID}`);
+  }
+  return entry.visual_classes;
+})();
 const PROFILE_DIGEST = readFileSync(
   resolve(REPO_ROOT, "tests/oracle/reference-profiles/revision-1-frame.sha256"),
   "ascii",
@@ -273,6 +285,7 @@ function writeCase(root, scenePath, scene, first, second) {
   const provenancePath = resolve(root, "evidence/provenance.json");
   writeFileSync(provenancePath, Buffer.concat([canonicalBytes(provenance), Buffer.from("\n")]));
   const formatRecord = (target, format, mediaType) => ({
+    visual_class: VISUAL_CLASSES[target.ordinal - 1],
     artifact: descriptor(
       resolve(root, `evidence/frame-${target.ordinal}/official.${format}`),
       { height: target[format].height, media_type: mediaType, width: target[format].width },

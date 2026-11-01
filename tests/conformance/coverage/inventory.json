@@ -77,7 +77,7 @@
     },
     {
       "path": "tests/conformance/cases/focused/frame-export/manifest.json",
-      "sha256": "c6155d7264e92d2d0e997080ad0127b1cb64beab2d0ea3142a1a31fc0acac200"
+      "sha256": "550840230583888bf5b94f013baeee9f719cb1126b33cd39e50ef51ba825e0a3"
     },
     {
       "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
@@ -157,7 +157,7 @@
     },
     {
       "path": "tests/conformance/cases/registry.json",
-      "sha256": "051f8f86cfd87e4adfcf38425a54c96da0aaa87ca61708e10599b36b5d100678"
+      "sha256": "e9b78660f412351a1df37ebf912c9d8b2561030fac575be92f472cf35c8d7eb1"
     },
     {
       "path": "tests/conformance/coverage/requirements.json",
@@ -3900,7 +3900,7 @@
           "ordinal": 1
         },
         "format": "svg",
-        "inputs_sha256": "b196cb64ac6c4241954e48e4a0a83972a1312c6f704aee229faf56631fcdd443"
+        "inputs_sha256": "4978c1b39e005820b37b6c9bae1cccbec55a5de561fa1939f00e45290d1ad1e8"
       },
       "options": {
         "exportBackground": true,
@@ -3924,7 +3924,7 @@
           "ordinal": 1
         },
         "format": "png",
-        "inputs_sha256": "b196cb64ac6c4241954e48e4a0a83972a1312c6f704aee229faf56631fcdd443"
+        "inputs_sha256": "4978c1b39e005820b37b6c9bae1cccbec55a5de561fa1939f00e45290d1ad1e8"
       },
       "options": {
         "exportBackground": true,
@@ -3948,7 +3948,7 @@
           "ordinal": 1
         },
         "format": "pdf",
-        "inputs_sha256": "b196cb64ac6c4241954e48e4a0a83972a1312c6f704aee229faf56631fcdd443"
+        "inputs_sha256": "4978c1b39e005820b37b6c9bae1cccbec55a5de561fa1939f00e45290d1ad1e8"
       },
       "options": {
         "exportBackground": true,
@@ -3969,7 +3969,7 @@
           "ordinal": 2
         },
         "format": "svg",
-        "inputs_sha256": "16a7896ed95b030029ab0db3cf36832395cb37d56d09204ccc9fa821b07fba33"
+        "inputs_sha256": "7419c1f51e2083c9d219ebc4ab760868a2e58909825caadb633d1a3b125b4769"
       },
       "options": {
         "exportBackground": true,
@@ -3993,7 +3993,7 @@
           "ordinal": 2
         },
         "format": "png",
-        "inputs_sha256": "16a7896ed95b030029ab0db3cf36832395cb37d56d09204ccc9fa821b07fba33"
+        "inputs_sha256": "7419c1f51e2083c9d219ebc4ab760868a2e58909825caadb633d1a3b125b4769"
       },
       "options": {
         "exportBackground": true,
@@ -4017,7 +4017,7 @@
           "ordinal": 2
         },
         "format": "pdf",
-        "inputs_sha256": "16a7896ed95b030029ab0db3cf36832395cb37d56d09204ccc9fa821b07fba33"
+        "inputs_sha256": "7419c1f51e2083c9d219ebc4ab760868a2e58909825caadb633d1a3b125b4769"
       },
       "options": {
         "exportBackground": true,
@@ -4038,7 +4038,7 @@
           "ordinal": 3
         },
         "format": "svg",
-        "inputs_sha256": "755bb65f0991d43c371a1111cb4e9f7dc44bb2cac71f37e8de50722f22549097"
+        "inputs_sha256": "508bf937f156f3ce34a66ee34adcfc36f08610a4e28fc16c385481bc3a1eece3"
       },
       "options": {
         "exportBackground": true,
@@ -4062,7 +4062,7 @@
           "ordinal": 3
         },
         "format": "png",
-        "inputs_sha256": "755bb65f0991d43c371a1111cb4e9f7dc44bb2cac71f37e8de50722f22549097"
+        "inputs_sha256": "508bf937f156f3ce34a66ee34adcfc36f08610a4e28fc16c385481bc3a1eece3"
       },
       "options": {
         "exportBackground": true,
@@ -4086,7 +4086,7 @@
           "ordinal": 3
         },
         "format": "pdf",
-        "inputs_sha256": "755bb65f0991d43c371a1111cb4e9f7dc44bb2cac71f37e8de50722f22549097"
+        "inputs_sha256": "508bf937f156f3ce34a66ee34adcfc36f08610a4e28fc16c385481bc3a1eece3"
       },
       "options": {
         "exportBackground": true,
@@ -4107,7 +4107,7 @@
           "ordinal": 4
         },
         "format": "svg",
-        "inputs_sha256": "533e4ec282431973233950004d66a50e59170bb10caec0d7f280897fa0384871"
+        "inputs_sha256": "429353e62bce93060be6a612b381b27fe196711919bd735a729e81c047ea665c"
       },
       "options": {
         "exportBackground": true,
@@ -4131,7 +4131,7 @@
           "ordinal": 4
         },
         "format": "png",
-        "inputs_sha256": "533e4ec282431973233950004d66a50e59170bb10caec0d7f280897fa0384871"
+        "inputs_sha256": "429353e62bce93060be6a612b381b27fe196711919bd735a729e81c047ea665c"
       },
       "options": {
         "exportBackground": true,
@@ -4155,7 +4155,7 @@
           "ordinal": 4
         },
         "format": "pdf",
-        "inputs_sha256": "533e4ec282431973233950004d66a50e59170bb10caec0d7f280897fa0384871"
+        "inputs_sha256": "429353e62bce93060be6a612b381b27fe196711919bd735a729e81c047ea665c"
       },
       "options": {
         "exportBackground": true,
@@ -4176,7 +4176,7 @@
           "ordinal": 5
         },
         "format": "svg",
-        "inputs_sha256": "f7c768047b48c12e54457b17be9ab34217222bc9f39941f0df3e0839d36a904c"
+        "inputs_sha256": "b5e318ac8b59064d4456a97f7e2c3e3c9bb083fac5fe3fa10d89603cd7185847"
       },
       "options": {
         "exportBackground": true,
@@ -4200,7 +4200,7 @@
           "ordinal": 5
         },
         "format": "png",
-        "inputs_sha256": "f7c768047b48c12e54457b17be9ab34217222bc9f39941f0df3e0839d36a904c"
+        "inputs_sha256": "b5e318ac8b59064d4456a97f7e2c3e3c9bb083fac5fe3fa10d89603cd7185847"
       },
       "options": {
         "exportBackground": true,
@@ -4224,7 +4224,7 @@
           "ordinal": 5
         },
         "format": "pdf",
-        "inputs_sha256": "f7c768047b48c12e54457b17be9ab34217222bc9f39941f0df3e0839d36a904c"
+        "inputs_sha256": "b5e318ac8b59064d4456a97f7e2c3e3c9bb083fac5fe3fa10d89603cd7185847"
       },
       "options": {
         "exportBackground": true,
@@ -4245,7 +4245,7 @@
           "ordinal": 6
         },
         "format": "svg",
-        "inputs_sha256": "722c4170522a8fcbb97a5e575618756b8fa3e6c70a686c97571918616ee74622"
+        "inputs_sha256": "8f0dd57a86d7e009a85162028b8121071660cc14414f9639ceeb05f2874c9f81"
       },
       "options": {
         "exportBackground": true,
@@ -4269,7 +4269,7 @@
           "ordinal": 6
         },
         "format": "png",
-        "inputs_sha256": "722c4170522a8fcbb97a5e575618756b8fa3e6c70a686c97571918616ee74622"
+        "inputs_sha256": "8f0dd57a86d7e009a85162028b8121071660cc14414f9639ceeb05f2874c9f81"
       },
       "options": {
         "exportBackground": true,
@@ -4293,7 +4293,7 @@
           "ordinal": 6
         },
         "format": "pdf",
-        "inputs_sha256": "722c4170522a8fcbb97a5e575618756b8fa3e6c70a686c97571918616ee74622"
+        "inputs_sha256": "8f0dd57a86d7e009a85162028b8121071660cc14414f9639ceeb05f2874c9f81"
       },
       "options": {
         "exportBackground": true,
@@ -4314,7 +4314,7 @@
           "ordinal": 7
         },
         "format": "svg",
-        "inputs_sha256": "985218d71d11cbee6c768e1beaa676255637e7022971d84412c7d1439f67667e"
+        "inputs_sha256": "d8f5e89d54115508380cf58a3cebbf080c5dd98a2a0cafd7adcf40e034db21cb"
       },
       "options": {
         "exportBackground": true,
@@ -4338,7 +4338,7 @@
           "ordinal": 7
         },
         "format": "png",
-        "inputs_sha256": "985218d71d11cbee6c768e1beaa676255637e7022971d84412c7d1439f67667e"
+        "inputs_sha256": "d8f5e89d54115508380cf58a3cebbf080c5dd98a2a0cafd7adcf40e034db21cb"
       },
       "options": {
         "exportBackground": true,
@@ -4362,7 +4362,7 @@
           "ordinal": 7
         },
         "format": "pdf",
-        "inputs_sha256": "985218d71d11cbee6c768e1beaa676255637e7022971d84412c7d1439f67667e"
+        "inputs_sha256": "d8f5e89d54115508380cf58a3cebbf080c5dd98a2a0cafd7adcf40e034db21cb"
       },
       "options": {
         "exportBackground": true,

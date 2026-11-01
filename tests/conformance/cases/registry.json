@@ -692,7 +692,16 @@
       "path": "tests/conformance/cases/focused/frame-export",
       "approving_issue": "97",
       "runner": "tools/reference-oracle/run-frame-conformance.sh",
-      "generator": "tools/reference-oracle/scripts/frame-conformance-case.mjs"
+      "generator": "tools/reference-oracle/scripts/frame-conformance-case.mjs",
+      "visual_classes": [
+        "geometry/image",
+        "geometry/image",
+        "geometry/image",
+        "mixed/representative",
+        "mixed/representative",
+        "geometry/image",
+        "typography"
+      ]
     },
     {
       "id": "focused.cjk-propagation.v1",

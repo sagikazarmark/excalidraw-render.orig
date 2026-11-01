@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "fcf26bffb9b0e1e649a6b147cbbd499f22108b9d7dda88e04b7bdaf2df728f55",
+  "catalog_sha256": "dcd7251fa59ecbe4b1ee344a0cb9351093a88ff74db5928d8f1ae18acc82cf8d",
   "approval": null,
   "assignments": [
     {
@@ -1806,7 +1806,7 @@
           "kind": "record",
           "record": {
             "path": "tests/conformance/coverage/pdf-judgments.json",
-            "sha256": "ecdd37f24a64df8d5c1e6c33dea226448e4ecad8ee6c7cd43a974432f4642b08"
+            "sha256": "193f90454c7d45e31ee77ce61de4d24c55975abb03533ebd223a18df87b01e39"
           },
           "approval_subject_sha256": "sha256:f0b9119f08e53d2d51873960722d4ab15619f6e2510291aa0389e6ad2f390f4a",
           "verifier": "pdf-judgments"
@@ -50669,7 +50669,7 @@
           "case": "focused.frame-export.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-export/manifest.json",
-            "sha256": "c6155d7264e92d2d0e997080ad0127b1cb64beab2d0ea3142a1a31fc0acac200"
+            "sha256": "550840230583888bf5b94f013baeee9f719cb1126b33cd39e50ef51ba825e0a3"
           }
         },
         "rationale": "Registered frame-kind case focused.frame-export.v1 (issue 97). verify-ownership runs conformance verify on it with approval required: manifest digest and identity, the pinned frame reference profile, every evidence descriptor, and all seven live frame/magicframe targets bound to their official SVG/PNG evidence and expected reports. Renderer parity against that evidence is executed by tests/parity_frame_export.rs (secondary evidence). The only focused-layer obligation without a case-label home; this assignment does not claim format/profile sub-obligations."

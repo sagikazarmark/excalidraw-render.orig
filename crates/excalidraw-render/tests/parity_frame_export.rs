@@ -8,11 +8,12 @@ use std::fs;
 mod common;
 
 use common::raster::decode_png;
+use common::registered_cases::visual_class;
 use common::reports::assert_report_matches;
 use common::repository_root;
 use common::svg_raster::rasterize;
 use excalidraw_render::{FrameRenderRequest, OutputFormat, Renderer, SceneDocument};
-use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
+use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode};
 
 #[test]
 fn frame_svg_and_png_match_the_pinned_official_evidence() {
@@ -58,10 +59,14 @@ fn frame_svg_and_png_match_the_pinned_official_evidence() {
         )
         .unwrap();
         let evidence = case.join(format!("evidence/frame-{ordinal}"));
-        let visual_class = match ordinal {
-            4 | 5 => VisualClass::MixedRepresentative,
-            7 => VisualClass::Typography,
-            _ => VisualClass::GeometryImage,
+        // Each output is judged in the class its manifest declares, which the
+        // registry names and `verify-all` checks.
+        let class_of = |format: &str| {
+            visual_class(
+                target["outputs"][format]["visual_class"]
+                    .as_str()
+                    .unwrap_or_else(|| panic!("frame {ordinal} {format} declares a visual class")),
+            )
         };
 
         let png = renderer
@@ -87,7 +92,7 @@ fn frame_svg_and_png_match_the_pinned_official_evidence() {
         let png_comparison = compare(
             &reference_png,
             &candidate_png,
-            visual_class,
+            class_of("png"),
             &[],
             ComparisonMode::Canonical,
         )
@@ -132,7 +137,7 @@ fn frame_svg_and_png_match_the_pinned_official_evidence() {
         let svg_comparison = compare(
             &reference_svg,
             &candidate_svg,
-            visual_class,
+            class_of("svg"),
             &[],
             ComparisonMode::PureRustSvg,
         )
