@@ -81,44 +81,33 @@ target directory, so the staged sources never touch the checkout.
 | Per-change gates | Formatting, lints, workspace tests, approved-file digests and packaged consumers | `just ci` |
 | Release checks | Native and WASM qualification, snapshot replay and full equality | `just release` |
 | PDF harness gates | PDFium/PDF.js rendering and qpdf structure tests | `just pdf-harness` |
-| Reference profile | Pinned official Excalidraw wrapper, assets, environment and smoke test | `dagger api call evidence reference --mode verify` |
-| Registered case | Expected reference SVG/PNG output for one scene | `dagger api call evidence case --case-id focused.rectangle-outline.v1` |
+| SVG harness gate | Chromium and pure-Rust rendering of the approved rectangle | `just svg-harness` |
+| Reference profile | Pinned official Excalidraw wrapper, assets, environment and smoke test | `just reference-profile` (`update` as the first argument rewrites, `frame` as the second selects the frame profile) |
+| Registered case | Expected reference SVG/PNG output for one scene | `just reference-case focused.rectangle-outline.v1` (`generate` as the second argument generates) |
 | Viewer qualification | Reproducibility and correctness of the tools used to judge rendered output | `just viewer-evidence svg` (also `pdf`, `font-subset`; `generate` as the second argument regenerates) |
-| Font corpus | Per-cell generated WOFF2 byte pins and packaged corpus copy | `dagger api call evidence font-corpus` |
+| Font corpus | Per-cell generated WOFF2 byte pins and packaged corpus copy | `just font-corpus` |
 | Native baseline | The canonical native artifact and report bytes for the inventory's 168 keys | `just stage-native-baseline` |
 | Representative candidate | A numbered successor of the stage-4 representative case, collected from its frozen authoring | `just candidate-successor tests/conformance/candidates/<directory>` |
 | Target aggregate | Both supported targets agree on generated font bytes and resource traces | `just target-evidence` |
-| Catalog / manifests | Derived catalog records and evidence bindings | `dagger api call evidence xtask --args catalog,materialize` |
+| Catalog / manifests | Derived catalog records and evidence bindings | `cargo run --locked -p xtask -- catalog materialize` |
 
 The viewer scripts (`tools/svg-font-subset-qualification.sh`,
-`tools/svg-viewer-qualification.sh`, `tools/pdf-viewer-qualification.sh`) and
-the candidate viewers run approval-pinned Docker images by digest, bind-mount
-the checkout and render with `--network none`. `just viewer-evidence` and
-`just candidate-successor` acquire what the scripts need first (the oracle's
-`npm ci`, the PDF harness, the pure-Rust viewer's crates) and then run them
-verbatim against the host's Docker. The reference oracle stays in the Dagger
-module (`dagger.dang`, `dagger-evidence.dang`, `dagger-oracle.dang`), which
-runs the same scripts in a private nested Docker daemon for hosts without a
-suitable Docker; it needs a Dagger engine that permits
-`insecureRootCapabilities` and never mounts the host Docker socket.
-Acquisition can use the network. The devenv shell carries the Dagger CLI.
+`tools/svg-viewer-qualification.sh`, `tools/pdf-viewer-qualification.sh`), the
+reference oracle runners (`tools/reference-oracle/run-*.sh`) and the candidate
+viewers run approval-pinned Docker images by digest, bind-mount the checkout
+and render with `--network none`. The recipes acquire what the scripts need
+first (the oracle's `npm ci`, the PDF harness, the pure-Rust viewer's crates)
+and then run them verbatim against the host's Docker, so these recipes need
+Docker. Acquisition can use the network. The images are `linux/amd64`; on an
+ARM host Docker emulates them, which makes the browser runs slow.
 
-Directory-returning calls take `--output PATH`. Use a staging directory, inspect
-the output, then copy the intended generated files into the checkout. For example:
-
-```sh
-dagger api call evidence reference --mode verify --output target/dagger-reference
-dagger api call evidence font-corpus --output target/dagger-corpus
-```
-
-`font-corpus` returns the staged JSON and digest sidecar, not an edited checkout.
-The corpus JSON also belongs at
+Reproduction writes under `target/`; generation and updates write to the
+checkout, and existing generators retain their refusal to overwrite manifested
+evidence. `just reference-case` reproduces into `target/reference-evidence`.
+`just font-corpus` stages the corpus JSON and its digest sidecar in
+`target/font-corpus`; they belong in `tests/oracle/compatibility-artifacts/`,
+and the corpus JSON also at
 `crates/excalidraw-render/tests/qualification/font-subset-corpus.json`.
-Reference calls accept `--frame` for the frame profile. Case calls default to
-`reproduce`; use `--mode generate` for explicit generation. Reference profile
-changes use `--mode update`. Existing generators retain their refusal
-to overwrite manifested evidence. The `xtask` entry point accepts its ordinary
-argument list, including the materialization commands.
 
 ## Target evidence and provenance
 

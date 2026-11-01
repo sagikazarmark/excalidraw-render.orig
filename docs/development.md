@@ -290,10 +290,10 @@ just test         # one of them
 just release      # the release checks, on the supported targets
 ```
 
-The reference oracle and the viewer harnesses run digest-pinned Docker images,
-from the host's Docker through `just pdf-harness`, `just viewer-evidence` and
-`just candidate-successor`, or through Dagger (`dagger api call evidence svg`)
-for hosts without a suitable Docker; the devenv shell carries the Dagger CLI.
+The reference oracle and the viewer harnesses run digest-pinned Docker images
+from the host's Docker, through `just pdf-harness`, `just svg-harness`,
+`just viewer-evidence`, `just reference-profile`, `just reference-case` and
+`just candidate-successor`.
 GitHub workflows run the recipes in the devenv shell and handle scheduling and
 artifact upload.
 

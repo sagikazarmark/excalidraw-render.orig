@@ -102,7 +102,7 @@ these rows and to existing rows such as `interaction:diagnostic-order` and
 
 ```sh
 just conformance
-dagger api call evidence ownership-catalog --output target/ownership-catalog.json
+cargo run --locked -p xtask -- conformance ownership-catalog > target/ownership-catalog.json
 cargo run --locked -p xtask -- conformance verify-ownership
 # Record explicit reviewed gap selections:
 cargo run --locked -p xtask -- conformance record-test-owner MODULE FUNCTION RATIONALE ID...

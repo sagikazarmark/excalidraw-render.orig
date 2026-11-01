@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended 2026-11-01 (Dagger retired)
 ---
 
 # Run the gates from devenv and just on any host
@@ -90,3 +90,13 @@ pinned Docker images, until they move. `input-boundaries` and
   longer invalidates evidence by changing a digest, only by changing bytes.
 - The sealed input views of the Dagger module go. A recipe can read any file
   in the checkout, and Cargo's change tracking replaces the compile view.
+
+Amended 2026-11-01: the remaining Dagger operations move to recipes and the
+module retires. devenv supplies PDFium build 7947 for the host beside qpdf, and
+the PDF harness records the library that ran instead of pinning one digest. The
+pure-Rust SVG viewer builds for the host. On macOS arm64 both reproduce every
+retained raster byte for byte, as does the font subset corpus. The oracle and
+viewer recipes run their digest-pinned images on the host's Docker, so they need
+Docker; the Docker-free oracle path and the nested daemon for hosts without
+Docker go with the module. Records that name the module's files keep them as
+historical provenance.
