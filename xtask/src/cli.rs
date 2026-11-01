@@ -64,6 +64,8 @@ pub enum ConformanceCommand {
     SeedOwnership,
     /// Verify the ownership ledger.
     VerifyOwnership,
+    /// Rebind the ownership ledger's catalog digest to the current catalog.
+    RebindOwnershipCatalog,
     /// Extend the ownership ledger with new obligations.
     ExtendOwnership {
         /// Previous catalog JSON.
@@ -570,6 +572,7 @@ mod tests {
                 "ownership-catalog",
                 "seed-ownership",
                 "verify-ownership",
+                "rebind-ownership-catalog",
                 "extend-ownership",
                 "record-test-owner",
                 "record-case-owner",

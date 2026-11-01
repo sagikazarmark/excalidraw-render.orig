@@ -17,8 +17,7 @@ use excalidraw_render::{
     ColorMode, MetadataOptions, OutputFormat, RenderRequest, Renderer, SceneDocument, Sizing,
 };
 use excalidraw_render_compare::{
-    compare, CanonicalRgba8, ComparisonLimits, ComparisonMode, ComparisonReport, RegionReport,
-    SsimOutcome, VisualClass,
+    compare, CanonicalRgba8, ComparisonMode, ComparisonReport, SsimOutcome, VisualClass,
 };
 use serde_json::{json, Value};
 
@@ -601,7 +600,7 @@ impl RasterizerLimitation {
 /// The approved tolerance exception governing one variant's whole direct PNG,
 /// if the case manifest records one: the record `parity_registered_case_png`
 /// consumes.
-pub fn whole_png_exception(manifest: &Value, variant_id: &str) -> Option<ComparisonLimits> {
+pub fn whole_png_exception(manifest: &Value, variant_id: &str) -> Option<RecordedDivergence> {
     manifest["exceptions"]
         .as_array()
         .expect("manifest exceptions are an array")
@@ -676,44 +675,50 @@ pub fn observed(report: &ComparisonReport) -> String {
     }
 }
 
-/// The exact no-margin ceilings a tolerance exception record carries as
-/// `max_changed_pixels` and binary64 `minimum_ssim_bits`. They are the observed
-/// values the approval bound, so they are consumed verbatim rather than rounded.
-pub fn exception_limits(record: &Value) -> ComparisonLimits {
-    let max_changed_pixels = record["max_changed_pixels"]
+/// The exact measurement a tolerance exception record carries as
+/// `max_changed_pixels` and binary64 `minimum_ssim_bits`: the observed values
+/// the review accepted, consumed verbatim rather than rounded.
+pub struct RecordedDivergence {
+    pub changed_pixels: u64,
+    pub ssim_bits: u64,
+}
+
+pub fn exception_limits(record: &Value) -> RecordedDivergence {
+    let changed_pixels = record["max_changed_pixels"]
         .as_u64()
         .expect("exception max_changed_pixels is an integer");
-    let minimum_ssim_bits = u64::from_str_radix(
+    let ssim_bits = u64::from_str_radix(
         record["minimum_ssim_bits"]
             .as_str()
             .expect("exception minimum_ssim_bits is a string"),
         16,
     )
     .expect("exception minimum_ssim_bits is binary64 hex");
-    ComparisonLimits::tolerance_exception(max_changed_pixels, f64::from_bits(minimum_ssim_bits))
-        .expect("exception SSIM floor is finite")
+    assert!(
+        f64::from_bits(ssim_bits).is_finite(),
+        "exception SSIM is a finite score"
+    );
+    RecordedDivergence {
+        changed_pixels,
+        ssim_bits,
+    }
 }
 
-/// Whether a whole-artifact measurement meets an exception's exact ceilings.
-pub fn within(limits: ComparisonLimits, whole: &RegionReport) -> bool {
-    limits.changed_pixels_pass(whole.changed_pixels, whole.area)
-        && matches!(whole.ssim, SsimOutcome::Score(score) if limits.ssim_pass(score))
-}
-
-/// Judges one whole-artifact comparison under the canonical budget, or under
-/// the tolerance exception that governs it: `None` when the artifact is where
+/// Judges one whole-artifact comparison under the canonical budget, or against
+/// the tolerance exception that records it: `None` when the artifact is where
 /// its record says it should be, otherwise the divergence to report with the
 /// observed measurement ready to transcribe.
 ///
-/// The measurement is the same under either budget; only the pass judgment
-/// differs, so the exception is judged on the canonical report rather than by
-/// comparing the rasters again. An excepted artifact must still fail the
-/// canonical budget: an exception is a recorded judgment about an observed
-/// difference, so once the difference is gone the record is stale and must be
-/// withdrawn rather than left to linger.
+/// The measurement is the same under either judgment, so the exception is
+/// judged on the canonical report rather than by comparing the rasters again.
+/// An exception records an observed difference with a diagnosed non-defect
+/// cause, exactly; the harness fails when the measurement moves in either
+/// direction, so a record can neither hide a regression beneath a stale
+/// ceiling nor outlive an improvement unrecorded, and a variant that returns
+/// inside the canonical budget makes its record stale.
 pub fn divergence(
     canonical: &ComparisonReport,
-    exception: Option<ComparisonLimits>,
+    exception: Option<RecordedDivergence>,
 ) -> Option<String> {
     match exception {
         None => (!canonical.passed())
@@ -723,10 +728,26 @@ pub fn divergence(
              withdrawn: {}",
             observed(canonical)
         )),
-        Some(limits) if !within(limits, &canonical.whole) => Some(format!(
-            "exceeds its approved tolerance exception ceilings: {}",
-            observed(canonical)
-        )),
+        Some(recorded)
+            if canonical.whole.changed_pixels != recorded.changed_pixels
+                || ssim_bits(canonical) != Some(recorded.ssim_bits) =>
+        {
+            let direction = match (
+                canonical.whole.changed_pixels.cmp(&recorded.changed_pixels),
+                ssim_bits(canonical).map(f64::from_bits),
+            ) {
+                (std::cmp::Ordering::Greater, _) => "worsened",
+                (_, Some(score)) if score < f64::from_bits(recorded.ssim_bits) => "worsened",
+                _ => "improved",
+            };
+            Some(format!(
+                "{direction} from its recorded tolerance exception (changed_pixels={} \
+                 ssim_bits={:016x}); re-record the exception with the observed measurement: {}",
+                recorded.changed_pixels,
+                recorded.ssim_bits,
+                observed(canonical)
+            ))
+        }
         Some(_) => None,
     }
 }

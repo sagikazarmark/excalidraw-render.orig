@@ -17,7 +17,7 @@ const SCHEMA: &str = "excalidraw-render/coverage-ownership/v1";
 /// parity, which holds each whole-artifact PNG tolerance exception at its exact
 /// ceilings and fails a stale one that the canonical budget would pass.
 const EXCEPTION_BINARY: &str = "parity_registered_case_png";
-const EXCEPTION_FUNCTION: &str = "every_registered_scene_case_matches_its_official_direct_png";
+const EXCEPTION_FUNCTION: &str = "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence";
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -807,6 +807,65 @@ pub fn extend_ownership(previous_catalog: &str, issue: u64, reason: &str) -> Res
         "extended ownership inventory: preserved {} dispositions, added {} explicit gaps",
         ledger.assignments.len(),
         extended.assignments.len() - ledger.assignments.len()
+    );
+    Ok(())
+}
+
+/// Rebind the ledger to the current ownership catalog and case manifests: the
+/// catalog digest moves with every manifest, spec, policy and surface edit,
+/// and a case owner's manifest descriptor with its manifest, while the
+/// assignments stay the same. This rewrites only those bindings, after the
+/// assignments validate against the current catalog, so no disposition can
+/// change under the name of a rebind.
+pub fn rebind_ownership_catalog() -> Result<(), String> {
+    let (catalog, mut ledger) = load()?;
+    let previous = ledger.catalog_sha256.clone();
+    ledger.catalog_sha256 = digest(&catalog)?;
+    let registry: Value = parse(&read(REGISTRY)?)?;
+    let mut manifests = 0;
+    let mut records = 0;
+    for assignment in &mut ledger.assignments {
+        match &mut assignment.disposition {
+            Disposition::Owned {
+                owner: Owner::Case { case, manifest },
+                ..
+            } => {
+                let entry = array(&registry, "cases")?
+                    .iter()
+                    .find(|e| e["id"] == case.as_str())
+                    .ok_or_else(|| format!("owner case {case} is not registered"))?;
+                let current = descriptor(&format!("{}/manifest.json", string(entry, "path")?))?;
+                if *manifest != current {
+                    *manifest = current;
+                    manifests += 1;
+                }
+            }
+            // A record owner's descriptor follows its regenerated record; the
+            // approval subject it carries is historical (ADR-0019).
+            Disposition::Owned {
+                owner: Owner::Record { record, .. },
+                ..
+            } => {
+                let current = descriptor(&record.path)?;
+                if *record != current {
+                    *record = current;
+                    records += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+    if ledger.catalog_sha256 == previous && manifests == 0 && records == 0 {
+        println!("ownership ledger already bound to the current catalog, manifests and records");
+        return Ok(());
+    }
+    validate(&catalog, &ledger, false)?;
+    let mut bytes = serde_json::to_vec_pretty(&ledger).map_err(|e| e.to_string())?;
+    bytes.push(b'\n');
+    fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())?;
+    println!(
+        "rebound the ownership ledger from catalog {previous} to {}, {manifests} case owner manifest descriptors and {records} record descriptors; no assignment changed",
+        ledger.catalog_sha256
     );
     Ok(())
 }

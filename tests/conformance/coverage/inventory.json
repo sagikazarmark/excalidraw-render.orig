@@ -9,7 +9,7 @@
     },
     {
       "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-      "sha256": "59a0858e23cc63ac361aa2a2fdef87f55d0e1be5c78aee766629a54f2e9e67a4"
+      "sha256": "2816ea9def0d2f8a6aeff4cc7f9b36ac9aecc8d6b82b7fb7afc885d0468cba9e"
     },
     {
       "path": "tests/conformance/cases/focused/bidi-alignment/manifest.json",
@@ -21,7 +21,7 @@
     },
     {
       "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
-      "sha256": "06930a1ee2cf5ed79ae89adb82f9479df29eaee68be027c0c930e8cef6d66433"
+      "sha256": "fa91c1f99d515667dc49264be2bf716e765faa60cb17796f124311f63875af5b"
     },
     {
       "path": "tests/conformance/cases/focused/bound-text-placement/manifest.json",
@@ -37,11 +37,11 @@
     },
     {
       "path": "tests/conformance/cases/focused/cjk-propagation/manifest.json",
-      "sha256": "e0f0b207a4ecadb0501acca521223b126fe9de15cba32eb19ccc96f186d6ab6b"
+      "sha256": "365c7c2f4d64183ad52a303b11dad164ff10a2136ebb489e44fb4de426d24dd3"
     },
     {
       "path": "tests/conformance/cases/focused/dark-mode-frames/manifest.json",
-      "sha256": "11b2582fd31872731705e3a3526571fcf734fe13a3d4280f643ec2a9b9862edd"
+      "sha256": "2ed54b28b680a02a8f3f7d007d9837cf7cc0ac60b61ebd56c122e2810be90b20"
     },
     {
       "path": "tests/conformance/cases/focused/dark-mode-images/manifest.json",
@@ -69,7 +69,7 @@
     },
     {
       "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
-      "sha256": "eee5cdf643e066b3f1ea70d792e2322858af6b727da82bdf002ee0e03c9ee80d"
+      "sha256": "8926a08461bb940117dc1dcfa7e90ae7eb353eb9e6835b362b336bf152364b4f"
     },
     {
       "path": "tests/conformance/cases/focused/frame-clip-mask-sharing/manifest.json",
@@ -81,7 +81,7 @@
     },
     {
       "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
-      "sha256": "2aa4b913cac911a808122ad51716c011a8eb373c74a19df6fbd154b818dd19d0"
+      "sha256": "5f4bc04e0015dd164a2125ad9c662ea0354ba76cd58c8e6aea75a07ed9bf0bcb"
     },
     {
       "path": "tests/conformance/cases/focused/freedraw-loop-fills/manifest.json",
@@ -93,11 +93,11 @@
     },
     {
       "path": "tests/conformance/cases/focused/helvetica-text/manifest.json",
-      "sha256": "36c9c97ff780deca82275b31a5a0209cdf2793a321188af49ab3a9ccd9271a39"
+      "sha256": "e97a04d8cc3229f4ba8bf846ed8ea234801ad816762cb5ae745b1a7a924e3e2a"
     },
     {
       "path": "tests/conformance/cases/focused/iframe-element/manifest.json",
-      "sha256": "0461484363f7de00d8ede8454b261e16996dd523ed8e1804334ed4c9abf8d361"
+      "sha256": "e99e4eae7dcaa7a774bc41c90a3173bb13360224a31fe6f29355e410924164d4"
     },
     {
       "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
@@ -105,7 +105,7 @@
     },
     {
       "path": "tests/conformance/cases/focused/legacy-line-height/manifest.json",
-      "sha256": "e3330e08d37a9e605cea9d10ac4b80074d2d8b8ce42a1d1dbc69bb4473327454"
+      "sha256": "ba737d076fc6f87e1df73dc3b0035feb6fa1aba3329c0d028094310eedb49bc5"
     },
     {
       "path": "tests/conformance/cases/focused/legacy-stroke-sharpness/manifest.json",
@@ -113,7 +113,7 @@
     },
     {
       "path": "tests/conformance/cases/focused/missing-glyph/manifest.json",
-      "sha256": "1658d7369c23cb3508686052c7759a51d5b9c0fedd576550eb77f2aa19e53745"
+      "sha256": "cce137c36dce7f5f753a77da04e1990843738bd4cdb72c612d16b884455740ea"
     },
     {
       "path": "tests/conformance/cases/focused/rectangle-outline/manifest.json",
@@ -157,7 +157,7 @@
     },
     {
       "path": "tests/conformance/cases/registry.json",
-      "sha256": "965c06ff70a015511f762930456174820814c4aaf6a30453e0df2244d65b05c6"
+      "sha256": "051f8f86cfd87e4adfcf38425a54c96da0aaa87ca61708e10599b36b5d100678"
     },
     {
       "path": "tests/conformance/coverage/requirements.json",
@@ -1811,7 +1811,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "942a3e58227d120f5a75df0575ab8536c5ebe1dcb8212835c22aa8926051ff85"
+        "inputs_sha256": "0286dfcf76ca0d23ab6556d6efcdbf324e61c2f1319a13d347b859f847d0d86f"
       },
       "options": {
         "exportBackground": true,
@@ -1841,7 +1841,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "942a3e58227d120f5a75df0575ab8536c5ebe1dcb8212835c22aa8926051ff85"
+        "inputs_sha256": "0286dfcf76ca0d23ab6556d6efcdbf324e61c2f1319a13d347b859f847d0d86f"
       },
       "options": {
         "exportBackground": true,
@@ -1871,7 +1871,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "942a3e58227d120f5a75df0575ab8536c5ebe1dcb8212835c22aa8926051ff85"
+        "inputs_sha256": "0286dfcf76ca0d23ab6556d6efcdbf324e61c2f1319a13d347b859f847d0d86f"
       },
       "options": {
         "exportBackground": true,
@@ -2072,7 +2072,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "4a90dde574a9a0e1cd2d483b1c96159e927e867c063a9327f333392491ef7f3a"
+        "inputs_sha256": "50c41b2d2ba8f11345127f4131b4ca21fb7769693e41978e3c5ae3a1cc499ee4"
       },
       "options": {
         "exportBackground": true,
@@ -2102,7 +2102,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "4a90dde574a9a0e1cd2d483b1c96159e927e867c063a9327f333392491ef7f3a"
+        "inputs_sha256": "50c41b2d2ba8f11345127f4131b4ca21fb7769693e41978e3c5ae3a1cc499ee4"
       },
       "options": {
         "exportBackground": true,
@@ -2132,7 +2132,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "4a90dde574a9a0e1cd2d483b1c96159e927e867c063a9327f333392491ef7f3a"
+        "inputs_sha256": "50c41b2d2ba8f11345127f4131b4ca21fb7769693e41978e3c5ae3a1cc499ee4"
       },
       "options": {
         "exportBackground": true,
@@ -2420,7 +2420,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "c2e994f0cca2104a72c7d10c67062fbd28c76d73ca7e279bc24647b2df2c48ac"
+        "inputs_sha256": "b3be839b5609c0db178a59ff03785189f71b82ffdb364f60bbb5575a08efd490"
       },
       "options": {
         "exportBackground": true,
@@ -2450,7 +2450,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "c2e994f0cca2104a72c7d10c67062fbd28c76d73ca7e279bc24647b2df2c48ac"
+        "inputs_sha256": "b3be839b5609c0db178a59ff03785189f71b82ffdb364f60bbb5575a08efd490"
       },
       "options": {
         "exportBackground": true,
@@ -2480,7 +2480,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "c2e994f0cca2104a72c7d10c67062fbd28c76d73ca7e279bc24647b2df2c48ac"
+        "inputs_sha256": "b3be839b5609c0db178a59ff03785189f71b82ffdb364f60bbb5575a08efd490"
       },
       "options": {
         "exportBackground": true,
@@ -2507,7 +2507,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "b3e6a5e710d2f8c39095fbc9adf9803a106565a6e4e604d1b03daa0969340ca6"
+        "inputs_sha256": "2b0ea88460660819d827f2cdd5020e38f297cb2d1609f94d85a9c6d9666897b1"
       },
       "options": {
         "exportBackground": true,
@@ -2537,7 +2537,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "b3e6a5e710d2f8c39095fbc9adf9803a106565a6e4e604d1b03daa0969340ca6"
+        "inputs_sha256": "2b0ea88460660819d827f2cdd5020e38f297cb2d1609f94d85a9c6d9666897b1"
       },
       "options": {
         "exportBackground": true,
@@ -2567,7 +2567,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "b3e6a5e710d2f8c39095fbc9adf9803a106565a6e4e604d1b03daa0969340ca6"
+        "inputs_sha256": "2b0ea88460660819d827f2cdd5020e38f297cb2d1609f94d85a9c6d9666897b1"
       },
       "options": {
         "exportBackground": true,
@@ -2594,7 +2594,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "6db565af762e4413b4712fc5b9ab823d2fc6ef2283a908130c42db6e450fd7ac"
+        "inputs_sha256": "55e7e5622f33a9f32de611605805d0a2393194e1e12b4d8172250755bbd886d5"
       },
       "options": {
         "exportBackground": true,
@@ -2624,7 +2624,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "6db565af762e4413b4712fc5b9ab823d2fc6ef2283a908130c42db6e450fd7ac"
+        "inputs_sha256": "55e7e5622f33a9f32de611605805d0a2393194e1e12b4d8172250755bbd886d5"
       },
       "options": {
         "exportBackground": true,
@@ -2654,7 +2654,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "6db565af762e4413b4712fc5b9ab823d2fc6ef2283a908130c42db6e450fd7ac"
+        "inputs_sha256": "55e7e5622f33a9f32de611605805d0a2393194e1e12b4d8172250755bbd886d5"
       },
       "options": {
         "exportBackground": true,
@@ -2681,7 +2681,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "08e7d114caf1fe651eefdef225a5adacf306ed909f45149e1728312f85820135"
+        "inputs_sha256": "52d564240da372eef37cf8441840048c2bd3ce6b2245482a2e020b6079252f71"
       },
       "options": {
         "exportBackground": true,
@@ -2711,7 +2711,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "08e7d114caf1fe651eefdef225a5adacf306ed909f45149e1728312f85820135"
+        "inputs_sha256": "52d564240da372eef37cf8441840048c2bd3ce6b2245482a2e020b6079252f71"
       },
       "options": {
         "exportBackground": true,
@@ -2741,7 +2741,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "08e7d114caf1fe651eefdef225a5adacf306ed909f45149e1728312f85820135"
+        "inputs_sha256": "52d564240da372eef37cf8441840048c2bd3ce6b2245482a2e020b6079252f71"
       },
       "options": {
         "exportBackground": true,
@@ -2768,7 +2768,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "3e79791248a06d678f5a50957e712940a1cc08f832a1b5ff256e345ceb856776"
+        "inputs_sha256": "628efe0dd499af7018a3230a972a1ef3e07ed31bc69cf1eab30a0ade180ed2f4"
       },
       "options": {
         "exportBackground": true,
@@ -2798,7 +2798,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "3e79791248a06d678f5a50957e712940a1cc08f832a1b5ff256e345ceb856776"
+        "inputs_sha256": "628efe0dd499af7018a3230a972a1ef3e07ed31bc69cf1eab30a0ade180ed2f4"
       },
       "options": {
         "exportBackground": true,
@@ -2828,7 +2828,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "3e79791248a06d678f5a50957e712940a1cc08f832a1b5ff256e345ceb856776"
+        "inputs_sha256": "628efe0dd499af7018a3230a972a1ef3e07ed31bc69cf1eab30a0ade180ed2f4"
       },
       "options": {
         "exportBackground": true,
@@ -2855,7 +2855,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "23b795e530870434cb0f09142012e3bd5c8886cd6f5df9ad990837e26fac02e8"
+        "inputs_sha256": "f462ff0cbefc60d68d33db1e92c98b9cb147f8c53f36befa5c448f5de22af734"
       },
       "options": {
         "exportBackground": true,
@@ -2885,7 +2885,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "23b795e530870434cb0f09142012e3bd5c8886cd6f5df9ad990837e26fac02e8"
+        "inputs_sha256": "f462ff0cbefc60d68d33db1e92c98b9cb147f8c53f36befa5c448f5de22af734"
       },
       "options": {
         "exportBackground": true,
@@ -2915,7 +2915,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "23b795e530870434cb0f09142012e3bd5c8886cd6f5df9ad990837e26fac02e8"
+        "inputs_sha256": "f462ff0cbefc60d68d33db1e92c98b9cb147f8c53f36befa5c448f5de22af734"
       },
       "options": {
         "exportBackground": true,
@@ -3725,7 +3725,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "532d66a1c9cdc6a74b3014799d2de74c1ba5868a3102c8be364cd5e5823c3e02"
+        "inputs_sha256": "9d9ff3ae6bd23ab2d18b39efb9442f7f2914ad65da7ff69d7597c4265aa30ec1"
       },
       "options": {
         "exportBackground": true,
@@ -3755,7 +3755,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "532d66a1c9cdc6a74b3014799d2de74c1ba5868a3102c8be364cd5e5823c3e02"
+        "inputs_sha256": "9d9ff3ae6bd23ab2d18b39efb9442f7f2914ad65da7ff69d7597c4265aa30ec1"
       },
       "options": {
         "exportBackground": true,
@@ -3785,7 +3785,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "532d66a1c9cdc6a74b3014799d2de74c1ba5868a3102c8be364cd5e5823c3e02"
+        "inputs_sha256": "9d9ff3ae6bd23ab2d18b39efb9442f7f2914ad65da7ff69d7597c4265aa30ec1"
       },
       "options": {
         "exportBackground": true,
@@ -4382,7 +4382,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "514a42517ad782e5555156f38defcaa80c88ce993c6245be7fd2b065574e88ce"
+        "inputs_sha256": "8363c06a38097d0002d9eb1b6a7a419d903e8ad31c3da03819c3650a03e00f62"
       },
       "options": {
         "exportBackground": true,
@@ -4412,7 +4412,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "514a42517ad782e5555156f38defcaa80c88ce993c6245be7fd2b065574e88ce"
+        "inputs_sha256": "8363c06a38097d0002d9eb1b6a7a419d903e8ad31c3da03819c3650a03e00f62"
       },
       "options": {
         "exportBackground": true,
@@ -4442,7 +4442,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "514a42517ad782e5555156f38defcaa80c88ce993c6245be7fd2b065574e88ce"
+        "inputs_sha256": "8363c06a38097d0002d9eb1b6a7a419d903e8ad31c3da03819c3650a03e00f62"
       },
       "options": {
         "exportBackground": true,
@@ -4817,7 +4817,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "c987e9bee031f78847d326e421e5c271646a5ecdf43b5e10059c31288eccbae6"
+        "inputs_sha256": "c44ea69e4b3390feba91af0cb95c63842b9b0375687575b5a9bf3b0932a6e1b9"
       },
       "options": {
         "exportBackground": true,
@@ -4847,7 +4847,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "c987e9bee031f78847d326e421e5c271646a5ecdf43b5e10059c31288eccbae6"
+        "inputs_sha256": "c44ea69e4b3390feba91af0cb95c63842b9b0375687575b5a9bf3b0932a6e1b9"
       },
       "options": {
         "exportBackground": true,
@@ -4877,7 +4877,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "c987e9bee031f78847d326e421e5c271646a5ecdf43b5e10059c31288eccbae6"
+        "inputs_sha256": "c44ea69e4b3390feba91af0cb95c63842b9b0375687575b5a9bf3b0932a6e1b9"
       },
       "options": {
         "exportBackground": true,
@@ -4904,7 +4904,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "c1ea4dd3aef63f643ba862d0a9b678a2d85fa85b38c1fceee0b6414190502d84"
+        "inputs_sha256": "2a4efb8b24c8c3ce8ca2c3632bb348e3e6ea351c9a12b2161f9f86a54f590449"
       },
       "options": {
         "exportBackground": true,
@@ -4934,7 +4934,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "c1ea4dd3aef63f643ba862d0a9b678a2d85fa85b38c1fceee0b6414190502d84"
+        "inputs_sha256": "2a4efb8b24c8c3ce8ca2c3632bb348e3e6ea351c9a12b2161f9f86a54f590449"
       },
       "options": {
         "exportBackground": true,
@@ -4964,7 +4964,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "c1ea4dd3aef63f643ba862d0a9b678a2d85fa85b38c1fceee0b6414190502d84"
+        "inputs_sha256": "2a4efb8b24c8c3ce8ca2c3632bb348e3e6ea351c9a12b2161f9f86a54f590449"
       },
       "options": {
         "exportBackground": true,
@@ -5078,7 +5078,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "dc00b12c7a0ad1d64bf825850efee723dba8c78dd2254644203938a3af938af0"
+        "inputs_sha256": "135e6c1b5f5ad08a8684e64130b32a1bedadfd2bfa9fed29425832759a91cb55"
       },
       "options": {
         "exportBackground": true,
@@ -5108,7 +5108,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "dc00b12c7a0ad1d64bf825850efee723dba8c78dd2254644203938a3af938af0"
+        "inputs_sha256": "135e6c1b5f5ad08a8684e64130b32a1bedadfd2bfa9fed29425832759a91cb55"
       },
       "options": {
         "exportBackground": true,
@@ -5138,7 +5138,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "dc00b12c7a0ad1d64bf825850efee723dba8c78dd2254644203938a3af938af0"
+        "inputs_sha256": "135e6c1b5f5ad08a8684e64130b32a1bedadfd2bfa9fed29425832759a91cb55"
       },
       "options": {
         "exportBackground": true,
@@ -5252,7 +5252,7 @@
           "kind": "scene"
         },
         "format": "svg",
-        "inputs_sha256": "22e304a73bd70f808fda84afe00793c0cd44efbb4d7523e7e0eadc5f7e8c6462"
+        "inputs_sha256": "e6d869771ebf1100467b2ec19ab64985fd65263060e81491fd3f1accaeef3936"
       },
       "options": {
         "exportBackground": true,
@@ -5282,7 +5282,7 @@
           "kind": "scene"
         },
         "format": "png",
-        "inputs_sha256": "22e304a73bd70f808fda84afe00793c0cd44efbb4d7523e7e0eadc5f7e8c6462"
+        "inputs_sha256": "e6d869771ebf1100467b2ec19ab64985fd65263060e81491fd3f1accaeef3936"
       },
       "options": {
         "exportBackground": true,
@@ -5312,7 +5312,7 @@
           "kind": "scene"
         },
         "format": "pdf",
-        "inputs_sha256": "22e304a73bd70f808fda84afe00793c0cd44efbb4d7523e7e0eadc5f7e8c6462"
+        "inputs_sha256": "e6d869771ebf1100467b2ec19ab64985fd65263060e81491fd3f1accaeef3936"
       },
       "options": {
         "exportBackground": true,

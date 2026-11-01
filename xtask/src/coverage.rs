@@ -20,11 +20,11 @@ mod ownership;
 mod pdf_judgments;
 pub use layers::{report_layers, verify_layers};
 pub use ownership::{
-    extend_ownership, ownership_catalog, record_case_owner, record_closure_owner,
-    record_exception_test_owner, record_library_test_owner, record_representative_owner,
-    record_test_owner, refresh_exception_test_owner_source, refresh_library_test_owner_source,
-    refresh_test_owner_source, refresh_test_owner_sources, seed_ownership, test_group_filter,
-    verify_ownership, verify_representative_owner,
+    extend_ownership, ownership_catalog, rebind_ownership_catalog, record_case_owner,
+    record_closure_owner, record_exception_test_owner, record_library_test_owner,
+    record_representative_owner, record_test_owner, refresh_exception_test_owner_source,
+    refresh_library_test_owner_source, refresh_test_owner_source, refresh_test_owner_sources,
+    seed_ownership, test_group_filter, verify_ownership, verify_representative_owner,
 };
 pub use pdf_judgments::{generate_pdf_judgments, verify_pdf_judgments};
 

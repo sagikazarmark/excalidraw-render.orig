@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "01b20e567d24eb1f60efa0bf1f5bbb9607b23c3c50e44c519606ac9d6d8f20b0",
+  "catalog_sha256": "fcf26bffb9b0e1e649a6b147cbbd499f22108b9d7dda88e04b7bdaf2df728f55",
   "approval": null,
   "assignments": [
     {
@@ -13,7 +13,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "59a0858e23cc63ac361aa2a2fdef87f55d0e1be5c78aee766629a54f2e9e67a4"
+            "sha256": "2816ea9def0d2f8a6aeff4cc7f9b36ac9aecc8d6b82b7fb7afc885d0468cba9e"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -43,7 +43,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "59a0858e23cc63ac361aa2a2fdef87f55d0e1be5c78aee766629a54f2e9e67a4"
+            "sha256": "2816ea9def0d2f8a6aeff4cc7f9b36ac9aecc8d6b82b7fb7afc885d0468cba9e"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -88,7 +88,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "59a0858e23cc63ac361aa2a2fdef87f55d0e1be5c78aee766629a54f2e9e67a4"
+            "sha256": "2816ea9def0d2f8a6aeff4cc7f9b36ac9aecc8d6b82b7fb7afc885d0468cba9e"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -103,7 +103,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "59a0858e23cc63ac361aa2a2fdef87f55d0e1be5c78aee766629a54f2e9e67a4"
+            "sha256": "2816ea9def0d2f8a6aeff4cc7f9b36ac9aecc8d6b82b7fb7afc885d0468cba9e"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -148,7 +148,7 @@
           "case": "focused.bound-text-containers.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
-            "sha256": "06930a1ee2cf5ed79ae89adb82f9479df29eaee68be027c0c930e8cef6d66433"
+            "sha256": "fa91c1f99d515667dc49264be2bf716e765faa60cb17796f124311f63875af5b"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Justify a multi-line bound label under every textAlign value inside rectangle, ellipse and diamond containers. This assignment does not claim all format/profile sub-obligations."
@@ -163,7 +163,7 @@
           "case": "focused.bound-text-containers.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
-            "sha256": "06930a1ee2cf5ed79ae89adb82f9479df29eaee68be027c0c930e8cef6d66433"
+            "sha256": "fa91c1f99d515667dc49264be2bf716e765faa60cb17796f124311f63875af5b"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Justify a multi-line bound label under every textAlign value inside rectangle, ellipse and diamond containers. This assignment does not claim all format/profile sub-obligations."
@@ -178,7 +178,7 @@
           "case": "focused.bound-text-containers.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
-            "sha256": "06930a1ee2cf5ed79ae89adb82f9479df29eaee68be027c0c930e8cef6d66433"
+            "sha256": "fa91c1f99d515667dc49264be2bf716e765faa60cb17796f124311f63875af5b"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Justify a multi-line bound label under every textAlign value inside rectangle, ellipse and diamond containers. This assignment does not claim all format/profile sub-obligations."
@@ -193,7 +193,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "59a0858e23cc63ac361aa2a2fdef87f55d0e1be5c78aee766629a54f2e9e67a4"
+            "sha256": "2816ea9def0d2f8a6aeff4cc7f9b36ac9aecc8d6b82b7fb7afc885d0468cba9e"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -208,7 +208,7 @@
           "case": "focused.bound-text-containers.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
-            "sha256": "06930a1ee2cf5ed79ae89adb82f9479df29eaee68be027c0c930e8cef6d66433"
+            "sha256": "fa91c1f99d515667dc49264be2bf716e765faa60cb17796f124311f63875af5b"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Justify a multi-line bound label under every textAlign value inside rectangle, ellipse and diamond containers. This assignment does not claim all format/profile sub-obligations."
@@ -313,7 +313,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "59a0858e23cc63ac361aa2a2fdef87f55d0e1be5c78aee766629a54f2e9e67a4"
+            "sha256": "2816ea9def0d2f8a6aeff4cc7f9b36ac9aecc8d6b82b7fb7afc885d0468cba9e"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -403,7 +403,7 @@
           "case": "focused.iframe-element.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/iframe-element/manifest.json",
-            "sha256": "0461484363f7de00d8ede8454b261e16996dd523ed8e1804334ed4c9abf8d361"
+            "sha256": "e99e4eae7dcaa7a774bc41c90a3173bb13360224a31fe6f29355e410924164d4"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Render one iframe element carrying a link beside an embeddable control with a link, so the official offline shell the reference draws for an iframe — its generated label and background — is observed against official evidence alongside the embeddable shell focused.embeddable-links.v1 approved. This assignment does not claim all format/profile sub-obligations."
@@ -463,7 +463,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "59a0858e23cc63ac361aa2a2fdef87f55d0e1be5c78aee766629a54f2e9e67a4"
+            "sha256": "2816ea9def0d2f8a6aeff4cc7f9b36ac9aecc8d6b82b7fb7afc885d0468cba9e"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -673,7 +673,7 @@
           "case": "focused.cjk-propagation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cjk-propagation/manifest.json",
-            "sha256": "e0f0b207a4ecadb0501acca521223b126fe9de15cba32eb19ccc96f186d6ab6b"
+            "sha256": "365c7c2f4d64183ad52a303b11dad164ff10a2136ebb489e44fb4de426d24dd3"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Propagate CJK text from Excalifont to the Xiaolai chain, including mixed Latin, digit and CJK runs in one text element. This assignment does not claim all format/profile sub-obligations."
@@ -688,7 +688,7 @@
           "case": "focused.font-families-virgil-lilita-comic.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
-            "sha256": "eee5cdf643e066b3f1ea70d792e2322858af6b727da82bdf002ee0e03c9ee80d"
+            "sha256": "8926a08461bb940117dc1dcfa7e90ae7eb353eb9e6835b362b336bf152364b4f"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Shape and position ordinary scene text in the three bundled families the corpus never evidenced, Virgil (fontFamily 1), Lilita One (7) and Comic Shanns (8), beside an Excalifont control: each family carries a two-line wrapped element at fontSize 20 and at 36 under every textAlign value, with the family's metadata line height (1.25, 1.15, 1.25), so the family metadata metrics that place each baseline, the stored width that anchors the centred and right-aligned lines, and the Reserved Font Name aliases the direct SVG embeds the Virgil and Lilita One subsets under (ExcalidrawRender-1, ExcalidrawRender-7) are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -733,7 +733,7 @@
           "case": "focused.helvetica-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/helvetica-text/manifest.json",
-            "sha256": "36c9c97ff780deca82275b31a5a0209cdf2793a321188af49ab3a9ccd9271a39"
+            "sha256": "e97a04d8cc3229f4ba8bf846ed8ea234801ad816762cb5ae745b1a7a924e3e2a"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Position Helvetica-family scene text by Excalidraw's metadata metrics while shaping it with the Liberation Sans substitute, across single- and multi-line elements and every textAlign value. This assignment does not claim all format/profile sub-obligations."
@@ -748,7 +748,7 @@
           "case": "focused.helvetica-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/helvetica-text/manifest.json",
-            "sha256": "36c9c97ff780deca82275b31a5a0209cdf2793a321188af49ab3a9ccd9271a39"
+            "sha256": "e97a04d8cc3229f4ba8bf846ed8ea234801ad816762cb5ae745b1a7a924e3e2a"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Position Helvetica-family scene text by Excalidraw's metadata metrics while shaping it with the Liberation Sans substitute, across single- and multi-line elements and every textAlign value. This assignment does not claim all format/profile sub-obligations."
@@ -763,7 +763,7 @@
           "case": "focused.font-families-virgil-lilita-comic.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
-            "sha256": "eee5cdf643e066b3f1ea70d792e2322858af6b727da82bdf002ee0e03c9ee80d"
+            "sha256": "8926a08461bb940117dc1dcfa7e90ae7eb353eb9e6835b362b336bf152364b4f"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Shape and position ordinary scene text in the three bundled families the corpus never evidenced, Virgil (fontFamily 1), Lilita One (7) and Comic Shanns (8), beside an Excalifont control: each family carries a two-line wrapped element at fontSize 20 and at 36 under every textAlign value, with the family's metadata line height (1.25, 1.15, 1.25), so the family metadata metrics that place each baseline, the stored width that anchors the centred and right-aligned lines, and the Reserved Font Name aliases the direct SVG embeds the Virgil and Lilita One subsets under (ExcalidrawRender-1, ExcalidrawRender-7) are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -778,7 +778,7 @@
           "case": "focused.missing-glyph.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/missing-glyph/manifest.json",
-            "sha256": "1658d7369c23cb3508686052c7759a51d5b9c0fedd576550eb77f2aa19e53745"
+            "sha256": "cce137c36dce7f5f753a77da04e1990843738bd4cdb72c612d16b884455740ea"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Substitute scalars absent from the complete fallback chain as spec 8.3 requires: an Excalifont element and a Liberation Sans (fontFamily 9) element each mix Latin with Linear B U+10000 and U+10001 and the noncharacter U+10FFFF, which no bundled face maps. The official export has no bundled glyph for them and draws whatever the browser's system-font fallback supplies; revision 1 shapes the deterministic basic-Latin ? from Liberation Sans, so the primary face and the replacement face are both exercised, and reports one font.missing-glyph warning per scalar per occurrence in source order. No scalar belongs to the CJK table, so Xiaolai stays out of the fallback chain. This assignment does not claim all format/profile sub-obligations."
@@ -793,7 +793,7 @@
           "case": "focused.cjk-propagation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cjk-propagation/manifest.json",
-            "sha256": "e0f0b207a4ecadb0501acca521223b126fe9de15cba32eb19ccc96f186d6ab6b"
+            "sha256": "365c7c2f4d64183ad52a303b11dad164ff10a2136ebb489e44fb4de426d24dd3"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Propagate CJK text from Excalifont to the Xiaolai chain, including mixed Latin, digit and CJK runs in one text element. This assignment does not claim all format/profile sub-obligations."
@@ -808,7 +808,7 @@
           "case": "focused.font-families-virgil-lilita-comic.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
-            "sha256": "eee5cdf643e066b3f1ea70d792e2322858af6b727da82bdf002ee0e03c9ee80d"
+            "sha256": "8926a08461bb940117dc1dcfa7e90ae7eb353eb9e6835b362b336bf152364b4f"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Shape and position ordinary scene text in the three bundled families the corpus never evidenced, Virgil (fontFamily 1), Lilita One (7) and Comic Shanns (8), beside an Excalifont control: each family carries a two-line wrapped element at fontSize 20 and at 36 under every textAlign value, with the family's metadata line height (1.25, 1.15, 1.25), so the family metadata metrics that place each baseline, the stored width that anchors the centred and right-aligned lines, and the Reserved Font Name aliases the direct SVG embeds the Virgil and Lilita One subsets under (ExcalidrawRender-1, ExcalidrawRender-7) are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -823,7 +823,7 @@
           "case": "focused.font-families-virgil-lilita-comic.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
-            "sha256": "eee5cdf643e066b3f1ea70d792e2322858af6b727da82bdf002ee0e03c9ee80d"
+            "sha256": "8926a08461bb940117dc1dcfa7e90ae7eb353eb9e6835b362b336bf152364b4f"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Shape and position ordinary scene text in the three bundled families the corpus never evidenced, Virgil (fontFamily 1), Lilita One (7) and Comic Shanns (8), beside an Excalifont control: each family carries a two-line wrapped element at fontSize 20 and at 36 under every textAlign value, with the family's metadata line height (1.25, 1.15, 1.25), so the family metadata metrics that place each baseline, the stored width that anchors the centred and right-aligned lines, and the Reserved Font Name aliases the direct SVG embeds the Virgil and Lilita One subsets under (ExcalidrawRender-1, ExcalidrawRender-7) are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -853,7 +853,7 @@
           "case": "focused.dark-mode-frames.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/dark-mode-frames/manifest.json",
-            "sha256": "11b2582fd31872731705e3a3526571fcf734fe13a3d4280f643ec2a9b9862edd"
+            "sha256": "2ed54b28b680a02a8f3f7d007d9837cf7cc0ac60b61ebd56c122e2810be90b20"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Export a named frame holding a half-opaque rectangle and two solid rectangles, a named magic frame holding one rectangle, and an unframed rectangle whose top edge fixes an integer scene origin above the frame names, in the default and dark-mode exports, so the dark-mode frame and magic-frame outline colours, the frame names' dark-mode colour, the frame clip and the frame outline opacity rule (#137) are observed against official evidence; every shape is a rectangle with roughness 0 so the comparison is not dominated by stroke rasterization, and the scene carries no image, so the images' dark-mode lowering is focused.dark-mode-images.v1. This assignment does not claim all format/profile sub-obligations."
@@ -868,7 +868,7 @@
           "case": "focused.frame-name-truncation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
-            "sha256": "2aa4b913cac911a808122ad51716c011a8eb373c74a19df6fbd154b818dd19d0"
+            "sha256": "5f4bc04e0015dd164a2125ad9c662ea0354ba76cd58c8e6aea75a07ed9bf0bcb"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Synthesize frame names as the reference's whole-scene export does: a 200-wide frame whose name is far wider than the frame, so the name is cut to the longest prefix that fits with a trailing ... when measured in Helvetica 14 (shaped by Liberation Sans), a frame whose name is the empty string, so its label is an empty text element rather than the null-name default Frame, a named outer frame and, nested inside it, a 120-wide inner frame whose long name is cut at its own width and whose label is not clipped by the outer frame while the rectangle it holds is clipped by the inner frame; every frame holds one roughness-0 rectangle. The frame labels' line box fixes a fractional scene origin (frame.y - 3 - 17.5), so the export extent is fractional too. This assignment does not claim all format/profile sub-obligations."
@@ -883,7 +883,7 @@
           "case": "focused.dark-mode-frames.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/dark-mode-frames/manifest.json",
-            "sha256": "11b2582fd31872731705e3a3526571fcf734fe13a3d4280f643ec2a9b9862edd"
+            "sha256": "2ed54b28b680a02a8f3f7d007d9837cf7cc0ac60b61ebd56c122e2810be90b20"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Export a named frame holding a half-opaque rectangle and two solid rectangles, a named magic frame holding one rectangle, and an unframed rectangle whose top edge fixes an integer scene origin above the frame names, in the default and dark-mode exports, so the dark-mode frame and magic-frame outline colours, the frame names' dark-mode colour, the frame clip and the frame outline opacity rule (#137) are observed against official evidence; every shape is a rectangle with roughness 0 so the comparison is not dominated by stroke rasterization, and the scene carries no image, so the images' dark-mode lowering is focused.dark-mode-images.v1. This assignment does not claim all format/profile sub-obligations."
@@ -898,7 +898,7 @@
           "case": "focused.frame-name-truncation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
-            "sha256": "2aa4b913cac911a808122ad51716c011a8eb373c74a19df6fbd154b818dd19d0"
+            "sha256": "5f4bc04e0015dd164a2125ad9c662ea0354ba76cd58c8e6aea75a07ed9bf0bcb"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Synthesize frame names as the reference's whole-scene export does: a 200-wide frame whose name is far wider than the frame, so the name is cut to the longest prefix that fits with a trailing ... when measured in Helvetica 14 (shaped by Liberation Sans), a frame whose name is the empty string, so its label is an empty text element rather than the null-name default Frame, a named outer frame and, nested inside it, a 120-wide inner frame whose long name is cut at its own width and whose label is not clipped by the outer frame while the rectangle it holds is clipped by the inner frame; every frame holds one roughness-0 rectangle. The frame labels' line box fixes a fractional scene origin (frame.y - 3 - 17.5), so the export extent is fractional too. This assignment does not claim all format/profile sub-obligations."
@@ -913,7 +913,7 @@
           "case": "focused.frame-name-truncation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
-            "sha256": "2aa4b913cac911a808122ad51716c011a8eb373c74a19df6fbd154b818dd19d0"
+            "sha256": "5f4bc04e0015dd164a2125ad9c662ea0354ba76cd58c8e6aea75a07ed9bf0bcb"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Synthesize frame names as the reference's whole-scene export does: a 200-wide frame whose name is far wider than the frame, so the name is cut to the longest prefix that fits with a trailing ... when measured in Helvetica 14 (shaped by Liberation Sans), a frame whose name is the empty string, so its label is an empty text element rather than the null-name default Frame, a named outer frame and, nested inside it, a 120-wide inner frame whose long name is cut at its own width and whose label is not clipped by the outer frame while the rectangle it holds is clipped by the inner frame; every frame holds one roughness-0 rectangle. The frame labels' line box fixes a fractional scene origin (frame.y - 3 - 17.5), so the export extent is fractional too. This assignment does not claim all format/profile sub-obligations."
@@ -928,7 +928,7 @@
           "case": "focused.frame-name-truncation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
-            "sha256": "2aa4b913cac911a808122ad51716c011a8eb373c74a19df6fbd154b818dd19d0"
+            "sha256": "5f4bc04e0015dd164a2125ad9c662ea0354ba76cd58c8e6aea75a07ed9bf0bcb"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Synthesize frame names as the reference's whole-scene export does: a 200-wide frame whose name is far wider than the frame, so the name is cut to the longest prefix that fits with a trailing ... when measured in Helvetica 14 (shaped by Liberation Sans), a frame whose name is the empty string, so its label is an empty text element rather than the null-name default Frame, a named outer frame and, nested inside it, a 120-wide inner frame whose long name is cut at its own width and whose label is not clipped by the outer frame while the rectangle it holds is clipped by the inner frame; every frame holds one roughness-0 rectangle. The frame labels' line box fixes a fractional scene origin (frame.y - 3 - 17.5), so the export extent is fractional too. This assignment does not claim all format/profile sub-obligations."
@@ -958,7 +958,7 @@
           "case": "focused.dark-mode-frames.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/dark-mode-frames/manifest.json",
-            "sha256": "11b2582fd31872731705e3a3526571fcf734fe13a3d4280f643ec2a9b9862edd"
+            "sha256": "2ed54b28b680a02a8f3f7d007d9837cf7cc0ac60b61ebd56c122e2810be90b20"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Export a named frame holding a half-opaque rectangle and two solid rectangles, a named magic frame holding one rectangle, and an unframed rectangle whose top edge fixes an integer scene origin above the frame names, in the default and dark-mode exports, so the dark-mode frame and magic-frame outline colours, the frame names' dark-mode colour, the frame clip and the frame outline opacity rule (#137) are observed against official evidence; every shape is a rectangle with roughness 0 so the comparison is not dominated by stroke rasterization, and the scene carries no image, so the images' dark-mode lowering is focused.dark-mode-images.v1. This assignment does not claim all format/profile sub-obligations."
@@ -1648,7 +1648,7 @@
           "case": "focused.legacy-line-height.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/legacy-line-height/manifest.json",
-            "sha256": "e3330e08d37a9e605cea9d10ac4b80074d2d8b8ce42a1d1dbc69bb4473327454"
+            "sha256": "ba737d076fc6f87e1df73dc3b0035feb6fa1aba3329c0d028094310eedb49bc5"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Derive a missing text lineHeight by the pinned restore rule: from the stored height and line count where the element has a height (Helvetica two lines, Cascadia one line, and a bound container label, none of which detect to their family metadata line height), and from the source family's metadata line height where the height is zero (Nunito 1.35 against the Excalifont 1.25 control). This assignment does not claim all format/profile sub-obligations."
@@ -1663,7 +1663,7 @@
           "case": "focused.legacy-line-height.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/legacy-line-height/manifest.json",
-            "sha256": "e3330e08d37a9e605cea9d10ac4b80074d2d8b8ce42a1d1dbc69bb4473327454"
+            "sha256": "ba737d076fc6f87e1df73dc3b0035feb6fa1aba3329c0d028094310eedb49bc5"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Derive a missing text lineHeight by the pinned restore rule: from the stored height and line count where the element has a height (Helvetica two lines, Cascadia one line, and a bound container label, none of which detect to their family metadata line height), and from the source family's metadata line height where the height is zero (Nunito 1.35 against the Excalifont 1.25 control). This assignment does not claim all format/profile sub-obligations."
@@ -1806,7 +1806,7 @@
           "kind": "record",
           "record": {
             "path": "tests/conformance/coverage/pdf-judgments.json",
-            "sha256": "44a8c04a647a733ede72cf0ff6c24ab02318dc663bb4c306f3c6de1a64dab6cd"
+            "sha256": "805b07f295d3f2fd671ddd6f694f8b3525b3c7cbf6e1d3597ba1b24f55a575f3"
           },
           "approval_subject_sha256": "sha256:f0b9119f08e53d2d51873960722d4ab15619f6e2510291aa0389e6ad2f390f4a",
           "verifier": "pdf-judgments"
@@ -49727,9 +49727,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -49740,12 +49740,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -49756,9 +49756,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -49769,12 +49769,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -49785,9 +49785,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -49798,12 +49798,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -49814,9 +49814,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -49827,12 +49827,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -49843,9 +49843,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -49856,12 +49856,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -49872,9 +49872,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -49885,12 +49885,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -49901,9 +49901,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -49914,12 +49914,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -49930,9 +49930,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -49943,12 +49943,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -49959,9 +49959,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -49972,12 +49972,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -49988,9 +49988,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50001,12 +50001,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50017,9 +50017,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50030,12 +50030,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50046,9 +50046,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50059,12 +50059,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50075,9 +50075,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50088,12 +50088,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50104,9 +50104,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50117,12 +50117,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50133,9 +50133,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50146,12 +50146,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50162,9 +50162,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50175,12 +50175,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50191,9 +50191,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50204,12 +50204,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50220,9 +50220,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50233,12 +50233,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50249,9 +50249,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50262,12 +50262,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50278,9 +50278,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50291,12 +50291,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50307,9 +50307,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50320,12 +50320,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {
@@ -50336,9 +50336,9 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/parity_registered_case_png.rs",
-            "sha256": "842cb56b8479392b8eadd544da1e097773b566cfdbd649b202899615ff0ab289"
+            "sha256": "95eab1fcd6885bbc8dc33efb286e07919b014beffb943499dc687f7c3da81c66"
           },
-          "function": "every_registered_scene_case_matches_its_official_direct_png",
+          "function": "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
           "binary": "parity_registered_case_png",
           "command": [
             "cargo",
@@ -50349,12 +50349,12 @@
             "excalidraw-render",
             "--test",
             "parity_registered_case_png",
-            "every_registered_scene_case_matches_its_official_direct_png",
+            "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence",
             "--",
             "--exact"
           ]
         },
-        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded ceilings and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
+        "rationale": "Exception-scope adapter: the registered-case direct PNG parity test renders this variant, compares it against the official canvas raster, holds it at the exception's exact recorded measurement in both directions and fails it once the canonical budget passes (stale). The adapter binds the sole png/whole exception of an existing variant of a registered scene case, with no viewer profile."
       }
     },
     {

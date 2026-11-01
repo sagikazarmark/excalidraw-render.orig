@@ -96,6 +96,7 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         C::OwnershipCatalog => println!("{}", coverage::ownership_catalog()?),
         C::SeedOwnership => println!("{}", coverage::seed_ownership()?),
         C::VerifyOwnership => coverage::verify_ownership()?,
+        C::RebindOwnershipCatalog => coverage::rebind_ownership_catalog()?,
         C::ExtendOwnership {
             previous,
             issue,

@@ -227,3 +227,55 @@ Recommendations:
    from the manifest.
 7. Prune `official.png` and consider compressing the 64 MB of raw rasters.
 8. Make the scaling ceilings relative or run them in release.
+
+## 9. Addendum: the identical-input controls, measured
+
+Recommendation 1 above proposed deriving the PNG SSIM floor from
+identical-input controls. The controls were measured for all 48 variants
+before acting on it, and the data does not support the simple form of the
+proposal.
+
+**Control A, the reference against itself** (`official-svg.rgba`, Chromium's
+raster of the official SVG, against `official-png.rgba`, the official canvas):
+0 changed pixels and SSIM ≥ 0.998 on nearly every geometry variant
+(`ellipse-diamond-fills` 18 px / 0.99982, `arrow-suite` not comparable in
+size, `rough-fillers-dashed-zigzag-line` 0 / 0.99982). Both rasters come
+from the same Skia, so this control measures nothing about rasterizer
+disagreement; it is not the 0.92 of ADR-0014, which was a representative
+text crop.
+
+**Control B, two rasterizers on identical input** (the workspace `resvg`
+rasterizing the official SVG against Chromium's raster of the same SVG):
+below the 0.999 floor on about 42 of 48 variants, from 0.9999
+(`embed-scene-metadata`) through 0.998 (`rectangle-outline` 0.99878,
+`freedraw` 0.99944), 0.995 (`bound-text-containers` 0.99455, `embeddable-links`
+0.99472), 0.98 (`helvetica-text` 0.98048, `legacy-line-height` 0.98169,
+`frame-clip-mask-sharing` 0.98131, `text-line-endings` 0.98177) to 0.93
+(`image-codecs` 0.92888, `rounded-image` 0.94926). Our own SVG rasterized by
+the same `resvg` lands on the same numbers wherever the paths match the
+official export, which they do on 43 of 48 variants.
+
+**Our direct PNG against the canvas**: SSIM 0.9952–0.99998 on the 42
+geometry variants, 0.81–0.89 on the six glyph-fallback and bidi variants. On
+most variants the direct PNG pipeline agrees with the canvas *better* than
+`resvg` agrees with Chromium on identical input; the 22 exceptions sit at
+0.9952–0.9986 where the floor is 0.999.
+
+So: the canonical 0.999 floor is beyond what two rasterizers achieve on
+identical input in general, which is why the exceptions exist, but no
+identical-input control exists for the direct PNG path itself (it renders
+scenes, not SVGs), so none can set its floor. Lowering the class floor is a
+maintainer decision ADR-0014 declined; the data for revisiting it is the
+table above.
+
+What the measurement did show is the dead zone in action: **11 of the 22
+exceptions were stale toward "improved"** without any harness noticing
+(`arrow-suite` recorded 324 px, observed 322; `bound-text-containers` 46 →
+10; `font-families-virgil-lilita-comic` 90 → 32; `cjk-propagation
+[max-dimension-200]` 26 → 14; `helvetica-text` 175 → 154; `legacy-line-height`
+261 → 210; `missing-glyph` 753 → 734; `dark-mode-frames` 45 → 42 and 53 → 49;
+`frame-name-truncation` 484 → 478; `iframe-element` 230 → 213), most of them
+text cases whose glyph rasterization moved with the HarfRust and skera
+upgrades. A later regression up to the stale ceiling would have passed. The
+exceptions are therefore judged two-sided from this review on, like the SVG
+pins, and the eleven were re-recorded at their observed values.
