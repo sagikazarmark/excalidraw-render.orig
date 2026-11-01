@@ -72,6 +72,7 @@ use excalidraw_render_compare::{
 };
 use serde_json::Value;
 
+use base64::Engine;
 use common::lower_hex;
 use common::registered_cases::{
     case_count, judge_each, observed, registered_scene_variants, variant_request, visual_class,
@@ -80,7 +81,7 @@ use common::registered_cases::{
 };
 use common::reports::assert_report_matches;
 use common::repository_root;
-use common::svg_raster::rasterize;
+use common::svg_raster::{embedded_faces, rasterize, referenced_families, EmbeddedFace};
 
 /// Diagnosed defects whose fix is pending a maintainer decision, observed on the
 /// rasterized document. See `PinnedDivergence` for why these are pinned rather
@@ -617,6 +618,55 @@ fn a_geometry_defect_pin_holds_the_renderer_geometry_and_requires_the_divergence
     assert!(
         detail.contains("geometry moved") && detail.contains("#172"),
         "{detail}"
+    );
+}
+
+#[test]
+fn embedded_faces_read_the_official_export_and_the_renderer_declarations() {
+    let payload = base64::engine::general_purpose::STANDARD.encode(b"wOF2-bytes");
+    let official = format!(
+        "<style class=\"style-fonts\">\n      @font-face {{ font-family: Excalifont; \
+         src: url(data:font/woff2;base64,{payload}); }}\n      @font-face {{ font-family: \
+         Xiaolai; src: url(data:font/woff2;base64,{payload}); }}\n    </style>"
+    );
+    let renderer = format!(
+        "<style class=\"style-fonts\">@font-face{{font-family:'ExcalidrawRender-9';\
+         src:url(data:font/ttf;base64,{payload})}}</style>"
+    );
+    assert_eq!(
+        embedded_faces(&official),
+        [
+            EmbeddedFace {
+                family: "Excalifont".into(),
+                media_type: "font/woff2".into(),
+                bytes: b"wOF2-bytes".to_vec(),
+            },
+            EmbeddedFace {
+                family: "Xiaolai".into(),
+                media_type: "font/woff2".into(),
+                bytes: b"wOF2-bytes".to_vec(),
+            },
+        ]
+    );
+    assert_eq!(
+        embedded_faces(&renderer),
+        [EmbeddedFace {
+            family: "ExcalidrawRender-9".into(),
+            media_type: "font/ttf".into(),
+            bytes: b"wOF2-bytes".to_vec(),
+        }]
+    );
+    assert!(embedded_faces("<svg><path d=\"M0 0\"/></svg>").is_empty());
+}
+
+#[test]
+fn referenced_families_split_lists_and_keep_document_order() {
+    let svg = "<text font-family=\"Helvetica, Segoe UI Emoji\">a</text>\
+               <text font-family=\"Excalifont\"><tspan font-family=\"Xiaolai\">b</tspan></text>\
+               <text font-family=\"Helvetica\">c</text>";
+    assert_eq!(
+        referenced_families(svg),
+        ["Helvetica", "Segoe UI Emoji", "Excalifont", "Xiaolai"]
     );
 }
 

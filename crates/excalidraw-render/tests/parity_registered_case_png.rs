@@ -36,8 +36,8 @@ use serde_json::Value;
 
 use common::raster::decode_png;
 use common::registered_cases::{
-    case_count, divergence, exception_limits, judge_each, registered_scene_variants,
-    variant_request, visual_class, PinnedDivergence, PinnedExtentDefect, RecordedDivergence,
+    case_count, divergence, judge_each, registered_scene_variants, variant_request, visual_class,
+    whole_png_exception, PinnedDivergence, PinnedExtentDefect, RecordedDivergence,
     RegisteredVariant,
 };
 use common::reports::assert_report_matches;
@@ -68,20 +68,12 @@ fn judge_registered_scene_cases(carried: bool) {
         "the registry has {} variants",
         if carried { "excepted" } else { "clean" }
     );
-    let seen: BTreeSet<_> = variants
-        .iter()
-        .map(|variant| (variant.case.clone(), variant.variant.clone()))
-        .collect();
 
     let failures: Vec<String> = judge_each(&variants, direct_png_divergence)
         .into_iter()
         .flatten()
         .collect();
 
-    if carried {
-        PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
-        PinnedExtentDefect::assert_all_observed(KNOWN_EXTENT_DEFECTS, &seen);
-    }
     assert!(
         failures.is_empty(),
         "{} of {} registered scene cases ({} variants) diverge from their official direct PNG:\n  {}",
@@ -93,14 +85,22 @@ fn judge_registered_scene_cases(carried: bool) {
 }
 
 /// Every variant without a tolerance exception passes the canonical budget
-/// against the official canvas raster.
+/// against the official canvas raster, or holds the measurement its known
+/// defect pins, and every pin names a variant the registry declares. A known
+/// defect has no exception, so the pinned variants are in this set.
 #[test]
 fn every_clean_registered_scene_case_matches_its_official_direct_png() {
+    let seen: BTreeSet<_> = registered_scene_variants(&repository_root())
+        .iter()
+        .map(|variant| (variant.case.clone(), variant.variant.clone()))
+        .collect();
+    PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
+    PinnedExtentDefect::assert_all_observed(KNOWN_EXTENT_DEFECTS, &seen);
     judge_registered_scene_cases(false);
 }
 
 /// Every variant with a tolerance exception holds exactly the divergence its
-/// record carries, and the known defects name variants the registry declares.
+/// record carries.
 #[test]
 fn every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence() {
     judge_registered_scene_cases(true);
@@ -186,16 +186,7 @@ fn direct_png_divergence(variant: &RegisteredVariant) -> Option<String> {
 /// The approved tolerance exception governing one variant's whole direct PNG, if
 /// the case manifest records one.
 fn tolerance_exception(manifest: &Value, variant_id: &str) -> Option<RecordedDivergence> {
-    manifest["exceptions"]
-        .as_array()
-        .expect("manifest exceptions are an array")
-        .iter()
-        .find(|exception| {
-            exception["variant"] == variant_id
-                && exception["format"] == "png"
-                && exception["region"] == "whole"
-        })
-        .map(exception_limits)
+    whole_png_exception(manifest, variant_id)
 }
 
 /// The default reference export, as every registered variant declares it

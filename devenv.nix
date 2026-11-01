@@ -102,7 +102,7 @@ in
     # Browser WASM: the wasm-bindgen test runner and headless Firefox over
     # geckodriver (ADR-0024). `devenv --profile browser shell` for the WASM
     # recipes (`just qualification wasm32-unknown-unknown`, `just wasm-packaging`,
-    # `just wasm-snapshot-replay`, `just render-fuzz-wasm`, `just release`).
+    # `just golden-wasm`, `just render-fuzz-wasm`, `just release`).
     browser.module = {
       packages =
         [

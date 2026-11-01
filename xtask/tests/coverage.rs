@@ -127,6 +127,7 @@ fn ownership_recording_validates_the_entire_batch_before_writing() {
 }
 
 #[test]
+#[ignore = "release tier: judges the live inventory (just test-release)"]
 fn inventory_is_current() {
     assert_success(command(&["conformance", "verify-inventory"]));
     let inventory = inventory();

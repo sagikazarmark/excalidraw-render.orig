@@ -281,9 +281,9 @@ fn packaged_public_facade_renders_fallbacks_deterministically() {
 fn packaged_public_facade_compresses_png_scanlines() {
     // A noisy raster upscaled by the renderer makes the PNG encoder take its
     // predictive scanline filters and exercises the deflate compressor on
-    // dense data, while the padding rows stay unfiltered. Together with the
-    // flat rectangle expectation this pins both filter paths and the
-    // compressor on every supported target (#113).
+    // dense data, while the padding rows stay unfiltered; the flat rectangle
+    // reproduced from the golden record covers the other filter path. The
+    // bytes themselves are the golden record's concern (#113).
     let scene =
         SceneDocument::parse(NOISY_RASTER_SCENE).expect("the noisy raster scene is admitted");
     let request = RenderRequest::builder(OutputFormat::Png)

@@ -67,6 +67,17 @@ struct Key {
     format: Format,
 }
 
+impl Key {
+    /// Whether this is the default scene PNG of `case`, the one target a #178
+    /// record may name.
+    fn is_default_scene_png_of(&self, case: &str) -> bool {
+        self.case == case
+            && self.variant == "default"
+            && self.format == Format::Png
+            && self.export == Export::Scene {}
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct Execution {
@@ -74,9 +85,10 @@ struct Execution {
     options: Value,
 }
 
+/// The digest and length that stand for a byte sequence in the record.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-struct Bytes {
+struct ByteDigest {
     sha256: String,
     byte_length: u64,
 }
@@ -84,15 +96,20 @@ struct Bytes {
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum Outcome {
-    Artifact { bytes: Bytes },
-    Failure { code: String, descriptor: Bytes },
+    Artifact {
+        bytes: ByteDigest,
+    },
+    Failure {
+        code: String,
+        descriptor: ByteDigest,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct Sample {
     outcome: Outcome,
-    report: Bytes,
+    report: ByteDigest,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -124,8 +141,8 @@ fn sha256(bytes: &[u8]) -> String {
         .collect()
 }
 
-fn describe(bytes: &[u8]) -> Bytes {
-    Bytes {
+fn describe(bytes: &[u8]) -> ByteDigest {
+    ByteDigest {
         sha256: sha256(bytes),
         byte_length: bytes.len() as u64,
     }
@@ -597,8 +614,13 @@ mod native {
     }
 
     /// The record's blobs hold exactly the bytes it names, and nothing else.
+    /// While the record is being rewritten this stands aside; the next run
+    /// judges what was written.
     #[test]
     fn the_golden_record_names_its_blobs_exactly() {
+        if updating() {
+            return;
+        }
         let record = load_record();
         let root = root();
         let mut referenced = BTreeSet::new();
@@ -641,6 +663,9 @@ mod native {
     /// The #178 record names registered cases, each once, with distinct bytes.
     #[test]
     fn the_experimental_wasm_record_is_well_formed() {
+        if updating() {
+            return;
+        }
         let record = super::wasm_differences(
             &fs::read_to_string(root().join(EXPERIMENTAL_WASM)).expect("record is present"),
         );
@@ -664,12 +689,7 @@ mod native {
             let expectation = golden
                 .expectations
                 .iter()
-                .find(|expectation| {
-                    expectation.key.case == difference.case
-                        && expectation.key.variant == "default"
-                        && expectation.key.format == Format::Png
-                        && expectation.key.export == Export::Scene {}
-                })
+                .find(|expectation| expectation.key.is_default_scene_png_of(&difference.case))
                 .unwrap_or_else(|| panic!("{} has a default scene PNG target", difference.case));
             assert_eq!(
                 expectation.sample.outcome,
@@ -689,8 +709,8 @@ mod native {
 #[serde(deny_unknown_fields)]
 struct WasmDifference {
     case: String,
-    native: Bytes,
-    wasm: Bytes,
+    native: ByteDigest,
+    wasm: ByteDigest,
 }
 
 #[derive(Debug, Deserialize)]
@@ -732,10 +752,7 @@ mod wasm {
 
     /// Whether a difference is exactly a recorded #178 pair.
     fn is_recorded(key: &Key, expected: &Sample, actual: &Sample, record: &WasmDifference) -> bool {
-        key.case == record.case
-            && key.variant == "default"
-            && key.format == Format::Png
-            && key.export == Export::Scene {}
+        key.is_default_scene_png_of(&record.case)
             && expected.outcome
                 == Outcome::Artifact {
                     bytes: record.native.clone(),

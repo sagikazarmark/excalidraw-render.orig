@@ -610,7 +610,7 @@ pub fn whole_png_exception(manifest: &Value, variant_id: &str) -> Option<Recorde
                 && exception["format"] == "png"
                 && exception["region"] == "whole"
         })
-        .map(exception_limits)
+        .map(recorded_exception)
 }
 
 /// The canonical comparison of one variant's direct PNG against the official
@@ -675,7 +675,7 @@ pub fn observed(report: &ComparisonReport) -> String {
     }
 }
 
-/// The exact measurement a tolerance exception record carries as
+/// The exact measurement a tolerance exception records as
 /// `max_changed_pixels` and binary64 `minimum_ssim_bits`: the observed values
 /// the review accepted, consumed verbatim rather than rounded.
 pub struct RecordedDivergence {
@@ -683,7 +683,8 @@ pub struct RecordedDivergence {
     pub ssim_bits: u64,
 }
 
-pub fn exception_limits(record: &Value) -> RecordedDivergence {
+/// The measurement one tolerance exception record carries.
+pub fn recorded_exception(record: &Value) -> RecordedDivergence {
     let changed_pixels = record["max_changed_pixels"]
         .as_u64()
         .expect("exception max_changed_pixels is an integer");

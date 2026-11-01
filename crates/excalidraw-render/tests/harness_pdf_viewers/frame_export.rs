@@ -12,7 +12,7 @@ use sha2::{Digest, Sha256};
 
 use crate::common::lower_hex;
 use crate::common::pdf_harness::render_viewer;
-use crate::common::registered_cases::{divergence, exception_limits, visual_class};
+use crate::common::registered_cases::{divergence, recorded_exception, visual_class};
 use crate::common::repository_root;
 use crate::common::scratch::ScratchDir;
 
@@ -122,7 +122,7 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
                         "frame {ordinal} {viewer} exception names the target's visual class"
                     );
                     excepted.insert((ordinal, profile));
-                    exception_limits(record)
+                    recorded_exception(record)
                 });
             if let Some(detail) = divergence(&canonical, exception) {
                 failures.push(format!("frame {ordinal} in {viewer}: {detail}"));

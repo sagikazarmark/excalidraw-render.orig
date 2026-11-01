@@ -1211,6 +1211,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "release tier: judges the live ledger (just test-release)"]
     fn five_layer_mapping_is_optional_but_pdf_judgments_remain_required() {
         let (catalog, mut ledger) = live();
         for assignment in &mut ledger.assignments {
@@ -1298,6 +1299,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "release tier: judges the live ledger (just test-release)"]
     fn inventory_extension_preserves_live_owners_and_approved_exclusions() {
         let (before, ledger) = live();
         let mut after = before.clone();
@@ -1412,6 +1414,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "release tier: judges the live ledger (just test-release)"]
     fn tolerance_exceptions_are_owned_only_by_the_direct_png_exception_test() {
         let (catalog, ledger) = live();
         let exception = catalog
@@ -1914,6 +1917,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "release tier: judges the live ledger (just test-release)"]
     fn test_owner_checks_compiled_module_and_selector_not_historical_source_digest() {
         let (catalog, mut ledger) = live();
         validate(&catalog, &ledger, false).unwrap();

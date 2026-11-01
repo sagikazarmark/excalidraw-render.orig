@@ -64,12 +64,13 @@ test-shard shard archive="target/nextest-archive.tar.zst":
         --profile default --no-fail-fast --partition slice:{{ shard }}
 
 # Run the release-tier tests: the xtask tests that build the qualified release
-# CLI and replay the representative candidate through it. Building the CLI first
+# CLI and replay the representative candidate through it, and the ones that
+# judge the live coverage inventory and ownership ledger. Building the CLI first
 # keeps the one-thread group from serializing on Cargo's build lock.
 test-release:
     cargo build --release --locked -p excalidraw-render-cli
     cargo nextest run --locked --workspace --profile default --no-fail-fast --run-ignored only \
-        -E 'group(release-cli)'
+        -E 'group(release-tier)'
 
 # Test the builds that leave out the png or pdf feature.
 test-features:
@@ -161,8 +162,14 @@ golden-wasm:
 
 # Adopt an intentional output change: rerender every golden target and rewrite
 # tests/conformance/golden for review (the render tier's golden_native test).
+# When the registry moved, the first run regenerates the embedded inputs module
+# and asks for a rebuild, so the recipe runs the test again.
 update-golden:
-    UPDATE_GOLDEN=1 cargo test --locked -p excalidraw-render --test golden_native
+    #!/usr/bin/env bash
+    set -euo pipefail
+    export UPDATE_GOLDEN=1
+    cargo test --locked -p excalidraw-render --test golden_native \
+        || cargo test --locked -p excalidraw-render --test golden_native
 
 # Build the reproducible CLI release archive and its SHA-256 file into dist/.
 release-archive version: require-native
