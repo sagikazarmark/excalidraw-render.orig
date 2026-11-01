@@ -1,5 +1,6 @@
-//! SVG parity for every registered scene case: path geometry and the rasterized
-//! document, judged on one render of each variant.
+//! SVG parity for every registered scene case: path geometry, paint and text
+//! attributes, and the rasterized document, judged on one render of each
+//! variant.
 //!
 //! **Path geometry.** The `d` attribute of every `<path>` the renderer emits is
 //! compared against the official export's, in document order. It is a sharper
@@ -18,6 +19,24 @@
 //! scaling defect shows. Path data and extent are the invariants, not SVG
 //! structure: the renderer legitimately differs from the official export in how
 //! it positions text and groups elements.
+//!
+//! **Paint and text attributes.** The raster flags a covered pixel only above
+//! about 26 grey levels, so a stroke drawn `#333333` instead of `#1e1e1e`
+//! passes every pixel. The attribute dimension compares, exactly and without a
+//! rasterizer, what every painted shape and every text line is drawn with:
+//! fill, stroke, stroke width, line cap and dash array, opacity and the
+//! composed transform for each `<path>` and `<rect>`, and orientation,
+//! baseline, `font-size`, fill and opacity, and where the line has one anchor
+//! its position and `text-anchor`, for each line of text. Both documents are
+//! resolved through their group structure first, since the two exporters
+//! group and position differently. `common::svg_paint` states what is
+//! normalized and what is excluded, each with its reason: `font-family`, which
+//! the renderer spells as the spec's fallback list (spec 8.4); `clip-path` and
+//! `mask`, whose ids differ; stroke details on unstroked shapes; shapes that
+//! paint nothing; and the along-the-line position and anchor of lines the
+//! renderer positions glyph by glyph. The first differing attribute is named
+//! with both values. A divergence awaiting a decision is pinned at its exact
+//! message in `KNOWN_ATTRIBUTE_DIVERGENCES`, like the geometry pins.
 //!
 //! **Document raster.** The direct-PNG harness compares rasters two different
 //! rasterizers produced, so a difference there can be the document or the
@@ -86,11 +105,12 @@ use base64::Engine;
 use common::lower_hex;
 use common::registered_cases::{
     case_count, judge_each, observed, registered_scene_variants, variant_request, visual_class,
-    PinnedDivergence, PinnedGeometryDefect, RasterizerLimitation, ReferenceAuthorityDivergence,
-    RegisteredVariant,
+    PinnedAttributeDivergence, PinnedDivergence, PinnedGeometryDefect, RasterizerLimitation,
+    ReferenceAuthorityDivergence, RegisteredVariant,
 };
 use common::reports::assert_report_matches;
 use common::repository_root;
+use common::svg_paint::attribute_divergence;
 use common::svg_raster::{embedded_faces, rasterize, referenced_families, EmbeddedFace};
 
 /// Diagnosed defects whose fix is pending a maintainer decision, observed on the
@@ -102,6 +122,11 @@ const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
 /// the extent or path dimension, where the renderer's own geometry is held at
 /// its exact digest instead of a measurement. See `PinnedGeometryDefect`.
 const KNOWN_GEOMETRY_DEFECTS: &[PinnedGeometryDefect] = &[];
+
+/// Diagnosed paint or text attribute divergences whose fix is pending a
+/// maintainer decision, held at the attribute dimension's exact message. All
+/// 48 registered variants agree today.
+const KNOWN_ATTRIBUTE_DIVERGENCES: &[PinnedAttributeDivergence] = &[];
 
 /// Compatibility exceptions whose approved tolerance exception the case
 /// manifest carries for the direct PNG, observed here on the rasterized SVG
@@ -243,6 +268,7 @@ fn every_registered_scene_case_matches_its_official_svg_geometry_and_raster() {
 
     PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
     PinnedGeometryDefect::assert_all_observed(KNOWN_GEOMETRY_DEFECTS, &seen);
+    PinnedAttributeDivergence::assert_all_observed(KNOWN_ATTRIBUTE_DIVERGENCES, &seen);
     PinnedDivergence::assert_all_observed(COMPATIBILITY_EXCEPTION_PINS, &seen);
     ReferenceAuthorityDivergence::assert_all_observed(REFERENCE_AUTHORITY_DIVERGENCES, &seen);
     RasterizerLimitation::assert_all_observed(RASTERIZER_LIMITATIONS, &seen);
@@ -301,8 +327,18 @@ fn svg_divergences(variant: &RegisteredVariant) -> Vec<String> {
         )],
         None => vec![("extent", extent), ("paths", paths)],
     };
+    let attributes = attribute_divergence(candidate_svg, &official_svg);
+    let attributes = match PinnedAttributeDivergence::lookup(
+        KNOWN_ATTRIBUTE_DIVERGENCES,
+        &variant.case,
+        &variant.variant,
+    ) {
+        Some(pin) => pin.mismatch(attributes.as_deref()),
+        None => attributes,
+    };
     dimensions
         .into_iter()
+        .chain(std::iter::once(("attributes", attributes)))
         .chain(std::iter::once((
             "raster",
             raster_divergence(variant, candidate_svg, &official_svg, geometry.is_some()),
@@ -661,4 +697,112 @@ fn extent_divergence_compares_only_the_root_element() {
         extent_divergence(scaled, official).as_deref(),
         Some("width \"400\" against official \"200\"; height \"240\" against official \"120\"")
     );
+}
+
+/// The official export of a registered case, as the attribute dimension's
+/// tests mutate it.
+fn official_svg(case: &str) -> String {
+    fs::read_to_string(repository_root().join(format!(
+        "tests/conformance/cases/focused/{case}/evidence/official.svg"
+    )))
+    .expect("official SVG present")
+}
+
+#[test]
+fn attribute_divergence_names_a_changed_stroke_colour_width_and_opacity() {
+    let official = official_svg("ellipse-diamond-fills");
+    assert_eq!(attribute_divergence(&official, &official), None);
+
+    let stroke = official.replacen("stroke=\"#1e1e1e\"", "stroke=\"#333333\"", 1);
+    assert_ne!(stroke, official, "the case strokes in #1e1e1e");
+    let detail = attribute_divergence(&stroke, &official).expect("a changed stroke diverges");
+    assert!(
+        detail.contains("stroke \"#333333\" against official \"#1e1e1e\""),
+        "{detail}"
+    );
+
+    let width = official.replacen("stroke-width=\"2\"", "stroke-width=\"3\"", 1);
+    assert_ne!(width, official, "the case strokes at width 2");
+    let detail = attribute_divergence(&width, &official).expect("a changed width diverges");
+    assert!(
+        detail.contains("stroke-width \"3\" against official \"2\""),
+        "{detail}"
+    );
+
+    let faded = official.replacen("<path ", "<path opacity=\"0.5\" ", 1);
+    let detail = attribute_divergence(&faded, &official).expect("an opacity diverges");
+    assert!(
+        detail.contains("path 0 opacity \"0.5\" against official \"1\""),
+        "{detail}"
+    );
+}
+
+#[test]
+fn attribute_divergence_names_a_changed_text_anchor_and_font_size() {
+    let official = official_svg("helvetica-text");
+    assert_eq!(attribute_divergence(&official, &official), None);
+
+    let anchor = official.replacen("text-anchor=\"middle\"", "text-anchor=\"start\"", 1);
+    assert_ne!(anchor, official, "the case centres a line");
+    let detail = attribute_divergence(&anchor, &official).expect("a changed anchor diverges");
+    assert!(
+        detail.contains("text line 1 text-anchor \"start\" against official \"middle\""),
+        "{detail}"
+    );
+
+    let size = official.replacen("font-size=\"20px\"", "font-size=\"21px\"", 1);
+    let detail = attribute_divergence(&size, &official).expect("a changed size diverges");
+    assert!(
+        detail.contains("text line 0 font-size \"21\" against official \"20\""),
+        "{detail}"
+    );
+}
+
+#[test]
+fn attribute_records_resolve_group_structure_and_spelling() {
+    // A fill-only path with and without the reference's `stroke-width="0"`,
+    // and a shorthand colour, inherited through differently nested groups.
+    let official = "<svg><g transform=\"translate(10 10) rotate(0 90 6.900000000000006)\">\
+                    <path fill=\"#bbb\" stroke=\"none\" stroke-width=\"0\" d=\"M0 0\"/></g>\
+                    <g transform=\"translate(10 40)\"><text x=\"110\" y=\"16.9\" \
+                    font-size=\"28px\" text-anchor=\"middle\" fill=\"#1e1e1e\">a</text></g></svg>";
+    let candidate = "<svg><g fill=\"#BBBBBB\"><g transform=\"translate(10 10) rotate(0 90 6.9)\">\
+                     <path stroke=\"none\" d=\"M0 0\"/></g></g>\
+                     <rect fill=\"transparent\" stroke=\"none\"/>\
+                     <g transform=\"translate(10 40)\"><text font-size=\"28\" \
+                     text-anchor=\"middle\" fill=\"#1e1e1e\"><tspan x=\"110\" y=\"16.9\">a</tspan>\
+                     </text></g></svg>";
+    assert_eq!(attribute_divergence(candidate, official), None);
+
+    // A line positioned glyph by glyph keeps its baseline but not its anchor.
+    let resolved = candidate.replace(
+        "<tspan x=\"110\" y=\"16.9\">a</tspan>",
+        "<tspan x=\"100 105\" y=\"16.9 16.9\" text-anchor=\"start\">ab</tspan>",
+    );
+    assert_eq!(attribute_divergence(&resolved, official), None);
+    let lowered = resolved.replace("y=\"16.9 16.9\"", "y=\"17.9 17.9\"");
+    let detail = attribute_divergence(&lowered, official).expect("a moved baseline diverges");
+    assert!(detail.contains("text line 0 baseline"), "{detail}");
+}
+
+#[test]
+fn a_pinned_attribute_divergence_is_exact_and_cannot_outlive_its_divergence() {
+    let pin = PinnedAttributeDivergence {
+        case: "focused.example.v1",
+        variant: "default",
+        issue: "#999",
+        detail: "path 0 stroke \"#333333\" against official \"#1e1e1e\"",
+    };
+    assert_eq!(pin.mismatch(Some(pin.detail)), None);
+    let moved = pin
+        .mismatch(Some(
+            "path 0 stroke \"#444444\" against official \"#1e1e1e\"",
+        ))
+        .expect("another divergence moves the pin");
+    assert!(
+        moved.contains("#999") && moved.contains("#444444"),
+        "{moved}"
+    );
+    let stale = pin.mismatch(None).expect("agreement is a stale pin");
+    assert!(stale.contains("stale") && stale.contains("#999"), "{stale}");
 }

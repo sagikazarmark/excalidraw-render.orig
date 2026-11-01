@@ -30,6 +30,7 @@ pub mod scratch;
 pub mod sfnt;
 pub mod svg;
 pub mod svg_baselines;
+pub mod svg_paint;
 pub mod svg_raster;
 
 /// The workspace root, two levels above this crate.

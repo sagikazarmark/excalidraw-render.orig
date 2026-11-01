@@ -373,6 +373,61 @@ impl PinnedGeometryDefect {
     }
 }
 
+/// A diagnosed paint or text attribute divergence whose fix is pending a
+/// maintainer decision, observed by the SVG harness's attribute dimension. It
+/// is held at the dimension's exact message, which names the first differing
+/// attribute of each kind with both values, so a fix, a regression or a change
+/// in the divergence moves the entry; and the divergence must still exist, so
+/// the entry cannot outlive the defect. It names the issue that tracks the fix
+/// and never enters a manifest.
+pub struct PinnedAttributeDivergence {
+    pub case: &'static str,
+    pub variant: &'static str,
+    pub issue: &'static str,
+    /// The attribute dimension's message for the variant.
+    pub detail: &'static str,
+}
+
+impl PinnedAttributeDivergence {
+    /// The entry pinning one variant, if any.
+    pub fn lookup<'a>(pins: &'a [Self], case: &str, variant: &str) -> Option<&'a Self> {
+        pins.iter()
+            .find(|pin| pin.case == case && pin.variant == variant)
+    }
+
+    /// Every entry must name a variant the registry still declares.
+    pub fn assert_all_observed(pins: &[Self], observed: &BTreeSet<(String, String)>) {
+        let orphans: Vec<_> = pins
+            .iter()
+            .filter(|pin| !observed.contains(&(pin.case.to_owned(), pin.variant.to_owned())))
+            .map(|pin| format!("{} [{}]", pin.case, pin.variant))
+            .collect();
+        assert!(
+            orphans.is_empty(),
+            "pinned attribute divergences name variants the registry no longer declares: \
+             {orphans:?}"
+        );
+    }
+
+    /// `None` when the observed divergence is the pinned one; otherwise the
+    /// failure to report, with the observed message to transcribe.
+    pub fn mismatch(&self, observed: Option<&str>) -> Option<String> {
+        match observed {
+            None => Some(format!(
+                "agrees with the official export's paint and text attributes, so its pin for \
+                 {} is stale and must be withdrawn",
+                self.issue
+            )),
+            Some(detail) if detail == self.detail => None,
+            Some(detail) => Some(format!(
+                "attribute divergence moved from the one pinned for {}; revisit the entry: \
+                 {detail}",
+                self.issue
+            )),
+        }
+    }
+}
+
 /// The geometry a [`PinnedGeometryDefect`] digests: the root `viewBox`,
 /// `width` and `height`, then every `<path>` element's `d` attribute in
 /// document order, one per line.
