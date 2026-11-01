@@ -811,7 +811,6 @@ fn check_rejected_header(bytes: &[u8], row: &Value, name: &str) {
     }
 }
 
-#[test]
 pub(super) fn authored_invalid_tiff_blocks_and_malformed_headers_have_bounded_recovery() {
     let record = evidence();
     let rows = record["cases"].as_array().unwrap();

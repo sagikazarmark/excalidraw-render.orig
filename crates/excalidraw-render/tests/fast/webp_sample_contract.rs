@@ -1693,7 +1693,6 @@ pub(super) fn qualified_13_cells_first_display_contract() {
     qualified_first_display_partition(&QUALIFIED_CELLS);
 }
 
-#[test]
 pub(super) fn all_sample_pngs_match_reference() {
     let (record, inputs) = evidence();
     let mut checked = 0;
@@ -1710,7 +1709,6 @@ pub(super) fn all_sample_pngs_match_reference() {
     assert_eq!(checked, 72);
 }
 
-#[test]
 pub(super) fn nested_webp_png_preserves_draw_time_alpha_quantization() {
     let (record, _) = evidence();
     for row in rows(&record, "cases") {

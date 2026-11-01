@@ -22,7 +22,6 @@ const ARROW_SCENE: &[u8] = br##"{
   "appState":{"viewBackgroundColor":"#ffffff"},"files":{}
 }"##;
 
-#[test]
 pub(super) fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
     let scene = SceneDocument::parse(ARROW_SCENE).expect("arrow scene is admitted");
 

@@ -369,7 +369,6 @@ fn gain_map_base_admission_and_precedence_match_the_reference() {
     gain_map_payload_resource_boundaries();
 }
 
-#[test]
 fn gain_map_payload_resource_boundaries() {
     use excalidraw_render::ResourceLimits;
     let evidence = reference::gain_map_evidence();
@@ -447,7 +446,6 @@ fn gain_map_payload_resource_boundaries() {
     }
 }
 
-#[test]
 fn remaining_transfer_exact_anchors() {
     // Independent SMPTE240 and cinema EOTF -> sRGB calculations. Include
     // the SMPTE240 toe on both sides and cinema's scale/clipping, not just
@@ -480,7 +478,6 @@ fn remaining_transfer_exact_anchors() {
     }
 }
 
-#[test]
 fn ignored_transfer_metadata_anchors() {
     // SkColorSpace::MakeCICP does not support these valid H.273 codes.
     // SkPngRustCodec falls through; this is not logarithmic conversion or
@@ -514,7 +511,6 @@ fn ignored_transfer_metadata_anchors() {
     }
 }
 
-#[test]
 fn bt1886_transfer_exact_anchors() {
     // Independently authored neutral anchors, corroborated by the collected
     // field in the shared helper. Range zero falls through to lower metadata.
@@ -550,7 +546,6 @@ fn bt1886_transfer_exact_anchors() {
     }
 }
 
-#[test]
 fn primary_space_exact_anchors() {
     let evidence = reference::evidence();
     let image = |id: &str, opaque: bool| {

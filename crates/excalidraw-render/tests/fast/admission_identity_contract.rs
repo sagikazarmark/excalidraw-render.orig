@@ -782,7 +782,6 @@ fn assert_nonparticipating_identity_boundaries() {
     }
 }
 
-#[test]
 pub(super) fn duplicate_ids_retain_first_occurrence_and_resolve_frame_references() {
     let source = scene(json!([
         {"id":"frame","type":"frame","width":80,"height":60,"updated":0},

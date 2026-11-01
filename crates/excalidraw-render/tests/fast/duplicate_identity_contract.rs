@@ -53,7 +53,6 @@ fn duplicate_frame_scene() -> Value {
     ]))
 }
 
-#[test]
 fn duplicate_frame_identity_reports_the_channels_consuming_disambiguation() {
     let source = duplicate_frame_scene();
     for format in FORMATS {
@@ -101,7 +100,6 @@ fn assert_frames(source: &Value, clean: &Value, format: OutputFormat, rows: &[Va
     assert!(batch.next().is_none());
 }
 
-#[test]
 fn endpoint_disambiguation_changes_frame_selection_but_not_stored_scene_geometry() {
     for field in ["startBinding", "endBinding"] {
         let mut first = rectangle("duplicate", 120);
@@ -179,7 +177,6 @@ fn assert_scene_equivalence(
     );
 }
 
-#[test]
 fn duplicate_bound_container_reports_visual_and_semantic_disambiguation() {
     let mut first = rectangle("duplicate", 0);
     first["angle"] = json!(0.4);
@@ -205,7 +202,6 @@ fn duplicate_bound_container_reports_visual_and_semantic_disambiguation() {
     }
 }
 
-#[test]
 fn reverse_bound_text_disambiguation_and_silence_follow_reciprocity() {
     for legacy in [false, true] {
         for reciprocal in [false, true] {
@@ -248,7 +244,6 @@ fn reverse_bound_text_disambiguation_and_silence_follow_reciprocity() {
     }
 }
 
-#[test]
 fn duplicate_occurrences_are_independent_and_preserved_in_source_order() {
     for ignored in ["deleted", "selection"] {
         let mut first = rectangle("duplicate", 0);
@@ -295,7 +290,6 @@ fn duplicate_occurrences_are_independent_and_preserved_in_source_order() {
     }
 }
 
-#[test]
 fn frame_opacity_and_target_scope_select_duplicate_effects() {
     for opacity in [50, 100] {
         let mut source = duplicate_frame_scene();
@@ -331,7 +325,6 @@ fn frame_opacity_and_target_scope_select_duplicate_effects() {
     }
 }
 
-#[test]
 fn empty_text_does_not_consume_disambiguated_frame_opacity() {
     let mut source = duplicate_frame_scene();
     source["elements"][0]["opacity"] = json!(50);
@@ -382,7 +375,6 @@ fn empty_text_does_not_consume_disambiguated_frame_opacity() {
     }
 }
 
-#[test]
 fn nonreciprocal_first_container_disambiguation_reports_text_loss() {
     let first = rectangle("duplicate", 0);
     let mut second = rectangle("duplicate", 100);
@@ -405,7 +397,6 @@ fn nonreciprocal_first_container_disambiguation_reports_text_loss() {
     }
 }
 
-#[test]
 fn retained_placeholders_consume_disambiguated_frame_opacity() {
     let mut source = duplicate_frame_scene();
     source["elements"][0]["opacity"] = json!(50);
@@ -441,7 +432,6 @@ fn retained_placeholders_consume_disambiguated_frame_opacity() {
     }
 }
 
-#[test]
 fn text_loss_and_placeholder_effects_repeat_through_frame_batches() {
     for placeholder in [false, true] {
         let mut source = if placeholder {
@@ -495,7 +485,6 @@ fn text_loss_and_placeholder_effects_repeat_through_frame_batches() {
     }
 }
 
-#[test]
 fn duplicate_and_cycle_repairs_have_independent_effects_and_source_order() {
     for closed_by_consumer in [true, false] {
         let mut first = rectangle("duplicate", 5);
@@ -562,7 +551,6 @@ fn duplicate_and_cycle_repairs_have_independent_effects_and_source_order() {
     }
 }
 
-#[test]
 fn duplicate_cycle_order_and_effects_repeat_in_selected_frame() {
     let mut first = rectangle("duplicate", 5);
     first["frameId"] = json!("consumer");
@@ -616,7 +604,6 @@ pub(super) fn identity_and_duplicate_relationship_contract_in_every_format() {
     duplicate_reports_survive_diagnostic_and_output_failures_in_scene_and_frames();
 }
 
-#[test]
 fn duplicate_reports_survive_diagnostic_and_output_failures_in_scene_and_frames() {
     let mut source = duplicate_frame_scene();
     // A second late repair gives a diagnostic-count crossing after the first

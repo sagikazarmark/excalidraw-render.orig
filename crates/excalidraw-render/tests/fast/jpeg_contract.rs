@@ -173,7 +173,6 @@ fn baseline_and_progressive_dc_blocks_are_exact_opaque_samples() {
     }
 }
 
-#[test]
 pub(super) fn all_tiff_orientations_preserve_exact_samples_and_svg_source_octets() {
     let (_, _, gray) = blocks(1);
     for progressive in [false, true] {
@@ -188,7 +187,6 @@ pub(super) fn all_tiff_orientations_preserve_exact_samples_and_svg_source_octets
     }
 }
 
-#[test]
 pub(super) fn absent_and_invalid_tiff_orientation_leave_the_source_layout_intact() {
     let (width, height, gray) = blocks(1);
     for progressive in [false, true] {
@@ -280,14 +278,12 @@ fn drawn_vectors() -> Vec<(&'static str, Vec<u8>)> {
     vectors
 }
 
-#[test]
 pub(super) fn trailing_data_and_malformed_icc_sequences_draw_the_first_image_untagged() {
     for (_, bytes) in drawn_vectors() {
         check(&bytes, 8, 8, &[64; 64]);
     }
 }
 
-#[test]
 pub(super) fn malformed_markers_have_exact_recovery_reports() {
     let missing = missing_scene();
     for (name, bytes) in malformed_vectors() {

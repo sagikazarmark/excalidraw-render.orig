@@ -358,7 +358,6 @@ fn explicit_pressure_vector_matches_the_qualified_geometry() {
     }
 }
 
-#[test]
 fn malformed_points_keep_pressure_length_based_on_source_occurrences() {
     for pressures in [json!([0.2, 0.8]), json!([0.2])] {
         let mut source = scene("freedraw");

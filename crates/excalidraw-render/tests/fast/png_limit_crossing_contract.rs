@@ -155,7 +155,6 @@ const CASES: [Case; 9] = [
     ),
 ];
 
-#[test]
 pub(super) fn raster_crossings_order_width_then_height_then_area() {
     for (depth, adam7) in [(8, false), (16, false), (8, true)] {
         for (width, height, dimension, pixels, crossing) in CASES {

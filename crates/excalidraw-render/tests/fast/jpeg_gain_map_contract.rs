@@ -725,7 +725,6 @@ pub(super) fn valid_sdr_gain_maps_match_reference_base_projection() {
         admitted(row, by_id(&bases, &row["base_id"]), false);
     }
 }
-#[test]
 pub(super) fn hdr_gain_maps_pin_known_color_defect_190() {
     let record = evidence();
     let bases = base_evidence();
@@ -1039,7 +1038,6 @@ fn with_secondary_mpf(original: &[u8], big: bool, app2: &[u8]) -> Vec<u8> {
     bytes
 }
 
-#[test]
 pub(super) fn secondary_mpf_index_has_exact_recovery() {
     assert_secondary_mpf_index_recovery(&evidence());
 }
@@ -1257,7 +1255,6 @@ fn assert_optional_mpf_controls(record: &Value) {
     assert_eq!((valid, invalid), (32, 128));
 }
 
-#[test]
 pub(super) fn malformed_mpf_fields_and_duplicate_indexes_have_exact_recovery() {
     let record = evidence();
     assert_optional_mpf_controls(&record);

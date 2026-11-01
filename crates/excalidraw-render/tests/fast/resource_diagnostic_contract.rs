@@ -1736,7 +1736,6 @@ fn png_projection_work_boundaries() {
     );
 }
 
-#[test]
 fn top_level_asset_resource_boundaries_have_exact_reports_and_authority() {
     let bytes = crate::common::codec_fixtures::png_rgba(2, 2, &[[255, 0, 0, 255]; 4]);
     for format in FORMATS {
@@ -2197,7 +2196,6 @@ fn coordinate_report_prefix_and_frame_replay() {
     }
 }
 
-#[test]
 fn top_level_svg_work_exhaustion_uses_ordinary_image_recovery() {
     // XML comments add source bytes but no semantic records. The root has
     // one node and two attributes: six records at 16 work units each.
@@ -2246,7 +2244,6 @@ fn top_level_svg_work_exhaustion_uses_ordinary_image_recovery() {
     }
 }
 
-#[test]
 fn nested_resource_limits_report_the_rejected_source_slot() {
     let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>"#;
     let child = format!(
@@ -2381,7 +2378,6 @@ fn nested_limit_owner_scope(nodes: bool) {
     }
 }
 
-#[test]
 fn nested_depth_stops_discovery_and_ignores_conflicting_payload() {
     let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="data:image/png;base64,bm90IGFuIGltYWdl"/></svg>"#;
     let child = format!(
@@ -2437,7 +2433,6 @@ fn nested_depth_stops_discovery_and_ignores_conflicting_payload() {
     }
 }
 
-#[test]
 fn nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance() {
     nested_placeholder_artifact_oracle(false);
 }
@@ -2586,7 +2581,6 @@ fn nested_placeholder_artifact_oracle_for(
     }
 }
 
-#[test]
 fn nested_depth_recovery_envelope_and_owner_order_are_exact() {
     nested_limit_envelope_and_owner_order(false);
 }
@@ -2648,7 +2642,6 @@ fn nested_limit_envelope_and_owner_order(nodes: bool) {
     }
 }
 
-#[test]
 fn nested_depth_recovery_depends_on_current_edge_not_cached_parent() {
     let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>"#;
     let shared = format!(
@@ -2703,7 +2696,6 @@ fn nested_depth_recovery_depends_on_current_edge_not_cached_parent() {
     }
 }
 
-#[test]
 fn rejected_nested_payload_effects_follow_signatures_not_media_claims() {
     let raster = crate::common::codec_fixtures::png_rgba(2, 2, &[[255, 0, 0, 255]; 4]);
     let vector = br#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2"/></svg>"#;
@@ -2819,7 +2811,6 @@ fn nested_raster_limits_preserve_exact_paths_and_local_recovery() {
     }
 }
 
-#[test]
 fn nested_raster_work_rejection_has_exact_measurements_and_recovery_budget() {
     // The PNG has few encoded bytes but 4096 pixels, so raster normalization
     // work crosses independently of the enclosing SVG's sanitization work.
@@ -2864,7 +2855,6 @@ fn nested_raster_work_rejection_has_exact_measurements_and_recovery_budget() {
     }
 }
 
-#[test]
 fn optional_metadata_output_boundary_retains_lower_priority_contract() {
     let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
     for format in FORMATS {
@@ -2916,7 +2906,6 @@ fn optional_metadata_output_boundary_retains_lower_priority_contract() {
     }
 }
 
-#[test]
 fn optional_metadata_components_have_exact_output_boundaries_and_priority() {
     let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
     for format in FORMATS {
@@ -3000,7 +2989,6 @@ fn optional_metadata_components_have_exact_output_boundaries_and_priority() {
     }
 }
 
-#[test]
 fn metadata_omissions_order_and_required_report_failure_are_exact() {
     let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
     for format in FORMATS {
@@ -3118,7 +3106,6 @@ fn metadata_omission_row(field: &str, configured: u64, attempted: u64) -> Value 
     row
 }
 
-#[test]
 fn optional_metadata_keeps_notices_and_nonempty_frozen_summary() {
     let source = json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":20,"height":20,"fileId":"missing","status":"error","updated":0}],"appState":{},"files":{}});
     for format in FORMATS {
@@ -3189,7 +3176,6 @@ fn optional_metadata_keeps_notices_and_nonempty_frozen_summary() {
     }
 }
 
-#[test]
 fn optional_metadata_frame_limits_are_independent_and_replayed() {
     let source = json!({"type":"excalidraw","version":2,"elements":[
         {"id":"short","type":"frame","name":"A","width":20,"height":20,"updated":0},
@@ -3296,7 +3282,6 @@ fn optional_metadata_contract_covers_components_limits_and_frames() {
     optional_metadata_frame_limits_are_independent_and_replayed();
 }
 
-#[test]
 fn embedded_scene_scratch_rejection_is_exact_and_keeps_visual_output() {
     // Enough opaque source to make embedded-scene scratch dominate the
     // already-admitted raster/PDF workspaces without adding rendered content.
@@ -3387,7 +3372,6 @@ fn embedded_scene_scratch_rejection_is_exact_and_keeps_visual_output() {
     }
 }
 
-#[test]
 fn optional_metadata_work_crossings_preserve_committed_measurement() {
     let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
     for options in [
@@ -3473,7 +3457,6 @@ fn optional_metadata_work_crossings_preserve_committed_measurement() {
     }
 }
 
-#[test]
 fn embedded_scene_work_rejects_at_each_stage_with_exact_retained_cost() {
     let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{},"source":"x".repeat(100_000)});
     let canonical = serde_json::to_vec(&source).unwrap().len() as u64;
@@ -3568,7 +3551,6 @@ fn embedded_scene_work_rejects_at_each_stage_with_exact_retained_cost() {
     }
 }
 
-#[test]
 fn resource_reports_are_scoped_and_replayed_for_independent_frames() {
     let bytes = crate::common::codec_fixtures::png_rgba(2, 2, &[[255, 0, 0, 255]; 4]);
     let mut source = image_scene(&bytes, "image/png");
@@ -3621,7 +3603,6 @@ fn resource_reports_are_scoped_and_replayed_for_independent_frames() {
     }
 }
 
-#[test]
 fn local_outline_resource_recovery_reports_exact_crossings() {
     for format in FORMATS {
         for bounded in [false, true] {
@@ -3749,7 +3730,6 @@ fn coordinate_contract_covers_components_points_recovery_and_frames() {
     }
 }
 
-#[test]
 fn coordinate_point_recovery_and_component_precedence() {
     for format in FORMATS {
         for kind in ["line", "arrow", "freedraw"] {
@@ -3821,7 +3801,6 @@ fn coordinate_point_recovery_and_component_precedence() {
     }
 }
 
-#[test]
 fn coordinate_limits_admit_non_outline_content_before_resolution() {
     let bytes = crate::common::codec_fixtures::solid_png(1, 1, [255, 0, 0, 255]);
     for format in FORMATS {
@@ -3869,7 +3848,6 @@ fn coordinate_limits_admit_non_outline_content_before_resolution() {
     }
 }
 
-#[test]
 fn invalid_frame_coordinates_omit_dependants_and_fail_the_frame_target() {
     for format in FORMATS {
         for kind in ["frame", "magicframe"] {
@@ -3921,7 +3899,6 @@ fn invalid_frame_coordinates_omit_dependants_and_fail_the_frame_target() {
     }
 }
 
-#[test]
 fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
     for format in FORMATS {
         let source = json!({"type":"excalidraw","version":2,"elements":[
@@ -3997,7 +3974,6 @@ fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
     }
 }
 
-#[test]
 fn coordinate_rejected_images_classify_authoritative_vector_content() {
     let vector=br#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>"#;
     let raster = crate::common::codec_fixtures::solid_png(1, 1, [255, 0, 0, 255]);
@@ -4043,7 +4019,6 @@ fn coordinate_rejected_images_classify_authoritative_vector_content() {
     }
 }
 
-#[test]
 fn frame_coordinate_recovery_reconciles_fallback_and_missing_image_reports() {
     for format in FORMATS {
         let source = json!({"type":"excalidraw","version":2,"elements":[
@@ -4139,7 +4114,6 @@ fn omitted_vector_content_reports_semantic_loss_only_in_vector_formats() {
     }
 }
 
-#[test]
 fn rejected_empty_content_does_not_claim_lost_link_semantics() {
     for format in FORMATS {
         for link in [
@@ -4176,7 +4150,6 @@ fn rejected_empty_content_does_not_claim_lost_link_semantics() {
     }
 }
 
-#[test]
 fn empty_text_work_recovery_does_not_claim_lost_source_semantics() {
     for format in FORMATS {
         for width in [0, 20] {
@@ -4212,7 +4185,6 @@ fn empty_text_work_recovery_does_not_claim_lost_source_semantics() {
     }
 }
 
-#[test]
 fn nonreciprocal_bound_text_recovery_does_not_claim_lost_text() {
     let source = json!({"type":"excalidraw","version":2,"elements":[
         {"id":"container","type":"rectangle","width":100,"height":100,"seed":1,"updated":0},
@@ -4244,7 +4216,6 @@ fn nonreciprocal_bound_text_recovery_does_not_claim_lost_text() {
     }
 }
 
-#[test]
 fn nested_placeholder_uses_current_reference_bounds_and_local_omission() {
     let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2"/></svg>"#;
     let mut source = image_scene(svg.as_bytes(), "image/svg+xml");
@@ -4351,7 +4322,6 @@ pub(super) fn nested_node_limits_cover_root_and_child_reports_and_silence() {
     }
 }
 
-#[test]
 fn nested_node_count_includes_text_and_stops_descendant_discovery() {
     // root + whitespace + desc + its text + trailing whitespace = five nodes.
     // Neither the comment nor the desc's attribute is a node.

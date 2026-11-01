@@ -456,7 +456,6 @@ fn issue_187_baseline_sampling_cells_remain_explicit_defects() {
     assert_eq!(rows.into_iter().map(check).sum::<usize>(), 24);
 }
 
-#[test]
 pub(super) fn cmyk_component_probe_isolates_reference_truncation_from_decoder_rounding() {
     use zune_jpeg::zune_core::{
         bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions,
@@ -511,7 +510,6 @@ pub(super) fn cmyk_component_probe_isolates_reference_truncation_from_decoder_ro
     }
 }
 
-#[test]
 pub(super) fn ycck_unconverted_components_with_integer_color_conversion_match_reference() {
     use zune_jpeg::zune_core::{
         bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions,

@@ -854,7 +854,6 @@ pub(super) fn corrected_gray_precision_and_model_mismatches_match_reference() {
         check(row);
     }
 }
-#[test]
 pub(super) fn multipart_profiles_preserve_semantics_and_discriminate_ignored_icc() {
     let record = evidence();
     multipart_contract(&record);

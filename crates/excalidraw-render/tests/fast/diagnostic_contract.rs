@@ -9,7 +9,6 @@ use serde_json::{json, Value};
 
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
-#[test]
 fn nested_media_claim_repair_preserves_types_and_path() {
     use base64::Engine;
     let png = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
@@ -41,7 +40,6 @@ fn nested_media_claim_repair_preserves_types_and_path() {
     }
 }
 
-#[test]
 fn nested_media_claims_keep_recursive_occurrence_identity_and_pixels() {
     use base64::Engine;
     let png = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
@@ -585,7 +583,6 @@ pub(super) fn media_type_contract_in_every_format() {
     }
 }
 
-#[test]
 fn invalid_media_claims_are_enriched_once_after_validation() {
     use base64::Engine;
     let bytes = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
@@ -652,7 +649,6 @@ fn invalid_media_claims_are_enriched_once_after_validation() {
     }
 }
 
-#[test]
 fn media_claims_report_each_authoritative_field_once() {
     use base64::Engine;
     let bytes = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
@@ -1369,7 +1365,6 @@ pub(super) fn malformed_file_contract_in_every_format() {
     }
 }
 
-#[test]
 fn nested_unsupported_recovery_preserves_surrounding_text() {
     use base64::Engine;
     let inner = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="data:image/png;base64,aW52YWxpZA==" width="40" height="30"/><text x="0" y="20">Kept</text></svg>"#;
@@ -1424,7 +1419,6 @@ fn nested_unsupported_recovery_preserves_surrounding_text() {
     assert_eq!(actual.artifact().bytes(), expected.artifact().bytes());
 }
 
-#[test]
 fn unparseable_jpeg_and_webp_profiles_are_ignored() {
     use base64::Engine;
     let mut jpeg = Vec::new();
@@ -1525,7 +1519,6 @@ fn shared_file_recipe_uses_first_participating_reference() {
     }
 }
 
-#[test]
 fn invalid_payload_field_suppresses_duplicate_asset_failure() {
     for format in FORMATS {
         for value in [Value::Null, json!(false), json!(42), json!([]), json!({})] {
@@ -1669,7 +1662,6 @@ fn unsupported_nested_images_report_removed_paths() {
     }
 }
 
-#[test]
 fn malformed_record_types_and_invalid_base64_have_exact_reports() {
     for format in FORMATS {
         for record in [
@@ -2057,7 +2049,6 @@ pub(super) fn missing_image_contract_in_every_format() {
     }
 }
 
-#[test]
 fn deleted_error_image_does_not_select_live_file_recovery_recipe() {
     let live = image("live", "file");
     let mut deleted = image("deleted", "file");
@@ -3265,7 +3256,6 @@ fn unsafe_links_are_omitted_in_semantic_formats_and_png_is_silent() {
     }
 }
 
-#[test]
 fn local_font_substitution_is_informational_per_occurrence_in_all_formats() {
     let text = |id: &str, family: u8| json!({"id":id,"type":"text","width":120,"height":30,"fontSize":20,"fontFamily":family,"text":"Office","updated":1});
     for format in FORMATS {
@@ -3340,7 +3330,6 @@ pub(super) fn unknown_elements_cover_bounded_placeholders_and_unbounded_omission
     }
 }
 
-#[test]
 pub(super) fn malformed_elements_cover_bounded_placeholders_and_unbounded_omissions() {
     let bounded = json!({"id":"bounded","type":"","width":40,"height":40,"updated":1});
     for format in FORMATS {
@@ -3450,7 +3439,6 @@ fn missing_images_report_referring_owners_and_format_specific_recovery() {
     }
 }
 
-#[test]
 fn malformed_file_records_report_each_authority_once_and_unreferenced_are_silent() {
     let files = json!({"a":null,"b":null,"unreferenced":null});
     for format in FORMATS {
@@ -3485,7 +3473,6 @@ fn malformed_file_records_report_each_authority_once_and_unreferenced_are_silent
     }
 }
 
-#[test]
 fn unsupported_payloads_report_each_file_once_and_unreferenced_are_silent() {
     let files = json!({"a":{"id":"a","mimeType":"image/png","dataURL":"data:image/png;base64,aW52YWxpZA==","created":1},
         "b":{"id":"b","mimeType":"image/png","dataURL":"data:image/png;base64,aW52YWxpZA==","created":1}});
