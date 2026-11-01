@@ -216,7 +216,8 @@ support deriving the PNG SSIM floor from them, which is recorded in
 [render-tier.md §9](render-tier.md) and left with ADR-0014, while the two-sided
 exceptions it did motivate found eleven stale records.
 
-Recommended and deferred, in rough order of value:
+Recommended and deferred, planned as tickets in
+[follow-up-plan.md](follow-up-plan.md); in rough order of value:
 
 - Exact textual dimensions in the SVG harness for `stroke`, `fill`,
   `stroke-width`, `opacity` and `<text>` positions (render-tier 3).
