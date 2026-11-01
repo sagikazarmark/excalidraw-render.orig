@@ -4,6 +4,40 @@ let
   # The PDF structure checks require exactly this release.
   qpdf = multiverse.qpdf."12.3.2";
 
+  # The upstream pdfium-binaries build 7947 the PDFium viewer profile names,
+  # unpacked as published: a derivation's fixup would strip and rewrite the
+  # library. Linux x86_64 is the exact library the profile was qualified with;
+  # every host's build is held to the retained raster bytes by the harness.
+  pdfium =
+    let
+      build =
+        {
+          x86_64-linux = {
+            name = "linux-x64";
+            hash = "sha256-HLAxMMJJHt+HsVdt+9hpJsodzNBEQEz1t0NiYEAAa+g=";
+          };
+          aarch64-linux = {
+            name = "linux-arm64";
+            hash = "sha256-OZIqRs/rk4xvnf27I+4VaRC1zTMmuSdms0+ob5kC6rA=";
+          };
+          x86_64-darwin = {
+            name = "mac-x64";
+            hash = "sha256-z2PURImFtyEsO96bQLoHtuDfhb4Z9NR3G4M8M/dwsMA=";
+          };
+          aarch64-darwin = {
+            name = "mac-arm64";
+            hash = "sha256-GIsFCk6WxW4Jo+Y/Xfyx7dH5xkdlVGXpiIscV0/vYZ4=";
+          };
+        }
+        .${pkgs.stdenv.hostPlatform.system};
+    in
+    pkgs.fetchzip {
+      name = "pdfium-binaries-7947-${build.name}";
+      url = "https://github.com/bblanchon/pdfium-binaries/releases/download/chromium%2F7947/pdfium-${build.name}.tgz";
+      inherit (build) hash;
+      stripRoot = false;
+    };
+
   # The WASM test runner must match the wasm-bindgen crate exactly.
   lock = builtins.fromTOML (builtins.readFile ./Cargo.lock);
   wasmBindgen = lib.findFirst (p: p.name == "wasm-bindgen") null lock.package;
@@ -40,14 +74,17 @@ in
     )
   );
 
-  # The harness wrappers read qpdf only from target/pdf-harness/qpdf, so link it
-  # there, unless tools/pdf-harness/install.sh unpacked the release there.
+  # The PDF harness reads qpdf and PDFium only from target/pdf-harness, so link
+  # them there, replacing a release an earlier installer unpacked in their place.
   enterShell = ''
     harness=${lib.escapeShellArg "${config.devenv.root}/target/pdf-harness"}
-    if [[ -L "$harness/qpdf" || ! -e "$harness/qpdf" ]]; then
-      mkdir -p "$harness"
-      ln -sfn ${qpdf} "$harness/qpdf"
-    fi
+    mkdir -p "$harness"
+    link_harness_tool() {
+      [[ -L "$2" || ! -e "$2" ]] || rm -rf "$2"
+      ln -sfn "$1" "$2"
+    }
+    link_harness_tool ${qpdf} "$harness/qpdf"
+    link_harness_tool ${pdfium} "$harness/pdfium"
   '';
 
   packages =
@@ -77,13 +114,6 @@ in
       pkgs.chromium
       pkgs.chromedriver
     ];
-
-  scripts.pdfium-install = {
-    description = "Install the exact-pinned native PDFium library and Rust harness worker (Linux x86_64)";
-    exec = ''
-      exec bash ${lib.escapeShellArg "${config.devenv.root}/tools/pdf-harness/install.sh"} --pdfium-only
-    '';
-  };
 
   languages = {
     rust = {

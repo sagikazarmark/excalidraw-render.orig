@@ -465,7 +465,8 @@ narrow PDFium antialiasing exception approved on issue #44. The exception keeps
 the global comparator unchanged and requires zero Pixelmatch changed pixels;
 PDF.js remains subject to the ordinary canonical visual gate.
 
-Install the pinned development-only tools once, then reproduce without network:
+In the devenv shell, which supplies PDFium and qpdf, install the remaining pinned
+development-only tools once, then reproduce without network:
 
 ```sh
 bash tools/pdf-harness/install.sh
@@ -476,7 +477,7 @@ Every `#[ignore]`d gate that needs this harness lives in the
 `harness_pdf_viewers` test binary of `crates/excalidraw-render` (the backend
 qualification's structural gates, the rectangle-outline, Excalifont text and
 frame-export viewer gates, and the viewer adapter contract), and the `harness`
-nextest profile selects that binary by name, so `dagger api call evidence pdf`
+nextest profile selects that binary by name, so `just pdf-harness`
 runs them without listing them, and a change that moves a structural digest or a
 viewer raster fails visibly rather than leaving the expectation files stale
 (#109). The adapter contract (`harness_pdf_viewers::adapters`) pins the viewer

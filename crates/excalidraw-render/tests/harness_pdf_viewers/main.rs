@@ -1,5 +1,5 @@
 //! The PDF gates that need the exact-pinned PDFium, PDF.js and qpdf harness
-//! (`tools/pdf-harness/install.sh`). Every test here is `#[ignore]`d for plain
+//! (`just pdf-harness`). Every test here is `#[ignore]`d for plain
 //! `cargo test`; the `harness` nextest profile selects this binary by name and
 //! runs it with `--run-ignored only`, so a gate cannot drift out of the
 //! pdf-harness-gates workflow by being renamed.

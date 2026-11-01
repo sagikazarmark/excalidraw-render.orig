@@ -56,17 +56,8 @@ type Evidence {
   }
 
   """
-   Execute the ignored PDF harness gates with exact-pinned Rust PDFium, PDF.js and qpdf.
-  """
-  pdf: String! {
-    self.run([
-      "bash", "-eu", "-c",
-      "bash tools/pdf-harness/install.sh && cargo nextest run --locked --release -p excalidraw-render --profile harness --run-ignored only -E 'binary(/^harness_pdf_/)'",
-    ]).combinedOutput
-  }
-
-  """
   Execute the ignored SVG renderer gate in both pinned canonical viewers.
+  The PDF gates run from `just pdf-harness`, which takes PDFium and qpdf from devenv.
   """
   svg: String! {
     self.run([
@@ -76,8 +67,9 @@ type Evidence {
   }
 
   """
-  Reproduce or generate font-subset, SVG, or PDF viewer evidence.
-  Existing scripts enforce their overwrite rules.
+  Reproduce or generate font-subset or SVG viewer evidence.
+  Existing scripts enforce their overwrite rules. PDF viewer evidence runs from
+  `just viewer-evidence pdf`, which takes PDFium and qpdf from devenv.
   """
   viewers(kind: String!, mode: String! = "reproduce"): Directory! {
     if (mode != "reproduce" and mode != "generate") {
@@ -86,11 +78,10 @@ type Evidence {
     let script = kind.{ case (_) {
       "font-subset" => "tools/svg-font-subset-qualification.sh"
       "svg" => "tools/svg-viewer-qualification.sh"
-      "pdf" => "tools/pdf-viewer-qualification.sh"
-      else => raise "kind must be font-subset, svg or pdf"
+      "pdf" => raise "PDF viewer evidence runs from just viewer-evidence pdf"
+      else => raise "kind must be font-subset or svg"
     } }
     let prepare = "bash tools/reference-oracle/run-container.sh install && cargo fetch --locked --manifest-path tools/svg-viewer-rust/Cargo.toml"
-    if (kind == "pdf") { prepare = "bash tools/pdf-harness/install.sh" }
     self.run([
       "bash", "-eu", "-c",
       prepare + " && bash \"$1\" \"$2\"",

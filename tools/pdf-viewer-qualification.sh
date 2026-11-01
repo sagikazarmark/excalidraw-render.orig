@@ -11,12 +11,8 @@ EXPECTATION="${REPO_ROOT}/tests/conformance/pdf-viewer-qualification/rectangle-o
 VISUAL_FAIL_EXPECTATION="${REPO_ROOT}/tests/conformance/pdf-viewer-qualification/rectangle-outline/expected-visual-fail-structure.json"
 COVERAGE_EXPECTATION="${REPO_ROOT}/tests/conformance/pdf-viewer-qualification/rectangle-outline/expected-coverage-structure.json"
 
-if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
-  echo "PDF viewer qualification requires Linux x86_64" >&2
-  exit 1
-fi
 if [[ ! -x "${REPO_ROOT}/target/pdf-harness/qpdf/bin/qpdf" || ! -d "${REPO_ROOT}/target/pdf-harness/pdfium" || ! -d "${REPO_ROOT}/tools/pdf-harness/pdfjs/node_modules" ]]; then
-  echo "install the pinned development tools with: bash tools/pdf-harness/install.sh" >&2
+  echo "in the devenv shell, install the pinned development tools with: bash tools/pdf-harness/install.sh" >&2
   exit 1
 fi
 

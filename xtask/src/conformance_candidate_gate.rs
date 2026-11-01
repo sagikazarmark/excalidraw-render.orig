@@ -327,16 +327,23 @@ fn producer_sets(directory: &str, collection: &Value, profile: &Value) -> Result
         .any(|r| r.get("adapter").is_some());
     if rust_pdfium {
         viewer_required.retain(|p| p != "tools/pdf-harness/pdfium/render.py");
-        // Earlier Rust captures included the historical wheel lock. Current
-        // captures use only the native lock; retain both complete inventories.
-        if !collection["sources"].as_array().is_some_and(|sources| {
-            sources
-                .iter()
-                .any(|s| s["path"] == "tools/pdf-harness/pdfium.lock.json")
-        }) {
-            viewer_required.retain(|p| p != "tools/pdf-harness/pdfium.lock.json");
-        }
+        viewer_required.retain(|p| p != "tools/pdf-harness/pdfium.lock.json");
         viewer_required.extend(crate::pdf_viewers::rust_pdfium_sources()?);
+        // Earlier Rust captures also bound the retired native lock, and the
+        // earliest the historical wheel lock beside it; retain each complete
+        // inventory, so a wheel lock alone stays incomplete.
+        let recorded = |path: &str| {
+            collection["sources"]
+                .as_array()
+                .is_some_and(|sources| sources.iter().any(|s| s["path"] == path))
+        };
+        let native_lock = crate::pdf_viewers::RETIRED_NATIVE_LOCK;
+        if recorded(native_lock) {
+            viewer_required.push(native_lock.to_owned());
+            if recorded("tools/pdf-harness/pdfium.lock.json") {
+                viewer_required.push("tools/pdf-harness/pdfium.lock.json".to_owned());
+            }
+        }
         for capture in collection["captures"]
             .as_array()
             .into_iter()
@@ -346,8 +353,7 @@ fn producer_sets(directory: &str, collection: &Value, profile: &Value) -> Result
             for run in capture["runs"].as_array().into_iter().flatten() {
                 if run["adapter"] != "pdfium-render/0.9.4"
                     || run["pdfium"] != "152.0.7947.0"
-                    || run["library_sha256"]
-                        != "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33"
+                    || !crate::pdf_viewers::is_library_sha256(&run["library_sha256"])
                     || run.get("pypdfium2").is_some()
                 {
                     return Err("invalid or mixed PDFium producer identity".into());

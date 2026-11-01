@@ -17,8 +17,7 @@ impl PdfiumAdapter {
             (Some(version), None, None) if version == "5.12.1" => Ok(Self::Python),
             (None, Some(adapter), Some(library))
                 if adapter == "pdfium-render/0.9.4"
-                    && library
-                        == "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33" =>
+                    && crate::pdf_viewers::is_library_sha256(library) =>
             {
                 Ok(Self::Rust)
             }
@@ -420,6 +419,11 @@ mod tests {
     fn rust_pdfium_stdout_and_retained_envelope_are_valid() {
         let (mut receipt, raw) = rust_pdfium();
         validate_receipt(&receipt, &raw, "native-pdfium").unwrap();
+        // Each host's pdfium-binaries build has its own library digest.
+        let mut elsewhere = receipt.clone();
+        elsewhere["library_sha256"] =
+            json!("8f674979f8457e8a99721412607e878580f8a702ad90d36d37adf571202b4087");
+        validate_receipt(&elsewhere, &raw, "native-pdfium").unwrap();
         receipt["raw_capture"] =
             json!({"file":"native-pdfium-0-raw.rgba.zlib","bytes":raw.len(),"sha256":sha256(&raw)});
         validate_receipt(&receipt, &raw, "native-pdfium").unwrap();
@@ -448,7 +452,7 @@ mod tests {
                 ("pdfium", json!("152.0.7947.1")),
                 ("pypdfium2", json!("5.12.2")),
                 ("adapter", json!("pdfium-render/0.9.5")),
-                ("library_sha256", json!("0".repeat(64))),
+                ("library_sha256", json!("0".repeat(63))),
                 ("byte_length", json!(raw.len() + 4)),
                 ("sha256", json!("0".repeat(64))),
                 ("layout", json!("bottom-up")),

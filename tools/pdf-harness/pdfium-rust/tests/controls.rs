@@ -59,6 +59,16 @@ fn worker(source: &Path, output: &Path, width: &str, height: &str) -> Output {
         .unwrap()
 }
 
+/// The digest of the library the worker loads, read independently of it.
+fn library_sha256() -> String {
+    let library = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
+        "../../../target/pdf-harness/pdfium/lib/{}pdfium{}",
+        std::env::consts::DLL_PREFIX,
+        std::env::consts::DLL_SUFFIX
+    ));
+    format!("{:x}", Sha256::digest(fs::read(library).unwrap()))
+}
+
 fn pdf(objects: &[Vec<u8>], version: &str) -> Vec<u8> {
     let mut data = format!("%PDF-{version}\n").into_bytes();
     let mut offsets = Vec::new();
@@ -162,7 +172,7 @@ fn assert_render_repeats(pdf: &[u8], width: usize, height: usize, expected: &[u8
             json!({
                 "adapter": "pdfium-render/0.9.4",
                 "pdfium": "152.0.7947.0",
-                "library_sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33",
+                "library_sha256": library_sha256(),
                 "byte_length": width * height * 4,
                 "width": width,
                 "height": height,

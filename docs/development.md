@@ -106,11 +106,11 @@ and pinned qpdf; the devenv shell provides both. See
 [`tools/reference-oracle/README.md`](../tools/reference-oracle/README.md) for the
 opt-in profile verification workflow.
 
-The PDF harness uses a separately installed native PDFium library with Rust
-bindings. On Linux x86_64, run `devenv shell pdfium-install` (or
-`bash tools/pdf-harness/install.sh --pdfium-only`) to install the checksum-pinned
-upstream binary and build its Rust worker. This needs no Python or Docker.
-The complete PDFium/PDF.js/qpdf setup is documented in
+The PDF harness uses a native PDFium library with Rust bindings. The devenv
+shell supplies the pinned upstream PDFium build and qpdf for the host and links
+them under `target/pdf-harness/`; `bash tools/pdf-harness/install.sh` then
+builds the Rust worker and installs PDF.js, which runs in Docker. No Python is
+needed. The complete PDFium/PDF.js/qpdf setup is documented in
 [`tools/pdf-harness/README.md`](../tools/pdf-harness/README.md).
 
 `cargo run --locked -p xtask -- demo build` writes a static side-by-side page of
@@ -291,8 +291,8 @@ just release      # the release checks, on the supported targets
 ```
 
 The reference oracle and the viewer harnesses run digest-pinned Docker images,
-from the host's Docker through `just viewer-evidence` and
-`just candidate-successor`, or through Dagger (`dagger api call evidence pdf`)
+from the host's Docker through `just pdf-harness`, `just viewer-evidence` and
+`just candidate-successor`, or through Dagger (`dagger api call evidence svg`)
 for hosts without a suitable Docker; the devenv shell carries the Dagger CLI.
 GitHub workflows run the recipes in the devenv shell and handle scheduling and
 artifact upload.

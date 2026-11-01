@@ -78,6 +78,12 @@ test-features:
 test-doc:
     cargo test --locked --workspace --doc
 
+# Run the PDF gates in PDFium, PDF.js and qpdf. PDF.js runs in its pinned image, so this needs Docker.
+pdf-harness:
+    bash tools/pdf-harness/install.sh
+    cargo nextest run --locked --release -p excalidraw-render --profile harness --run-ignored only \
+        -E 'binary(/^harness_pdf_/)'
+
 # Verify the cases, the coverage ledgers, the sealed catalog, and the committed evidence.
 conformance: xtask
     target/debug/xtask conformance verify-all
