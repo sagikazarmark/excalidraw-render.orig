@@ -53,6 +53,16 @@
 //! (official SVGs this rasterizer cannot lay out as browsers do, proved by the
 //! variant's direct PNG being where its record says it is).
 //!
+//! Every pin is a measurement under the workspace `resvg`, `tiny-skia` and
+//! `fontdb` at whatever versions `Cargo.lock` resolves, and is exact in both
+//! directions. A rasterizer bump that moves a measurement therefore fails on
+//! that pin with the observed values printed, and a bump that moves nothing
+//! needs no edit here; the harness does not mirror the lockfile's versions.
+//! The canonical judge of the pure-Rust SVG dimension is the pinned viewer in
+//! `tools/svg-viewer-rust`, which holds its own lock; running the raster
+//! dimension through it as a subprocess stays in reserve for the day a bump
+//! does move a pin.
+//!
 //! Every registered variant is compared on both dimensions, since dark mode and
 //! sizing must leave path geometry untouched, and each variant is rendered once:
 //! the two dimensions judge the same bytes, and a divergence in each is reported
@@ -99,11 +109,8 @@ const KNOWN_GEOMETRY_DEFECTS: &[PinnedGeometryDefect] = &[];
 /// pinned at its exact measurement and must correspond to that recorded
 /// exception; see `PinnedDivergence`.
 ///
-/// The measurements are those of the workspace rasterizer named in
-/// [`PINNED_RASTERIZER`], which the workspace manifest holds at an exact
-/// version and the lockfile resolves; a bump of that rasterizer re-derives every
-/// pin here, and [`pins_are_measured_by_the_locked_rasterizer`] says so
-/// instead of letting the bump surface as an opaque SSIM bit mismatch.
+/// The measurements are those of the workspace `resvg`, `tiny-skia` and
+/// `fontdb` at whatever versions `Cargo.lock` resolves; see the module docs.
 const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
     // Spec 8.3's replacement glyph (#124): the official document sets the three
     // unmapped scalars in the embedded Excalifont and Liberation Sans subsets,
@@ -220,48 +227,6 @@ const RASTERIZER_LIMITATIONS: &[RasterizerLimitation] = &[
         limitation: "usvg ignores direction and anchors right-to-left text as left-to-right",
     },
 ];
-
-/// The rasterizer, its pixel backend and its font database — which drives the
-/// glyph fallback both pinned cases exercise — that the pins above were
-/// measured with, as the lockfile names them.
-///
-/// Re-derived for resvg 0.48.1 and fontdb 0.24.0 (#209): every pin above
-/// measured exactly as it did under resvg 0.47.0 and fontdb 0.23.0. Re-derived
-/// again for resvg 0.49.0, with the same tiny-skia and fontdb: every pin
-/// measured exactly as under 0.48.1.
-const PINNED_RASTERIZER: &[(&str, &str)] = &[
-    ("resvg", "0.49.0"),
-    ("tiny-skia", "0.12.0"),
-    ("fontdb", "0.24.0"),
-];
-
-#[test]
-fn pins_are_measured_by_the_locked_rasterizer() {
-    let lockfile =
-        fs::read_to_string(repository_root().join("Cargo.lock")).expect("workspace lockfile");
-    for (package, pinned) in PINNED_RASTERIZER {
-        let locked: Vec<&str> = lockfile
-            .split("[[package]]")
-            .filter_map(|record| {
-                let mut lines = record
-                    .lines()
-                    .map(str::trim)
-                    .skip_while(|line| line.is_empty());
-                (lines.next() == Some(&format!("name = \"{package}\"")))
-                    .then(|| lines.next())
-                    .flatten()
-                    .and_then(|line| line.strip_prefix("version = \""))
-                    .and_then(|version| version.strip_suffix('"'))
-            })
-            .collect();
-        assert_eq!(
-            locked,
-            [*pinned],
-            "COMPATIBILITY_EXCEPTION_PINS were measured with {package} {pinned}; the lockfile \
-             resolves {locked:?}, so re-derive the pins and PINNED_RASTERIZER together"
-        );
-    }
-}
 
 #[test]
 fn every_registered_scene_case_matches_its_official_svg_geometry_and_raster() {
