@@ -404,12 +404,12 @@ retained reports. Changed subset bytes, reference inputs, viewer profiles or
 results still fail their checks and need review; implementation hashes are not
 a substitute for those checks.
 
-The release evidence beside it
-(`svg-font-subset-release-evidence/revision-1.json`) binds the approved
-viewer qualification to the supported-target measurement the packaged
-public facade workflow produces (`svg_font_subset_targets.rs`), and returns
-to `pending_ci` whenever the corpus moves until a fresh aggregate is
-recorded.
+The corpus test runs on both supported targets in `just release`
+(`just qualification <target>`); each run asserts every cell's generated
+WOFF2 digest against the same committed corpus pin, which is the cross-target
+agreement. The separate release-evidence record, target aggregate and
+cross-target measurement that once restated that agreement retired with the
+2026-11-01 testing review.
 
 ## Canonical PDF harnesses
 

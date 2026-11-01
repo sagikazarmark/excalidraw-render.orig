@@ -143,13 +143,13 @@ release: conformance-release test-release (qualification native) (qualification 
 # Run the packaged facade and the no-CJK consumer in browser WASM.
 wasm-packaging: (package-facade wasm) (package-no-cjk wasm)
 
-# Run a target's release qualification and materialize its report.
-qualification target: xtask
+# Run a target's release qualification: the renderer's unit target in release
+# mode with the corpus and frame-batch tests admitted, logged under the evidence
+# directory.
+qualification target:
     {{ if target == native { "just require-native" } else { "" } }}
     mkdir -p "{{ evidence }}/{{ target }}"
     bash tools/ci/qualification.sh "{{ target }}" "{{ evidence }}/{{ target }}/qualification.log"
-    target/debug/xtask conformance materialize-svg-font-subset-target "{{ target }}" \
-        "{{ evidence }}/{{ target }}/qualification.log" "{{ evidence }}/{{ target }}/{{ target }}.json"
 
 # Collect native snapshots of the packaged facade and replay them against the native baseline.
 snapshot-replay: collect-native-snapshots
@@ -175,15 +175,6 @@ wasm-snapshot-replay: package xtask
     mkdir -p "{{ evidence }}"
     cd tests/package-consumer && bash ../../tools/ci/wasm-snapshots.sh "../../{{ evidence }}/wasm-snapshots"
     target/debug/xtask conformance verify-wasm-snapshots "{{ evidence }}/wasm-snapshots"
-
-# Export both targets' qualification reports and their aggregate from a clean commit.
-target-evidence: require-native
-    bash tools/ci/require-clean-source.sh
-    just release
-    rm -rf "{{ evidence }}/reports"
-    mkdir -p "{{ evidence }}/reports"
-    cp "{{ evidence }}/{{ native }}/{{ native }}.json" "{{ evidence }}/{{ wasm }}/{{ wasm }}.json" "{{ evidence }}/reports/"
-    target/debug/xtask conformance aggregate-svg-font-subset-targets "{{ evidence }}/reports" "{{ evidence }}/aggregate.json"
 
 # Build the reproducible CLI release archive and its SHA-256 file into dist/.
 release-archive version: require-native

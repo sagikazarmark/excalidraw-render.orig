@@ -1,5 +1,8 @@
-name: Release evidence
+name: Release
 
+# The release checks on both supported targets (docs/ci.md), on demand from
+# the commit to be released. The logs are the evidence; the run's URL goes in
+# the release notes.
 on:
   workflow_dispatch:
 
@@ -14,8 +17,8 @@ defaults:
     shell: devenv shell -- bash -e {0}
 
 jobs:
-  evidence:
-    name: Target evidence
+  release:
+    name: Release checks
     runs-on: ubuntu-latest
     timeout-minutes: 180
 
@@ -42,13 +45,12 @@ jobs:
             . -> target
             tests/package-consumer -> ../../target/package-consumer
 
-      # The release checks on both supported targets, then the aggregate.
-      - name: Target evidence
-        run: just target-evidence
+      - name: Release checks
+        run: just release
 
-      - name: Upload the target evidence
+      - name: Upload the logs
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: target-evidence
+          name: release-evidence
           path: target/release-evidence

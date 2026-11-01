@@ -295,36 +295,6 @@ pub enum ConformanceCommand {
     VerifySvgViewers,
     /// Verify canonical SVG font subset viewer qualification.
     VerifySvgFontSubsets,
-    /// Verify SVG font subset release evidence.
-    VerifySvgFontSubsetRelease,
-    /// Materialize SVG font subset target evidence.
-    MaterializeSvgFontSubsetTarget {
-        /// Target.
-        target: String,
-        /// Qualification test log.
-        test_log: String,
-        /// Target report path.
-        output: String,
-    },
-    /// Materialize the cross-target SVG font subset measurement.
-    MaterializeSvgFontSubsetCrossTarget {
-        /// Qualification test log.
-        test_log: String,
-    },
-    /// Aggregate SVG font subset target evidence.
-    AggregateSvgFontSubsetTargets {
-        /// Target report directory.
-        input: String,
-        /// Aggregate report path.
-        output: String,
-    },
-    /// Record the SVG font subset target aggregate into the release evidence.
-    RecordSvgFontSubsetTargetAggregate {
-        /// Downloaded aggregate report.
-        aggregate: String,
-        /// Workflow run URL.
-        run_url: String,
-    },
     /// Generate the pure-Rust SVG font subset viewer report.
     GenerateSvgFontSubsetRustReport {
         /// Viewer input manifest.
@@ -676,11 +646,6 @@ mod tests {
                 "candidate-executions",
                 "verify-svg-viewers",
                 "verify-svg-font-subsets",
-                "verify-svg-font-subset-release",
-                "materialize-svg-font-subset-target",
-                "materialize-svg-font-subset-cross-target",
-                "aggregate-svg-font-subset-targets",
-                "record-svg-font-subset-target-aggregate",
                 "generate-svg-font-subset-rust-report",
                 "materialize-svg-font-subset-evidence",
                 "verify-pdf-viewers",

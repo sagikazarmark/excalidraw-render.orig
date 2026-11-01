@@ -15,7 +15,6 @@ mod pdf_viewers;
 mod representative;
 mod sfnt;
 mod svg_font_subset_runner;
-mod svg_font_subset_targets;
 mod svg_font_subsets;
 mod svg_viewers;
 
@@ -231,30 +230,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         C::VerifySvgFontSubsets => {
             svg_font_subsets::verify()?;
             println!("verified canonical SVG font subset viewer qualification");
-        }
-        C::VerifySvgFontSubsetRelease => {
-            let state = svg_font_subset_targets::verify_release()?;
-            println!("verified SVG font subset release evidence ({state})");
-        }
-        C::MaterializeSvgFontSubsetTarget {
-            target,
-            test_log,
-            output,
-        } => {
-            svg_font_subset_targets::materialize(&target, &test_log, &output)?;
-            println!("materialized SVG font subset target evidence for {target}");
-        }
-        C::MaterializeSvgFontSubsetCrossTarget { test_log } => {
-            svg_font_subset_targets::materialize_cross_target(&test_log)?;
-            println!("materialized cross-target SVG font subset measurement");
-        }
-        C::AggregateSvgFontSubsetTargets { input, output } => {
-            svg_font_subset_targets::aggregate(&input, &output)?;
-            println!("aggregated SVG font subset target evidence");
-        }
-        C::RecordSvgFontSubsetTargetAggregate { aggregate, run_url } => {
-            svg_font_subset_targets::record_aggregate(&aggregate, &run_url)?;
-            println!("recorded SVG font subset target aggregate into the release evidence");
         }
         C::GenerateSvgFontSubsetRustReport {
             inputs,
