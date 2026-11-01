@@ -323,6 +323,10 @@ nightly-render-fuzz cases="4096":
         -p excalidraw-render --test render_fuzz render_fuzz::nightly_complete_render_fuzz \
         -- --ignored --exact --nocapture
 
+# Expand the complete-render fuzz under the revision-1 default resource limits.
+nightly-render-fuzz-default-limits cases="4096":
+    EXCALIDRAW_RENDER_FUZZ_DEFAULT_LIMITS=1 just nightly-render-fuzz {{ cases }}
+
 # Run the complete-render fuzz smoke in browser WASM.
 render-fuzz-wasm:
     CARGO_PROFILE_TEST_DEBUG=0 cargo test --locked --target {{ wasm }} -p excalidraw-render --test render_fuzz \

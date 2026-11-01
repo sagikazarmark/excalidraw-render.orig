@@ -48,6 +48,14 @@ jobs:
           EXCALIDRAW_FUZZ_SEED: ${{ github.run_id }}
         run: just nightly
 
+      # The complete-render fuzz again, under the default resource limits the
+      # lowered fuzz profile keeps out of reach (docs/render-fuzzing.md).
+      - name: Expand under the default limits
+        if: ${{ !cancelled() }}
+        env:
+          EXCALIDRAW_FUZZ_SEED: ${{ github.run_id }}
+        run: just nightly-render-fuzz-default-limits
+
   wasm:
     name: Browser WASM
     runs-on: ubuntu-latest

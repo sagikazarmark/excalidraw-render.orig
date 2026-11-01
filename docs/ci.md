@@ -113,7 +113,8 @@ committed pins, which is the cross-target agreement.
 
 `nightly.yaml` runs `just nightly` (the five fuzz expansions in one job, with
 `EXCALIDRAW_FUZZ_SEED` set to the run id so a night searches new cases and a
-failure names the seed that replays it), the browser-WASM checks, and the PDF
+failure names the seed that replays it) and, in the same job,
+`just nightly-render-fuzz-default-limits`, the browser-WASM checks, and the PDF
 and SVG viewer harnesses on the runner's Docker. `oracle.yaml` runs weekly:
 `just reference-profile verify` for the scene and frame profiles and
 `just reference-cases reproduce`, which regenerates every registered case in
