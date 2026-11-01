@@ -10,7 +10,14 @@ USER_ID="$(id -u)"
 GROUP_ID="$(id -g)"
 
 if [[ "${MODE}" != "generate" && "${MODE}" != "reproduce" ]] || [[ "${CASE_ID}" != "focused.frame-export.v1" ]]; then
-  echo "usage: $0 <generate|reproduce> focused.frame-export.v1" >&2
+  echo "usage: $0 <generate|reproduce> focused.frame-export.v1 [--supersede]" >&2
+  exit 2
+fi
+
+# Generation over a manifested case needs --supersede; the generator enforces it.
+SUPERSEDE="${3:-}"
+if [[ -n "${SUPERSEDE}" && ( "${SUPERSEDE}" != "--supersede" || "${MODE}" != "generate" || -n "${4:-}" ) ]]; then
+  echo "usage: $0 <generate|reproduce> focused.frame-export.v1 [--supersede]" >&2
   exit 2
 fi
 
@@ -24,4 +31,4 @@ docker run --rm --init --ipc=host \
   --mount "type=bind,src=${REPO_ROOT},dst=/workspace" \
   --workdir /workspace/tools/reference-oracle \
   "${IMAGE}" \
-  bash -lc "npm exec vite -- build --config vite.frame.config.mjs && node scripts/frame-profile.mjs verify && node scripts/frame-conformance-case.mjs '${MODE}' '${CASE_ID}'"
+  bash -lc "npm exec vite -- build --config vite.frame.config.mjs && node scripts/frame-profile.mjs verify && node scripts/frame-conformance-case.mjs '${MODE}' '${CASE_ID}' ${SUPERSEDE}"

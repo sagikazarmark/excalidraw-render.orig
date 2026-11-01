@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 import { canonicalize } from "./canonical-json.mjs";
+import { carriedApproval, generationArgs } from "./generation-guard.mjs";
 
 // Standalone generator for the focused typography case.
 //
@@ -546,11 +547,16 @@ function compareCheckedEvidence(stagedRoot, manifest) {
 }
 
 async function main() {
-  const [mode, caseId] = process.argv.slice(2);
-  if ((mode !== "generate" && mode !== "reproduce") || caseId !== CASE_ID) {
+  const args = generationArgs(
+    process.argv.slice(2),
+    "node scripts/typography-conformance-case.mjs",
+  );
+  const { mode, caseId } = args;
+  if (caseId !== CASE_ID) {
     throw new Error(`usage: node scripts/typography-conformance-case.mjs <generate|reproduce> ${CASE_ID}`);
   }
   CASE = loadCase(caseId);
+  const approval = carriedApproval(resolve(CASE.root, "manifest.json"), args);
   if (process.env.REFERENCE_ORACLE_CANONICAL !== "1" || process.version !== "v24.16.0") {
     throw new Error("run this command in the canonical reference-profile container");
   }
@@ -581,6 +587,7 @@ async function main() {
   const provenancePath = writeEvidence(outputRoot, first, second);
   const manifest = buildManifest(scenePath, provenancePath, outputRoot, first, assetsByPath);
   if (mode === "generate") {
+    manifest.approval = approval;
     const manifestBytes = canonicalBytes(manifest);
     writeFileSync(resolve(CASE.root, "manifest.json"), Buffer.concat([manifestBytes, Buffer.from("\n")]));
     writeFileSync(resolve(CASE.root, "manifest.sha256"), `${sha256(manifestBytes)}\n`);

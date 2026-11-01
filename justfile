@@ -239,8 +239,9 @@ reference-profile mode="verify" profile="scene":
     bash tools/reference-oracle/run-container.sh install
     bash "$script" "{{ mode }}"
 
+# Generating over a manifested case needs --supersede, which keeps its approval block.
 # Reproduce a registered case with its reference runner into target/reference-evidence, or generate it.
-reference-case id mode="reproduce": xtask
+reference-case id mode="reproduce" *flags: xtask
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{ mode }}" in
@@ -248,10 +249,11 @@ reference-case id mode="reproduce": xtask
         *) echo "a registered case is reproduced or generated, not {{ mode }}" >&2; exit 2 ;;
     esac
     bash tools/reference-oracle/run-container.sh install
-    target/debug/xtask conformance "{{ mode }}" "{{ id }}"
+    target/debug/xtask conformance "{{ mode }}" "{{ id }}" {{ flags }}
 
+# Every case is manifested, so regenerating the registry is `just reference-cases generate --supersede`.
 # Reproduce every registered case in one container session (the weekly oracle drift check), or generate them all.
-reference-cases mode="reproduce":
+reference-cases mode="reproduce" *flags:
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{ mode }}" in
@@ -259,7 +261,7 @@ reference-cases mode="reproduce":
         *) echo "the registered cases are reproduced or generated, not {{ mode }}" >&2; exit 2 ;;
     esac
     bash tools/reference-oracle/run-container.sh install
-    bash tools/reference-oracle/run-all-cases.sh "{{ mode }}"
+    bash tools/reference-oracle/run-all-cases.sh "{{ mode }}" {{ flags }}
 
 # Regenerate the per-cell font subset corpus into target/font-corpus for review.
 font-corpus:

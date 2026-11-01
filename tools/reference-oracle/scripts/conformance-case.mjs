@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 import { canonicalize } from "./canonical-json.mjs";
+import { carriedApproval, generationArgs } from "./generation-guard.mjs";
 
 const ORACLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(ORACLE_ROOT, "../..");
@@ -511,11 +512,10 @@ function compareCheckedEvidence(stagedRoot, manifest) {
 }
 
 async function main() {
-  const [mode, caseId] = process.argv.slice(2);
-  if ((mode !== "generate" && mode !== "reproduce") || !caseId) {
-    throw new Error("usage: node scripts/conformance-case.mjs <generate|reproduce> <case-id>");
-  }
+  const args = generationArgs(process.argv.slice(2), "node scripts/conformance-case.mjs");
+  const { mode, caseId } = args;
   CASE = loadCase(caseId);
+  const approval = carriedApproval(resolve(CASE.root, "manifest.json"), args);
   if (process.env.REFERENCE_ORACLE_CANONICAL !== "1" || process.version !== "v24.16.0") {
     throw new Error("run this command in the canonical reference-profile container");
   }
@@ -550,6 +550,7 @@ async function main() {
   const provenancePath = writeEvidence(outputRoot, renders);
   const manifest = buildManifest(scenePath, provenancePath, outputRoot, renders);
   if (mode === "generate") {
+    manifest.approval = approval;
     const manifestBytes = canonicalBytes(manifest);
     writeFileSync(resolve(CASE.root, "manifest.json"), Buffer.concat([manifestBytes, Buffer.from("\n")]));
     writeFileSync(resolve(CASE.root, "manifest.sha256"), `${sha256(manifestBytes)}\n`);

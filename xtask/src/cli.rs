@@ -287,6 +287,10 @@ pub enum ConformanceCommand {
     Generate {
         /// Case ID.
         case_id: String,
+        /// Replace a manifested case, keeping its approval block; without
+        /// it, generation refuses to overwrite one.
+        #[arg(long)]
+        supersede: bool,
     },
     /// Reproduce a case with the reference oracle, then verify it.
     Reproduce {
@@ -699,6 +703,32 @@ mod tests {
             panic!()
         };
         assert!(modules.is_empty());
+    }
+
+    #[test]
+    fn generation_supersedes_only_when_asked() {
+        for (args, expected) in [
+            (&["conformance", "generate", "case.v1"][..], false),
+            (
+                &["conformance", "generate", "case.v1", "--supersede"][..],
+                true,
+            ),
+        ] {
+            let Family::Conformance(ConformanceCommand::Generate { case_id, supersede }) =
+                parse(args)
+            else {
+                panic!()
+            };
+            assert_eq!((case_id.as_str(), supersede), ("case.v1", expected));
+        }
+        assert!(Cli::try_parse_from([
+            "xtask",
+            "conformance",
+            "reproduce",
+            "case.v1",
+            "--supersede"
+        ])
+        .is_err());
     }
 
     #[test]

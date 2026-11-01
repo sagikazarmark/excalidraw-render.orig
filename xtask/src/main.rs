@@ -244,24 +244,25 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
             pdf_viewers::refresh_pdfium_runtime()?;
             println!("refreshed Rust PDFium runtime record against retained calibration rasters");
         }
-        C::Generate { case_id } => {
-            run_reference_oracle("generate", &case_id)?;
+        C::Generate { case_id, supersede } => {
+            run_reference_oracle("generate", &case_id, supersede)?;
             conformance::verify(&case_id)?;
         }
         C::Reproduce { case_id } => {
-            run_reference_oracle("reproduce", &case_id)?;
+            run_reference_oracle("reproduce", &case_id, false)?;
             conformance::verify(&case_id)?;
         }
     }
     Ok(())
 }
 
-fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
+fn run_reference_oracle(mode: &str, case_id: &str, supersede: bool) -> Result<(), String> {
     let runner = conformance::case_runner(case_id)?;
     let status = Command::new("bash")
         .arg(conformance::repo_root().join(&runner))
         .arg(mode)
         .arg(case_id)
+        .args(supersede.then_some("--supersede"))
         .status()
         .map_err(|error| format!("failed to start reference oracle: {error}"))?;
     if !status.success() {

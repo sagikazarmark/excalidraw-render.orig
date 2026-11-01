@@ -178,8 +178,12 @@ and its run provenance; the generator and runner descriptors in that
 provenance are historical, compared by path only.
 
 Reproduction writes under `target/`; generation and updates write to the
-checkout, and existing generators retain their refusal to overwrite manifested
-evidence. `just reference-case` reproduces into `target/reference-evidence`.
+checkout. The case generators refuse to overwrite a manifested case unless
+given `--supersede`, which replaces it and keeps its approval block (ADR-0019
+history), so `just reference-cases generate --supersede` regenerates the whole
+registry in one container session and an unmoved reference reviews as an
+unchanged tree; `just reference-case <id> generate --supersede` does one case.
+`just reference-case` reproduces into `target/reference-evidence`.
 `just font-corpus` stages the corpus JSON and its digest sidecar in
 `target/font-corpus`; they belong in `tests/oracle/compatibility-artifacts/`,
 and the corpus JSON also at
