@@ -253,10 +253,14 @@ and reproduction.
 
 `comparator-profiles/canonical-visual-v1.json` freezes the format-neutral
 RGBA8 projection, Pixelmatch, SSIM, crop, and visual-budget protocol. Its
-adjacent digest binds the profile. The profile in turn binds what can change a
-measurement: the unpublished Rust implementation, adversarial vectors, and
-imported Pixelmatch 7.2.0 fixtures. The upstream behaviour the implementation
-reproduces is documented in
+adjacent digest binds the profile. The profile in turn binds what defines a
+measurement: adversarial vectors and imported Pixelmatch 7.2.0 fixtures, which
+the comparator's own tests execute. Its `implementation.sources` digests are
+historical: they record the sources the profile was cut from and are checked
+for shape only, so a source edit that moves no measurement moves nothing, and
+one that does fails the vectors. The comparator's dependencies are pinned by
+`Cargo.lock` alone (ADR-0005, amended 2026-11-01). The upstream behaviour the
+implementation reproduces is documented in
 [the comparator primary sources](../../docs/research/conformance-comparator-primary-sources.md).
 Verify all of them offline with:
 
@@ -264,23 +268,8 @@ Verify all of them offline with:
 cargo test --locked -p excalidraw-render-compare
 ```
 
-The comparator's dependency closure,
-`comparator-profiles/canonical-visual-v1.closure.json`, lists the `Cargo.lock`
-packages reachable from `excalidraw-render-compare`: name, exact version,
-source, and checksum. It is committed and reviewed in Git, and the profile
-test recomputes it from the live lock and names any package that differs. No
-digest binds it (ADR-0005, amended for #212), so when a comparator dependency
-moves, the closure file is the only thing that changes. Refresh it with:
-
-```sh
-EXCALIDRAW_REFRESH_COMPARATOR_CLOSURE=1 cargo test --locked -p excalidraw-render-compare --test profile -- --ignored materialize
-```
-
-Without the variable, `materialize` only stages the closure under Cargo's
-scratch directory.
-
-The profile itself moves only when the comparator's sources, protocol, limits,
-vectors or fixtures change, and that change gets its own review. Its digest is
+The profile itself moves only when the comparator's protocol, limits, vectors
+or fixtures change, and that change gets its own review. Its digest is
 bound by live evidence, and each rebinding moves that evidence's own digest in
 turn:
 - the SVG and PDF viewer qualifications, and their sidecars (digests of the

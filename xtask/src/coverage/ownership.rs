@@ -2076,7 +2076,7 @@ mod tests {
                 compare,
                 "profile",
                 "",
-                "canonical_comparator_profile_schema_and_all_bound_bytes_are_current",
+                "canonical_comparator_profile_is_sealed_and_its_measurement_bindings_are_current",
                 "crates/excalidraw-render-compare/tests/profile.rs",
             ),
         ] {
@@ -2167,12 +2167,6 @@ mod tests {
                 "render_fuzz",
                 "render_fuzz",
                 "nightly_complete_render_fuzz",
-            ),
-            (
-                executable::COMPARE,
-                "profile",
-                "",
-                "materialize_canonical_comparator_closure",
             ),
             // Wrong module paths, targets or packages.
             (
