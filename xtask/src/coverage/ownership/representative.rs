@@ -223,6 +223,7 @@ pub(super) fn verified_owner(case: &str) -> Result<Owner, String> {
 mod tests {
     use super::*;
     #[test]
+    #[ignore = "release tier: builds the release CLI (just test-release)"]
     fn representative_owner_release_positive_path_uses_real_gate_in_isolated_fixture() {
         // Synthetic authorization exists only below target/. Reuse qualified
         // viewer bytes only after fresh release SVG/PDF are byte-identical to

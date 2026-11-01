@@ -254,6 +254,8 @@ pub enum ConformanceCommand {
     },
     /// Verify every registered case.
     VerifyAll,
+    /// Verify the registered representative candidates against a fresh release build.
+    VerifyCandidates,
     /// Prepare candidate assets.
     CandidatePrepareAssets {
         /// Candidate directory.
@@ -686,6 +688,7 @@ mod tests {
                 "verify-closure",
                 "verify",
                 "verify-all",
+                "verify-candidates",
                 "candidate-prepare-assets",
                 "candidate-compare",
                 "candidate-semantics",

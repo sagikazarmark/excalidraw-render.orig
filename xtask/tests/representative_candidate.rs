@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::{fs, path::Path, process::Command};
 
 #[test]
+#[ignore = "release tier: builds the release CLI (just test-release)"]
 fn representative_registry_is_consumed_through_native_execution() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let registry: Value = serde_json::from_slice(

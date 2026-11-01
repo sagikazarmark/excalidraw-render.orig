@@ -624,6 +624,7 @@ mod tests {
         })
     }
     #[test]
+    #[ignore = "release tier: builds the release CLI (just test-release)"]
     fn fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds() {
         let nonce = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

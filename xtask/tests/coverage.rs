@@ -174,11 +174,8 @@ fn ownership_recording_validates_the_entire_batch_before_writing() {
 }
 
 #[test]
-fn inventory_is_current_and_release_closure_does_not_pass_for_a_draft() {
+fn inventory_is_current() {
     assert_success(command(&["conformance", "verify-inventory"]));
-    let output = command(&["conformance", "verify-closure"]);
-    assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("release coverage is incomplete"));
     let inventory = inventory();
     assert_eq!(inventory["executions"].as_array().unwrap().len(), 168);
     assert!(inventory["coverage"]
@@ -186,6 +183,14 @@ fn inventory_is_current_and_release_closure_does_not_pass_for_a_draft() {
         .unwrap()
         .iter()
         .any(|r| r["candidates"].as_array().unwrap().len() > 1));
+}
+
+#[test]
+#[ignore = "release tier: builds the release CLI (just test-release)"]
+fn release_closure_does_not_pass_for_a_draft() {
+    let output = command(&["conformance", "verify-closure"]);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("release coverage is incomplete"));
 }
 
 #[test]

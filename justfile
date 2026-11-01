@@ -51,24 +51,26 @@ test-render:
 test-tools:
     python3 -m unittest discover -s tools/ci -p 'test_*.py'
 
-# CI runs the fast and render tiers as one archived build and several shards,
-# with the release-CLI test group in a job of its own.
+# CI runs the fast and render tiers as one archived build and several shards.
 
 # Build every test target once into a nextest archive.
 test-archive archive="target/nextest-archive.tar.zst":
     cargo nextest archive --locked --workspace --archive-file {{ archive }}
 
-# Run one shard, such as 1/4, of the fast and render tiers from an archive,
-# without the release-CLI group. It extracts into the checkout, where every
-# binary is at the path its build compiled in.
+# Run one shard, such as 1/4, of the fast and render tiers from an archive. It
+# extracts into the checkout, where every binary is at the path its build
+# compiled in.
 test-shard shard archive="target/nextest-archive.tar.zst":
     cargo nextest run --archive-file {{ archive }} --extract-to . --extract-overwrite \
-        --profile default --no-fail-fast --partition slice:{{ shard }} -E 'not group(release-cli)'
+        --profile default --no-fail-fast --partition slice:{{ shard }}
 
-# Run the tests that build the release CLI, building it first.
-test-release-cli:
+# Run the release-tier tests: the xtask tests that build the qualified release
+# CLI and replay the representative candidate through it. Building the CLI first
+# keeps the one-thread group from serializing on Cargo's build lock.
+test-release:
     cargo build --release --locked -p excalidraw-render-cli
-    cargo nextest run --locked --workspace --profile default --no-fail-fast -E 'group(release-cli)'
+    cargo nextest run --locked --workspace --profile default --no-fail-fast --run-ignored only \
+        -E 'group(release-cli)'
 
 # Test the builds that leave out the png or pdf feature.
 test-features:
@@ -90,16 +92,22 @@ svg-harness:
     cargo nextest run --locked --release -p excalidraw-render --profile harness --run-ignored only \
         -E 'binary(/^harness_svg_/)'
 
-# Verify the cases, the coverage ledgers, the sealed catalog, and the committed evidence.
+# Verify the registered cases, the sealed catalog and the viewer qualification records.
 conformance: xtask
     target/debug/xtask conformance verify-all
-    target/debug/xtask conformance verify-inventory
-    target/debug/xtask conformance verify-ownership
     target/debug/xtask catalog verify
-    target/debug/xtask conformance verify-svg-font-subset-release
-    target/debug/xtask conformance verify-svg-font-subsets
     target/debug/xtask conformance verify-svg-viewers
     target/debug/xtask conformance verify-pdf-viewers
+
+# Verify the release-tier records: the representative candidates against a fresh
+# release build, the coverage inventory and ownership ledgers, and the font-subset
+# viewer qualification. They bind evidence that only the release checks consume
+# and move on every intentional output change, so no per-change gate carries them.
+conformance-release: xtask
+    target/debug/xtask conformance verify-candidates
+    target/debug/xtask conformance verify-inventory
+    target/debug/xtask conformance verify-ownership
+    target/debug/xtask conformance verify-svg-font-subsets
 
 # Check the published crates the way a downstream consumer uses them.
 packaging: package-cli package-facade package-no-cjk
@@ -134,7 +142,7 @@ native := "x86_64-unknown-linux-gnu"
 wasm := "wasm32-unknown-unknown"
 
 # Run every release check on both supported targets.
-release: (qualification native) (qualification wasm) packaging wasm-packaging full-equality
+release: conformance-release test-release (qualification native) (qualification wasm) packaging wasm-packaging full-equality
 
 # Run the packaged facade and the no-CJK consumer in browser WASM.
 wasm-packaging: (package-facade wasm) (package-no-cjk wasm)

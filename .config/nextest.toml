@@ -51,19 +51,20 @@ filter = 'binary(/^parity_registered_case_/) & test(/^every_registered_scene_cas
 threads-required = "num-cpus"
 
 # These xtask tests run commands that build the qualified release CLI on first
-# use (LTO, one codegen unit: minutes on a CI runner). Run concurrently, the
-# first uses only queue on Cargo's build lock while holding test slots, so they
-# take turns in their own group. The ownership unit tests that judge the live
-# ledger hold the representative row as a gap instead, so they never reach the
-# build and stay out of the group.
+# use (LTO, one codegen unit: minutes on a CI runner). They are #[ignore]d as
+# the release tier (`just test-release` runs them with `--run-ignored only`),
+# and run concurrently the first uses only queue on Cargo's build lock while
+# holding test slots, so they take turns in their own group. The ownership unit
+# tests that judge the live ledger hold the representative row as a gap
+# instead, so they never reach the build and stay out of the group.
 [test-groups]
 release-cli = { max-threads = 1 }
 
 [[profile.default.overrides]]
 filter = '''
 package(xtask) & (
-    binary(=coverage)
-    | binary(=representative_candidate)
+    test(=release_closure_does_not_pass_for_a_draft)
+    | test(=representative_registry_is_consumed_through_native_execution)
     | test(=coverage::ownership::representative::tests::representative_owner_release_positive_path_uses_real_gate_in_isolated_fixture)
     | test(=conformance_candidate_native::tests::fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds)
 )

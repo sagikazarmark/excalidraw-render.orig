@@ -192,7 +192,10 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
                 println!("verified {case_id}");
             }
             println!("verified {} registered cases", case_ids.len());
+        }
+        C::VerifyCandidates => {
             conformance_candidate_gate::verify_registry()?;
+            println!("verified the registered representative candidates");
         }
         C::CandidatePrepareAssets { directory } => {
             conformance_candidate::prepare_assets(&directory)?
