@@ -10,9 +10,9 @@ mod common;
 use common::raster::decode_png;
 use common::reports::assert_report_matches;
 use common::repository_root;
+use common::svg_raster::rasterize;
 use excalidraw_render::{FrameRenderRequest, OutputFormat, Renderer, SceneDocument};
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
-use tiny_skia::{Pixmap, Transform};
 
 #[test]
 fn frame_svg_and_png_match_the_pinned_official_evidence() {
@@ -116,19 +116,19 @@ fn frame_svg_and_png_match_the_pinned_official_evidence() {
         assert!(!candidate_svg.contains("data-frame-name"));
         assert!(!candidate_svg.contains("data-frame-outline"));
 
-        let candidate_svg = CanonicalRgba8::new(
+        let candidate_svg = rasterize_svg(
+            svg.artifact().bytes(),
             svg_width,
             svg_height,
-            rasterize_svg(svg.artifact().bytes(), svg_width, svg_height),
-        )
-        .expect("candidate SVG raster is canonical RGBA8");
+            &format!("frame {ordinal} candidate SVG"),
+        );
         let official_svg = fs::read(evidence.join("official.svg")).unwrap();
-        let reference_svg = CanonicalRgba8::new(
+        let reference_svg = rasterize_svg(
+            &official_svg,
             svg_width,
             svg_height,
-            rasterize_svg(&official_svg, svg_width, svg_height),
-        )
-        .expect("official SVG raster is canonical RGBA8");
+            &format!("frame {ordinal} official SVG"),
+        );
         let svg_comparison = compare(
             &reference_svg,
             &candidate_svg,
@@ -204,11 +204,16 @@ fn frame_svg_and_png_match_the_pinned_official_evidence() {
     }
 }
 
-fn rasterize_svg(bytes: &[u8], width: u32, height: u32) -> Vec<u8> {
+/// Rasterizes a frame SVG through the shared font-aware rasterizer, which
+/// registers the faces the document embeds so its text is judged rather than
+/// dropped, and checks the raster is the size the evidence declares.
+fn rasterize_svg(bytes: &[u8], width: u32, height: u32, context: &str) -> CanonicalRgba8 {
     let svg = std::str::from_utf8(bytes).expect("SVG is UTF-8");
-    let tree = usvg::Tree::from_str(svg, &usvg::Options::default())
-        .expect("SVG is accepted by the pure-Rust viewer");
-    let mut pixmap = Pixmap::new(width, height).expect("frame raster dimensions are valid");
-    resvg::render(&tree, Transform::identity(), &mut pixmap.as_mut());
-    pixmap.data().to_vec()
+    let raster = rasterize(svg, context);
+    assert_eq!(
+        (raster.width(), raster.height()),
+        (width, height),
+        "{context}: the SVG rasterizes at the evidence's size"
+    );
+    raster
 }

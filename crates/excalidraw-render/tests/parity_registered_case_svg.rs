@@ -65,16 +65,12 @@ mod common;
 
 use std::collections::BTreeSet;
 use std::fs;
-use std::sync::Arc;
 
-use base64::Engine;
 use excalidraw_render::{OutputFormat, Renderer};
 use excalidraw_render_compare::{
-    compare, CanonicalRgba8, ComparisonMode, ComparisonReport, RegionReport, SsimOutcome,
+    compare, ComparisonMode, ComparisonReport, RegionReport, SsimOutcome,
 };
-use resvg::tiny_skia::{Pixmap, Transform};
 use serde_json::Value;
-use usvg::fontdb;
 
 use common::lower_hex;
 use common::registered_cases::{
@@ -84,6 +80,7 @@ use common::registered_cases::{
 };
 use common::reports::assert_report_matches;
 use common::repository_root;
+use common::svg_raster::rasterize;
 
 /// Diagnosed defects whose fix is pending a maintainer decision, observed on the
 /// rasterized document. See `PinnedDivergence` for why these are pinned rather
@@ -236,14 +233,6 @@ const PINNED_RASTERIZER: &[(&str, &str)] = &[
     ("tiny-skia", "0.12.0"),
     ("fontdb", "0.24.0"),
 ];
-
-/// System families the official export names without embedding, and the
-/// renderer's manifested substitute for each. The official raster evidence was
-/// produced with whatever the reference container resolved these to; document
-/// parity needs one face on both sides, and the substitute is the face the
-/// renderer's own SVG embeds for the same family.
-const SYSTEM_FAMILY_SUBSTITUTES: &[(&str, &str)] =
-    &[("Helvetica", "fonts/Liberation/LiberationSans-Regular.woff2")];
 
 #[test]
 fn pins_are_measured_by_the_locked_rasterizer() {
@@ -555,175 +544,6 @@ fn truncate(value: &str) -> String {
     }
 }
 
-/// Rasterizes one SVG document with the workspace `resvg`, resolving text
-/// through the faces the document itself embeds.
-fn rasterize(svg: &str, context: &str) -> CanonicalRgba8 {
-    let mut database = fontdb::Database::new();
-    let mut registered = BTreeSet::new();
-    for face in embedded_faces(svg) {
-        let sfnt = match face.media_type.as_str() {
-            "font/woff2" => wuff::decompress_woff2(&face.bytes)
-                .unwrap_or_else(|error| panic!("{context}: embedded WOFF2 decodes: {error:?}")),
-            _ => face.bytes.clone(),
-        };
-        register_face(&mut database, sfnt, &face.family);
-        registered.insert(face.family);
-    }
-    for family in referenced_families(svg) {
-        if registered.contains(&family) {
-            continue;
-        }
-        if let Some((_, asset)) = SYSTEM_FAMILY_SUBSTITUTES
-            .iter()
-            .find(|(system, _)| *system == family)
-        {
-            let woff2 = excalidraw_fonts::load_asset(asset)
-                .expect("substitute asset verifies")
-                .expect("substitute asset is manifested");
-            let sfnt = wuff::decompress_woff2(woff2.bytes()).expect("substitute WOFF2 decodes");
-            register_face(&mut database, sfnt, &family);
-            registered.insert(family);
-        }
-    }
-
-    let options = usvg::Options {
-        fontdb: Arc::new(database),
-        ..Default::default()
-    };
-    let tree = usvg::Tree::from_str(svg, &options)
-        .unwrap_or_else(|error| panic!("{context}: SVG parses: {error}"));
-    let size = tree.size().to_int_size();
-    let mut pixmap = Pixmap::new(size.width(), size.height()).expect("raster size is valid");
-    resvg::render(&tree, Transform::identity(), &mut pixmap.as_mut());
-
-    // tiny-skia stores premultiplied pixels; the comparator wants straight
-    // alpha, un-premultiplied by the canonical integer rule (spec 14.3,
-    // `(c * 255 + alpha / 2) / alpha`) rather than tiny-skia's float division,
-    // so that a pinned measurement here is the one the pinned viewer would take.
-    let mut rgba = Vec::with_capacity(pixmap.pixels().len() * 4);
-    for pixel in pixmap.pixels() {
-        let alpha = u32::from(pixel.alpha());
-        let straight = |channel: u8| -> u8 {
-            (u32::from(channel) * 255 + alpha / 2)
-                .checked_div(alpha)
-                .map_or(0, |value| value.min(255) as u8)
-        };
-        rgba.extend_from_slice(&[
-            straight(pixel.red()),
-            straight(pixel.green()),
-            straight(pixel.blue()),
-            pixel.alpha(),
-        ]);
-    }
-    CanonicalRgba8::new(size.width(), size.height(), rgba).expect("raster is canonical RGBA8")
-}
-
-/// Loads one sfnt and registers it under the CSS family the document uses for
-/// it, whatever the font's own name table says: a subset chunk of Xiaolai is
-/// `Xiaolai` to the document even when its name table says otherwise, and the
-/// renderer's aliases (`ExcalidrawRender-9`) name no real family at all.
-fn register_face(database: &mut fontdb::Database, sfnt: Vec<u8>, family: &str) {
-    for id in database.load_font_source(fontdb::Source::Binary(Arc::new(sfnt))) {
-        let mut info = database.face(id).expect("loaded face is present").clone();
-        database.remove_face(id);
-        info.families = vec![(family.to_owned(), fontdb::Language::English_UnitedStates)];
-        database.push_face_info(info);
-    }
-}
-
-/// One `@font-face` declaration's family and decoded payload.
-#[derive(Debug, PartialEq)]
-struct EmbeddedFace {
-    family: String,
-    media_type: String,
-    bytes: Vec<u8>,
-}
-
-/// Every `@font-face` in the document. Accepts both the official export's
-/// spacing (`font-family: Excalifont; src: url(...);`) and the renderer's
-/// (`font-family:'Excalifont';src:url(...)`).
-fn embedded_faces(svg: &str) -> Vec<EmbeddedFace> {
-    let mut faces = Vec::new();
-    let mut rest = svg;
-    while let Some(start) = rest.find("@font-face") {
-        rest = &rest[start + "@font-face".len()..];
-        let Some(open) = rest.find('{') else { break };
-        let Some(close) = rest[open..].find('}') else {
-            break;
-        };
-        let block = &rest[open + 1..open + close];
-        rest = &rest[open + close..];
-
-        let family = declaration(block, "font-family")
-            .expect("@font-face declares font-family")
-            .trim_matches(|c| c == '\'' || c == '"')
-            .to_owned();
-        let src = declaration(block, "src").expect("@font-face declares src");
-        let url = src
-            .strip_prefix("url(")
-            .and_then(|url| url.split_once(')'))
-            .map(|(url, _)| url)
-            .expect("src is a url()");
-        let (media_type, encoded) = url
-            .strip_prefix("data:")
-            .and_then(|data| data.split_once(";base64,"))
-            .expect("src is a base64 data URL");
-        let bytes = base64::engine::general_purpose::STANDARD
-            .decode(encoded)
-            .expect("font data URL is valid base64");
-        faces.push(EmbeddedFace {
-            family,
-            media_type: media_type.to_owned(),
-            bytes,
-        });
-    }
-    faces
-}
-
-/// The value of one `name: value;` declaration inside a CSS block. A `;` inside
-/// parentheses does not end a declaration, since a data URL carries one.
-fn declaration<'a>(block: &'a str, name: &str) -> Option<&'a str> {
-    let mut depth = 0usize;
-    let mut start = 0usize;
-    let mut entries = Vec::new();
-    for (index, character) in block.char_indices() {
-        match character {
-            '(' => depth += 1,
-            ')' => depth = depth.saturating_sub(1),
-            ';' if depth == 0 => {
-                entries.push(&block[start..index]);
-                start = index + 1;
-            }
-            _ => {}
-        }
-    }
-    entries.push(&block[start..]);
-    entries.into_iter().find_map(|entry| {
-        let (key, value) = entry.split_once(':')?;
-        (key.trim() == name).then(|| value.trim())
-    })
-}
-
-/// Every family named by a `font-family="..."` attribute, split on commas, in
-/// document order and without duplicates.
-fn referenced_families(svg: &str) -> Vec<String> {
-    let mut seen = BTreeSet::new();
-    let mut families = Vec::new();
-    let mut rest = svg;
-    while let Some(start) = rest.find(" font-family=\"") {
-        rest = &rest[start + " font-family=\"".len()..];
-        let Some(end) = rest.find('"') else { break };
-        for family in rest[..end].split(',') {
-            let family = family.trim().trim_matches(|c| c == '\'' || c == '"');
-            if !family.is_empty() && seen.insert(family.to_owned()) {
-                families.push(family.to_owned());
-            }
-        }
-        rest = &rest[end..];
-    }
-    families
-}
-
 #[test]
 fn a_pinned_divergence_holds_its_variant_to_the_exact_measurement() {
     const PINNED_SSIM_BITS: u64 = 0x3fea_c711_a5b4_5706;
@@ -797,55 +617,6 @@ fn a_geometry_defect_pin_holds_the_renderer_geometry_and_requires_the_divergence
     assert!(
         detail.contains("geometry moved") && detail.contains("#172"),
         "{detail}"
-    );
-}
-
-#[test]
-fn embedded_faces_read_the_official_export_and_the_renderer_declarations() {
-    let payload = base64::engine::general_purpose::STANDARD.encode(b"wOF2-bytes");
-    let official = format!(
-        "<style class=\"style-fonts\">\n      @font-face {{ font-family: Excalifont; \
-         src: url(data:font/woff2;base64,{payload}); }}\n      @font-face {{ font-family: \
-         Xiaolai; src: url(data:font/woff2;base64,{payload}); }}\n    </style>"
-    );
-    let renderer = format!(
-        "<style class=\"style-fonts\">@font-face{{font-family:'ExcalidrawRender-9';\
-         src:url(data:font/ttf;base64,{payload})}}</style>"
-    );
-    assert_eq!(
-        embedded_faces(&official),
-        [
-            EmbeddedFace {
-                family: "Excalifont".into(),
-                media_type: "font/woff2".into(),
-                bytes: b"wOF2-bytes".to_vec(),
-            },
-            EmbeddedFace {
-                family: "Xiaolai".into(),
-                media_type: "font/woff2".into(),
-                bytes: b"wOF2-bytes".to_vec(),
-            },
-        ]
-    );
-    assert_eq!(
-        embedded_faces(&renderer),
-        [EmbeddedFace {
-            family: "ExcalidrawRender-9".into(),
-            media_type: "font/ttf".into(),
-            bytes: b"wOF2-bytes".to_vec(),
-        }]
-    );
-    assert!(embedded_faces("<svg><path d=\"M0 0\"/></svg>").is_empty());
-}
-
-#[test]
-fn referenced_families_split_lists_and_keep_document_order() {
-    let svg = "<text font-family=\"Helvetica, Segoe UI Emoji\">a</text>\
-               <text font-family=\"Excalifont\"><tspan font-family=\"Xiaolai\">b</tspan></text>\
-               <text font-family=\"Helvetica\">c</text>";
-    assert_eq!(
-        referenced_families(svg),
-        ["Helvetica", "Segoe UI Emoji", "Excalifont", "Xiaolai"]
     );
 }
 
