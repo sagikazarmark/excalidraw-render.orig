@@ -12,6 +12,17 @@ updates:
         patterns:
           - "*"
 
+  # The reference profile binds the oracle's npm lock and the bundle built from
+  # it (renderer spec 3.2), so a change is a reviewed profile change, never an
+  # automatic one. The ignore also covers security updates: the oracle builds
+  # once and renders committed fixtures with the network off.
+  - package-ecosystem: npm
+    directory: /tools/reference-oracle
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "*"
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

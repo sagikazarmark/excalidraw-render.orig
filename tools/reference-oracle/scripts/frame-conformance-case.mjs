@@ -355,6 +355,10 @@ async function main() {
   const second = await renderOnce(scene, allowedAssets);
   assertRepeatable(first, second);
   const outputRoot = mode === "generate" ? CASE_ROOT : STAGING_ROOT;
+  if (mode === "generate" && existsSync(resolve(CASE_ROOT, "manifest.json"))) {
+    const existing = JSON.parse(readFileSync(resolve(CASE_ROOT, "manifest.json"), "utf8"));
+    if (existing.approval !== null) throw new Error("generation refuses to replace approved evidence");
+  }
   if (mode === "reproduce") rmSync(STAGING_ROOT, { recursive: true, force: true });
   const manifest = writeCase(outputRoot, scenePath, scene, first, second);
   if (mode === "reproduce") {
