@@ -33,6 +33,19 @@ number, not only new metadata.
 - The crates.io token needs the `publish-new` scope for the first publication,
   since none of the crates exist yet.
 
+## Versioning rule for output bytes
+
+A patch release never moves the golden record (`tests/conformance/golden`)
+or a parity pin: it carries fixes whose artifact bytes are unchanged for every
+registered export target, so an application that pinned the previous patch
+sees the same bytes. A change that moves them, including a bump of a crate in
+Dependabot's `output-bytes` group (Krilla, HarfRust, usvg, resvg, tiny-skia,
+skera, the decoders, …), waits for the next minor release, and the minor
+release restages everything it moved once: `just update-golden`, the
+two-sided tolerance exceptions the parity harnesses report, and the
+representative candidate through `restage.yaml`. The golden test classifies
+the change; the review of its diff is the acceptance.
+
 ## 1. Prepare the candidate
 
 1. Bump `version` in `[workspace.package]`, every font crate's `version`
@@ -43,21 +56,25 @@ number, not only new metadata.
 
 ## 2. Verify
 
-On Linux x86-64, in the devenv shell:
+In the devenv shell, on any supported host (the WASM checks need the `browser`
+profile: `devenv --profile browser shell`), or through the `Release` workflow
+from the release commit:
 
 ```sh
 just ci
 devenv --option languages.rust.version:string 1.92.0 shell -- just msrv
-just release
+devenv --profile browser shell -- just release
 cargo publish --workspace --dry-run --locked
 ```
 
-`just ci` is the per-change gate (lint, tests, evidence, packaging), `just msrv`
-the MSRV check, and
-`just release` the release checks (native and experimental-WASM qualification,
-snapshot replay, traces and full equality). The SVG/PDF viewer harnesses run separately;
-see [conformance operations](tests/conformance/README.md). The publish dry run
-packages and compiles every crate against its packaged dependencies.
+`just ci` is the per-change gate (lint, tests, conformance, packaging),
+`just msrv` the MSRV check, and `just release` the release checks: the
+release-tier verifiers and tests, native and experimental-WASM qualification,
+the packaged consumers in WASM and the golden targets in WASM. The PDF and SVG
+viewer harnesses run nightly and on demand (`just pdf-harness`,
+`just svg-harness`); see [conformance operations](tests/conformance/README.md).
+The publish dry run packages and compiles every crate against its packaged
+dependencies.
 
 ## 3. Tag and publish
 
