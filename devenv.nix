@@ -52,25 +52,6 @@ in
   # xtask reads qpdf from QPDF before target/pdf-harness/qpdf.
   env.QPDF = "${qpdf}/bin/qpdf";
 
-  # Browser WASM runs in Firefox, the browser nixpkgs builds for every host
-  # (ADR-0024). The renderer makes no browser calls, so the build is not pinned.
-  env.CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER = "wasm-bindgen-test-runner";
-  env.GECKODRIVER = "${pkgs.geckodriver}/bin/geckodriver";
-  # The qualification corpus runs for minutes in one test.
-  env.WASM_BINDGEN_TEST_TIMEOUT = "1800";
-  # geckodriver otherwise starts whichever Firefox it finds first.
-  env.WASM_BINDGEN_TEST_WEBDRIVER_JSON = toString (
-    pkgs.writeText "webdriver.json" (
-      builtins.toJSON {
-        "moz:firefoxOptions".binary =
-          if pkgs.stdenv.isDarwin then
-            "${pkgs.firefox}/Applications/Firefox.app/Contents/MacOS/firefox"
-          else
-            "${pkgs.firefox}/bin/firefox";
-      }
-    )
-  );
-
   # The PDF harness reads qpdf and PDFium only from target/pdf-harness, so link
   # them there, replacing a release an earlier installer unpacked in their place.
   enterShell = ''
@@ -84,33 +65,22 @@ in
     link_harness_tool ${pdfium} "$harness/pdfium"
   '';
 
-  packages =
-    with pkgs;
-    [
-      just
+  # The base shell runs every per-change gate (`just ci`) and the native release
+  # checks. The browser stack is the `browser` profile below, so a lint job does
+  # not pull Firefox; the maintainer's release tooling is the `maintainer`
+  # profile.
+  packages = with pkgs; [
+    just
 
-      lld
-      python3
-      qpdf
-      wasm-bindgen-cli
-      firefox
-      geckodriver
-      cargo-audit
-      cargo-deny
-      cargo-dist
-      cargo-nextest
-      cargo-release
-      cargo-watch
-      wasm-pack
-      curl
-      unzip
-      gnutar
-      gzip
-    ]
-    ++ lib.optionals pkgs.stdenv.isLinux [
-      pkgs.chromium
-      pkgs.chromedriver
-    ];
+    lld
+    qpdf
+    cargo-deny
+    cargo-nextest
+    curl
+    unzip
+    gnutar
+    gzip
+  ];
 
   languages = {
     rust = {
@@ -125,6 +95,54 @@ in
     javascript = {
       enable = true;
       npm.enable = true;
+    };
+  };
+
+  profiles = {
+    # Browser WASM: the wasm-bindgen test runner and headless Firefox over
+    # geckodriver (ADR-0024). `devenv --profile browser shell` for the WASM
+    # recipes (`just qualification wasm32-unknown-unknown`, `just wasm-packaging`,
+    # `just wasm-snapshot-replay`, `just render-fuzz-wasm`, `just release`).
+    browser.module = {
+      packages =
+        [
+          wasm-bindgen-cli
+          pkgs.firefox
+          pkgs.geckodriver
+        ]
+        ++ lib.optionals pkgs.stdenv.isLinux [
+          pkgs.chromium
+          pkgs.chromedriver
+        ];
+
+      # The renderer makes no browser calls, so the Firefox build is not pinned.
+      env.CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER = "wasm-bindgen-test-runner";
+      env.GECKODRIVER = "${pkgs.geckodriver}/bin/geckodriver";
+      # The qualification corpus runs for minutes in one test.
+      env.WASM_BINDGEN_TEST_TIMEOUT = "1800";
+      # geckodriver otherwise starts whichever Firefox it finds first.
+      env.WASM_BINDGEN_TEST_WEBDRIVER_JSON = toString (
+        pkgs.writeText "webdriver.json" (
+          builtins.toJSON {
+            "moz:firefoxOptions".binary =
+              if pkgs.stdenv.isDarwin then
+                "${pkgs.firefox}/Applications/Firefox.app/Contents/MacOS/firefox"
+              else
+                "${pkgs.firefox}/bin/firefox";
+          }
+        )
+      );
+    };
+
+    # The release and audit tooling the runbook (release.md) uses.
+    maintainer.module = {
+      packages = with pkgs; [
+        cargo-audit
+        cargo-dist
+        cargo-release
+        cargo-watch
+        wasm-pack
+      ];
     };
   };
 }

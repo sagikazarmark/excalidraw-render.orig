@@ -30,11 +30,14 @@ jobs:
           # Some checks read files from earlier commits.
           fetch-depth: 0
 
+      # The browser profile adds the wasm-bindgen runner and headless Firefox
+      # for the WASM half of the release checks.
       - name: Set up devenv
         uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
         with:
           cachix-cache: rust-projects
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          profile: browser
 
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3

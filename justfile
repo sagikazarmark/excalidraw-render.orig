@@ -1,4 +1,7 @@
-# The gates, run in the devenv shell (ADR-0024).
+# The gates, run in the devenv shell (ADR-0024). The base shell runs every
+# per-change gate and the native release checks; the WASM recipes need the
+# `browser` profile (`devenv --profile browser shell`), which adds the
+# wasm-bindgen runner and headless Firefox.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
