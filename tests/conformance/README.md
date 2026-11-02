@@ -344,8 +344,14 @@ the corpus `tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qual
 classifies each of the 231 sources — the 230 official WOFF2 chunks and the
 Noto Emoji fallback face (#150) — into the eight qualification classes, and
 every successful cell's subset is rendered beside its complete source in
-pinned Chromium and the controlled pure-Rust viewer, one semantic execution
-per distinct subset identity. Both viewers admit only WOFF2, so the source
+pinned Chromium and the controlled pure-Rust viewer, one execution per
+distinct glyph set. A glyph set is what the viewers render: the source font's
+identity (which names its bytes' digest) and the ordered scalars set in it,
+keyed by the SHA-256 of both. The executions and both viewer reports are keyed
+by glyph set; each execution records the semantic subset identity and the
+subset's WOFF2, sfnt, SVG and asset digests as fields. The qualification was
+re-recorded under this key on 2026-11-02 (Docker Desktop with Rosetta on Apple
+silicon): every result of both viewers equals the one it replaced. Both viewers admit only WOFF2, so the source
 role of an sfnt source is the subsetter's own WOFF2 encoding of the
 manifested face; the corpus records that encoding's digest as
 `viewerSourceWoff2Sha256` beside the sfnt's `sourceSha256`, the pure-Rust
@@ -388,6 +394,15 @@ harness script. Its paths and digests describe the capture, but
 verification does not require those source files to exist or match today's
 checkout. A source-only refactor therefore needs no manifest refresh. Generation
 still records the source identities actually used.
+
+A subset profile change that moves only the subsets' bytes (a profile token
+rename, a subsetter bump that leaves the outlines alone) is adopted without a
+viewer run: regenerate the corpus, then `just font-subset-rebind`
+materializes fresh viewer inputs and `conformance rebind-svg-font-subsets`
+rewrites each execution's subset fields, the input manifest digest and the
+subset profile descriptor. The glyph sets and the source fields must not move,
+so neither viewer report changes; the viewers' rasters are compared again only
+when the qualification is regenerated.
 
 After subsetter changes, run the corpus test above. After changing viewer adapters
 or input generation, use `bash tools/svg-font-subset-qualification.sh reproduce`

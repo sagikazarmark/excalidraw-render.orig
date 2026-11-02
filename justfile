@@ -225,6 +225,13 @@ viewer-evidence kind mode="reproduce":
     fi
     bash "$script" "{{ mode }}"
 
+# After a subset-only profile change, rebind the font-subset qualification's subset fields to fresh viewer inputs.
+font-subset-rebind: xtask
+    cargo test --locked --release -p excalidraw-render --lib \
+        render::font_subset_qualification::materialize_complete_font_subset_viewer_inputs \
+        -- --ignored --exact
+    target/debug/xtask conformance rebind-svg-font-subsets target/svg-font-subset-viewer-qualification/inputs.json
+
 # Verify or update the scene or frame reference profile in the pinned oracle container.
 reference-profile mode="verify" profile="scene":
     #!/usr/bin/env bash

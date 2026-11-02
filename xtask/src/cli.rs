@@ -279,6 +279,11 @@ pub enum ConformanceCommand {
         /// Pure-Rust viewer report.
         pure_rust: String,
     },
+    /// Rebind the SVG font subset qualification to the current subsets.
+    RebindSvgFontSubsets {
+        /// Freshly materialized viewer input manifest.
+        inputs: String,
+    },
     /// Verify canonical PDF viewer and structural qualification.
     VerifyPdfViewers,
     /// Refresh the Rust PDFium runtime record.
@@ -611,6 +616,7 @@ mod tests {
                 "verify-svg-font-subsets",
                 "generate-svg-font-subset-rust-report",
                 "materialize-svg-font-subset-evidence",
+                "rebind-svg-font-subsets",
                 "verify-pdf-viewers",
                 "refresh-pdfium-runtime",
                 "generate",

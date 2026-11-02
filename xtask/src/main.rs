@@ -237,6 +237,7 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
             svg_font_subsets::materialize(&inputs, &chromium, &pure_rust)?;
             println!("materialized SVG font subset viewer evidence");
         }
+        C::RebindSvgFontSubsets { inputs } => svg_font_subsets::rebind(&inputs)?,
         C::VerifyPdfViewers => {
             pdf_viewers::verify()?;
             println!("verified canonical PDF viewer and structural qualification");

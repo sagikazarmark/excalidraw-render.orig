@@ -21,7 +21,7 @@ pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> 
         .map_err(|error| format!("failed to read viewer inputs {inputs}: {error}"))?;
     let inputs: Value = serde_json::from_slice(&bytes)
         .map_err(|error| format!("invalid viewer input manifest: {error}"))?;
-    if inputs["schema"] != json!("excalidraw-render/svg-font-subset-viewer-inputs/v1") {
+    if inputs["schema"] != json!("excalidraw-render/svg-font-subset-viewer-inputs/v2") {
         return Err("unsupported SVG font subset viewer input manifest".to_owned());
     }
     let cases = inputs["cases"]
@@ -72,21 +72,17 @@ pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> 
     let report = json!({
         "environment": environment,
         "fresh_state_per_role": true,
-        "inputs_sha256": sha256(&bytes),
         "results": results,
         "samples_per_role": 2,
-        "schema": "excalidraw-render/svg-font-subset-viewer-report/v1",
+        "schema": "excalidraw-render/svg-font-subset-viewer-report/v2",
         "viewer": "pure_rust",
     });
     write_json(&output_path, &report)
 }
 
 fn run_case(case: &Value, viewer: &Path, staging: &Path) -> Result<Value, String> {
-    let id = string(
-        &case["semantic_subset_identity"],
-        "semantic subset identity",
-    )?;
-    verify_sha256(id, "semantic subset identity")?;
+    let id = string(&case["glyph_set"], "glyph set")?;
+    verify_sha256(id, "glyph set")?;
     let dimensions = case["dimensions"].clone();
     let expected_length = dimensions["byte_length"]
         .as_u64()
@@ -174,7 +170,7 @@ fn run_case(case: &Value, viewer: &Path, staging: &Path) -> Result<Value, String
         "compatibility_record": Value::Null,
         "decision": if passed { "pass" } else { "fail" },
         "dimensions": dimensions,
-        "semantic_subset_identity": id,
+        "glyph_set": id,
         "source_raster_sha256": role_hashes[0][0],
         "source_run_sha256": role_hashes[0],
         "source_semantic_sha256": sha256(&source_semantic_bytes),

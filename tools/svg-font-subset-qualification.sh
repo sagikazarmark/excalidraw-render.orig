@@ -45,7 +45,7 @@ docker run --rm --network none --platform linux/amd64 \
   --env CARGO_HOME=/usr/local/cargo \
   --env CARGO_TARGET_DIR=/workspace/target/svg-font-subset-rust-1.97.1 \
   --mount "type=bind,src=${REPO_ROOT},dst=/workspace" \
-  --mount "type=bind,src=${HOME}/.cargo/registry,dst=/usr/local/cargo/registry,readonly" \
+  --mount "type=bind,src=${CARGO_HOME:-${HOME}/.cargo}/registry,dst=/usr/local/cargo/registry,readonly" \
   --workdir /workspace \
   "${RUST_IMAGE}" bash -c \
   'cargo build --release --locked -p xtask && cargo build --release --locked --manifest-path tools/svg-viewer-rust/Cargo.toml && target/svg-font-subset-rust-1.97.1/release/xtask conformance generate-svg-font-subset-rust-report target/svg-font-subset-viewer-qualification/inputs.json target/svg-font-subset-rust-1.97.1/release/excalidraw-render-svg-viewer target/svg-font-subset-viewer-qualification/pure-rust-report.json'

@@ -42,7 +42,7 @@ async function main() {
   const outputPath = repositoryOutputPath(outputArgument);
   const inputBytes = readFileSync(inputsPath);
   const inputs = JSON.parse(inputBytes.toString("utf8"));
-  if (inputs.schema !== "excalidraw-render/svg-font-subset-viewer-inputs/v1"
+  if (inputs.schema !== "excalidraw-render/svg-font-subset-viewer-inputs/v2"
       || !Array.isArray(inputs.cases) || inputs.cases.length !== EXECUTIONS) {
     throw new Error("invalid SVG font subset viewer input manifest");
   }
@@ -54,8 +54,8 @@ async function main() {
   const subsetRepeat = await runRole(inputs.cases, "subset", 1);
   const results = inputs.cases.map((entry, index) => {
     const roles = [source[index], sourceRepeat[index], subset[index], subsetRepeat[index]];
-    if (roles.some((result) => result.id !== entry.semantic_subset_identity)) {
-      throw new Error(`viewer result order diverged for ${entry.semantic_subset_identity}`);
+    if (roles.some((result) => result.id !== entry.glyph_set)) {
+      throw new Error(`viewer result order diverged for ${entry.glyph_set}`);
     }
     const sourceDeterministic = source[index].rasterSha256 === sourceRepeat[index].rasterSha256
       && source[index].semanticSha256 === sourceRepeat[index].semanticSha256;
@@ -78,7 +78,7 @@ async function main() {
       compatibility_record: null,
       decision: passed ? "pass" : "fail",
       dimensions: entry.dimensions,
-      semantic_subset_identity: entry.semantic_subset_identity,
+      glyph_set: entry.glyph_set,
       source_raster_sha256: source[index].rasterSha256,
       source_run_sha256: [source[index].rasterSha256, sourceRepeat[index].rasterSha256],
       source_semantic_sha256: source[index].semanticSha256,
@@ -100,10 +100,9 @@ async function main() {
       timezone: "UTC",
     },
     fresh_state_per_role: true,
-    inputs_sha256: sha256(inputBytes),
     results,
     samples_per_role: 2,
-    schema: "excalidraw-render/svg-font-subset-viewer-report/v1",
+    schema: "excalidraw-render/svg-font-subset-viewer-report/v2",
     viewer: "chromium",
   };
   if (results.some((result) => result.decision !== "pass")) {
@@ -309,7 +308,7 @@ async function renderCase(browser, entry, role) {
     const platformFonts = await auditInlineSvgFont(browser, svg);
     semantic.platform_glyph_counts = platformFonts.map((font) => font.glyphCount);
     return {
-      id: entry.semantic_subset_identity,
+      id: entry.glyph_set,
       rasterSha256: sha256(decoded.rgba),
       semantic,
       semanticSha256: sha256(Buffer.from(canonicalJson(semantic))),
@@ -392,8 +391,8 @@ async function auditPlatformFonts(session) {
 }
 
 function validateCase(entry) {
-  if (!/^[0-9a-f]{64}$/u.test(entry.semantic_subset_identity)) {
-    throw new Error("invalid semantic subset identity");
+  for (const key of ["glyph_set", "semantic_subset_identity"]) {
+    if (!/^[0-9a-f]{64}$/u.test(entry[key])) throw new Error(`invalid ${key}`);
   }
   for (const role of ["source", "subset"]) {
     const svg = readFileSync(repositoryInputPath(entry[`${role}_svg`]));
