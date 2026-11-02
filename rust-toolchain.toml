@@ -1,0 +1,7 @@
+# The toolchain the gates build with (ADR-0024) and the release binaries ship
+# with. `devenv.nix` reads the channel from here; rustup reads this file
+# directly, so dist's release workflow builds with the same compiler. Only the
+# channel is set: the pinned Rust image the viewer qualification runs offline
+# has this toolchain and nothing more to install.
+[toolchain]
+channel = "1.97.1"

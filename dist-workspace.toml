@@ -1,0 +1,48 @@
+[workspace]
+members = ["cargo:."]
+
+# dist builds and publishes the `excalidraw-render` binaries when a `vX.Y.Z`
+# tag is pushed (docs/development/releasing.md). `.github/workflows/release.yml`
+# is generated from this file: change it here and run `dist generate`.
+[dist]
+# The preferred dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.33.1"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = ["shell"]
+# Target platforms to build apps for (Rust target-triple syntax). Only
+# x86_64-unknown-linux-gnu is release-qualified (ADR-0006); the others are
+# prebuilt for convenience.
+targets = [
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "aarch64-unknown-linux-musl",
+    "x86_64-apple-darwin",
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+]
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
+# Whether to install an updater program
+install-updater = false
+unix-archive = ".tar.gz"
+# Build only the CLI, not `--workspace`: xtask and the comparator are not
+# shipped.
+precise-builds = true
+# The CLI's README and LICENSE-BUNDLE.txt are auto-included from its package
+# directory; the code licenses live at the workspace root.
+include = ["LICENSE-MIT", "LICENSE-APACHE"]
+# Deploy the side-by-side demo to GitHub Pages once the release is out.
+post-announce-jobs = ["./pages"]
+
+[dist.github-custom-job-permissions]
+pages = { contents = "read", pages = "write", id-token = "write" }
+
+# The actions release.yml uses, pinned to commits like every other workflow.
+# Dependabot skips release.yml, since `dist plan` rejects a workflow that differs
+# from the generated one; move these when dist moves its action versions.
+[dist.github-action-commits]
+"actions/checkout" = "d23441a48e516b6c34aea4fa41551a30e30af803"          # v6.1.0
+"actions/upload-artifact" = "cf430e030ddbb5b0abf93d22962f4752f3646cd9"   # v7.0.2
+"actions/download-artifact" = "9000827ccba6bdab643e8b6fd33ac0654aef8333" # v8.0.2

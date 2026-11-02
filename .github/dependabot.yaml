@@ -55,10 +55,16 @@ updates:
     ignore:
       - dependency-name: "*"
 
+  # dist generates release.yml from dist-workspace.toml, whose
+  # `github-action-commits` pins its actions, and `dist plan` fails the
+  # workflow when the file differs from what dist generates. An update there
+  # goes through `dist generate`, not Dependabot.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: daily
+    exclude-paths:
+      - .github/workflows/release.yml
     groups:
       github-actions:
         patterns:

@@ -107,9 +107,10 @@ These affect unusual or malformed embedded images only.
 
 ## Platforms and reproducibility
 
-- Linux x86-64 GNU is the release-qualified native target. The prebuilt binary's
-  glibc requirement follows the pinned release builder and is recorded with its archive.
-- Other operating systems and architectures are not release-qualified.
+- Linux x86-64 GNU is the release-qualified native target. Its prebuilt binary
+  is built on Ubuntu 22.04 (glibc 2.35); the musl archives are statically linked.
+- Other operating systems and architectures are not release-qualified,
+  including the prebuilt Linux ARM64, Linux musl and macOS archives.
 - Later 0.x releases may change rendering. Pin the renderer version, dependencies,
   and build environment when preserving exact output is important.
 - Browser WASM is experimental. Four PNG cases differ from native by one channel

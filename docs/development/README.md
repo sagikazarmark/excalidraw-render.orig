@@ -52,7 +52,8 @@ published lock. `serde_json` is a test-only dependency of the library.
 
 The published crates declare `rust-version = "1.92"`, the oldest compiler they
 support; `just msrv` compiles the renderer and CLI with it. The gates otherwise
-build with the toolchain `devenv.nix` pins (1.97.1).
+build with the toolchain `rust-toolchain.toml` pins (1.97.1), which the devenv
+shell provides and the release workflow builds the shipped binaries with.
 
 ## Run
 

@@ -15,3 +15,7 @@ include = ["/src/", "/fonts/", "/LICENSE-BUNDLE.txt", "/README.md"]
 
 [lints]
 workspace = true
+
+# cargo-release keeps the Excalidraw build metadata when it bumps the version.
+[package.metadata.release]
+metadata = "persistent"

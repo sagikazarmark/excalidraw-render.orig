@@ -23,8 +23,9 @@ cargo install --locked excalidraw-render-cli
 ```
 
 This installs the `excalidraw-render` binary (Rust 1.92 or newer). Each GitHub
-release also carries a prebuilt Linux x86-64 (glibc) archive with a SHA-256
-checksum.
+release also carries prebuilt archives, each with a SHA-256 checksum, and a
+shell installer for Linux (x86-64 and ARM64, glibc and musl) and macOS (x86-64
+and ARM64); only Linux x86-64 (glibc) is release-qualified.
 
 ## Usage
 

@@ -176,26 +176,6 @@ update-golden:
     cargo test --locked -p excalidraw-render --test golden_native \
         || cargo test --locked -p excalidraw-render --test golden_native
 
-# Build the reproducible CLI release archive and its SHA-256 file into dist/.
-release-archive version: require-native
-    #!/usr/bin/env bash
-    set -euo pipefail
-    crate="$(awk -F'"' '/^version = /{print $2; exit}' Cargo.toml)"
-    if [[ "$crate" != "{{ version }}" ]]; then
-        echo "archive version {{ version }} does not match the workspace version $crate" >&2
-        exit 1
-    fi
-    cargo build --locked --release -p excalidraw-render-cli --target-dir target
-    name="excalidraw-render-{{ version }}-{{ native }}"
-    rm -rf "dist/$name" "dist/$name.tar.gz" "dist/$name.tar.gz.sha256"
-    mkdir -p "dist/$name"
-    cp target/release/excalidraw-render README.md LICENSE-MIT LICENSE-APACHE \
-        crates/excalidraw-render-cli/LICENSE-BUNDLE.txt "dist/$name/"
-    tar -C dist --sort=name --owner=0 --group=0 --numeric-owner --mode=u+rwX,go+rX,go-w \
-        --mtime=@0 -cf - "$name" | gzip -9n > "dist/$name.tar.gz"
-    rm -rf "dist/$name"
-    cd dist && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
-
 # Restaging. These recipes regenerate committed evidence after a change that moves
 # it. They write candidates for review; nothing here edits a manifest or the
 # registry, and CI exports their output as artifacts (docs/development/ci.md).
@@ -351,9 +331,8 @@ render-fuzz-wasm:
 xtask:
     cargo build --locked -q -p xtask
 
-# Refuse to produce the native release archive or the representative candidate on a
-# host that is not the supported native target: the archive ships that target's
-# binary, and the candidate's pinned images are linux/amd64.
+# Refuse to produce the representative candidate on a host that is not the
+# supported native target: the candidate's pinned images are linux/amd64.
 [private]
 require-native:
     [[ "{{ host }}" == "{{ native }}" ]] || { echo "this needs {{ native }}, not {{ host }}" >&2; exit 1; }

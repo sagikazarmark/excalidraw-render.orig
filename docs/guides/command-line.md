@@ -10,8 +10,8 @@ excalidraw-render frames [OPTIONS] <INPUT> -o <DIRECTORY> --format <svg|png|pdf>
 excalidraw-render frames [OPTIONS] <INPUT> --list
 ```
 
-Install it with `cargo install --locked excalidraw-render-cli`, or download the
-Linux x86-64 archive from a GitHub release; [Getting started](getting-started.md)
+Install it with `cargo install --locked excalidraw-render-cli`, or download a
+prebuilt archive or the shell installer from a GitHub release; [Getting started](getting-started.md)
 walks through a first render.
 
 ## Choose the format
