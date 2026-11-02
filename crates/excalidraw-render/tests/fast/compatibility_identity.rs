@@ -4,8 +4,7 @@ use excalidraw_render::{
     RequestError, SceneDocument, SceneParseError,
 };
 
-const REVISION_1_REFERENCE_PROFILE_DIGEST: &str =
-    "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
+use crate::common::reference_profile_digest;
 
 #[test]
 fn a_renderer_exposes_the_reference_profile_it_reproduces() {
@@ -19,7 +18,7 @@ fn a_renderer_exposes_the_reference_profile_it_reproduces() {
         assert_eq!(identity.excalidraw_release(), "v0.18.1");
         assert_eq!(
             identity.reference_profile_digest(),
-            REVISION_1_REFERENCE_PROFILE_DIGEST
+            reference_profile_digest()
         );
 
         let frame = renderer.frame_profile_identity();
@@ -47,7 +46,7 @@ fn reference_profile_identity_is_serializable() {
                 "\"excalidraw_release\":\"v0.18.1\",",
                 "\"reference_profile_digest\":\"{}\"}}"
             ),
-            REVISION_1_REFERENCE_PROFILE_DIGEST
+            reference_profile_digest()
         )
     );
 }

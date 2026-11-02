@@ -5,8 +5,6 @@ use excalidraw_render::{
 
 const EMPTY_SCENE: &[u8] =
     br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}}"#;
-const PROFILE_DIGEST: &str =
-    "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 
 #[test]
 fn valid_empty_scene_renders_a_complete_svg_artifact() {
@@ -109,7 +107,10 @@ fn assert_outcome_contract(outcome: &RenderOutcome, format: OutputFormat) {
         CompatibilityRevision::REVISION_1
     );
     assert_eq!(profile.excalidraw_release(), "v0.18.1");
-    assert_eq!(profile.reference_profile_digest(), PROFILE_DIGEST);
+    assert_eq!(
+        profile.reference_profile_digest(),
+        crate::common::reference_profile_digest()
+    );
     assert!(outcome.report().is_empty());
 }
 

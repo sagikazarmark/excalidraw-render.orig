@@ -66,3 +66,12 @@ pub fn read_json(path: &Path) -> Value {
 pub fn lower_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
+
+/// The revision-1 scene reference profile's digest, `sha256:<hex>`, as its
+/// sidecar names it: the one place a profile update changes it.
+pub fn reference_profile_digest() -> String {
+    format!(
+        "sha256:{}",
+        include_str!("../../../../tests/oracle/reference-profiles/revision-1.sha256").trim()
+    )
+}

@@ -186,7 +186,15 @@ The reference profile binds the oracle's npm lock and the bundle built from it
 (renderer spec 3.2), so Dependabot does not update `tools/reference-oracle`. A
 dependency change there is a reviewed profile change: regenerate the profile
 with `just reference-profile update` and carry the new digest through the
-revision-1 records that bind it. Reproduction compares the oracle's artifacts
+revision-1 records that bind it. No verifier, generator or test repeats the
+digest of the scene profile, the frame profile, the asset manifest or the scene
+surface: xtask (`revision::Reference`), the oracle's scripts
+(`scripts/revision.mjs`) and the renderer's tests read each from its `.sha256`
+sidecar after checking the file still has it, and the renderer reads the
+generated catalog. So `update` writing the sidecar is the only hand edit; the
+rest is regenerated evidence (`cargo run -p xtask -- catalog materialize`,
+`just reference-cases generate --supersede`, `just update-golden`, and the
+records that bind those). Reproduction compares the oracle's artifacts
 and its run provenance; the generator and runner descriptors in that
 provenance are historical, compared by path only.
 

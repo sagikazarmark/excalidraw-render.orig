@@ -12,7 +12,6 @@ use crate::conformance::{canonical_bytes, read_repository_file, repo_root, sha25
 const INVENTORY: &str = "tests/conformance/coverage/inventory.json";
 const REQUIREMENTS: &str = "tests/conformance/coverage/requirements.json";
 const REGISTRY: &str = "tests/conformance/cases/registry.json";
-const SURFACE: &str = "tests/oracle/scene-surfaces/revision-1.json";
 const INVENTORY_SCHEMA: &str = "excalidraw-render/coverage-inventory/v1";
 
 mod layers;
@@ -217,10 +216,10 @@ fn derive_inventory_with_catalog(
         return Err("coverage requirements must retain the complete requirement set".into());
     }
     let registry: Value = parse(&read(REGISTRY)?)?;
-    let surface: Value = parse(&read(SURFACE)?)?;
+    let surface: Value = parse(&read(&crate::revision::Reference::SceneSurface.path())?)?;
     let mut sources = vec![
         descriptor(REGISTRY)?,
-        descriptor(SURFACE)?,
+        descriptor(&crate::revision::Reference::SceneSurface.path())?,
         requirements_descriptor,
         catalog.clone(),
     ];

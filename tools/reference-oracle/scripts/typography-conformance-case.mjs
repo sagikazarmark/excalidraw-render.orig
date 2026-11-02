@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 import { canonicalize } from "./canonical-json.mjs";
+import { referenceDigest } from "./revision.mjs";
 import { carriedApproval, generationArgs } from "./generation-guard.mjs";
 
 // Standalone generator for the focused typography case.
@@ -92,9 +93,9 @@ const OPTIONS = {
 const EMPTY_REPORT = Buffer.from('{"schema_version":1,"diagnostics":[]}', "utf8");
 
 const ORIGIN = "http://reference.invalid";
-const PROFILE_DIGEST = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
-const ASSET_DIGEST = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const SURFACE_DIGEST = "93029f2dab63c203dee69da4497ea4c2988a72d73f2a0017e62c529a4caac202";
+const PROFILE_DIGEST = referenceDigest("profile");
+const ASSET_DIGEST = referenceDigest("assetManifest");
+const SURFACE_DIGEST = referenceDigest("sceneSurface");
 const CONTAINER_IMAGE = "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9";
 const BROWSER_VERSION = "149.0.7827.55";
 const BROWSER_ARGUMENTS = [
@@ -564,13 +565,6 @@ async function main() {
     cwd: ORACLE_ROOT,
     stdio: "inherit",
   });
-  if (readFileSync(resolve(PROFILE_ROOT, "revision-1.sha256"), "ascii").trim() !== PROFILE_DIGEST
-      || readFileSync(resolve(PROFILE_ROOT, "revision-1-assets.sha256"), "ascii").trim() !== ASSET_DIGEST) {
-    throw new Error("reference profile identities do not match compatibility revision 1");
-  }
-  if (readFileSync(resolve(REPO_ROOT, "tests/oracle/scene-surfaces/revision-1.sha256"), "ascii").trim() !== SURFACE_DIGEST) {
-    throw new Error("scene-surface identity does not match compatibility revision 1");
-  }
   const assetManifest = JSON.parse(readFileSync(resolve(PROFILE_ROOT, "revision-1-assets.json"), "utf8"));
   const assetsByPath = new Map(assetManifest.officialPackage.assets.map((asset) => [`/${asset.path}`, asset]));
   const allowedAssets = new Set(assetsByPath.keys());

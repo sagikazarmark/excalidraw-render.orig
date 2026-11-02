@@ -14,8 +14,6 @@ const MANIFEST_DIGEST_PATH: &str =
     "tests/conformance/svg-viewer-qualification/rectangle-outline/manifest.sha256";
 const PROFILE_SCHEMA_ID: &str = "excalidraw-render/conformance-svg-viewer-profile/v1";
 const QUALIFICATION_SCHEMA_ID: &str = "excalidraw-render/conformance-svg-viewer-qualification/v1";
-const REFERENCE_PROFILE_DIGEST: &str =
-    "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 
 pub fn verify() -> Result<(), String> {
     let manifest_bytes = fs::read(repo_root().join(MANIFEST_PATH))
@@ -90,7 +88,8 @@ fn verify_profile(descriptor: &Value, viewer: &str) -> Result<(), String> {
     let profile: Value = serde_json::from_slice(&bytes)
         .map_err(|error| format!("invalid {viewer} viewer profile: {error}"))?;
     verify_schema(&profile, PROFILE_SCHEMA_ID)?;
-    if profile["identity"]["reference_profile_digest"] != json!(REFERENCE_PROFILE_DIGEST)
+    if profile["identity"]["reference_profile_digest"]
+        != json!(crate::revision::Reference::Profile.prefixed_digest()?)
         || profile["qualification"]["case_id"] != json!("focused.rectangle-outline.v1")
         || profile["qualification"]["declared_font_faces"] != json!(0)
         || profile["qualification"]["declared_image_assets"] != json!(0)

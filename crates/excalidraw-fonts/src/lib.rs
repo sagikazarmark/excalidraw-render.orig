@@ -382,6 +382,8 @@ pub struct RevisionCatalog {
     pub source_commit: &'static str,
     pub npm_integrity: &'static str,
     pub reference_profile_digest: &'static str,
+    /// The frame-export reference profile's digest, `sha256:<hex>`.
+    pub frame_reference_profile_digest: &'static str,
     pub catalog_sha256: &'static str,
     pub catalog_json: &'static [u8],
     pub incorporated_artifacts: &'static [IncorporatedArtifact],

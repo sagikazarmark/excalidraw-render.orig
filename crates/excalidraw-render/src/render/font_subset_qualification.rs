@@ -17,8 +17,11 @@ const CORPUS_PATH: &str = concat!(
 const PACKAGED_CORPUS_PATH: &str =
     "crates/excalidraw-render/tests/qualification/font-subset-corpus.json";
 const CORPUS_SCHEMA: &str = "excalidraw-render/svg-font-subset-qualification-corpus/v1";
-const SOURCE_MANIFEST_SHA256: &str =
-    "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
+/// The revision's asset manifest digest, as its sidecar names it.
+const SOURCE_MANIFEST_SIDECAR: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../tests/oracle/reference-profiles/revision-1-assets.sha256"
+));
 const PROFILE_SHA256: &str = "0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4";
 /// Per-cell trace digests are not pinned: cross-target equality of the
 /// aggregate `resourceTracesSha256` is the determinism property (ADR-0002).
@@ -327,7 +330,10 @@ pub(crate) fn assert_complete_font_subset_qualification_corpus() {
     assert_eq!(corpus.schema, CORPUS_SCHEMA);
     assert_eq!(corpus.compatibility_revision, 1);
     assert_eq!(corpus.originating_issue, 98);
-    assert_eq!(corpus.source_manifest_sha256, SOURCE_MANIFEST_SHA256);
+    assert_eq!(
+        corpus.source_manifest_sha256,
+        SOURCE_MANIFEST_SIDECAR.trim()
+    );
     assert_eq!(corpus.subset_profile_sha256, PROFILE_SHA256);
     assert_eq!(corpus.classes.len(), CLASS_IDS.len());
     for (definition, expected) in corpus.classes.iter().zip(CLASS_IDS) {
@@ -1139,7 +1145,7 @@ fn build_corpus() -> Corpus {
         schema: CORPUS_SCHEMA.to_owned(),
         compatibility_revision: 1,
         originating_issue: 98,
-        source_manifest_sha256: SOURCE_MANIFEST_SHA256.to_owned(),
+        source_manifest_sha256: SOURCE_MANIFEST_SIDECAR.trim().to_owned(),
         subset_profile_sha256: PROFILE_SHA256.to_owned(),
         classes: class_definitions(),
         sources,

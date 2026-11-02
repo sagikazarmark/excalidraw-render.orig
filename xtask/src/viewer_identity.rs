@@ -12,7 +12,6 @@ use serde_json::Value;
 
 use crate::conformance::{repo_root, sha256};
 
-const REFERENCE_PROFILE_PATH: &str = "tests/oracle/reference-profiles/revision-1.json";
 pub(crate) const PDFIUM_PROFILE_PATH: &str =
     "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json";
 
@@ -34,7 +33,7 @@ pub(crate) fn sealed_profile(path: &str) -> Result<Value, String> {
 /// The scene reference profile, which `conformance verify-all` binds to every
 /// case.
 pub(crate) fn reference_profile() -> Result<Value, String> {
-    sealed_profile(REFERENCE_PROFILE_PATH)
+    sealed_profile(&crate::revision::Reference::Profile.path())
 }
 
 /// The pinned reference container's runtime, as the reference profile

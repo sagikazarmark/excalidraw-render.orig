@@ -13,6 +13,7 @@ mod demo;
 mod pdf_harness;
 mod pdf_viewers;
 mod representative;
+mod revision;
 mod sfnt;
 mod svg_font_subset_runner;
 mod svg_font_subsets;

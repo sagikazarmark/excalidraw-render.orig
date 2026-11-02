@@ -16,8 +16,6 @@ const MANIFEST_DIGEST_PATH: &str =
 const QUALIFICATION_SCHEMA_ID: &str = "excalidraw-render/conformance-pdf-viewer-qualification/v1";
 const VIEWER_PROFILE_SCHEMA_ID: &str = "excalidraw-render/conformance-pdf-viewer-profile/v1";
 const STRUCTURE_PROFILE_SCHEMA_ID: &str = "excalidraw-render/conformance-pdf-structure-profile/v1";
-const REFERENCE_PROFILE_DIGEST: &str =
-    "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 pub(crate) const COMPARATOR_DIGEST: &str =
     "4cb3f236ce675abb9ba566365322c9602f20a40e8a42c196df8a02be3a677588";
 const REFERENCE_RASTER_DIGEST: &str =
@@ -232,7 +230,8 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
     let profile: Value = serde_json::from_slice(&bytes)
         .map_err(|error| format!("invalid {viewer} PDF viewer profile: {error}"))?;
     verify_declared_schema(&profile, VIEWER_PROFILE_SCHEMA_ID)?;
-    if profile["identity"]["reference_profile_digest"] != json!(REFERENCE_PROFILE_DIGEST)
+    if profile["identity"]["reference_profile_digest"]
+        != json!(crate::revision::Reference::Profile.prefixed_digest()?)
         || profile["qualification"]["case_id"] != json!("focused.rectangle-outline.v1")
         || profile["qualification"]["dpi"] != json!(96)
         || profile["settings"]["dimensions"]["dpi"] != json!("96")
@@ -393,7 +392,8 @@ fn verify_structure_profile(descriptor: &Value) -> Result<(), String> {
     verify_declared_schema(&profile, STRUCTURE_PROFILE_SCHEMA_ID)?;
     if profile["id"] != json!("canonical-pdf-structure.qpdf.v1")
         || profile["identity"]["parser"] != json!("qpdf")
-        || profile["identity"]["reference_profile_digest"] != json!(REFERENCE_PROFILE_DIGEST)
+        || profile["identity"]["reference_profile_digest"]
+            != json!(crate::revision::Reference::Profile.prefixed_digest()?)
         || profile["qualification"]["case_id"] != json!("focused.rectangle-outline.v1")
         || runtime_record(&profile, "python")?.is_empty()
     {

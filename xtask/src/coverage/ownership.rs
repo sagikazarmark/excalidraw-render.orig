@@ -158,8 +158,8 @@ fn catalog_from_inventory(
     policy
         .rows
         .extend(png_profiles::rows(&read(png_profiles::PATH)?)?);
-    let surface: Value = parse(&read(SURFACE)?)?;
-    let surface_descriptor = descriptor(SURFACE)?;
+    let surface: Value = parse(&read(&crate::revision::Reference::SceneSurface.path())?)?;
+    let surface_descriptor = descriptor(&crate::revision::Reference::SceneSurface.path())?;
     let mut obligations = Vec::new();
     for row in &inventory.coverage {
         if row.id.starts_with("case-label:") {
