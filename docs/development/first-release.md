@@ -55,14 +55,6 @@ Platforms:
       and the pinned toolchain (devenv does not run on Windows).
 - [ ] State the Windows status in the README.
 
-The JSON report and the public API:
-
-- [ ] Restage the representative candidate as
-      `stage4-frames-text-assets-v30` through `restage.yaml`: the CLI no
-      longer takes `--compatibility-revision` and its reports changed shape,
-      so v29's native capture no longer replays. Register v30 in place of v29
-      and rebind its ownership record.
-
 Compatibility revisions:
 
 - [ ] Record in spec § 3 whether a reference-profile bump after publication

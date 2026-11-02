@@ -2,9 +2,9 @@
   "schema": "excalidraw-render/representative-corpus-adapter/v1",
   "cases": [
     {
-      "id": "representative.stage4-frames-text-assets.v29",
-      "directory": "tests/conformance/candidates/stage4-frames-text-assets-v29",
-      "status": "stage4-v29-subset-profile-successor",
+      "id": "representative.stage4-frames-text-assets.v30",
+      "directory": "tests/conformance/candidates/stage4-frames-text-assets-v30",
+      "status": "stage4-v30-cli-report-successor",
       "formats": [
         "svg",
         "png",
@@ -15,9 +15,9 @@
         "interaction:frames-text-assets"
       ],
       "execution_keys": [
-        "representative.stage4-frames-text-assets.v29:default:svg",
-        "representative.stage4-frames-text-assets.v29:default:png",
-        "representative.stage4-frames-text-assets.v29:default:pdf"
+        "representative.stage4-frames-text-assets.v30:default:svg",
+        "representative.stage4-frames-text-assets.v30:default:png",
+        "representative.stage4-frames-text-assets.v30:default:pdf"
       ],
       "consumer": [
         "cargo",
@@ -29,7 +29,7 @@
         "--",
         "conformance",
         "candidate-verify",
-        "tests/conformance/candidates/stage4-frames-text-assets-v29"
+        "tests/conformance/candidates/stage4-frames-text-assets-v30"
       ],
       "exceptions": [
         {
@@ -40,7 +40,7 @@
             200,
             120
           ],
-          "case_id": "representative.stage4-frames-text-assets.v29",
+          "case_id": "representative.stage4-frames-text-assets.v30",
           "comparison_id": "pdf-pdfium",
           "format": "pdf",
           "max_changed_pixels": 118,
@@ -65,7 +65,7 @@
             124,
             41
           ],
-          "case_id": "representative.stage4-frames-text-assets.v29",
+          "case_id": "representative.stage4-frames-text-assets.v30",
           "comparison_id": "pdf-pdfium",
           "format": "pdf",
           "max_changed_pixels": 118,
@@ -90,7 +90,7 @@
             200,
             120
           ],
-          "case_id": "representative.stage4-frames-text-assets.v29",
+          "case_id": "representative.stage4-frames-text-assets.v30",
           "comparison_id": "pdf-pdfjs",
           "format": "pdf",
           "max_changed_pixels": 16,
@@ -102,7 +102,7 @@
             "descriptor": {
               "byte_length": 4072,
               "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
-              "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
+              "sha256": "7e878d5ea6fa9dcbe712759016e3bf4e2fc4b298c91cb8a2e37acae732d8146e"
             },
             "id": "canonical-pdf.pdfjs.v1"
           }

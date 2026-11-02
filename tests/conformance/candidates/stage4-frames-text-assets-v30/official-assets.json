@@ -14,7 +14,7 @@
         "face_index": 0,
         "family": "Excalifont",
         "media_type": "font/ttf",
-        "path": "tests/conformance/candidates/stage4-frames-text-assets-v29/assets/official-font-0.sfnt",
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v30/assets/official-font-0.sfnt",
         "sha256": "d0abaa9d6fcb36d7b51ee9e9ab8db52783b24cae6feba60a1f90f00a1888ba24",
         "stretch": "normal",
         "style": "normal",
@@ -30,7 +30,7 @@
     {
       "canonical": {
         "media_type": "image/svg+xml",
-        "path": "tests/conformance/candidates/stage4-frames-text-assets-v29/assets/official-image-0.svg",
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v30/assets/official-image-0.svg",
         "sha256": "a28798ab75854879768160ef7c283dd75a37a1878134a69f62f08091bc0c5f6a"
       },
       "source": {
@@ -41,7 +41,7 @@
     {
       "canonical": {
         "media_type": "image/png",
-        "path": "tests/conformance/candidates/stage4-frames-text-assets-v29/assets/official-image-1.png",
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v30/assets/official-image-1.png",
         "sha256": "7601625e03d39d2afebfa4e8e2f4788313fad8a287a0f554de15a4ceafdc61f1"
       },
       "source": {

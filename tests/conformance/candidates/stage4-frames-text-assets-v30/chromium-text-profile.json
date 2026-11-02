@@ -31,15 +31,15 @@
     },
     {
       "path": "tools/reference-oracle/package-lock.json",
-      "sha256": "9bb3ff6bed9708ecd238945754e6884c41ca20decd66930f2f85f5a354eb3d5f"
+      "sha256": "8857f2792a506163d150a5481122a4bb93b3646e356a57065770747a188d67fc"
     },
     {
-      "path": "tests/conformance/candidates/stage4-frames-text-assets-v29/native.svg",
+      "path": "tests/conformance/candidates/stage4-frames-text-assets-v30/native.svg",
       "sha256": "823329ee47844e0081f2bb8c9fda175a5964f6a19a7e9418cb966e11f24d4246"
     },
     {
-      "path": "tests/conformance/candidates/stage4-frames-text-assets-v29/native-assets.json",
-      "sha256": "5b3bade4ef051a9274e6887846297567cb82b89649083788d27341aadd00c5d4"
+      "path": "tests/conformance/candidates/stage4-frames-text-assets-v30/native-assets.json",
+      "sha256": "e56157031a9fef5437957a66425366d02f51533c633c6e4483bcb709d4078f76"
     }
   ],
   "qualification": {
