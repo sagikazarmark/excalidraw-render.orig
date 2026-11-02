@@ -129,12 +129,28 @@ fn validate(proposal: &Value, wanted: &Value) -> Result<()> {
     }
     Ok(())
 }
-/// A proposal keeps the record of the comparator it was measured under; the
-/// gate recomputes its measurements with the live comparator (ADR-0019).
+/// A proposal keeps the records of the comparator and the viewer profiles it
+/// was measured under; the gate recomputes its measurements with the live
+/// comparator from the stored rasters, and the live viewers are qualified on
+/// their own (ADR-0019). A record is kept only where it names the same file as
+/// the live one and is a well-formed digest.
 fn with_measured_comparator(mut wanted: Value, proposal: &Value) -> Value {
     let comparator = &proposal["comparator"];
     if comparator["path"] == COMPARATOR_PROFILE && historical_binding(comparator).is_ok() {
         wanted["comparator"] = comparator.clone();
+    }
+    if let (Some(scopes), Some(measured)) = (
+        wanted["exceptions"].as_array_mut(),
+        proposal["exceptions"].as_array(),
+    ) {
+        for (scope, measured) in scopes.iter_mut().zip(measured) {
+            let record = &measured["viewer_profile"]["descriptor"];
+            if record["path"] == scope["viewer_profile"]["descriptor"]["path"]
+                && historical_binding(record).is_ok()
+            {
+                scope["viewer_profile"]["descriptor"] = record.clone();
+            }
+        }
     }
     wanted
 }
@@ -244,6 +260,32 @@ mod tests {
             forged["comparator"][key] = bad;
             assert!(validate(&forged, &with_measured_comparator(wanted.clone(), &forged)).is_err());
         }
+    }
+    #[test]
+    fn proposals_keep_the_viewer_profile_records_they_were_measured_under() {
+        let profile = "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json";
+        let live = descriptor(&repo_root(), profile).unwrap();
+        let measured = json!({"path":profile,"byte_length":1,"sha256":"0".repeat(64)});
+        let scope = |descriptor: &Value| json!({"viewer_profile":{"id":"canonical-pdf.pdfjs.v1","descriptor":descriptor}});
+        let wanted = json!({"exceptions": [scope(&live)]});
+        let proposal = json!({"exceptions": [scope(&measured)]});
+        validate(
+            &proposal,
+            &with_measured_comparator(wanted.clone(), &proposal),
+        )
+        .unwrap();
+        for (key, bad) in [("sha256", json!("00")), ("path", json!("Cargo.toml"))] {
+            let mut forged = proposal.clone();
+            forged["exceptions"][0]["viewer_profile"]["descriptor"][key] = bad;
+            assert!(validate(&forged, &with_measured_comparator(wanted.clone(), &forged)).is_err());
+        }
+        let mut renamed = proposal.clone();
+        renamed["exceptions"][0]["viewer_profile"]["id"] = json!("another");
+        assert!(validate(
+            &renamed,
+            &with_measured_comparator(wanted.clone(), &renamed)
+        )
+        .is_err());
     }
     #[test]
     fn krilla_successor_covers_only_the_reviewed_pdf_with_identical_rasters() {

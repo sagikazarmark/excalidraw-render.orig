@@ -248,8 +248,6 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
         crate::conformance_candidate_gate::historical_binding(
             &profile["implementation"]["lockfile"],
         )?;
-    } else {
-        verify_descriptor(&profile["implementation"]["lockfile"])?;
     }
     if viewer == "pdfium" {
         verify_producer_sources(
@@ -281,17 +279,17 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
             }
             verify_exact_directory("tools/pdf-harness/pdfium/empty-fonts", &[".keep"])?;
         }
-        "pdfjs" => verify_pdfjs_profile(&profile, &ReferenceRuntime::load()?)?,
+        "pdfjs" => {
+            verify_pdfjs_profile(&profile, &ReferenceRuntime::load()?)?;
+            verify_pdfjs_install(&profile)?;
+        }
         _ => return Err(format!("unknown PDF viewer {viewer}")),
     }
     Ok(())
 }
 
 /// The PDF.js profile's identity is self-consistent and its container, Node
-/// and npm are the reference container's, which it runs in. Its lockfile is
-/// historical producer code until the qualification is regenerated under the
-/// installed PDF.js (ADR-0019), so the profile's PDF.js and canvas versions
-/// are not compared with it.
+/// and npm are the reference container's, which it runs in.
 fn verify_pdfjs_profile(profile: &Value, reference: &ReferenceRuntime) -> Result<(), String> {
     let version = string(&profile["identity"]["upstream_version"], "PDF.js version")?;
     let commit = &profile["identity"]["upstream_commit"];
@@ -317,6 +315,47 @@ fn verify_pdfjs_profile(profile: &Value, reference: &ReferenceRuntime) -> Result
         if recorded != expected {
             return Err(format!(
                 "PDF.js profile records {name} {recorded}, the reference profile {expected}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+const PDFJS_PACKAGE: &str = "tools/pdf-harness/pdfjs/package.json";
+
+/// The PDF.js the harness installs is the one the profile names: the profile
+/// binds the harness's npm lockfile by digest, live, so a Dependabot bump of
+/// PDF.js is a visible viewer change, and the lockfile and `package.json`
+/// install the profile's `pdfjs-dist` and `@napi-rs/canvas` versions. The
+/// harness's other sources are producer code (ADR-0019); evidence captured
+/// under an earlier lock records it historically.
+fn verify_pdfjs_install(profile: &Value) -> Result<(), String> {
+    let descriptor = &profile["implementation"]["lockfile"];
+    let path = string(&descriptor["path"], "PDF.js lockfile path")?;
+    let lock_bytes = read_repository_file(&repo_root(), path)?;
+    if descriptor["sha256"] != json!(sha256(&lock_bytes)) {
+        return Err(format!(
+            "{path} is not the lockfile the PDF.js profile qualified; requalify the viewer"
+        ));
+    }
+    let lock: Value =
+        serde_json::from_slice(&lock_bytes).map_err(|error| format!("invalid {path}: {error}"))?;
+    let package: Value =
+        serde_json::from_slice(&read_repository_file(&repo_root(), PDFJS_PACKAGE)?)
+            .map_err(|error| format!("invalid {PDFJS_PACKAGE}: {error}"))?;
+    let version = string(&profile["identity"]["upstream_version"], "PDF.js version")?;
+    let canvas = runtime_record(profile, "@napi-rs/canvas")?;
+    for (name, expected) in [("pdfjs-dist", version), ("@napi-rs/canvas", canvas)] {
+        let locked = lock["packages"][format!("node_modules/{name}")]["version"]
+            .as_str()
+            .unwrap_or_default();
+        let declared = package["dependencies"][name].as_str().unwrap_or_default();
+        if locked.is_empty()
+            || declared != locked
+            || !(expected == locked || expected.starts_with(&format!("{locked} ")))
+        {
+            return Err(format!(
+                "the PDF.js harness installs {name} {locked:?} (package.json {declared:?}),                  the profile names {expected:?}"
             ));
         }
     }
@@ -730,6 +769,26 @@ mod tests {
         let mut renamed = pdfjs.clone();
         renamed["identity"]["upstream_version"] = json!("0.0.1");
         assert!(verify_pdfjs_profile(&renamed, &reference).is_err());
+    }
+
+    #[test]
+    fn pdfjs_profile_binds_the_installed_pdfjs_live() {
+        let pdfjs = profile("tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json");
+        verify_pdfjs_install(&pdfjs).unwrap();
+
+        // A Dependabot bump moves the lockfile, which the profile no longer
+        // matches until the viewer is requalified.
+        let mut bumped = pdfjs.clone();
+        bumped["implementation"]["lockfile"]["sha256"] = json!("0".repeat(64));
+        assert!(verify_pdfjs_install(&bumped)
+            .unwrap_err()
+            .contains("requalify the viewer"));
+        // And a profile naming another PDF.js than the one installed fails.
+        let mut renamed = pdfjs.clone();
+        renamed["identity"]["upstream_version"] = json!("6.1.200");
+        assert!(verify_pdfjs_install(&renamed)
+            .unwrap_err()
+            .contains("pdfjs-dist"));
     }
 
     #[test]
