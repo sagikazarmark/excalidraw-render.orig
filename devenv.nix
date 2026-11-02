@@ -143,7 +143,7 @@ in
       };
     };
 
-    # The release and audit tooling the runbook (release.md) uses.
+    # Optional maintainer tools; no recipe or runbook step needs them.
     maintainer.module = {
       packages = with pkgs; [
         cargo-audit

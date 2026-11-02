@@ -1,9 +1,6 @@
 # 0.1.0 release policy
 
-Status: accepted scope. No publication is implied by this document. The code
-is published at
-[`sagikazarmark/excalidraw-render`](https://github.com/sagikazarmark/excalidraw-render)
-before the crates are.
+Status: accepted scope. No publication is implied by this document.
 
 This policy implements [ADR-0016](adr/0016-release-0.1.0-with-a-version-scoped-contract.md).
 It takes precedence over the original revision-1 specification's publication,
@@ -15,7 +12,7 @@ this release does not claim to have completed every requirement in it.
 
 - Rust library and native CLI for whole-scene and frame SVG, PNG, and vector-first PDF.
 - Excalidraw 0.18.1 compatibility target, with explicit diagnostics and
-  [known limitations](known-limitations.md).
+  [known limitations](reference/known-limitations.md).
 - Release-qualified native target: Linux x86-64 GNU, using the pinned Rust
   toolchain/build environment. Other native platforms are unqualified.
 - Browser-hosted `wasm32-unknown-unknown` remains tested but experimental.
@@ -55,10 +52,7 @@ provenance must distinguish an edited working tree from a clean tagged candidate
 
 ## Follow-up work
 
-The issues below live in the development repository's tracker. The release
-renames that repository to `excalidraw-render` and makes it public (see
-[the runbook](../release.md)), so these numbers, and the `#N` references in
-commits, ADRs and docs, keep pointing at the same issues.
+The issues below live in the repository's tracker.
 
 | Work | 0.1.0 disposition |
 | --- | --- |

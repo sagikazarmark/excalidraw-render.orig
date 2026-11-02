@@ -5,8 +5,9 @@ updates:
   # adopted through review (see the pinning policy in Cargo.toml). The crates
   # whose code computes artifact bytes (decoders, shaping, subsetting,
   # rasterization, the PDF writer, compression, number formatting) form their
-  # own group: it moves the golden record and the parity pins, so release.md
-  # merges it only between minor releases, in one restage. The rest moves
+  # own group: it moves the golden record and the parity pins, so the release
+  # runbook (docs/development/releasing.md) merges it only between minor
+  # releases, in one restage. The rest moves
   # weekly.
   - package-ecosystem: cargo
     directory: /

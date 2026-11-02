@@ -88,8 +88,8 @@ route fixed it as part of the refresh.
   `traversal`, which the bounded layout validator had used; ADR-0020 replaced
   that validator with a typed walk (#210), so the workspace has no direct
   read-fonts dependency.
-  [`skera-upstream-name-record-fix.md`](../research/archive/skera-upstream-name-record-fix.md)
-  records that verification.
+  `docs/research/archive/skera-upstream-name-record-fix.md` (in the tree at
+  `1ab9342a`) records that verification.
 - The single refresh completed on 2026-09-11 (`e6f1344`, `3f06c91`): all three
   identity tokens name their upstream implementations, spec §8.3.3 names the
   same versions, the corpus, catalog, cross-target measurement and both viewer

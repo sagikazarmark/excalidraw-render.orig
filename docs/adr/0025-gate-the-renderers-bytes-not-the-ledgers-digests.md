@@ -4,9 +4,8 @@ status: accepted
 
 # Gate the renderer's bytes, not the ledger's digests
 
-The 2026-11-01 testing strategy review
-([docs/research/review-2026-11-01](../research/review-2026-11-01/README.md))
-found two systems under the name "testing". The tests of the renderer (unit
+The 2026-11-01 testing strategy review (`docs/research/review-2026-11-01/`,
+in the tree at `1ab9342a`) found two systems under the name "testing". The tests of the renderer (unit
 and component tests, the Rough.js and number-format vectors, the codec oracle
 contracts, the parity harnesses against official evidence, the determinism
 checks, the packaged consumer) were mostly good and some excellent. Around
@@ -105,8 +104,8 @@ are the release tier or gone.**
   render-tier report); the canonical budgets are unchanged and the question
   stays with ADR-0014.
 - Records that no check reads any more (the baseline directory, the three
-  font-subset release records, the trace note) are gone or archived under
-  ADR-0022; Git history keeps their bytes.
+  font-subset release records, the trace note) are gone under ADR-0022; Git
+  history keeps their bytes.
 - This supersedes the "native evidence needs x86_64-unknown-linux-gnu" guard
   of ADR-0006 for the snapshot and qualification recipes, the target-evidence
   aggregate it describes, and the trace-equality property ADR-0002 held as a

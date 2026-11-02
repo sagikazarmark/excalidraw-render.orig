@@ -47,7 +47,7 @@ cargo run --locked -p xtask -- conformance inventory > target/inventory.json
 # Review the staged diff, then copy target/inventory.json here.
 cargo run --locked -p xtask -- conformance verify-inventory
 cargo run --locked -p xtask -- conformance inventory-digest
-just conformance
+just conformance-release
 ```
 
 Generation, staged for review:
@@ -118,9 +118,8 @@ The test-only trace collection (`just trace-logs`, `just full-equality`) once
 joined the semantic resource ledgers of both targets to the packaged artifact
 runs. It proved nothing the artifact and report equality does not already prove
 (ADR-0002) at the cost of two further release builds, and it retired with the
-2026-11-01 testing review. Its one finding, 30 cross-target trace differences
-from an unstable sort fixed by a total order, is recorded in
-[the archived note](../../../docs/research/archive/trace-collection.md).
+2026-11-01 testing review. Its one finding was 30 cross-target trace
+differences from an unstable sort, fixed by a total order.
 
 ### Golden record
 
@@ -140,16 +139,14 @@ must appear exactly as recorded and all appear.
 
 The golden record replaced the native baseline (`coverage/native-baseline`,
 collected through the packaged facade on Linux x86-64 and restaged through a
-workflow) and the browser-WASM replay of it on 2026-11-01. The baseline's
-history, its approvals and the WASM mismatch investigation are in
-[the findings](../../../docs/research/wasm-snapshot-mismatches.md) and the
-[2026-11-01 review](../../../docs/research/review-2026-11-01/release-pipeline.md).
+workflow) and the browser-WASM replay of it on 2026-11-01. The WASM mismatch
+investigation is in [the findings](../../../docs/research/wasm-snapshot-mismatches.md).
 
 ### PDF judgments (`closure:pdf-judgments`)
 
-`pdf-judgments.json` is one record, approved on #85, that closes the 48 PDF
-report gaps above and binds the specialized PDF judgment files no ledger row
-binds. It carries:
+`pdf-judgments.json` is one record, approved on #85, that closes the PDF
+report gaps of the inventory and binds the specialized PDF judgment files no
+ledger row binds. It carries:
 
 - `executions`: an expected report for every PDF inventory execution (56),
   derived by `xtask/src/coverage/pdf_judgments/derive.rs` from approved
@@ -286,5 +283,4 @@ unreferenced. Every problem is listed.
 
 The retired writer/approval commands are not an update procedure. Historically,
 the closure owner bound this record through the compiled-in `layers` verifier
-(`verify-layers --strict` in-process today). See
-[the five-layer note](../../../docs/research/archive/five-layer-integration.md).
+(`verify-layers --strict` in-process today).

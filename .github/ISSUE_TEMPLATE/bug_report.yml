@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check the [known limitations](https://github.com/sagikazarmark/excalidraw-render/blob/main/docs/known-limitations.md) first.
+        Check the [known limitations](https://github.com/sagikazarmark/excalidraw-render/blob/main/docs/reference/known-limitations.md) first.
         Report security vulnerabilities privately as described in [SECURITY.md](https://github.com/sagikazarmark/excalidraw-render/blob/main/SECURITY.md), not here.
   - type: input
     id: version

@@ -1,5 +1,5 @@
 //! Issue #82: bounded byte and grammar mutation through the public facade.
-//! See docs/asset-fuzzing.md for the input envelope and failure promotion flow.
+//! See docs/development/asset-fuzzing.md for the input envelope and failure promotion flow.
 
 mod seeds;
 

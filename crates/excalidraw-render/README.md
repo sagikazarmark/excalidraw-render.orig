@@ -16,7 +16,7 @@ from elastic/elasticsearch-specification, © Elastic and contributors,
 The compatibility target is Excalidraw **0.18.1**. Output is close to, but not
 pixel-identical with, the browser exporter; every render returns a
 compatibility report describing the substitutions, omissions, and fallbacks it
-made. See the [known limitations](../../docs/known-limitations.md).
+made. See the [known limitations](../../docs/reference/known-limitations.md).
 
 For a command-line tool, see
 [`excalidraw-render-cli`](https://crates.io/crates/excalidraw-render-cli).
@@ -48,7 +48,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 `Renderer::render_frames` exports each frame of a scene separately. The
 [API documentation](https://docs.rs/excalidraw-render) covers requests,
-resource limits, frame export, and the error and diagnostic types.
+resource limits, frame export, and the error and diagnostic types. The
+[guides](../../docs/README.md) walk through
+[the library](../../docs/guides/library.md),
+[exporting frames](../../docs/guides/frames.md) and
+[features and WebAssembly](../../docs/guides/features-and-wasm.md), and the
+repository's [examples](examples) are complete programs.
 
 ## Untrusted input and servers
 
@@ -57,7 +62,8 @@ CPU-bound: call it from `tokio::task::spawn_blocking` or a worker pool in async
 code. `ResourceLimits` bounds the work a scene can request, and
 `Sizing::MaxDimension` bounds raster size, but there is no deadline or
 cancellation: run renders in a separate process when you need a hard time or
-memory ceiling.
+memory ceiling. [Serving untrusted input](../../docs/guides/untrusted-input.md)
+covers each of these.
 
 The defaults admit large drawings rather than protect a shared server:
 
@@ -130,7 +136,8 @@ dependency versions. Dependencies take ordinary semver ranges, so a patch
 release of a decoder, rasterizer or compressor can change output bytes; the
 release's gates test the versions in its repository `Cargo.lock`. Later 0.x
 releases may also intentionally change rendering. When exact output bytes
-matter, pin the renderer (`=0.1.0`) and commit your `Cargo.lock`.
+matter, pin the renderer (`=0.1.0`) and commit your `Cargo.lock`; see
+[reproducible output](../../docs/guides/reproducible-output.md).
 
 Linux x86-64 (glibc) is the release-qualified platform. Other native platforms
 build and run but are not release-qualified; browser WASM is experimental.

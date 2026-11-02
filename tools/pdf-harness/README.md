@@ -2,7 +2,9 @@
 
 This development-only harness qualifies PDFium and PDF.js as independent 96 DPI
 PDF viewers and qpdf as the independent structural parser. None of these tools
-is a production renderer dependency.
+is a production renderer dependency. Why these three, and the upstream sources
+behind each adapter, are in
+[the primary-source notes](../../docs/research/pdf-harness-primary-sources.md).
 
 The devenv shell supplies PDFium and qpdf and links them under
 `target/pdf-harness/` (`devenv.nix`). In that shell, build the Rust PDFium
@@ -114,8 +116,8 @@ WebP receipts) records that lock historically.
 
 The Rust inspector also validates the expectation object before invoking qpdf;
 missing or malformed fields are configuration errors, even when the requested
-PDF outcome is `fail`. Rust tests compare generated fixtures and all 14 retained
-calibration/backend structural reports against their checked-in bytes, without
+PDF outcome is `fail`. Rust tests compare generated fixtures and all 10 retained
+calibration/backend structural reports (six calibration, four backend) against their checked-in bytes, without
 executing Python. Independent protocol and expectation tests cover malformed
 and boundary inputs. Nonempty malformed qpdf JSON uses
 Rust parser diagnostics rather than promising byte-identical Python exception
@@ -148,8 +150,7 @@ cargo test --locked -p xtask \
 ### Rust PDFium runtime
 
 The old `candidate-pdf-requalify`, `pdf-requalification-subject`, and
-`refresh-pdf-viewer-dependencies` commands are retired. They now return explicit
-guidance instead of reading deleted producers or refreshing historical hashes.
+`refresh-pdf-viewer-dependencies` commands are retired and no longer exist.
 Use current harness reproduction and `conformance verify-pdf-viewers` for
 verification; meaningful historical pin-transition assertions remain Rust tests.
 

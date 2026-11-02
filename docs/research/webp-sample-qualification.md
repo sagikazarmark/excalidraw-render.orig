@@ -111,7 +111,6 @@ bash tools/reference-oracle/run-webp-sample.sh build-helper
 bash tools/reference-oracle/run-webp-sample.sh test-helper
 bash tools/reference-oracle/run-webp-sample.sh verify
 cargo test --locked -p excalidraw-render --test fast webp_sample_contract::
-node tools/reference-oracle/scripts/webp-sample-ownership.mjs verify
 cargo run --locked -p xtask -- conformance verify-ownership
 ```
 

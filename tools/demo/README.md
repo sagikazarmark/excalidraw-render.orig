@@ -1,8 +1,7 @@
 # Side-by-side demo
 
 A static page showing this library's SVG and PNG renders beside the official
-Excalidraw 0.18.1 exports of the same scenes. [SPEC.md](SPEC.md) is the
-specification it was built against.
+Excalidraw 0.18.1 exports of the same scenes.
 
 ```sh
 cargo run --locked -p xtask -- demo build [--out DIR]

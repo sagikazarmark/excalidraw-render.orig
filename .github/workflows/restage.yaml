@@ -2,7 +2,7 @@ name: Restage
 
 # Regenerates the Docker-bound evidence a change can move and exports it for
 # review. Nothing here commits: download the artifacts, adopt them in a
-# commit, and run the verifiers (docs/ci.md). The golden record needs no
+# commit, and run the verifiers (docs/development/ci.md). The golden record needs no
 # workflow: `just update-golden` rewrites it on any host.
 on:
   workflow_dispatch:

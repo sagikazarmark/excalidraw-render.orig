@@ -44,12 +44,12 @@ still check the complete historical ledger and cannot treat advisory gaps as
 completed coverage.
 
 The ledger was built up in reviewed tranches, one per obligation family or
-codec facet. Each tranche's selections, rationale and verification are recorded
-in a note under
-[`docs/research/archive/`](../../../docs/research/archive/README.md)
-(`*-ownership.md`, `*-qualification.md`, `*-umbrella-facets.md`); the
-`rationale` strings in the ledger name the note that assigned each owner. Two
-notes stay live because code cites them for policy and provenance:
+codec facet. Each tranche's selections, rationale and verification were
+recorded in a note, and the `rationale` strings in the ledger name the note
+that assigned each owner as `docs/research/<name>.md`. Those notes were removed
+under ADR-0022; read them in the tree at `1ab9342a` under
+`docs/research/archive/`. Two notes stay live because code cites them for
+policy and provenance:
 [PNG SDR color](../../../docs/research/png-sdr-color-ownership.md) and
 [PNG HDR/gain maps](../../../docs/research/png-hdr-gain-map-ownership.md).
 
@@ -101,9 +101,12 @@ these rows and to existing rows such as `interaction:diagnostic-order` and
 ## Commands and checks
 
 ```sh
-just conformance
+just conformance-release
 cargo run --locked -p xtask -- conformance ownership-catalog > target/ownership-catalog.json
 cargo run --locked -p xtask -- conformance verify-ownership
+# After the spec, a policy or a record moves the catalog digest, rebind it
+# (assignments must still validate; no disposition changes):
+cargo run --locked -p xtask -- conformance rebind-ownership-catalog
 # Record explicit reviewed gap selections:
 cargo run --locked -p xtask -- conformance record-test-owner MODULE FUNCTION RATIONALE ID...
 # Explicit root library tests using private test-only operation seams:
@@ -134,7 +137,7 @@ closure requirements cannot be removed without a code change as well.
 remaining qualification rows. Its descriptor is part of the catalog digest.
 Sample-cell evidence is limited to the declared untagged 8-bit-lattice scope;
 non-lattice precision, color interpretation and axis composition are distinct
-requirements. See [the inventory assessment](../../../docs/research/archive/png-profile-ownership.md).
+requirements.
 
 `extend-ownership` authenticates a captured prior catalog against the existing
 ledger, refuses changes/removals to any prior obligation, preserves all prior

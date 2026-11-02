@@ -20,6 +20,7 @@ expectation-file binding. Representative exceptions, native baseline refresh and
 global ownership/closure require separate approval. V6 remains historical; the
 next representative capture must use the final release producer and verifier.
 
-See `docs/research/archive/stage4-pdf-approved-transition.md` for applied identities,
-fresh qpdf/viewer replay results and the final capture checkpoint. Production
-fix and original qualification details are in `docs/research/archive/stage4-image-icc-fix.md`.
+`docs/research/archive/stage4-pdf-approved-transition.md` records the applied
+identities, fresh qpdf/viewer replay results and the final capture checkpoint;
+`docs/research/archive/stage4-image-icc-fix.md` the production fix and original
+qualification details. Both are in the tree at `1ab9342a`.

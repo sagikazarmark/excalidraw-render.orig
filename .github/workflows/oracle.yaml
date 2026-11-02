@@ -6,7 +6,7 @@ name: Reference oracle
 # case regenerates to its committed evidence byte for byte, so drift in the
 # oracle's closure or a generator is seen within days rather than when the
 # oracle is next needed. The runner is linux/amd64 with Docker, which is what
-# the pinned images need (docs/ci.md).
+# the pinned images need (docs/development/ci.md).
 on:
   schedule:
     - cron: "17 4 * * 1"

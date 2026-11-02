@@ -89,7 +89,7 @@ fn build(out: &Path) -> Result<()> {
         });
     }
     fs::copy(
-        root.join("docs/known-limitations.md"),
+        root.join("docs/reference/known-limitations.md"),
         out.join("known-limitations.md"),
     )
     .map_err(|e| format!("known-limitations.md: {e}"))?;

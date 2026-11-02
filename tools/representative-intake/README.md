@@ -102,7 +102,7 @@ registry integration as described below.
 
 ## Verification
 
-The seven `xtask/tests/representative_*` suites run under `just test`. The
+The nine `xtask/tests/representative_*` suites run under `just test`. The
 real-renderer tests in `representative_intake` and `representative_case`,
 which capture and verify all six Velox executions twice, need a freshly built
 CLI and are `#[ignore]`d in the ordinary tiers; run them from the devenv shell:
@@ -222,7 +222,7 @@ cargo run --locked -p xtask -- representative compact verify <proposal-dir>
 cargo run --locked --release -p xtask -- representative compact check <proposal-dir>
 ```
 
-New compact records use v2. Offline `verify` also accepts the six retained v1
+New compact records use v2. Offline `verify` also accepts the three retained v1
 records, including historical prose alongside their retained directories. It
 checks JSON integrity and receipt bindings without requiring discarded rasters.
 `check` requires v2 and a full collection at the recorded roots; legacy v1 fresh
