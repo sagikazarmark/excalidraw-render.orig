@@ -971,7 +971,7 @@ mod tests {
                         bad["sources"].as_array_mut().unwrap().push(duplicate);
                     }
                     1 => bad["sources"][0]["sha256"] = json!("stale"),
-                    _ => bad["sources"][0] = descriptor(&repo_root(), "AGENTS.md").unwrap(),
+                    _ => bad["sources"][0] = descriptor(&repo_root(), "README.md").unwrap(),
                 }
                 let result = if font {
                     producer_sets(dir, &collection, &bad)
