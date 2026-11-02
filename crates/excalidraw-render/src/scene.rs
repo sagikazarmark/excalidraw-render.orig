@@ -77,6 +77,11 @@ impl SceneDocument {
         Arc::ptr_eq(&self._root, &other._root)
     }
 
+    /// Hashes the identity [`same_identity`](Self::same_identity) compares.
+    pub(crate) fn hash_identity<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::ptr::hash(Arc::as_ptr(&self._root), state);
+    }
+
     pub(crate) fn canonicalized_original_bytes(&self) -> Result<Vec<u8>, TryReserveError> {
         let mut bytes = Vec::new();
         write_canonical_json(&self._root, &mut bytes)?;

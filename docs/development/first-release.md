@@ -55,21 +55,13 @@ Platforms:
       and the pinned toolchain (devenv does not run on Windows).
 - [ ] State the Windows status in the README.
 
-The JSON report and the public API (when unsure, leave it out):
+The JSON report and the public API:
 
-- [ ] Give every CLI report shape a discriminator (`"command": "render" |
-      "frames.list" | "frames.export"`, or `mode` applied consistently).
-- [ ] Golden tests for the serialized form of a render report, a partial frame
-      batch, an error, and one diagnostic of each `DiagnosticDetails` variant.
-- [ ] Drop `compatibility_revision` and `reference_profile_digest` from the
-      JSON reports until revision 2 exists.
-- [ ] Make `CompatibilityRevision`, `ReferenceProfileIdentity`,
-      `SvgFontSubsetStage`, `FiniteValue::new` and
-      `FrameBatchError::preparation_subject` `pub(crate)` or `#[doc(hidden)]`.
-- [ ] Remove the hidden `--compatibility-revision` and `--list-revisions` CLI
-      flags, after checking that no tooling uses them.
-- [ ] `PartialEq`/`Eq`/`Hash` on `FrameRef`, `PartialEq` on `RenderRequest` and
-      `FrameRenderRequest`, and `Default` on `Sizing`.
+- [ ] Restage the representative candidate as
+      `stage4-frames-text-assets-v30` through `restage.yaml`: the CLI no
+      longer takes `--compatibility-revision` and its reports changed shape,
+      so v29's native capture no longer replays. Register v30 in place of v29
+      and rebind its ownership record.
 
 Compatibility revisions:
 

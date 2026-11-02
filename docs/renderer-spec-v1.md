@@ -308,8 +308,6 @@ The supported facade MUST have this topology:
 SceneDocument::parse(&[u8]) -> Result<SceneDocument, SceneParseError>
 
 Renderer::new() -> Renderer
-Renderer::profile_identity(&self) -> &'static ReferenceProfileIdentity
-Renderer::frame_profile_identity(&self) -> &'static ReferenceProfileIdentity
 Renderer::render(&self, &SceneDocument, &RenderRequest)
     -> Result<RenderOutcome, RenderError>
 Renderer::render_frame(&self, FrameRef, &FrameRenderRequest)
@@ -329,20 +327,21 @@ fresh request-scoped session. Public structs have private fields and read-only
 accessors. Evolvable enums and string-backed code enums are non-exhaustive.
 Requests are constructible only through validated builders.
 
-Every `Renderer` exposes its scene and frame `ReferenceProfileIdentity`
-through read-only accessors. A successful outcome exposes read-only access to its
-artifact, immutable ordered report, and the `ReferenceProfileIdentity` it
-reproduces (the frame profile for a frame export). `RenderError` exposes the complete ordered report accumulated
+A successful outcome exposes read-only access to its artifact and immutable
+ordered report. `RenderError` exposes the complete ordered report accumulated
 before failure; pre-render typed failures expose no report.
 
-`CompatibilityRevision` is a public read-only newtype with a named constant for
-each revision. `ReferenceProfileIdentity` exposes compatibility revision,
-Excalidraw release, and canonical profile digest. A renderer release implements
-exactly one compatibility revision, which `Renderer::new()` selects; revision
-`1` in the 0.x releases. There is no revision selector: per ADR-0016 no
-historical revision is retained, so callers pin the package release and
-dependency lockfile for exact reproduction. A profile digest is discoverable but
-not a selector.
+A renderer release implements exactly one compatibility revision, which
+`Renderer::new()` selects; revision `1` in the 0.x releases. There is no
+revision selector: per ADR-0016 no historical revision is retained, so callers
+pin the package release and dependency lockfile for exact reproduction. The
+revision and its reference profile identity (`CompatibilityRevision`,
+`ReferenceProfileIdentity`, and the `profile_identity` and
+`frame_profile_identity` accessors of `Renderer` and `RenderOutcome`) are
+`#[doc(hidden)]`: the workspace's own tooling and the CLI's
+`--version --verbose` read them, but they are not part of the supported
+facade until a release implements a second revision. Artifact provenance
+metadata still records them (section 12).
 
 One target request produces exactly one `OutputFormat`: `Svg`, `Png`, or `Pdf`, spelled
 `svg`, `png`, and `pdf` in serialized forms. Every variant exists in every
@@ -404,7 +403,6 @@ error.
 The render controls are exactly:
 
 ```text
---compatibility-revision <N>
 --no-background
 --padding <F64>
 --scale <F64>
@@ -423,7 +421,6 @@ The render controls are exactly:
 --report-format <human|json|none>
 --report-output <stderr|PATH>
 --force
---list-revisions
 ```
 
 `--scale` and `--max-dimension` are mutually exclusive. Report format defaults
@@ -444,7 +441,7 @@ Frame artifact output is always a directory and cannot be `-`; input may still
 be stdin. The exact token `frames` is reserved as a subcommand, while a scene
 file with that basename remains addressable as `./frames` or after `--`. The
 frame command reuses applicable background, sizing, color, metadata, asset, PDF,
-report, revision, and force controls. It does not accept padding or whole-scene
+report, and force controls. It does not accept padding or whole-scene
 frame controls. Its additional controls are one `--name-regex <REGEX>`, positive
 `--max-frames <N>` up to 16384 with default 256, `--allow-partial`, and
 `--list`.
@@ -455,7 +452,7 @@ selected-frame cap, source ordering, and derived basenames — then reports
 ordinal, kind, source name, and derived output basename without rendering,
 reading supplemental asset bytes, creating the output directory, or writing any
 artifact. It is exempt from performing those actions, not from validating them:
-failure-ordering steps 1 through 5 apply unchanged, so request values and asset
+failure-ordering steps 1 through 4 apply unchanged, so request values and asset
 declarations an export would reject are rejected here too. Without `--format`,
 format-independent request values are still validated. With `--format` the basename carries its extension; without it, the
 basename is reported as a stem. An empty selection is a valid answer and exits
@@ -464,9 +461,9 @@ basename is reported as a stem. An empty selection is a valid answer and exits
 `--report-format none`. The listing is delivered on the report channel: human
 mode emits one tab-separated line per frame, or one `note:` line for an empty
 selection; JSON mode emits one schema-1 document whose top-level member order
-is `schema_version`, `status`, `renderer_version`, `compatibility_revision`,
-`excalidraw_release`, `reference_profile_digest`, `mode`, `frames`, with `mode`
-fixed to `list` and each entry ordered `ordinal`, `kind`, `name`, `output_basename`.
+is `schema_version`, `command`, `status`, `renderer_version`,
+`excalidraw_release`, `frames`, with `command` fixed to `frames.list` and each
+entry ordered `ordinal`, `kind`, `name`, `output_basename`.
 
 The optional name regex uses Unicode-aware linear-time Rust regex search,
 case-sensitive by default. It is applied only to nonempty source string names.
@@ -486,13 +483,13 @@ is reported honestly as possibly partial. `--allow-partial` instead publishes
 independent successes after frame-local render, collision, staging, or delivery
 failures and exits 1 when any target failed.
 
-Frame JSON reporting uses a dedicated schema-1 batch envelope with frame profile
-identity, format, overall and delivery status, scene-global diagnostics once,
-and one ordinal-ordered entry per selected frame. Each entry contains target
+Frame JSON reporting uses a dedicated schema-1 batch envelope with the command,
+the Excalidraw release, format, overall and delivery status, scene-global
+diagnostics once, and one ordinal-ordered entry per selected frame. Each entry contains target
 identity, source name, intended path, artifact descriptor, target diagnostics,
 error, and delivery state. Its top-level member order is `schema_version`,
-`status`, `renderer_version`, `compatibility_revision`, `excalidraw_release`,
-`reference_profile_digest`, `format`, `delivery_state`, `diagnostics`, `frames`.
+`command` (fixed to `frames.export`), `status`, `renderer_version`,
+`excalidraw_release`, `format`, `delivery_state`, `diagnostics`, `frames`.
 Frame-entry member order is `ordinal`, `kind`, `name`, `output_path`, `artifact`,
 `error`, `diagnostics`, `delivery_state`. Human clean success remains silent.
 
@@ -500,16 +497,15 @@ The CLI selects one failure in this order:
 
 1. Deterministic report-mode preparse.
 2. Command grammar and standalone-mode validation.
-3. Compatibility-revision selection.
-4. Explicit or inferred format selection.
-5. Request values and asset declarations.
-6. Path-conflict validation.
-7. Output-location, existing output, and report checks.
-8. Bounded scene read and parse.
-9. Supplemental reads by ascending file-ID UTF-8 bytes.
-10. Render.
-11. Artifact staging and delivery.
-12. Report staging and delivery.
+3. Explicit or inferred format selection.
+4. Request values and asset declarations.
+5. Path-conflict validation.
+6. Output-location, existing output, and report checks.
+7. Bounded scene read and parse.
+8. Supplemental reads by ascending file-ID UTF-8 bytes.
+9. Render.
+10. Artifact staging and delivery.
+11. Report staging and delivery.
 
 The report-mode preparser recognizes exactly one valid `--report-format json` or
 `--report-format=json`. Missing, malformed, duplicate, or conflicting choices
@@ -527,7 +523,7 @@ fails `cli.invalid-output-directory` with exit 2 even with `--force`; a frame
 output that exists and is not a directory fails the same code. An output file
 whose directory, or a frame output directory whose parent, is missing or not a
 directory fails `cli.output-write-failed` (operation `create`, artifact state
-`none`) at step 7, before the scene is read or rendered.
+`none`) at step 6, before the scene is read or rendered.
 
 Both requested path outputs are fully staged in their destination directories
 before either is delivered and are atomically replaced where supported. A
@@ -559,15 +555,13 @@ occurrence. `none` suppresses successful reporting and emits one non-JSON
 | ---: | --- |
 | `0` | Complete artifact delivered, including diagnosed or metadata-omitted success |
 | `1` | I/O, bounded-read, parse, fatal render/resource, allocation, existing-destination, or delivery failure |
-| `2` | Grammar, request, format, duplicate-ID, or unsupported-revision usage error |
+| `2` | Grammar, request, format, or duplicate-ID usage error |
 
-`--list-revisions` accepts only human or JSON report controls and lists revisions
-in increasing order. While the renderer implements a single revision,
-`--compatibility-revision` and `--list-revisions` keep working but are omitted
-from `--help`. `-V, --version` is human-only standalone stdout and prints one
+The CLI has no revision controls: a release implements one revision (section 6).
+`-V, --version` is human-only standalone stdout and prints one
 line, `excalidraw-render VERSION (Excalidraw RELEASE)`; with `-v, --verbose` it
 adds `compatibility revision N` and `reference profile DIGEST` lines for the
-default revision.
+revision it implements.
 
 ## 8. Rendering Semantics
 
@@ -2357,7 +2351,6 @@ Detail bindings are fixed, not producer-selected:
 | `scene.number-token-too-large` | `parse_limit`, `max_number_token_bytes`, bytes |
 | `scene.parse-memory-exceeded` | `parse_limit`, `max_parse_working_bytes`, bytes |
 | Every `request.*` | `request_value`; canonical rejected field and applicable asset/option |
-| `revision.unsupported` (CLI only) | family `cli`, `cli_argument` with the rejected `--compatibility-revision` value |
 | `scene.unbounded-geometry`, encoder/internal failures other than `encode.svg-font-subset-failed` | null |
 | `encode.svg-font-subset-failed` | `svg_font_subset_failure`; first failed stage, resolved family, source asset identity |
 | Fatal PDF fallback | `pdf_raster_fallback`, null recovery, first closure |
@@ -2436,7 +2429,7 @@ scene.duplicate-object-key
 scene.parse-memory-exceeded
 ```
 
-Request codes, and the CLI-only revision code, are:
+Request codes are:
 
 ```text
 request.invalid-padding
@@ -2448,7 +2441,6 @@ request.invalid-asset-media-type
 request.incompatible-format-options
 request.invalid-resource-limit
 request.format-unavailable
-revision.unsupported
 ```
 
 Frame-batch construction codes use family `frame_batch` and null details:
@@ -2621,11 +2613,10 @@ Render report schema 1 has this exact top-level order:
 ```json
 {
   "schema_version": 1,
+  "command": "render | frames.list | frames.export",
   "status": "success | failure",
   "renderer_version": "package semver",
-  "compatibility_revision": 1,
   "excalidraw_release": "v0.18.1",
-  "reference_profile_digest": "sha256:...",
   "format": "svg | png | pdf | null",
   "artifact": {
     "media_type": "image/svg+xml",
@@ -2637,16 +2628,22 @@ Render report schema 1 has this exact top-level order:
 }
 ```
 
-Exactly one of artifact and error is non-null. Identity and format become
-populated as soon as selected. Artifact descriptors contain no bytes.
+Exactly one of artifact and error is non-null. Format becomes populated as soon
+as selected. Artifact descriptors contain no bytes.
 
-Revision-discovery schema 1 contains schema version, renderer version, and
-increasing revision entries with compatibility revision, Excalidraw release,
-profile digest, and default flag in that order. An incompatible shape or new
-detail kind after first publication requires a new report schema; a new stable
-code can then remain in schema 1 only with null details or an existing detail
-kind. The unpublished schema 1 defined here already includes
-`svg_font_subset_failure`.
+`command` names the command that ran. `render` always uses this envelope.
+`frames.list` and `frames.export` use the frame list and frame batch envelopes
+of section 7, which carry a `frames` member, except for a failure before a
+listing or a batch exists, which uses this envelope with status `failure`. A
+command-line grammar error reports the command its first argument names:
+`frames`, with `--list` anywhere after it, or otherwise the scene render. The
+reference profile is not repeated in reports: the renderer version identifies
+it, and `--version --verbose` prints it.
+
+An incompatible shape or new detail kind after first publication requires a
+new report schema; a new stable code can then remain in schema 1 only with null
+details or an existing detail kind. The unpublished schema 1 defined here
+already includes `svg_font_subset_failure`.
 
 ## 12. Artifact Manifest
 

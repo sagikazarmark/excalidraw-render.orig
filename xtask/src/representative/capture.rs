@@ -3,7 +3,33 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 use tempfile::TempDir;
 
-const SCHEMA: &str = "excalidraw-render/representative-intake-capture/v2";
+const SCHEMA: &str = "excalidraw-render/representative-intake-capture/v3";
+
+/// The CLI contract a capture record observed. Records before v3 ran the CLI
+/// with `--compatibility-revision 1` and read reports that named the revision
+/// and the reference profile digest; the CLI dropped both before 0.1.0 and its
+/// reports name their `command` instead. Retained records keep the contract
+/// they ran under.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum CliContract {
+    /// Capture schemas v1 and v2.
+    Revisioned,
+    /// Capture schema v3: this CLI.
+    Current,
+}
+
+impl CliContract {
+    fn of(schema: &Value) -> Result<Self> {
+        match schema.as_str() {
+            Some(
+                "excalidraw-render/representative-intake-capture/v1"
+                | "excalidraw-render/representative-intake-capture/v2",
+            ) => Ok(Self::Revisioned),
+            Some(SCHEMA) => Ok(Self::Current),
+            _ => Err("unsupported capture schema".into()),
+        }
+    }
+}
 
 /// A private capture directory, removed with its contents when dropped.
 pub(super) fn scratch() -> Result<TempDir> {
@@ -25,19 +51,19 @@ fn scratch_in(parent: &Path) -> Result<TempDir> {
     builder.tempdir_in(parent).map_err(|e| e.to_string())
 }
 
-pub(super) fn request_args(variant: &Value, format: &str) -> Result<Vec<String>> {
-    let mut args = vec![
-        "--format".into(),
-        format.into(),
-        "--compatibility-revision".into(),
-        "1".into(),
+pub(super) fn request_args(variant: &Value, format: &str, cli: CliContract) -> Result<Vec<String>> {
+    let mut args = vec!["--format".into(), format.into()];
+    if cli == CliContract::Revisioned {
+        args.extend(["--compatibility-revision".into(), "1".into()]);
+    }
+    args.extend([
         "--padding".into(),
         json::number(&variant["padding"])?,
         "--scale".into(),
         json::number(&variant["scale"])?,
         "--report-format".into(),
         "json".into(),
-    ];
+    ]);
     if variant["color_mode"] == "dark" {
         args.push("--dark-mode".into());
     }
@@ -67,15 +93,15 @@ pub(super) fn render_args(
         "--report-output".into(),
         path_arg(report)?,
     ];
-    args.extend(request_args(variant, format)?);
+    args.extend(request_args(variant, format, CliContract::Current)?);
     Ok(args)
 }
 
-fn execution_row(variant: &Value, format: &str) -> Result<Value> {
+fn execution_row(variant: &Value, format: &str, cli: CliContract) -> Result<Value> {
     let key = format!("{}-{format}", text(variant, "id")?);
     Ok(
         json!({"variant": variant["id"], "format": format, "fresh_process_runs": 2,
-        "request_args": request_args(variant, format)?, "artifact": format!("{key}.{format}"), "report": format!("{key}-report.json")}),
+        "request_args": request_args(variant, format, cli)?, "artifact": format!("{key}.{format}"), "report": format!("{key}-report.json")}),
     )
 }
 
@@ -88,11 +114,10 @@ fn validate_descriptor(value: &Value) -> Result<()> {
     )
 }
 
-fn validate_report(artifact: &[u8], report: &[u8], format: &str) -> Result<()> {
+fn validate_report(artifact: &[u8], report: &[u8], format: &str, cli: CliContract) -> Result<()> {
     let parsed = decode(report)?;
-    fields(
-        &parsed,
-        &[
+    let envelope: &[&str] = match cli {
+        CliContract::Revisioned => &[
             "schema_version",
             "status",
             "renderer_version",
@@ -104,8 +129,19 @@ fn validate_report(artifact: &[u8], report: &[u8], format: &str) -> Result<()> {
             "error",
             "diagnostics",
         ],
-        "invalid report envelope",
-    )?;
+        CliContract::Current => &[
+            "schema_version",
+            "command",
+            "status",
+            "renderer_version",
+            "excalidraw_release",
+            "format",
+            "artifact",
+            "error",
+            "diagnostics",
+        ],
+    };
+    fields(&parsed, envelope, "invalid report envelope")?;
     require(
         parsed["schema_version"].as_u64() == Some(1)
             && parsed["status"] == "success"
@@ -113,20 +149,30 @@ fn validate_report(artifact: &[u8], report: &[u8], format: &str) -> Result<()> {
         "invalid success report",
     )?;
     require(
-        parsed["compatibility_revision"].as_u64() == Some(1)
-            && parsed["excalidraw_release"] == "v0.18.1",
+        parsed["excalidraw_release"] == "v0.18.1",
         "unexpected compatibility identity",
     )?;
     require(
         !text(&parsed, "renderer_version")?.is_empty(),
         "missing renderer version",
     )?;
-    require(
-        text(&parsed, "reference_profile_digest")?
-            .strip_prefix("sha256:")
-            .is_some_and(digest),
-        "invalid profile identity",
-    )?;
+    match cli {
+        CliContract::Revisioned => {
+            require(
+                parsed["compatibility_revision"].as_u64() == Some(1),
+                "unexpected compatibility identity",
+            )?;
+            require(
+                text(&parsed, "reference_profile_digest")?
+                    .strip_prefix("sha256:")
+                    .is_some_and(digest),
+                "invalid profile identity",
+            )?;
+        }
+        CliContract::Current => {
+            require(parsed["command"] == "render", "invalid report command")?;
+        }
+    }
     require(parsed["format"] == format, "invalid report format")?;
     for d in array(&parsed, "diagnostics")? {
         fields(
@@ -348,7 +394,7 @@ pub(super) fn capture(
                         .ok_or("report name")?,
                 )?,
             );
-            validate_report(&observed.0, &observed.1, format)?;
+            validate_report(&observed.0, &observed.1, format, CliContract::Current)?;
             if pass == 0 {
                 first.insert(key, observed);
             } else {
@@ -375,7 +421,7 @@ pub(super) fn capture(
         let (artifact, report) = first.remove(&key).ok_or("missing observed render")?;
         files.insert(format!("{key}.{format}"), artifact);
         files.insert(format!("{key}-report.json"), report);
-        rows.push(execution_row(variant, format)?);
+        rows.push(execution_row(variant, format, CliContract::Current)?);
     }
     let record = json!({"schema": SCHEMA, "case_id": manifest["case_id"], "status": "observed-unapproved", "eligible_executions": [], "approval": null,
         "intake_manifest": intake, "renderer_binary": binary, "tool": tool, "rows": rows,
@@ -406,12 +452,12 @@ pub(super) fn verify_capture(bundle: &Path, output: &Path) -> Result<Value> {
     for key in ["intake_manifest", "renderer_binary"] {
         validate_descriptor(&record[key])?;
     }
+    let cli = CliContract::of(&record["schema"])?;
     if record["schema"] == "excalidraw-render/representative-intake-capture/v1" {
         // Historical observer identity, just like the v2 executable descriptor.
         // Actual files, reports, requests and intake bindings are checked below.
         validate_descriptor(&record["tool"])?;
     } else {
-        require(record["schema"] == SCHEMA, "unsupported capture schema")?;
         fields(
             &record["tool"],
             &["implementation", "version", "executable"],
@@ -443,12 +489,12 @@ pub(super) fn verify_capture(bundle: &Path, output: &Path) -> Result<Value> {
     let mut files = BTreeMap::new();
     for variant in array(&plan, "variants")? {
         for format in FORMATS {
-            let row = execution_row(variant, format)?;
+            let row = execution_row(variant, format, cli)?;
             let a = text(&row, "artifact")?;
             let r = text(&row, "report")?;
             let artifact = read(output, a)?;
             let report = read(output, r)?;
-            validate_report(&artifact, &report, format)?;
+            validate_report(&artifact, &report, format, cli)?;
             files.insert(a.to_owned(), descriptor(&artifact));
             files.insert(r.to_owned(), descriptor(&report));
             rows.push(row);

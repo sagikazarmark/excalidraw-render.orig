@@ -91,7 +91,6 @@ pub(crate) fn code_hint(code: &str) -> Option<&'static str> {
         "pdf.raster-fallback-forbidden" => {
             "use --pdf-raster-fallback allow-isolated to rasterize what vector PDF cannot express"
         }
-        "revision.unsupported" => "run `excalidraw-render --list-revisions` to see the supported revisions",
         _ => return None,
     })
 }

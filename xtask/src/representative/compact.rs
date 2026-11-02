@@ -253,6 +253,7 @@ fn verify(output: &Path) -> Result<Value> {
                     schema,
                     "excalidraw-render/representative-intake-capture/v1"
                         | "excalidraw-render/representative-intake-capture/v2"
+                        | "excalidraw-render/representative-intake-capture/v3"
                 ),
                 "viewers" => {
                     schema

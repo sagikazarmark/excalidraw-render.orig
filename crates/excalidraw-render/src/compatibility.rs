@@ -7,6 +7,10 @@ use crate::outcome::{RenderError, RenderErrorCategory, RenderOutcome};
 use crate::request::{OutputFormat, RenderRequest};
 use crate::scene::SceneDocument;
 
+// Hidden, with the accessors that return the identity: this release implements
+// a single revision, so there is nothing to choose between, and the identity
+// joins the supported API when a second revision exists. The CLI prints it for
+// `--version --verbose`.
 /// Identifies the static-export profile a renderer release implements.
 ///
 /// This release implements exactly one revision, [`REVISION_1`]. During 0.x a
@@ -15,6 +19,7 @@ use crate::scene::SceneDocument;
 /// output bytes are required.
 ///
 /// [`REVISION_1`]: CompatibilityRevision::REVISION_1
+#[doc(hidden)]
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(transparent)]
 pub struct CompatibilityRevision(u64);
@@ -36,6 +41,8 @@ impl fmt::Display for CompatibilityRevision {
 }
 
 /// Immutable identity of the reference profile a renderer reproduces.
+// Hidden, like `CompatibilityRevision`.
+#[doc(hidden)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct ReferenceProfileIdentity {
     compatibility_revision: CompatibilityRevision,
@@ -82,7 +89,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    /// Constructs a renderer for [`CompatibilityRevision::REVISION_1`].
+    /// Constructs a renderer.
     pub fn new() -> Self {
         Self {
             catalog: &crate::catalog::REVISION_1,
@@ -90,12 +97,14 @@ impl Renderer {
     }
 
     /// Returns the reference profile scene exports reproduce.
+    #[doc(hidden)]
     pub const fn profile_identity(&self) -> &'static ReferenceProfileIdentity {
         self.catalog.profile()
     }
 
     /// Returns the reference profile frame exports reproduce. It shares the
     /// scene profile's revision and release but has its own digest.
+    #[doc(hidden)]
     pub const fn frame_profile_identity(&self) -> &'static ReferenceProfileIdentity {
         self.catalog.frame_profile()
     }
@@ -799,7 +808,7 @@ pub struct FiniteValue(f64);
 
 impl FiniteValue {
     /// Creates a value only when the supplied number is finite.
-    pub fn new(value: f64) -> Option<Self> {
+    pub(crate) fn new(value: f64) -> Option<Self> {
         value.is_finite().then_some(Self(value))
     }
 
@@ -1128,7 +1137,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn schema_1_library_detail_kinds_use_the_declared_member_order() {
+    fn every_detail_kind_serializes_in_its_declared_member_order() {
         let finite = |value| FiniteValue::new(value).expect("test value is finite");
         let path = NestedPath {
             segments: vec![NestedPathSegment {
@@ -1138,6 +1147,40 @@ mod tests {
             }],
         };
         let cases = [
+            (
+                DiagnosticDetails::ParseLimit {
+                    field: "max_scene_bytes",
+                    configured: 67_108_864,
+                    value_kind: ValueKind::Bytes,
+                    measurement: Measurement::AtLeast { value: 67_108_865 },
+                },
+                concat!(
+                    "{\"kind\":\"parse_limit\",\"field\":\"max_scene_bytes\",",
+                    "\"configured\":67108864,\"value_kind\":\"bytes\",",
+                    "\"measurement\":{\"kind\":\"at_least\",\"value\":67108865}}"
+                ),
+            ),
+            (
+                DiagnosticDetails::RequestValue {
+                    field: "supplemental_assets",
+                    asset_id: Some("image-1".to_owned()),
+                    option: Some("media_type"),
+                },
+                concat!(
+                    "{\"kind\":\"request_value\",\"field\":\"supplemental_assets\",",
+                    "\"asset_id\":\"image-1\",\"option\":\"media_type\"}"
+                ),
+            ),
+            (
+                DiagnosticDetails::Compatibility {
+                    recovery: Recovery::Substituted,
+                    recipe_id: Some("official.embeddable-offline@sha256:d1d9".to_owned()),
+                },
+                concat!(
+                    "{\"kind\":\"compatibility\",\"recovery\":\"substituted\",",
+                    "\"recipe_id\":\"official.embeddable-offline@sha256:d1d9\"}"
+                ),
+            ),
             (
                 DiagnosticDetails::Asset {
                     asset_id: "image-1".to_owned(),
@@ -1242,6 +1285,53 @@ mod tests {
                 ),
             ),
             (
+                DiagnosticDetails::NestedResourceLimit {
+                    field: "max_nested_asset_depth",
+                    configured: ResourceValue::Integer(8),
+                    value_kind: ValueKind::Depth,
+                    measurement: ResourceMeasurement::AtLeast {
+                        value: ResourceValue::Integer(9),
+                    },
+                    asset_chain: vec![AssetChainEntry {
+                        asset_id: None,
+                        occurrence: 2,
+                    }],
+                    paths: vec![path.clone()],
+                    recovery: Recovery::Omitted,
+                    recipe_id: None,
+                },
+                concat!(
+                    "{\"kind\":\"nested_resource_limit\",",
+                    "\"field\":\"max_nested_asset_depth\",\"configured\":8,",
+                    "\"value_kind\":\"depth\",",
+                    "\"measurement\":{\"kind\":\"at_least\",\"value\":9},",
+                    "\"asset_chain\":[{\"asset_id\":null,\"occurrence\":2}],",
+                    "\"paths\":[{\"segments\":[{\"kind\":\"node\",",
+                    "\"ordinal\":1,\"name\":null}]}],\"recovery\":\"omitted\",",
+                    "\"recipe_id\":null}"
+                ),
+            ),
+            (
+                DiagnosticDetails::NestedAssetClaim {
+                    asset_chain: vec![AssetChainEntry {
+                        asset_id: Some("image-1".to_owned()),
+                        occurrence: 0,
+                    }],
+                    paths: vec![path.clone()],
+                    claimed_media_type: "image/jpeg".to_owned(),
+                    validated_media_type: "image/png".to_owned(),
+                    recovery: Recovery::Repaired,
+                },
+                concat!(
+                    "{\"kind\":\"nested_asset_claim\",",
+                    "\"asset_chain\":[{\"asset_id\":\"image-1\",\"occurrence\":0}],",
+                    "\"paths\":[{\"segments\":[{\"kind\":\"node\",",
+                    "\"ordinal\":1,\"name\":null}]}],",
+                    "\"claimed_media_type\":\"image/jpeg\",",
+                    "\"validated_media_type\":\"image/png\",\"recovery\":\"repaired\"}"
+                ),
+            ),
+            (
                 DiagnosticDetails::PdfRasterFallback {
                     recovery: None,
                     logical_bounds: Some(LogicalBounds {
@@ -1264,12 +1354,35 @@ mod tests {
             ),
         ];
 
+        let mut kinds = Vec::new();
         for (details, expected) in cases {
+            // Naming every variant here fails the build when one is added
+            // without a case above.
+            let kind = match &details {
+                DiagnosticDetails::ParseLimit { .. } => "parse_limit",
+                DiagnosticDetails::RequestValue { .. } => "request_value",
+                DiagnosticDetails::Compatibility { .. } => "compatibility",
+                DiagnosticDetails::Asset { .. } => "asset",
+                DiagnosticDetails::ResourceLimit { .. } => "resource_limit",
+                DiagnosticDetails::MemoryUnavailable { .. } => "memory_unavailable",
+                DiagnosticDetails::MissingGlyph { .. } => "missing_glyph",
+                DiagnosticDetails::FontUnavailable { .. } => "font_unavailable",
+                DiagnosticDetails::SvgFontSubsetFailure { .. } => "svg_font_subset_failure",
+                DiagnosticDetails::Metadata { .. } => "metadata",
+                DiagnosticDetails::NestedSource { .. } => "nested_source",
+                DiagnosticDetails::NestedResourceLimit { .. } => "nested_resource_limit",
+                DiagnosticDetails::NestedAssetClaim { .. } => "nested_asset_claim",
+                DiagnosticDetails::PdfRasterFallback { .. } => "pdf_raster_fallback",
+            };
+            kinds.push(kind);
             assert_eq!(
                 serde_json::to_string(&details).expect("serialize schema-1 details"),
                 expected
             );
         }
+        kinds.sort_unstable();
+        kinds.dedup();
+        assert_eq!(kinds.len(), 14, "one case for every detail kind");
     }
 
     #[test]

@@ -3,15 +3,14 @@ use std::env;
 use std::ffi::OsString;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
-use std::num::IntErrorKind;
 use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use excalidraw_render::{
-    license_bundle, ColorMode, CompatibilityDiagnostic, CompatibilityRevision, ErrorDescriptor,
-    FrameOptions, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, RenderRequest,
-    Renderer, ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
+    license_bundle, ColorMode, CompatibilityDiagnostic, ErrorDescriptor, FrameOptions,
+    MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, RenderRequest, Renderer,
+    ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
 };
 use serde::{Serialize, Serializer};
 use sha2::{Digest, Sha256};
@@ -188,12 +187,6 @@ struct Cli {
     /// express [default: allow-isolated]
     #[arg(long, value_enum, value_name = "MODE", help_heading = RENDERING)]
     pdf_raster_fallback: Option<PdfFallbackArg>,
-    // Hidden, like --list-revisions, while the renderer implements a single
-    // revision: there is nothing to choose between yet.
-    /// Compatibility revision to render with [default: 1; see
-    /// --list-revisions]
-    #[arg(long, value_name = "N", hide = true, help_heading = RENDERING)]
-    compatibility_revision: Option<String>,
 
     /// Turn frame rendering off: no frame clipping, names, or outlines
     #[arg(long, help_heading = FRAMES)]
@@ -237,9 +230,6 @@ struct Cli {
     #[arg(short, long, help_heading = REPORTING)]
     verbose: bool,
 
-    /// List the supported compatibility revisions and exit
-    #[arg(long, hide = true, help_heading = INFORMATION)]
-    list_revisions: bool,
     /// Print the version and the Excalidraw release it matches, then exit
     /// (add --verbose for the exact build identity to quote in bug reports)
     #[arg(short = 'V', long, help_heading = INFORMATION)]
@@ -247,6 +237,27 @@ struct Cli {
     /// Print the bundled third-party license notices, then exit
     #[arg(long, help_heading = INFORMATION)]
     licenses: bool,
+
+    /// The command the reports answer: the scene render, unless the `frames`
+    /// subcommand built this from its own arguments.
+    #[arg(skip)]
+    command: ReportCommand,
+}
+
+/// The `command` member of every JSON report: the command it answers.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize)]
+enum ReportCommand {
+    /// The scene render: a [`RenderReport`].
+    #[default]
+    #[serde(rename = "render")]
+    Render,
+    /// `frames --list`: a frame list report, or a [`RenderReport`] failure.
+    #[serde(rename = "frames.list")]
+    FramesList,
+    /// A `frames` export: a frame batch report, or a [`RenderReport`]
+    /// failure when no batch was rendered.
+    #[serde(rename = "frames.export")]
+    FramesExport,
 }
 
 #[derive(Serialize)]
@@ -432,30 +443,20 @@ struct CliPathEntry {
 #[derive(Serialize)]
 struct RenderReport<'a> {
     schema_version: u32,
+    command: ReportCommand,
     status: &'static str,
     renderer_version: &'static str,
-    compatibility_revision: Option<CompatibilityRevision>,
-    excalidraw_release: Option<&'static str>,
-    reference_profile_digest: Option<&'static str>,
+    excalidraw_release: &'static str,
     format: Option<OutputFormat>,
     artifact: Option<ArtifactDescriptor>,
     error: Option<Box<ReportError>>,
     diagnostics: &'a [CompatibilityDiagnostic],
 }
 
-#[derive(Serialize)]
-struct RevisionReport {
-    schema_version: u32,
-    renderer_version: &'static str,
-    revisions: Vec<RevisionEntry>,
-}
-
-#[derive(Serialize)]
-struct RevisionEntry {
-    compatibility_revision: CompatibilityRevision,
-    excalidraw_release: &'static str,
-    reference_profile_digest: &'static str,
-    default: bool,
+/// The Excalidraw release this renderer reproduces, as reports spell it
+/// (`v0.18.1`).
+fn excalidraw_release() -> &'static str {
+    Renderer::new().profile_identity().excalidraw_release()
 }
 
 /// Serializes each unit enum as its `as_str` spelling, so reports and human
@@ -471,12 +472,6 @@ macro_rules! serialize_as_str {
 }
 
 serialize_as_str!(IoRole, DeliveryRole, CliOperation, DeliveryState);
-
-struct SelectedIdentity {
-    revision: CompatibilityRevision,
-    release: &'static str,
-    digest: &'static str,
-}
 
 struct Failure {
     error: Box<ReportError>,
@@ -537,19 +532,24 @@ impl Failure {
 fn main() -> ExitCode {
     let args: Vec<OsString> = env::args_os().collect();
     let preparse_json = preparse_json_mode(&args);
+    let preparse_command = preparse_command(&args);
     match Invocation::try_parse_from(&args) {
         Ok(Invocation {
             command: Some(CliCommand::Frames(frames)),
             ..
         }) => ExitCode::from(run_frames(frames)),
         Ok(Invocation { render, .. }) => ExitCode::from(run(render)),
-        Err(error) => command_line_error(&error, preparse_json),
+        Err(error) => command_line_error(&error, preparse_json, preparse_command),
     }
 }
 
 /// Prints requested help, or reports a command-line grammar error the way the
 /// preparsed report mode asks for.
-fn command_line_error(error: &clap::Error, preparse_json: bool) -> ExitCode {
+fn command_line_error(
+    error: &clap::Error,
+    preparse_json: bool,
+    command: ReportCommand,
+) -> ExitCode {
     use clap::error::ErrorKind;
     match error.kind() {
         ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
@@ -573,7 +573,13 @@ fn command_line_error(error: &clap::Error, preparse_json: bool) -> ExitCode {
                     None,
                     EXIT_USAGE,
                 );
-                failure_report_bytes(ReportFormat::Json, None, None, failure, HumanReport::PLAIN)
+                failure_report_bytes(
+                    ReportFormat::Json,
+                    command,
+                    None,
+                    failure,
+                    HumanReport::PLAIN,
+                )
             } else {
                 human::clap_error(&rendered, "cli.invalid-arguments").into_bytes()
             };
@@ -607,32 +613,27 @@ fn validate_report_options(cli: &Cli) -> Result<(), Failure> {
 }
 
 fn run(cli: Cli) -> u8 {
-    if cli.version || cli.licenses || cli.list_revisions {
+    if cli.version || cli.licenses {
         return run_standalone(&cli);
     }
 
-    let mut identity = None;
     let mut selected_format = None;
-    let result = run_render(&cli, &mut identity, &mut selected_format);
+    let result = run_render(&cli, &mut selected_format);
     match result {
         Ok((artifact, diagnostics)) => deliver_success(
             &cli,
-            identity.as_ref().expect("render identity selected"),
             selected_format.expect("render format selected"),
             artifact,
             diagnostics,
         ),
-        Err(failure) => emit_failure(&cli, identity.as_ref(), selected_format, failure),
+        Err(failure) => emit_failure(&cli, selected_format, failure),
     }
 }
 
 fn run_standalone(cli: &Cli) -> u8 {
-    let count =
-        usize::from(cli.version) + usize::from(cli.licenses) + usize::from(cli.list_revisions);
     let render_controls = cli.input.is_some()
         || cli.output.is_some()
         || cli.format.is_some()
-        || cli.compatibility_revision.is_some()
         || cli.no_background
         || cli.padding.is_some()
         || cli.scale.is_some()
@@ -649,15 +650,13 @@ fn run_standalone(cli: &Cli) -> u8 {
         || !cli.asset_mime.is_empty()
         || cli.pdf_raster_fallback.is_some()
         || cli.force;
-    let invalid = count != 1
+    let invalid = (cli.version && cli.licenses)
         || render_controls
-        || cli.report_output.as_deref() == Some("-")
-        || ((cli.version || cli.licenses)
-            && (cli.report_format != ReportFormat::Human || cli.report_output.is_some()));
+        || cli.report_format != ReportFormat::Human
+        || cli.report_output.is_some();
     if invalid {
         return emit_failure(
             cli,
-            None,
             None,
             Failure::cli(
                 "cli.invalid-arguments",
@@ -668,93 +667,30 @@ fn run_standalone(cli: &Cli) -> u8 {
         );
     }
 
-    let profile = Renderer::new().profile_identity();
-    if cli.version {
-        let release = profile.excalidraw_release();
-        let mut text = format!(
-            "excalidraw-render {} (Excalidraw {})\n",
-            env!("CARGO_PKG_VERSION"),
-            release.strip_prefix('v').unwrap_or(release)
-        );
-        // The exact identity a bug report or reproduction pins; JSON reports
-        // carry it too.
-        if cli.verbose {
-            text.push_str(&format!(
-                "compatibility revision {}\nreference profile {}\n",
-                profile.compatibility_revision(),
-                profile.reference_profile_digest()
-            ));
-        }
-        return write_stdout(text.as_bytes());
-    }
     if cli.licenses {
         return write_stdout(license_bundle().as_bytes());
     }
-
-    // The renderer implements exactly one revision, which is also the default.
-    let revisions = vec![RevisionEntry {
-        compatibility_revision: profile.compatibility_revision(),
-        excalidraw_release: profile.excalidraw_release(),
-        reference_profile_digest: profile.reference_profile_digest(),
-        default: true,
-    }];
-    let bytes = match cli.report_format {
-        ReportFormat::Human => revisions
-            .iter()
-            .map(|entry| {
-                format!(
-                    "{}\t{}\t{}{}\n",
-                    entry.compatibility_revision,
-                    entry.excalidraw_release,
-                    entry.reference_profile_digest,
-                    if entry.default { "\tdefault" } else { "" }
-                )
-            })
-            .collect::<String>()
-            .into_bytes(),
-        ReportFormat::Json => json_line(&RevisionReport {
-            schema_version: 1,
-            renderer_version: env!("CARGO_PKG_VERSION"),
-            revisions,
-        }),
-        ReportFormat::None => {
-            return emit_failure(
-                cli,
-                None,
-                None,
-                Failure::cli(
-                    "cli.invalid-arguments",
-                    "--list-revisions does not accept --report-format none",
-                    None,
-                    EXIT_USAGE,
-                ),
-            )
-        }
-    };
-    if report_output(cli) != "stderr" && destination_is_taken(Path::new(report_output(cli))) {
-        return emit_failure(
-            cli,
-            None,
-            None,
-            Failure::cli(
-                "cli.destination-exists",
-                "report destination already exists",
-                Some(CliDetails::Delivery {
-                    role: DeliveryRole::Report,
-                    operation: CliOperation::Create,
-                    path: report_output(cli).to_owned(),
-                    artifact_state: DeliveryState::None,
-                }),
-                EXIT_OPERATIONAL,
-            ),
-        );
+    let profile = Renderer::new().profile_identity();
+    let release = profile.excalidraw_release();
+    let mut text = format!(
+        "excalidraw-render {} (Excalidraw {})\n",
+        env!("CARGO_PKG_VERSION"),
+        release.strip_prefix('v').unwrap_or(release)
+    );
+    // The exact reference profile a bug report or reproduction pins. Reports
+    // leave it out: the renderer version names it.
+    if cli.verbose {
+        text.push_str(&format!(
+            "compatibility revision {}\nreference profile {}\n",
+            profile.compatibility_revision(),
+            profile.reference_profile_digest()
+        ));
     }
-    deliver_report_bytes(cli, &bytes, DeliveryState::None)
+    write_stdout(text.as_bytes())
 }
 
 fn run_render(
     cli: &Cli,
-    identity: &mut Option<SelectedIdentity>,
     selected_format: &mut Option<OutputFormat>,
 ) -> Result<(Vec<u8>, Vec<CompatibilityDiagnostic>), Failure> {
     if cli.report_output.as_deref() == Some("-") {
@@ -797,14 +733,6 @@ fn run_render(
         )
         .with_hint("pass -o FILE, or -o - with --format to write standard output")
     })?;
-
-    let renderer = select_renderer(cli.compatibility_revision.as_deref())?;
-    let profile = renderer.profile_identity();
-    *identity = Some(SelectedIdentity {
-        revision: profile.compatibility_revision(),
-        release: profile.excalidraw_release(),
-        digest: profile.reference_profile_digest(),
-    });
 
     let format = select_format(cli.format, output)?;
     *selected_format = Some(format);
@@ -855,6 +783,7 @@ fn run_render(
         .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
 
     let request = build_request(cli, format, assets)?;
+    let renderer = Renderer::new();
     let outcome = renderer.render(&scene, &request).map_err(|error| {
         let diagnostics = error.report().diagnostics().to_vec();
         let descriptor = error.descriptor();
@@ -894,48 +823,6 @@ fn scene_size(
         height,
         sizing: request.sizing(),
     })
-}
-
-/// The renderer for `--compatibility-revision`, which accepts only the one
-/// revision the library implements; absent, it selects that revision.
-fn select_renderer(requested: Option<&str>) -> Result<Renderer, Failure> {
-    let renderer = Renderer::new();
-    let Some(value) = requested else {
-        return Ok(renderer);
-    };
-    let argument = || {
-        Some(CliDetails::CliArgument {
-            argument: "--compatibility-revision".to_owned(),
-            value: Some(value.to_owned()),
-        })
-    };
-    let parsed = match value.parse::<u64>() {
-        Ok(revision) => Some(revision),
-        // Too large for u64 is still a well-formed revision, just not one
-        // this renderer implements.
-        Err(error) if *error.kind() == IntErrorKind::PosOverflow => None,
-        Err(_) => {
-            return Err(Failure::cli(
-                "cli.invalid-arguments",
-                "compatibility revision must be a nonnegative integer",
-                argument(),
-                EXIT_USAGE,
-            ))
-        }
-    };
-    let supported = renderer.profile_identity().compatibility_revision();
-    if parsed != Some(supported.get()) {
-        let revision = parsed.map_or_else(|| value.to_owned(), |revision| revision.to_string());
-        return Err(Failure::cli(
-            "revision.unsupported",
-            format!(
-                "compatibility revision {revision} is not supported; this renderer implements revision {supported}"
-            ),
-            argument(),
-            EXIT_USAGE,
-        ));
-    }
-    Ok(renderer)
 }
 
 fn build_request(
@@ -1482,7 +1369,6 @@ fn io_failure(
 
 fn deliver_success(
     cli: &Cli,
-    identity: &SelectedIdentity,
     format: OutputFormat,
     artifact: Vec<u8>,
     diagnostics: Vec<CompatibilityDiagnostic>,
@@ -1494,11 +1380,10 @@ fn deliver_success(
     };
     let report = RenderReport {
         schema_version: 1,
+        command: cli.command,
         status: "success",
         renderer_version: env!("CARGO_PKG_VERSION"),
-        compatibility_revision: Some(identity.revision),
-        excalidraw_release: Some(identity.release),
-        reference_profile_digest: Some(identity.digest),
+        excalidraw_release: excalidraw_release(),
         format: Some(format),
         artifact: Some(descriptor),
         error: None,
@@ -1520,7 +1405,6 @@ fn deliver_success(
             Err(error) => {
                 return emit_failure(
                     cli,
-                    Some(identity),
                     Some(format),
                     delivery_failure(
                         DeliveryRole::Output,
@@ -1542,7 +1426,6 @@ fn deliver_success(
             Err(error) => {
                 return emit_failure(
                     cli,
-                    Some(identity),
                     Some(format),
                     delivery_failure(
                         DeliveryRole::Report,
@@ -1560,7 +1443,6 @@ fn deliver_success(
         if let Err(error) = staged.deliver() {
             return emit_failure(
                 cli,
-                Some(identity),
                 Some(format),
                 delivery_failure(
                     DeliveryRole::Output,
@@ -1585,7 +1467,6 @@ fn deliver_success(
         }
         return emit_failure(
             cli,
-            Some(identity),
             Some(format),
             delivery_failure(
                 DeliveryRole::Output,
@@ -1601,7 +1482,6 @@ fn deliver_success(
         if let Err(error) = staged.deliver() {
             return emergency_report_failure(
                 cli,
-                identity,
                 format,
                 &error,
                 DeliveryState::Complete,
@@ -1643,16 +1523,11 @@ fn success_report_bytes(
     }
 }
 
-fn emit_failure(
-    cli: &Cli,
-    identity: Option<&SelectedIdentity>,
-    format: Option<OutputFormat>,
-    failure: Failure,
-) -> u8 {
+fn emit_failure(cli: &Cli, format: Option<OutputFormat>, failure: Failure) -> u8 {
     let exit = failure.exit;
     let diagnostics = failure.diagnostics.clone();
     let human = HumanReport::new(cli.verbose, None, format);
-    let bytes = failure_report_bytes(cli.report_format, identity, format, failure, human);
+    let bytes = failure_report_bytes(cli.report_format, cli.command, format, failure, human);
     let report_output = report_output(cli);
     if report_output == "stderr"
         || cli.report_format == ReportFormat::None
@@ -1671,7 +1546,7 @@ fn emit_failure(
         );
         let emergency = failure_report_bytes(
             emergency_report_format(cli.report_format),
-            identity,
+            cli.command,
             format,
             fallback,
             human,
@@ -1724,7 +1599,7 @@ fn report_destination_is_safe(cli: &Cli) -> bool {
 /// diagnostics, an error line, and its hints (`none` keeps only the line).
 fn failure_report_bytes(
     mode: ReportFormat,
-    identity: Option<&SelectedIdentity>,
+    command: ReportCommand,
     format: Option<OutputFormat>,
     failure: Failure,
     human: HumanReport,
@@ -1761,11 +1636,10 @@ fn failure_report_bytes(
     }
     json_line(&RenderReport {
         schema_version: 1,
+        command,
         status: "failure",
         renderer_version: env!("CARGO_PKG_VERSION"),
-        compatibility_revision: identity.map(|value| value.revision),
-        excalidraw_release: identity.map(|value| value.release),
-        reference_profile_digest: identity.map(|value| value.digest),
+        excalidraw_release: excalidraw_release(),
         format,
         artifact: None,
         error: Some(failure.error),
@@ -1855,7 +1729,6 @@ fn delivery_failure(
 
 fn emergency_report_failure(
     cli: &Cli,
-    identity: &SelectedIdentity,
     format: OutputFormat,
     error: &DeliveryError,
     artifact_state: DeliveryState,
@@ -1870,7 +1743,7 @@ fn emergency_report_failure(
     );
     let bytes = failure_report_bytes(
         emergency_report_format(cli.report_format),
-        Some(identity),
+        cli.command,
         Some(format),
         failure,
         HumanReport::PLAIN,
@@ -1898,8 +1771,13 @@ fn deliver_report_bytes(cli: &Cli, bytes: &[u8], artifact_state: DeliveryState) 
                 artifact_state,
                 Vec::new(),
             );
-            let bytes =
-                failure_report_bytes(cli.report_format, None, None, failure, HumanReport::PLAIN);
+            let bytes = failure_report_bytes(
+                cli.report_format,
+                cli.command,
+                None,
+                failure,
+                HumanReport::PLAIN,
+            );
             let _ = write_stream(&mut io::stderr().lock(), &bytes);
             EXIT_OPERATIONAL
         }
@@ -2077,6 +1955,22 @@ fn preparse_json_mode(args: &[OsString]) -> bool {
     report_options == 1 && valid_json == 1
 }
 
+/// The command a rejected command line meant to run, for its JSON report:
+/// `frames` is the first argument when given, and `--list` makes it a
+/// listing.
+fn preparse_command(args: &[OsString]) -> ReportCommand {
+    match args.get(1) {
+        Some(first) if first == "frames" => {
+            if args[2..].iter().any(|arg| arg == "--list") {
+                ReportCommand::FramesList
+            } else {
+                ReportCommand::FramesExport
+            }
+        }
+        _ => ReportCommand::Render,
+    }
+}
+
 /// `report` as one line of JSON.
 fn json_line(report: &impl Serialize) -> Vec<u8> {
     let mut bytes = serde_json::to_vec(report).expect("reports serialize");
@@ -2100,16 +1994,16 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use excalidraw_render::{
-        CompatibilityDiagnostic, CompatibilityRevision, ErrorDescriptor, OutputFormat,
-        RenderRequest, Renderer, SceneDocument,
+        CompatibilityDiagnostic, ErrorDescriptor, OutputFormat, RenderRequest, Renderer,
+        SceneDocument,
     };
 
     use super::{
-        json_line, lexical_absolute, parse_asset_declarations, preparse_json_mode, same_path,
-        select_format, sha256, split_asset_option, ArtifactDescriptor, CliDetails, CliError,
-        CliMeasurement, CliOperation, CliPathEntry, DeliveryError, DeliveryRole, DeliveryState,
-        Failure, FormatArg, IoRole, RenderReport, ReportError, RevisionEntry, RevisionReport,
-        StagedFile, EXIT_USAGE,
+        json_line, lexical_absolute, parse_asset_declarations, preparse_command,
+        preparse_json_mode, same_path, select_format, sha256, split_asset_option,
+        ArtifactDescriptor, CliDetails, CliError, CliMeasurement, CliOperation, CliPathEntry,
+        DeliveryError, DeliveryRole, DeliveryState, Failure, FormatArg, IoRole, RenderReport,
+        ReportCommand, ReportError, StagedFile, EXIT_USAGE,
     };
 
     /// `--help` describes every argument of every command.
@@ -2622,11 +2516,10 @@ mod tests {
         let diagnostics = missing_image_diagnostics();
         let report = RenderReport {
             schema_version: 1,
+            command: ReportCommand::Render,
             status: "success",
             renderer_version: "0.1.0",
-            compatibility_revision: Some(CompatibilityRevision::REVISION_1),
-            excalidraw_release: Some("v0.18.1"),
-            reference_profile_digest: Some("sha256:abc"),
+            excalidraw_release: "v0.18.1",
             format: Some(OutputFormat::Svg),
             artifact: Some(ArtifactDescriptor {
                 media_type: "image/svg+xml",
@@ -2639,9 +2532,8 @@ mod tests {
         assert_eq!(
             utf8(json_line(&report)),
             [
-                r#"{"schema_version":1,"status":"success","renderer_version":"0.1.0","#,
-                r#""compatibility_revision":1,"excalidraw_release":"v0.18.1","#,
-                r#""reference_profile_digest":"sha256:abc","format":"svg","#,
+                r#"{"schema_version":1,"command":"render","status":"success","#,
+                r#""renderer_version":"0.1.0","excalidraw_release":"v0.18.1","format":"svg","#,
                 r#""artifact":{"media_type":"image/svg+xml","byte_length":42,"sha256":"sha256:def"},"#,
                 r#""error":null,"diagnostics":["#,
                 MISSING_IMAGE_DIAGNOSTIC_JSON,
@@ -2658,11 +2550,10 @@ mod tests {
         let diagnostics = missing_image_diagnostics();
         let report = RenderReport {
             schema_version: 1,
-            status: "error",
+            command: ReportCommand::FramesExport,
+            status: "failure",
             renderer_version: "0.1.0",
-            compatibility_revision: None,
-            excalidraw_release: None,
-            reference_profile_digest: None,
+            excalidraw_release: "v0.18.1",
             format: None,
             artifact: None,
             error: Some(Box::new(ReportError::Library(invalid_json_error()))),
@@ -2671,9 +2562,9 @@ mod tests {
         assert_eq!(
             utf8(json_line(&report)),
             [
-                r#"{"schema_version":1,"status":"error","renderer_version":"0.1.0","#,
-                r#""compatibility_revision":null,"excalidraw_release":null,"#,
-                r#""reference_profile_digest":null,"format":null,"artifact":null,"error":"#,
+                r#"{"schema_version":1,"command":"frames.export","status":"failure","#,
+                r#""renderer_version":"0.1.0","excalidraw_release":"v0.18.1","format":null,"#,
+                r#""artifact":null,"error":"#,
                 INVALID_JSON_ERROR_JSON,
                 r#","diagnostics":["#,
                 MISSING_IMAGE_DIAGNOSTIC_JSON,
@@ -2688,11 +2579,10 @@ mod tests {
     fn cli_error_line(details: Option<CliDetails>) -> String {
         let report = RenderReport {
             schema_version: 1,
-            status: "error",
+            command: ReportCommand::Render,
+            status: "failure",
             renderer_version: "0.1.0",
-            compatibility_revision: Some(CompatibilityRevision::REVISION_1),
-            excalidraw_release: Some("v0.18.1"),
-            reference_profile_digest: Some("sha256:abc"),
+            excalidraw_release: "v0.18.1",
             format: Some(OutputFormat::Png),
             artifact: None,
             error: Some(Box::new(ReportError::Cli(CliError {
@@ -2713,9 +2603,9 @@ mod tests {
     /// The report line `cli_error_line` renders around `details_json`.
     fn expected_cli_error_line(details_json: &str) -> String {
         [
-            r#"{"schema_version":1,"status":"error","renderer_version":"0.1.0","#,
-            r#""compatibility_revision":1,"excalidraw_release":"v0.18.1","#,
-            r#""reference_profile_digest":"sha256:abc","format":"png","artifact":null,"#,
+            r#"{"schema_version":1,"command":"render","status":"failure","#,
+            r#""renderer_version":"0.1.0","excalidraw_release":"v0.18.1","format":"png","#,
+            r#""artifact":null,"#,
             r#""error":{"family":"cli","category":"usage","code":"cli.example","message":"#,
             TRICKY_JSON,
             r#","format":"pdf","element_id":"#,
@@ -2732,11 +2622,10 @@ mod tests {
     fn cli_error_fields_serialize_as_explicit_nulls_when_absent() {
         let report = RenderReport {
             schema_version: 1,
-            status: "error",
+            command: ReportCommand::FramesList,
+            status: "failure",
             renderer_version: "0.1.0",
-            compatibility_revision: None,
-            excalidraw_release: None,
-            reference_profile_digest: None,
+            excalidraw_release: "v0.18.1",
             format: None,
             artifact: None,
             error: Some(Box::new(ReportError::Cli(CliError {
@@ -2754,9 +2643,9 @@ mod tests {
         assert_eq!(
             utf8(json_line(&report)),
             concat!(
-                r#"{"schema_version":1,"status":"error","renderer_version":"0.1.0","#,
-                r#""compatibility_revision":null,"excalidraw_release":null,"#,
-                r#""reference_profile_digest":null,"format":null,"artifact":null,"#,
+                r#"{"schema_version":1,"command":"frames.list","status":"failure","#,
+                r#""renderer_version":"0.1.0","excalidraw_release":"v0.18.1","format":null,"#,
+                r#""artifact":null,"#,
                 r#""error":{"family":"cli","category":null,"code":"cli.format-required","#,
                 r#""message":"m","format":null,"element_id":null,"json_pointer":null,"#,
                 r#""details":null},"diagnostics":[]}"#,
@@ -2958,47 +2847,42 @@ mod tests {
         }
     }
 
+    /// A rejected command line still names the command it meant to run.
     #[test]
-    fn a_revision_report_lists_every_revision_in_order() {
-        let report = RevisionReport {
-            schema_version: 1,
-            renderer_version: "0.1.0",
-            revisions: vec![
-                RevisionEntry {
-                    compatibility_revision: CompatibilityRevision::REVISION_1,
-                    excalidraw_release: "v0.18.1",
-                    reference_profile_digest: "sha256:abc",
-                    default: true,
-                },
-                RevisionEntry {
-                    compatibility_revision: CompatibilityRevision::REVISION_1,
-                    excalidraw_release: TRICKY,
-                    reference_profile_digest: "sha256:def",
-                    default: false,
-                },
-            ],
-        };
+    fn the_command_of_a_rejected_command_line_is_preparsed() {
+        for (values, command) in [
+            (&[][..], ReportCommand::Render),
+            (
+                &["scene.excalidraw", "-o", "out.svg"][..],
+                ReportCommand::Render,
+            ),
+            // A scene file named `frames` after an option is the render's input.
+            (&["--force", "frames"][..], ReportCommand::Render),
+            (
+                &["frames", "scene.excalidraw", "-o", "out"][..],
+                ReportCommand::FramesExport,
+            ),
+            (
+                &["frames", "scene.excalidraw", "--list"][..],
+                ReportCommand::FramesList,
+            ),
+            (&["frames", "--list"][..], ReportCommand::FramesList),
+        ] {
+            assert_eq!(preparse_command(&args(values)), command, "{values:?}");
+        }
+    }
+
+    /// Every command spells its discriminator as the reports promise.
+    #[test]
+    fn every_report_command_keeps_its_spelling() {
         assert_eq!(
-            utf8(json_line(&report)),
-            [
-                r#"{"schema_version":1,"renderer_version":"0.1.0","revisions":["#,
-                r#"{"compatibility_revision":1,"excalidraw_release":"v0.18.1","#,
-                r#""reference_profile_digest":"sha256:abc","default":true},"#,
-                r#"{"compatibility_revision":1,"excalidraw_release":"#,
-                TRICKY_JSON,
-                r#","reference_profile_digest":"sha256:def","default":false}]}"#,
-                "\n",
-            ]
-            .concat()
-        );
-        let empty = RevisionReport {
-            schema_version: 1,
-            renderer_version: "0.1.0",
-            revisions: Vec::new(),
-        };
-        assert_eq!(
-            utf8(json_line(&empty)),
-            "{\"schema_version\":1,\"renderer_version\":\"0.1.0\",\"revisions\":[]}\n"
+            serde_json::to_string(&[
+                ReportCommand::Render,
+                ReportCommand::FramesList,
+                ReportCommand::FramesExport,
+            ])
+            .expect("commands serialize"),
+            r#"["render","frames.list","frames.export"]"#
         );
     }
 }

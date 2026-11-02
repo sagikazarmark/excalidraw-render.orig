@@ -77,6 +77,24 @@ impl<'scene> FrameRef<'scene> {
     }
 }
 
+/// Two references are equal when they name the same frame occurrence of the
+/// same admitted scene. A clone of a [`SceneDocument`] is the same scene; a
+/// second parse of the same bytes is not.
+impl PartialEq for FrameRef<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.belongs_to(other.scene) && self.source_index == other.source_index
+    }
+}
+
+impl Eq for FrameRef<'_> {}
+
+impl std::hash::Hash for FrameRef<'_> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.scene.hash_identity(state);
+        self.source_index.hash(state);
+    }
+}
+
 impl fmt::Debug for FrameRef<'_> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
@@ -199,11 +217,6 @@ impl FrameBatchError {
     /// Returns the implicated frame ordinal for a target-selection failure.
     pub const fn ordinal(&self) -> Option<u32> {
         self.ordinal
-    }
-
-    /// Returns the stable shared-preparation subject, when applicable.
-    pub const fn preparation_subject(&self) -> Option<&'static str> {
-        self.preparation_subject
     }
 
     /// Returns the stable machine-readable error code.

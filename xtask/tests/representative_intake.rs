@@ -275,7 +275,7 @@ fn real_capture_repeats_and_rejects_resealed_report_tampering() {
     let record = f.json("capture/capture.json");
     assert_eq!(
         record["schema"],
-        "excalidraw-render/representative-intake-capture/v2"
+        "excalidraw-render/representative-intake-capture/v3"
     );
     assert!(record["approval"].is_null());
     assert_eq!(record["rows"].as_array().unwrap().len(), 3);

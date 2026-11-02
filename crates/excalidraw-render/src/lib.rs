@@ -7,11 +7,9 @@
 //! lists what the renderer substituted, omitted or approximated, so
 //! differences from Excalidraw are reported rather than silent.
 //!
-//! The Excalidraw behaviour a release reproduces is identified by a
-//! [`CompatibilityRevision`]: this release implements revision 1, bound to
-//! Excalidraw 0.18.1, and [`Renderer::profile_identity`] names it. In 0.x,
-//! any release may change output and diagnostics; pin the renderer version
-//! and dependency lockfile for reproducible output.
+//! This release reproduces Excalidraw 0.18.1. In 0.x, any release may change
+//! output and diagnostics; pin the renderer version and dependency lockfile
+//! for reproducible output.
 //! Linux x86-64 GNU is release-qualified; browser WASM is experimental.
 //!
 //! Throughout this documentation, *reference* means Excalidraw's own exporter
@@ -235,11 +233,13 @@ mod stage4_diagnostic_contract;
 struct ReadmeDoctests;
 
 pub use compatibility::{
-    AssetChainEntry, CompatibilityRevision, DiagnosticDetails, ErrorCode, ErrorDescriptor,
-    ErrorFamily, FiniteValue, LogicalBounds, Measurement, MetadataComponent, MetadataOperation,
-    NestedPath, NestedPathSegment, NestedSegmentKind, Recovery, ReferenceProfileIdentity, Renderer,
-    ResourceMeasurement, ResourceValue, SvgFontSubsetStage, ValueKind,
+    AssetChainEntry, DiagnosticDetails, ErrorCode, ErrorDescriptor, ErrorFamily, FiniteValue,
+    LogicalBounds, Measurement, MetadataComponent, MetadataOperation, NestedPath,
+    NestedPathSegment, NestedSegmentKind, Recovery, Renderer, ResourceMeasurement, ResourceValue,
+    SvgFontSubsetStage, ValueKind,
 };
+#[doc(hidden)]
+pub use compatibility::{CompatibilityRevision, ReferenceProfileIdentity};
 pub use frame::{
     FrameBatchError, FrameBatchErrorKind, FrameKind, FrameRef, FrameRefs, FrameRenderCursor,
     FrameRenderEntry,

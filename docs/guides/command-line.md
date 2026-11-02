@@ -161,11 +161,14 @@ excalidraw-render drawing.excalidraw -o drawing.svg \
 jq -r '.diagnostics[] | select(.severity == "warning") | .code' report.json | sort | uniq -c
 ```
 
-The report has a `status` (`success` or `failure`), an `error` object with a
-stable `code` when the render failed, and a `diagnostics` array whose entries
-carry `code`, `severity`, `element_id`, `json_pointer` (the location in the
-scene) and `message`. Match on codes, not messages: codes are stable, messages
-may be reworded.
+The report has a `command` (`render`, `frames.list` or `frames.export`), a
+`status` (`success` or `failure`; a frame batch can also be `partial`), an
+`error` object with a stable `code` when the command failed, and a
+`diagnostics` array whose entries carry `code`, `severity`, `element_id`,
+`json_pointer` (the location in the scene) and `message`. The `frames` reports
+add a `frames` array; a `frames` command that fails before it has a listing or
+a batch reports in the render shape, without one. Match on codes, not
+messages: codes are stable, messages may be reworded.
 
 ## Export frames
 

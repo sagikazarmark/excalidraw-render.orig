@@ -5,9 +5,9 @@ use std::path::{Path, PathBuf};
 
 use clap::Args;
 use excalidraw_render::{
-    ColorMode, CompatibilityDiagnostic, CompatibilityRevision, FrameBatchErrorKind,
-    FrameRenderRequest, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, Renderer,
-    ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
+    ColorMode, CompatibilityDiagnostic, FrameBatchErrorKind, FrameRenderRequest, MetadataOptions,
+    OutputFormat, PdfOptions, PdfRasterFallback, Renderer, ResourceLimits, SceneDocument, Sizing,
+    SupplementalAssets,
 };
 use regex::Regex;
 use serde::{Serialize, Serializer};
@@ -16,11 +16,11 @@ use unicode_normalization::UnicodeNormalization as _;
 use crate::human::{self, HumanReport};
 use crate::{
     deliver_report_bytes, destination_exists, destination_is_taken, emergency_report_failure,
-    emit_failure, json_line, not_a_directory, parse_asset_declarations, path_conflict,
-    path_entry_exists, read_bounded_asset, read_scene, report_output, same_path, select_renderer,
+    emit_failure, excalidraw_release, json_line, not_a_directory, parse_asset_declarations,
+    path_conflict, path_entry_exists, read_bounded_asset, read_scene, report_output, same_path,
     sha256, stage_report_file, validate_paths, validate_report_options, write_stdout, write_stream,
     ArtifactDescriptor, Cli, CliDetails, CliError, CliOperation, DeliveryError, DeliveryRole,
-    DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError, ReportFormat, SelectedIdentity,
+    DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportCommand, ReportError, ReportFormat,
     StagedFile, ASSETS, EXIT_OPERATIONAL, EXIT_USAGE, METADATA, OUTPUT, RENDERING, REPORTING,
 };
 
@@ -119,12 +119,6 @@ pub(crate) struct FramesCli {
     /// express [default: allow-isolated]
     #[arg(long, value_enum, value_name = "MODE", help_heading = RENDERING)]
     pdf_raster_fallback: Option<PdfFallbackArg>,
-    // Hidden while the renderer implements a single revision, as in the scene
-    // command.
-    /// Compatibility revision to render with [default: 1; see
-    /// --list-revisions]
-    #[arg(long, value_name = "N", hide = true, help_heading = RENDERING)]
-    compatibility_revision: Option<String>,
 
     /// Embed the scene so Excalidraw can reopen each exported file for editing
     #[arg(long, help_heading = METADATA)]
@@ -175,7 +169,6 @@ impl FramesCli {
             input: Some(self.input.clone()),
             output: self.output.clone(),
             format: self.format,
-            compatibility_revision: self.compatibility_revision.clone(),
             no_background: self.no_background,
             padding: None,
             scale: self.scale,
@@ -195,9 +188,13 @@ impl FramesCli {
             report_output: self.report_output.clone(),
             force: self.force,
             verbose: self.verbose,
-            list_revisions: false,
             version: false,
             licenses: false,
+            command: if self.list {
+                ReportCommand::FramesList
+            } else {
+                ReportCommand::FramesExport
+            },
         }
     }
 }
@@ -232,23 +229,20 @@ struct FrameListEntry {
 #[derive(Serialize)]
 struct FrameListReport<'a> {
     schema_version: u32,
+    command: ReportCommand,
     status: &'static str,
     renderer_version: &'static str,
-    compatibility_revision: Option<CompatibilityRevision>,
-    excalidraw_release: Option<&'static str>,
-    reference_profile_digest: Option<&'static str>,
-    mode: &'static str,
+    excalidraw_release: &'static str,
     frames: &'a [FrameListEntry],
 }
 
 #[derive(Serialize)]
 struct FrameBatchReport<'a> {
     schema_version: u32,
+    command: ReportCommand,
     status: &'a str,
     renderer_version: &'static str,
-    compatibility_revision: CompatibilityRevision,
     excalidraw_release: &'static str,
-    reference_profile_digest: &'static str,
     format: OutputFormat,
     delivery_state: DeliveryState,
     diagnostics: &'a [CompatibilityDiagnostic],
@@ -270,20 +264,18 @@ pub(crate) fn run_frames(frames: FramesCli) -> u8 {
         return run_frames_list(&frames);
     }
     let cli = frames.report_cli();
-    let mut identity = None;
     let format = OutputFormat::from(frames.format());
-    let result = prepare_and_render_frames(&frames, &mut identity);
+    let result = prepare_and_render_frames(&frames);
     match result {
         Ok(batch) => deliver_frame_batch(
             &cli,
-            identity.as_ref().expect("frame identity selected"),
             format,
             batch.entries,
             batch.global_diagnostics,
             batch.had_failure,
             frames.allow_partial,
         ),
-        Err(failure) => emit_failure(&cli, identity.as_ref(), Some(format), failure),
+        Err(failure) => emit_failure(&cli, Some(format), failure),
     }
 }
 
@@ -293,22 +285,13 @@ pub(crate) fn run_frames(frames: FramesCli) -> u8 {
 /// so unlike the export it succeeds instead of failing `cli.frame-no-match`.
 fn run_frames_list(frames: &FramesCli) -> u8 {
     let cli = frames.report_cli();
-    let mut identity = None;
-    match prepare_frame_list(frames, &mut identity) {
-        Ok(entries) => deliver_frame_list(
-            &cli,
-            identity.as_ref(),
-            &entries,
-            frames.name_regex.as_deref(),
-        ),
-        Err(failure) => emit_failure(&cli, identity.as_ref(), None, failure),
+    match prepare_frame_list(frames) {
+        Ok(entries) => deliver_frame_list(&cli, &entries, frames.name_regex.as_deref()),
+        Err(failure) => emit_failure(&cli, None, failure),
     }
 }
 
-fn prepare_frame_list(
-    frames: &FramesCli,
-    identity: &mut Option<SelectedIdentity>,
-) -> Result<Vec<FrameListEntry>, Failure> {
+fn prepare_frame_list(frames: &FramesCli) -> Result<Vec<FrameListEntry>, Failure> {
     if frames.report_format == ReportFormat::None {
         return Err(Failure::cli(
             "cli.invalid-arguments",
@@ -317,7 +300,7 @@ fn prepare_frame_list(
             EXIT_USAGE,
         ));
     }
-    let FramePreamble { regex, .. } = prepare_frame_preamble(frames, identity)?;
+    let FramePreamble { regex, .. } = prepare_frame_preamble(frames)?;
 
     let report_path = frames.report_output.as_deref().unwrap_or("stderr");
     if report_path != "stderr" {
@@ -346,12 +329,7 @@ fn prepare_frame_list(
         .collect())
 }
 
-fn deliver_frame_list(
-    cli: &Cli,
-    identity: Option<&SelectedIdentity>,
-    entries: &[FrameListEntry],
-    name_regex: Option<&str>,
-) -> u8 {
+fn deliver_frame_list(cli: &Cli, entries: &[FrameListEntry], name_regex: Option<&str>) -> u8 {
     let bytes = match cli.report_format {
         // An empty listing still succeeds, but says so on stderr rather than
         // printing nothing.
@@ -375,7 +353,7 @@ fn deliver_frame_list(
             })
             .collect::<String>()
             .into_bytes(),
-        ReportFormat::Json => frame_list_json_line(identity, entries),
+        ReportFormat::Json => frame_list_json_line(entries),
         // Rejected during preparation; list mode has nothing to report without
         // a report format.
         ReportFormat::None => Vec::new(),
@@ -389,18 +367,13 @@ fn deliver_frame_list(
     }
 }
 
-fn frame_list_json_line(
-    identity: Option<&SelectedIdentity>,
-    entries: &[FrameListEntry],
-) -> Vec<u8> {
+fn frame_list_json_line(entries: &[FrameListEntry]) -> Vec<u8> {
     json_line(&FrameListReport {
         schema_version: 1,
+        command: ReportCommand::FramesList,
         status: "success",
         renderer_version: env!("CARGO_PKG_VERSION"),
-        compatibility_revision: identity.map(|identity| identity.revision),
-        excalidraw_release: identity.map(|identity| identity.release),
-        reference_profile_digest: identity.map(|identity| identity.digest),
-        mode: "list",
+        excalidraw_release: excalidraw_release(),
         frames: entries,
     })
 }
@@ -451,7 +424,7 @@ fn frame_name_regex(frames: &FramesCli) -> Result<Option<Regex>, Failure> {
 
 /// Everything `--list` and an export must both settle before either touches the
 /// filesystem, in the order the CLI failure ladder requires: report options,
-/// selection bounds, revision identity, then request values and asset
+/// selection bounds, then request values and asset
 /// declarations. `--list` is exempt from *reading* supplemental assets and from
 /// writing, not from rejecting a command an export would reject.
 struct FramePreamble {
@@ -461,20 +434,11 @@ struct FramePreamble {
     asset_mimes: BTreeMap<String, String>,
 }
 
-fn prepare_frame_preamble(
-    frames: &FramesCli,
-    identity: &mut Option<SelectedIdentity>,
-) -> Result<FramePreamble, Failure> {
+fn prepare_frame_preamble(frames: &FramesCli) -> Result<FramePreamble, Failure> {
     validate_report_options(&frames.report_cli())?;
     validate_frame_limit(frames)?;
     let regex = frame_name_regex(frames)?;
-    let renderer = select_renderer(frames.compatibility_revision.as_deref())?;
-    let profile = renderer.frame_profile_identity();
-    *identity = Some(SelectedIdentity {
-        revision: profile.compatibility_revision(),
-        release: profile.excalidraw_release(),
-        digest: profile.reference_profile_digest(),
-    });
+    let renderer = Renderer::new();
 
     let (asset_paths, asset_mimes) = parse_asset_declarations(&frames.asset, &frames.asset_mime)?;
     let mut validation_assets = SupplementalAssets::builder();
@@ -531,10 +495,7 @@ fn frame_limit_exceeded(frames: &FramesCli) -> Failure {
     )
 }
 
-fn prepare_and_render_frames(
-    frames: &FramesCli,
-    identity: &mut Option<SelectedIdentity>,
-) -> Result<PreparedFrameBatch, Failure> {
+fn prepare_and_render_frames(frames: &FramesCli) -> Result<PreparedFrameBatch, Failure> {
     if frames.output() == "-" {
         return Err(Failure::cli(
             "cli.invalid-arguments",
@@ -551,7 +512,7 @@ fn prepare_and_render_frames(
         renderer,
         asset_paths,
         asset_mimes,
-    } = prepare_frame_preamble(frames, identity)?;
+    } = prepare_frame_preamble(frames)?;
 
     let report_path = frames.report_output.as_deref().unwrap_or("stderr");
     validate_paths(&frames.input, frames.output(), report_path, &asset_paths)?;
@@ -1008,7 +969,6 @@ fn frame_cli_error(
 
 fn deliver_frame_batch(
     cli: &Cli,
-    identity: &SelectedIdentity,
     format: OutputFormat,
     mut entries: Vec<(FrameCliEntry, Option<StagedFile>)>,
     global_diagnostics: Vec<CompatibilityDiagnostic>,
@@ -1032,7 +992,6 @@ fn deliver_frame_batch(
     let (status, _) = frame_batch_delivery(&entries, had_failure);
     let mut report_bytes = frame_batch_report_bytes(
         cli.report_format,
-        identity,
         format,
         status,
         &global_diagnostics,
@@ -1044,7 +1003,6 @@ fn deliver_frame_batch(
         Err(error) => {
             return emergency_report_failure(
                 cli,
-                identity,
                 format,
                 &error,
                 DeliveryState::None,
@@ -1134,7 +1092,6 @@ fn deliver_frame_batch(
     let (status, artifact_state) = frame_batch_delivery(&entries, had_failure);
     let final_report_bytes = frame_batch_report_bytes(
         cli.report_format,
-        identity,
         format,
         status,
         &global_diagnostics,
@@ -1149,7 +1106,6 @@ fn deliver_frame_batch(
             Err(error) => {
                 return emergency_report_failure(
                     cli,
-                    identity,
                     format,
                     &error,
                     artifact_state,
@@ -1160,7 +1116,6 @@ fn deliver_frame_batch(
     }
     let report_exit = deliver_frame_report(
         cli,
-        identity,
         format,
         &report_bytes,
         staged_report,
@@ -1224,7 +1179,6 @@ fn frame_batch_delivery(
 
 fn frame_batch_report_bytes(
     mode: ReportFormat,
-    identity: &SelectedIdentity,
     format: OutputFormat,
     status: &str,
     global_diagnostics: &[CompatibilityDiagnostic],
@@ -1292,11 +1246,10 @@ fn frame_batch_report_bytes(
             let artifact_state = frame_batch_delivery(entries, status != "success").1;
             json_line(&FrameBatchReport {
                 schema_version: 1,
+                command: ReportCommand::FramesExport,
                 status,
                 renderer_version: env!("CARGO_PKG_VERSION"),
-                compatibility_revision: identity.revision,
-                excalidraw_release: identity.release,
-                reference_profile_digest: identity.digest,
+                excalidraw_release: excalidraw_release(),
                 format,
                 delivery_state: artifact_state,
                 diagnostics: global_diagnostics,
@@ -1333,7 +1286,6 @@ fn frame_batch_error_line(entries: &[(FrameCliEntry, Option<StagedFile>)]) -> Ve
 
 fn deliver_frame_report(
     cli: &Cli,
-    identity: &SelectedIdentity,
     format: OutputFormat,
     bytes: &[u8],
     staged_report: Option<StagedFile>,
@@ -1345,7 +1297,7 @@ fn deliver_frame_report(
         return match staged.deliver() {
             Ok(()) => 0,
             Err(error) => {
-                emergency_report_failure(cli, identity, format, &error, artifact_state, diagnostics)
+                emergency_report_failure(cli, format, &error, artifact_state, diagnostics)
             }
         };
     }
@@ -1371,23 +1323,15 @@ mod tests {
         invalid_json_error, missing_image_diagnostics, INVALID_JSON_ERROR_JSON,
         MISSING_IMAGE_DIAGNOSTIC_JSON, TRICKY, TRICKY_JSON,
     };
-    use crate::{ArtifactDescriptor, DeliveryState, ReportError, ReportFormat, SelectedIdentity};
-    use excalidraw_render::{CompatibilityRevision, OutputFormat, SceneDocument};
-
-    fn identity() -> SelectedIdentity {
-        SelectedIdentity {
-            revision: CompatibilityRevision::REVISION_1,
-            release: "v0.18.1",
-            digest: "sha256:abc",
-        }
-    }
+    use crate::{ArtifactDescriptor, DeliveryState, ReportError, ReportFormat};
+    use excalidraw_render::{OutputFormat, SceneDocument};
 
     fn utf8(bytes: Vec<u8>) -> String {
         String::from_utf8(bytes).expect("the report is UTF-8")
     }
 
     #[test]
-    fn a_frame_list_report_carries_the_identity_and_every_entry() {
+    fn a_frame_list_report_carries_every_entry() {
         let entries = [
             FrameListEntry {
                 ordinal: 1,
@@ -1403,7 +1347,7 @@ mod tests {
             },
         ];
         let frames_json = [
-            r#""mode":"list","frames":[{"ordinal":1,"kind":"frame","name":null,"#,
+            r#""frames":[{"ordinal":1,"kind":"frame","name":null,"#,
             r#""output_basename":"frame-1"},{"ordinal":2,"kind":"magicframe","name":"#,
             TRICKY_JSON,
             r#","output_basename":"b"}]}"#,
@@ -1412,15 +1356,15 @@ mod tests {
         .concat();
         let version = env!("CARGO_PKG_VERSION");
         assert_eq!(
-            utf8(frame_list_json_line(Some(&identity()), &entries)),
+            utf8(frame_list_json_line(&entries)),
             format!(
-                r#"{{"schema_version":1,"status":"success","renderer_version":"{version}","compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":"sha256:abc",{frames_json}"#
+                r#"{{"schema_version":1,"command":"frames.list","status":"success","renderer_version":"{version}","excalidraw_release":"v0.18.1",{frames_json}"#
             )
         );
         assert_eq!(
-            utf8(frame_list_json_line(None, &[])),
+            utf8(frame_list_json_line(&[])),
             format!(
-                r#"{{"schema_version":1,"status":"success","renderer_version":"{version}","compatibility_revision":null,"excalidraw_release":null,"reference_profile_digest":null,"mode":"list","frames":[]}}"#
+                r#"{{"schema_version":1,"command":"frames.list","status":"success","renderer_version":"{version}","excalidraw_release":"v0.18.1","frames":[]}}"#
             ) + "\n"
         );
     }
@@ -1464,7 +1408,6 @@ mod tests {
         assert_eq!(
             utf8(frame_batch_report_bytes(
                 ReportFormat::Json,
-                &identity(),
                 OutputFormat::Svg,
                 "partial",
                 &diagnostics,
@@ -1472,10 +1415,10 @@ mod tests {
                 crate::human::HumanReport::PLAIN,
             )),
             [
-                r#"{"schema_version":1,"status":"partial","renderer_version":""#,
+                r#"{"schema_version":1,"command":"frames.export","status":"partial","#,
+                r#""renderer_version":""#,
                 version,
-                r#"","compatibility_revision":1,"excalidraw_release":"v0.18.1","#,
-                r#""reference_profile_digest":"sha256:abc","format":"svg","#,
+                r#"","excalidraw_release":"v0.18.1","format":"svg","#,
                 r#""delivery_state":"possibly_partial","diagnostics":["#,
                 MISSING_IMAGE_DIAGNOSTIC_JSON,
                 r#"],"frames":[{"ordinal":1,"kind":"frame","name":"#,
