@@ -14,7 +14,7 @@ from elastic/elasticsearch-specification, © Elastic and contributors,
 
 The compatibility target is Excalidraw **0.18.1**. Output is close to, but not
 pixel-identical with, the browser exporter; see the
-[known limitations](../../docs/known-limitations.md).
+[known limitations](../../docs/reference/known-limitations.md).
 
 ## Install
 
@@ -71,6 +71,15 @@ error.
 `excalidraw-render --version` prints the version and the Excalidraw release it
 matches; add `--verbose` for the exact compatibility revision and profile
 digest.
+
+## Guides
+
+- [Getting started](../../docs/guides/getting-started.md): a first render,
+  step by step.
+- [Command-line guide](../../docs/guides/command-line.md): every option by
+  task, the JSON report and scripting.
+- [Exporting frames](../../docs/guides/frames.md): one file per frame, and
+  slide decks.
 
 ## License
 

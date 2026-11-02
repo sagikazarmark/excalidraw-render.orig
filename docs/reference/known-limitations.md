@@ -1,0 +1,127 @@
+# Known limitations for 0.1.0
+
+The renderer targets Excalidraw 0.18.1. It is not pixel-identical to the browser
+renderer and does not claim complete conformance. Compatibility reports describe
+declared repairs, substitutions, omissions, and fallbacks. The differences below
+are known defects or unqualified behavior; a report is not guaranteed to diagnose
+each one at runtime.
+
+## What you are most likely to notice
+
+- **Some scripts draw as `?`.** Text is drawn only with the bundled fonts. A
+  browser falls back to system fonts; this renderer draws `?` for a character
+  none of them covers and reports `font.missing-glyph`. The bundled fonts cover
+  Latin, Greek and Cyrillic (Nunito lacks Greek; Lilita One and Comic Shanns
+  lack both), and Chinese, Japanese and Korean only in the Excalifont family
+  (through Xiaolai, the default `cjk` feature). Hebrew, Arabic, Armenian,
+  Georgian, Ethiopic, Thai, and Indic scripts such as Devanagari, Bengali and
+  Tamil draw as `?`, as do Vietnamese stacked diacritics outside Nunito and
+  Cascadia Code.
+- **Emoji are monochrome.** Emoji render as monochrome Noto Emoji outlines in
+  the text color, not the color emoji a browser draws from system fonts; an
+  opt-in color face is planned
+  ([#233](https://github.com/sagikazarmark/excalidraw-render/issues/233)).
+- **Very large drawings can be too big for PNG.** A PNG render fails with
+  `resource.raster-surface-exceeded` when its image would exceed the default
+  raster surface limits: 33,554,432 pixels in area (about 5,800 × 5,800) or
+  16,384 pixels on a side. Pass `--max-dimension 4096` (or a lower `--scale`)
+  to shrink the image, or render to SVG or PDF, which do not draw the whole
+  drawing onto one raster canvas. Library callers use `Sizing::MaxDimension`
+  or raise `max_raster_surface_pixels` in `ResourceLimits`. Diagrams with
+  many long diagonal lines can also hit the work limit; see
+  [Resource limits](#resource-limits).
+- **Output is close to, not identical with, the browser.** Fractional PNG
+  stroke coverage has remaining browser differences
+  ([#194](https://github.com/sagikazarmark/excalidraw-render/issues/194)), and
+  antialiasing in SVG and PDF viewers can differ slightly from the browser.
+
+## Text and fonts
+
+- Bundled font substitutions differ from ambient browser fonts. These are
+  diagnosed.
+- Without the default `cjk` feature the library does not bundle Xiaolai, and a
+  render that needs it fails with `render.font-unavailable` instead of
+  substituting another font.
+
+## Scene input
+
+- A scene must be a version-2 document with `type`, `version` and `elements`
+  members. Like Excalidraw, the renderer treats a missing `appState` as the
+  defaults and a missing `files` map as empty. A document missing a required
+  member is rejected with `scene.invalid-envelope`, and the CLI names every
+  missing member in one hint.
+- Only `.excalidraw` JSON is read. PNG and SVG exports with an embedded scene,
+  library files, and clipboard data are recognized and rejected with
+  `scene.unsupported-input`.
+- Properties that Excalidraw releases after 0.18.1 add are ignored. Known
+  editor-only state (such as binding modes and line polygon toggles) is
+  reported as informational; other unrecognized properties are warnings,
+  since a later release may render them.
+
+## PDF output
+
+- PDF is vector-first, not universally all-vector: unsupported nested-SVG effects
+  can use diagnosed raster fallback. Multi-page, tagged, and archival PDF formats
+  are outside the initial scope.
+
+## Resource limits
+
+- PNG work is charged from each element's device-space bounding box, not the
+  pixels it paints, so long diagonal arrows and lines cost far more than their
+  strokes take to draw. A large diagram of them at `--scale 2` can fail with
+  `resource.total-work-exceeded` under the default limits. Library callers can
+  raise `max_total_work_units` up to its absolute maximum; the CLI has no limit
+  options, so use a lower `--scale` or `--max-dimension`.
+- Filter effects in a nested SVG image are charged per primitive at the size
+  they are rasterized, so a large or heavily parameterized filter (many
+  turbulence octaves, a wide morphology radius, a long primitive chain) can
+  fail a PNG or PDF render with `resource.total-work-exceeded` or
+  `resource.total-rasterized-pixels-exceeded`; SVG output embeds the image
+  and is unaffected.
+- The default limits bound one render to a few seconds of CPU on a current
+  core for hostile input. Services that render untrusted scenes concurrently
+  should still apply their own timeout and concurrency limits.
+
+## Images
+
+- AVIF is unsupported and follows unsupported-image recovery
+  ([#68](https://github.com/sagikazarmark/excalidraw-render/issues/68)).
+
+### Rare image-decoding differences
+
+These affect unusual or malformed embedded images only.
+
+- Some less common JPEG sampling configurations and CMYK/YCCK conversions differ
+  from Chromium ([#187](https://github.com/sagikazarmark/excalidraw-render/issues/187)).
+  HDR-base JPEG gain-map projection is incomplete
+  ([#190](https://github.com/sagikazarmark/excalidraw-render/issues/190)).
+- The pinned JPEG decoder can accept truncated entropy before a retained scan
+  marker even in strict mode. Such malformed JPEGs can produce incorrect
+  pixels instead of decode-failure recovery. Marker/framing checks alone do not
+  validate all entropy. Such output is still deterministic and bounded; this is
+  a correctness limitation, not memory corruption
+  ([#193](https://github.com/sagikazarmark/excalidraw-render/issues/193)).
+- A lossless WebP with bitstream alpha, a clear VP8X alpha flag, and a transforming
+  ICC profile has a known color mismatch
+  ([#197](https://github.com/sagikazarmark/excalidraw-render/issues/197)).
+
+## Platforms and reproducibility
+
+- Linux x86-64 GNU is the release-qualified native target. The prebuilt binary's
+  glibc requirement follows the pinned release builder and is recorded with its archive.
+- Other operating systems and architectures are not release-qualified.
+- Later 0.x releases may change rendering. Pin the renderer version, dependencies,
+  and build environment when preserving exact output is important.
+- Browser WASM is experimental. Four PNG cases differ from native by one channel
+  value in one or two pixels due to `tiny-skia-path` cubic-root math
+  ([#178](https://github.com/sagikazarmark/excalidraw-render/issues/178)).
+  No other WASM differences are known.
+
+## Coverage and issue references
+
+The test suite includes reference comparisons, a golden record of output bytes, resource limits,
+fuzz regressions, packaged consumers, and browser execution. Exhaustive corpus
+coverage and full cross-target qualification remain open. Passing
+existing tests does not mean every valid Excalidraw scene has been qualified.
+
+Follow-up work on these limitations is tracked in the repository's issues.

@@ -1,6 +1,6 @@
 //! The PDF backend qualification without its harness: the operation matrices
 //! and the isolated fallback render deterministically, vector-first where the
-//! qualification says so, with their inputs and outputs pinned by digest. The
+//! qualification says so; the golden record holds their bytes. The
 //! qpdf structural gates and the fallback's viewer gates over the same renders
 //! live in `harness_pdf_viewers`.
 

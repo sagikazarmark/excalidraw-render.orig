@@ -1,7 +1,8 @@
 # Derived coordinate admission
 
 This audit follows the coordinate checkpoint in
-[`nested-resource-limit-amendment.md`](archive/nested-resource-limit-amendment.md#coordinate-admission-checkpoint-ownership-still-open).
+`nested-resource-limit-amendment.md` (removed under ADR-0022; the tree at
+`1ab9342a` has it under `docs/research/archive/`).
 The governing contract is renderer spec §13: admitted source components alone
 do not admit their derived geometry.
 

@@ -1,6 +1,6 @@
 name: Release
 
-# The release checks on both supported targets (docs/ci.md), on demand from
+# The release checks on both supported targets (docs/development/ci.md), on demand from
 # the commit to be released. The logs are the evidence; the run's URL goes in
 # the release notes.
 on:

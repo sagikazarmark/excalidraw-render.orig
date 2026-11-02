@@ -54,7 +54,7 @@ the commands or their results. The maintainer attestation path above is valid
 for Dagger runs regardless of Actions availability; record the tested commit,
 lock, command, reports and digests, plus a trace URL when available. The existing
 `pending_ci` manifest state means pending target aggregation on any runner.
-See `docs/ci.md` for the canonical operation inventory. This changes orchestration,
+See `docs/development/ci.md` for the canonical operation inventory. This changes orchestration,
 not the supported target set or ADR-0003's serialized evidence-refresh policy.
 
 Amended 2026-10-13: ADR-0024 replaces Dagger with recipes in the devenv shell

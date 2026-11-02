@@ -198,7 +198,7 @@ release-archive version: require-native
 
 # Restaging. These recipes regenerate committed evidence after a change that moves
 # it. They write candidates for review; nothing here edits a manifest or the
-# registry, and CI exports their output as artifacts (docs/ci.md).
+# registry, and CI exports their output as artifacts (docs/development/ci.md).
 
 # Reproduce or generate the font-subset, SVG or PDF viewer qualification in its pinned containers.
 viewer-evidence kind mode="reproduce":

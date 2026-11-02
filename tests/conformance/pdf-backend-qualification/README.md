@@ -1,7 +1,7 @@
 # PDF backend qualification
 
-Compatibility revision 1 writes PDF through Krilla 0.8.2, pinned exactly
-(ADR-0021). It replaced a direct `pdf-writer 0.12` writer that spliced
+Compatibility revision 1 writes PDF through Krilla 0.8.2, locked exactly in
+`Cargo.lock` (ADR-0021). It replaced a direct `pdf-writer 0.12` writer that spliced
 renumbered `svg2pdf 0.13` Form chunks into its file. svg2pdf is deprecated, and
 Krilla, its maintained successor, only produces whole documents, so the whole
 writer moved.
@@ -35,12 +35,15 @@ fallback image and soft mask, preventing either from being mistaken for source
 content or whole-page rasterization.
 
 The approved rectangle, Excalifont, and frame-export focused cases run through
-both canonical PDF viewers. The package-consumer risk set pins selectable text,
-source-image, native nested-SVG, and isolated-fallback artifact and report bytes
-on `x86_64-unknown-linux-gnu` and browser-hosted `wasm32-unknown-unknown`.
+both canonical PDF viewers. The golden record holds the artifact and report
+bytes of the project-operation, nested-native and isolated-fallback scenes
+(`facade.*` in `tests/conformance/golden/facade-scenes.json`), and the
+package-consumer risk set checks that selectable text, source-image, native
+nested-SVG, and isolated-fallback renders repeat on `x86_64-unknown-linux-gnu`
+and browser-hosted `wasm32-unknown-unknown`.
 
-The harness-free half of the qualification (determinism, digest pins and
-vector-first structure) is `pdf_backend_qualification` in the `fast` test
+The harness-free half of the qualification (determinism and vector-first
+structure) is `pdf_backend_qualification` in the `fast` test
 binary; every gate that needs the pinned PDF harness is in the
 `harness_pdf_viewers` binary, which the `harness` nextest profile selects. Run
 them after installing the harness:
@@ -65,12 +68,11 @@ field checks do not cover: `operation_sha256` hashes every content operator with
 its operands, and `inventory_sha256` hashes the structural inventory, including
 the attachments, embedded font bytes, `ToUnicode` streams, image bytes,
 clips, and `ActualText` mappings. Renderer work that moves any of those bytes
-moves the digests. The harness-free tests in
-`crates/excalidraw-render/tests/fast/pdf_backend_qualification.rs` pin the
-artifact bytes and the expectation file bytes, so re-pinning an artifact digest
-there keeps them green while the digests inside the expectation silently go
-stale. Re-run the ignored gates whenever a PDF artifact digest in that file
-changes.
+moves the digests. The golden record catches the artifact change on every
+change (`just update-golden` adopts it), but only the ignored structural gates
+read the expectations, so the digests inside them silently go stale. Re-run
+the ignored gates whenever `just update-golden` moves one of these scenes' PDF
+blobs.
 
 To re-pin after such a change, first attribute the drift to the commits that
 moved the artifact bytes, or accept the current output on review; a diff that
@@ -79,18 +81,15 @@ failed and must be treated as a defect rather than re-pinned. Then:
 
 1. Run the ignored gates. The structural inspector writes a
    `excalidraw-render/pdf-structure-report/v1` report to
-   `target/<prefix>-<pid>-structure.json`, where `<prefix>` is
+   `target/tmp/<prefix>-<pid>/structure.json`, where `<prefix>` is
    `pdf-backend-qualification`, `pdf-fallback-qualification`, or
-   `pdf-nested-native-qualification`. The observed digests are the `actual`
+   `pdf-nested-native-qualification`; a failing gate keeps the directory. The
+   observed digests are the `actual`
    values of the `operation-sequence-sha256` and `structural-inventory-sha256`
    entries in `checks[]`. Copy them from the report; never derive them by hand.
 2. Write the observed values into `operation_sha256` and `inventory_sha256` of
    the matching expectation file, keeping the existing single-line layout and
-   trailing LF.
-3. Update the pinned sha256 of each edited expectation file in
-   `fast/pdf_backend_qualification.rs` (`PROJECT_STRUCTURE`,
-   `FALLBACK_STRUCTURE`, `NESTED_NATIVE_STRUCTURE`) to `sha256sum` of the new
-   file bytes.
+   trailing LF, and review the diff in Git.
 
 The isolated-fallback visual gate compares the fallback PDF rendered by PDFium
 and PDF.js against the official-SVG authority under the tolerance exception in
@@ -103,8 +102,8 @@ with `--nocapture`; on failure it prints the observed `changed_pixels` and
 shortest round-tripping rendering of the binary64 score, so its `f64::to_bits`
 (for example `struct.pack(">d", score).hex()` in Python) is the exact
 `minimum_ssim_bits`. Because PDF.js runs first, also run
-`bash tools/pdf-harness/run-pdfium.sh render target/pdf-fallback-viewers-<pid>.pdf <output.rgba> 40 30`
-on the PDF the test wrote and confirm both viewers emit the same canonical RGBA
+`bash tools/pdf-harness/run-pdfium.sh render target/tmp/pdf-fallback-viewers-<pid>/candidate.pdf <output.rgba> 40 30`
+on the PDF the test wrote (kept when the gate fails) and confirm both viewers emit the same canonical RGBA
 before re-pinning; if they differ, record both measurements on the issue
 instead of choosing a floor. A re-pin sets `minimum_ssim_bits` to the
 observed binary64 bits, `max_changed_pixels` to the observed count,
@@ -112,9 +111,9 @@ observed binary64 bits, `max_changed_pixels` to the observed count,
 diagnosed cause, then updates the pinned sha256 of the exception file in
 `harness_pdf_viewers/backend_qualification.rs`.
 
-The literals that move together are therefore: the expectation file digests and
-their sha256 pins in the test, and the exception record fields and its sha256
-pin in the test. The scene, official-SVG, official-RGBA, and evidence-generator
+The literals that move together are therefore: the digests inside the
+expectation files, and the exception record fields and its sha256 pin in the
+test. The scene, official-SVG, official-RGBA, and evidence-generator
 pins in the same test never move for a re-pin; they change only through a
 reviewed reference-profile change.
 

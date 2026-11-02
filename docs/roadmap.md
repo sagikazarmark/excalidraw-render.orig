@@ -6,7 +6,8 @@ contract. Nothing here gates a release today; nothing here is normative.
 These two protocols were specified in full before implementation existed, as
 sections 15 and 16 of the
 [Excalidraw Static Renderer Specification](renderer-spec-v1.md) at document
-version `1.1.0`. They are moved here unchanged rather than deleted: the wording
+version `1.1.0` (the numbering at that version; those numbers now hold other
+sections). They are moved here unchanged rather than deleted: the wording
 is settled, and the footprint budget in particular is the only standing
 pushback against the 12.4 MiB of embedded fonts the renderer carries. When
 either protocol is activated, it moves back into the specification (or into its

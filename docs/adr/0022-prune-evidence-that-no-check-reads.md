@@ -128,6 +128,22 @@ by `tools/reference-oracle/scripts/stage4-representative-v2.mjs` and the
 scripts and their `run-stage4-representative-v{2,4}.sh` wrappers. The V4 and
 V29 provenance still names the scripts under a historical producer path.
 
+On 2026-11-02 the same reasoning removed research and planning notes that no
+check reads (about 1.5 MB, the tree at `1ab9342a` has them): all of
+`docs/research/archive/` (the completed ownership tranches, codec
+qualifications, library evaluations, re-approval records and the 2026-09-07
+review), the 2026-11-01 testing review under `docs/research/review-2026-11-01/`
+with the finished notes `canvas-image-resampling.md`,
+`pure-rust-svg-viewer-primary-sources.md` and
+`nightly-2026-08-05-font-subset-finding.md`, and `docs/release-readiness.md`,
+whose open items moved to the first-release checklist
+(`docs/development/first-release.md`). The `rationale` strings in
+`coverage/ownership.json` and the frozen approval comments name many of these
+notes as `docs/research/<name>.md`, their path before the 2026-09-30 and
+2026-10-28 archive moves; read them as `docs/research/archive/<name>.md` in the
+tree at `1ab9342a`. Notes that code, the spec or a kept record still cites stay
+in `docs/research/`.
+
 ## Consequences
 
 - A future round deletes its own collection once the gate no longer reads it,

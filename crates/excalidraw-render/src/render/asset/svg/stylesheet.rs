@@ -3,7 +3,7 @@
 //! cssparser owns normal block and declaration tokenization. Its CSS error
 //! recovery and opaque strings/functions differ from our historical admission
 //! policy, which even admits some malformed values for usvg to ignore. Only
-//! those cases use the compatibility fallback below; see docs/css-tokenization.md.
+//! those cases use the compatibility fallback below; see docs/development/css-tokenization.md.
 use cssparser::{Delimiter, ParseError, Parser, Token};
 
 pub(super) struct Rule<'a> {

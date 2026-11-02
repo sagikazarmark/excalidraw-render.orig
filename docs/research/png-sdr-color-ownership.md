@@ -1,7 +1,8 @@
 # PNG SDR color qualification (#85)
 
-This records the initial SDR tranche. The subsequent
-[remaining-primary extension](archive/png-cicp-primary-ownership.md) preserves all 340
+This records the initial SDR tranche. The subsequent remaining-primary
+extension (`png-cicp-primary-ownership.md`, removed under ADR-0022; the tree at
+`1ab9342a` has it under `docs/research/archive/`) preserves all 340
 cases below and adds 160, bringing the current record to 500 cases and the cICP
 selection to 220 cells. `verify` now reproduces that extended record.
 

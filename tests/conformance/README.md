@@ -67,7 +67,7 @@ isolate one variable:
   under the pure-Rust budget: the SVG document with the rasterizer held
   constant. The raster dimension is document parity, not a canonical viewer
   gate; the pinned canonical SVG viewers are a separate piece of work and
-  neither admits text-bearing SVG today.
+  admit text-bearing SVG only through a closed font declaration (below).
 - `parity_registered_case_png` compares the renderer's PNG against the official
   browser raster under the canonical budget: the whole pipeline, rasterizer
   included, which is where tolerance exceptions apply.
@@ -275,8 +275,7 @@ turn:
 - the SVG and PDF viewer qualifications, and their sidecars (digests of the
   manifest without its trailing LF);
 - the rectangle PDF renderer expectations;
-- the oracle references under `tests/oracle/` and the test sources that pin
-  them;
+- the oracle references under `tests/oracle/`;
 - `coverage/pdf-judgments.json`, and the `pdf-judgments` record digest in
   `coverage/ownership.json`.
 

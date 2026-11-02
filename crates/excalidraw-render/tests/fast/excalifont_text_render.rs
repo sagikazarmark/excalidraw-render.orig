@@ -74,7 +74,6 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 // Spec §8.5 per-glyph device phases: an independent pinned
                 // Chromium replay of this rotated scene measured 0 changed
                 // pixels, SSIM bits 3feffa5b1c4f155c, against the golden PNG.
-                // See docs/research/archive/png-stage4-binding-reconciliation.md.
             }
             OutputFormat::Pdf => {
                 let pdf = pdf_text(first.artifact().bytes());

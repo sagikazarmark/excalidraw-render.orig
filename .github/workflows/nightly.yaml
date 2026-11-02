@@ -49,7 +49,7 @@ jobs:
         run: just nightly
 
       # The complete-render fuzz again, under the default resource limits the
-      # lowered fuzz profile keeps out of reach (docs/render-fuzzing.md).
+      # lowered fuzz profile keeps out of reach (docs/development/render-fuzzing.md).
       - name: Expand under the default limits
         if: ${{ !cancelled() }}
         env:
