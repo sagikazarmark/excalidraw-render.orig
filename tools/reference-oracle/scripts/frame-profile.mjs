@@ -49,6 +49,40 @@ function fileRecord(path, shown = displayPath(path)) {
   return { bytes: bytes.length, path: shown, sha256: sha256(bytes) };
 }
 
+// The oracle tooling the profile records but whose bytes do not determine the
+// frame output: the profile and case generators and their runners. Like the
+// host verifier (`catalog verify`, ADR-0019), verification keeps their
+// recorded digests as capture-time provenance; the bundle and the inputs that
+// build it stay live, and `reproduce` compares the case evidence itself.
+const HISTORICAL_TOOLING = new Set([
+  "tools/reference-oracle/run-frame-conformance.sh",
+  "tools/reference-oracle/run-frame-profile.sh",
+  "tools/reference-oracle/scripts/canonical-json.mjs",
+  "tools/reference-oracle/scripts/frame-conformance-case.mjs",
+  "tools/reference-oracle/scripts/frame-profile.mjs",
+]);
+
+/** The reference file records: live, except recorded historical tooling. */
+function referenceRecords(mode) {
+  const recorded = mode === "verify"
+    ? new Map(
+      JSON.parse(readFileSync(PROFILE_PATH, "utf8")).referenceFiles.files
+        .map((record) => [record.path, record]),
+    )
+    : new Map();
+  return REFERENCE_PATHS.map((path) => {
+    const record = recorded.get(path);
+    if (HISTORICAL_TOOLING.has(path) && record) {
+      if (!Number.isInteger(record.bytes) || record.bytes <= 0
+        || !/^[0-9a-f]{64}$/.test(record.sha256)) {
+        throw new Error(`${path} has an invalid historical record`);
+      }
+      return { bytes: record.bytes, path, sha256: record.sha256 };
+    }
+    return fileRecord(resolve(REPO_ROOT, path), path);
+  });
+}
+
 function listFiles(root) {
   const files = [];
   function visit(path) {
@@ -110,9 +144,7 @@ function main() {
   const bundleFiles = listFiles(BUNDLE_ROOT).map((path) =>
     fileRecord(path, relative(BUNDLE_ROOT, path).split(sep).join("/")),
   );
-  const referenceFiles = REFERENCE_PATHS.map((path) =>
-    fileRecord(resolve(REPO_ROOT, path), path),
-  );
+  const referenceFiles = referenceRecords(mode);
   const profile = {
     schema: "excalidraw-render/frame-reference-profile/v1",
     compatibilityRevision: 1,

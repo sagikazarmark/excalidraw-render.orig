@@ -133,6 +133,14 @@ one container session and compares it with the committed evidence, so drift
 in the oracle's closure is seen within days. A scheduled failure opens an
 issue labelled `scheduled-failure`, or comments on the open one.
 
+The oracle's images are linux/amd64. On Apple silicon, Docker Desktop runs
+them under Rosetta, where both profiles verify and the 25 cases without text
+reproduce, but the 12 text-bearing cases fail: Excalidraw's font-subsetting
+worker misses its 1,000 ms deadline and logs a console error, which the oracle
+treats as a failure. Reproduce or generate those on a Linux x86-64 host
+(measured 2026-11-02). The PDF viewer qualification reproduces there byte for
+byte.
+
 The expansions take a case count:
 
 ```sh
@@ -187,7 +195,9 @@ checkout. The case generators refuse to overwrite a manifested case unless
 given `--supersede`, which replaces it and keeps its approval block (ADR-0019
 history), so `just reference-cases generate --supersede` regenerates the whole
 registry in one container session for review in Git;
-`just reference-case <id> generate --supersede` does one case.
+`just reference-case <id> generate --supersede` does one case. Against an
+unmoved reference only each case's provenance moves: the fresh browser process
+IDs and the producer digests (measured on `focused.rectangle-outline.v1`).
 `just reference-case` reproduces into `target/reference-evidence`.
 `just font-corpus` stages the corpus JSON and its digest sidecar in
 `target/font-corpus`; they belong in `tests/oracle/compatibility-artifacts/`,
