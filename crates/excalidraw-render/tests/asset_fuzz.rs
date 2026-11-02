@@ -4,6 +4,9 @@ mod asset_fuzz;
 #[path = "common/codec_fixtures.rs"]
 mod codec_fixtures;
 #[allow(dead_code)]
+#[path = "common/fuzz_seed.rs"]
+mod fuzz_seed;
+#[allow(dead_code)]
 #[path = "common/pdf_inspect.rs"]
 mod pdf_inspect;
 #[allow(dead_code)]

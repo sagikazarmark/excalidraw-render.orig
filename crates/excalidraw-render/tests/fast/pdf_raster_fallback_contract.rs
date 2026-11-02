@@ -226,7 +226,6 @@ fn raster_fallback_contract_covers_families_occurrences_geometry_and_failures() 
     inline_filter_cascade_has_exact_provenance_without_a_stylesheet();
 }
 
-#[test]
 fn partial_alpha_closure_preserves_straight_samples_and_attached_mask() {
     let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="linear" slope="0.5"/></feComponentTransfer></filter></defs><rect width="20" height="10" fill="#03fcdb" fill-opacity="0.047058823529411764" filter="url(#effect)"/></svg>"##;
     let expected = row(
@@ -252,7 +251,6 @@ fn partial_alpha_closure_preserves_straight_samples_and_attached_mask() {
     assert_eq!(rgb.bytes, [0, 255, 212].repeat(200));
 }
 
-#[test]
 fn every_effect_family_has_an_exact_report_and_isolated_artifact() {
     let cases = [
         ("blur", BLUR, 4, vec![node(3)]),
@@ -405,7 +403,6 @@ fn every_effect_family_has_an_exact_report_and_isolated_artifact() {
     }
 }
 
-#[test]
 fn occurrence_order_and_merged_causes_are_exact() {
     let nested = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="10" height="10" filter="url(#effect)"/><rect x="10" width="10" height="10" filter="url(#effect)"/></svg>"##;
     let mut source = source(nested);
@@ -463,7 +460,6 @@ fn occurrence_order_and_merged_causes_are_exact() {
     );
 }
 
-#[test]
 fn noops_and_native_content_are_silent_under_forbid() {
     let forbid = RenderRequest::builder(OutputFormat::Pdf)
         .pdf_options(PdfOptions::default().with_raster_fallback(PdfRasterFallback::Forbid))
@@ -495,7 +491,6 @@ fn noops_and_native_content_are_silent_under_forbid() {
     report(project.report(), json!([]));
 }
 
-#[test]
 fn scaled_bounds_and_failure_preflight_are_exact() {
     let source = source(&svg(BLUR));
     for scale in [0.5, 1.0, 2.0] {
@@ -614,7 +609,6 @@ fn scaled_bounds_and_failure_preflight_are_exact() {
     );
 }
 
-#[test]
 fn frame_reports_are_scoped_and_replayed() {
     let mut source = source(&svg(BLUR));
     source["elements"][0]["frameId"] = json!("first");
@@ -653,7 +647,6 @@ fn frame_reports_are_scoped_and_replayed() {
     }
 }
 
-#[test]
 fn mixed_reports_follow_original_scene_owners() {
     let mut source = source(&svg(BLUR));
     source["elements"].as_array_mut().unwrap().insert(0,json!({"id":"before","type":"rectangle","width":1,"height":1,"link":"javascript:never()","seed":1,"roughness":0,"updated":1}));
@@ -667,7 +660,6 @@ fn mixed_reports_follow_original_scene_owners() {
     );
 }
 
-#[test]
 fn authority_and_expansion_keep_occurrence_specific_causes() {
     let nested = svg(BLUR);
     let mut scene = source(&nested);
@@ -768,7 +760,6 @@ fn authority_and_expansion_keep_occurrence_specific_causes() {
     );
 }
 
-#[test]
 fn cropped_closure_dimensions_match_admitted_grid() {
     let mut scene = source(&svg(BLUR));
     scene["elements"][0]["width"] = json!(10);
@@ -825,7 +816,6 @@ fn cropped_closure_dimensions_match_admitted_grid() {
     }
 }
 
-#[test]
 fn subpixel_anisotropic_and_nested_resource_grids_are_exact() {
     let fractional = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" x="0" y="0" width="100%" height="100%"><feColorMatrix type="saturate" values="0.5"/></filter></defs><rect x="0.25" y="0.25" width="0.5" height="0.5" filter="url(#effect)"/></svg>"##;
     let actual = checked(
@@ -888,7 +878,6 @@ fn subpixel_anisotropic_and_nested_resource_grids_are_exact() {
     );
 }
 
-#[test]
 fn stylesheet_effects_and_cascade_are_admitted_and_attributed() {
     let styled = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><style>.fx {filter:url(#effect);fill:#00ff00} [id] {opacity:0}</style><defs><filter id="effect" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" class="fx"/></svg>"##;
     let expected = row(
@@ -923,7 +912,6 @@ fn stylesheet_effects_and_cascade_are_admitted_and_attributed() {
     checked(&invisible, &forbid, json!([]));
 }
 
-#[test]
 fn resource_occurrence_transforms_and_filter_inputs_share_the_plan() {
     let pattern = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter><pattern id="p" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="scale(2)"><rect width="4" height="4" filter="url(#effect)"/></pattern></defs><rect width="20" height="10" fill="url(#p)"/><rect width="20" height="10" fill="url(#p)" transform="translate(10 0) scale(0.5)"/></svg>"##;
     let actual = checked(
@@ -985,7 +973,6 @@ fn resource_occurrence_transforms_and_filter_inputs_share_the_plan() {
     isolated_pixels_match_source_effect(actual.artifact().bytes(), dependency);
 }
 
-#[test]
 fn tiny_geometry_and_transforms_survive_normalized_serialization() {
     let tiny = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" filterUnits="userSpaceOnUse" x="0" y="0" width="20" height="10"><feFlood flood-color="#00ff00"/></filter></defs><rect width="0.0000000000001" height="0.0000000000001" filter="url(#effect)"/></svg>"##;
     let actual = checked(
@@ -1002,7 +989,6 @@ fn tiny_geometry_and_transforms_survive_normalized_serialization() {
     isolated_pixels_match_source_effect(actual.artifact().bytes(), tiny);
 }
 
-#[test]
 fn rotated_closure_uses_the_final_device_grid() {
     let svg = svg(BLUR);
     let mut scene = source(&svg);
@@ -1088,7 +1074,6 @@ fn assert_streams_are_compressed(bytes: &[u8]) {
     }
 }
 
-#[test]
 fn cropped_repeating_patterns_keep_their_complete_tile() {
     let pattern = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter><pattern id="p" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" filter="url(#effect)"/></pattern></defs><rect width="20" height="10" fill="url(#p)"/></svg>"##;
     let mut scene = source(pattern);
@@ -1155,7 +1140,6 @@ fn cropped_repeating_patterns_keep_their_complete_tile() {
     assert!(image_planes(invisible.artifact().bytes()).is_empty());
 }
 
-#[test]
 fn inline_filter_cascade_has_exact_provenance_without_a_stylesheet() {
     let original = svg(BLUR);
     let expected = row(

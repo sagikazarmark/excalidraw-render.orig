@@ -2,6 +2,7 @@
 use std::{path::Path, process::Command};
 
 #[test]
+#[ignore = "host tools: Node (just test-release)"]
 fn retained_webp_viewer_boundary_rejects_pixel_and_semantic_drift() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let output = Command::new("node")

@@ -1,5 +1,9 @@
 name: CI
 
+# The per-change gates: every recipe of `just ci`, run in the devenv shell on
+# ubuntu-latest (ADR-0024). A job is one gate or a few cheap ones that share a
+# build; the fast and render tiers compile once into a nextest archive that
+# four shards run. The release tier (`just release`) is the Release workflow.
 on:
   push:
     branches: [main]
@@ -21,28 +25,8 @@ defaults:
     shell: devenv shell -- bash -e {0}
 
 jobs:
-  fmt:
-    name: Format
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
-        with:
-          cachix-cache: rust-projects
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
-      - name: Check formatting
-        run: just fmt
-
-  clippy:
-    name: Clippy
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -64,31 +48,17 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
 
-      - name: Clippy
-        run: just clippy
+      - name: Check formatting
+        run: just fmt
 
-  deny:
-    name: Dependencies
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
-        with:
-          cachix-cache: rust-projects
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
-      - name: Check advisories, licenses and sources
+      - name: Check dependencies
         run: just deny
 
+      - name: Lint
+        run: just clippy
+
   features:
-    name: Clippy (features)
+    name: Features
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -110,8 +80,11 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
 
-      - name: Clippy without default features and with each one alone
+      - name: Lint the feature matrix
         run: just features
+
+      - name: Test the builds that leave out PNG or PDF
+        run: just test-features
 
   msrv:
     name: Rust 1.92
@@ -136,13 +109,12 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv --option languages.rust.version:string 1.92.0 shell -- {0}
 
-      - name: Check MSRV
+      - name: Check the published crates on the MSRV
         shell: devenv --option languages.rust.version:string 1.92.0 shell -- bash -e {0}
         run: just msrv
 
   # The fast and render tiers compile once into a nextest archive, which four
-  # shards run; the tests that build the release CLI run beside them. `Test`
-  # joins the results into the one check that branch protection requires.
+  # shards run.
   test-build:
     name: Test (build)
     runs-on: ubuntu-latest
@@ -169,9 +141,6 @@ jobs:
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
-
-      - name: Test the CI helper scripts
-        run: just test-tools
 
       - name: Build and archive the test targets
         run: just test-archive
@@ -227,109 +196,9 @@ jobs:
       - name: Run shard ${{ matrix.shard }}
         run: just test-shard ${{ matrix.shard }}/4
 
-  test-release-cli:
-    name: Test (release CLI)
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    env:
-      CARGO_PROFILE_TEST_DEBUG: line-tables-only
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          # Some checks read files from earlier commits.
-          fetch-depth: 0
-
-      - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
-        with:
-          cachix-cache: rust-projects
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
-      - name: Set up Rust cache
-        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-        with:
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-          cmd-format: devenv shell -- {0}
-
-      - name: Run the release-CLI tests
-        run: just test-release-cli
-
-  test:
-    name: Test
-    needs: [test-build, test-shard, test-release-cli]
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Require every test job to pass
-        shell: bash
-        env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
-        run: |
-          for result in $RESULTS; do
-            if [[ "$result" != success ]]; then
-              echo "a test job finished with: $result" >&2
-              exit 1
-            fi
-          done
-
-  test-doc:
-    name: Test (doc)
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
-        with:
-          cachix-cache: rust-projects
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
-      - name: Set up Rust cache
-        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-        with:
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-          cmd-format: devenv shell -- {0}
-
-      - name: Doc tests
-        run: just test-doc
-
-  test-features:
-    name: Test (features)
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up devenv
-        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
-        with:
-          cachix-cache: rust-projects
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
-      - name: Set up Rust cache
-        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-        with:
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-          cmd-format: devenv shell -- {0}
-
-      - name: Test the builds that leave out PNG or PDF
-        run: just test-features
-
-  conformance:
+  # The conformance verifiers and the documentation tests share one debug
+  # build of the workspace.
+  verify:
     name: Conformance
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -352,8 +221,11 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
 
-      - name: Verify cases, ledgers and approved evidence
+      - name: Verify the registered cases, the catalog and the viewer records
         run: just conformance
+
+      - name: Doc tests
+        run: just test-doc
 
   packaging:
     name: Packaging

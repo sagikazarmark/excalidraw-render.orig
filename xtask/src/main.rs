@@ -13,11 +13,12 @@ mod demo;
 mod pdf_harness;
 mod pdf_viewers;
 mod representative;
+mod revision;
 mod sfnt;
 mod svg_font_subset_runner;
-mod svg_font_subset_targets;
 mod svg_font_subsets;
 mod svg_viewers;
+mod viewer_identity;
 
 use std::env;
 use std::process::{Command, ExitCode};
@@ -97,6 +98,7 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         C::OwnershipCatalog => println!("{}", coverage::ownership_catalog()?),
         C::SeedOwnership => println!("{}", coverage::seed_ownership()?),
         C::VerifyOwnership => coverage::verify_ownership()?,
+        C::RebindOwnershipCatalog => coverage::rebind_ownership_catalog()?,
         C::ExtendOwnership {
             previous,
             issue,
@@ -151,9 +153,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         } => coverage::record_closure_owner(&obligation, &verifier, &rationale)?,
         C::InventoryDigest => println!("{}", coverage::inventory_digest()?),
         C::VerifyInventory => coverage::verify_inventory()?,
-        C::VerifyResults { report } => coverage::verify_results(&report)?,
-        C::VerifyNativeSnapshots { directory } => coverage::verify_snapshots(&directory)?,
-        C::StageWasmSnapshots => coverage::stage_wasm_snapshots()?,
         C::TestGroupFilter { manifest } => {
             println!("{}", coverage::test_group_filter(&manifest)?)
         }
@@ -162,18 +161,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
             println!("prepared native release CLI: {}", path.display());
         }
         C::RefreshTestOwnerSources { modules } => coverage::refresh_test_owner_sources(&modules)?,
-        C::StageTraces => coverage::stage_traces()?,
-        C::AggregateTraces { directory } => coverage::aggregate_traces(&directory)?,
-        C::JoinTraceResults { directory } => coverage::join_trace_results(&directory)?,
-        C::VerifyJoinedResults { directory } => coverage::verify_joined_results(&directory)?,
-        C::VerifyWasmSnapshots { directory } => coverage::verify_wasm_snapshots(&directory)?,
-        C::ReportWasmSnapshots { directory } => coverage::report_wasm_snapshots(&directory)?,
-        C::StageNativeBaseline {
-            snapshots,
-            baseline,
-        } => coverage::stage_baseline(&snapshots, &baseline)?,
-        C::VerifyNativeBaseline => coverage::verify_baseline()?,
-        C::ReplayNativeSnapshots { snapshots } => coverage::replay_snapshots(&snapshots)?,
         C::PdfJudgmentsGenerate => coverage::generate_pdf_judgments()?,
         C::VerifyPdfJudgments => coverage::verify_pdf_judgments()?,
         C::LayersReport | C::VerifyLayers { strict: false } => {
@@ -192,7 +179,10 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
                 println!("verified {case_id}");
             }
             println!("verified {} registered cases", case_ids.len());
+        }
+        C::VerifyCandidates => {
             conformance_candidate_gate::verify_registry()?;
+            println!("verified the registered representative candidates");
         }
         C::CandidatePrepareAssets { directory } => {
             conformance_candidate::prepare_assets(&directory)?
@@ -215,9 +205,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         C::CandidateNativeCheck { directory } => {
             print_json(&conformance_candidate_native::replay(&directory)?)?
         }
-        C::QualifyExcalifontCanary { directory } => print_json(
-            &conformance_candidate_native::qualify_text_canary(&directory)?,
-        )?,
         C::CandidateInspect { directory } => {
             print_json(&conformance_candidate_gate::inspect(&directory)?)?
         }
@@ -233,30 +220,6 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
         C::VerifySvgFontSubsets => {
             svg_font_subsets::verify()?;
             println!("verified canonical SVG font subset viewer qualification");
-        }
-        C::VerifySvgFontSubsetRelease => {
-            let state = svg_font_subset_targets::verify_release()?;
-            println!("verified SVG font subset release evidence ({state})");
-        }
-        C::MaterializeSvgFontSubsetTarget {
-            target,
-            test_log,
-            output,
-        } => {
-            svg_font_subset_targets::materialize(&target, &test_log, &output)?;
-            println!("materialized SVG font subset target evidence for {target}");
-        }
-        C::MaterializeSvgFontSubsetCrossTarget { test_log } => {
-            svg_font_subset_targets::materialize_cross_target(&test_log)?;
-            println!("materialized cross-target SVG font subset measurement");
-        }
-        C::AggregateSvgFontSubsetTargets { input, output } => {
-            svg_font_subset_targets::aggregate(&input, &output)?;
-            println!("aggregated SVG font subset target evidence");
-        }
-        C::RecordSvgFontSubsetTargetAggregate { aggregate, run_url } => {
-            svg_font_subset_targets::record_aggregate(&aggregate, &run_url)?;
-            println!("recorded SVG font subset target aggregate into the release evidence");
         }
         C::GenerateSvgFontSubsetRustReport {
             inputs,
@@ -274,6 +237,7 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
             svg_font_subsets::materialize(&inputs, &chromium, &pure_rust)?;
             println!("materialized SVG font subset viewer evidence");
         }
+        C::RebindSvgFontSubsets { inputs } => svg_font_subsets::rebind(&inputs)?,
         C::VerifyPdfViewers => {
             pdf_viewers::verify()?;
             println!("verified canonical PDF viewer and structural qualification");
@@ -282,24 +246,25 @@ fn run_conformance(command: ConformanceCommand) -> Result<(), String> {
             pdf_viewers::refresh_pdfium_runtime()?;
             println!("refreshed Rust PDFium runtime record against retained calibration rasters");
         }
-        C::Generate { case_id } => {
-            run_reference_oracle("generate", &case_id)?;
+        C::Generate { case_id, supersede } => {
+            run_reference_oracle("generate", &case_id, supersede)?;
             conformance::verify(&case_id)?;
         }
         C::Reproduce { case_id } => {
-            run_reference_oracle("reproduce", &case_id)?;
+            run_reference_oracle("reproduce", &case_id, false)?;
             conformance::verify(&case_id)?;
         }
     }
     Ok(())
 }
 
-fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
+fn run_reference_oracle(mode: &str, case_id: &str, supersede: bool) -> Result<(), String> {
     let runner = conformance::case_runner(case_id)?;
     let status = Command::new("bash")
         .arg(conformance::repo_root().join(&runner))
         .arg(mode)
         .arg(case_id)
+        .args(supersede.then_some("--supersede"))
         .status()
         .map_err(|error| format!("failed to start reference oracle: {error}"))?;
     if !status.success() {

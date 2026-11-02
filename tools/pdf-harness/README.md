@@ -102,6 +102,16 @@ profile still names the retired pypdfium2 wheel lock; that record is historical
 and checked for shape only. The Rust worker's library identity is the digest
 each receipt records.
 
+The PDF.js profile binds `pdfjs/package-lock.json` live: the profile's digest
+of it must be the lockfile's, and the lockfile and `package.json` must install
+the `pdfjs-dist` and `@napi-rs/canvas` versions the profile names. A Dependabot
+bump of PDF.js therefore fails `conformance verify-pdf-viewers` until the
+viewer is requalified (`just viewer-evidence pdf reproduce`, then the profile,
+its sidecar and the qualification manifest updated). PDF.js 6.2.108 was
+requalified so on 2026-11-02: every retained raster reproduced byte for byte.
+Evidence captured under an earlier lock (the representative candidates, the
+WebP receipts) records that lock historically.
+
 The Rust inspector also validates the expectation object before invoking qpdf;
 missing or malformed fields are configuration errors, even when the requested
 PDF outcome is `fail`. Rust tests compare generated fixtures and all 14 retained

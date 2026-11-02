@@ -12,30 +12,20 @@ use crate::conformance::{canonical_bytes, read_repository_file, repo_root, sha25
 const INVENTORY: &str = "tests/conformance/coverage/inventory.json";
 const REQUIREMENTS: &str = "tests/conformance/coverage/requirements.json";
 const REGISTRY: &str = "tests/conformance/cases/registry.json";
-const SURFACE: &str = "tests/oracle/scene-surfaces/revision-1.json";
 const INVENTORY_SCHEMA: &str = "excalidraw-render/coverage-inventory/v1";
-const RESULT_SCHEMA: &str = "excalidraw-render/coverage-results/v1";
-const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 
 mod layers;
 mod ownership;
 mod pdf_judgments;
 pub use layers::{report_layers, verify_layers};
-mod snapshots;
 pub use ownership::{
-    extend_ownership, ownership_catalog, record_case_owner, record_closure_owner,
-    record_exception_test_owner, record_library_test_owner, record_representative_owner,
-    record_test_owner, refresh_exception_test_owner_source, refresh_library_test_owner_source,
-    refresh_test_owner_source, refresh_test_owner_sources, seed_ownership, test_group_filter,
-    verify_ownership, verify_representative_owner,
+    extend_ownership, ownership_catalog, rebind_ownership_catalog, record_case_owner,
+    record_closure_owner, record_exception_test_owner, record_library_test_owner,
+    record_representative_owner, record_test_owner, refresh_exception_test_owner_source,
+    refresh_library_test_owner_source, refresh_test_owner_source, refresh_test_owner_sources,
+    seed_ownership, test_group_filter, verify_ownership, verify_representative_owner,
 };
-mod traces;
 pub use pdf_judgments::{generate_pdf_judgments, verify_pdf_judgments};
-pub use snapshots::{
-    replay_snapshots, report_wasm_snapshots, stage_baseline, stage_wasm_snapshots, verify_baseline,
-    verify_snapshots, verify_wasm_snapshots,
-};
-pub use traces::{aggregate_traces, join_trace_results, stage_traces, verify_joined_results};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -226,10 +216,10 @@ fn derive_inventory_with_catalog(
         return Err("coverage requirements must retain the complete requirement set".into());
     }
     let registry: Value = parse(&read(REGISTRY)?)?;
-    let surface: Value = parse(&read(SURFACE)?)?;
+    let surface: Value = parse(&read(&crate::revision::Reference::SceneSurface.path())?)?;
     let mut sources = vec![
         descriptor(REGISTRY)?,
-        descriptor(SURFACE)?,
+        descriptor(&crate::revision::Reference::SceneSurface.path())?,
         requirements_descriptor,
         catalog.clone(),
     ];
@@ -409,153 +399,11 @@ pub fn verify_closure() -> Result<(), String> {
     ))
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-struct Bytes {
-    sha256: String,
-    byte_length: u64,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
-enum Outcome {
-    Artifact { bytes: Bytes },
-    Failure { code: String },
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-struct Sample {
-    outcome: Outcome,
-    report: Bytes,
-    trace: Bytes,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-struct CaseResult {
-    key: CaseKey,
-    samples: [Sample; 2],
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "snake_case")]
-enum Order {
-    Forward,
-    Reverse,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-struct ProcessRun {
-    target: String,
-    order: Order,
-    /// Collector-issued identity of a fresh process/instance; never a PID shared across hosts.
-    process_id: String,
-    results: Vec<CaseResult>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-struct ResultBundle {
-    schema: String,
-    compatibility_revision: u64,
-    commit: String,
-    inventory_sha256: String,
-    // The retired Dagger runner's pin files, which older bundles record (ADR-0024).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    tool_manifest_sha256: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    dagger_lock_sha256: Option<String>,
-    runs: Vec<ProcessRun>,
-}
-
 fn hex(value: &str, length: usize) -> bool {
     value.len() == length
         && value
             .bytes()
             .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
-}
-
-fn validate_results(inventory: &Inventory, bundle: &ResultBundle) -> Result<(), String> {
-    if bundle.schema != RESULT_SCHEMA
-        || bundle.compatibility_revision != 1
-        || !hex(&bundle.commit, 40)
-        || bundle.inventory_sha256 != digest(inventory)?
-        || [&bundle.tool_manifest_sha256, &bundle.dagger_lock_sha256]
-            .into_iter()
-            .flatten()
-            .any(|digest| !hex(digest, 64))
-    {
-        return Err("invalid result identity or inventory binding".into());
-    }
-    let keys: Vec<_> = inventory.executions.iter().map(|e| &e.key).collect();
-    if keys.is_empty() {
-        return Err("result inventory is empty".into());
-    }
-    let mut runs = BTreeSet::new();
-    let mut processes = BTreeSet::new();
-    let mut canonical = BTreeMap::new();
-    for run in &bundle.runs {
-        if !TARGETS.contains(&run.target.as_str())
-            || !runs.insert((run.target.as_str(), run.order.clone()))
-        {
-            return Err("unsupported target or duplicate process order".into());
-        }
-        if run.process_id.trim().is_empty() || !processes.insert(&run.process_id) {
-            return Err("process identities must be nonempty and distinct".into());
-        }
-        let expected: Vec<_> = match run.order {
-            Order::Forward => keys.clone(),
-            Order::Reverse => keys.iter().rev().copied().collect(),
-        };
-        if run.results.iter().map(|r| &r.key).collect::<Vec<_>>() != expected {
-            return Err(
-                "result keys are missing, extra, duplicated, stale or out of process order".into(),
-            );
-        }
-        for result in &run.results {
-            for sample in &result.samples {
-                let mut records = vec![&sample.report, &sample.trace];
-                match &sample.outcome {
-                    Outcome::Artifact { bytes } => records.push(bytes),
-                    Outcome::Failure { code } if code.trim().is_empty() => {
-                        return Err("failure code is empty".into())
-                    }
-                    Outcome::Failure { .. } => {}
-                }
-                if records
-                    .iter()
-                    .any(|b| !hex(&b.sha256, 64) || b.byte_length == 0)
-                {
-                    return Err("invalid artifact/report/trace descriptor".into());
-                }
-            }
-            if result.samples[0] != result.samples[1] {
-                return Err(format!("fresh-session mismatch for {:?}", result.key));
-            }
-            if let Some(first) = canonical.insert(&result.key, &result.samples[0]) {
-                if first != &result.samples[0] {
-                    return Err(format!(
-                        "cross-target/process mismatch for {:?}",
-                        result.key
-                    ));
-                }
-            }
-        }
-    }
-    if runs.len() != TARGETS.len() * 2 {
-        return Err("missing supported target/process order".into());
-    }
-    Ok(())
-}
-
-pub fn verify_results(path: &str) -> Result<(), String> {
-    let inventory = load_inventory()?;
-    let bundle: ResultBundle = parse(&fs::read(path).map_err(|e| e.to_string())?)?;
-    validate_results(&inventory, &bundle)?;
-    println!("verified result equality for the draft inventory; native baseline replay and release closure remain separate checks");
-    Ok(())
 }
 
 #[cfg(test)]

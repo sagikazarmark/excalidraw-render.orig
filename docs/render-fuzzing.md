@@ -58,9 +58,23 @@ work at 1,073,741,824 units (font subset admission needs the normal font budget)
 These are logical ceilings, not allocator RSS claims. Only digests and reports
 are retained between passes, not the full population's artifacts.
 
+Those lowered ceilings reject the magnitudes behind the hand-found hostile-input
+bugs before the renderer sees them, so a second nightly step,
+`just nightly-render-fuzz-default-limits`, runs the same generator under the
+revision-1 default `ResourceLimits` (`EXCALIDRAW_RENDER_FUZZ_DEFAULT_LIMITS=1`).
+Each limit profile still applies its one exhausted ceiling on top of the
+defaults. Any `resource.*` failure is admitted in this mode, since any default
+ceiling may be the first one crossed; every other outcome rule is unchanged,
+and the controls, which assert the lowered profile's codes, are not run. Its
+first measurement (aarch64 macOS, test profile) was 512 cases in 8 s at a
+127 MB peak and 4,096 in 62 s at 176 MB, the same as the lowered run, so it
+runs 4,096 cases behind the same 90-minute timeout. A reproducer from this
+step replays with the same variable set.
+
 ```sh
 cargo test --locked -p excalidraw-render --test render_fuzz
 just nightly-render-fuzz        # 4,096 cases; pass a count to change it
+just nightly-render-fuzz-default-limits
 just render-fuzz-wasm
 ```
 

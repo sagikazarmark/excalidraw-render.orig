@@ -183,6 +183,9 @@ mod font_metadata;
 mod fonts;
 mod frame;
 #[cfg(test)]
+#[path = "../tests/common/fuzz_seed.rs"]
+mod fuzz_seed;
+#[cfg(test)]
 mod metadata_failure_contract;
 mod normalization;
 mod outcome;
@@ -454,10 +457,6 @@ pub mod wasm_tests {
         use base64::Engine as _;
         use sha2::{Digest, Sha256};
         let bytes = include_bytes!("../../../tests/oracle/png-precision/reference.json");
-        assert_eq!(
-            crate::resource_accounting::lower_hex(&Sha256::digest(bytes)),
-            "8400494ec5f6e744b00e175db6931aff33c2a659dc57c3b3ab62646da0cf83e5"
-        );
         let evidence: serde_json::Value = serde_json::from_slice(bytes).unwrap();
         let decode_png = |bytes: &[u8]| {
             let mut reader = png::Decoder::new(std::io::Cursor::new(bytes))

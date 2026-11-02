@@ -17,8 +17,11 @@ const CORPUS_PATH: &str = concat!(
 const PACKAGED_CORPUS_PATH: &str =
     "crates/excalidraw-render/tests/qualification/font-subset-corpus.json";
 const CORPUS_SCHEMA: &str = "excalidraw-render/svg-font-subset-qualification-corpus/v1";
-const SOURCE_MANIFEST_SHA256: &str =
-    "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
+/// The revision's asset manifest digest, as its sidecar names it.
+const SOURCE_MANIFEST_SIDECAR: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../tests/oracle/reference-profiles/revision-1-assets.sha256"
+));
 const PROFILE_SHA256: &str = "0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4";
 /// Per-cell trace digests are not pinned: cross-target equality of the
 /// aggregate `resourceTracesSha256` is the determinism property (ADR-0002).
@@ -327,7 +330,10 @@ pub(crate) fn assert_complete_font_subset_qualification_corpus() {
     assert_eq!(corpus.schema, CORPUS_SCHEMA);
     assert_eq!(corpus.compatibility_revision, 1);
     assert_eq!(corpus.originating_issue, 98);
-    assert_eq!(corpus.source_manifest_sha256, SOURCE_MANIFEST_SHA256);
+    assert_eq!(
+        corpus.source_manifest_sha256,
+        SOURCE_MANIFEST_SIDECAR.trim()
+    );
     assert_eq!(corpus.subset_profile_sha256, PROFILE_SHA256);
     assert_eq!(corpus.classes.len(), CLASS_IDS.len());
     for (definition, expected) in corpus.classes.iter().zip(CLASS_IDS) {
@@ -1139,7 +1145,7 @@ fn build_corpus() -> Corpus {
         schema: CORPUS_SCHEMA.to_owned(),
         compatibility_revision: 1,
         originating_issue: 98,
-        source_manifest_sha256: SOURCE_MANIFEST_SHA256.to_owned(),
+        source_manifest_sha256: SOURCE_MANIFEST_SIDECAR.trim().to_owned(),
         subset_profile_sha256: PROFILE_SHA256.to_owned(),
         classes: class_definitions(),
         sources,
@@ -1323,7 +1329,14 @@ fn materialize_viewer_inputs() {
                 "ordered_scalars": scalars,
                 "source_identity": qualified.source_identity,
             });
-            if let Some(execution) = executions.get_mut(identity) {
+            // Cases are keyed and ordered by what they render, so a subset
+            // profile change rewrites their subset fields, not their order.
+            let glyph_set = glyph_set(&qualified.source_identity, scalars);
+            if let Some(execution) = executions.get_mut(&glyph_set) {
+                assert_eq!(
+                    execution["semantic_subset_identity"], identity,
+                    "one glyph set has one semantic subset identity"
+                );
                 execution["coverage"]
                     .as_array_mut()
                     .expect("execution coverage is an array")
@@ -1433,7 +1446,7 @@ fn materialize_viewer_inputs() {
                 format!("target/svg-font-subset-viewer-qualification/inputs/{identity}/{name}")
             };
             executions.insert(
-                identity.to_owned(),
+                glyph_set.clone(),
                 serde_json::json!({
                     "coverage": [coverage],
                     "dimensions": {
@@ -1444,6 +1457,7 @@ fn materialize_viewer_inputs() {
                         "width": width,
                     },
                     "effective_alias": qualified.effective_alias,
+                    "glyph_set": glyph_set,
                     "mapped_scalars": mapped_scalars,
                     "semantic_subset_identity": identity,
                     "source_assets": relative("source.assets.json"),
@@ -1473,10 +1487,29 @@ fn materialize_viewer_inputs() {
             env!("CARGO_MANIFEST_DIR"),
             "/tests/qualification/font-subset-corpus.json"
         ))),
-        "schema": "excalidraw-render/svg-font-subset-viewer-inputs/v1",
+        "schema": "excalidraw-render/svg-font-subset-viewer-inputs/v2",
         "subset_profile_sha256": PROFILE_SHA256,
     });
     write_json(&output.join("inputs.json"), &cases);
+}
+
+/// The key of a viewer qualification case: the SHA-256 of the source font's
+/// identity (which names its bytes' digest) and the ordered scalars set in it.
+/// It is the semantic subset identity's preimage without the subset profile,
+/// so it names what is rendered and survives a profile change;
+/// `xtask conformance verify-svg-font-subsets` recomputes it from the case's
+/// coverage.
+#[cfg(not(target_arch = "wasm32"))]
+fn glyph_set(source_identity: &str, scalars: &[u32]) -> String {
+    let scalars = scalars
+        .iter()
+        .map(u32::to_string)
+        .collect::<Vec<_>>()
+        .join(",");
+    sha256(
+        format!("excalidraw-render:svg-font-subset-glyph-set:v1\n{source_identity}\n{scalars}")
+            .as_bytes(),
+    )
 }
 
 #[cfg(not(target_arch = "wasm32"))]

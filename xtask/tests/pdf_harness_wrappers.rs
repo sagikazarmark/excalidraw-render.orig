@@ -40,6 +40,7 @@ fn success(output: &Output) {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 fn prebuilt_wrappers_reproduce_all_six_fixtures_and_structural_reports() {
     let scratch = Scratch::new();
     let case = root().join("tests/conformance/pdf-viewer-qualification/rectangle-outline");
@@ -118,6 +119,7 @@ fn prebuilt_wrappers_reproduce_all_six_fixtures_and_structural_reports() {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 fn fallback_uses_locked_absolute_manifest_and_isolated_target_even_with_parent_override() {
     let scratch = Scratch::new();
     // Inspect the actual Cargo invocation without rebuilding the workspace in a
@@ -145,6 +147,7 @@ fn fallback_uses_locked_absolute_manifest_and_isolated_target_even_with_parent_o
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 fn structural_wrapper_rejects_output_symlinks_before_launching_xtask() {
     let scratch = Scratch::new();
     let target = scratch.0.join("keep.json");

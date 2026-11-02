@@ -7,7 +7,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use excalidraw_render::{
     ColorMode, CompatibilityReport, DiagnosticCode, ErrorCode, FrameOptions, MetadataOptions,
     OutputFormat, PdfOptions, PdfRasterFallback, RenderRequest, Renderer, ResourceLimits,
-    SceneDocument, Sizing, SupplementalAssets,
+    ResourceLimitsBuilder, SceneDocument, Sizing, SupplementalAssets,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -30,7 +30,40 @@ struct Case {
     output_ceilings: Option<[u64; 3]>,
 }
 
+/// Whether the nightly default-limits mode is on. It swaps the lowered fuzz
+/// profile for [`ResourceLimits::default`], so generated and mutated
+/// magnitudes the lowered ceilings would reject first reach the renderer,
+/// where they must still end in an artifact or a typed failure.
+fn default_limits() -> bool {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        std::env::var_os("EXCALIDRAW_RENDER_FUZZ_DEFAULT_LIMITS").is_some_and(|value| value == "1")
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        false
+    }
+}
+
 fn limits(mode: usize, output: Option<u64>) -> ResourceLimits {
+    if default_limits() {
+        return default_profile_limits(mode, output);
+    }
+    lowered_limits(mode, output)
+}
+
+/// The revision-1 default profile, with each limit mode's one deliberately
+/// exhausted ceiling still applied so the modes keep reaching their codes.
+fn default_profile_limits(mode: usize, output: Option<u64>) -> ResourceLimits {
+    let builder = ResourceLimits::builder();
+    let builder = match output {
+        Some(output) => builder.max_output_bytes(output),
+        None => builder,
+    };
+    exhaust(builder, mode).build().unwrap()
+}
+
+fn lowered_limits(mode: usize, output: Option<u64>) -> ResourceLimits {
     let builder = ResourceLimits::builder()
         .max_scene_bytes(MAX_INPUT as u64)
         .max_elements(32)
@@ -55,6 +88,11 @@ fn limits(mode: usize, output: Option<u64>) -> ResourceLimits {
         .max_element_work_units(16_777_216)
         .max_asset_work_units(16_777_216)
         .max_total_work_units(1_073_741_824);
+    exhaust(builder, mode).build().unwrap()
+}
+
+/// Applies limit mode `mode`'s exhausted ceiling, if any, to `builder`.
+fn exhaust(builder: ResourceLimitsBuilder, mode: usize) -> ResourceLimitsBuilder {
     match mode {
         0 | 12 => builder,
         1 => builder.max_scene_bytes(64),
@@ -77,8 +115,6 @@ fn limits(mode: usize, output: Option<u64>) -> ResourceLimits {
         11 => builder.max_element_work_units(128),
         _ => panic!("unknown limit mode"),
     }
-    .build()
-    .unwrap()
 }
 
 fn request(case: &Case, format: OutputFormat, output: Option<u64>) -> RenderRequest {
@@ -242,8 +278,11 @@ fn exercise(case: &Case, renderer: &Renderer, reverse: bool) -> Vec<Snapshot> {
                     assert!(inspect::manifest(format, restored.artifact().bytes())
                         .is_some_and(|m| !m["notices"].as_array().unwrap().is_empty()));
                 } else {
+                    // Under the default profile any ceiling may be the first
+                    // one reached; it must still be a typed resource failure.
                     assert!(
-                        allowed_failure(error.code()),
+                        allowed_failure(error.code())
+                            || (default_limits() && error.code().as_str().starts_with("resource.")),
                         "unexpected failure: {error:?}"
                     );
                 }
@@ -335,8 +374,8 @@ fn sequence(cases: &[Case]) {
     }
 }
 
-fn generated(count: usize) {
-    let mut generator = generator::Generator::new();
+fn generated(seed: u64, count: usize) {
+    let mut generator = generator::Generator::with_seed(seed);
     let cases: Vec<_> = (0..count)
         .map(|index| {
             let mut case = generator.case(index);
@@ -353,7 +392,7 @@ fn generated(count: usize) {
 }
 
 pub(super) fn smoke() {
-    generated(36);
+    generated(generator::SEED, 36);
 }
 
 #[test]
@@ -475,9 +514,16 @@ fn nightly_complete_render_fuzz() {
         .map(|n| n.parse().unwrap())
         .unwrap_or(4096);
     assert!((1..=16_384).contains(&count));
+    if default_limits() {
+        // The controls assert the lowered profile's codes; this mode only
+        // searches.
+        eprintln!("render-fuzz: the revision-1 default resource limits");
+        generated(crate::fuzz_seed::nightly_seed(generator::SEED), count);
+        return;
+    }
     complete_controls_reach_all_projections_and_limit_profiles();
     metadata_omission_and_fatal_output_are_reached();
-    generated(count);
+    generated(crate::fuzz_seed::nightly_seed(generator::SEED), count);
 }
 
 #[test]

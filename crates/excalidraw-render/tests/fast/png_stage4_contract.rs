@@ -83,11 +83,9 @@ fn review_icc_declaration_bounds_both_tag_table_and_tag_data() {
     }
 }
 
-#[test]
 fn review_icc_common_headers_are_checked_on_every_path() {
     check(crate::common::png_icc_safety::headers());
 }
-#[test]
 fn sampled_icc_curves_and_descriptive_metadata_have_independent_pixel_contracts() {
     check_evidence(
         crate::common::png_icc_safety::sampled_evidence(),
@@ -460,13 +458,13 @@ fn complete_profile_composition_matches_independent_reference() {
 /// family crossed with every sample layout, transparency form (intrinsic,
 /// key, palette, none), interlace and APNG container against the pinned
 /// reference, including PDF's grayscale soft mask and transparent RGB zero.
-/// The frozen matrix covers the gray ICC, LUT, gAMA, cHRM, v4 ICC and PQ/HLG
-/// families; the supplement adds the sRGB chunk, v2 matrix/TRC ICC, SDR,
-/// linear, BT.709 and Display-P3 cICP, ignored narrow-range cICP, and gray
-/// sRGB/gAMA/cICP/PQ.
+/// The frozen matrix (gray ICC, LUT, gAMA, cHRM, v4 ICC and PQ/HLG) is
+/// `complete_profile_composition_matches_independent_reference`, scheduled
+/// once beside this; the supplement here adds the sRGB chunk, v2 matrix/TRC
+/// ICC, SDR, linear, BT.709 and Display-P3 cICP, ignored narrow-range cICP,
+/// and gray sRGB/gAMA/cICP/PQ.
 #[test]
 fn png_alpha_and_profiles_compose_across_every_layout() {
-    complete_profile_composition_matches_independent_reference();
     check_evidence(
         crate::common::png_stage4_composition::supplemental_evidence(),
         "composition",

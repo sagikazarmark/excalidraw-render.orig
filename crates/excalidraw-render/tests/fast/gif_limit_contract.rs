@@ -112,7 +112,6 @@ fn sources() -> Vec<(&'static str, Vec<u8>, u32, u32)> {
 /// Equality passes silently and the first crossing reports exactly the
 /// attempted total, and recovers like a missing asset. Direct SVG validates
 /// without deriving pixels.
-#[test]
 pub(super) fn gif_limits_have_exact_equality_and_first_crossing() {
     for (name, bytes, width, height) in sources() {
         let source = scene(&bytes, width, height);
@@ -220,7 +219,6 @@ const CASES: [Case; 9] = [
 ];
 
 /// Width precedes height, then area; the image side precedes pixels.
-#[test]
 pub(super) fn gif_raster_crossings_order_width_then_height_then_area() {
     for animated in [false, true] {
         for (width, height, dimension, pixels, expected) in CASES {

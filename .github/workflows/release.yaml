@@ -1,0 +1,60 @@
+name: Release
+
+# The release checks on both supported targets (docs/ci.md), on demand from
+# the commit to be released. The logs are the evidence; the run's URL goes in
+# the release notes.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    shell: devenv shell -- bash -e {0}
+
+jobs:
+  release:
+    name: Release checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Some checks read files from earlier commits.
+          fetch-depth: 0
+
+      # The release profile adds the browser stack (the wasm-bindgen runner and
+      # headless Firefox) for the WASM half of the release checks, and Node for
+      # the representative candidate and the host-tool tests.
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          profile: release
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+          workspaces: |
+            . -> target
+            tests/package-consumer -> ../../target/package-consumer
+
+      - name: Release checks
+        run: just release
+
+      - name: Upload the logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-evidence
+          path: target/release-evidence

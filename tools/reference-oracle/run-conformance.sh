@@ -12,13 +12,21 @@ case "${1:-}" in
     MODE="$1"
     ;;
   *)
-    echo "usage: $0 <generate|reproduce> <case-id>" >&2
+    echo "usage: $0 <generate|reproduce> <case-id> [--supersede]" >&2
     exit 2
     ;;
 esac
 
 if [[ -z "${2:-}" ]]; then
-  echo "usage: $0 <generate|reproduce> <case-id>" >&2
+  echo "usage: $0 <generate|reproduce> <case-id> [--supersede]" >&2
+  exit 2
+fi
+
+# Generation over a manifested case needs --supersede, which the generator
+# enforces; nothing else may reach the container command line.
+SUPERSEDE="${3:-}"
+if [[ -n "${SUPERSEDE}" && ( "${SUPERSEDE}" != "--supersede" || "${MODE}" != "generate" || -n "${4:-}" ) ]]; then
+  echo "usage: $0 <generate|reproduce> <case-id> [--supersede]" >&2
   exit 2
 fi
 
@@ -32,4 +40,4 @@ docker run --rm --init --ipc=host \
   --mount "type=bind,src=${REPO_ROOT},dst=/workspace" \
   --workdir /workspace/tools/reference-oracle \
   "${IMAGE}" \
-  bash -lc "npm run build && node scripts/profile.mjs verify && node scripts/conformance-case.mjs '${MODE}' '$2'"
+  bash -lc "npm run build && node scripts/profile.mjs verify && node scripts/conformance-case.mjs '${MODE}' '$2' ${SUPERSEDE}"

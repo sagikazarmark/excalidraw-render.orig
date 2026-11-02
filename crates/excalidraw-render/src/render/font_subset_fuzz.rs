@@ -238,7 +238,7 @@ fn nightly_font_subset_fuzz_is_bounded_and_deterministic() {
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(4_096)
         .min(16_384);
-    assert_generated_cases(FIXED_SEED, cases);
+    assert_generated_cases(crate::fuzz_seed::nightly_seed(FIXED_SEED), cases);
 }
 
 pub(crate) fn assert_font_subset_fuzz_smoke() {

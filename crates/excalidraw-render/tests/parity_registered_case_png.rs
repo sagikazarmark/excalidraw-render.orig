@@ -13,10 +13,13 @@
 //!
 //! A variant may carry an approved tolerance exception in its case manifest
 //! (`exceptions`, scoped to `format: png` and `region: whole`). Such a variant is
-//! held to the exception's exact recorded ceilings instead of the canonical
-//! budget, and must still fail the canonical budget: an exception is a recorded
-//! judgment about an observed difference, so once the difference is gone the
-//! record is stale and the test says so rather than letting it linger.
+//! held to the exception's exact recorded measurement instead of the canonical
+//! budget, in both directions: a regression fails, and so does an unrecorded
+//! improvement, so a record can neither hide a later regression beneath a stale
+//! ceiling nor outlive its cause. A variant that returns inside the canonical
+//! budget makes its record stale and the test says so. The clean and the
+//! excepted variants are judged by separate tests, so a pass of the clean set
+//! means what it says.
 //!
 //! A variant whose divergence is a diagnosed defect awaiting a decision gets no
 //! exception; it is listed in `KNOWN_DEFECTS` with its measurement pinned, so
@@ -28,13 +31,14 @@ use std::collections::BTreeSet;
 use std::fs;
 
 use excalidraw_render::{ColorMode, OutputFormat, Renderer, Sizing};
-use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonLimits, ComparisonMode};
+use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode};
 use serde_json::Value;
 
 use common::raster::decode_png;
 use common::registered_cases::{
-    case_count, divergence, exception_limits, judge_each, registered_scene_variants,
-    variant_request, visual_class, PinnedDivergence, PinnedExtentDefect, RegisteredVariant,
+    case_count, divergence, judge_each, registered_scene_variants, variant_request, visual_class,
+    whole_png_exception, PinnedDivergence, PinnedExtentDefect, RecordedDivergence,
+    RegisteredVariant,
 };
 use common::reports::assert_report_matches;
 use common::repository_root;
@@ -48,28 +52,58 @@ const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
 /// rendered dimensions. See `PinnedExtentDefect`.
 const KNOWN_EXTENT_DEFECTS: &[PinnedExtentDefect] = &[];
 
-#[test]
-fn every_registered_scene_case_matches_its_official_direct_png() {
-    let variants = registered_scene_variants(&repository_root());
-    let seen: BTreeSet<_> = variants
-        .iter()
-        .map(|variant| (variant.case.clone(), variant.variant.clone()))
+/// Judges the variants `carried` selects: the clean set under the canonical
+/// budget, or the excepted set against their recorded divergences. The two
+/// tests split the registry so a pass of the clean set means what it says, and
+/// the excepted set is read as what it is: recorded divergences held exactly.
+fn judge_registered_scene_cases(carried: bool) {
+    let variants: Vec<_> = registered_scene_variants(&repository_root())
+        .into_iter()
+        .filter(|variant| {
+            tolerance_exception(&variant.manifest, &variant.variant).is_some() == carried
+        })
         .collect();
+    assert!(
+        !variants.is_empty(),
+        "the registry has {} variants",
+        if carried { "excepted" } else { "clean" }
+    );
 
     let failures: Vec<String> = judge_each(&variants, direct_png_divergence)
         .into_iter()
         .flatten()
         .collect();
 
-    PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
-    PinnedExtentDefect::assert_all_observed(KNOWN_EXTENT_DEFECTS, &seen);
     assert!(
         failures.is_empty(),
-        "{} of {} registered scene cases diverge from their official direct PNG:\n  {}",
+        "{} of {} registered scene cases ({} variants) diverge from their official direct PNG:\n  {}",
         failures.len(),
         case_count(&variants),
+        if carried { "excepted" } else { "clean" },
         failures.join("\n  ")
     );
+}
+
+/// Every variant without a tolerance exception passes the canonical budget
+/// against the official canvas raster, or holds the measurement its known
+/// defect pins, and every pin names a variant the registry declares. A known
+/// defect has no exception, so the pinned variants are in this set.
+#[test]
+fn every_clean_registered_scene_case_matches_its_official_direct_png() {
+    let seen: BTreeSet<_> = registered_scene_variants(&repository_root())
+        .iter()
+        .map(|variant| (variant.case.clone(), variant.variant.clone()))
+        .collect();
+    PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
+    PinnedExtentDefect::assert_all_observed(KNOWN_EXTENT_DEFECTS, &seen);
+    judge_registered_scene_cases(false);
+}
+
+/// Every variant with a tolerance exception holds exactly the divergence its
+/// record carries.
+#[test]
+fn every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence() {
+    judge_registered_scene_cases(true);
 }
 
 /// Renders one variant's direct PNG and judges it against the official
@@ -151,17 +185,8 @@ fn direct_png_divergence(variant: &RegisteredVariant) -> Option<String> {
 
 /// The approved tolerance exception governing one variant's whole direct PNG, if
 /// the case manifest records one.
-fn tolerance_exception(manifest: &Value, variant_id: &str) -> Option<ComparisonLimits> {
-    manifest["exceptions"]
-        .as_array()
-        .expect("manifest exceptions are an array")
-        .iter()
-        .find(|exception| {
-            exception["variant"] == variant_id
-                && exception["format"] == "png"
-                && exception["region"] == "whole"
-        })
-        .map(exception_limits)
+fn tolerance_exception(manifest: &Value, variant_id: &str) -> Option<RecordedDivergence> {
+    whole_png_exception(manifest, variant_id)
 }
 
 /// The default reference export, as every registered variant declares it

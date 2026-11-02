@@ -1,6 +1,6 @@
 # 0.1.0 Release Readiness Plan
 
-Status: in progress. Date: 2026-10-18, updated 2026-10-30. Owner: Mark Sagi-Kazar.
+Status: in progress. Date: 2026-10-18, updated 2026-11-01. Owner: Mark Sagi-Kazar.
 
 This plan records what stands between `main` and the first
 release, and what to do about each item. The [release policy](release-0.1.0.md)
@@ -64,7 +64,7 @@ These are open regardless of code quality.
    restage at `d4686803` found every qualification raster unchanged and V29's
    PDF and PNG equal to V28's.
 
-Already in place: CI passes on `main` (all ten jobs, including MSRV), the
+Already in place: CI passes on `main` (every gate, including MSRV), the
 nightly passes, private vulnerability reporting is on, and all five crate names
 are free on crates.io. Every open issue is either a follow-up listed in the
 release policy or an enhancement (#233, #199); #213 is untriaged but looks
@@ -92,9 +92,10 @@ night replays the same cases. They also run under tiny limits (64 KiB inputs,
 
 Before 0.1.0:
 
-- [ ] Add a `*_FUZZ_SEED` variable beside the existing `*_FUZZ_CASES` ones. The
+- [x] Add a `*_FUZZ_SEED` variable beside the existing `*_FUZZ_CASES` ones. The
       nightly derives the seed from the run number and prints it, and PR runs
-      keep the fixed seed. Failure labels already carry `seed=…`.
+      keep the fixed seed. Failure labels already carry `seed=…`. Done
+      2026-11-01: `EXCALIDRAW_FUZZ_SEED`, mixed into each family's fixed seed.
 - [ ] Add a nightly fuzz family that runs under the default limits.
 - [ ] Run one cargo-fuzz session of a few hours on `SceneDocument::parse` →
       render (SVG, PNG and PDF) under the default limits, seeded from the
@@ -134,12 +135,12 @@ Krilla, HarfRust, usvg and read-fonts are all pre-1.0, and their recent bumps
 moved output. The README already tells users to pin the version and keep
 their lockfile when exact output bytes matter.
 
-- [ ] Add a versioning rule to `release.md`: a patch release never moves the
+- [x] Add a versioning rule to `release.md`: a patch release never moves the
       approved baseline. A bump that moves it waits for the next minor release.
-      The conformance gate already detects any movement, so it classifies the
-      change.
-- [ ] Merge Dependabot's byte-affecting groups (Krilla, HarfRust, usvg, resvg,
-      read-fonts, zune-jpeg, …) only between minor releases.
+      Done 2026-11-01: the golden test classifies the change.
+- [x] Merge Dependabot's byte-affecting groups (Krilla, HarfRust, usvg, resvg,
+      read-fonts, zune-jpeg, …) only between minor releases. Done 2026-11-01:
+      the `output-bytes` Dependabot group.
 
 ### 4. Windows and macOS are unverified
 
@@ -196,20 +197,26 @@ retyping means moving to accessors.
 
 ### 6. Changes are expensive
 
-The verification code (about 140k lines across tests, xtask and tools) is larger
-than the renderer (about 78k). Any change that moves evidence means restaging on
-x86-64 Linux. This does not block the release, but it slows patch releases.
+**Revised 2026-11-01** by the [testing strategy review](research/review-2026-11-01/README.md).
+The verification code was larger than the renderer and any change that moved
+evidence meant restaging on x86-64 Linux. The review found the cost was in an
+evidence-provenance ledger rather than in tests of the renderer, and removed
+most of it:
 
-- [x] Add a `workflow_dispatch` "restage" workflow that runs the Linux-only steps
-      (baseline restage, `just release`, viewer checks) and uploads the results
-      as an artifact or a commit. It also closes gates 1, 2 and 4 above.
-      Done 2026-10-27: `restage.yaml` stages the baseline, regenerates the
-      font-subset viewer qualification, collects a representative successor
-      and reproduces the SVG/PDF viewer qualifications, as artifacts;
-      `release-evidence.yaml` already ran `just release`. Gates 1, 2 and 4
-      are closed by it. The superseded V6 and V27 candidates were pruned once
-      their last readers moved to V28 or carried their fixture themselves
-      (ADR-0022).
+- [x] The golden record (`tests/conformance/golden`) replaced the native
+      baseline, its collector, the WASM staging and the restage job: every
+      registered export target is judged in the render tier on every change,
+      and `just update-golden` rewrites the record on any host. Rendering all
+      168 keys on macOS arm64 reproduced every Linux-recorded blob.
+- [x] The trace pipeline and the font-subset target-evidence chain retired;
+      the inventory, ownership and candidate verifiers moved to the release
+      tier; the PR gate verifies the cases, the catalog and the viewer records.
+- [x] CI runs six gates from a lean devenv base, with the browser stack in a
+      profile; the viewer harnesses run nightly and the reference oracle weekly.
+- [x] Tolerance exceptions are held at their exact measurement in both
+      directions; eleven had drifted unrecorded.
+- [x] `restage.yaml` keeps the two Docker-bound recipes (the font-subset
+      viewer qualification and the representative candidate).
 - [ ] Combined with rule 3, refresh evidence once per minor release instead of
       piecemeal.
 - Continue pruning in the direction of ADR-0022: when a digest pin forces a

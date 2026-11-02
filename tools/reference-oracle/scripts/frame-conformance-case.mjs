@@ -1,7 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
-  existsSync,
   mkdirSync,
   readFileSync,
   rmSync,
@@ -13,16 +12,27 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 import { canonicalize } from "./canonical-json.mjs";
+import { carriedApproval, generationArgs } from "./generation-guard.mjs";
+import { referenceDigest } from "./revision.mjs";
 
 const ORACLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(ORACLE_ROOT, "../..");
 const CASE_ID = "focused.frame-export.v1";
 const CASE_ROOT = resolve(REPO_ROOT, "tests/conformance/cases/focused/frame-export");
 const STAGING_ROOT = resolve(REPO_ROOT, "target/reference-evidence/frame-export");
-const PROFILE_DIGEST = readFileSync(
-  resolve(REPO_ROOT, "tests/oracle/reference-profiles/revision-1-frame.sha256"),
-  "ascii",
-).trim();
+// The comparator class of each frame target, by ordinal, as the case registry
+// declares it; the manifest carries it so the parity test reads no table.
+const VISUAL_CLASSES = (() => {
+  const registry = JSON.parse(
+    readFileSync(resolve(REPO_ROOT, "tests/conformance/cases/registry.json"), "utf8"),
+  );
+  const entry = registry.cases.find((candidate) => candidate.id === CASE_ID);
+  if (!entry || !Array.isArray(entry.visual_classes)) {
+    throw new Error(`the case registry names no visual classes for ${CASE_ID}`);
+  }
+  return entry.visual_classes;
+})();
+const PROFILE_DIGEST = referenceDigest("frameProfile");
 const ORIGIN = "http://reference.invalid";
 const BROWSER_VERSION = "149.0.7827.55";
 const BROWSER_ARGUMENTS = [
@@ -239,7 +249,7 @@ function assertRepeatable(first, second) {
   }
 }
 
-function writeCase(root, scenePath, scene, first, second) {
+function writeCase(root, scenePath, scene, first, second, approval) {
   mkdirSync(resolve(root, "evidence"), { recursive: true });
   writeFileSync(resolve(root, "expected-report.json"), '{"schema_version":1,"diagnostics":[]}');
   for (const target of first.targets) {
@@ -273,6 +283,7 @@ function writeCase(root, scenePath, scene, first, second) {
   const provenancePath = resolve(root, "evidence/provenance.json");
   writeFileSync(provenancePath, Buffer.concat([canonicalBytes(provenance), Buffer.from("\n")]));
   const formatRecord = (target, format, mediaType) => ({
+    visual_class: VISUAL_CLASSES[target.ordinal - 1],
     artifact: descriptor(
       resolve(root, `evidence/frame-${target.ordinal}/official.${format}`),
       { height: target[format].height, media_type: mediaType, width: target[format].width },
@@ -296,7 +307,7 @@ function writeCase(root, scenePath, scene, first, second) {
       (element.type === "frame" || element.type === "magicframe"),
   );
   const manifest = {
-    approval: null,
+    approval,
     case_id: CASE_ID,
     compatibility_revision: 1,
     expected_report: descriptor(
@@ -336,10 +347,12 @@ function normalized(value) {
 }
 
 async function main() {
-  const [mode, caseId] = process.argv.slice(2);
-  if (!['generate', 'reproduce'].includes(mode) || caseId !== CASE_ID) {
+  const args = generationArgs(process.argv.slice(2), "node scripts/frame-conformance-case.mjs");
+  const { mode, caseId } = args;
+  if (caseId !== CASE_ID) {
     throw new Error(`usage: node scripts/frame-conformance-case.mjs <generate|reproduce> ${CASE_ID}`);
   }
+  const approval = carriedApproval(resolve(CASE_ROOT, "manifest.json"), args);
   if (process.env.REFERENCE_ORACLE_CANONICAL !== "1" || process.version !== "v24.16.0") {
     throw new Error("run this command in the canonical frame reference container");
   }
@@ -355,12 +368,8 @@ async function main() {
   const second = await renderOnce(scene, allowedAssets);
   assertRepeatable(first, second);
   const outputRoot = mode === "generate" ? CASE_ROOT : STAGING_ROOT;
-  if (mode === "generate" && existsSync(resolve(CASE_ROOT, "manifest.json"))) {
-    const existing = JSON.parse(readFileSync(resolve(CASE_ROOT, "manifest.json"), "utf8"));
-    if (existing.approval !== null) throw new Error("generation refuses to replace approved evidence");
-  }
   if (mode === "reproduce") rmSync(STAGING_ROOT, { recursive: true, force: true });
-  const manifest = writeCase(outputRoot, scenePath, scene, first, second);
+  const manifest = writeCase(outputRoot, scenePath, scene, first, second, approval);
   if (mode === "reproduce") {
     const evidencePaths = ["expected-report.json"];
     for (const target of manifest.targets) {

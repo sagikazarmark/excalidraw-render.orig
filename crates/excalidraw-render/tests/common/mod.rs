@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 pub mod approved_scenes;
+pub mod characterization;
 pub mod clean_baselines;
 pub mod codec_fixtures;
 pub mod image_scene;
@@ -30,6 +31,8 @@ pub mod scratch;
 pub mod sfnt;
 pub mod svg;
 pub mod svg_baselines;
+pub mod svg_paint;
+pub mod svg_raster;
 
 /// The workspace root, two levels above this crate.
 pub fn repository_root() -> PathBuf {
@@ -62,4 +65,13 @@ pub fn read_json(path: &Path) -> Value {
 /// Lowercase hex of a digest, as evidence records spell it.
 pub fn lower_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+/// The revision-1 scene reference profile's digest, `sha256:<hex>`, as its
+/// sidecar names it: the one place a profile update changes it.
+pub fn reference_profile_digest() -> String {
+    format!(
+        "sha256:{}",
+        include_str!("../../../../tests/oracle/reference-profiles/revision-1.sha256").trim()
+    )
 }

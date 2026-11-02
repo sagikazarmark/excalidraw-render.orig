@@ -77,6 +77,6 @@ percentage precision, quoted delimiters, malformed/unclosed blocks, rejected
 constructs, deep uninterpreted values, exact stylesheet effect causes and
 forbidden-fallback errors. The focused tests also run in the browser WASM
 worker (`just qualification wasm32-unknown-unknown`), and the packaged
-snapshot replays on both targets (`just snapshot-replay`,
-`just wasm-snapshot-replay`) showed no artifact or report delta from the
+snapshot replays on both targets (now the golden test, `just test-render` and
+`just golden-wasm`) showed no artifact or report delta from the
 change.

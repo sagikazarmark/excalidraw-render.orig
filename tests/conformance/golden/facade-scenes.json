@@ -1,0 +1,51 @@
+{
+  "schema": "excalidraw-render/golden-facade-scenes/v1",
+  "description": "Project-authored scenes with no official evidence whose exact bytes the golden record holds, each rendered with the default request in every format. The fast tier's behavioural tests read the same files.",
+  "options": {
+    "exportBackground": true,
+    "exportEmbedScene": false,
+    "exportPadding": 10,
+    "exportScale": 1,
+    "exportWithDarkMode": false,
+    "frameRendering": { "clip": true, "enabled": true, "name": true, "outline": true },
+    "maxWidthOrHeight": null,
+    "viewBackgroundColor": "#ffffff"
+  },
+  "scenes": [
+    {
+      "id": "facade.arrows.v1",
+      "path": "tests/conformance/golden/facade-scenes/arrows.excalidraw",
+      "guards": "every arrow binding, elbow and arrowhead family (tests/fast/arrow_render.rs)"
+    },
+    {
+      "id": "facade.excalifont-text.v1",
+      "path": "tests/conformance/golden/facade-scenes/excalifont-text.excalidraw",
+      "guards": "shaped Excalifont text and its embedded subset, rotated and translucent (tests/fast/excalifont_text_render.rs)"
+    },
+    {
+      "id": "facade.isolated-fallback.v1",
+      "path": "tests/conformance/golden/facade-scenes/isolated-fallback.excalidraw",
+      "guards": "the one nested-SVG closure the PDF backend rasterizes (tests/fast/pdf_backend_qualification.rs)"
+    },
+    {
+      "id": "facade.multi-glyph-clusters.v1",
+      "path": "tests/conformance/golden/facade-scenes/multi-glyph-clusters.excalidraw",
+      "guards": "clusters that shape to several glyphs, whose text PDF shares per cluster (tests/fast/cluster_text_pdf.rs)"
+    },
+    {
+      "id": "facade.outline-shapes.v1",
+      "path": "tests/conformance/golden/facade-scenes/outline-shapes.excalidraw",
+      "guards": "every sharp and rounded outline shape family (tests/fast/outline_shape_render.rs)"
+    },
+    {
+      "id": "facade.pdf-nested-native-operations.v1",
+      "path": "tests/conformance/pdf-backend-qualification/nested-native-operations.excalidraw",
+      "guards": "the PDF backend qualification's nested-SVG native operation matrix (tests/fast/pdf_backend_qualification.rs)"
+    },
+    {
+      "id": "facade.pdf-project-operations.v1",
+      "path": "tests/conformance/pdf-backend-qualification/project-operations.excalidraw",
+      "guards": "the PDF backend qualification's complete project operation matrix (tests/fast/pdf_backend_qualification.rs)"
+    }
+  ]
+}

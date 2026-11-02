@@ -2,25 +2,16 @@ use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, ErrorCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
-use sha2::{Digest, Sha256};
 
-use crate::common::lower_hex;
 use crate::common::raster::decode_png;
 use crate::common::svg::path_data;
 
-const SCENE: &[u8] = br##"{
-  "type":"excalidraw","version":2,
-  "elements":[
-    {"id":"rectangle","type":"rectangle","x":10,"y":10,"width":80,"height":50,"seed":1,"updated":1},
-    {"id":"rounded-rectangle","type":"rectangle","x":110,"y":10,"width":80,"height":50,"roundness":{"type":3},"seed":2,"updated":1},
-    {"id":"ellipse","type":"ellipse","x":210,"y":10,"width":80,"height":50,"seed":3,"updated":1},
-    {"id":"diamond","type":"diamond","x":310,"y":10,"width":80,"height":50,"seed":4,"updated":1},
-    {"id":"rounded-diamond","type":"diamond","x":410,"y":10,"width":80,"height":50,"roundness":{"type":2},"seed":5,"updated":1},
-    {"id":"line","type":"line","x":10,"y":90,"width":160,"height":40,"points":[[0,0],[80,40],[160,10]],"seed":6,"updated":1},
-    {"id":"rounded-line","type":"line","x":210,"y":90,"width":160,"height":40,"points":[[0,0],[80,40],[160,10]],"roundness":{"type":2},"seed":7,"updated":1}
-  ],
-  "appState":{"viewBackgroundColor":"#ffffff"},"files":{}
-}"##;
+/// Every outline shape family, sharp and rounded. The golden record holds its
+/// bytes in every format (`facade.outline-shapes.v1`).
+const SCENE: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../tests/conformance/golden/facade-scenes/outline-shapes.excalidraw"
+));
 
 #[test]
 fn admitted_outline_shape_families_render_directly_in_every_format() {
@@ -33,35 +24,8 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
         let outcome = Renderer::new()
             .render(&scene, &request)
             .expect("all outline families render");
-        // The SVG's one pin is the path-vector digest below, which holds the
-        // geometry; PNG and PDF each keep one whole-artifact digest. Both
-        // moved with the rounded diamond's corner radii (#160), which now come
-        // from the vertex offsets `floor(extent / 2) + 1` as the reference's
-        // do: the 80x50 rounded diamond's radii are 10.25 / 6.5, not 10 / 6.25.
-        // The PDF moved again with #173: the bottom edge is a line's cubic
-        // extremum, which the reference's solver and once-rounded
-        // `Math.pow(x, 3)` place at `141.14833106583293` where the renderer's
-        // own solver had `141.1483310658329`; the PNG truncates to the same
-        // 141 rows and did not move.
-        let expected_digest = match format {
-            OutputFormat::Svg => None,
-            OutputFormat::Png => {
-                Some("267d2f7b19997dbc9df1e0b5643a3bfeccfd317b78914428db09ab5a9064f170")
-            }
-            OutputFormat::Pdf => {
-                // Moved when Krilla became the PDF writer (ADR-0021), with
-                // the same Rough paths.
-                Some("906fd0c4b9df540c1f5e59b781c3f36a6f71c3cb8ad662a5eb7dbeb96ba20df6")
-            }
-            _ => unreachable!("the test enumerates every revision-1 output format"),
-        };
-        if let Some(expected_digest) = expected_digest {
-            assert_eq!(
-                lower_hex(&Sha256::digest(outcome.artifact().bytes())),
-                expected_digest,
-                "exact {format:?} focused-case artifact changed"
-            );
-        }
+        // The golden record holds every format's bytes
+        // (`facade.outline-shapes.v1`).
 
         assert!(
             outcome.report().is_empty(),

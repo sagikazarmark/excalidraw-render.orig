@@ -24,7 +24,6 @@ const COLORED_RECTANGLE: &[u8] = br##"{
     "files":{}
 }"##;
 
-#[test]
 pub(super) fn chromium_css_colors_are_canonicalized_for_every_projection() {
     let svg = render_source(COLORED_RECTANGLE, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
@@ -48,7 +47,6 @@ pub(super) fn chromium_css_colors_are_canonicalized_for_every_projection() {
     assert!(content.contains("0.2509804 0 0.7490196 SCN\n"));
 }
 
-#[test]
 pub(super) fn canonical_color_alpha_is_preserved_by_every_projection() {
     let source = br##"{
         "type":"excalidraw",
@@ -100,7 +98,6 @@ pub(super) fn canonical_color_alpha_is_preserved_by_every_projection() {
     assert_eq!(content.matches(" gs\n").count(), 2);
 }
 
-#[test]
 pub(super) fn element_opacity_multiplies_color_alpha_in_every_projection() {
     let source = br##"{
         "type":"excalidraw",
@@ -153,7 +150,6 @@ pub(super) fn element_opacity_multiplies_color_alpha_in_every_projection() {
         .contains(&format!("/Type /ExtGState\n/CA {PDF_EFFECTIVE_ALPHA}\n")));
 }
 
-#[test]
 pub(super) fn dark_mode_lowers_scene_colors_before_every_projection() {
     // SVG carries the reference's root filter over light colors; PNG floors
     // the lowered filter as the canvas does and PDF rounds it as the official

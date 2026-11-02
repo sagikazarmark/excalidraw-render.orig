@@ -16,15 +16,14 @@ defaults:
     shell: devenv shell -- bash -e {0}
 
 jobs:
+  # The bounded randomized expansions. One job compiles the renderer once and
+  # runs every family; the seed is the run id, printed by each family, so a
+  # night searches a different region than the last and a failure names the
+  # seed that reproduces it.
   expansion:
-    name: Nightly (${{ matrix.task }})
+    name: Nightly expansions
     runs-on: ubuntu-latest
     timeout-minutes: 90
-
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [font-subset-fuzz, frame-batch-property, scene-fuzz, asset-fuzz, render-fuzz]
 
     steps:
       - name: Checkout repository
@@ -45,12 +44,71 @@ jobs:
           cmd-format: devenv shell -- {0}
 
       - name: Expand
-        run: just nightly-${{ matrix.task }}
+        env:
+          EXCALIDRAW_FUZZ_SEED: ${{ github.run_id }}
+        run: just nightly
+
+      # The complete-render fuzz again, under the default resource limits the
+      # lowered fuzz profile keeps out of reach (docs/render-fuzzing.md).
+      - name: Expand under the default limits
+        if: ${{ !cancelled() }}
+        env:
+          EXCALIDRAW_FUZZ_SEED: ${{ github.run_id }}
+        run: just nightly-render-fuzz-default-limits
 
   wasm:
     name: Browser WASM
     runs-on: ubuntu-latest
     timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The browser profile adds the wasm-bindgen runner and headless Firefox.
+      - name: Set up devenv
+        uses: sagikazarmark/setup-devenv@c36f9e57ca50ee1a6dad1a05a1a684e321f8096a # v0.3.0
+        with:
+          cachix-cache: rust-projects
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          profile: browser
+
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cmd-format: devenv shell -- {0}
+          workspaces: |
+            . -> target
+            tests/package-consumer -> ../../target/package-consumer
+
+      - name: Qualification
+        run: just qualification wasm32-unknown-unknown
+
+      - name: Packaged consumers
+        run: just wasm-packaging
+
+      - name: Golden targets
+        run: just golden-wasm
+
+      - name: Complete-render fuzz smoke
+        run: just render-fuzz-wasm
+
+  # The viewer harnesses: the PDF gates in PDFium, PDF.js and qpdf, and the SVG
+  # gate in Chromium and the pure-Rust viewer. PDF.js and Chromium run in their
+  # pinned images on the runner's Docker. Scheduled so their expectations
+  # cannot drift unnoticed again (#107).
+  harness:
+    name: Viewer harness (${{ matrix.kind }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [pdf, svg]
 
     steps:
       - name: Checkout repository
@@ -69,18 +127,39 @@ jobs:
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cmd-format: devenv shell -- {0}
-          workspaces: |
-            . -> target
-            tests/package-consumer -> ../../target/package-consumer
 
-      - name: Qualification
-        run: just qualification wasm32-unknown-unknown
+      - name: Run the harness
+        run: just ${{ matrix.kind }}-harness
 
-      - name: Packaged consumers
-        run: just wasm-packaging
+  # A scheduled failure opens an issue, or comments on the open one, so a red
+  # night is seen by someone other than the workflow's last committer.
+  report:
+    name: Report a scheduled failure
+    needs: [expansion, wasm, harness]
+    if: ${{ failure() && github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
 
-      - name: Snapshot replay
-        run: just wasm-snapshot-replay
-
-      - name: Complete-render fuzz smoke
-        run: just render-fuzz-wasm
+    steps:
+      - name: Open or update the failure issue
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WORKFLOW: ${{ github.workflow }}
+        run: |
+          title="Scheduled ${WORKFLOW} run failed"
+          body="[Run ${GITHUB_RUN_ID}](${RUN_URL}) failed on $(date -u +%F)."
+          gh label create scheduled-failure --force --color B60205 \
+            --description "A scheduled workflow run failed" >/dev/null
+          existing="$(gh issue list --state open --label scheduled-failure \
+            --search "in:title \"${title}\"" --json number --jq '.[0].number // empty')"
+          if [[ -n "${existing}" ]]; then
+            gh issue comment "${existing}" --body "${body}"
+          else
+            gh issue create --title "${title}" --label scheduled-failure,needs-triage --body "${body}"
+          fi

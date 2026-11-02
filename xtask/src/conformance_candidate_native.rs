@@ -284,7 +284,7 @@ fn report(bytes: &[u8], artifact: &[u8], format: &str, expected: &Value) -> Resu
         "pdf" => "application/pdf",
         _ => return Err("unsupported native format".into()),
     };
-    let wanted = json!({"schema_version":1,"status":"success","renderer_version":env!("CARGO_PKG_VERSION"),"compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":"sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71","format":format,"artifact":{"media_type":media,"byte_length":artifact.len(),"sha256":format!("sha256:{}",sha256(artifact))},"error":null,"diagnostics":expected["diagnostics"]});
+    let wanted = json!({"schema_version":1,"status":"success","renderer_version":env!("CARGO_PKG_VERSION"),"compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":crate::revision::Reference::Profile.prefixed_digest()?,"format":format,"artifact":{"media_type":media,"byte_length":artifact.len(),"sha256":format!("sha256:{}",sha256(artifact))},"error":null,"diagnostics":expected["diagnostics"]});
     if expected != &json!({"schema_version":1,"diagnostics":[]}) || actual != wanted {
         return Err(format!(
             "native {format} report differs from the independently authored contract"
@@ -421,98 +421,6 @@ fn check_output(
     Ok(())
 }
 
-/// Qualify the one user-authorized native Excalifont byte-canary change against
-/// a fresh, independently rendered official canvas. No approved evidence moves.
-pub fn qualify_text_canary(directory: &str) -> Result<Value> {
-    let root = crate::conformance_candidate_gate::candidate_root(directory)?;
-    let provenance = value(&root, "provenance.json")?;
-    if provenance["fresh_process_runs"] != 2
-        || provenance["browser"] != "149.0.7827.55"
-        || provenance["width"] != 118
-        || provenance["height"] != 102
-    {
-        return Err("unqualified canary reference".into());
-    }
-    for source in provenance["sources"]
-        .as_array()
-        .ok_or("canary reference producer chain")?
-    {
-        let path = source["path"].as_str().ok_or("source path")?;
-        if source["sha256"] != sha256(&read(&repo_root(), path)?) {
-            return Err(format!("stale canary reference producer {path}"));
-        }
-    }
-    let before = producers()?;
-    let (executable, build) = build()?;
-    let source = read(&root, "scene.json")?;
-    let mut png_bytes = Vec::new();
-    let mut rows = Vec::new();
-    for (format, expected) in [
-        (
-            "svg",
-            "25ce18f298281f6a899de079bd4e065d3f0e62d0e863fb431f8e55cc3350a90c",
-        ),
-        (
-            "png",
-            "9b2da5d13b6a2c672ab80be51edbeeb9491195b57939dea9f48e80e3887f3b95",
-        ),
-        (
-            "pdf",
-            "ed5dd7b2faf6fcd7c56c6afd5f8adbfb01d4326079414de7b16ef9d53cc2c6bb",
-        ),
-    ] {
-        let a = render(&executable, &source, format, &[])?;
-        let b = render(&executable, &source, format, &[])?;
-        if a != b || sha256(&a.0) != expected {
-            return Err(format!("canary {format} differs from the independently asserted native sparse-scene canary"));
-        }
-        report(
-            &a.1,
-            &a.0,
-            format,
-            &json!({"schema_version":1,"diagnostics":[]}),
-        )?;
-        write_new(&root.join(format!("native.{format}")), &a.0)?;
-        if format == "png" {
-            png_bytes = a.0;
-        }
-        rows.push(json!({"format":format,"sha256":expected,"fresh_process_runs":2}));
-    }
-    let mut reader = png::Decoder::new(std::io::Cursor::new(png_bytes))
-        .read_info()
-        .map_err(|e| e.to_string())?;
-    let mut rgba = vec![0; reader.output_buffer_size().ok_or("PNG buffer overflows")?];
-    let info = reader.next_frame(&mut rgba).map_err(|e| e.to_string())?;
-    if (info.width, info.height) != (118, 102)
-        || info.color_type != png::ColorType::Rgba
-        || info.bit_depth != png::BitDepth::Eight
-    {
-        return Err("canary pixel format/extent".into());
-    }
-    use excalidraw_render_compare::{CanonicalRgba8, ComparisonMode, SsimOutcome, VisualClass};
-    let reference = CanonicalRgba8::new(118, 102, read(&root, "official-png.rgba")?)
-        .map_err(|e| e.to_string())?;
-    let actual = CanonicalRgba8::new(118, 102, rgba).map_err(|e| e.to_string())?;
-    let comparison = excalidraw_render_compare::compare(
-        &reference,
-        &actual,
-        VisualClass::Typography,
-        &[],
-        ComparisonMode::Canonical,
-    )
-    .map_err(|e| e.to_string())?;
-    if !comparison.passed() {
-        return Err(format!(
-            "independent rotated canary typography budget failed: {:?}",
-            comparison.whole
-        ));
-    }
-    check_producers(&before)?;
-    let result = json!({"schema":"excalidraw-render/excalifont-canary-qualification/v1","build":build,"native_producers":before,"reference_provenance":descriptor(&root,"provenance.json")?,"rows":rows,"changed_pixels":comparison.whole.changed_pixels,"ssim_bits":match comparison.whole.ssim{SsimOutcome::Score(s)=>format!("{:016x}",s.to_bits()),_=>return Err("canary SSIM".into())},"canonical_typography_passed":true,"old_native_png_sha256":"cb90c943bc71d5eec983bf2c933e1c3c16dd4ca7b5fc14ba79f0230404209534","new_native_png_sha256":"9b2da5d13b6a2c672ab80be51edbeeb9491195b57939dea9f48e80e3887f3b95"});
-    write_new(&root.join("qualification.json"), &canonical_bytes(&result)?)?;
-    Ok(result)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -624,6 +532,7 @@ mod tests {
         })
     }
     #[test]
+    #[ignore = "release tier: builds the release CLI (just test-release)"]
     fn fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds() {
         let nonce = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -764,7 +673,7 @@ mod tests {
     fn cli_success_alone_does_not_satisfy_the_report_contract() {
         let artifact = b"test";
         let expected = json!({"schema_version":1,"diagnostics":[]});
-        let base = json!({"schema_version":1,"status":"success","renderer_version":env!("CARGO_PKG_VERSION"),"compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":"sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71","format":"svg","artifact":{"media_type":"image/svg+xml","byte_length":4,"sha256":format!("sha256:{}",sha256(artifact))},"error":null,"diagnostics":[]});
+        let base = json!({"schema_version":1,"status":"success","renderer_version":env!("CARGO_PKG_VERSION"),"compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":crate::revision::Reference::Profile.prefixed_digest().unwrap(),"format":"svg","artifact":{"media_type":"image/svg+xml","byte_length":4,"sha256":format!("sha256:{}",sha256(artifact))},"error":null,"diagnostics":[]});
         report(&canonical_bytes(&base).unwrap(), artifact, "svg", &expected).unwrap();
         for key in [
             "schema_version",

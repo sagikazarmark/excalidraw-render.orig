@@ -490,7 +490,7 @@ impl Generator {
     }
 }
 
-fn generated(cases: usize, expanded: bool) {
+fn generated(stream_seed: u64, cases: usize, expanded: bool) {
     let mut seeds = if expanded {
         seeds::expanded()
     } else {
@@ -499,7 +499,7 @@ fn generated(cases: usize, expanded: bool) {
     if !expanded {
         seeds.extend(seeds::svg());
     }
-    let mut generator = Generator(FIXED_SEED);
+    let mut generator = Generator(stream_seed);
     let families = [
         "image/png",
         "image/jpeg",
@@ -518,7 +518,7 @@ fn generated(cases: usize, expanded: bool) {
             .collect();
         let original = family[generator.next() % family.len()];
         let mut seed = generator.mutate(original, index);
-        seed.id = format!("seed={FIXED_SEED:016x} case={index} {}", original.id);
+        seed.id = format!("seed={stream_seed:016x} case={index} {}", original.id);
         // Bound exponential encoded size separately from admitted depth. Deep
         // chains are linear; repeated siblings use at most two levels.
         let repeated = generator.next().is_multiple_of(2);
@@ -541,7 +541,7 @@ fn fixed_seed_asset_fuzz_smoke() {
 }
 
 pub(crate) fn assert_asset_fuzz_smoke() {
-    generated(64, false);
+    generated(FIXED_SEED, 64, false);
 }
 
 #[test]
@@ -677,7 +677,7 @@ fn nightly_asset_fuzz_is_bounded_and_deterministic() {
         replay(&seed, 0, false, 0, false, seed.valid);
         replay(&seed, 1, false, 0, false, seed.valid);
     }
-    generated(cases, true);
+    generated(crate::fuzz_seed::nightly_seed(FIXED_SEED), cases, true);
 }
 
 #[test]

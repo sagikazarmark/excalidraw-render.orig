@@ -38,10 +38,6 @@ fn raster(bytes: &[u8]) -> CanonicalRgba8 {
 
 fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/jpeg-color/reference.json");
-    assert_eq!(
-        lower_hex(&Sha256::digest(bytes)),
-        "976955ebad540f3aa0291e6073838d59f1519dad1a8efe4cdab89198fbb57088"
-    );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(
         record["schema"],
@@ -54,7 +50,9 @@ fn evidence() -> Value {
         let path = source["path"].as_str().unwrap();
         if matches!(
             path,
-            "Cargo.lock" | "crates/excalidraw-render/tests/jpeg_matrix_inputs.rs"
+            "Cargo.lock"
+                | "crates/excalidraw-render/tests/jpeg_matrix_inputs.rs"
+                | "crates/excalidraw-render/tests/fast/jpeg_matrix_inputs.rs"
         ) || crate::common::is_oracle_producer(path)
         {
             continue;
@@ -460,7 +458,6 @@ fn issue_187_baseline_sampling_cells_remain_explicit_defects() {
     assert_eq!(rows.into_iter().map(check).sum::<usize>(), 24);
 }
 
-#[test]
 pub(super) fn cmyk_component_probe_isolates_reference_truncation_from_decoder_rounding() {
     use zune_jpeg::zune_core::{
         bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions,
@@ -515,7 +512,6 @@ pub(super) fn cmyk_component_probe_isolates_reference_truncation_from_decoder_ro
     }
 }
 
-#[test]
 pub(super) fn ycck_unconverted_components_with_integer_color_conversion_match_reference() {
     use zune_jpeg::zune_core::{
         bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions,

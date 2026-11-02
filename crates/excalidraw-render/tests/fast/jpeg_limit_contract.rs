@@ -155,7 +155,6 @@ const SOURCES: [Source; 4] = [
 /// Equality passes silently and the first crossing reports exactly the
 /// attempted total, and recovers like a missing asset. Direct SVG validates
 /// without deriving pixels.
-#[test]
 pub(super) fn jpeg_limits_have_exact_equality_and_first_crossing() {
     let (map, map_width, map_height) = gain_map();
     let mut sources: Vec<_> = SOURCES
@@ -260,7 +259,6 @@ const CASES: [Case; 9] = [
 ];
 
 /// Width precedes height, then area; the image side precedes pixels.
-#[test]
 pub(super) fn jpeg_raster_crossings_order_width_then_height_then_area() {
     for (name, build) in SOURCES {
         for (width, height, dimension, pixels, expected) in CASES {

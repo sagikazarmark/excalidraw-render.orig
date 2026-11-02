@@ -3,11 +3,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::conformance::sha256;
+use crate::revision::{sealed_digest, Reference, REVISION};
 use crate::sfnt::Sfnt;
 use excalidraw_fonts::FontLicense;
 use serde_json::{json, Value};
 
-const REVISION: u64 = 1;
 const EXCALIDRAW_RELEASE: &str = "v0.18.1";
 const SOURCE_COMMIT: &str = "a2ec2889babf7d2295469c6d90ebe77fae57df84";
 const NPM_INTEGRITY: &str =
@@ -17,17 +17,12 @@ const NPM_INTEGRITY: &str =
 /// the font packages' build metadata names.
 const ORACLE_LOCKFILE: &str = "tools/reference-oracle/package-lock.json";
 const EXCALIDRAW_LOCK_ENTRY: &str = "node_modules/@excalidraw/excalidraw";
-const PROFILE_DIGEST: &str = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
-const FRAME_PROFILE_DIGEST: &str =
-    "63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e";
-const ASSET_MANIFEST_DIGEST: &str =
-    "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const SCENE_SURFACE_DIGEST: &str =
-    "93029f2dab63c203dee69da4497ea4c2988a72d73f2a0017e62c529a4caac202";
+/// Pinned here, unlike the other incorporated artifacts: the schema has no
+/// sidecar, and the scene-surface manifest's `schemaDefinition` record does not
+/// name these bytes. It embeds the reference profile digest, so a profile
+/// update regenerates the schema and edits this digest.
 const SCENE_SURFACE_SCHEMA_DIGEST: &str =
     "c8af2987f69e320bbc2673e252284fda77a18ddaf667bf998055c47cd3aa7341";
-const SCENE_SURFACE_EVIDENCE_DIGEST: &str =
-    "29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb";
 /// Three physical payloads: small official fonts, common Xiaolai, extended
 /// Xiaolai. Whole chunks retain upstream declaration order within each group.
 const FONT_PACKAGES: [&str; 3] = [
@@ -68,90 +63,88 @@ const NOTO_EMOJI_SHA256: &str = "0ed584d111778b259f205a40807d78131de02a5b04dad4e
 const NOTO_EMOJI_LENGTH: usize = 862_680;
 const XIAOLAI_ORDER_SHA256: &str =
     "c2cbbbfa669404795527e06cf596ab4b1b851f9bb993c608c8ab9c3c2aabe9d3";
-const SVG_FONT_SUBSET_PROFILE_DIGEST: &str =
-    "f23470d703abde83ac59cd7408d8114fa6128f9069ae63d53b1a83092d85ba15";
-const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
-    "fc4e8ce56cb7bf4bca9dfd6f3495c9ae9f5440a5818aa3e6f645d5303265ff85";
 /// The SVG font subset qualification corpus covers every official chunk and
 /// the Noto Emoji fallback sfnt (#150).
 const QUALIFICATION_SOURCES: usize = 231;
 const NOTO_EMOJI_UPSTREAM_PATH: &str = "scripts/woff2/assets/NotoEmoji-Regular.ttf";
-const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST: &str =
-    "7c9ee4417835a19f4ec6b644a521c304399dbf8481e4d3f92c061af5261fdbb7";
-const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST: &str =
-    "db0e54e516bd82bdc5733d6e950c36bd975bdd7d2a766e89e73804fe21d30264";
+const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_PATH: &str =
+    "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json";
+const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_PATH: &str =
+    "tests/oracle/compatibility-artifacts/svg-font-subset-qualification-corpus-v1.schema.json";
 
 struct IncorporatedArtifactSource {
-    repository_path: &'static str,
-    digest: &'static str,
+    repository_path: String,
+    digest: String,
     packaged_name: &'static str,
     canonical_json: bool,
 }
 
-const fn artifact(
-    repository_path: &'static str,
-    digest: &'static str,
+fn artifact(
+    repository_path: &str,
+    digest: &str,
     packaged_name: &'static str,
     canonical_json: bool,
 ) -> IncorporatedArtifactSource {
     IncorporatedArtifactSource {
-        repository_path,
-        digest,
+        repository_path: repository_path.to_owned(),
+        digest: digest.to_owned(),
         packaged_name,
         canonical_json,
     }
 }
 
-const ARTIFACTS: &[IncorporatedArtifactSource] = &[
-    artifact(
-        "tests/oracle/reference-profiles/revision-1.json",
-        PROFILE_DIGEST,
-        "reference-profile.json",
+/// An incorporated reference identity, at the path and digest its sidecar
+/// names (`revision::Reference`).
+fn reference_artifact(
+    reference: Reference,
+    packaged_name: &'static str,
+) -> Result<IncorporatedArtifactSource, String> {
+    Ok(artifact(
+        &reference.path(),
+        &reference.digest()?,
+        packaged_name,
         true,
-    ),
-    artifact(
-        "tests/oracle/reference-profiles/revision-1-frame.json",
-        FRAME_PROFILE_DIGEST,
-        "reference-frame-profile.json",
-        true,
-    ),
-    artifact(
-        "tests/oracle/reference-profiles/revision-1-assets.json",
-        ASSET_MANIFEST_DIGEST,
-        "reference-assets.json",
-        true,
-    ),
-    artifact(
-        "tests/oracle/scene-surfaces/revision-1.json",
-        SCENE_SURFACE_DIGEST,
-        "scene-surface.json",
-        true,
-    ),
-    artifact(
-        "tests/oracle/scene-surfaces/scene-surface-v1.schema.json",
-        SCENE_SURFACE_SCHEMA_DIGEST,
-        "scene-surface.schema.json",
-        true,
-    ),
-    artifact(
-        "tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json",
-        SCENE_SURFACE_EVIDENCE_DIGEST,
-        "scene-surface-evidence.json",
-        true,
-    ),
-    artifact(
-        "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json",
-        SVG_FONT_SUBSET_PROFILE_DIGEST,
-        "svg-font-subset-profile.json",
-        true,
-    ),
-    artifact(
-        "tests/oracle/compatibility-artifacts/revision-1-chromium-149-cjk-scalars.bin",
-        CHROMIUM_149_CJK_SCALARS_DIGEST,
-        "chromium-149-cjk-scalars.bin",
-        false,
-    ),
-];
+    ))
+}
+
+/// The artifacts the revision incorporates. The four reference identities
+/// read their digests from their sidecars; the rest are pinned here.
+fn artifacts() -> Result<Vec<IncorporatedArtifactSource>, String> {
+    Ok(vec![
+        reference_artifact(Reference::Profile, "reference-profile.json")?,
+        reference_artifact(Reference::FrameProfile, "reference-frame-profile.json")?,
+        reference_artifact(Reference::AssetManifest, "reference-assets.json")?,
+        reference_artifact(Reference::SceneSurface, "scene-surface.json")?,
+        artifact(
+            "tests/oracle/scene-surfaces/scene-surface-v1.schema.json",
+            SCENE_SURFACE_SCHEMA_DIGEST,
+            "scene-surface.schema.json",
+            true,
+        ),
+        artifact(
+            "tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json",
+            &sealed_digest("tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json")?,
+            "scene-surface-evidence.json",
+            true,
+        ),
+        artifact(
+            "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json",
+            &sealed_digest(
+                "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json",
+            )?,
+            "svg-font-subset-profile.json",
+            true,
+        ),
+        artifact(
+            "tests/oracle/compatibility-artifacts/revision-1-chromium-149-cjk-scalars.bin",
+            &sealed_digest(
+                "tests/oracle/compatibility-artifacts/revision-1-chromium-149-cjk-scalars.bin",
+            )?,
+            "chromium-149-cjk-scalars.bin",
+            false,
+        ),
+    ])
+}
 
 const LICENSE_PARTS: &[(&str, &str)] = &[
     ("Project MIT license", "../../LICENSE-MIT"),
@@ -505,7 +498,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
     }
 
     let reference_assets = read_canonical_json(
-        &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
+        &root.join(Reference::AssetManifest.path()),
         "reference asset manifest",
     )?;
     let manifest_assets = array_at(
@@ -574,7 +567,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
     materialize_payload_indexes(&root, &assets)?;
 
     let scene_surface = read_canonical_json(
-        &root.join("tests/oracle/scene-surfaces/revision-1.json"),
+        &root.join(Reference::SceneSurface.path()),
         "scene-surface manifest",
     )?;
     verify_scene_surface(&root, &scene_surface)?;
@@ -623,12 +616,12 @@ pub fn materialize() -> Result<(), String> {
     materialize_incorporated_artifacts(&root, &base)?;
 
     let scene_surface = read_canonical_json(
-        &root.join("tests/oracle/scene-surfaces/revision-1.json"),
+        &root.join(Reference::SceneSurface.path()),
         "scene-surface manifest",
     )?;
     verify_scene_surface(&root, &scene_surface)?;
     let reference_assets = read_canonical_json(
-        &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
+        &root.join(Reference::AssetManifest.path()),
         "reference asset manifest",
     )?;
     let assets = expected_assets(&reference_assets)?;
@@ -753,12 +746,16 @@ fn materialize_incorporated_artifacts(root: &Path, base: &Path) -> Result<(), St
     fs::create_dir_all(&incorporated)
         .map_err(|error| format!("failed to create catalog directory: {error}"))?;
     verify_incorporated_inventory(&incorporated)?;
-    for artifact in ARTIFACTS {
-        verify_authoritative_sidecar(root, artifact.repository_path, artifact.digest)?;
+    for artifact in &artifacts()? {
+        verify_authoritative_sidecar(
+            root,
+            artifact.repository_path.as_str(),
+            artifact.digest.as_str(),
+        )?;
         let bytes = read_verified(
-            &root.join(artifact.repository_path),
-            artifact.digest,
-            artifact.repository_path,
+            &root.join(artifact.repository_path.as_str()),
+            artifact.digest.as_str(),
+            artifact.repository_path.as_str(),
         )?;
         write_if_changed(&incorporated.join(artifact.packaged_name), &bytes)?;
     }
@@ -769,8 +766,8 @@ fn materialize_incorporated_artifacts(root: &Path, base: &Path) -> Result<(), St
             .map_err(|error| format!("failed to read {}: {error}", schema_path.display()))?,
     )
     .map_err(|error| format!("invalid revision catalog schema: {error}"))?;
-    schema["properties"]["incorporatedArtifacts"]["minItems"] = json!(ARTIFACTS.len());
-    schema["properties"]["incorporatedArtifacts"]["maxItems"] = json!(ARTIFACTS.len());
+    schema["properties"]["incorporatedArtifacts"]["minItems"] = json!(artifacts()?.len());
+    schema["properties"]["incorporatedArtifacts"]["maxItems"] = json!(artifacts()?.len());
     let schema_bytes = serde_json::to_vec(&schema)
         .map_err(|error| format!("failed to canonicalize revision catalog schema: {error}"))?;
     let schema_digest = sha256(&schema_bytes);
@@ -787,8 +784,8 @@ fn materialize_incorporated_artifacts(root: &Path, base: &Path) -> Result<(), St
 }
 
 fn verify_incorporated_inventory(incorporated: &Path) -> Result<(), String> {
-    let expected = ARTIFACTS
-        .iter()
+    let expected = artifacts()?
+        .into_iter()
         .map(|artifact| artifact.packaged_name)
         .collect::<BTreeSet<_>>();
     for entry in fs::read_dir(incorporated)
@@ -828,15 +825,19 @@ pub fn verify() -> Result<(), String> {
     let base = root.join("crates/excalidraw-fonts");
     verify_incorporated_inventory(&base.join("catalog/incorporated"))?;
 
-    for artifact in ARTIFACTS {
-        verify_authoritative_sidecar(&root, artifact.repository_path, artifact.digest)?;
+    for artifact in &artifacts()? {
+        verify_authoritative_sidecar(
+            &root,
+            artifact.repository_path.as_str(),
+            artifact.digest.as_str(),
+        )?;
         let authoritative = read_verified(
-            &root.join(artifact.repository_path),
-            artifact.digest,
-            artifact.repository_path,
+            &root.join(artifact.repository_path.as_str()),
+            artifact.digest.as_str(),
+            artifact.repository_path.as_str(),
         )?;
         if artifact.canonical_json {
-            verify_canonical_json_bytes(&authoritative, artifact.repository_path)?;
+            verify_canonical_json_bytes(&authoritative, artifact.repository_path.as_str())?;
         }
         let packaged_path = base
             .join("catalog/incorporated")
@@ -846,18 +847,18 @@ pub fn verify() -> Result<(), String> {
         if packaged != authoritative {
             return Err(format!(
                 "packaged incorporated artifact differs from {}",
-                artifact.repository_path
+                artifact.repository_path.as_str()
             ));
         }
     }
     let frame_profile = read_canonical_json(
-        &root.join("tests/oracle/reference-profiles/revision-1-frame.json"),
+        &root.join(Reference::FrameProfile.path()),
         "frame reference profile",
     )?;
     verify_frame_reference_profile(&root, &frame_profile)?;
 
     let scene_surface = read_canonical_json(
-        &root.join("tests/oracle/scene-surfaces/revision-1.json"),
+        &root.join(Reference::SceneSurface.path()),
         "scene-surface manifest",
     )?;
     verify_scene_surface(&root, &scene_surface)?;
@@ -870,7 +871,7 @@ pub fn verify() -> Result<(), String> {
     let catalog: Value = serde_json::from_slice(&catalog_bytes)
         .map_err(|error| format!("invalid revision catalog JSON: {error}"))?;
     let reference_assets = read_canonical_json(
-        &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
+        &root.join(Reference::AssetManifest.path()),
         "reference asset manifest",
     )?;
     verify_catalog_schema(&base, &catalog)?;
@@ -1089,8 +1090,8 @@ fn review_decode(upstream_path: &str, source: &[u8]) -> Result<ReviewedDecode, S
 /// qualified it, every chunk's reviewed decode in catalog order, the one decode
 /// that is additionally checked in byte for byte, and the historical approval
 /// metadata it carries.
-fn reviewed_decodes_record(decodes: &[ReviewedDecode], approval: Value) -> Value {
-    json!({
+fn reviewed_decodes_record(decodes: &[ReviewedDecode], approval: Value) -> Result<Value, String> {
+    Ok(json!({
         "approval": approval,
         "checkedInDecodes": [{
             "identity": format!("{EXCALIFONT_BASIC_LATIN_PATH}@sha256:{EXCALIFONT_BASIC_LATIN_SHA256}"),
@@ -1112,10 +1113,10 @@ fn reviewed_decodes_record(decodes: &[ReviewedDecode], approval: Value) -> Value
             "name": DECODER_NAME,
             "version": DECODER_VERSION,
         },
-        "qualificationCorpusSha256": SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST,
+        "qualificationCorpusSha256": sealed_digest(SVG_FONT_SUBSET_QUALIFICATION_CORPUS_PATH)?,
         "schema": REVIEWED_DECODES_SCHEMA,
-        "sourceManifestSha256": ASSET_MANIFEST_DIGEST,
-    })
+        "sourceManifestSha256": Reference::AssetManifest.digest()?,
+    }))
 }
 
 /// The subject digest of a reviewed-decodes record: the record without its
@@ -1154,7 +1155,7 @@ fn materialize_reviewed_decodes(root: &Path, assets: &[ImportedAsset]) -> Result
         .iter()
         .map(|asset| review_decode(&asset.path, &asset.bytes))
         .collect::<Result<Vec<_>, String>>()?;
-    let mut record = reviewed_decodes_record(&decodes, Value::Null);
+    let mut record = reviewed_decodes_record(&decodes, Value::Null)?;
     let path = root.join(REVIEWED_DECODES_PATH);
     let existing = match fs::read(&path) {
         Ok(bytes) => Some(
@@ -1307,7 +1308,7 @@ fn verify_reviewed_decodes(
     if decodes.len() != 230 {
         return Err("reviewed decodes must cover all 230 official chunks".to_owned());
     }
-    let expected = reviewed_decodes_record(&decodes, record["approval"].clone());
+    let expected = reviewed_decodes_record(&decodes, record["approval"].clone())?;
     if *record != expected {
         return Err(
             "reviewed-decodes record differs from the pinned decoder's output over the checked-in chunks"
@@ -1405,7 +1406,7 @@ fn build_catalog(
                 "identity": identity,
                 "licenseIdentity": asset.license,
                 "outputFormats": ["svg", "png", "pdf"],
-                "profile": format!("sha256:{PROFILE_DIGEST}"),
+                "profile": Reference::Profile.prefixed_digest()?,
                 "provenanceIdentity": "excalidraw.npm-v0.18.1",
                 "reservedFontNames": asset.reserved_names,
                 "role": "official-rendering-font",
@@ -1433,9 +1434,9 @@ fn build_catalog(
         "compatibilityRevision": REVISION,
         "excalidrawRelease": EXCALIDRAW_RELEASE,
         "fallbackRecipeIdentities": fallback_ids,
-        "incorporatedArtifacts": ARTIFACTS.iter().map(|artifact| json!({
-            "path": artifact.repository_path,
-            "sha256": artifact.digest,
+        "incorporatedArtifacts": artifacts()?.iter().map(|artifact| json!({
+            "path": artifact.repository_path.as_str(),
+            "sha256": artifact.digest.as_str(),
         })).collect::<Vec<_>>(),
         "licenseIdentities": license_identities(),
         "noticeIdentities": notice_ids,
@@ -1446,7 +1447,7 @@ fn build_catalog(
             "sourceCommit": SOURCE_COMMIT,
             "sourceIds": source_ids,
         }],
-        "referenceProfileDigest": format!("sha256:{PROFILE_DIGEST}"),
+        "referenceProfileDigest": Reference::Profile.prefixed_digest()?,
         "schema": CATALOG_SCHEMA,
         "sourceCommit": SOURCE_COMMIT,
         "transformationIdentities": [{
@@ -1921,15 +1922,25 @@ fn generate_rust(
     rust_field(
         &mut output,
         "reference_profile_digest",
-        &format!("sha256:{PROFILE_DIGEST}"),
+        &Reference::Profile.prefixed_digest()?,
+    );
+    rust_field(
+        &mut output,
+        "frame_reference_profile_digest",
+        &Reference::FrameProfile.prefixed_digest()?,
     );
     rust_field(&mut output, "catalog_sha256", &sha256(catalog_bytes));
     output.push_str("    catalog_json: include_bytes!(\"../../catalog/revision-1.json\"),\n");
     output.push_str("    incorporated_artifacts: &[\n");
-    for artifact in ARTIFACTS {
+    for artifact in &artifacts()? {
         output.push_str("        IncorporatedArtifact {\n");
-        rust_field_indented(&mut output, "repository_path", artifact.repository_path, 12);
-        rust_field_indented(&mut output, "sha256", artifact.digest, 12);
+        rust_field_indented(
+            &mut output,
+            "repository_path",
+            artifact.repository_path.as_str(),
+            12,
+        );
+        rust_field_indented(&mut output, "sha256", artifact.digest.as_str(), 12);
         output.push_str(&format!(
             "            bytes: include_bytes!(\"../../catalog/incorporated/{}\"),\n",
             artifact.packaged_name
@@ -2479,8 +2490,8 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
     }
     verify_digest_sidecar(&corpus_path.with_extension("sha256"), &corpus_bytes)?;
     verify_digest_sidecar(&schema_path.with_extension("sha256"), &schema_bytes)?;
-    if sha256(&corpus_bytes) != SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST
-        || sha256(&schema_bytes) != SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST
+    if sha256(&corpus_bytes) != sealed_digest(SVG_FONT_SUBSET_QUALIFICATION_CORPUS_PATH)?
+        || sha256(&schema_bytes) != sealed_digest(SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_PATH)?
     {
         return Err("font subset qualification artifact digest is not pinned".to_owned());
     }
@@ -2503,7 +2514,7 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
     if corpus["schema"] != json!("excalidraw-render/svg-font-subset-qualification-corpus/v1")
         || corpus["compatibilityRevision"] != json!(REVISION)
         || corpus["originatingIssue"] != json!(98)
-        || corpus["sourceManifestSha256"] != json!(ASSET_MANIFEST_DIGEST)
+        || corpus["sourceManifestSha256"] != json!(Reference::AssetManifest.digest()?)
         || corpus["subsetProfileSha256"]
             != json!("0b6ec496a92a1aa2d0fdcca9ab0ca57c7ff5f18300473da8e46755d67572fca4")
     {
@@ -2617,7 +2628,7 @@ fn verify_catalog_identity(catalog: &Value, scene_surface: &Value) -> Result<(),
         || catalog["excalidrawRelease"] != json!(EXCALIDRAW_RELEASE)
         || catalog["sourceCommit"] != json!(SOURCE_COMMIT)
         || catalog["npmIntegrity"] != json!(NPM_INTEGRITY)
-        || catalog["referenceProfileDigest"] != json!(format!("sha256:{PROFILE_DIGEST}"))
+        || catalog["referenceProfileDigest"] != json!(Reference::Profile.prefixed_digest()?)
     {
         return Err("revision catalog compatibility identity is stale".to_owned());
     }
@@ -2635,7 +2646,7 @@ fn verify_catalog_identity(catalog: &Value, scene_surface: &Value) -> Result<(),
 /// need the bytes themselves.
 fn verify_assets(root: &Path, catalog: &Value) -> Result<BTreeMap<String, Vec<u8>>, String> {
     let reference = read_canonical_json(
-        &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
+        &root.join(Reference::AssetManifest.path()),
         "reference asset manifest",
     )?;
     let expected = array_at(
@@ -3227,9 +3238,8 @@ fn verify_frame_reference_profile(root: &Path, profile: &Value) -> Result<(), St
         || profile["excalidrawRelease"] != json!(EXCALIDRAW_RELEASE)
         || profile["exportTarget"] != json!("frame")
         || profile["baseSceneReferenceProfile"]["digest"]
-            != json!(format!("sha256:{PROFILE_DIGEST}"))
-        || profile["baseSceneReferenceProfile"]["path"]
-            != json!("tests/oracle/reference-profiles/revision-1.json")
+            != json!(Reference::Profile.prefixed_digest()?)
+        || profile["baseSceneReferenceProfile"]["path"] != json!(Reference::Profile.path())
     {
         return Err("frame reference profile identity is stale".to_owned());
     }
@@ -3704,6 +3714,7 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::FontLicense;
+    use super::Reference;
     use super::{
         carry_approval, generate_scene_surface_rust, parse_unicode_ranges, parse_xiaolai_index,
         review_decode, reviewed_decodes_record, reviewed_decodes_subject, verify_scene_surface,
@@ -3736,7 +3747,7 @@ mod tests {
     fn importer_reproduces_all_three_checked_in_payloads_byte_for_byte() {
         let root = crate::conformance::repo_root();
         let reference = super::read_canonical_json(
-            &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
+            &root.join(Reference::AssetManifest.path()),
             "reference assets",
         )
         .unwrap();
@@ -4056,7 +4067,7 @@ export const XiaolaiFontFaces: ExcalidrawFontFaceDescriptor[] = [
             &excalifont_basic_latin_source(),
         )
         .expect("the manifested chunk decodes");
-        reviewed_decodes_record(&[decode], approval)
+        reviewed_decodes_record(&[decode], approval).unwrap()
     }
 
     fn approval(subject: &str, url: &str) -> Value {

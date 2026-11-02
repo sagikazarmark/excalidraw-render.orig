@@ -8,7 +8,6 @@ use crate::common::raster::decode_png;
 use crate::common::render::render;
 use crate::common::svg::{font_family_attribute, LIBERATION_FAMILIES, NOTO_EMOJI_FAMILIES};
 
-#[test]
 pub(super) fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
     let scene = SceneDocument::parse(
         br##"{

@@ -1,4 +1,8 @@
-# The gates, run in the devenv shell (ADR-0024).
+# The gates, run in the devenv shell (ADR-0024). The base shell runs every
+# per-change gate; the WASM recipes need the `browser` profile
+# (`devenv --profile browser shell`), which adds the wasm-bindgen runner and
+# headless Firefox, and the release checks and `candidate-successor` the
+# `release` profile, which extends it with Node.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
@@ -40,35 +44,37 @@ msrv:
     cargo check --locked -p excalidraw-render -p excalidraw-render-cli
 
 # Run the fast tier: every test outside the parity, limits, and harness binaries.
-test: test-tools
+test:
     cargo nextest run --locked --workspace --profile ci-fast
 
 # Run the render tier: the parity harnesses and the fixed parser ceilings.
 test-render:
     cargo nextest run --locked --workspace --profile ci-render
 
-# Test the CI helper scripts.
-test-tools:
-    python3 -m unittest discover -s tools/ci -p 'test_*.py'
-
-# CI runs the fast and render tiers as one archived build and several shards,
-# with the release-CLI test group in a job of its own.
+# CI runs the fast and render tiers as one archived build and several shards.
 
 # Build every test target once into a nextest archive.
 test-archive archive="target/nextest-archive.tar.zst":
     cargo nextest archive --locked --workspace --archive-file {{ archive }}
 
-# Run one shard, such as 1/4, of the fast and render tiers from an archive,
-# without the release-CLI group. It extracts into the checkout, where every
-# binary is at the path its build compiled in.
+# Run one shard, such as 1/4, of the fast and render tiers from an archive. It
+# extracts into the checkout, where every binary is at the path its build
+# compiled in.
 test-shard shard archive="target/nextest-archive.tar.zst":
     cargo nextest run --archive-file {{ archive }} --extract-to . --extract-overwrite \
-        --profile default --no-fail-fast --partition slice:{{ shard }} -E 'not group(release-cli)'
+        --profile default --no-fail-fast --partition slice:{{ shard }}
 
-# Run the tests that build the release CLI, building it first.
-test-release-cli:
+# Run the release-tier tests: the xtask tests that build the qualified release
+# CLI and replay the representative candidate through it, the ones that judge
+# the live coverage inventory and ownership ledger, the ones that run host tools
+# (qpdf, Node; the `release` devenv profile has both), and the case generators'
+# replacement guard. Building the CLI first keeps the one-thread group from
+# serializing on Cargo's build lock.
+test-release:
     cargo build --release --locked -p excalidraw-render-cli
-    cargo nextest run --locked --workspace --profile default --no-fail-fast -E 'group(release-cli)'
+    cargo nextest run --locked --workspace --profile default --no-fail-fast --run-ignored only \
+        -E 'group(release-tier) | group(host-tools)'
+    node --test tools/reference-oracle/scripts/generation-guard.test.mjs
 
 # Test the builds that leave out the png or pdf feature.
 test-features:
@@ -90,16 +96,22 @@ svg-harness:
     cargo nextest run --locked --release -p excalidraw-render --profile harness --run-ignored only \
         -E 'binary(/^harness_svg_/)'
 
-# Verify the cases, the coverage ledgers, the sealed catalog, and the committed evidence.
+# Verify the registered cases, the sealed catalog and the viewer qualification records.
 conformance: xtask
     target/debug/xtask conformance verify-all
-    target/debug/xtask conformance verify-inventory
-    target/debug/xtask conformance verify-ownership
     target/debug/xtask catalog verify
-    target/debug/xtask conformance verify-svg-font-subset-release
-    target/debug/xtask conformance verify-svg-font-subsets
     target/debug/xtask conformance verify-svg-viewers
     target/debug/xtask conformance verify-pdf-viewers
+
+# Verify the release-tier records: the representative candidates against a fresh
+# release build, the coverage inventory and ownership ledgers, and the font-subset
+# viewer qualification. They bind evidence that only the release checks consume
+# and move on every intentional output change, so no per-change gate carries them.
+conformance-release: xtask
+    target/debug/xtask conformance verify-candidates
+    target/debug/xtask conformance verify-inventory
+    target/debug/xtask conformance verify-ownership
+    target/debug/xtask conformance verify-svg-font-subsets
 
 # Check the published crates the way a downstream consumer uses them.
 packaging: package-cli package-facade package-no-cjk
@@ -124,95 +136,45 @@ package-facade target=host: package
 package-no-cjk target=host: package
     bash tests/package-consumer/check-no-cjk.sh "{{ target }}"
 
-# The release checks. They run on the supported targets: browser WASM runs on any host, and
-# native evidence needs x86_64-unknown-linux-gnu (ADR-0006, ADR-0024).
+# The release checks. They run on the supported targets (ADR-0006): the native
+# checks on any host, since the bytes do not depend on it (ADR-0024), and the
+# browser-WASM checks in headless Firefox, all from the `release` devenv profile
+# (`devenv --profile release shell -- just release`).
 
-# Where the release checks write their logs, snapshots and reports
+# Where the release checks write their logs
 evidence := "target/release-evidence"
 
 native := "x86_64-unknown-linux-gnu"
 wasm := "wasm32-unknown-unknown"
 
 # Run every release check on both supported targets.
-release: (qualification native) (qualification wasm) packaging wasm-packaging full-equality
+release: conformance-release test-release (qualification native) (qualification wasm) packaging wasm-packaging golden-wasm
 
 # Run the packaged facade and the no-CJK consumer in browser WASM.
 wasm-packaging: (package-facade wasm) (package-no-cjk wasm)
 
-# Run a target's release qualification and materialize its report.
-qualification target: xtask
-    {{ if target == native { "just require-native" } else { "" } }}
+# Run a target's release qualification: the renderer's unit target in release
+# mode with the corpus and frame-batch tests admitted, logged under the evidence
+# directory.
+qualification target:
     mkdir -p "{{ evidence }}/{{ target }}"
     bash tools/ci/qualification.sh "{{ target }}" "{{ evidence }}/{{ target }}/qualification.log"
-    target/debug/xtask conformance materialize-svg-font-subset-target "{{ target }}" \
-        "{{ evidence }}/{{ target }}/qualification.log" "{{ evidence }}/{{ target }}/{{ target }}.json"
 
-# Collect native snapshots of the packaged facade and replay them against the native baseline.
-snapshot-replay: collect-native-snapshots
-    target/debug/xtask conformance verify-native-baseline
-    target/debug/xtask conformance replay-native-snapshots "{{ evidence }}/native-snapshots"
+# Render every golden target in browser WASM against the native golden record,
+# accepting only the #178 differences tests/conformance/golden/experimental-wasm.json records.
+golden-wasm:
+    CARGO_PROFILE_TEST_DEBUG=0 cargo test --locked --target {{ wasm }} -p excalidraw-render --test golden_native
 
-# Collect native snapshots of the packaged facade for the inventory's keys and check their form.
-[private]
-collect-native-snapshots: require-native package xtask
-    target/debug/xtask conformance verify-inventory
-    rm -rf "{{ evidence }}/native-snapshots"
-    mkdir -p "{{ evidence }}"
-    cd tests/package-consumer && cargo test --locked --release --target "{{ native }}" --example native_snapshots
-    cd tests/package-consumer && cargo run --locked --release --target "{{ native }}" --example native_snapshots \
-        -- collect ../.. "../../{{ evidence }}/native-snapshots"
-    target/debug/xtask conformance verify-native-snapshots "{{ evidence }}/native-snapshots"
-
-# Render every snapshot key in browser WASM and compare with the approved native baseline.
-wasm-snapshot-replay: package xtask
-    target/debug/xtask conformance stage-wasm-snapshots
-    rm -rf "{{ evidence }}/wasm-snapshots"
-    mkdir -p "{{ evidence }}"
-    cd tests/package-consumer && bash ../../tools/ci/wasm-snapshots.sh "../../{{ evidence }}/wasm-snapshots"
-    target/debug/xtask conformance report-wasm-snapshots "{{ evidence }}/wasm-snapshots"
-    python3 tools/ci/release-results.py snapshots "{{ evidence }}/wasm-snapshots"
-
-# Collect a target's test-only resource traces from an instrumented copy of the source.
-trace-logs target:
+# Adopt an intentional output change: rerender every golden target and rewrite
+# tests/conformance/golden for review (the render tier's golden_native test).
+# When the registry moved, the first run regenerates the embedded inputs module
+# and asks for a rebuild, so the recipe runs the test again.
+update-golden:
     #!/usr/bin/env bash
     set -euo pipefail
-    case "{{ target }}" in
-        {{ native }}) just require-native; dir=native ;;
-        {{ wasm }}) dir=wasm ;;
-        *) echo "traces cover only the supported targets, not {{ target }}" >&2; exit 2 ;;
-    esac
-    # Staging edits tracked sources, so it runs in a worktree of the current tree.
-    # Its build stays apart from the workspace's, which the instrumentation would evict.
-    root="$PWD"
-    stage="$root/target/trace-source"
-    export CARGO_TARGET_DIR="$root/target/trace-build"
-    git worktree remove --force "$stage" 2>/dev/null || rm -rf "$stage"
-    commit="$(git stash create)"
-    git worktree add --quiet --detach "$stage" "${commit:-HEAD}"
-    trap 'git -C "$root" worktree remove --force "$stage"' EXIT
-    out="$root/{{ evidence }}/results/$dir"
-    rm -rf "$out"
-    cd "$stage"
-    cargo run --locked -q -p xtask -- conformance stage-traces
-    bash tools/ci/trace-snapshots.sh "{{ target }}" "$out"
-
-# Join both targets' traces to the packaged runs and check their equality.
-full-equality: (trace-logs native) (trace-logs wasm) snapshot-replay wasm-snapshot-replay xtask
-    target/debug/xtask conformance aggregate-traces "{{ evidence }}/results"
-    rm -rf "{{ evidence }}/results/native-snapshots" "{{ evidence }}/results/wasm-snapshots"
-    cp -R "{{ evidence }}/native-snapshots" "{{ evidence }}/results/native-snapshots"
-    cp -R "{{ evidence }}/wasm-snapshots" "{{ evidence }}/results/wasm-snapshots"
-    target/debug/xtask conformance join-trace-results "{{ evidence }}/results"
-    python3 tools/ci/release-results.py joined "{{ evidence }}/results"
-
-# Export both targets' qualification reports and their aggregate from a clean commit.
-target-evidence: require-native
-    bash tools/ci/require-clean-source.sh
-    just release
-    rm -rf "{{ evidence }}/reports"
-    mkdir -p "{{ evidence }}/reports"
-    cp "{{ evidence }}/{{ native }}/{{ native }}.json" "{{ evidence }}/{{ wasm }}/{{ wasm }}.json" "{{ evidence }}/reports/"
-    target/debug/xtask conformance aggregate-svg-font-subset-targets "{{ evidence }}/reports" "{{ evidence }}/aggregate.json"
+    export UPDATE_GOLDEN=1
+    cargo test --locked -p excalidraw-render --test golden_native \
+        || cargo test --locked -p excalidraw-render --test golden_native
 
 # Build the reproducible CLI release archive and its SHA-256 file into dist/.
 release-archive version: require-native
@@ -237,13 +199,6 @@ release-archive version: require-native
 # Restaging. These recipes regenerate committed evidence after a change that moves
 # it. They write candidates for review; nothing here edits a manifest or the
 # registry, and CI exports their output as artifacts (docs/ci.md).
-
-# Stage a native baseline candidate from a clean commit into target/release-evidence/native-baseline.
-stage-native-baseline: require-native
-    bash tools/ci/require-clean-source.sh
-    just collect-native-snapshots
-    rm -rf "{{ evidence }}/native-baseline"
-    target/debug/xtask conformance stage-native-baseline "{{ evidence }}/native-snapshots" "{{ evidence }}/native-baseline"
 
 # Reproduce or generate the font-subset, SVG or PDF viewer qualification in its pinned containers.
 viewer-evidence kind mode="reproduce":
@@ -270,6 +225,13 @@ viewer-evidence kind mode="reproduce":
     fi
     bash "$script" "{{ mode }}"
 
+# After a subset-only profile change, rebind the font-subset qualification's subset fields to fresh viewer inputs.
+font-subset-rebind: xtask
+    cargo test --locked --release -p excalidraw-render --lib \
+        render::font_subset_qualification::materialize_complete_font_subset_viewer_inputs \
+        -- --ignored --exact
+    target/debug/xtask conformance rebind-svg-font-subsets target/svg-font-subset-viewer-qualification/inputs.json
+
 # Verify or update the scene or frame reference profile in the pinned oracle container.
 reference-profile mode="verify" profile="scene":
     #!/usr/bin/env bash
@@ -286,8 +248,9 @@ reference-profile mode="verify" profile="scene":
     bash tools/reference-oracle/run-container.sh install
     bash "$script" "{{ mode }}"
 
+# Generating over a manifested case needs --supersede, which keeps its approval block.
 # Reproduce a registered case with its reference runner into target/reference-evidence, or generate it.
-reference-case id mode="reproduce": xtask
+reference-case id mode="reproduce" *flags: xtask
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{ mode }}" in
@@ -295,7 +258,19 @@ reference-case id mode="reproduce": xtask
         *) echo "a registered case is reproduced or generated, not {{ mode }}" >&2; exit 2 ;;
     esac
     bash tools/reference-oracle/run-container.sh install
-    target/debug/xtask conformance "{{ mode }}" "{{ id }}"
+    target/debug/xtask conformance "{{ mode }}" "{{ id }}" {{ flags }}
+
+# Every case is manifested, so regenerating the registry is `just reference-cases generate --supersede`.
+# Reproduce every registered case in one container session (the weekly oracle drift check), or generate them all.
+reference-cases mode="reproduce" *flags:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ mode }}" in
+        reproduce|generate) ;;
+        *) echo "the registered cases are reproduced or generated, not {{ mode }}" >&2; exit 2 ;;
+    esac
+    bash tools/reference-oracle/run-container.sh install
+    bash tools/reference-oracle/run-all-cases.sh "{{ mode }}" {{ flags }}
 
 # Regenerate the per-cell font subset corpus into target/font-corpus for review.
 font-corpus:
@@ -328,7 +303,13 @@ candidate-successor dir: require-native xtask
     target/debug/xtask conformance candidate-materialize "{{ dir }}"
 
 # The randomized expansions the nightly schedule runs. They are bounded but long,
-# so no per-change gate carries them.
+# so no per-change gate carries them. Each takes a case count; with
+# EXCALIDRAW_FUZZ_SEED set (the workflow passes the run id) a family mixes it
+# into its fixed seed and prints the result, so a night searches new cases and a
+# failure names the seed that replays it. Unset, they replay the fixed seed.
+
+# Run every nightly expansion in one build.
+nightly: nightly-font-subset-fuzz nightly-frame-batch-property nightly-scene-fuzz nightly-asset-fuzz nightly-render-fuzz
 
 # Expand the bounded font subset fuzz.
 nightly-font-subset-fuzz cases="4096":
@@ -356,6 +337,10 @@ nightly-render-fuzz cases="4096":
         -p excalidraw-render --test render_fuzz render_fuzz::nightly_complete_render_fuzz \
         -- --ignored --exact --nocapture
 
+# Expand the complete-render fuzz under the revision-1 default resource limits.
+nightly-render-fuzz-default-limits cases="4096":
+    EXCALIDRAW_RENDER_FUZZ_DEFAULT_LIMITS=1 just nightly-render-fuzz {{ cases }}
+
 # Run the complete-render fuzz smoke in browser WASM.
 render-fuzz-wasm:
     CARGO_PROFILE_TEST_DEBUG=0 cargo test --locked --target {{ wasm }} -p excalidraw-render --test render_fuzz \
@@ -366,7 +351,9 @@ render-fuzz-wasm:
 xtask:
     cargo build --locked -q -p xtask
 
-# Refuse native release evidence on a host that is not the supported native target.
+# Refuse to produce the native release archive or the representative candidate on a
+# host that is not the supported native target: the archive ships that target's
+# binary, and the candidate's pinned images are linux/amd64.
 [private]
 require-native:
-    [[ "{{ host }}" == "{{ native }}" ]] || { echo "native release evidence needs {{ native }}, not {{ host }}" >&2; exit 1; }
+    [[ "{{ host }}" == "{{ native }}" ]] || { echo "this needs {{ native }}, not {{ host }}" >&2; exit 1; }

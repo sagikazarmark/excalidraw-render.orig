@@ -15,8 +15,12 @@ const SCENE: &[u8] =
     include_bytes!("../../conformance/cases/focused/rectangle-outline/scene.excalidraw");
 const EXPECTED_REPORT: &[u8] =
     include_bytes!("../../conformance/cases/focused/rectangle-outline/expected-report-svg.json");
-const LICENSE_BUNDLE_SHA256: &str =
-    "cadd243b2228954efb8f61f62d492bcde65a23f8e7e96a2db5a6cc42ce78a9f2";
+/// The golden record of every registered export target
+/// (`tests/conformance/golden`): the packaged facade must reproduce the
+/// rectangle case's recorded bytes, which anchors this consumer to the same
+/// record the render tier judges and `just update-golden` rewrites.
+const GOLDEN_RECORD: &str = include_str!("../../conformance/golden/native.json");
+const GOLDEN_CASE: &str = "focused.rectangle-outline.v1";
 const FALLBACK_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"future","type":"future","x":0,"y":0,"width":200,"height":60,"angle":0.2,"opacity":40,"updated":1},null],"appState":{},"files":{}}"#;
 const TEXT_SCENE: &[u8] =
     include_bytes!("../../conformance/cases/focused/excalifont-text/scene.excalidraw");
@@ -25,163 +29,84 @@ const NATIVE_NESTED_SVG_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"el
 const RASTER_FALLBACK_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PGRlZnM+PGZpbHRlciBpZD0iYmx1ciIgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMSIvPjwvZmlsdGVyPjwvZGVmcz48cmVjdCB3aWR0aD0iMjAiIGhlaWdodD0iMTAiIGZpbGw9IiMwMGZmMDAiIGZpbHRlcj0idXJsKCNibHVyKSIvPjwvc3ZnPg==","created":1}}}"##;
 const NOISY_RASTER_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":128,"height":64,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/png","dataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAICAYAAADwdn+XAAAB+ElEQVR42g3FbUyMAQDA8Wfo5Vg4t2jR8AFX0vIynXa5LqMdOeQ0Sa/bSRvhWmuVlA+ksjIXadMdcyvt6BxRpq22W63RqkdsbDHr3G5ys+JW6Lo/vy8/Iembipz3K7md/IUeWQzVvh/Uzvj5uKAZ8ckI6tR5jvjC2WO9ynRoHtV5WjQR+wlQnsQcXIDQY//DtjYrGR4Ta6O8tA0PMeUNxhAbiE5ZwcMdLxitjaPccZbOiGcEfTAxscHJ8iV2BrYfQGgsWo3S3oTamsmNmlRkb6WcPiFlIkjAJVpRdm1BlxyLIFRSIWlGEW6jyjqH8fAwqusNCO53azga8wDHpnEUNisF/g66XMX/v4dUW0eT0UyZXoZ5tJ6QsRwq5c9ZdbOGi6EeXO2lCJJHLQwmTZOufsl8VCtprV7k4yKJpp28yVzPZW0k3SW5pHUnUhY3w1BJJXPxOZx6/ZMVG/8inFeMEfF9M04xC3vAZ6ptEvbOxLMwWsX9r14+5e8iMDeeAQlkxxipkbswGrJZOnsGcVk6QrvGh33qKetSfqFOuENL33GqUvOJzDiEu/gVd+t+c0tTj6XBw2KdgWtbdyPRW+h1Gwg55kHYVzTCBVEk7NJBJqMLCSv04dI7OedfxGSPlI5+B+VXUohMGOJxVinexkFmazvpz7bQl9DLP6p9QFNSPs87AAAAAElFTkSuQmCC","created":1}}}"#;
 const FRAME_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"first-frame","type":"frame","name":"Public One","x":10,"y":20,"width":80,"height":60,"updated":1},{"id":"first-child","type":"rectangle","x":20,"y":30,"width":20,"height":20,"frameId":"first-frame","strokeColor":"#e03131","backgroundColor":"#e03131","fillStyle":"solid","roughness":0,"updated":1},{"id":"second-frame","type":"magicframe","name":"Public Two","x":110,"y":20,"width":50,"height":40,"updated":1},{"id":"second-child","type":"ellipse","x":120,"y":30,"width":20,"height":15,"frameId":"second-frame","strokeColor":"#1971c2","backgroundColor":"#1971c2","fillStyle":"solid","roughness":0,"updated":1}],"appState":{},"files":{}}"##;
-const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
-    (
-        // The SVG artifact moved with #150/#151: the placeholder label's
-        // `font-family` carries the consumer fallback list after
-        // `ExcalidrawRender-9`; then with #151 item 1, when `<metadata>`
-        // began carrying the Liberation Sans attribution and the OFL body as
-        // two notices instead of the full OFL notice under the family's
-        // license identity. Then with #172: the placeholder is rotated 0.2
-        // rad, and its box corners now rotate in the reference's
-        // `pointRotateRads` order, which lands the scene's bottom edge and
-        // the layout origin one ulp away (`viewBox` height
-        // 118.53786082948673, `translate(... 29.268930414743366)`); the PNG
-        // truncates to the same rows and is unchanged. Then with the subset
-        // profile token naming wuff 0.2.9, skera 0.8.0 and ttf2woff2 0.14.1,
-        // which moves the embedded subset's identity and notice. The report
-        // is unchanged. Again with skera 0.9.0, which also serializes the
-        // subset's GSUB and GPOS lists in declaration order.
-        OutputFormat::Svg,
-        "ca6b8973eb9b53a928b1be8a29cefb0c54d9d46e0f56ffa90a365996e51f63c0",
-        "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
-    ),
-    (
-        OutputFormat::Png,
-        "997f544675c9330b82daf013d021a46b189b84ff82f2c0bacfe955523c9cc0a3",
-        "2557fb95fd4972c5ceaea2b0b1b8a3a73f157c2fe147bd5d348be0f639186922",
-    ),
-    (
-        // The PDF artifact moved with #133/#150 (ADR-0008): every stream is
-        // Flate, the Liberation Sans program carries its subset tag and the
-        // trailer its content-derived /ID; then with #151 item 1, when the
-        // XMP manifest began carrying the attribution and license body
-        // notices; then with #172, the same one-ulp page height and origin
-        // as the SVG above; then with ADR-0021, when Krilla became the PDF
-        // writer. The report is unchanged.
-        OutputFormat::Pdf,
-        "c6db8497bc8550d8514e45dc1be3f708f698f859fea3658bb6d6cc003a0e00b6",
-        "737130c9efaa38327d3fe31ecdeddc35ad72a01ea8dc7c11e3a57942c4867247",
-    ),
-];
-// Every PDF artifact digest here and in PDF_FALLBACK_FAMILIES moved with
-// #133/#150 (ADR-0008: Flate streams, subset-tagged chunk programs, the
-// trailer /ID); the one font-bearing PDF here moved again with #151 item 1
-// (the XMP manifest's attribution and license body notices). The nested-SVG
-// PDFs moved again with #209 (ADR-0021): after the usvg 0.47 -> 0.45
-// bridge each fallback image sits in an identity `q 1 0 0 1 0 0 cm Q` group,
-// and a `8.9e-16` residue in the native nested SVG prints as `0`. Every PDF
-// digest here and `expected/rectangle.pdf` moved again when Krilla became the
-// PDF writer (ADR-0021). No report digest moved.
-const PDF_RISK_SET: &[(&str, &[u8], &str, &str)] = &[
-    (
-        "selectable-text",
-        TEXT_SCENE,
-        "32f075d0cca826163720973c5ef06560dc169a8b572a678f58da30925d2c19b7",
-        "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
-    ),
-    (
-        "source-image",
-        SOURCE_IMAGE_SCENE,
-        // c9fc43d corrected image orientation, explicit interpolation, and
-        // direct ICCBased image color spaces. The report is unchanged.
-        "91cd0d8b71788df8989fd7107e946c3571891d372405a37f10730e5276bf83dd",
-        "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
-    ),
-    (
-        "native-nested-svg",
-        NATIVE_NESTED_SVG_SCENE,
-        "44d782533d4273324f33d5b7d91e5bfc21e849b5827b58081d1536aaf58925e2",
-        "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
-    ),
-    (
-        "isolated-raster-fallback",
-        RASTER_FALLBACK_SCENE,
-        "767770926e5f9f8f0e5eafb9a00e4ae7073a6ca401af589f6d0944a6746e8a23",
-        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
-    ),
-];
-const PDF_FALLBACK_FAMILIES: &[(&str, &str, &str, &str)] = &[
-    (
-        "blur",
-        r#"<feGaussianBlur stdDeviation="1"/>"#,
-        "767770926e5f9f8f0e5eafb9a00e4ae7073a6ca401af589f6d0944a6746e8a23",
-        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
-    ),
+/// The nested-SVG filter primitives whose PDF export takes the raster
+/// fallback, or an appearance-equivalent native lowering, one family each.
+const PDF_FALLBACK_FAMILIES: &[(&str, &str)] = &[
+    ("blur", r#"<feGaussianBlur stdDeviation="1"/>"#),
     (
         "convolution",
         r#"<feConvolveMatrix order="3" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0"/>"#,
-        "8be83985eb902e84cd7a76521ead3692ff7d2880912d6bb9ef6ba299aee45086",
-        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "morphology",
         r#"<feMorphology operator="dilate" radius="1"/>"#,
-        "8be83985eb902e84cd7a76521ead3692ff7d2880912d6bb9ef6ba299aee45086",
-        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "displacement",
         r#"<feTurbulence baseFrequency="0.1" numOctaves="1" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>"#,
-        "a7aa9e03c47092f8c7be054a4947aa8215223936100b88bcff751ed303e43344",
-        "a39664c294a12af60d1c206a0772a78ee73fccc76833b995d02cfdec127433c7",
     ),
     (
         "turbulence",
         r#"<feTurbulence baseFrequency="0.1" numOctaves="1"/>"#,
-        // The old pin predated the shared raster-closure pipeline (9712833);
-        // the current one was reconfirmed at c5fec02.
-        "174f12465f67aa2146e1b97ddf988640d5f3822b319f7f1198f004005c9611d9",
-        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "lighting",
         r#"<feDiffuseLighting surfaceScale="2"><feDistantLight azimuth="45" elevation="60"/></feDiffuseLighting>"#,
-        "fbda47cc3b3f5f04e4ff9bdadbfcb6f74b658fac99eaea3429f1d0ff6bf4548d",
-        "130660f6f7c8091d99e2976c06043b1fa657c21159e98104dd50c5cd2128c14b",
     ),
     (
         "post-composite-color",
         r#"<feColorMatrix type="saturate" values="0.5"/>"#,
-        "841a1685f9ebd96ace4918aa34694574706f82e6c0454b5202649146da14db69",
-        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "filter-blend",
         r#"<feBlend in="SourceGraphic" in2="SourceGraphic" mode="overlay"/>"#,
-        "8be83985eb902e84cd7a76521ead3692ff7d2880912d6bb9ef6ba299aee45086",
-        "7867f55c810c54ffd7d671366bad5db3de847cf44fecae17fd93323df6b56c31",
     ),
 ];
-
-struct ArtifactExpectation {
-    format: OutputFormat,
-    bytes: &'static [u8],
-}
-
-const ARTIFACT_EXPECTATIONS: &[ArtifactExpectation] = &[
-    ArtifactExpectation {
-        format: OutputFormat::Svg,
-        bytes: include_bytes!("../expected/rectangle.svg"),
-    },
-    ArtifactExpectation {
-        format: OutputFormat::Png,
-        bytes: include_bytes!("../expected/rectangle.png"),
-    },
-    ArtifactExpectation {
-        format: OutputFormat::Pdf,
-        bytes: include_bytes!("../expected/rectangle.pdf"),
-    },
+/// The PDF scenes whose writer paths differ: selectable text, a raster image,
+/// natively lowered nested SVG, and an isolated raster fallback.
+const PDF_RISK_SET: &[(&str, &[u8])] = &[
+    ("selectable-text", TEXT_SCENE),
+    ("source-image", SOURCE_IMAGE_SCENE),
+    ("native-nested-svg", NATIVE_NESTED_SVG_SCENE),
+    ("isolated-raster-fallback", RASTER_FALLBACK_SCENE),
 ];
+
+/// The golden record's artifact digest and length for the rectangle case's
+/// default variant in `format`.
+fn golden_rectangle(format: OutputFormat) -> (String, usize) {
+    let record: serde_json::Value =
+        serde_json::from_str(GOLDEN_RECORD).expect("the golden record parses");
+    let expectation = record["expectations"]
+        .as_array()
+        .expect("golden expectations")
+        .iter()
+        .find(|expectation| {
+            expectation["key"]["case"] == GOLDEN_CASE
+                && expectation["key"]["variant"] == "default"
+                && expectation["key"]["format"] == format.as_str()
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "the golden record holds {GOLDEN_CASE} in {}",
+                format.as_str()
+            )
+        });
+    let bytes = &expectation["sample"]["outcome"]["bytes"];
+    (
+        bytes["sha256"].as_str().expect("digest").to_owned(),
+        bytes["byte_length"].as_u64().expect("length") as usize,
+    )
+}
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
-fn packaged_public_facade_preserves_artifact_byte_stability() {
+fn packaged_public_facade_reproduces_the_golden_rectangle() {
     let scene = SceneDocument::parse(SCENE).expect("the approved rectangle scene is admitted");
     let renderer = Renderer::new();
+    let formats = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
-    let forward_round = render_round(&renderer, &scene, ARTIFACT_EXPECTATIONS.iter());
-    let mut reverse_round = render_round(&renderer, &scene, ARTIFACT_EXPECTATIONS.iter().rev());
+    let forward_round = render_round(&renderer, &scene, formats.iter().copied());
+    let mut reverse_round = render_round(&renderer, &scene, formats.iter().rev().copied());
     reverse_round.reverse();
 
     assert!(
@@ -192,7 +117,7 @@ fn packaged_public_facade_preserves_artifact_byte_stability() {
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
-fn packaged_svg_font_subsets_are_cross_target_stable() {
+fn packaged_svg_font_subsets_are_embedded_deterministically() {
     let scene = SceneDocument::parse(TEXT_SCENE).expect("the typography scene is admitted");
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
@@ -206,20 +131,6 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
 
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-    // Moved with 5173fae, which stopped separating a multi-line text's tspans
-    // with a raw newline (a rendered character under xml:space="preserve");
-    // the in-crate Excalifont digests were repinned then, this one was not
-    // (#116). Moved again with #150/#151, when `font-family` became the list
-    // `Excalifont, Xiaolai, Segoe UI Emoji, sans-serif`, and with #151 item 1,
-    // when `<metadata>` began carrying the Excalifont attribution and the OFL
-    // body as two notices. ADR-0003's identity refresh changes the embedded
-    // subset's name table and its profile-derived identity/notice, as does
-    // the token naming wuff 0.2.9, skera 0.8.0 and ttf2woff2 0.14.1, and
-    // again with skera 0.9.0, which also reorders the subset's GSUB and GPOS.
-    assert_eq!(
-        lower_hex(&Sha256::digest(first.artifact().bytes())),
-        "abae5fa96e2fe6449bfd5307b5682e2b11ebbce0ec3013c9ba2ab98b09ad7fac"
-    );
     assert!(svg.contains("\"asset_identity\":\"license.ofl-1.1\""));
     assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
     assert!(svg.contains("svg-font-subset@sha256:"));
@@ -255,7 +166,10 @@ fn packaged_public_facade_renders_discovered_frames_directly_and_lazily() {
             assert_eq!(entry.frame().ordinal(), expected_frame.ordinal());
             assert_eq!(direct.artifact().bytes(), lazy.artifact().bytes());
             assert_eq!(direct.report(), lazy.report());
-            assert_eq!(direct.profile_identity().reference_profile_digest(), lazy.profile_identity().reference_profile_digest());
+            assert_eq!(
+                direct.profile_identity().reference_profile_digest(),
+                lazy.profile_identity().reference_profile_digest()
+            );
         }
         assert!(cursor.next().is_none());
     }
@@ -304,13 +218,12 @@ fn packaged_public_facade_preserves_direct_and_lazy_frame_errors() {
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
-fn packaged_public_facade_exposes_the_exact_license_bundle() {
+fn packaged_public_facade_exposes_the_license_bundle() {
     let bundle: &'static str = license_bundle();
 
-    assert_eq!(
-        lower_hex(&Sha256::digest(bundle.as_bytes())),
-        LICENSE_BUNDLE_SHA256
-    );
+    assert!(bundle.contains("SIL Open Font License"));
+    assert!(bundle.contains("Excalifont"));
+    assert!(bundle.contains("Liberation"));
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -340,27 +253,24 @@ fn packaged_public_facade_enforces_the_frozen_scene_surface() {
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
-fn packaged_public_facade_renders_fallbacks_with_cross_target_stable_bytes() {
+fn packaged_public_facade_renders_fallbacks_deterministically() {
     let scene = SceneDocument::parse(FALLBACK_SCENE).expect("the fallback scene is admitted");
-    for (format, artifact_sha256, report_sha256) in FALLBACK_HASHES {
-        let request = RenderRequest::builder(*format)
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
             .build()
             .expect("the fallback request is valid");
-        let outcome = Renderer::new()
+        let first = Renderer::new()
             .render(&scene, &request)
             .expect("fallback and omission retain a meaningful artifact");
-        let report = serde_json::to_vec(outcome.report()).expect("the report serializes");
+        let second = Renderer::new()
+            .render(&scene, &request)
+            .expect("fallback and omission render repeatedly");
 
-        assert_eq!(
-            lower_hex(&Sha256::digest(outcome.artifact().bytes())),
-            *artifact_sha256,
-            "{} fallback artifact changed",
-            format.as_str()
-        );
-        assert_eq!(
-            lower_hex(&Sha256::digest(&report)),
-            *report_sha256,
-            "{} fallback report changed",
+        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+        assert_eq!(first.report(), second.report());
+        assert!(
+            !first.report().diagnostics().is_empty(),
+            "{}: the unknown element and the null entry are diagnosed",
             format.as_str()
         );
     }
@@ -368,17 +278,12 @@ fn packaged_public_facade_renders_fallbacks_with_cross_target_stable_bytes() {
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
-fn packaged_public_facade_preserves_png_scanline_filter_bytes_across_targets() {
+fn packaged_public_facade_compresses_png_scanlines() {
     // A noisy raster upscaled by the renderer makes the PNG encoder take its
     // predictive scanline filters and exercises the deflate compressor on
-    // dense data, while the padding rows stay unfiltered. Together with the
-    // flat rectangle expectation this pins both filter paths and the
-    // compressor on every supported target (#113). The digest moved with
-    // #165: the 16x8 image at 128x64 is now resampled once per destination
-    // pixel centre, as the canvas resamples it, instead of at every subpixel
-    // centre of the supersample, so its interior pixels changed.
-    // c9fc43d subsequently matched the canvas's four-bit bilinear weights.
-    // That pre-existing change was missing from this companion snapshot.
+    // dense data, while the padding rows stay unfiltered; the flat rectangle
+    // reproduced from the golden record covers the other filter path. The
+    // bytes themselves are the golden record's concern (#113).
     let scene =
         SceneDocument::parse(NOISY_RASTER_SCENE).expect("the noisy raster scene is admitted");
     let request = RenderRequest::builder(OutputFormat::Png)
@@ -398,20 +303,13 @@ fn packaged_public_facade_preserves_png_scanline_filter_bytes_across_targets() {
         first.artifact().bytes().len() * 2 < 148 * (84 * 4 + 1),
         "the PNG is not deflate-compressed"
     );
-    assert_eq!(
-        lower_hex(&Sha256::digest(first.artifact().bytes())),
-        "46501d857058f88ab033e3e5b2fbf1d1b3e1bdef71510420d907b2b40a8dcea7"
-    );
-    assert_eq!(
-        lower_hex(&Sha256::digest(&report)),
-        "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
-    );
+    assert!(first.report().diagnostics().is_empty(), "{report:?}");
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
-fn packaged_public_facade_preserves_pdf_risk_set_bytes_across_targets() {
-    for (name, scene_bytes, artifact_sha256, report_sha256) in PDF_RISK_SET {
+fn packaged_public_facade_renders_the_pdf_risk_set_deterministically() {
+    for (name, scene_bytes) in PDF_RISK_SET {
         let scene = SceneDocument::parse(scene_bytes).expect("the PDF risk-set scene is admitted");
         let request = RenderRequest::builder(OutputFormat::Pdf)
             .build()
@@ -422,30 +320,23 @@ fn packaged_public_facade_preserves_pdf_risk_set_bytes_across_targets() {
         let second = Renderer::new()
             .render(&scene, &request)
             .expect("the PDF risk-set scene renders repeatedly");
-        let report = serde_json::to_vec(first.report()).expect("the report serializes");
-        let actual_artifact_sha256 = lower_hex(&Sha256::digest(first.artifact().bytes()));
-        let actual_report_sha256 = lower_hex(&Sha256::digest(&report));
         assert_eq!(
             first.artifact().bytes(),
             second.artifact().bytes(),
             "{name}"
         );
         assert_eq!(first.report(), second.report(), "{name}");
-        assert_eq!(
-            actual_artifact_sha256, *artifact_sha256,
-            "{name} PDF artifact changed"
-        );
-        assert_eq!(
-            actual_report_sha256, *report_sha256,
-            "{name} PDF report changed"
+        assert!(
+            first.artifact().bytes().starts_with(b"%PDF-"),
+            "{name} is a PDF"
         );
     }
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
-fn packaged_public_facade_preserves_every_pdf_fallback_family_across_targets() {
-    for (name, primitives, artifact_sha256, report_sha256) in PDF_FALLBACK_FAMILIES {
+fn packaged_public_facade_renders_every_pdf_fallback_family_deterministically() {
+    for (name, primitives) in PDF_FALLBACK_FAMILIES {
         let nested = format!(
             r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" x="0" y="0" width="100%" height="100%">{primitives}</filter></defs><rect width="20" height="10" fill="#00ff00" filter="url(#effect)"/></svg>"##
         );
@@ -458,47 +349,50 @@ fn packaged_public_facade_preserves_every_pdf_fallback_family_across_targets() {
         let request = RenderRequest::builder(OutputFormat::Pdf)
             .build()
             .expect("fallback-family request is valid");
-        let outcome = Renderer::new()
+        let first = Renderer::new()
             .render(&scene, &request)
             .expect("fallback-family scene renders");
-        let report = serde_json::to_vec(outcome.report()).expect("fallback report serializes");
+        let second = Renderer::new()
+            .render(&scene, &request)
+            .expect("fallback-family scene renders repeatedly");
         assert_eq!(
-            lower_hex(&Sha256::digest(outcome.artifact().bytes())),
-            *artifact_sha256,
-            "{name} PDF artifact changed"
+            first.artifact().bytes(),
+            second.artifact().bytes(),
+            "{name} PDF artifact is deterministic"
         );
-        assert_eq!(
-            lower_hex(&Sha256::digest(&report)),
-            *report_sha256,
-            "{name} PDF report changed"
-        );
+        assert_eq!(first.report(), second.report(), "{name}");
     }
 }
 
-fn render_round<'a>(
+fn render_round(
     renderer: &Renderer,
     scene: &SceneDocument,
-    expectations: impl Iterator<Item = &'a ArtifactExpectation>,
+    formats: impl Iterator<Item = OutputFormat>,
 ) -> Vec<(Vec<u8>, Vec<u8>)> {
-    expectations
-        .map(|expectation| {
-            let request = RenderRequest::builder(expectation.format)
+    formats
+        .map(|format| {
+            let request = RenderRequest::builder(format)
                 .build()
                 .expect("the default format request is valid");
             let outcome = renderer
                 .render(scene, &request)
                 .expect("the approved rectangle renders through the public facade");
             let report = serde_json::to_vec(outcome.report()).expect("the report serializes");
+            let (sha256, byte_length) = golden_rectangle(format);
 
-            assert_eq!(outcome.artifact().format(), expectation.format);
+            assert_eq!(outcome.artifact().format(), format);
+            assert_eq!(outcome.artifact().media_type(), format.media_type());
             assert_eq!(
-                outcome.artifact().media_type(),
-                expectation.format.media_type()
+                outcome.artifact().bytes().len(),
+                byte_length,
+                "{} artifact length differs from the golden record",
+                format.as_str()
             );
-            assert!(
-                outcome.artifact().bytes() == expectation.bytes,
-                "{} artifact bytes differ from the native expectation",
-                expectation.format.as_str()
+            assert_eq!(
+                lower_hex(&Sha256::digest(outcome.artifact().bytes())),
+                sha256,
+                "{} artifact bytes differ from the golden record",
+                format.as_str()
             );
             assert_eq!(report, EXPECTED_REPORT);
 

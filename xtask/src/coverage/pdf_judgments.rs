@@ -14,7 +14,9 @@ pub(super) const SCHEMA: &str = "excalidraw-render/pdf-judgments/v1";
 #[cfg(test)]
 const SUBJECT: &str = "excalidraw-render/pdf-judgments-approval-subject/v1";
 const SPEC: &str = "docs/renderer-spec-v1.md";
-const BASELINE: &str = "tests/conformance/coverage/native-baseline";
+const GOLDEN: &str = "tests/conformance/golden";
+/// The case-id prefix of the golden record's project-authored facade scenes.
+const GOLDEN_FACADE_PREFIX: &str = "facade.";
 
 /// Repository view with test overrides: `Some` replaces or adds a file, `None`
 /// removes one. Production uses no overrides. Shared with the five-layer
@@ -312,78 +314,81 @@ fn canonical_key(key: &Value) -> Result<String, String> {
     String::from_utf8(canonical_bytes(key)?).map_err(|e| e.to_string())
 }
 
-/// Cross-check: every derived PDF report equals the approved native baseline's
-/// actual report byte for byte. Returns the number of equal reports.
-fn cross_check_baseline(repo: &Repo, record: &Value) -> Result<usize, String> {
-    let baseline: Value = parse(&repo.read(&format!("{BASELINE}/revision-1.json"))?)?;
-    let expected = expected_pdf_reports(record)?;
-    let mut equal = 0;
-    let mut mismatches = Vec::new();
-    for entry in baseline["expectations"]
-        .as_array()
-        .ok_or("baseline expectations must be an array")?
-    {
-        if entry["key"]["format"] != "pdf" {
-            continue;
-        }
-        let key = canonical_key(&entry["key"])?;
-        let sha = string(&entry["sample"]["report"], "sha256")?;
-        let actual = repo.read(&format!("{BASELINE}/blobs/{sha}"))?;
-        match expected.get(&key) {
-            Some(bytes) if *bytes == actual => equal += 1,
-            Some(_) => mismatches.push(key),
-            None => mismatches.push(format!("{key} (no expected report)")),
-        }
-    }
-    if equal != expected.len() || !mismatches.is_empty() {
-        return Err(format!(
-            "{} derived PDF reports differ from the approved native baseline: {}",
-            expected.len() - equal,
-            mismatches.join("; ")
-        ));
-    }
-    Ok(equal)
+/// The golden record's key for an inventory key: the same without the input
+/// digest, which the golden test does not carry.
+fn golden_key(key: &Value) -> Result<String, String> {
+    let mut key = key.clone();
+    key.as_object_mut()
+        .ok_or("case key must be an object")?
+        .remove("inputs_sha256");
+    canonical_key(&key)
 }
 
-/// Snapshot/baseline integration: every actual report must equal its expected
-/// report. PDF compares exact bytes with this record; SVG/PNG compare complete
-/// JSON values with the manifest-owned declarations. Returns (total, pdf).
-pub(super) fn check_actual_reports(
-    reports: &[(CaseKey, Vec<u8>)],
-) -> Result<(usize, usize), String> {
-    let repo = Repo::real();
-    let inventory = load_inventory()?;
-    let record = verify_record(&repo, &inventory)?;
-    let pdf = expected_pdf_reports(&record)?;
+/// Cross-check against the golden record (`tests/conformance/golden`): every
+/// golden target's actual report blob equals its expected report. PDF compares
+/// exact bytes with this record; SVG and PNG compare complete JSON values with
+/// the manifest-owned declarations. Returns the number of PDF reports checked,
+/// which must be every PDF execution of the inventory.
+fn cross_check_golden(repo: &Repo, record: &Value) -> Result<usize, String> {
+    let golden: Value = parse(&repo.read(&format!("{GOLDEN}/native.json"))?)?;
+    let expected: BTreeMap<String, Vec<u8>> = expected_pdf_reports(record)?
+        .into_iter()
+        .map(|(key, bytes)| Ok((golden_key(&parse::<Value>(key.as_bytes())?)?, bytes)))
+        .collect::<Result<_, String>>()?;
     let registry: Value = parse(&repo.read(REGISTRY)?)?;
-    let mut pdf_count = 0;
-    for (key, actual) in reports {
-        if key.format == Format::Pdf {
-            let expected = pdf
-                .get(&canonical_key(&key_value(key))?)
-                .ok_or_else(|| format!("{key:?} has no expected PDF report"))?;
-            if expected != actual {
-                return Err(format!(
-                    "actual PDF report for {key:?} differs from pdf-judgments.json"
-                ));
+    let mut pdf = 0;
+    let mut mismatches = Vec::new();
+    for entry in golden["expectations"]
+        .as_array()
+        .ok_or("golden expectations must be an array")?
+        .iter()
+        // A facade scene (`tests/conformance/golden/facade-scenes.json`) is
+        // project-authored and unregistered: it declares no expected report,
+        // and its report is pinned by the golden record alone.
+        .filter(|entry| {
+            !entry["key"]["case"]
+                .as_str()
+                .is_some_and(|case| case.starts_with(GOLDEN_FACADE_PREFIX))
+        })
+    {
+        let key = canonical_key(&entry["key"])?;
+        let sha = string(&entry["sample"]["report"], "sha256")?;
+        let actual = repo.read(&format!("{GOLDEN}/blobs/{sha}"))?;
+        if entry["key"]["format"] == "pdf" {
+            match expected.get(&key) {
+                Some(bytes) if *bytes == actual => pdf += 1,
+                Some(_) => mismatches.push(key),
+                None => mismatches.push(format!("{key} (no expected report)")),
             }
-            pdf_count += 1;
         } else {
-            let declared = declared(&repo, &registry, key)?;
-            let list = if key.format == Format::Svg {
+            let case_key: CaseKey = serde_json::from_value(json!({
+                "case": entry["key"]["case"], "variant": entry["key"]["variant"],
+                "export": entry["key"]["export"], "format": entry["key"]["format"],
+                "inputs_sha256": "0".repeat(64),
+            }))
+            .map_err(|e| e.to_string())?;
+            let declared = declared(repo, &registry, &case_key)?;
+            let list = if case_key.format == Format::Svg {
                 declared.svg
             } else {
                 declared.png
             };
-            let actual: Value = parse(actual)?;
+            let actual: Value = parse(&actual)?;
             if actual != json!({"schema_version":1,"diagnostics":list}) {
-                return Err(format!(
-                    "actual report for {key:?} differs from its manifest-owned expected report"
-                ));
+                mismatches.push(key);
             }
         }
     }
-    Ok((reports.len(), pdf_count))
+    if pdf != expected.len() || !mismatches.is_empty() {
+        return Err(format!(
+            "{} golden reports differ from their expected reports ({} of {} PDF reports equal pdf-judgments.json): {}",
+            mismatches.len(),
+            pdf,
+            expected.len(),
+            mismatches.join("; ")
+        ));
+    }
+    Ok(pdf)
 }
 
 fn existing_declarations(repo: &Repo) -> Result<Vec<Value>, String> {
@@ -417,7 +422,15 @@ fn write_record(record: &Value) -> Result<(), String> {
 
 pub fn generate_pdf_judgments() -> Result<(), String> {
     let repo = Repo::real();
-    let record = generate_in(&repo, &load_inventory()?)?;
+    let mut record = generate_in(&repo, &load_inventory()?)?;
+    // The approval block is historical metadata (ADR-0019): a regeneration
+    // carries the existing one forward rather than nulling it.
+    if let Ok(existing) = repo.read(RECORD) {
+        let existing: Value = parse(&existing)?;
+        if !existing["approval"].is_null() {
+            record["approval"] = existing["approval"].clone();
+        }
+    }
     write_record(&record)?;
     println!(
         "wrote {RECORD}: {} expected PDF reports, {} bound judgment files; review the diff",
@@ -431,7 +444,7 @@ pub fn generate_pdf_judgments() -> Result<(), String> {
 pub(super) fn verify_owned_record() -> Result<(), String> {
     let repo = Repo::real();
     let record = verify_record(&repo, &load_inventory()?)?;
-    cross_check_baseline(&repo, &record).map(|_| ())
+    cross_check_golden(&repo, &record).map(|_| ())
 }
 
 /// The record's canonical subject digest, without the `sha256:` prefix.
@@ -443,9 +456,9 @@ pub(super) fn record_subject(record: &Value) -> Result<String, String> {
 pub fn verify_pdf_judgments() -> Result<(), String> {
     let repo = Repo::real();
     let record = verify_record(&repo, &load_inventory()?)?;
-    let equal = cross_check_baseline(&repo, &record)?;
+    let equal = cross_check_golden(&repo, &record)?;
     println!(
-        "verified pdf-judgments.json: {} expected PDF reports ({} equal the native baseline byte for byte), {} bound judgment files, {} classified non-judgment files",
+        "verified pdf-judgments.json: {} expected PDF reports ({} equal the golden record byte for byte, whose SVG and PNG reports equal their manifests), {} bound judgment files, {} classified non-judgment files",
         record["executions"].as_array().map_or(0, Vec::len),
         equal,
         record["judgments"].as_array().map_or(0, Vec::len),
@@ -506,7 +519,7 @@ mod tests {
             repo.overrides.insert(derive::IMPLEMENTATION.into(), source);
             let verified = verify_record(&repo, &inventory).unwrap();
             assert_eq!(verified, accepted);
-            assert_eq!(cross_check_baseline(&repo, &verified).unwrap(), 56);
+            assert_eq!(cross_check_golden(&repo, &verified).unwrap(), 56);
         }
     }
 
@@ -588,7 +601,7 @@ mod tests {
             .filter(|e| e.key.format == Format::Pdf)
             .count();
         assert_eq!(record["executions"].as_array().unwrap().len(), pdf);
-        assert_eq!(cross_check_baseline(&fixture.repo, &record).unwrap(), pdf);
+        assert_eq!(cross_check_golden(&fixture.repo, &record).unwrap(), pdf);
         fixture.verify().unwrap();
     }
 
@@ -809,8 +822,43 @@ mod tests {
         ));
     }
 
+    /// A golden record of the given targets whose report blobs are overrides,
+    /// against a record whose PDF expectations are restricted to those targets.
+    fn golden_fixture(fixture: &Fixture, reports: &[(&CaseKey, &[u8])]) -> (Repo, Value) {
+        let mut repo = Repo::real();
+        repo.overrides = fixture.repo.overrides.clone();
+        let mut expectations = Vec::new();
+        for (key, bytes) in reports {
+            let sha = sha256(bytes);
+            repo.overrides
+                .insert(format!("{GOLDEN}/blobs/{sha}"), Some(bytes.to_vec()));
+            let mut key = key_value(key);
+            key.as_object_mut().unwrap().remove("inputs_sha256");
+            expectations.push(json!({"key":key,"sample":{
+                "outcome":{"kind":"artifact","bytes":{"sha256":"0".repeat(64),"byte_length":1}},
+                "report":{"sha256":sha,"byte_length":bytes.len()}}}));
+        }
+        let golden = json!({"schema":"excalidraw-render/golden-native/v1",
+            "compatibility_revision":1,"expectations":expectations});
+        repo.overrides.insert(
+            format!("{GOLDEN}/native.json"),
+            Some(serde_json::to_vec(&golden).unwrap()),
+        );
+        let pdf: Vec<_> = reports
+            .iter()
+            .filter(|(key, _)| key.format == Format::Pdf)
+            .map(|(key, _)| key_value(key))
+            .collect();
+        let mut record = fixture.record.clone();
+        record["executions"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|e| pdf.contains(&e["key"]));
+        (repo, record)
+    }
+
     #[test]
-    fn actual_reports_must_equal_expected_reports() {
+    fn golden_reports_must_equal_expected_reports() {
         let fixture = Fixture::new();
         let find = |case: &str, format: Format| {
             fixture
@@ -835,27 +883,39 @@ mod tests {
             .clone();
         let bytes = report_bytes(&expected).unwrap();
         let empty = report_bytes(&[]).unwrap();
-        assert_eq!(
-            check_actual_reports(&[(pdf.clone(), bytes.clone()), (png.clone(), empty.clone())])
-                .unwrap(),
-            (2, 1)
+        let (repo, record) = golden_fixture(&fixture, &[(&pdf, &bytes), (&png, &empty)]);
+        assert_eq!(cross_check_golden(&repo, &record).unwrap(), 1);
+        // A facade scene is unregistered and declares nothing; its golden
+        // report is not cross-checked, whatever it holds.
+        let mut facade = pdf.clone();
+        facade.case = format!("{GOLDEN_FACADE_PREFIX}example.v1");
+        let mut facade_png = png.clone();
+        facade_png.case = facade.case.clone();
+        let (repo, record) = golden_fixture(
+            &fixture,
+            &[(&pdf, &bytes), (&facade, &empty), (&facade_png, &bytes)],
         );
+        assert_eq!(cross_check_golden(&repo, &record).unwrap(), 1);
         // PDF compares exact bytes: the same value in another member order fails.
         let reordered =
             canonical_bytes(&json!({"schema_version":1,"diagnostics":expected})).unwrap();
-        assert!(check_actual_reports(&[(pdf.clone(), reordered)])
+        let (repo, record) = golden_fixture(&fixture, &[(&pdf, &reordered)]);
+        assert!(cross_check_golden(&repo, &record)
             .unwrap_err()
-            .contains("differs from pdf-judgments.json"));
+            .contains("0 of 1 PDF reports equal"));
         // PNG is silent for unsafe links, so the PDF diagnostics are wrong there.
-        let mut wrong = bytes;
-        wrong = String::from_utf8(wrong)
+        let wrong = String::from_utf8(bytes.clone())
             .unwrap()
             .replace("\"pdf\"", "\"png\"")
             .into_bytes();
-        assert!(check_actual_reports(&[(png, wrong)])
-            .unwrap_err()
-            .contains("manifest-owned expected report"));
-        assert!(check_actual_reports(&[(pdf, empty)]).is_err());
+        let (repo, record) = golden_fixture(&fixture, &[(&pdf, &bytes), (&png, &wrong)]);
+        assert!(cross_check_golden(&repo, &record).is_err());
+        // A PDF expectation the golden record lacks is incomplete.
+        let (repo, mut record) = golden_fixture(&fixture, &[(&pdf, &bytes)]);
+        record["executions"] = fixture.record["executions"].clone();
+        assert!(cross_check_golden(&repo, &record).is_err());
+        let (repo, record) = golden_fixture(&fixture, &[(&pdf, &empty)]);
+        assert!(cross_check_golden(&repo, &record).is_err());
     }
 
     #[test]

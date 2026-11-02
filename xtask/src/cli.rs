@@ -64,6 +64,8 @@ pub enum ConformanceCommand {
     SeedOwnership,
     /// Verify the ownership ledger.
     VerifyOwnership,
+    /// Rebind the ownership ledger's catalog digest to the current catalog.
+    RebindOwnershipCatalog,
     /// Extend the ownership ledger with new obligations.
     ExtendOwnership {
         /// Previous catalog JSON.
@@ -167,18 +169,6 @@ pub enum ConformanceCommand {
     InventoryDigest,
     /// Verify the obligation inventory.
     VerifyInventory,
-    /// Verify a result bundle.
-    VerifyResults {
-        /// Result bundle path.
-        report: String,
-    },
-    /// Verify native snapshots.
-    VerifyNativeSnapshots {
-        /// Snapshot directory.
-        directory: String,
-    },
-    /// Stage WASM snapshots.
-    StageWasmSnapshots,
     /// Print the test filter for a test group.
     TestGroupFilter {
         /// Test group manifest.
@@ -191,47 +181,6 @@ pub enum ConformanceCommand {
         /// Test modules.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         modules: Vec<String>,
-    },
-    /// Stage trace logs.
-    StageTraces,
-    /// Aggregate trace logs.
-    AggregateTraces {
-        /// Trace log directory.
-        directory: String,
-    },
-    /// Join trace and public results.
-    JoinTraceResults {
-        /// Trace/public result directory.
-        directory: String,
-    },
-    /// Verify joined trace and public results.
-    VerifyJoinedResults {
-        /// Trace/public result directory.
-        directory: String,
-    },
-    /// Verify WASM snapshots.
-    VerifyWasmSnapshots {
-        /// WASM log directory.
-        directory: String,
-    },
-    /// Report WASM snapshots.
-    ReportWasmSnapshots {
-        /// WASM log directory.
-        directory: String,
-    },
-    /// Stage a new native baseline.
-    StageNativeBaseline {
-        /// Snapshot directory.
-        snapshots: String,
-        /// New baseline directory.
-        baseline: String,
-    },
-    /// Verify the native baseline.
-    VerifyNativeBaseline,
-    /// Replay native snapshots.
-    ReplayNativeSnapshots {
-        /// Snapshot directory.
-        snapshots: String,
     },
     /// Generate PDF judgments.
     PdfJudgmentsGenerate,
@@ -254,6 +203,8 @@ pub enum ConformanceCommand {
     },
     /// Verify every registered case.
     VerifyAll,
+    /// Verify the registered representative candidates against a fresh release build.
+    VerifyCandidates,
     /// Prepare candidate assets.
     CandidatePrepareAssets {
         /// Candidate directory.
@@ -289,11 +240,6 @@ pub enum ConformanceCommand {
         /// Candidate directory.
         directory: String,
     },
-    /// Qualify the Excalifont text canary.
-    QualifyExcalifontCanary {
-        /// Independent canary evidence directory.
-        directory: String,
-    },
     /// Inspect a candidate.
     CandidateInspect {
         /// Candidate directory.
@@ -315,36 +261,6 @@ pub enum ConformanceCommand {
     VerifySvgViewers,
     /// Verify canonical SVG font subset viewer qualification.
     VerifySvgFontSubsets,
-    /// Verify SVG font subset release evidence.
-    VerifySvgFontSubsetRelease,
-    /// Materialize SVG font subset target evidence.
-    MaterializeSvgFontSubsetTarget {
-        /// Target.
-        target: String,
-        /// Qualification test log.
-        test_log: String,
-        /// Target report path.
-        output: String,
-    },
-    /// Materialize the cross-target SVG font subset measurement.
-    MaterializeSvgFontSubsetCrossTarget {
-        /// Qualification test log.
-        test_log: String,
-    },
-    /// Aggregate SVG font subset target evidence.
-    AggregateSvgFontSubsetTargets {
-        /// Target report directory.
-        input: String,
-        /// Aggregate report path.
-        output: String,
-    },
-    /// Record the SVG font subset target aggregate into the release evidence.
-    RecordSvgFontSubsetTargetAggregate {
-        /// Downloaded aggregate report.
-        aggregate: String,
-        /// Workflow run URL.
-        run_url: String,
-    },
     /// Generate the pure-Rust SVG font subset viewer report.
     GenerateSvgFontSubsetRustReport {
         /// Viewer input manifest.
@@ -363,6 +279,11 @@ pub enum ConformanceCommand {
         /// Pure-Rust viewer report.
         pure_rust: String,
     },
+    /// Rebind the SVG font subset qualification to the current subsets.
+    RebindSvgFontSubsets {
+        /// Freshly materialized viewer input manifest.
+        inputs: String,
+    },
     /// Verify canonical PDF viewer and structural qualification.
     VerifyPdfViewers,
     /// Refresh the Rust PDFium runtime record.
@@ -371,6 +292,10 @@ pub enum ConformanceCommand {
     Generate {
         /// Case ID.
         case_id: String,
+        /// Replace a manifested case, keeping its approval block; without
+        /// it, generation refuses to overwrite one.
+        #[arg(long)]
+        supersede: bool,
     },
     /// Reproduce a case with the reference oracle, then verify it.
     Reproduce {
@@ -651,6 +576,7 @@ mod tests {
                 "ownership-catalog",
                 "seed-ownership",
                 "verify-ownership",
+                "rebind-ownership-catalog",
                 "extend-ownership",
                 "record-test-owner",
                 "record-case-owner",
@@ -664,21 +590,9 @@ mod tests {
                 "record-closure-owner",
                 "inventory-digest",
                 "verify-inventory",
-                "verify-results",
-                "verify-native-snapshots",
-                "stage-wasm-snapshots",
                 "test-group-filter",
                 "build-native-cli",
                 "refresh-test-owner-sources",
-                "stage-traces",
-                "aggregate-traces",
-                "join-trace-results",
-                "verify-joined-results",
-                "verify-wasm-snapshots",
-                "report-wasm-snapshots",
-                "stage-native-baseline",
-                "verify-native-baseline",
-                "replay-native-snapshots",
                 "pdf-judgments-generate",
                 "verify-pdf-judgments",
                 "layers-report",
@@ -686,6 +600,7 @@ mod tests {
                 "verify-closure",
                 "verify",
                 "verify-all",
+                "verify-candidates",
                 "candidate-prepare-assets",
                 "candidate-compare",
                 "candidate-semantics",
@@ -693,20 +608,15 @@ mod tests {
                 "candidate-verify",
                 "candidate-native-capture",
                 "candidate-native-check",
-                "qualify-excalifont-canary",
                 "candidate-inspect",
                 "candidate-propose-exceptions",
                 "candidate-revise",
                 "candidate-executions",
                 "verify-svg-viewers",
                 "verify-svg-font-subsets",
-                "verify-svg-font-subset-release",
-                "materialize-svg-font-subset-target",
-                "materialize-svg-font-subset-cross-target",
-                "aggregate-svg-font-subset-targets",
-                "record-svg-font-subset-target-aggregate",
                 "generate-svg-font-subset-rust-report",
                 "materialize-svg-font-subset-evidence",
+                "rebind-svg-font-subsets",
                 "verify-pdf-viewers",
                 "refresh-pdfium-runtime",
                 "generate",
@@ -799,6 +709,32 @@ mod tests {
             panic!()
         };
         assert!(modules.is_empty());
+    }
+
+    #[test]
+    fn generation_supersedes_only_when_asked() {
+        for (args, expected) in [
+            (&["conformance", "generate", "case.v1"][..], false),
+            (
+                &["conformance", "generate", "case.v1", "--supersede"][..],
+                true,
+            ),
+        ] {
+            let Family::Conformance(ConformanceCommand::Generate { case_id, supersede }) =
+                parse(args)
+            else {
+                panic!()
+            };
+            assert_eq!((case_id.as_str(), supersede), ("case.v1", expected));
+        }
+        assert!(Cli::try_parse_from([
+            "xtask",
+            "conformance",
+            "reproduce",
+            "case.v1",
+            "--supersede"
+        ])
+        .is_err());
     }
 
     #[test]

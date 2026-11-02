@@ -100,6 +100,7 @@ fn model() -> Value {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 #[cfg(unix)]
 fn fatal_parser_errors_keep_diagnostics_in_both_lists() {
     use std::os::unix::fs::PermissionsExt;
@@ -132,6 +133,7 @@ fn fatal_parser_errors_keep_diagnostics_in_both_lists() {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 #[cfg(unix)]
 fn ascii_del_is_escaped_in_report_bytes_and_operation_hashes() {
     let scratch = Scratch::new();
@@ -144,6 +146,7 @@ fn ascii_del_is_escaped_in_report_bytes_and_operation_hashes() {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 #[cfg(unix)]
 fn uri_actions_retain_urlsplit_validation_and_scheme_classification() {
     let scratch = Scratch::new();
@@ -193,6 +196,7 @@ fn uri_actions_retain_urlsplit_validation_and_scheme_classification() {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 #[cfg(unix)]
 fn inline_images_and_icc_preserve_types_bytes_and_truncated_tag_tables() {
     let scratch = Scratch::new();
@@ -233,6 +237,7 @@ fn inline_images_and_icc_preserve_types_bytes_and_truncated_tag_tables() {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 #[cfg(unix)]
 fn action_cycles_are_path_local_and_deep_chains_fail_without_panicking() {
     let scratch = Scratch::new();
@@ -293,6 +298,7 @@ fn expectation_from_report(report: &Value) -> Value {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 fn backend_requalification_reports_retain_exact_bytes() {
     let scratch = Scratch::new();
     let root = root();

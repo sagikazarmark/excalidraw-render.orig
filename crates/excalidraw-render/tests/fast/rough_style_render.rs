@@ -18,7 +18,6 @@ const SCENE: &[u8] = br##"{
   "appState":{"viewBackgroundColor":"#ffffff"},"files":{}
 }"##;
 
-#[test]
 pub(super) fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
     let scene = SceneDocument::parse(SCENE).expect("style scene is admitted");
 
@@ -150,7 +149,6 @@ pub(super) fn dots_dashed_and_zigzag_line_fills_render_undiagnosed_in_every_form
     }
 }
 
-#[test]
 pub(super) fn patterned_curved_boundaries_match_pinned_js_sampling() {
     let scene = SceneDocument::parse(br##"{
       "type":"excalidraw","version":2,

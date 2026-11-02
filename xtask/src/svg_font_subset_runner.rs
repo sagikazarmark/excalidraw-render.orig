@@ -9,6 +9,9 @@ use viewer_skrifa::outline::{DrawSettings, OutlinePen};
 use viewer_skrifa::{FontRef, GlyphId, MetadataProvider};
 
 use crate::conformance::{canonical_bytes, repo_root, sha256};
+use crate::viewer_identity::{cargo_locked_version, read_text};
+
+const VIEWER_LOCK: &str = "tools/svg-viewer-rust/Cargo.lock";
 
 pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> {
     let inputs_path = repository_path(inputs)?;
@@ -18,7 +21,7 @@ pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> 
         .map_err(|error| format!("failed to read viewer inputs {inputs}: {error}"))?;
     let inputs: Value = serde_json::from_slice(&bytes)
         .map_err(|error| format!("invalid viewer input manifest: {error}"))?;
-    if inputs["schema"] != json!("excalidraw-render/svg-font-subset-viewer-inputs/v1") {
+    if inputs["schema"] != json!("excalidraw-render/svg-font-subset-viewer-inputs/v2") {
         return Err("unsupported SVG font subset viewer input manifest".to_owned());
     }
     let cases = inputs["cases"]
@@ -56,34 +59,30 @@ pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> 
     fs::remove_dir_all(&staging)
         .map_err(|error| format!("failed to remove {}: {error}", staging.display()))?;
 
+    // The viewer's crate versions are the ones its own lockfile resolves.
+    let lockfile = read_text(VIEWER_LOCK)?;
+    let mut environment = json!({
+        "host": crate::svg_font_subsets::QUALIFICATION_HOST,
+        "rustc": rustc_version()?,
+        "target": crate::svg_viewers::NATIVE_TARGET,
+    });
+    for name in crate::svg_font_subsets::PURE_RUST_REPORT_CRATES {
+        environment[name] = json!(cargo_locked_version(&lockfile, name)?);
+    }
     let report = json!({
-        "environment": {
-            "fontdb": "0.24.0",
-            "host": "linux-amd64",
-            "harfrust": "0.12.0",
-            "resvg": "0.48.1",
-            "rustc": rustc_version()?,
-            "skrifa": "0.44.0",
-            "target": "x86_64-unknown-linux-gnu",
-            "tiny-skia": "0.12.0",
-            "usvg": "0.48.1",
-        },
+        "environment": environment,
         "fresh_state_per_role": true,
-        "inputs_sha256": sha256(&bytes),
         "results": results,
         "samples_per_role": 2,
-        "schema": "excalidraw-render/svg-font-subset-viewer-report/v1",
+        "schema": "excalidraw-render/svg-font-subset-viewer-report/v2",
         "viewer": "pure_rust",
     });
     write_json(&output_path, &report)
 }
 
 fn run_case(case: &Value, viewer: &Path, staging: &Path) -> Result<Value, String> {
-    let id = string(
-        &case["semantic_subset_identity"],
-        "semantic subset identity",
-    )?;
-    verify_sha256(id, "semantic subset identity")?;
+    let id = string(&case["glyph_set"], "glyph set")?;
+    verify_sha256(id, "glyph set")?;
     let dimensions = case["dimensions"].clone();
     let expected_length = dimensions["byte_length"]
         .as_u64()
@@ -171,7 +170,7 @@ fn run_case(case: &Value, viewer: &Path, staging: &Path) -> Result<Value, String
         "compatibility_record": Value::Null,
         "decision": if passed { "pass" } else { "fail" },
         "dimensions": dimensions,
-        "semantic_subset_identity": id,
+        "glyph_set": id,
         "source_raster_sha256": role_hashes[0][0],
         "source_run_sha256": role_hashes[0],
         "source_semantic_sha256": sha256(&source_semantic_bytes),
@@ -230,7 +229,7 @@ fn advances_and_offsets(report: &Value) -> Value {
     })
 }
 
-/// The viewer's usvg 0.48.1 reads fonts with skrifa (charmap, unscaled
+/// The viewer's usvg reads fonts with skrifa (charmap, unscaled
 /// metrics, unhinted outlines at the default location) and shapes with
 /// HarfRust 0.12; the report reads and shapes each face the same way.
 fn semantic_report(sfnt: &[u8], svg: &[u8], scalars: &[u32]) -> Result<Value, String> {

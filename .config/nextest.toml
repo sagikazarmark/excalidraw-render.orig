@@ -12,12 +12,14 @@
 #               and `tools/ci/check-format-features.sh` runs it reduced
 #   parity_*    parity against official evidence: the registry-driven scene
 #               harnesses and the frame-export case
+#   golden_*    the golden bytes of every registered export target
+#               (tests/conformance/golden), native and browser WASM
 #   limits_*    fixed parser ceilings that build 64 MiB and 1M-entry scenes,
 #               and scene-scaling guards against quadratic per-element lookups
 #   harness_*   #[ignore]d gates that need the pinned Chromium, PDFium, PDF.js
 #               and qpdf harnesses; a harness binary holds nothing else
 #
-# The `parity_*` and `limits_*` binaries are the render tier, `ci-render`;
+# The `parity_*`, `golden_*` and `limits_*` binaries are the render tier, `ci-render`;
 # everything else that runs without a harness is the fast tier, `ci-fast`.
 # `just ci` runs them as `just test` and `just test-render`. CI runs both from
 # one archive, as slices of the `default` profile (`just test-shard`).
@@ -32,8 +34,8 @@
 #
 # The devenv shell provides nextest, and a developer is pointed at the
 # recommended release. The floor is the release that introduced the `group()`
-# filterset predicate, which the CI recipes `test-shard` and `test-release-cli`
-# use; it also covers test priorities (0.9.91) and sliced partitions (0.9.127).
+# filterset predicate, which `just test-release` uses; it also covers test
+# priorities (0.9.91) and sliced partitions (0.9.127).
 nextest-version = { required = "0.9.133", recommended = "0.9.143" }
 
 [profile.default]
@@ -47,28 +49,58 @@ default-filter = 'not binary(/^harness_/)'
 # (`common::registered_cases::judge_each`), so each runs alone rather than
 # beside three other processes. Overrides are inherited by every profile.
 [[profile.default.overrides]]
-filter = 'binary(/^parity_registered_case_/) & test(/^every_registered_scene_case_/)'
+filter = '''
+binary(/^parity_registered_case_/) & test(/^every_(clean_|excepted_)?registered_scene_case_/)
+'''
 threads-required = "num-cpus"
 
-# These xtask tests run commands that build the qualified release CLI on first
-# use (LTO, one codegen unit: minutes on a CI runner). Run concurrently, the
-# first uses only queue on Cargo's build lock while holding test slots, so they
-# take turns in their own group. The ownership unit tests that judge the live
-# ledger hold the representative row as a gap instead, so they never reach the
-# build and stay out of the group.
+# The release tier: the xtask tests that build the qualified release CLI (LTO,
+# one codegen unit: minutes on a CI runner) to replay the representative
+# candidate, and the ones that judge the live coverage inventory and ownership
+# ledger, which re-key on every font-catalog or spec edit. All are #[ignore]d
+# for the fast tier and run by `just test-release` with `--run-ignored only`;
+# the CLI builders run concurrently would only queue on Cargo's build lock
+# while holding test slots, so the group takes one thread.
 [test-groups]
-release-cli = { max-threads = 1 }
+release-tier = { max-threads = 1 }
+# The xtask tests that run host tools: qpdf 12.3.2, bash and `realpath` for the
+# PDF inspector and harness wrappers, and Node for the WebP viewer boundary, the
+# candidate asset derivation and the ownership recorders, which verify the
+# representative owner through the candidate gate before writing. They are
+# #[ignore]d so the fast tier needs none of them and the base devenv shell no
+# Node; `just test-release` runs them from the `release` profile, which has
+# both.
+host-tools = { max-threads = "num-cpus" }
 
 [[profile.default.overrides]]
 filter = '''
 package(xtask) & (
-    binary(=coverage)
-    | binary(=representative_candidate)
-    | test(=coverage::ownership::representative::tests::representative_owner_release_positive_path_uses_real_gate_in_isolated_fixture)
-    | test(=conformance_candidate_native::tests::fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds)
+    binary(=webp_boundary)
+    | binary(=pdf_inspection)
+    | binary(=pdf_inspection_expectations)
+    | binary(=pdf_inspection_parity)
+    | binary(=pdf_harness_wrappers)
+    | test(=conformance_candidate::tests::provenance_derivation_rejects_mutations_without_repairing_evidence)
+    | (binary(=coverage) & test(/^ownership_recording_/))
 )
 '''
-test-group = "release-cli"
+test-group = "host-tools"
+
+[[profile.default.overrides]]
+filter = '''
+package(xtask) & (
+    test(=release_closure_does_not_pass_for_a_draft)
+    | test(=inventory_is_current)
+    | test(=representative_registry_is_consumed_through_native_execution)
+    | test(=coverage::ownership::representative::tests::representative_owner_release_positive_path_uses_real_gate_in_isolated_fixture)
+    | test(=conformance_candidate_native::tests::fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds)
+    | test(=coverage::ownership::tests::five_layer_mapping_is_optional_but_pdf_judgments_remain_required)
+    | test(=coverage::ownership::tests::inventory_extension_preserves_live_owners_and_approved_exclusions)
+    | test(=coverage::ownership::tests::tolerance_exceptions_are_owned_only_by_the_direct_png_exception_test)
+    | test(=coverage::ownership::tests::test_owner_checks_compiled_module_and_selector_not_historical_source_digest)
+)
+'''
+test-group = "release-tier"
 # Start the group first, so the build overlaps the rest of the run instead of
 # ending it on one busy slot.
 priority = 100
@@ -86,12 +118,12 @@ priority = 50
 # The fast tier: the `default` set without the parity and limits tiers.
 # Together with `ci-render` it covers the `default` set exactly once.
 [profile.ci-fast]
-default-filter = 'not binary(/^(harness|parity|limits)_/)'
+default-filter = 'not binary(/^(harness|parity|golden|limits)_/)'
 fail-fast = false
 
 # The render tier: the parity harnesses and the fixed parser ceilings.
 [profile.ci-render]
-default-filter = 'binary(/^(parity|limits)_/)'
+default-filter = 'binary(/^(parity|golden|limits)_/)'
 fail-fast = false
 
 # The harness gates. Every test in these binaries is #[ignore]d for plain

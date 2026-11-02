@@ -2,7 +2,7 @@
 //! (`just pdf-harness`). Every test here is `#[ignore]`d for plain
 //! `cargo test`; the `harness` nextest profile selects this binary by name and
 //! runs it with `--run-ignored only`, so a gate cannot drift out of the
-//! pdf-harness-gates workflow by being renamed.
+//! nightly harness job by being renamed.
 //!
 //! Each module holds the gates of one approved input. Where the fast tier
 //! inspects the same render for structure (the rectangle outline and the

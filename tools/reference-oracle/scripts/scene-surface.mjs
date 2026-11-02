@@ -8,6 +8,7 @@ import { dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { canonicalize } from "./canonical-json.mjs";
+import { referenceDigest } from "./revision.mjs";
 
 const ORACLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(ORACLE_ROOT, "../..");
@@ -17,8 +18,8 @@ const MANIFEST_PATH = resolve(SURFACE_ROOT, "revision-1.json");
 const MANIFEST_DIGEST_PATH = resolve(SURFACE_ROOT, "revision-1.sha256");
 const EVIDENCE_PATH = resolve(SURFACE_ROOT, "evidence/revision-1-harmless-fields.json");
 const EVIDENCE_DIGEST_PATH = resolve(SURFACE_ROOT, "evidence/revision-1-harmless-fields.sha256");
-const PROFILE_DIGEST = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
-const ASSET_MANIFEST_DIGEST = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
+const PROFILE_DIGEST = referenceDigest("profile");
+const ASSET_MANIFEST_DIGEST = referenceDigest("assetManifest");
 const EXCALIDRAW_COMMIT = "a2ec2889babf7d2295469c6d90ebe77fae57df84";
 
 const FORMATS = ["svg", "png", "pdf"];

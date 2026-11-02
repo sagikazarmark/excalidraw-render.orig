@@ -7,6 +7,8 @@ use serde_json::{json, Value};
 use crate::conformance::{
     canonical_bytes, object, read_repository_file as read_repository_file_in, repo_root, sha256,
 };
+use crate::revision::sealed_digest;
+use crate::viewer_identity::{runtime_record, svg_viewer_profile, ReferenceRuntime};
 
 const MANIFEST_PATH: &str =
     "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json";
@@ -24,10 +26,12 @@ const CORPUS_PATH: &str = concat!(
 /// these counts; the schema states the execution count as well.
 pub(crate) const SUCCESSFUL_CELLS: usize = 780;
 pub(crate) const EXECUTIONS: usize = 662;
-/// The committed qualification corpus every piece of SVG font subset evidence
-/// binds.
-pub(crate) const CORPUS_SHA256: &str =
-    "7c9ee4417835a19f4ec6b644a521c304399dbf8481e4d3f92c061af5261fdbb7";
+const SUBSET_PROFILE_PATH: &str =
+    "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json";
+const CHROMIUM_PROFILE_PATH: &str =
+    "tests/conformance/viewer-profiles/canonical-svg-chromium-v1.json";
+const PURE_RUST_PROFILE_PATH: &str =
+    "tests/conformance/viewer-profiles/canonical-svg-pure-rust-v1.json";
 const REQUIRED_CHECKS: [&str; 7] = [
     "shaping",
     "glyph_choice",
@@ -62,10 +66,7 @@ pub fn materialize(inputs: &str, chromium: &str, pure_rust: &str) -> Result<(), 
 
     let mut executions = Vec::new();
     for case in array(&input["cases"], "viewer input cases")? {
-        let id = string(
-            &case["semantic_subset_identity"],
-            "semantic subset identity",
-        )?;
+        let id = string(&case["glyph_set"], "glyph set")?;
         let chromium_decision = chromium_results
             .get(id)
             .ok_or_else(|| format!("Chromium report lacks {id}"))?;
@@ -77,8 +78,9 @@ pub fn materialize(inputs: &str, chromium: &str, pure_rust: &str) -> Result<(), 
             "chromium_decision": chromium_decision,
             "coverage": case["coverage"],
             "decision": if pass { "pass" } else { "fail" },
+            "glyph_set": id,
             "pure_rust_decision": rust_decision,
-            "semantic_subset_identity": id,
+            "semantic_subset_identity": case["semantic_subset_identity"],
             "source_assets_sha256": case["source_assets_sha256"],
             "source_sfnt_sha256": case["source_sfnt_sha256"],
             "source_svg_sha256": case["source_svg_sha256"],
@@ -167,10 +169,7 @@ fn report_decisions(report: &Value, viewer: &str) -> Result<BTreeMap<String, Str
     }
     let mut decisions = BTreeMap::new();
     for result in array(&report["results"], "viewer report results")? {
-        let id = string(
-            &result["semantic_subset_identity"],
-            "viewer result identity",
-        )?;
+        let id = string(&result["glyph_set"], "viewer result glyph set")?;
         let decision = string(&result["decision"], "viewer decision")?;
         if decisions
             .insert(id.to_owned(), decision.to_owned())
@@ -221,16 +220,8 @@ fn verify_manifest(manifest: &Value) -> Result<(), String> {
         "viewer input manifest digest",
     )?;
     verify_sha256(input_sha256, "viewer input manifest digest")?;
-    let chromium = verify_viewer_report(
-        &manifest["viewer_reports"]["chromium"],
-        "chromium",
-        input_sha256,
-    )?;
-    let pure_rust = verify_viewer_report(
-        &manifest["viewer_reports"]["pure_rust"],
-        "pure_rust",
-        input_sha256,
-    )?;
+    let chromium = verify_viewer_report(&manifest["viewer_reports"]["chromium"], "chromium")?;
+    let pure_rust = verify_viewer_report(&manifest["viewer_reports"]["pure_rust"], "pure_rust")?;
     let expected_ids = executions.keys().cloned().collect::<BTreeSet<_>>();
     if chromium.keys().cloned().collect::<BTreeSet<_>>() != expected_ids
         || pure_rust.keys().cloned().collect::<BTreeSet<_>>() != expected_ids
@@ -276,13 +267,15 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
         verify_descriptor(descriptor)?;
     }
     if manifest["corpus"]["path"] != json!(CORPUS_PATH)
-        || manifest["corpus"]["sha256"] != json!(CORPUS_SHA256)
-        || manifest["subset_profile"]["sha256"]
-            != json!("f23470d703abde83ac59cd7408d8114fa6128f9069ae63d53b1a83092d85ba15")
+        || manifest["corpus"]["sha256"] != json!(sealed_digest(CORPUS_PATH)?)
+        || manifest["subset_profile"]["path"] != json!(SUBSET_PROFILE_PATH)
+        || manifest["subset_profile"]["sha256"] != json!(sealed_digest(SUBSET_PROFILE_PATH)?)
+        || manifest["viewer_profiles"]["chromium"]["path"] != json!(CHROMIUM_PROFILE_PATH)
         || manifest["viewer_profiles"]["chromium"]["sha256"]
-            != json!("be1664b3ad79c09b99680ff5e8ca0e56a98fce703c94a13e19e889097c90426b")
+            != json!(sealed_digest(CHROMIUM_PROFILE_PATH)?)
+        || manifest["viewer_profiles"]["pure_rust"]["path"] != json!(PURE_RUST_PROFILE_PATH)
         || manifest["viewer_profiles"]["pure_rust"]["sha256"]
-            != json!("3ffb9edeb9f02ccb8fe6e18ad714017bacee1af06cfffbda36568dc765bee674")
+            != json!(sealed_digest(PURE_RUST_PROFILE_PATH)?)
     {
         return Err("qualification dependency identity is stale".to_owned());
     }
@@ -332,7 +325,7 @@ struct ExpectedCell {
 fn expected_cells() -> Result<BTreeMap<(String, String), ExpectedCell>, String> {
     let bytes = fs::read(repo_root().join(CORPUS_PATH))
         .map_err(|error| format!("failed to read {CORPUS_PATH}: {error}"))?;
-    if sha256(&bytes) != CORPUS_SHA256 {
+    if sha256(&bytes) != sealed_digest(CORPUS_PATH)? {
         return Err(format!(
             "{CORPUS_PATH} is not the bound qualification corpus"
         ));
@@ -405,11 +398,15 @@ fn verify_execution_coverage<'a>(
     let mut executions = BTreeMap::new();
     let mut actual = BTreeSet::new();
     for execution in array(&manifest["executions"], "qualification executions")? {
-        let id = string(&execution["semantic_subset_identity"], "execution identity")?;
+        let id = string(&execution["glyph_set"], "execution glyph set")?;
         if executions.insert(id.to_owned(), execution).is_some() {
             return Err(format!("duplicate qualification execution {id}"));
         }
-        verify_sha256(id, "execution semantic subset identity")?;
+        let semantic_identity = string(
+            &execution["semantic_subset_identity"],
+            "execution semantic subset identity",
+        )?;
+        verify_sha256(semantic_identity, "execution semantic subset identity")?;
         verify_sha256(
             string(&execution["source_woff2_sha256"], "source WOFF2 digest")?,
             "source WOFF2 digest",
@@ -435,7 +432,8 @@ fn verify_execution_coverage<'a>(
             let expected_cell = expected
                 .get(&key)
                 .ok_or_else(|| format!("unexpected qualification coverage {source}/{class}"))?;
-            if expected_cell.semantic_identity != id
+            if expected_cell.semantic_identity != semantic_identity
+                || glyph_set(source, &coverage["ordered_scalars"])? != id
                 || coverage["ordered_scalars"] != expected_cell.scalars
                 || execution["source_woff2_sha256"] != json!(expected_cell.source_woff2_sha256)
                 || expected_cell
@@ -461,17 +459,53 @@ fn verify_execution_coverage<'a>(
     Ok(executions)
 }
 
+/// The host both viewers qualified the subsets on (ADR-0006).
+pub(crate) const QUALIFICATION_HOST: &str = "linux-amd64";
+/// The pure-Rust viewer's crates whose versions its font-subset report records.
+pub(crate) const PURE_RUST_REPORT_CRATES: [&str; 6] =
+    ["fontdb", "harfrust", "resvg", "skrifa", "tiny-skia", "usvg"];
+
+/// The Chromium report's environment: the reference container's runtime and
+/// launch arguments, as the reference profile records them.
+fn chromium_environment(reference: &ReferenceRuntime) -> Value {
+    json!({
+        "browser_arguments": reference.browser_arguments.join(" "),
+        "chromium": reference.chromium,
+        "container": reference.container,
+        "host": QUALIFICATION_HOST,
+        "locale": "en-US",
+        "node": format!("v{}", reference.node),
+        "playwright": reference.playwright,
+        "role_processes": "fresh Chromium process per execution, role, and repeat",
+        "timezone": "UTC",
+    })
+}
+
+/// The pure-Rust report's environment: the canonical pure-Rust SVG viewer's
+/// runtime, as its profile records it (and `verify-svg-viewers` holds that
+/// profile to the viewer's lockfile and toolchain).
+fn pure_rust_environment(profile: &Value) -> Result<Value, String> {
+    let mut environment = json!({
+        "host": QUALIFICATION_HOST,
+        "rustc": format!("rustc {}", runtime_record(profile, "rustc")?),
+        "target": runtime_record(profile, "target")?,
+    });
+    for name in PURE_RUST_REPORT_CRATES {
+        environment[name] = json!(runtime_record(profile, name)?);
+    }
+    Ok(environment)
+}
+
 fn verify_viewer_report(
     descriptor: &Value,
     viewer: &str,
-    input_sha256: &str,
 ) -> Result<BTreeMap<String, Value>, String> {
     let bytes = verify_descriptor(descriptor)?;
     let report: Value = serde_json::from_slice(&bytes)
         .map_err(|error| format!("invalid {viewer} font subset viewer report: {error}"))?;
-    if report["schema"] != json!("excalidraw-render/svg-font-subset-viewer-report/v1")
+    if report["schema"] != json!("excalidraw-render/svg-font-subset-viewer-report/v2")
         || report["viewer"] != json!(viewer)
-        || report["inputs_sha256"] != json!(input_sha256)
+        || report.get("inputs_sha256").is_some()
         || report["samples_per_role"] != json!(2)
         || report["fresh_state_per_role"] != json!(true)
     {
@@ -479,28 +513,8 @@ fn verify_viewer_report(
     }
     let environment = &report["environment"];
     let expected_environment = match viewer {
-        "chromium" => json!({
-            "browser_arguments": "--disable-gpu --font-render-hinting=none --force-color-profile=srgb",
-            "chromium": "149.0.7827.55",
-            "container": "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9",
-            "host": "linux-amd64",
-            "locale": "en-US",
-            "node": "v24.16.0",
-            "playwright": "1.61.0",
-            "role_processes": "fresh Chromium process per execution, role, and repeat",
-            "timezone": "UTC",
-        }),
-        "pure_rust" => json!({
-            "fontdb": "0.24.0",
-            "harfrust": "0.12.0",
-            "host": "linux-amd64",
-            "resvg": "0.48.1",
-            "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
-            "skrifa": "0.44.0",
-            "target": "x86_64-unknown-linux-gnu",
-            "tiny-skia": "0.12.0",
-            "usvg": "0.48.1",
-        }),
+        "chromium" => chromium_environment(&ReferenceRuntime::load()?),
+        "pure_rust" => pure_rust_environment(&svg_viewer_profile("pure-rust")?)?,
         _ => return Err(format!("unknown viewer report {viewer}")),
     };
     if environment != &expected_environment {
@@ -508,10 +522,7 @@ fn verify_viewer_report(
     }
     let mut results = BTreeMap::new();
     for result in array(&report["results"], "viewer results")? {
-        let id = string(
-            &result["semantic_subset_identity"],
-            "viewer result identity",
-        )?;
+        let id = string(&result["glyph_set"], "viewer result glyph set")?;
         if results.insert(id.to_owned(), result.clone()).is_some() {
             return Err(format!("duplicate {viewer} viewer result {id}"));
         }
@@ -521,10 +532,7 @@ fn verify_viewer_report(
 }
 
 fn verify_result(result: &Value, viewer: &str) -> Result<(), String> {
-    let id = string(
-        &result["semantic_subset_identity"],
-        "viewer result identity",
-    )?;
+    let id = string(&result["glyph_set"], "viewer result glyph set")?;
     let width = result["dimensions"]["width"]
         .as_u64()
         .filter(|value| *value > 0)
@@ -719,6 +727,120 @@ fn verify_sidecar(relative: &str, bytes: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
+/// The key of an execution: what the viewers render, the source font's
+/// identity (which names its bytes' digest) and the ordered scalars set in it.
+/// It is the semantic subset identity's preimage without the subset profile,
+/// so the executions and both viewer reports keep their keys when the profile
+/// moves; the renderer's viewer-input materializer computes the same.
+fn glyph_set(source_identity: &str, ordered_scalars: &Value) -> Result<String, String> {
+    let scalars = array(ordered_scalars, "ordered scalars")?
+        .iter()
+        .map(|scalar| {
+            scalar
+                .as_u64()
+                .map(|scalar| scalar.to_string())
+                .ok_or_else(|| "ordered scalars must be integers".to_owned())
+        })
+        .collect::<Result<Vec<_>, _>>()?
+        .join(",");
+    Ok(sha256(
+        format!("excalidraw-render:svg-font-subset-glyph-set:v1\n{source_identity}\n{scalars}")
+            .as_bytes(),
+    ))
+}
+
+/// The fields of an execution that name the subset rather than what it
+/// renders. A subset profile change moves only these, and
+/// [`rebind`] carries them from fresh viewer inputs.
+const SUBSET_FIELDS: [&str; 5] = [
+    "semantic_subset_identity",
+    "subset_assets_sha256",
+    "subset_sfnt_sha256",
+    "subset_svg_sha256",
+    "subset_woff2_sha256",
+];
+
+/// Rebinds the qualification to the subsets of a moved subset profile without
+/// re-running the viewers: from freshly materialized viewer inputs it rewrites
+/// each execution's subset fields, the input manifest digest and the subset
+/// profile descriptor, and nothing else. The glyph sets must be the record's
+/// exactly, and the source fields must not move, so the viewer reports, keyed
+/// by glyph set, stay as they are. The viewers' rasters are compared again
+/// only when the qualification is regenerated.
+pub fn rebind(inputs: &str) -> Result<(), String> {
+    let input_bytes = read_repository_file(inputs)?;
+    let input: Value = serde_json::from_slice(&input_bytes)
+        .map_err(|error| format!("invalid viewer input manifest: {error}"))?;
+    if input["schema"] != json!("excalidraw-render/svg-font-subset-viewer-inputs/v2") {
+        return Err("unsupported SVG font subset viewer input manifest".to_owned());
+    }
+    let bytes = fs::read(repo_root().join(MANIFEST_PATH))
+        .map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?;
+    let mut manifest: Value = serde_json::from_slice(&bytes)
+        .map_err(|error| format!("invalid SVG font subset viewer manifest: {error}"))?;
+    let rebound = rebind_executions(&mut manifest, &input)?;
+    manifest["input_manifest_sha256"] = json!(sha256(&input_bytes));
+    manifest["subset_profile"] = descriptor(SUBSET_PROFILE_PATH)?;
+    manifest["corpus"] = descriptor(CORPUS_PATH)?;
+    let canonical = canonical_bytes(&manifest)?;
+    fs::write(
+        repo_root().join(MANIFEST_PATH),
+        [&canonical[..], b"\n"].concat(),
+    )
+    .map_err(|error| format!("failed to write {MANIFEST_PATH}: {error}"))?;
+    fs::write(
+        repo_root().join(MANIFEST_DIGEST_PATH),
+        format!("{}\n", sha256(&canonical)),
+    )
+    .map_err(|error| format!("failed to write {MANIFEST_DIGEST_PATH}: {error}"))?;
+    println!("rebound {rebound} of {EXECUTIONS} executions to the current subsets");
+    Ok(())
+}
+
+fn rebind_executions(manifest: &mut Value, input: &Value) -> Result<usize, String> {
+    let cases = array(&input["cases"], "viewer input cases")?
+        .iter()
+        .map(|case| Ok((string(&case["glyph_set"], "glyph set")?.to_owned(), case)))
+        .collect::<Result<BTreeMap<_, _>, String>>()?;
+    let executions = manifest["executions"]
+        .as_array_mut()
+        .ok_or_else(|| "qualification executions must be an array".to_owned())?;
+    if executions.len() != cases.len() {
+        return Err("the viewer inputs do not cover the record's glyph sets".to_owned());
+    }
+    let mut rebound = 0;
+    for execution in executions {
+        let key = string(&execution["glyph_set"], "execution glyph set")?.to_owned();
+        let case = cases
+            .get(&key)
+            .ok_or_else(|| format!("the viewer inputs lack glyph set {key}"))?;
+        if case["coverage"] != execution["coverage"]
+            || [
+                "source_assets_sha256",
+                "source_sfnt_sha256",
+                "source_svg_sha256",
+                "source_woff2_sha256",
+            ]
+            .iter()
+            .any(|field| case[*field] != execution[*field])
+        {
+            return Err(format!(
+                "glyph set {key} renders another source than the record; regenerate the qualification"
+            ));
+        }
+        let mut moved = false;
+        for field in SUBSET_FIELDS {
+            verify_sha256(string(&case[field], field)?, field)?;
+            if execution[field] != case[field] {
+                execution[field] = case[field].clone();
+                moved = true;
+            }
+        }
+        rebound += usize::from(moved);
+    }
+    Ok(rebound)
+}
+
 fn verify_sha256(value: &str, subject: &str) -> Result<(), String> {
     if value.len() != 64
         || !value
@@ -749,6 +871,75 @@ mod tests {
 
     fn accepted_manifest() -> Value {
         serde_json::from_slice(&read_repository_file(MANIFEST_PATH).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn glyph_sets_name_the_source_and_scalars_only() {
+        let key = glyph_set("fonts/A.woff2@sha256:00", &json!([65, 66])).unwrap();
+        assert_eq!(
+            key,
+            sha256(
+                b"excalidraw-render:svg-font-subset-glyph-set:v1\nfonts/A.woff2@sha256:00\n65,66"
+            )
+        );
+        assert_ne!(
+            key,
+            glyph_set("fonts/A.woff2@sha256:00", &json!([66, 65])).unwrap()
+        );
+        assert_ne!(
+            key,
+            glyph_set("fonts/B.woff2@sha256:00", &json!([65, 66])).unwrap()
+        );
+        assert!(glyph_set("fonts/A.woff2@sha256:00", &json!(["A"])).is_err());
+    }
+
+    #[test]
+    fn rebinding_moves_only_the_subset_fields_of_unchanged_glyph_sets() {
+        let digest = |byte: char| byte.to_string().repeat(64);
+        let execution = json!({
+            "coverage": [{"class": "mapped-scalar", "ordered_scalars": [65], "source_identity": "s"}],
+            "decision": "pass",
+            "glyph_set": digest('a'),
+            "semantic_subset_identity": digest('b'),
+            "source_assets_sha256": digest('c'),
+            "source_sfnt_sha256": digest('c'),
+            "source_svg_sha256": digest('c'),
+            "source_woff2_sha256": digest('c'),
+            "subset_assets_sha256": digest('d'),
+            "subset_sfnt_sha256": digest('d'),
+            "subset_svg_sha256": digest('d'),
+            "subset_woff2_sha256": digest('d'),
+        });
+        let mut case = execution.clone();
+        for field in SUBSET_FIELDS {
+            case[field] = json!(digest('e'));
+        }
+        let input = json!({"cases": [case.clone()]});
+        let mut manifest = json!({"executions": [execution.clone()]});
+        assert_eq!(rebind_executions(&mut manifest, &input).unwrap(), 1);
+        let rebound = &manifest["executions"][0];
+        for field in SUBSET_FIELDS {
+            assert_eq!(rebound[field], json!(digest('e')), "{field}");
+        }
+        for field in ["glyph_set", "coverage", "decision", "source_woff2_sha256"] {
+            assert_eq!(rebound[field], execution[field], "{field}");
+        }
+        // Idempotent: nothing moves the second time.
+        assert_eq!(rebind_executions(&mut manifest, &input).unwrap(), 0);
+
+        let mut moved_source = case.clone();
+        moved_source["source_woff2_sha256"] = json!(digest('f'));
+        let mut manifest = json!({"executions": [execution.clone()]});
+        assert!(
+            rebind_executions(&mut manifest, &json!({"cases": [moved_source]}))
+                .unwrap_err()
+                .contains("regenerate the qualification")
+        );
+        let mut other = case;
+        other["glyph_set"] = json!(digest('9'));
+        assert!(rebind_executions(&mut manifest, &json!({"cases": [other]}))
+            .unwrap_err()
+            .contains("lack glyph set"));
     }
 
     #[test]

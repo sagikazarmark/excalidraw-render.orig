@@ -182,14 +182,16 @@ fn inspect(
     expected: bool,
 ) -> Result<Value> {
     let input = input.canonicalize().map_err(|e| e.to_string())?;
+    let locked = locked_qpdf_version()?;
     let version = Command::new(qpdf)
         .arg("--version")
         .output()
         .map_err(|e| e.to_string())?;
     if !version.status.success()
-        || !String::from_utf8_lossy(&version.stdout).starts_with("qpdf version 12.3.2\n")
+        || !String::from_utf8_lossy(&version.stdout)
+            .starts_with(&format!("qpdf version {locked}\n"))
     {
-        return Err("PDF inspector requires qpdf 12.3.2".into());
+        return Err(format!("PDF inspector requires qpdf {locked}"));
     }
     let raw = fs::read(&input).map_err(|e| e.to_string())?;
     let check = Command::new(qpdf)
@@ -269,6 +271,22 @@ fn inspect(
     Ok(report)
 }
 
+/// The qpdf release the structure profile's lock names, which the inspector
+/// requires and its reports record.
+fn locked_qpdf_version() -> Result<String> {
+    const LOCK: &str = "tools/pdf-harness/structure/qpdf.lock.json";
+    let lock: Value = serde_json::from_slice(
+        &fs::read(crate::conformance::repo_root().join(LOCK))
+            .map_err(|e| format!("{LOCK}: {e}"))?,
+    )
+    .map_err(|e| format!("{LOCK}: {e}"))?;
+    lock["package"]["version"]
+        .as_str()
+        .filter(|version| !version.is_empty())
+        .map(str::to_owned)
+        .ok_or_else(|| format!("{LOCK} names no qpdf version"))
+}
+
 fn build_report(
     source: &Value,
     raw: &[u8],
@@ -344,6 +362,6 @@ fn build_report(
     document["pdf_version"] = source["qpdf"][0]["pdfversion"].clone();
     document["xmp"] = stream_descriptor(stream_value(objects, &catalog["/Metadata"])?.as_deref());
     Ok(
-        json!({"schema":"excalidraw-render/pdf-structure-report/v1","checks":[],"document":document,"errors":errors,"expected_pass":false,"pages":pages,"parser":{"name":"qpdf","status":status,"version":"12.3.2","warnings":warnings},"passed":false}),
+        json!({"schema":"excalidraw-render/pdf-structure-report/v1","checks":[],"document":document,"errors":errors,"expected_pass":false,"pages":pages,"parser":{"name":"qpdf","status":status,"version":locked_qpdf_version()?,"warnings":warnings},"passed":false}),
     )
 }

@@ -44,7 +44,7 @@ pub(crate) static REVISION_1: RevisionCatalog = RevisionCatalog {
     frame_profile: ReferenceProfileIdentity::new(
         CompatibilityRevision::REVISION_1,
         fonts::revision_1().excalidraw_release,
-        "sha256:63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e",
+        fonts::revision_1().frame_reference_profile_digest,
     ),
     assets: fonts::revision_1(),
     scene_surface: &crate::scene_surface::SCENE_SURFACE_POLICY,

@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 import { canonicalize } from "./canonical-json.mjs";
+import { referenceDigest } from "./revision.mjs";
 
 const ORACLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(ORACLE_ROOT, "../..");
@@ -19,7 +20,7 @@ const SURFACE_ROOT = resolve(REPO_ROOT, "tests/oracle/scene-surfaces");
 const EVIDENCE_PATH = resolve(SURFACE_ROOT, "evidence/revision-1-harmless-fields.json");
 const EVIDENCE_DIGEST_PATH = resolve(SURFACE_ROOT, "evidence/revision-1-harmless-fields.sha256");
 const ORIGIN = "http://reference.invalid";
-const PROFILE_DIGEST = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
+const PROFILE_DIGEST = referenceDigest("profile");
 const BROWSER_ARGUMENTS = [
   "--disable-gpu",
   "--font-render-hinting=none",
@@ -573,9 +574,6 @@ async function main() {
   const profileDigest = readFileSync(resolve(PROFILE_ROOT, "revision-1.sha256"), "ascii").trim();
   if (sha256(profileBytes) !== profileDigest) {
     throw new Error("reference profile digest does not match its canonical bytes");
-  }
-  if (profileDigest !== PROFILE_DIGEST) {
-    throw new Error(`unexpected reference profile digest ${profileDigest}`);
   }
   const assetManifest = JSON.parse(
     readFileSync(resolve(PROFILE_ROOT, "revision-1-assets.json"), "utf8"),

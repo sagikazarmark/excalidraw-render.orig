@@ -34,7 +34,6 @@ const NAMED_FRAME_SCENE: &[u8] = br##"{
     "appState":{},"files":{}
 }"##;
 
-#[test]
 pub(super) fn frame_name_is_painted_grey_above_the_frame_in_png() {
     let scene = SceneDocument::parse(NAMED_FRAME_SCENE).expect("named frame is admitted");
     let png = render(&scene, OutputFormat::Png, FrameOptions::default());
@@ -181,7 +180,6 @@ pub(super) fn frame_clipping_uses_the_rounded_frame_boundary() {
     assert_ne!(decoded.pixel(20, 20), [255, 255, 255, 255]);
 }
 
-#[test]
 pub(super) fn group_membership_preserves_direct_paint_order_in_every_format() {
     let scene = SceneDocument::parse(br##"{
         "type":"excalidraw","version":2,

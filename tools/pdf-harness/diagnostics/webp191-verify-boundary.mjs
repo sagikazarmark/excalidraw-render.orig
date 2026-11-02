@@ -73,7 +73,8 @@ const record = json(control, "measurements.json");
 for (const [directory, manifest] of [[control, record], [current, json(current, "measurements.json")]]) {
   for (const [path, digest] of Object.entries(manifest.files)) assert.equal(sha(read(directory, path)), digest, path);
 }
-// Only completed producers are historical. Every input/profile/output remains live.
+// Only completed producers and measurement records are historical. Every input
+// and output remains live.
 const producers = new Set([
   "tools/pdf-harness/pdfium/render.py",
   "tools/pdf-harness/pdfium/test_alpha.py",
@@ -82,8 +83,21 @@ const producers = new Set([
   "tools/pdf-harness/run-pdfjs.sh",
   "tools/pdf-harness/diagnostics/webp191-comparison-boundary.py",
 ]);
+// The viewer profiles and the PDF qualification they were measured under are
+// measurement records (ADR-0019): the viewers are requalified on their own
+// (`conformance verify-pdf-viewers`), and the observed rasters below are
+// compared exactly, so these are checked for shape, not against today's files.
+const measurementRecords = new Set([
+  "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+  "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+  "tests/conformance/pdf-viewer-qualification/rectangle-outline/manifest.json",
+]);
 for (const d of record.sources) {
-  if (!producers.has(d.path)) assert.equal(sha(read(root, d.path)), d.sha256, d.path);
+  if (measurementRecords.has(d.path)) {
+    assert.match(d.sha256, /^[0-9a-f]{64}$/u, d.path);
+  } else if (!producers.has(d.path)) {
+    assert.equal(sha(read(root, d.path)), d.sha256, d.path);
+  }
 }
 for (const [path, key] of [["reference.json", "reference_sha256"], ["inputs.json", "inputs_sha256"]]) {
   assert.equal(sha(read(base, path)), record[key], path);

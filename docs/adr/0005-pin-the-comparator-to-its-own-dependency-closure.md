@@ -1,5 +1,5 @@
 ---
-status: accepted; amended 2026-09-30 (#212), the closure is recorded, not bound
+status: accepted; amended 2026-09-30 (#212), the closure is recorded, not bound; amended 2026-11-01, the closure and the sources are not checked
 ---
 
 # Pin the canonical comparator to its own dependency closure
@@ -131,3 +131,31 @@ migrations, a superseded profile must equal the live one once
 `implementation.closure` is removed. A profile move now means a change to the
 comparator's sources, protocol, limits, vectors or fixtures, and that gets its
 own review.
+
+## Amended 2026-11-01: the closure and the sources are no longer checked
+
+The closure was recorded from 2026-09-04 to 2026-11-01. Unbound, it still
+failed CI: the profile test required it to equal the live lock, so a
+Dependabot bump of a comparator dev-dependency (`jsonschema`, `sha2`) failed
+`just ci` until someone refreshed the file, three times in the seventeen CI
+failures after 2026-10-13. The same test required `implementation.sources` to
+equal the comparator's own files, so a comment edit under `src/` failed until
+the profile, and everything that binds its digest, was regenerated. Neither
+check could see a change in a comparison: the comparator has no normal
+dependencies, its dev-dependencies only run its tests, and `Cargo.lock` is
+already the pin and already reviewed in Git.
+
+**Decision.** `canonical-visual-v1.closure.json`, its `materialize` command
+and the closure check are gone. The profile's `implementation.sources`
+digests are historical, as ADR-0019 made every other producer digest: they
+record the sources the profile was cut from and are checked for shape only (a
+path under the comparator's crate and a SHA-256), so the profile does not move
+when they do. The profile test keeps the sidecar, the schema, the inherited
+edition and lint level, and the live digests of the vectors, the upstream
+notice and the imported fixtures. A source change that moves a measurement
+fails those vectors, and the viewer qualifications and oracle references that
+record measured results, which is where it always surfaced. Kept evidence that
+names the closure file resolves it as a historical record.
+
+The title is history: the comparator is no longer pinned to its dependency
+closure, only to what defines a measurement.

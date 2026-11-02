@@ -114,6 +114,7 @@ fn check<'a>(report: &'a Value, id: &str) -> &'a Value {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 fn every_consumed_expectation_field_is_required_and_type_checked() {
     let scratch = Scratch::new();
     let baseline = expectation();
@@ -175,6 +176,7 @@ fn every_consumed_expectation_field_is_required_and_type_checked() {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 fn minimum_checks_keep_input_order_and_python_numeric_spelling() {
     let scratch = Scratch::new();
     let mut expected = expectation();
@@ -216,6 +218,7 @@ fn minimum_checks_keep_input_order_and_python_numeric_spelling() {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 fn declared_icc_tags_cannot_silently_disappear() {
     let scratch = Scratch::new();
     let mut expected = expectation();
@@ -231,6 +234,7 @@ fn declared_icc_tags_cannot_silently_disappear() {
 }
 
 #[test]
+#[ignore = "host tools: qpdf 12.3.2, bash and realpath (just test-release)"]
 #[cfg(unix)]
 fn equality_compares_integer_float_values_without_rounding_integers() {
     let scratch = Scratch::new();

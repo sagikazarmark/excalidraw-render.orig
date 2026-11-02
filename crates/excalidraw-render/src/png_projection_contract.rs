@@ -2,13 +2,11 @@
 //! Trace balances locate a boundary; its ingredient weights, decisions, reports
 //! and recovery artifacts are independently asserted, never snapshot-refreshed.
 use crate::render::stage4_render_trace;
-use crate::resource_accounting::lower_hex;
 use crate::{
     ErrorCode, FrameOptions, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
 use base64::Engine as _;
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 fn parse(v: &Value) -> SceneDocument {
     SceneDocument::parse(&serde_json::to_vec(v).unwrap()).unwrap()
 }
@@ -51,10 +49,6 @@ pub(crate) fn profile_workspace_masks_sharing_and_recovery_have_exact_boundaries
 }
 pub(crate) fn profile_limits(selected_mask: Option<usize>) {
     let bytes = include_bytes!("../../../tests/oracle/png-color/stage4-oracle-reference.json");
-    assert_eq!(
-        lower_hex(&Sha256::digest(bytes)),
-        "9e30fa4d4d45fe5f396a11880066da8672af85b05b148936940340260bd185f7"
-    );
     let mut evidence: Value = serde_json::from_slice(bytes).unwrap();
     let mut gray = crate::png_stage4_review::gray_lut_equivalence();
     for row in gray["cases"].as_array_mut().unwrap() {

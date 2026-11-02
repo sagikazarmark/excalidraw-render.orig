@@ -53,3 +53,17 @@ their own, so those records describe the measurement only. That retires the
 successor chains that authenticated them against archived preimages (eight
 comparator refreshes, the resvg 0.48 viewer requalification, the PDFium #192
 alpha successor and the relocated pypdfium2 lock) and the archives they read.
+
+Amended 2026-11-02: the PDF.js harness's npm lockfile is a live binding of the
+PDF.js viewer profile again, and only of it. The October bump to PDF.js 6.2.108
+left the profile describing 6.1.200 while the harness ran 6.2.108, passing
+only because the lockfile was historical. The viewer was requalified under
+6.2.108, every retained raster reproducing byte for byte, and
+`conformance verify-pdf-viewers` now requires the profile's lockfile digest to
+be the live lockfile's and the lockfile and `package.json` to install the
+`pdfjs-dist` and `@napi-rs/canvas` versions the profile names. A Dependabot
+bump of PDF.js is therefore a visible viewer change that needs a
+requalification, which replaces the "needs no requalification" sentence above.
+Evidence measured under an earlier lock (the representative candidates, the
+WebP boundary controls) keeps recording it historically, as the comparator and
+viewer profiles it was measured with.

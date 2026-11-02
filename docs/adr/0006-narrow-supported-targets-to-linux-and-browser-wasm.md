@@ -1,5 +1,5 @@
 ---
-status: accepted; amended 2026-09-11 (Dagger) and 2026-10-13 (ADR-0024 supersedes the Dagger amendment)
+status: accepted; amended 2026-09-11 (Dagger), 2026-10-13 (ADR-0024 supersedes the Dagger amendment) and 2026-11-01 (ADR-0025 retires the target-evidence aggregate and the Linux-only snapshot guard)
 ---
 
 # Narrow supported targets to Linux and browser WASM
@@ -60,3 +60,10 @@ not the supported target set or ADR-0003's serialized evidence-refresh policy.
 Amended 2026-10-13: ADR-0024 replaces Dagger with recipes in the devenv shell
 as the runner, retires the tool manifest for `devenv.lock`, and lets the
 browser-WASM target run in any browser. The supported target set is unchanged.
+
+Amended 2026-11-01: ADR-0025 replaces the native baseline and the
+target-evidence aggregate with the golden record, judged on every change on
+any host and in browser WASM. The supported targets are unchanged; what is
+recorded is the bytes, not where they were recorded, and the only recipes that
+still refuse another host build the native release archive and the
+representative candidate.

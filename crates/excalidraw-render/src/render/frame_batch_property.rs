@@ -684,5 +684,5 @@ fn nightly_frame_batch_property_runs_a_deeper_sample() {
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(2_048)
         .min(16_384);
-    assert_generated_cases(FIXED_SEED, cases);
+    assert_generated_cases(crate::fuzz_seed::nightly_seed(FIXED_SEED), cases);
 }

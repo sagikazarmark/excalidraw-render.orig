@@ -1,0 +1,55 @@
+{
+  "schema": "excalidraw-render/experimental-wasm-differences/v1",
+  "issue": 178,
+  "measurement": {
+    "trace_url": "https://dagger.cloud/sagikazarmark/traces/df09b2eb17a438ceb8b1eca20dcf64a3",
+    "source": "local-engine full-results on dce66204; PNG pairs unchanged; not a clean-tag attestation. The trace pairs the record once carried went with the trace pipeline (2026-11-01).",
+    "scope": "four exact PNG pairs; reports, sessions and process orders agree"
+  },
+  "cases": [
+    {
+      "case": "focused.freedraw-loop-fills.v1",
+      "native": {
+        "sha256": "9d5d54c00b7f92fc5b2025d4f21191ff1e5739ac48fd92a4b10cbcd3c954704c",
+        "byte_length": 16105
+      },
+      "wasm": {
+        "sha256": "69ae229351705237cd1963bb43d82674216b1a62000af654ff1ca99b2a37f830",
+        "byte_length": 16108
+      }
+    },
+    {
+      "case": "focused.legacy-stroke-sharpness.v1",
+      "native": {
+        "sha256": "100c69709a72631280bfccb661dbd36bd6e660e3594b132177cdd96968dc4fd3",
+        "byte_length": 21988
+      },
+      "wasm": {
+        "sha256": "9266cc16deeb3b7a363677bfbcf5f700c932972da6170271842cd7f07fe549af",
+        "byte_length": 21987
+      }
+    },
+    {
+      "case": "focused.rotated-shape-bounds.v1",
+      "native": {
+        "sha256": "51ebdc146a2a90281d65b5b7349869ec045d08268d0dd729a0b13f8014116621",
+        "byte_length": 7580
+      },
+      "wasm": {
+        "sha256": "145087cf51216ad761f27abea685cc7b80d1495acecb0d841751f0a2e04785a1",
+        "byte_length": 7580
+      }
+    },
+    {
+      "case": "focused.rough-fillers-dashed-zigzag-line.v1",
+      "native": {
+        "sha256": "4126e39c241e9ba287b1f6be1aec89ade8db8bdfcde94020f7b59042c3023877",
+        "byte_length": 118390
+      },
+      "wasm": {
+        "sha256": "997bde1e89d4f0923d2d012303488b715d494007c98660a8ac686a63b3d92f61",
+        "byte_length": 118395
+      }
+    }
+  ]
+}

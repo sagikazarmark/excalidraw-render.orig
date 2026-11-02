@@ -2,30 +2,26 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
-use serde_json::{json, Value};
+use serde_json::Value;
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
 
 const PROFILE_PATH: &str = "tests/conformance/comparator-profiles/canonical-visual-v1.json";
 const PROFILE_DIGEST_PATH: &str =
     "tests/conformance/comparator-profiles/canonical-visual-v1.sha256";
-const CLOSURE_PATH: &str = "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json";
-/// Opts `materialize` into writing the committed closure instead of staging it.
-const REFRESH_ENV: &str = "EXCALIDRAW_REFRESH_COMPARATOR_CLOSURE";
-const CLOSURE_SCHEMA: &str = "excalidraw-render/conformance-comparator-closure/v1";
-const CLOSURE_HEADER_KEYS: [&str; 3] = ["schema", "lockfile", "root"];
-const PACKAGE_KEYS: [&str; 4] = ["name", "version", "source", "checksum"];
-const CRATE_NAME: &str = "excalidraw-render-compare";
 const CRATE_DIR: &str = "crates/excalidraw-render-compare/";
-const LOCKFILE_PATH: &str = "Cargo.lock";
 const WORKSPACE_MANIFEST_PATH: &str = "Cargo.toml";
 
-// The manifest and lockfile readers below are hand-rolled on purpose: a `toml` or
-// `cargo-lock` dev-dependency would enter the very closure this test pins, so every
-// upstream release of the reader would itself move the profile.
-
+/// The profile is sealed by its sidecar and binds, live, what defines a
+/// measurement: its schema, the adversarial vectors and the imported upstream
+/// fixtures, which the comparator's own tests execute. Its
+/// `implementation.sources` digests are historical (ADR-0005, amended
+/// 2026-11-01): they record the sources the profile was cut from and are
+/// checked for shape only, so a comment edit under `src/` or a dev-dependency
+/// bump moves nothing here. A source change that moves a measurement fails the
+/// vectors instead.
 #[test]
-fn canonical_comparator_profile_schema_and_all_bound_bytes_are_current() {
+fn canonical_comparator_profile_is_sealed_and_its_measurement_bindings_are_current() {
     let root = repository_root();
     let profile_bytes = fs::read(root.join(PROFILE_PATH)).unwrap();
     let recorded_digest = fs::read_to_string(root.join(PROFILE_DIGEST_PATH)).unwrap();
@@ -44,15 +40,33 @@ fn canonical_comparator_profile_schema_and_all_bound_bytes_are_current() {
 
     let implementation = &profile["implementation"];
     for descriptor in implementation["sources"].as_array().unwrap() {
-        verify_descriptor(&root, descriptor);
+        verify_historical_descriptor(descriptor);
     }
     verify_workspace_inheritance(&root, implementation);
-    verify_closure(&root);
     for descriptor in profile["vectors"].as_array().unwrap() {
         verify_descriptor(&root, descriptor);
     }
     verify_descriptor(&root, &profile["license"]["upstream_notice"]);
     verify_upstream_fixture_manifest(&root);
+}
+
+/// A historical source record: a safe path under the comparator's crate and a
+/// SHA-256 digest, not compared with today's file.
+fn verify_historical_descriptor(descriptor: &Value) {
+    let path = descriptor["path"].as_str().unwrap();
+    assert_safe_relative_path(path);
+    assert!(
+        path.starts_with(CRATE_DIR),
+        "{path} is not a comparator source"
+    );
+    let digest = descriptor["sha256"].as_str().unwrap();
+    assert!(
+        digest.len() == 64
+            && digest
+                .bytes()
+                .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f')),
+        "{path} records no SHA-256 digest"
+    );
 }
 
 /// The comparator inherits its edition and its `unsafe_code` lint level from the
@@ -73,108 +87,6 @@ fn verify_workspace_inheritance(root: &Path, implementation: &Value) {
         implementation["lints"]["rust"]["unsafe_code"],
         toml_value(&workspace, "workspace.lints.rust", "unsafe_code")
     );
-}
-
-/// The committed closure is exactly the comparator's reachable subgraph of the live
-/// workspace lock. It records what the comparator builds against, but no digest binds
-/// it: the profile names only what can change a measurement (ADR-0005, amended for #212), so a
-/// dependency move changes this file and nothing else.
-fn verify_closure(root: &Path) {
-    let committed: Value = serde_json::from_slice(&fs::read(root.join(CLOSURE_PATH)).unwrap())
-        .expect("the committed closure is JSON");
-    let current = current_closure(root);
-    for key in CLOSURE_HEADER_KEYS {
-        assert_eq!(committed[key], current[key], "closure {key}");
-    }
-
-    let committed = package_records(&committed);
-    let current = package_records(&current);
-    let stale: Vec<_> = committed.difference(&current).collect();
-    let missing: Vec<_> = current.difference(&committed).collect();
-    assert!(
-        stale.is_empty() && missing.is_empty(),
-        "committed comparator closure differs from {LOCKFILE_PATH}\n\
-         no longer locked: {stale:#?}\n\
-         not committed: {missing:#?}\n\
-         refresh with: {REFRESH_ENV}=1 cargo test --locked -p {CRATE_NAME} --test profile \
-         -- --ignored materialize"
-    );
-}
-
-/// Each package of a closure as one canonical JSON record, so set differences name
-/// whole packages.
-fn package_records(closure: &Value) -> BTreeSet<String> {
-    closure["packages"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(Value::to_string)
-        .collect()
-}
-
-fn current_closure(root: &Path) -> Value {
-    let lockfile = fs::read_to_string(root.join(LOCKFILE_PATH)).unwrap();
-    json!({
-        "schema": CLOSURE_SCHEMA,
-        "lockfile": LOCKFILE_PATH,
-        "root": CRATE_NAME,
-        "packages": lock_closure(&lockfile, CRATE_NAME),
-    })
-}
-
-/// Writes the current closure over the committed file when
-/// `EXCALIDRAW_REFRESH_COMPARATOR_CLOSURE=1`, and
-/// otherwise only stages it under Cargo's scratch directory, so a run of every
-/// `--ignored` test leaves the source tree clean.
-#[test]
-#[ignore = "explicitly refreshes the comparator's committed dependency closure"]
-fn materialize_canonical_comparator_closure() {
-    let root = repository_root();
-    let committed = root.join(CLOSURE_PATH);
-    let closure = format_closure(&current_closure(&root));
-    if std::env::var_os(REFRESH_ENV).is_some_and(|value| value == "1") {
-        fs::write(&committed, closure).unwrap();
-        println!("refreshed {}", committed.display());
-        return;
-    }
-    let staged = Path::new(env!("CARGO_TARGET_TMPDIR")).join(
-        committed
-            .file_name()
-            .expect("the committed closure has a file name"),
-    );
-    fs::write(&staged, closure).unwrap();
-    println!(
-        "staged the current comparator closure at {}; set {REFRESH_ENV}=1 to write {}",
-        staged.display(),
-        committed.display()
-    );
-}
-
-/// One package per line, so a closure diff names exactly the packages that moved.
-fn format_closure(closure: &Value) -> String {
-    let mut out = String::from("{\n");
-    for key in CLOSURE_HEADER_KEYS {
-        out.push_str(&format!("  {:?}: {},\n", key, closure[key]));
-    }
-    out.push_str("  \"packages\": [\n");
-    let packages = closure["packages"].as_array().unwrap();
-    for (index, package) in packages.iter().enumerate() {
-        out.push_str("    { ");
-        let mut fields = Vec::new();
-        for key in PACKAGE_KEYS {
-            if let Some(value) = package.get(key) {
-                fields.push(format!("{key:?}: {value}"));
-            }
-        }
-        out.push_str(&fields.join(", "));
-        out.push_str(" }");
-        if index + 1 < packages.len() {
-            out.push(',');
-        }
-        out.push('\n');
-    }
-    out.push_str("  ]\n}\n");
-    out
 }
 
 /// The raw right-hand side of `key` inside `[table]` of a Cargo manifest, unquoted.
@@ -205,103 +117,6 @@ fn strip_quotes(value: &str) -> Option<&str> {
     value
         .strip_prefix('"')
         .and_then(|value| value.strip_suffix('"'))
-}
-
-#[test]
-fn lock_closure_follows_versioned_dependency_specs_and_drops_unreachable_packages() {
-    let lock = r#"# This file is automatically @generated by Cargo.
-# It is not intended for manual editing.
-version = 4
-
-[[package]]
-name = "alpha"
-version = "0.1.0"
-dependencies = [
- "beta 2.0.0",
- "epsilon 1.0.0 (git+https://example.invalid/epsilon#0123abcd)",
- "gamma",
-]
-
-[[package]]
-name = "beta"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1111111111111111111111111111111111111111111111111111111111111111"
-dependencies = [
- "delta",
-]
-
-[[package]]
-name = "beta"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2222222222222222222222222222222222222222222222222222222222222222"
-
-[[package]]
-name = "delta"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4444444444444444444444444444444444444444444444444444444444444444"
-
-[[package]]
-name = "epsilon"
-version = "1.0.0"
-source = "git+https://example.invalid/epsilon#0123abcd"
-
-[[package]]
-name = "epsilon"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6666666666666666666666666666666666666666666666666666666666666666"
-
-[[package]]
-name = "gamma"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3333333333333333333333333333333333333333333333333333333333333333"
-dependencies = [
- "beta 2.0.0",
-]
-
-[[package]]
-name = "omega"
-version = "5.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5555555555555555555555555555555555555555555555555555555555555555"
-dependencies = [
- "alpha",
- "beta 1.0.0",
-]
-
-[[patch.unused]]
-name = "gamma"
-version = "0.4.0"
-source = "git+https://example.invalid/gamma#89abcdef"
-"#;
-
-    assert_eq!(
-        lock_closure(lock, "alpha"),
-        json!([
-            { "name": "alpha", "version": "0.1.0" },
-            {
-                "name": "beta",
-                "version": "2.0.0",
-                "source": "registry+https://github.com/rust-lang/crates.io-index",
-                "checksum": "2222222222222222222222222222222222222222222222222222222222222222"
-            },
-            {
-                "name": "epsilon",
-                "version": "1.0.0",
-                "source": "git+https://example.invalid/epsilon#0123abcd"
-            },
-            {
-                "name": "gamma",
-                "version": "0.3.0",
-                "source": "registry+https://github.com/rust-lang/crates.io-index",
-                "checksum": "3333333333333333333333333333333333333333333333333333333333333333"
-            },
-        ])
-    );
 }
 
 fn verify_upstream_fixture_manifest(root: &Path) {
@@ -342,127 +157,6 @@ fn verify_descriptor(root: &Path, descriptor: &Value) -> Vec<u8> {
     let bytes = fs::read(root.join(path)).unwrap();
     assert_eq!(descriptor["sha256"], sha256(&bytes));
     bytes
-}
-
-/// One `[[package]]` entry of a Cargo lockfile.
-#[derive(Debug, Default)]
-struct LockedPackage {
-    name: String,
-    version: String,
-    source: Option<String>,
-    checksum: Option<String>,
-    dependencies: Vec<String>,
-}
-
-impl LockedPackage {
-    /// Whether this entry is the one a lockfile dependency spec names. Cargo writes
-    /// `name`, `name version` when several versions are locked, and
-    /// `name version (source)` when the same version comes from several sources.
-    fn matches(&self, spec: &str) -> bool {
-        let mut parts = spec.split(' ');
-        parts.next() == Some(self.name.as_str())
-            && parts.next().is_none_or(|version| version == self.version)
-            && parts.next().is_none_or(|source| {
-                self.source
-                    .as_deref()
-                    .is_some_and(|own| format!("({own})") == source)
-            })
-    }
-
-    fn describe(&self) -> Value {
-        let mut package = json!({ "name": self.name, "version": self.version });
-        if let Some(source) = &self.source {
-            package["source"] = json!(source);
-        }
-        if let Some(checksum) = &self.checksum {
-            package["checksum"] = json!(checksum);
-        }
-        package
-    }
-}
-
-/// Every `[[package]]` entry of a Cargo lockfile. Any other table (`[metadata]` in old
-/// lockfiles, `[[patch.unused]]`) is skipped rather than folded into the last package.
-fn locked_packages(lockfile: &str) -> Vec<LockedPackage> {
-    let mut packages: Vec<LockedPackage> = Vec::new();
-    let mut in_package = false;
-    let mut lines = lockfile.lines();
-    while let Some(line) = lines.next() {
-        if line.starts_with('[') {
-            in_package = line == "[[package]]";
-            if in_package {
-                packages.push(LockedPackage::default());
-            }
-            continue;
-        }
-        if !in_package {
-            continue;
-        }
-        let package = packages.last_mut().unwrap();
-        let Some((key, value)) = line.split_once(" = ") else {
-            continue;
-        };
-        match key {
-            "name" => package.name = unquote(value),
-            "version" => package.version = unquote(value),
-            "source" => package.source = Some(unquote(value)),
-            "checksum" => package.checksum = Some(unquote(value)),
-            "dependencies" => {
-                assert_eq!(value, "[");
-                package.dependencies = lines
-                    .by_ref()
-                    .take_while(|line| *line != "]")
-                    .map(|line| unquote(line.trim().trim_end_matches(',')))
-                    .collect();
-            }
-            _ => {}
-        }
-    }
-    packages
-}
-
-fn unquote(value: &str) -> String {
-    strip_quotes(value)
-        .unwrap_or_else(|| panic!("lockfile value {value:?} is not a quoted string"))
-        .to_owned()
-}
-
-/// The packages reachable from `root` in `lockfile`, sorted by name and version.
-fn lock_closure(lockfile: &str, root: &str) -> Value {
-    let packages = locked_packages(lockfile);
-    let resolve = |spec: &str| -> usize {
-        let mut matches = packages
-            .iter()
-            .enumerate()
-            .filter(|(_, package)| package.matches(spec))
-            .map(|(index, _)| index);
-        let index = matches
-            .next()
-            .unwrap_or_else(|| panic!("lockfile has no package matching {spec:?}"));
-        assert!(
-            matches.next().is_none(),
-            "lockfile dependency spec {spec:?} is ambiguous"
-        );
-        index
-    };
-
-    let mut reached = BTreeSet::new();
-    let mut pending = vec![resolve(root)];
-    while let Some(index) = pending.pop() {
-        if reached.insert(index) {
-            pending.extend(
-                packages[index]
-                    .dependencies
-                    .iter()
-                    .map(|spec| resolve(spec)),
-            );
-        }
-    }
-
-    let mut closure: Vec<&LockedPackage> =
-        reached.into_iter().map(|index| &packages[index]).collect();
-    closure.sort_by(|left, right| (&left.name, &left.version).cmp(&(&right.name, &right.version)));
-    Value::Array(closure.into_iter().map(LockedPackage::describe).collect())
 }
 
 fn assert_safe_relative_path(path: &str) {

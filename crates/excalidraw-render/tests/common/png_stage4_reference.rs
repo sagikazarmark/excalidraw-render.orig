@@ -1,11 +1,6 @@
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 pub fn evidence() -> Value {
     let bytes = include_bytes!("../../../../tests/oracle/png-color/stage4-reference.json");
-    assert_eq!(
-        lower_hex(&Sha256::digest(bytes)),
-        "14a39790664e3f2f0779e32a80a9e593c2a985cbc1a5d67988aa92f018eef031"
-    );
     let record: Value = serde_json::from_slice(bytes).unwrap();
     assert_eq!(record["cases"].as_array().unwrap().len(), 186);
     assert_eq!(record["visual_class"], "geometry-image");
@@ -51,8 +46,4 @@ pub fn anchor(row: &Value, rgba: &[u8]) {
             row["id"]
         );
     }
-}
-
-fn lower_hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }

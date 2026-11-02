@@ -13,6 +13,8 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 import { canonicalize } from "./canonical-json.mjs";
+import { referenceDigest } from "./revision.mjs";
+import { carriedApproval, generationArgs } from "./generation-guard.mjs";
 
 // Standalone generator for the focused typography case.
 //
@@ -20,8 +22,9 @@ import { canonicalize } from "./canonical-json.mjs";
 // provenance pins that generator's bytes, so a change made for font-bearing
 // evidence must not move the scene cases' provenance; and this case's provenance
 // pins this file, so the case stays reproducible through its declared generator
-// alone. The one module both share, canonical-json.mjs, is bound by the
-// reference profile whose digest every provenance pins. An earlier version
+// alone. The modules both share are canonical-json.mjs, which the reference
+// profile binds, and revision.mjs, which reads the revision's reference
+// digests from their sidecars. An earlier version
 // templated over conformance-case.mjs with string anchors and went stale the
 // first time that file was refactored (#106).
 
@@ -91,9 +94,9 @@ const OPTIONS = {
 const EMPTY_REPORT = Buffer.from('{"schema_version":1,"diagnostics":[]}', "utf8");
 
 const ORIGIN = "http://reference.invalid";
-const PROFILE_DIGEST = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
-const ASSET_DIGEST = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const SURFACE_DIGEST = "93029f2dab63c203dee69da4497ea4c2988a72d73f2a0017e62c529a4caac202";
+const PROFILE_DIGEST = referenceDigest("profile");
+const ASSET_DIGEST = referenceDigest("assetManifest");
+const SURFACE_DIGEST = referenceDigest("sceneSurface");
 const CONTAINER_IMAGE = "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9";
 const BROWSER_VERSION = "149.0.7827.55";
 const BROWSER_ARGUMENTS = [
@@ -546,11 +549,16 @@ function compareCheckedEvidence(stagedRoot, manifest) {
 }
 
 async function main() {
-  const [mode, caseId] = process.argv.slice(2);
-  if ((mode !== "generate" && mode !== "reproduce") || caseId !== CASE_ID) {
+  const args = generationArgs(
+    process.argv.slice(2),
+    "node scripts/typography-conformance-case.mjs",
+  );
+  const { mode, caseId } = args;
+  if (caseId !== CASE_ID) {
     throw new Error(`usage: node scripts/typography-conformance-case.mjs <generate|reproduce> ${CASE_ID}`);
   }
   CASE = loadCase(caseId);
+  const approval = carriedApproval(resolve(CASE.root, "manifest.json"), args);
   if (process.env.REFERENCE_ORACLE_CANONICAL !== "1" || process.version !== "v24.16.0") {
     throw new Error("run this command in the canonical reference-profile container");
   }
@@ -558,13 +566,6 @@ async function main() {
     cwd: ORACLE_ROOT,
     stdio: "inherit",
   });
-  if (readFileSync(resolve(PROFILE_ROOT, "revision-1.sha256"), "ascii").trim() !== PROFILE_DIGEST
-      || readFileSync(resolve(PROFILE_ROOT, "revision-1-assets.sha256"), "ascii").trim() !== ASSET_DIGEST) {
-    throw new Error("reference profile identities do not match compatibility revision 1");
-  }
-  if (readFileSync(resolve(REPO_ROOT, "tests/oracle/scene-surfaces/revision-1.sha256"), "ascii").trim() !== SURFACE_DIGEST) {
-    throw new Error("scene-surface identity does not match compatibility revision 1");
-  }
   const assetManifest = JSON.parse(readFileSync(resolve(PROFILE_ROOT, "revision-1-assets.json"), "utf8"));
   const assetsByPath = new Map(assetManifest.officialPackage.assets.map((asset) => [`/${asset.path}`, asset]));
   const allowedAssets = new Set(assetsByPath.keys());
@@ -581,6 +582,7 @@ async function main() {
   const provenancePath = writeEvidence(outputRoot, first, second);
   const manifest = buildManifest(scenePath, provenancePath, outputRoot, first, assetsByPath);
   if (mode === "generate") {
+    manifest.approval = approval;
     const manifestBytes = canonicalBytes(manifest);
     writeFileSync(resolve(CASE.root, "manifest.json"), Buffer.concat([manifestBytes, Buffer.from("\n")]));
     writeFileSync(resolve(CASE.root, "manifest.sha256"), `${sha256(manifestBytes)}\n`);

@@ -77,11 +77,11 @@ An explicit, diagnosed, and tested departure from reference behavior required by
 _Avoid_: Silent divergence, implementation limitation
 
 **Tolerance exception**:
-A reviewed record in a conformance case that one variant's observed difference from reference evidence, for one format, viewer, and region, has a diagnosed non-defect cause. It documents that cause and sets ceilings to the exact observed changed-pixel count and SSIM score with no margin; repository review accepts changes, and a variant that returns inside the canonical budget makes it stale.
-_Avoid_: Visual exception, known-divergence suppression, test skip
+A reviewed record in a conformance case that one variant's observed difference from reference evidence, for one format, viewer, and region, has a diagnosed non-defect cause. It documents that cause and records the exact observed changed-pixel count and SSIM score with no margin; the harness fails when the measurement moves in either direction, so the record is re-recorded under repository review on a regression and on an improvement alike, and a variant that returns inside the canonical budget makes it stale.
+_Avoid_: Visual exception, known-divergence suppression, test skip, ceiling (for the recorded measurement)
 
 **Known defect**:
-A diagnosed renderer defect whose fix awaits a maintainer decision, recorded in the parity harness that observes it with its exact measurement pinned and the issue that tracks it named. It is not an approved judgment and never enters a case manifest; the pin fails the harness when the divergence moves in either direction, so the entry can neither outlive the defect nor absorb another one.
+A diagnosed renderer defect whose fix awaits a maintainer decision, recorded in the parity harness that observes it with its exact measurement pinned and the issue that tracks it named. It is not an approved judgment and never enters a case manifest; the pin fails the harness when the divergence moves in either direction, so the entry can neither outlive the defect nor absorb another one. Outside the parity harnesses, a fast-tier test that holds the renderer's current wrong output for an open issue does so through `common::characterization::known_defect`, which names the issue when the output moves and says to close it and drop the pin if the output improved; such a pin is a characterization, not parity evidence.
 _Avoid_: Tolerance exception for a defect, suppression list, expected failure
 
 **Compatibility exception pin**:

@@ -178,7 +178,6 @@ fn malformed_element_contract_covers_recovery_and_semantic_loss() {
     malformed_frame_rejection_reports_lost_navigation();
 }
 
-#[test]
 fn malformed_frame_rejection_reports_lost_navigation() {
     for format in FORMATS {
         for link in [
@@ -319,7 +318,6 @@ fn malformed_label_and_transform_oracle() {
     }
 }
 
-#[test]
 fn malformed_transform_opacity_and_clip_match_authored_geometry() {
     // A quarter turn maps the source box to x=35..45,y=5..45. The inner
     // frame clips it to y=10..40, wholly inside its straight top/bottom edges.

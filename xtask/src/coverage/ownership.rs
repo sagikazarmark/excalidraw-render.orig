@@ -15,9 +15,11 @@ const LEDGER: &str = "tests/conformance/coverage/ownership.json";
 const SCHEMA: &str = "excalidraw-render/coverage-ownership/v1";
 /// The one root test target an owner may select: registered-case direct PNG
 /// parity, which holds each whole-artifact PNG tolerance exception at its exact
-/// ceilings and fails a stale one that the canonical budget would pass.
+/// measurement in both directions and fails a stale one that the canonical
+/// budget would pass.
 const EXCEPTION_BINARY: &str = "parity_registered_case_png";
-const EXCEPTION_FUNCTION: &str = "every_registered_scene_case_matches_its_official_direct_png";
+const EXCEPTION_FUNCTION: &str =
+    "every_excepted_registered_scene_case_holds_its_recorded_direct_png_divergence";
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -156,8 +158,8 @@ fn catalog_from_inventory(
     policy
         .rows
         .extend(png_profiles::rows(&read(png_profiles::PATH)?)?);
-    let surface: Value = parse(&read(SURFACE)?)?;
-    let surface_descriptor = descriptor(SURFACE)?;
+    let surface: Value = parse(&read(&crate::revision::Reference::SceneSurface.path())?)?;
+    let surface_descriptor = descriptor(&crate::revision::Reference::SceneSurface.path())?;
     let mut obligations = Vec::new();
     for row in &inventory.coverage {
         if row.id.starts_with("case-label:") {
@@ -811,6 +813,65 @@ pub fn extend_ownership(previous_catalog: &str, issue: u64, reason: &str) -> Res
     Ok(())
 }
 
+/// Rebind the ledger to the current ownership catalog and case manifests: the
+/// catalog digest moves with every manifest, spec, policy and surface edit,
+/// and a case owner's manifest descriptor with its manifest, while the
+/// assignments stay the same. This rewrites only those bindings, after the
+/// assignments validate against the current catalog, so no disposition can
+/// change under the name of a rebind.
+pub fn rebind_ownership_catalog() -> Result<(), String> {
+    let (catalog, mut ledger) = load()?;
+    let previous = ledger.catalog_sha256.clone();
+    ledger.catalog_sha256 = digest(&catalog)?;
+    let registry: Value = parse(&read(REGISTRY)?)?;
+    let mut manifests = 0;
+    let mut records = 0;
+    for assignment in &mut ledger.assignments {
+        match &mut assignment.disposition {
+            Disposition::Owned {
+                owner: Owner::Case { case, manifest },
+                ..
+            } => {
+                let entry = array(&registry, "cases")?
+                    .iter()
+                    .find(|e| e["id"] == case.as_str())
+                    .ok_or_else(|| format!("owner case {case} is not registered"))?;
+                let current = descriptor(&format!("{}/manifest.json", string(entry, "path")?))?;
+                if *manifest != current {
+                    *manifest = current;
+                    manifests += 1;
+                }
+            }
+            // A record owner's descriptor follows its regenerated record; the
+            // approval subject it carries is historical (ADR-0019).
+            Disposition::Owned {
+                owner: Owner::Record { record, .. },
+                ..
+            } => {
+                let current = descriptor(&record.path)?;
+                if *record != current {
+                    *record = current;
+                    records += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+    if ledger.catalog_sha256 == previous && manifests == 0 && records == 0 {
+        println!("ownership ledger already bound to the current catalog, manifests and records");
+        return Ok(());
+    }
+    validate(&catalog, &ledger, false)?;
+    let mut bytes = serde_json::to_vec_pretty(&ledger).map_err(|e| e.to_string())?;
+    bytes.push(b'\n');
+    fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())?;
+    println!(
+        "rebound the ownership ledger from catalog {previous} to {}, {manifests} case owner manifest descriptors and {records} record descriptors; no assignment changed",
+        ledger.catalog_sha256
+    );
+    Ok(())
+}
+
 pub fn verify_ownership() -> Result<(), String> {
     let (catalog, ledger) = load()?;
     let gaps = validate(&catalog, &ledger, false)?;
@@ -1150,6 +1211,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "release tier: judges the live ledger (just test-release)"]
     fn five_layer_mapping_is_optional_but_pdf_judgments_remain_required() {
         let (catalog, mut ledger) = live();
         for assignment in &mut ledger.assignments {
@@ -1237,6 +1299,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "release tier: judges the live ledger (just test-release)"]
     fn inventory_extension_preserves_live_owners_and_approved_exclusions() {
         let (before, ledger) = live();
         let mut after = before.clone();
@@ -1351,6 +1414,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "release tier: judges the live ledger (just test-release)"]
     fn tolerance_exceptions_are_owned_only_by_the_direct_png_exception_test() {
         let (catalog, ledger) = live();
         let exception = catalog
@@ -1853,6 +1917,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "release tier: judges the live ledger (just test-release)"]
     fn test_owner_checks_compiled_module_and_selector_not_historical_source_digest() {
         let (catalog, mut ledger) = live();
         validate(&catalog, &ledger, false).unwrap();
@@ -2011,7 +2076,7 @@ mod tests {
                 compare,
                 "profile",
                 "",
-                "canonical_comparator_profile_schema_and_all_bound_bytes_are_current",
+                "canonical_comparator_profile_is_sealed_and_its_measurement_bindings_are_current",
                 "crates/excalidraw-render-compare/tests/profile.rs",
             ),
         ] {
@@ -2102,12 +2167,6 @@ mod tests {
                 "render_fuzz",
                 "render_fuzz",
                 "nightly_complete_render_fuzz",
-            ),
-            (
-                executable::COMPARE,
-                "profile",
-                "",
-                "materialize_canonical_comparator_closure",
             ),
             // Wrong module paths, targets or packages.
             (

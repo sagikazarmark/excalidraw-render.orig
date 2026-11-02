@@ -6,16 +6,13 @@ use std::path::{Component, Path, PathBuf};
 use serde_json::{json, Map, Value};
 use sha2::{Digest, Sha256};
 
+use crate::revision::Reference;
+
 const REGISTRY_RELATIVE_PATH: &str = "tests/conformance/cases/registry.json";
 const REGISTRY_SCHEMA: &str = "excalidraw-render/conformance-case-registry/v1";
 const REPOSITORY_ISSUE_PREFIX: &str =
     "https://github.com/sagikazarmark/excalidraw-render.orig/issues/";
 const EMPTY_REPORT: &[u8] = br#"{"schema_version":1,"diagnostics":[]}"#;
-const PROFILE_DIGEST: &str = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
-const ASSET_DIGEST: &str = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const SURFACE_DIGEST: &str = "93029f2dab63c203dee69da4497ea4c2988a72d73f2a0017e62c529a4caac202";
-const FRAME_PROFILE_DIGEST: &str =
-    "63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e";
 
 pub fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -42,6 +39,8 @@ struct CaseEntry {
     empty_fields: Vec<String>,
     expected_diagnostics: Value,
     variants: Value,
+    /// The comparator class of each frame target, by ordinal (frame cases).
+    visual_classes: Value,
     exceptions: Value,
 }
 
@@ -101,6 +100,7 @@ fn registry() -> Result<Vec<CaseEntry>, String> {
                 .unwrap_or_default(),
             expected_diagnostics: case["expected_diagnostics"].clone(),
             variants: case["variants"].clone(),
+            visual_classes: case["visual_classes"].clone(),
             // A case that registers no tolerance exceptions carries none; the
             // manifest field is then required to be explicitly empty.
             exceptions: match &case["exceptions"] {
@@ -252,15 +252,10 @@ fn verify_frame(loaded: &LoadedCase) -> Result<(), String> {
     }
     let profile = object(&loaded.manifest["profile"], "frame profile")?;
     verify_exact_keys(profile, &["digest", "path"], "frame profile")?;
-    if profile["digest"] != json!(format!("sha256:{FRAME_PROFILE_DIGEST}"))
-        || profile["path"] != json!("tests/oracle/reference-profiles/revision-1-frame.json")
+    if profile["digest"] != json!(Reference::FrameProfile.prefixed_digest()?)
+        || profile["path"] != json!(Reference::FrameProfile.path())
     {
         return Err("frame conformance profile identity is stale".to_owned());
-    }
-    let profile_bytes = fs::read(repo_root().join(profile["path"].as_str().unwrap()))
-        .map_err(|error| format!("failed to read frame profile: {error}"))?;
-    if sha256(&profile_bytes) != FRAME_PROFILE_DIGEST {
-        return Err("frame conformance profile bytes are stale".to_owned());
     }
 
     let mut referenced = Vec::new();
@@ -333,6 +328,22 @@ fn verify_frame_targets(loaded: &LoadedCase, scene: &Value) -> Result<(), String
         .as_array()
         .filter(|targets| targets.len() == frames.len() && targets.len() == 7)
         .ok_or_else(|| "frame manifest must bind all seven live reference targets".to_owned())?;
+    if loaded.entry.visual_classes.as_array().map(Vec::len) != Some(targets.len())
+        || loaded
+            .entry
+            .visual_classes
+            .as_array()
+            .is_some_and(|classes| {
+                classes.iter().any(|class| {
+                    !matches!(
+                        class.as_str(),
+                        Some("exact" | "geometry/image" | "typography" | "mixed/representative")
+                    )
+                })
+            })
+    {
+        return Err("the registry must name a visual class for every frame target".to_owned());
+    }
     for (index, (target, frame)) in targets.iter().zip(frames).enumerate() {
         verify_exact_keys(
             object(target, "frame target")?,
@@ -354,9 +365,15 @@ fn verify_frame_targets(loaded: &LoadedCase, scene: &Value) -> Result<(), String
             let output = &target["outputs"][format];
             verify_exact_keys(
                 object(output, "frame format output")?,
-                &["artifact", "raw_raster"],
+                &["artifact", "raw_raster", "visual_class"],
                 "frame format output",
             )?;
+            if output["visual_class"] != loaded.entry.visual_classes[index] {
+                return Err(format!(
+                    "frame {} {format} visual class is not the registered one",
+                    index + 1
+                ));
+            }
             let artifact = object(&output["artifact"], "frame artifact")?;
             let raw = object(&output["raw_raster"], "frame raw raster")?;
             let width = u32_field(artifact, "width")?;
@@ -458,7 +475,7 @@ fn verify_frame_provenance(loaded: &LoadedCase) -> Result<(), String> {
     if provenance["schema"] != json!("excalidraw-render/frame-reference-evidence-provenance/v1")
         || provenance["case_id"] != json!(loaded.entry.id)
         || provenance["frame_reference_profile_digest"]
-            != json!(format!("sha256:{FRAME_PROFILE_DIGEST}"))
+            != json!(Reference::FrameProfile.prefixed_digest()?)
     {
         return Err("frame provenance identity is stale".to_owned());
     }
@@ -992,41 +1009,18 @@ fn verify_reference_identities(manifest: &Value) -> Result<(), String> {
         &["asset_manifest", "profile", "scene_surface"],
         "reference",
     )?;
-    let identities = [
-        (
-            "profile",
-            "tests/oracle/reference-profiles/revision-1.sha256",
-            PROFILE_DIGEST,
-        ),
-        (
-            "asset_manifest",
-            "tests/oracle/reference-profiles/revision-1-assets.sha256",
-            ASSET_DIGEST,
-        ),
-        (
-            "scene_surface",
-            "tests/oracle/scene-surfaces/revision-1.sha256",
-            SURFACE_DIGEST,
-        ),
-    ];
-    for (key, sidecar, digest) in identities {
+    for (key, identity) in [
+        ("profile", Reference::Profile),
+        ("asset_manifest", Reference::AssetManifest),
+        ("scene_surface", Reference::SceneSurface),
+    ] {
         let value = object(&reference[key], key)?;
         verify_exact_keys(value, &["digest", "path"], key)?;
-        if value["digest"] != json!(format!("sha256:{digest}")) {
+        if value["digest"] != json!(identity.prefixed_digest()?) {
             return Err(format!("unexpected {key} digest"));
         }
-        let actual = fs::read_to_string(repo_root().join(sidecar))
-            .map_err(|error| format!("failed to read {sidecar}: {error}"))?;
-        if actual.trim() != digest {
-            return Err(format!("{sidecar} does not contain the approved digest"));
-        }
-        let path = value["path"]
-            .as_str()
-            .ok_or_else(|| format!("{key}.path must be a string"))?;
-        let bytes = fs::read(repo_root().join(path))
-            .map_err(|error| format!("failed to read {path}: {error}"))?;
-        if sha256(&bytes) != digest {
-            return Err(format!("{path} does not match the approved digest"));
+        if value["path"] != json!(identity.path()) {
+            return Err(format!("unexpected {key} path"));
         }
     }
     Ok(())
@@ -1260,7 +1254,7 @@ fn verify_typography_provenance(case_data: &LoadedCase) -> Result<(), String> {
         || provenance["case_id"] != json!(case_data.entry.id)
         || provenance["generated_at"] != json!("2026-07-22")
         || provenance["png_independent_from_svg"] != json!(true)
-        || provenance["reference_profile_digest"] != json!(format!("sha256:{PROFILE_DIGEST}"))
+        || provenance["reference_profile_digest"] != json!(Reference::Profile.prefixed_digest()?)
         || provenance["generation_invocation"]
             != json!(
                 "cargo run --locked -p xtask -- conformance generate focused.excalifont-text.v1"
@@ -1542,11 +1536,10 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
         ],
         "provenance",
     )?;
-    if provenance["container_image"]
-        != json!("mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9")
-        || provenance["node_version"] != json!("v24.16.0")
-        || provenance["generated_at"] != json!(generated_at)
-        || provenance["reference_profile_digest"] != json!(format!("sha256:{PROFILE_DIGEST}"))
+    let reference_profile = crate::viewer_identity::reference_profile()?;
+    verify_reference_runtime(&provenance, &reference_profile)?;
+    if provenance["generated_at"] != json!(generated_at)
+        || provenance["reference_profile_digest"] != json!(Reference::Profile.prefixed_digest()?)
         || provenance["generation_invocation"]
             != json!(format!(
                 "cargo run --locked -p xtask -- conformance generate {}",
@@ -1559,33 +1552,6 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
             ))
     {
         return Err("generation provenance identity is invalid".to_owned());
-    }
-    let browser = object(&provenance["browser"], "browser provenance")?;
-    verify_exact_keys(
-        browser,
-        &["arguments", "context", "version"],
-        "browser provenance",
-    )?;
-    if browser["arguments"]
-        != json!([
-            "--disable-gpu",
-            "--font-render-hinting=none",
-            "--force-color-profile=srgb"
-        ])
-        || browser["context"]
-            != json!({
-                "colorScheme": "light",
-                "deviceScaleFactor": 1,
-                "forcedColors": "none",
-                "locale": "en-US",
-                "reducedMotion": "reduce",
-                "serviceWorkers": "block",
-                "timezoneId": "UTC",
-                "viewport": {"height": 720, "width": 1280},
-            })
-        || browser["version"] != json!("149.0.7827.55")
-    {
-        return Err("browser provenance does not match the approved reference profile".to_owned());
     }
     crate::conformance_candidate_gate::historical_sources(&json!([provenance["generator"]]))?;
     verify_repo_descriptor(&provenance["runner"], "runner")?;
@@ -1619,6 +1585,10 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
     if runs[0]["browser_process_id"] == runs[1]["browser_process_id"] {
         return Err("provenance runs reused a browser process ID".to_owned());
     }
+    let origin = reference_profile["browser"]["origin"]
+        .as_str()
+        .filter(|origin| !origin.is_empty())
+        .ok_or_else(|| "the reference profile names no browser origin".to_owned())?;
     for (index, run) in runs.iter().enumerate() {
         let run = object(run, "run provenance")?;
         verify_exact_keys(
@@ -1650,11 +1620,9 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
             .as_array()
             .ok_or_else(|| "run requests must be an array".to_owned())?;
         if requests.is_empty()
-            || requests.iter().any(|request| {
-                request
-                    .as_str()
-                    .is_none_or(|url| !url.starts_with("http://reference.invalid/"))
-            })
+            || requests
+                .iter()
+                .any(|request| request.as_str().is_none_or(|url| !url.starts_with(origin)))
         {
             return Err("run request set is empty or escapes the fixed origin".to_owned());
         }
@@ -1679,6 +1647,49 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
     }
     if runs[0]["requests"] != runs[1]["requests"] {
         return Err("request sets differ across fresh processes".to_owned());
+    }
+    Ok(())
+}
+
+/// Checks a case's recorded runtime (container, Node, Chromium and its launch
+/// and context) for shape and against the reference profile, rather than
+/// against literals: a regenerated profile moves every identity at once and
+/// needs no edit here.
+fn verify_reference_runtime(provenance: &Value, profile: &Value) -> Result<(), String> {
+    let reference = crate::viewer_identity::ReferenceRuntime::from_profile(profile)?;
+    let container = provenance["container_image"].as_str().unwrap_or_default();
+    let pinned = container
+        .rsplit_once("@sha256:")
+        .is_some_and(|(_, digest)| crate::viewer_identity::is_lower_hex(digest, 64));
+    if !pinned {
+        return Err(format!(
+            "provenance container image {container:?} is not pinned by a SHA-256 digest"
+        ));
+    }
+    if container != reference.container {
+        return Err(format!(
+            "provenance container image {container:?} is not the reference profile's {:?}",
+            reference.container
+        ));
+    }
+    let node = provenance["node_version"].as_str().unwrap_or_default();
+    if node.strip_prefix('v') != Some(reference.node.as_str()) {
+        return Err(format!(
+            "provenance Node {node:?} is not the reference profile's v{}",
+            reference.node
+        ));
+    }
+    let browser = object(&provenance["browser"], "browser provenance")?;
+    verify_exact_keys(
+        browser,
+        &["arguments", "context", "version"],
+        "browser provenance",
+    )?;
+    if browser["version"] != json!(reference.chromium)
+        || browser["arguments"] != json!(reference.browser_arguments)
+        || browser["context"] != profile["browser"]["context"]
+    {
+        return Err("browser provenance does not match the approved reference profile".to_owned());
     }
     Ok(())
 }
@@ -2304,9 +2315,60 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::{
-        verify_exceptions, verify_png_extent, verify_png_semantics, verify_svg_metadata,
-        verify_svg_root_extent, Sizing, EMBEDDED_SCENE_MIME_TYPE,
+        verify_exceptions, verify_png_extent, verify_png_semantics, verify_reference_runtime,
+        verify_svg_metadata, verify_svg_root_extent, Sizing, EMBEDDED_SCENE_MIME_TYPE,
     };
+
+    /// A case's runtime provenance as the generator writes it from `profile`.
+    fn runtime_provenance(profile: &Value) -> Value {
+        let platform = &profile["canonicalPlatform"];
+        json!({
+            "container_image": format!(
+                "{}@{}",
+                platform["container"]["image"].as_str().unwrap(),
+                platform["container"]["perPlatformDigest"].as_str().unwrap()
+            ),
+            "node_version": format!("v{}", platform["runtime"]["node"].as_str().unwrap()),
+            "browser": {
+                "arguments": profile["browser"]["launch"]["explicitArguments"],
+                "context": profile["browser"]["context"],
+                "version": platform["runtime"]["chromium"],
+            },
+        })
+    }
+
+    #[test]
+    fn runtime_provenance_is_judged_against_the_reference_profile() {
+        let profile =
+            crate::viewer_identity::reference_profile().expect("the reference profile reads");
+        let provenance = runtime_provenance(&profile);
+        verify_reference_runtime(&provenance, &profile)
+            .expect("the profile's own runtime verifies");
+
+        // A regenerated profile with a new Chromium needs no verifier edit: the
+        // provenance written from it verifies.
+        let mut bumped = profile.clone();
+        bumped["canonicalPlatform"]["runtime"]["chromium"] = json!("150.0.0.1");
+        verify_reference_runtime(&runtime_provenance(&bumped), &bumped)
+            .expect("a bumped profile's runtime verifies");
+        assert!(verify_reference_runtime(&provenance, &bumped)
+            .expect_err("evidence from the old Chromium is not the bumped profile's")
+            .contains("browser provenance"));
+
+        let mut unpinned = provenance.clone();
+        unpinned["container_image"] = json!("mcr.microsoft.com/playwright:latest");
+        assert!(verify_reference_runtime(&unpinned, &profile)
+            .expect_err("a tag is not a pinned image")
+            .contains("not pinned by a SHA-256 digest"));
+        let mut other_node = provenance.clone();
+        other_node["node_version"] = json!("v0.0.0");
+        assert!(verify_reference_runtime(&other_node, &profile)
+            .expect_err("another Node is not the profile's")
+            .contains("Node"));
+        let mut empty_version = provenance;
+        empty_version["browser"]["version"] = json!("");
+        assert!(verify_reference_runtime(&empty_version, &profile).is_err());
+    }
 
     /// A one-pixel untagged RGBA8 PNG and its raw raster, with `chunks`
     /// spliced in before `IEND` as the reference's `encodePngMetadata` does.

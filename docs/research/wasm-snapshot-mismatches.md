@@ -50,22 +50,20 @@ direct edge cannot undo transitive Cargo feature unification.
 | focused.rough-fillers-dashed-zigzag-line.v1 | PNG | 118,390 bytes | 118,395 bytes |
 
 All four compatibility reports match the native report. The 0.1.0 release
-policy scopes these as a tracked experimental-WASM limitation: `just
-wasm-snapshot-replay` and `just full-equality` accept exactly the differences
-recorded in `tests/package-consumer/experimental-wasm.json` and fail on any
-other, or on a change in these. Strict equality stays available as a
-qualification goal (`verify-joined-results`).
+policy scopes these as a tracked experimental-WASM limitation: the golden
+test in browser WASM (`just golden-wasm`) accepts exactly the differences
+recorded in `tests/conformance/golden/experimental-wasm.json` and fails on any
+other, on a change in these, or on a recorded difference that no longer
+appears.
 
 ## Reproduce
 
 ```sh
-just wasm-snapshot-replay   # logs under target/release-evidence/wasm-snapshots
+devenv --profile browser shell -- just golden-wasm
 ```
 
-The run exports `forward.log`, `reverse.log`, `replay.json`, compiler, browser,
-Git commit/source-status records, and package archive digests. Its input digest
-binds the inventory, scenes/options, native collector, WASM harness, consumer
-manifest and lockfile, runner script, and actual tracked/untracked renderer
-source bytes plus workspace Cargo files. `report-wasm-snapshots` materializes
-the comparison, and `tools/ci/release-results.py snapshots` is the 0.1.0 gate
-over it; `verify-wasm-snapshots` is the strict form that rejects any mismatch.
+The test renders every golden target forward and reverse in a dedicated
+worker and compares each with `tests/conformance/golden/native.json`; a
+failure prints the keys that differ with the recorded and observed bytes.
+(The original replay ran the packaged facade through a staged harness and a
+Python gate; that machinery retired with the 2026-11-01 testing review.)

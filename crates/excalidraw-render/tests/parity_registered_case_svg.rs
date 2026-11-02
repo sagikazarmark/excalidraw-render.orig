@@ -1,5 +1,6 @@
-//! SVG parity for every registered scene case: path geometry and the rasterized
-//! document, judged on one render of each variant.
+//! SVG parity for every registered scene case: path geometry, paint and text
+//! attributes, and the rasterized document, judged on one render of each
+//! variant.
 //!
 //! **Path geometry.** The `d` attribute of every `<path>` the renderer emits is
 //! compared against the official export's, in document order. It is a sharper
@@ -18,6 +19,24 @@
 //! scaling defect shows. Path data and extent are the invariants, not SVG
 //! structure: the renderer legitimately differs from the official export in how
 //! it positions text and groups elements.
+//!
+//! **Paint and text attributes.** The raster flags a covered pixel only above
+//! about 26 grey levels, so a stroke drawn `#333333` instead of `#1e1e1e`
+//! passes every pixel. The attribute dimension compares, exactly and without a
+//! rasterizer, what every painted shape and every text line is drawn with:
+//! fill, stroke, stroke width, line cap and dash array, opacity and the
+//! composed transform for each `<path>` and `<rect>`, and orientation,
+//! baseline, `font-size`, fill and opacity, and where the line has one anchor
+//! its position and `text-anchor`, for each line of text. Both documents are
+//! resolved through their group structure first, since the two exporters
+//! group and position differently. `common::svg_paint` states what is
+//! normalized and what is excluded, each with its reason: `font-family`, which
+//! the renderer spells as the spec's fallback list (spec 8.4); `clip-path` and
+//! `mask`, whose ids differ; stroke details on unstroked shapes; shapes that
+//! paint nothing; and the along-the-line position and anchor of lines the
+//! renderer positions glyph by glyph. The first differing attribute is named
+//! with both values. A divergence awaiting a decision is pinned at its exact
+//! message in `KNOWN_ATTRIBUTE_DIVERGENCES`, like the geometry pins.
 //!
 //! **Document raster.** The direct-PNG harness compares rasters two different
 //! rasterizers produced, so a difference there can be the document or the
@@ -53,6 +72,16 @@
 //! (official SVGs this rasterizer cannot lay out as browsers do, proved by the
 //! variant's direct PNG being where its record says it is).
 //!
+//! Every pin is a measurement under the workspace `resvg`, `tiny-skia` and
+//! `fontdb` at whatever versions `Cargo.lock` resolves, and is exact in both
+//! directions. A rasterizer bump that moves a measurement therefore fails on
+//! that pin with the observed values printed, and a bump that moves nothing
+//! needs no edit here; the harness does not mirror the lockfile's versions.
+//! The canonical judge of the pure-Rust SVG dimension is the pinned viewer in
+//! `tools/svg-viewer-rust`, which holds its own lock; running the raster
+//! dimension through it as a subprocess stays in reserve for the day a bump
+//! does move a pin.
+//!
 //! Every registered variant is compared on both dimensions, since dark mode and
 //! sizing must leave path geometry untouched, and each variant is rendered once:
 //! the two dimensions judge the same bytes, and a divergence in each is reported
@@ -65,25 +94,24 @@ mod common;
 
 use std::collections::BTreeSet;
 use std::fs;
-use std::sync::Arc;
 
-use base64::Engine;
 use excalidraw_render::{OutputFormat, Renderer};
 use excalidraw_render_compare::{
-    compare, CanonicalRgba8, ComparisonMode, ComparisonReport, RegionReport, SsimOutcome,
+    compare, ComparisonMode, ComparisonReport, RegionReport, SsimOutcome,
 };
-use resvg::tiny_skia::{Pixmap, Transform};
 use serde_json::Value;
-use usvg::fontdb;
 
+use base64::Engine;
 use common::lower_hex;
 use common::registered_cases::{
     case_count, judge_each, observed, registered_scene_variants, variant_request, visual_class,
-    PinnedDivergence, PinnedGeometryDefect, RasterizerLimitation, ReferenceAuthorityDivergence,
-    RegisteredVariant,
+    PinnedAttributeDivergence, PinnedDivergence, PinnedGeometryDefect, RasterizerLimitation,
+    ReferenceAuthorityDivergence, RegisteredVariant,
 };
 use common::reports::assert_report_matches;
 use common::repository_root;
+use common::svg_paint::attribute_divergence;
+use common::svg_raster::{embedded_faces, rasterize, referenced_families, EmbeddedFace};
 
 /// Diagnosed defects whose fix is pending a maintainer decision, observed on the
 /// rasterized document. See `PinnedDivergence` for why these are pinned rather
@@ -95,17 +123,18 @@ const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
 /// its exact digest instead of a measurement. See `PinnedGeometryDefect`.
 const KNOWN_GEOMETRY_DEFECTS: &[PinnedGeometryDefect] = &[];
 
+/// Diagnosed paint or text attribute divergences whose fix is pending a
+/// maintainer decision, held at the attribute dimension's exact message.
+const KNOWN_ATTRIBUTE_DIVERGENCES: &[PinnedAttributeDivergence] = &[];
+
 /// Compatibility exceptions whose approved tolerance exception the case
 /// manifest carries for the direct PNG, observed here on the rasterized SVG
 /// document as well. The manifest admits no `format: svg` exception, so each is
 /// pinned at its exact measurement and must correspond to that recorded
 /// exception; see `PinnedDivergence`.
 ///
-/// The measurements are those of the workspace rasterizer named in
-/// [`PINNED_RASTERIZER`], which the workspace manifest holds at an exact
-/// version and the lockfile resolves; a bump of that rasterizer re-derives every
-/// pin here, and [`pins_are_measured_by_the_locked_rasterizer`] says so
-/// instead of letting the bump surface as an opaque SSIM bit mismatch.
+/// The measurements are those of the workspace `resvg`, `tiny-skia` and
+/// `fontdb` at whatever versions `Cargo.lock` resolves; see the module docs.
 const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
     // Spec 8.3's replacement glyph (#124): the official document sets the three
     // unmapped scalars in the embedded Excalifont and Liberation Sans subsets,
@@ -223,56 +252,6 @@ const RASTERIZER_LIMITATIONS: &[RasterizerLimitation] = &[
     },
 ];
 
-/// The rasterizer, its pixel backend and its font database — which drives the
-/// glyph fallback both pinned cases exercise — that the pins above were
-/// measured with, as the lockfile names them.
-///
-/// Re-derived for resvg 0.48.1 and fontdb 0.24.0 (#209): every pin above
-/// measured exactly as it did under resvg 0.47.0 and fontdb 0.23.0. Re-derived
-/// again for resvg 0.49.0, with the same tiny-skia and fontdb: every pin
-/// measured exactly as under 0.48.1.
-const PINNED_RASTERIZER: &[(&str, &str)] = &[
-    ("resvg", "0.49.0"),
-    ("tiny-skia", "0.12.0"),
-    ("fontdb", "0.24.0"),
-];
-
-/// System families the official export names without embedding, and the
-/// renderer's manifested substitute for each. The official raster evidence was
-/// produced with whatever the reference container resolved these to; document
-/// parity needs one face on both sides, and the substitute is the face the
-/// renderer's own SVG embeds for the same family.
-const SYSTEM_FAMILY_SUBSTITUTES: &[(&str, &str)] =
-    &[("Helvetica", "fonts/Liberation/LiberationSans-Regular.woff2")];
-
-#[test]
-fn pins_are_measured_by_the_locked_rasterizer() {
-    let lockfile =
-        fs::read_to_string(repository_root().join("Cargo.lock")).expect("workspace lockfile");
-    for (package, pinned) in PINNED_RASTERIZER {
-        let locked: Vec<&str> = lockfile
-            .split("[[package]]")
-            .filter_map(|record| {
-                let mut lines = record
-                    .lines()
-                    .map(str::trim)
-                    .skip_while(|line| line.is_empty());
-                (lines.next() == Some(&format!("name = \"{package}\"")))
-                    .then(|| lines.next())
-                    .flatten()
-                    .and_then(|line| line.strip_prefix("version = \""))
-                    .and_then(|version| version.strip_suffix('"'))
-            })
-            .collect();
-        assert_eq!(
-            locked,
-            [*pinned],
-            "COMPATIBILITY_EXCEPTION_PINS were measured with {package} {pinned}; the lockfile \
-             resolves {locked:?}, so re-derive the pins and PINNED_RASTERIZER together"
-        );
-    }
-}
-
 #[test]
 fn every_registered_scene_case_matches_its_official_svg_geometry_and_raster() {
     let variants = registered_scene_variants(&repository_root());
@@ -288,6 +267,7 @@ fn every_registered_scene_case_matches_its_official_svg_geometry_and_raster() {
 
     PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
     PinnedGeometryDefect::assert_all_observed(KNOWN_GEOMETRY_DEFECTS, &seen);
+    PinnedAttributeDivergence::assert_all_observed(KNOWN_ATTRIBUTE_DIVERGENCES, &seen);
     PinnedDivergence::assert_all_observed(COMPATIBILITY_EXCEPTION_PINS, &seen);
     ReferenceAuthorityDivergence::assert_all_observed(REFERENCE_AUTHORITY_DIVERGENCES, &seen);
     RasterizerLimitation::assert_all_observed(RASTERIZER_LIMITATIONS, &seen);
@@ -346,8 +326,18 @@ fn svg_divergences(variant: &RegisteredVariant) -> Vec<String> {
         )],
         None => vec![("extent", extent), ("paths", paths)],
     };
+    let attributes = attribute_divergence(candidate_svg, &official_svg);
+    let attributes = match PinnedAttributeDivergence::lookup(
+        KNOWN_ATTRIBUTE_DIVERGENCES,
+        &variant.case,
+        &variant.variant,
+    ) {
+        Some(pin) => pin.mismatch(attributes.as_deref()),
+        None => attributes,
+    };
     dimensions
         .into_iter()
+        .chain(std::iter::once(("attributes", attributes)))
         .chain(std::iter::once((
             "raster",
             raster_divergence(variant, candidate_svg, &official_svg, geometry.is_some()),
@@ -555,175 +545,6 @@ fn truncate(value: &str) -> String {
     }
 }
 
-/// Rasterizes one SVG document with the workspace `resvg`, resolving text
-/// through the faces the document itself embeds.
-fn rasterize(svg: &str, context: &str) -> CanonicalRgba8 {
-    let mut database = fontdb::Database::new();
-    let mut registered = BTreeSet::new();
-    for face in embedded_faces(svg) {
-        let sfnt = match face.media_type.as_str() {
-            "font/woff2" => wuff::decompress_woff2(&face.bytes)
-                .unwrap_or_else(|error| panic!("{context}: embedded WOFF2 decodes: {error:?}")),
-            _ => face.bytes.clone(),
-        };
-        register_face(&mut database, sfnt, &face.family);
-        registered.insert(face.family);
-    }
-    for family in referenced_families(svg) {
-        if registered.contains(&family) {
-            continue;
-        }
-        if let Some((_, asset)) = SYSTEM_FAMILY_SUBSTITUTES
-            .iter()
-            .find(|(system, _)| *system == family)
-        {
-            let woff2 = excalidraw_fonts::load_asset(asset)
-                .expect("substitute asset verifies")
-                .expect("substitute asset is manifested");
-            let sfnt = wuff::decompress_woff2(woff2.bytes()).expect("substitute WOFF2 decodes");
-            register_face(&mut database, sfnt, &family);
-            registered.insert(family);
-        }
-    }
-
-    let options = usvg::Options {
-        fontdb: Arc::new(database),
-        ..Default::default()
-    };
-    let tree = usvg::Tree::from_str(svg, &options)
-        .unwrap_or_else(|error| panic!("{context}: SVG parses: {error}"));
-    let size = tree.size().to_int_size();
-    let mut pixmap = Pixmap::new(size.width(), size.height()).expect("raster size is valid");
-    resvg::render(&tree, Transform::identity(), &mut pixmap.as_mut());
-
-    // tiny-skia stores premultiplied pixels; the comparator wants straight
-    // alpha, un-premultiplied by the canonical integer rule (spec 14.3,
-    // `(c * 255 + alpha / 2) / alpha`) rather than tiny-skia's float division,
-    // so that a pinned measurement here is the one the pinned viewer would take.
-    let mut rgba = Vec::with_capacity(pixmap.pixels().len() * 4);
-    for pixel in pixmap.pixels() {
-        let alpha = u32::from(pixel.alpha());
-        let straight = |channel: u8| -> u8 {
-            (u32::from(channel) * 255 + alpha / 2)
-                .checked_div(alpha)
-                .map_or(0, |value| value.min(255) as u8)
-        };
-        rgba.extend_from_slice(&[
-            straight(pixel.red()),
-            straight(pixel.green()),
-            straight(pixel.blue()),
-            pixel.alpha(),
-        ]);
-    }
-    CanonicalRgba8::new(size.width(), size.height(), rgba).expect("raster is canonical RGBA8")
-}
-
-/// Loads one sfnt and registers it under the CSS family the document uses for
-/// it, whatever the font's own name table says: a subset chunk of Xiaolai is
-/// `Xiaolai` to the document even when its name table says otherwise, and the
-/// renderer's aliases (`ExcalidrawRender-9`) name no real family at all.
-fn register_face(database: &mut fontdb::Database, sfnt: Vec<u8>, family: &str) {
-    for id in database.load_font_source(fontdb::Source::Binary(Arc::new(sfnt))) {
-        let mut info = database.face(id).expect("loaded face is present").clone();
-        database.remove_face(id);
-        info.families = vec![(family.to_owned(), fontdb::Language::English_UnitedStates)];
-        database.push_face_info(info);
-    }
-}
-
-/// One `@font-face` declaration's family and decoded payload.
-#[derive(Debug, PartialEq)]
-struct EmbeddedFace {
-    family: String,
-    media_type: String,
-    bytes: Vec<u8>,
-}
-
-/// Every `@font-face` in the document. Accepts both the official export's
-/// spacing (`font-family: Excalifont; src: url(...);`) and the renderer's
-/// (`font-family:'Excalifont';src:url(...)`).
-fn embedded_faces(svg: &str) -> Vec<EmbeddedFace> {
-    let mut faces = Vec::new();
-    let mut rest = svg;
-    while let Some(start) = rest.find("@font-face") {
-        rest = &rest[start + "@font-face".len()..];
-        let Some(open) = rest.find('{') else { break };
-        let Some(close) = rest[open..].find('}') else {
-            break;
-        };
-        let block = &rest[open + 1..open + close];
-        rest = &rest[open + close..];
-
-        let family = declaration(block, "font-family")
-            .expect("@font-face declares font-family")
-            .trim_matches(|c| c == '\'' || c == '"')
-            .to_owned();
-        let src = declaration(block, "src").expect("@font-face declares src");
-        let url = src
-            .strip_prefix("url(")
-            .and_then(|url| url.split_once(')'))
-            .map(|(url, _)| url)
-            .expect("src is a url()");
-        let (media_type, encoded) = url
-            .strip_prefix("data:")
-            .and_then(|data| data.split_once(";base64,"))
-            .expect("src is a base64 data URL");
-        let bytes = base64::engine::general_purpose::STANDARD
-            .decode(encoded)
-            .expect("font data URL is valid base64");
-        faces.push(EmbeddedFace {
-            family,
-            media_type: media_type.to_owned(),
-            bytes,
-        });
-    }
-    faces
-}
-
-/// The value of one `name: value;` declaration inside a CSS block. A `;` inside
-/// parentheses does not end a declaration, since a data URL carries one.
-fn declaration<'a>(block: &'a str, name: &str) -> Option<&'a str> {
-    let mut depth = 0usize;
-    let mut start = 0usize;
-    let mut entries = Vec::new();
-    for (index, character) in block.char_indices() {
-        match character {
-            '(' => depth += 1,
-            ')' => depth = depth.saturating_sub(1),
-            ';' if depth == 0 => {
-                entries.push(&block[start..index]);
-                start = index + 1;
-            }
-            _ => {}
-        }
-    }
-    entries.push(&block[start..]);
-    entries.into_iter().find_map(|entry| {
-        let (key, value) = entry.split_once(':')?;
-        (key.trim() == name).then(|| value.trim())
-    })
-}
-
-/// Every family named by a `font-family="..."` attribute, split on commas, in
-/// document order and without duplicates.
-fn referenced_families(svg: &str) -> Vec<String> {
-    let mut seen = BTreeSet::new();
-    let mut families = Vec::new();
-    let mut rest = svg;
-    while let Some(start) = rest.find(" font-family=\"") {
-        rest = &rest[start + " font-family=\"".len()..];
-        let Some(end) = rest.find('"') else { break };
-        for family in rest[..end].split(',') {
-            let family = family.trim().trim_matches(|c| c == '\'' || c == '"');
-            if !family.is_empty() && seen.insert(family.to_owned()) {
-                families.push(family.to_owned());
-            }
-        }
-        rest = &rest[end..];
-    }
-    families
-}
-
 #[test]
 fn a_pinned_divergence_holds_its_variant_to_the_exact_measurement() {
     const PINNED_SSIM_BITS: u64 = 0x3fea_c711_a5b4_5706;
@@ -875,4 +696,112 @@ fn extent_divergence_compares_only_the_root_element() {
         extent_divergence(scaled, official).as_deref(),
         Some("width \"400\" against official \"200\"; height \"240\" against official \"120\"")
     );
+}
+
+/// The official export of a registered case, as the attribute dimension's
+/// tests mutate it.
+fn official_svg(case: &str) -> String {
+    fs::read_to_string(repository_root().join(format!(
+        "tests/conformance/cases/focused/{case}/evidence/official.svg"
+    )))
+    .expect("official SVG present")
+}
+
+#[test]
+fn attribute_divergence_names_a_changed_stroke_colour_width_and_opacity() {
+    let official = official_svg("ellipse-diamond-fills");
+    assert_eq!(attribute_divergence(&official, &official), None);
+
+    let stroke = official.replacen("stroke=\"#1e1e1e\"", "stroke=\"#333333\"", 1);
+    assert_ne!(stroke, official, "the case strokes in #1e1e1e");
+    let detail = attribute_divergence(&stroke, &official).expect("a changed stroke diverges");
+    assert!(
+        detail.contains("stroke \"#333333\" against official \"#1e1e1e\""),
+        "{detail}"
+    );
+
+    let width = official.replacen("stroke-width=\"2\"", "stroke-width=\"3\"", 1);
+    assert_ne!(width, official, "the case strokes at width 2");
+    let detail = attribute_divergence(&width, &official).expect("a changed width diverges");
+    assert!(
+        detail.contains("stroke-width \"3\" against official \"2\""),
+        "{detail}"
+    );
+
+    let faded = official.replacen("<path ", "<path opacity=\"0.5\" ", 1);
+    let detail = attribute_divergence(&faded, &official).expect("an opacity diverges");
+    assert!(
+        detail.contains("path 0 opacity \"0.5\" against official \"1\""),
+        "{detail}"
+    );
+}
+
+#[test]
+fn attribute_divergence_names_a_changed_text_anchor_and_font_size() {
+    let official = official_svg("helvetica-text");
+    assert_eq!(attribute_divergence(&official, &official), None);
+
+    let anchor = official.replacen("text-anchor=\"middle\"", "text-anchor=\"start\"", 1);
+    assert_ne!(anchor, official, "the case centres a line");
+    let detail = attribute_divergence(&anchor, &official).expect("a changed anchor diverges");
+    assert!(
+        detail.contains("text line 1 text-anchor \"start\" against official \"middle\""),
+        "{detail}"
+    );
+
+    let size = official.replacen("font-size=\"20px\"", "font-size=\"21px\"", 1);
+    let detail = attribute_divergence(&size, &official).expect("a changed size diverges");
+    assert!(
+        detail.contains("text line 0 font-size \"21\" against official \"20\""),
+        "{detail}"
+    );
+}
+
+#[test]
+fn attribute_records_resolve_group_structure_and_spelling() {
+    // A fill-only path with and without the reference's `stroke-width="0"`,
+    // and a shorthand colour, inherited through differently nested groups.
+    let official = "<svg><g transform=\"translate(10 10) rotate(0 90 6.900000000000006)\">\
+                    <path fill=\"#bbb\" stroke=\"none\" stroke-width=\"0\" d=\"M0 0\"/></g>\
+                    <g transform=\"translate(10 40)\"><text x=\"110\" y=\"16.9\" \
+                    font-size=\"28px\" text-anchor=\"middle\" fill=\"#1e1e1e\">a</text></g></svg>";
+    let candidate = "<svg><g fill=\"#BBBBBB\"><g transform=\"translate(10 10) rotate(0 90 6.9)\">\
+                     <path stroke=\"none\" d=\"M0 0\"/></g></g>\
+                     <rect fill=\"transparent\" stroke=\"none\"/>\
+                     <g transform=\"translate(10 40)\"><text font-size=\"28\" \
+                     text-anchor=\"middle\" fill=\"#1e1e1e\"><tspan x=\"110\" y=\"16.9\">a</tspan>\
+                     </text></g></svg>";
+    assert_eq!(attribute_divergence(candidate, official), None);
+
+    // A line positioned glyph by glyph keeps its baseline but not its anchor.
+    let resolved = candidate.replace(
+        "<tspan x=\"110\" y=\"16.9\">a</tspan>",
+        "<tspan x=\"100 105\" y=\"16.9 16.9\" text-anchor=\"start\">ab</tspan>",
+    );
+    assert_eq!(attribute_divergence(&resolved, official), None);
+    let lowered = resolved.replace("y=\"16.9 16.9\"", "y=\"17.9 17.9\"");
+    let detail = attribute_divergence(&lowered, official).expect("a moved baseline diverges");
+    assert!(detail.contains("text line 0 baseline"), "{detail}");
+}
+
+#[test]
+fn a_pinned_attribute_divergence_is_exact_and_cannot_outlive_its_divergence() {
+    let pin = PinnedAttributeDivergence {
+        case: "focused.example.v1",
+        variant: "default",
+        issue: "#999",
+        detail: "path 0 stroke \"#333333\" against official \"#1e1e1e\"",
+    };
+    assert_eq!(pin.mismatch(Some(pin.detail)), None);
+    let moved = pin
+        .mismatch(Some(
+            "path 0 stroke \"#444444\" against official \"#1e1e1e\"",
+        ))
+        .expect("another divergence moves the pin");
+    assert!(
+        moved.contains("#999") && moved.contains("#444444"),
+        "{moved}"
+    );
+    let stale = pin.mismatch(None).expect("agreement is a stale pin");
+    assert!(stale.contains("stale") && stale.contains("#999"), "{stale}");
 }

@@ -88,14 +88,18 @@ dimensions (#170, #171, #172).
 
 A tolerance exception records a maintainer's judgment that one variant's
 observed difference from the official evidence has a non-defect cause. It names
-the variant, format, viewer, and region it governs, sets its ceilings to the
-exact observed changed-pixel count and binary64 SSIM score with no margin,
-documents the cause, and links the issue that carries the decision. The
-generator carries registered exceptions into the manifest for Git review;
-`parity_registered_case_png` then holds an excepted variant to those ceilings
-and fails if the variant starts passing the canonical budget, so a record cannot
-outlive the difference it describes. Today only whole-artifact direct-PNG
-exceptions with no viewer are admitted.
+the variant, format, viewer, and region it governs, records the exact observed
+changed-pixel count and binary64 SSIM score with no margin, documents the
+cause, and links the issue that carries the decision. The generator carries
+registered exceptions into the manifest for Git review;
+`parity_registered_case_png` then holds an excepted variant to that
+measurement in both directions, so a regression fails and so does an
+unrecorded improvement (the record is re-recorded under review, in
+`registry.json` and the case manifest with its sidecar), and fails if the
+variant starts passing the canonical budget, so a record cannot outlive the
+difference it describes. The clean and the excepted variants are judged by
+separate tests. Today only whole-artifact direct-PNG exceptions with no viewer
+are admitted.
 
 A compatibility exception, such as spec 8.3's replacement glyph for a scalar
 no bundled face maps or its Noto Emoji substitution for the local-only emoji
@@ -249,10 +253,14 @@ and reproduction.
 
 `comparator-profiles/canonical-visual-v1.json` freezes the format-neutral
 RGBA8 projection, Pixelmatch, SSIM, crop, and visual-budget protocol. Its
-adjacent digest binds the profile. The profile in turn binds what can change a
-measurement: the unpublished Rust implementation, adversarial vectors, and
-imported Pixelmatch 7.2.0 fixtures. The upstream behaviour the implementation
-reproduces is documented in
+adjacent digest binds the profile. The profile in turn binds what defines a
+measurement: adversarial vectors and imported Pixelmatch 7.2.0 fixtures, which
+the comparator's own tests execute. Its `implementation.sources` digests are
+historical: they record the sources the profile was cut from and are checked
+for shape only, so a source edit that moves no measurement moves nothing, and
+one that does fails the vectors. The comparator's dependencies are pinned by
+`Cargo.lock` alone (ADR-0005, amended 2026-11-01). The upstream behaviour the
+implementation reproduces is documented in
 [the comparator primary sources](../../docs/research/conformance-comparator-primary-sources.md).
 Verify all of them offline with:
 
@@ -260,23 +268,8 @@ Verify all of them offline with:
 cargo test --locked -p excalidraw-render-compare
 ```
 
-The comparator's dependency closure,
-`comparator-profiles/canonical-visual-v1.closure.json`, lists the `Cargo.lock`
-packages reachable from `excalidraw-render-compare`: name, exact version,
-source, and checksum. It is committed and reviewed in Git, and the profile
-test recomputes it from the live lock and names any package that differs. No
-digest binds it (ADR-0005, amended for #212), so when a comparator dependency
-moves, the closure file is the only thing that changes. Refresh it with:
-
-```sh
-EXCALIDRAW_REFRESH_COMPARATOR_CLOSURE=1 cargo test --locked -p excalidraw-render-compare --test profile -- --ignored materialize
-```
-
-Without the variable, `materialize` only stages the closure under Cargo's
-scratch directory.
-
-The profile itself moves only when the comparator's sources, protocol, limits,
-vectors or fixtures change, and that change gets its own review. Its digest is
+The profile itself moves only when the comparator's protocol, limits, vectors
+or fixtures change, and that change gets its own review. Its digest is
 bound by live evidence, and each rebinding moves that evidence's own digest in
 turn:
 - the SVG and PDF viewer qualifications, and their sidecars (digests of the
@@ -351,9 +344,16 @@ the corpus `tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qual
 classifies each of the 231 sources — the 230 official WOFF2 chunks and the
 Noto Emoji fallback face (#150) — into the eight qualification classes, and
 every successful cell's subset is rendered beside its complete source in
-pinned Chromium and the controlled pure-Rust viewer, one semantic execution
-per distinct subset identity. Both viewers admit only WOFF2, so the source
-role of an sfnt source is the subsetter's own WOFF2 encoding of the
+pinned Chromium and the controlled pure-Rust viewer, one execution per
+distinct glyph set. A glyph set is what the viewers render: the source font's
+identity (which names its bytes' digest) and the ordered scalars set in it,
+keyed by the SHA-256 of both. The executions and both viewer reports are keyed
+by glyph set; each execution records the semantic subset identity and the
+subset's WOFF2, sfnt, SVG and asset digests as fields. The qualification was
+re-recorded under this key on 2026-11-02 (Docker Desktop with Rosetta on Apple
+silicon): every result of both viewers equals the one it replaced.
+
+Both viewers admit only WOFF2, so the source role of an sfnt source is the subsetter's own WOFF2 encoding of the
 manifested face; the corpus records that encoding's digest as
 `viewerSourceWoff2Sha256` beside the sfnt's `sourceSha256`, the pure-Rust
 viewer renders from the sfnt itself, and the corpus test checks that the
@@ -368,7 +368,6 @@ part of the release-mode qualification set and runs only with
 
 ```sh
 cargo run --locked -p xtask -- conformance verify-svg-font-subsets
-cargo run --locked -p xtask -- conformance verify-svg-font-subset-release
 EXCALIDRAW_RENDER_RELEASE_QUALIFICATION=1 cargo test --locked --release -p excalidraw-render --lib \
   complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces
 ```
@@ -397,6 +396,19 @@ verification does not require those source files to exist or match today's
 checkout. A source-only refactor therefore needs no manifest refresh. Generation
 still records the source identities actually used.
 
+A subset profile change that moves only the subsets' bytes (a profile token
+rename, a subsetter bump that leaves the outlines alone) is adopted without a
+viewer run: regenerate the corpus, then `just font-subset-rebind`
+materializes fresh viewer inputs and `conformance rebind-svg-font-subsets`
+rewrites each execution's subset fields, the input manifest digest and the
+corpus and subset profile descriptors, whose digests the verifier reads from
+their sidecars. The rebind covers this record only: the renderer's own pins of
+the subset profile (its digest in `font_subset_qualification.rs`,
+`font_subset_fuzz.rs` and the fuzz regression corpus) and the catalog that
+incorporates the profile are regenerated as before. The glyph sets and the source fields must not move,
+so neither viewer report changes; the viewers' rasters are compared again only
+when the qualification is regenerated.
+
 After subsetter changes, run the corpus test above. After changing viewer adapters
 or input generation, use `bash tools/svg-font-subset-qualification.sh reproduce`
 to regenerate viewer inputs and compare fresh reports byte-for-byte with the
@@ -404,12 +416,12 @@ retained reports. Changed subset bytes, reference inputs, viewer profiles or
 results still fail their checks and need review; implementation hashes are not
 a substitute for those checks.
 
-The release evidence beside it
-(`svg-font-subset-release-evidence/revision-1.json`) binds the approved
-viewer qualification to the supported-target measurement the packaged
-public facade workflow produces (`svg_font_subset_targets.rs`), and returns
-to `pending_ci` whenever the corpus moves until a fresh aggregate is
-recorded.
+The corpus test runs on both supported targets in `just release`
+(`just qualification <target>`); each run asserts every cell's generated
+WOFF2 digest against the same committed corpus pin, which is the cross-target
+agreement. The separate release-evidence record, target aggregate and
+cross-target measurement that once restated that agreement retired with the
+2026-11-01 testing review.
 
 ## Canonical PDF harnesses
 
