@@ -16,7 +16,7 @@ on:
         type: string
         default: ""
       viewer-checks:
-        description: Reproduce the SVG and PDF viewer qualifications (release gate 2)
+        description: Reproduce the SVG, PDF and font-subset viewer qualifications (release gate 2)
         type: boolean
         default: false
 
@@ -112,12 +112,13 @@ jobs:
     name: Viewer checks (${{ matrix.kind }})
     if: ${{ inputs.viewer-checks }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # The font-subset check renders 662 glyph sets four times in Chromium.
+    timeout-minutes: 180
 
     strategy:
       fail-fast: false
       matrix:
-        kind: [svg, pdf]
+        kind: [svg, pdf, font-subset]
 
     steps:
       - name: Checkout repository
