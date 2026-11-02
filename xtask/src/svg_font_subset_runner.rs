@@ -229,7 +229,7 @@ fn advances_and_offsets(report: &Value) -> Value {
     })
 }
 
-/// The viewer's usvg 0.48.1 reads fonts with skrifa (charmap, unscaled
+/// The viewer's usvg reads fonts with skrifa (charmap, unscaled
 /// metrics, unhinted outlines at the default location) and shapes with
 /// HarfRust 0.12; the report reads and shapes each face the same way.
 fn semantic_report(sfnt: &[u8], svg: &[u8], scalars: &[u32]) -> Result<Value, String> {

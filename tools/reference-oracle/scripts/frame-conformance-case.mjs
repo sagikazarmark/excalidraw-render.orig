@@ -13,6 +13,7 @@ import { chromium } from "playwright";
 
 import { canonicalize } from "./canonical-json.mjs";
 import { carriedApproval, generationArgs } from "./generation-guard.mjs";
+import { referenceDigest } from "./revision.mjs";
 
 const ORACLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(ORACLE_ROOT, "../..");
@@ -31,10 +32,7 @@ const VISUAL_CLASSES = (() => {
   }
   return entry.visual_classes;
 })();
-const PROFILE_DIGEST = readFileSync(
-  resolve(REPO_ROOT, "tests/oracle/reference-profiles/revision-1-frame.sha256"),
-  "ascii",
-).trim();
+const PROFILE_DIGEST = referenceDigest("frameProfile");
 const ORIGIN = "http://reference.invalid";
 const BROWSER_VERSION = "149.0.7827.55";
 const BROWSER_ARGUMENTS = [

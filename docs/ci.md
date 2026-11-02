@@ -188,11 +188,14 @@ dependency change there is a reviewed profile change: regenerate the profile
 with `just reference-profile update` and carry the new digest through the
 revision-1 records that bind it. No verifier, generator or test repeats the
 digest of the scene profile, the frame profile, the asset manifest or the scene
-surface: xtask (`revision::Reference`), the oracle's scripts
-(`scripts/revision.mjs`) and the renderer's tests read each from its `.sha256`
-sidecar after checking the file still has it, and the renderer reads the
-generated catalog. So `update` writing the sidecar is the only hand edit; the
-rest is regenerated evidence (`cargo run -p xtask -- catalog materialize`,
+surface: xtask (`revision::Reference`) and the oracle's scripts
+(`scripts/revision.mjs`) read each from its `.sha256` sidecar after checking
+the file still has it, the renderer's tests read the sidecar, and the renderer
+reads the generated catalog. The scene-surface schema, which embeds the profile
+digest and has no sidecar, is the one digest still pinned in xtask
+(`SCENE_SURFACE_SCHEMA_DIGEST`). Besides that digest, `update` writing the
+sidecar is the only hand edit; the rest is regenerated evidence
+(`cargo run -p xtask -- catalog materialize`,
 `just reference-cases generate --supersede`, `just update-golden`, and the
 records that bind those). Reproduction compares the oracle's artifacts
 and its run provenance; the generator and runner descriptors in that

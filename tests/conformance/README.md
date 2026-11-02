@@ -351,8 +351,9 @@ keyed by the SHA-256 of both. The executions and both viewer reports are keyed
 by glyph set; each execution records the semantic subset identity and the
 subset's WOFF2, sfnt, SVG and asset digests as fields. The qualification was
 re-recorded under this key on 2026-11-02 (Docker Desktop with Rosetta on Apple
-silicon): every result of both viewers equals the one it replaced. Both viewers admit only WOFF2, so the source
-role of an sfnt source is the subsetter's own WOFF2 encoding of the
+silicon): every result of both viewers equals the one it replaced.
+
+Both viewers admit only WOFF2, so the source role of an sfnt source is the subsetter's own WOFF2 encoding of the
 manifested face; the corpus records that encoding's digest as
 `viewerSourceWoff2Sha256` beside the sfnt's `sourceSha256`, the pure-Rust
 viewer renders from the sfnt itself, and the corpus test checks that the
@@ -400,7 +401,11 @@ rename, a subsetter bump that leaves the outlines alone) is adopted without a
 viewer run: regenerate the corpus, then `just font-subset-rebind`
 materializes fresh viewer inputs and `conformance rebind-svg-font-subsets`
 rewrites each execution's subset fields, the input manifest digest and the
-subset profile descriptor. The glyph sets and the source fields must not move,
+corpus and subset profile descriptors, whose digests the verifier reads from
+their sidecars. The rebind covers this record only: the renderer's own pins of
+the subset profile (its digest in `font_subset_qualification.rs`,
+`font_subset_fuzz.rs` and the fuzz regression corpus) and the catalog that
+incorporates the profile are regenerated as before. The glyph sets and the source fields must not move,
 so neither viewer report changes; the viewers' rasters are compared again only
 when the qualification is regenerated.
 

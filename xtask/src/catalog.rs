@@ -3,12 +3,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::conformance::sha256;
-use crate::revision::Reference;
+use crate::revision::{sealed_digest, Reference, REVISION};
 use crate::sfnt::Sfnt;
 use excalidraw_fonts::FontLicense;
 use serde_json::{json, Value};
 
-const REVISION: u64 = 1;
 const EXCALIDRAW_RELEASE: &str = "v0.18.1";
 const SOURCE_COMMIT: &str = "a2ec2889babf7d2295469c6d90ebe77fae57df84";
 const NPM_INTEGRITY: &str =
@@ -18,10 +17,12 @@ const NPM_INTEGRITY: &str =
 /// the font packages' build metadata names.
 const ORACLE_LOCKFILE: &str = "tools/reference-oracle/package-lock.json";
 const EXCALIDRAW_LOCK_ENTRY: &str = "node_modules/@excalidraw/excalidraw";
+/// Pinned here, unlike the other incorporated artifacts: the schema has no
+/// sidecar, and the scene-surface manifest's `schemaDefinition` record does not
+/// name these bytes. It embeds the reference profile digest, so a profile
+/// update regenerates the schema and edits this digest.
 const SCENE_SURFACE_SCHEMA_DIGEST: &str =
     "c8af2987f69e320bbc2673e252284fda77a18ddaf667bf998055c47cd3aa7341";
-const SCENE_SURFACE_EVIDENCE_DIGEST: &str =
-    "29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb";
 /// Three physical payloads: small official fonts, common Xiaolai, extended
 /// Xiaolai. Whole chunks retain upstream declaration order within each group.
 const FONT_PACKAGES: [&str; 3] = [
@@ -62,18 +63,14 @@ const NOTO_EMOJI_SHA256: &str = "0ed584d111778b259f205a40807d78131de02a5b04dad4e
 const NOTO_EMOJI_LENGTH: usize = 862_680;
 const XIAOLAI_ORDER_SHA256: &str =
     "c2cbbbfa669404795527e06cf596ab4b1b851f9bb993c608c8ab9c3c2aabe9d3";
-const SVG_FONT_SUBSET_PROFILE_DIGEST: &str =
-    "f23470d703abde83ac59cd7408d8114fa6128f9069ae63d53b1a83092d85ba15";
-const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
-    "fc4e8ce56cb7bf4bca9dfd6f3495c9ae9f5440a5818aa3e6f645d5303265ff85";
 /// The SVG font subset qualification corpus covers every official chunk and
 /// the Noto Emoji fallback sfnt (#150).
 const QUALIFICATION_SOURCES: usize = 231;
 const NOTO_EMOJI_UPSTREAM_PATH: &str = "scripts/woff2/assets/NotoEmoji-Regular.ttf";
-const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST: &str =
-    "7c9ee4417835a19f4ec6b644a521c304399dbf8481e4d3f92c061af5261fdbb7";
-const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST: &str =
-    "db0e54e516bd82bdc5733d6e950c36bd975bdd7d2a766e89e73804fe21d30264";
+const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_PATH: &str =
+    "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json";
+const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_PATH: &str =
+    "tests/oracle/compatibility-artifacts/svg-font-subset-qualification-corpus-v1.schema.json";
 
 struct IncorporatedArtifactSource {
     repository_path: String,
@@ -126,19 +123,23 @@ fn artifacts() -> Result<Vec<IncorporatedArtifactSource>, String> {
         ),
         artifact(
             "tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json",
-            SCENE_SURFACE_EVIDENCE_DIGEST,
+            &sealed_digest("tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json")?,
             "scene-surface-evidence.json",
             true,
         ),
         artifact(
             "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json",
-            SVG_FONT_SUBSET_PROFILE_DIGEST,
+            &sealed_digest(
+                "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json",
+            )?,
             "svg-font-subset-profile.json",
             true,
         ),
         artifact(
             "tests/oracle/compatibility-artifacts/revision-1-chromium-149-cjk-scalars.bin",
-            CHROMIUM_149_CJK_SCALARS_DIGEST,
+            &sealed_digest(
+                "tests/oracle/compatibility-artifacts/revision-1-chromium-149-cjk-scalars.bin",
+            )?,
             "chromium-149-cjk-scalars.bin",
             false,
         ),
@@ -1112,7 +1113,7 @@ fn reviewed_decodes_record(decodes: &[ReviewedDecode], approval: Value) -> Resul
             "name": DECODER_NAME,
             "version": DECODER_VERSION,
         },
-        "qualificationCorpusSha256": SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST,
+        "qualificationCorpusSha256": sealed_digest(SVG_FONT_SUBSET_QUALIFICATION_CORPUS_PATH)?,
         "schema": REVIEWED_DECODES_SCHEMA,
         "sourceManifestSha256": Reference::AssetManifest.digest()?,
     }))
@@ -2489,8 +2490,8 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
     }
     verify_digest_sidecar(&corpus_path.with_extension("sha256"), &corpus_bytes)?;
     verify_digest_sidecar(&schema_path.with_extension("sha256"), &schema_bytes)?;
-    if sha256(&corpus_bytes) != SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST
-        || sha256(&schema_bytes) != SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST
+    if sha256(&corpus_bytes) != sealed_digest(SVG_FONT_SUBSET_QUALIFICATION_CORPUS_PATH)?
+        || sha256(&schema_bytes) != sealed_digest(SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_PATH)?
     {
         return Err("font subset qualification artifact digest is not pinned".to_owned());
     }

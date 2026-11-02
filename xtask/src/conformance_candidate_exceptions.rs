@@ -134,7 +134,7 @@ fn validate(proposal: &Value, wanted: &Value) -> Result<()> {
 /// comparator from the stored rasters, and the live viewers are qualified on
 /// their own (ADR-0019). A record is kept only where it names the same file as
 /// the live one and is a well-formed digest.
-fn with_measured_comparator(mut wanted: Value, proposal: &Value) -> Value {
+fn with_measurement_records(mut wanted: Value, proposal: &Value) -> Value {
     let comparator = &proposal["comparator"];
     if comparator["path"] == COMPARATOR_PROFILE && historical_binding(comparator).is_ok() {
         wanted["comparator"] = comparator.clone();
@@ -227,7 +227,7 @@ pub fn evaluate(directory: &str) -> Result<Value> {
     } else {
         validate(
             &proposal,
-            &with_measured_comparator(expected(directory)?, &proposal),
+            &with_measurement_records(expected(directory)?, &proposal),
         )?;
         observations(&canonical, &proposal)?;
         crate::conformance_candidate::comparisons_with_scopes(
@@ -251,14 +251,14 @@ mod tests {
         let proposal = json!({"comparator": measured, "exceptions": []});
         validate(
             &proposal,
-            &with_measured_comparator(wanted.clone(), &proposal),
+            &with_measurement_records(wanted.clone(), &proposal),
         )
         .unwrap();
-        validate(&wanted, &with_measured_comparator(wanted.clone(), &wanted)).unwrap();
+        validate(&wanted, &with_measurement_records(wanted.clone(), &wanted)).unwrap();
         for (key, bad) in [("sha256", json!("00")), ("path", json!("Cargo.toml"))] {
             let mut forged = proposal.clone();
             forged["comparator"][key] = bad;
-            assert!(validate(&forged, &with_measured_comparator(wanted.clone(), &forged)).is_err());
+            assert!(validate(&forged, &with_measurement_records(wanted.clone(), &forged)).is_err());
         }
     }
     #[test]
@@ -271,19 +271,19 @@ mod tests {
         let proposal = json!({"exceptions": [scope(&measured)]});
         validate(
             &proposal,
-            &with_measured_comparator(wanted.clone(), &proposal),
+            &with_measurement_records(wanted.clone(), &proposal),
         )
         .unwrap();
         for (key, bad) in [("sha256", json!("00")), ("path", json!("Cargo.toml"))] {
             let mut forged = proposal.clone();
             forged["exceptions"][0]["viewer_profile"]["descriptor"][key] = bad;
-            assert!(validate(&forged, &with_measured_comparator(wanted.clone(), &forged)).is_err());
+            assert!(validate(&forged, &with_measurement_records(wanted.clone(), &forged)).is_err());
         }
         let mut renamed = proposal.clone();
         renamed["exceptions"][0]["viewer_profile"]["id"] = json!("another");
         assert!(validate(
             &renamed,
-            &with_measured_comparator(wanted.clone(), &renamed)
+            &with_measurement_records(wanted.clone(), &renamed)
         )
         .is_err());
     }

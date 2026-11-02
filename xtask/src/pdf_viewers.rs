@@ -321,6 +321,7 @@ fn verify_pdfjs_profile(profile: &Value, reference: &ReferenceRuntime) -> Result
 }
 
 const PDFJS_PACKAGE: &str = "tools/pdf-harness/pdfjs/package.json";
+const PDFJS_LOCK: &str = "tools/pdf-harness/pdfjs/package-lock.json";
 
 /// The PDF.js the harness installs is the one the profile names: the profile
 /// binds the harness's npm lockfile by digest, live, so a Dependabot bump of
@@ -331,6 +332,9 @@ const PDFJS_PACKAGE: &str = "tools/pdf-harness/pdfjs/package.json";
 fn verify_pdfjs_install(profile: &Value) -> Result<(), String> {
     let descriptor = &profile["implementation"]["lockfile"];
     let path = string(&descriptor["path"], "PDF.js lockfile path")?;
+    if path != PDFJS_LOCK {
+        return Err(format!("the PDF.js profile binds {path}, not {PDFJS_LOCK}"));
+    }
     let lock_bytes = read_repository_file(&repo_root(), path)?;
     if descriptor["sha256"] != json!(sha256(&lock_bytes)) {
         return Err(format!(
@@ -354,7 +358,8 @@ fn verify_pdfjs_install(profile: &Value) -> Result<(), String> {
             || !(expected == locked || expected.starts_with(&format!("{locked} ")))
         {
             return Err(format!(
-                "the PDF.js harness installs {name} {locked:?} (package.json {declared:?}),                  the profile names {expected:?}"
+                "the PDF.js harness installs {name} {locked:?} (package.json {declared:?}), \
+                 the profile names {expected:?}"
             ));
         }
     }
@@ -789,6 +794,13 @@ mod tests {
         assert!(verify_pdfjs_install(&renamed)
             .unwrap_err()
             .contains("pdfjs-dist"));
+        // And only the harness's own lockfile can stand for it.
+        let mut copied = pdfjs.clone();
+        copied["implementation"]["lockfile"]["path"] =
+            json!("tools/reference-oracle/package-lock.json");
+        assert!(verify_pdfjs_install(&copied)
+            .unwrap_err()
+            .contains("not tools/pdf-harness/pdfjs/package-lock.json"));
     }
 
     #[test]

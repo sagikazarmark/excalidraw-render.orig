@@ -575,9 +575,6 @@ async function main() {
   if (sha256(profileBytes) !== profileDigest) {
     throw new Error("reference profile digest does not match its canonical bytes");
   }
-  if (profileDigest !== PROFILE_DIGEST) {
-    throw new Error(`unexpected reference profile digest ${profileDigest}`);
-  }
   const assetManifest = JSON.parse(
     readFileSync(resolve(PROFILE_ROOT, "revision-1-assets.json"), "utf8"),
   );

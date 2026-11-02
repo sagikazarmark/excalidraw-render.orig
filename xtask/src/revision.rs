@@ -38,36 +38,41 @@ impl Reference {
         }
     }
 
-    /// The path of the identity's digest sidecar.
-    pub(crate) fn sidecar_path(self) -> String {
-        let path = self.path();
-        format!("{}.sha256", path.strip_suffix(".json").unwrap_or(&path))
-    }
-
     /// The approved digest, lowercase hex: the sidecar's, once the file's
     /// bytes are checked to have it.
     pub(crate) fn digest(self) -> Result<String, String> {
-        let sidecar = self.sidecar_path();
-        let digest = fs::read_to_string(repo_root().join(&sidecar))
-            .map_err(|error| format!("failed to read {sidecar}: {error}"))?
-            .trim()
-            .to_owned();
-        if !crate::viewer_identity::is_lower_hex(&digest, 64) {
-            return Err(format!("{sidecar} holds no SHA-256 digest"));
-        }
-        let path = self.path();
-        let bytes = fs::read(repo_root().join(&path))
-            .map_err(|error| format!("failed to read {path}: {error}"))?;
-        if sha256(&bytes) != digest {
-            return Err(format!("{path} does not match {sidecar}"));
-        }
-        Ok(digest)
+        sealed_digest(&self.path())
     }
 
     /// The digest as the records spell it, `sha256:<hex>`.
     pub(crate) fn prefixed_digest(self) -> Result<String, String> {
         Ok(format!("sha256:{}", self.digest()?))
     }
+}
+
+/// The digest of a repository file that has a `.sha256` sidecar beside it
+/// (`name.json` and `name.sha256`, `name.bin` and `name.sha256`): the
+/// sidecar's, once the file's bytes are checked to have it. An artifact pinned
+/// this way is updated by regenerating it and its sidecar, with no verifier
+/// edit.
+pub(crate) fn sealed_digest(path: &str) -> Result<String, String> {
+    let sidecar = match path.rsplit_once('.') {
+        Some((stem, extension)) if !extension.contains('/') => format!("{stem}.sha256"),
+        _ => return Err(format!("{path} has no extension to replace")),
+    };
+    let digest = fs::read_to_string(repo_root().join(&sidecar))
+        .map_err(|error| format!("failed to read {sidecar}: {error}"))?
+        .trim()
+        .to_owned();
+    if !crate::viewer_identity::is_lower_hex(&digest, 64) {
+        return Err(format!("{sidecar} holds no SHA-256 digest"));
+    }
+    let bytes = fs::read(repo_root().join(path))
+        .map_err(|error| format!("failed to read {path}: {error}"))?;
+    if sha256(&bytes) != digest {
+        return Err(format!("{path} does not match {sidecar}"));
+    }
+    Ok(digest)
 }
 
 #[cfg(test)]
@@ -82,16 +87,25 @@ mod tests {
             Reference::AssetManifest,
             Reference::SceneSurface,
         ] {
-            let digest = reference.digest().unwrap();
-            assert_eq!(
-                reference.prefixed_digest().unwrap(),
-                format!("sha256:{digest}")
-            );
-            assert!(reference.sidecar_path().ends_with(".sha256"));
+            reference.digest().unwrap();
         }
         assert_eq!(
-            Reference::FrameProfile.sidecar_path(),
-            "tests/oracle/reference-profiles/revision-1-frame.sha256"
+            Reference::FrameProfile.path(),
+            "tests/oracle/reference-profiles/revision-1-frame.json"
         );
+    }
+
+    #[test]
+    fn sealed_digests_check_the_file_against_its_sidecar() {
+        let bin = "tests/oracle/compatibility-artifacts/revision-1-chromium-149-cjk-scalars.bin";
+        assert_eq!(
+            sealed_digest(bin).unwrap(),
+            sha256(&fs::read(repo_root().join(bin)).unwrap())
+        );
+        // A file without a sidecar has no sealed digest.
+        let schema = "tests/oracle/scene-surfaces/scene-surface-v1.schema.json";
+        assert!(sealed_digest(schema)
+            .unwrap_err()
+            .contains("failed to read"));
     }
 }

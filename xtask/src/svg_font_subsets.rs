@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 use crate::conformance::{
     canonical_bytes, object, read_repository_file as read_repository_file_in, repo_root, sha256,
 };
+use crate::revision::sealed_digest;
 use crate::viewer_identity::{runtime_record, svg_viewer_profile, ReferenceRuntime};
 
 const MANIFEST_PATH: &str =
@@ -25,10 +26,12 @@ const CORPUS_PATH: &str = concat!(
 /// these counts; the schema states the execution count as well.
 pub(crate) const SUCCESSFUL_CELLS: usize = 780;
 pub(crate) const EXECUTIONS: usize = 662;
-/// The committed qualification corpus every piece of SVG font subset evidence
-/// binds.
-pub(crate) const CORPUS_SHA256: &str =
-    "7c9ee4417835a19f4ec6b644a521c304399dbf8481e4d3f92c061af5261fdbb7";
+const SUBSET_PROFILE_PATH: &str =
+    "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json";
+const CHROMIUM_PROFILE_PATH: &str =
+    "tests/conformance/viewer-profiles/canonical-svg-chromium-v1.json";
+const PURE_RUST_PROFILE_PATH: &str =
+    "tests/conformance/viewer-profiles/canonical-svg-pure-rust-v1.json";
 const REQUIRED_CHECKS: [&str; 7] = [
     "shaping",
     "glyph_choice",
@@ -264,13 +267,15 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
         verify_descriptor(descriptor)?;
     }
     if manifest["corpus"]["path"] != json!(CORPUS_PATH)
-        || manifest["corpus"]["sha256"] != json!(CORPUS_SHA256)
-        || manifest["subset_profile"]["sha256"]
-            != json!("f23470d703abde83ac59cd7408d8114fa6128f9069ae63d53b1a83092d85ba15")
+        || manifest["corpus"]["sha256"] != json!(sealed_digest(CORPUS_PATH)?)
+        || manifest["subset_profile"]["path"] != json!(SUBSET_PROFILE_PATH)
+        || manifest["subset_profile"]["sha256"] != json!(sealed_digest(SUBSET_PROFILE_PATH)?)
+        || manifest["viewer_profiles"]["chromium"]["path"] != json!(CHROMIUM_PROFILE_PATH)
         || manifest["viewer_profiles"]["chromium"]["sha256"]
-            != json!("be1664b3ad79c09b99680ff5e8ca0e56a98fce703c94a13e19e889097c90426b")
+            != json!(sealed_digest(CHROMIUM_PROFILE_PATH)?)
+        || manifest["viewer_profiles"]["pure_rust"]["path"] != json!(PURE_RUST_PROFILE_PATH)
         || manifest["viewer_profiles"]["pure_rust"]["sha256"]
-            != json!("3ffb9edeb9f02ccb8fe6e18ad714017bacee1af06cfffbda36568dc765bee674")
+            != json!(sealed_digest(PURE_RUST_PROFILE_PATH)?)
     {
         return Err("qualification dependency identity is stale".to_owned());
     }
@@ -320,7 +325,7 @@ struct ExpectedCell {
 fn expected_cells() -> Result<BTreeMap<(String, String), ExpectedCell>, String> {
     let bytes = fs::read(repo_root().join(CORPUS_PATH))
         .map_err(|error| format!("failed to read {CORPUS_PATH}: {error}"))?;
-    if sha256(&bytes) != CORPUS_SHA256 {
+    if sha256(&bytes) != sealed_digest(CORPUS_PATH)? {
         return Err(format!(
             "{CORPUS_PATH} is not the bound qualification corpus"
         ));
@@ -775,8 +780,8 @@ pub fn rebind(inputs: &str) -> Result<(), String> {
         .map_err(|error| format!("invalid SVG font subset viewer manifest: {error}"))?;
     let rebound = rebind_executions(&mut manifest, &input)?;
     manifest["input_manifest_sha256"] = json!(sha256(&input_bytes));
-    manifest["subset_profile"] =
-        descriptor("tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json")?;
+    manifest["subset_profile"] = descriptor(SUBSET_PROFILE_PATH)?;
+    manifest["corpus"] = descriptor(CORPUS_PATH)?;
     let canonical = canonical_bytes(&manifest)?;
     fs::write(
         repo_root().join(MANIFEST_PATH),

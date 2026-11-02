@@ -22,8 +22,9 @@ import { carriedApproval, generationArgs } from "./generation-guard.mjs";
 // provenance pins that generator's bytes, so a change made for font-bearing
 // evidence must not move the scene cases' provenance; and this case's provenance
 // pins this file, so the case stays reproducible through its declared generator
-// alone. The one module both share, canonical-json.mjs, is bound by the
-// reference profile whose digest every provenance pins. An earlier version
+// alone. The modules both share are canonical-json.mjs, which the reference
+// profile binds, and revision.mjs, which reads the revision's reference
+// digests from their sidecars. An earlier version
 // templated over conformance-case.mjs with string anchors and went stale the
 // first time that file was refactored (#106).
 
