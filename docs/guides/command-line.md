@@ -162,13 +162,15 @@ jq -r '.diagnostics[] | select(.severity == "warning") | .code' report.json | so
 ```
 
 The report has a `command` (`render`, `frames.list` or `frames.export`), a
-`status` (`success` or `failure`; a frame batch can also be `partial`), an
-`error` object with a stable `code` when the command failed, and a
+`status` (`success` or `failure`; a frame batch can also be `partial`) and a
 `diagnostics` array whose entries carry `code`, `severity`, `element_id`,
-`json_pointer` (the location in the scene) and `message`. The `frames` reports
-add a `frames` array; a `frames` command that fails before it has a listing or
-a batch reports in the render shape, without one. Match on codes, not
-messages: codes are stable, messages may be reworded.
+`json_pointer` (the location in the scene) and `message`. A failed render, or
+a `frames` command that fails before it has a listing or a batch, has an
+`error` object with a stable `code`. The `frames` reports carry a `frames`
+array instead of `error` (a listing has no `diagnostics` either), and a frame
+batch reports each failure in that frame's `error`: check `status`, then
+`.frames[].error`. Match on codes, not messages: codes are stable, messages
+may be reworded.
 
 ## Export frames
 

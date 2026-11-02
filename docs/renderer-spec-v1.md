@@ -2636,9 +2636,10 @@ as selected. Artifact descriptors contain no bytes.
 of section 7, which carry a `frames` member, except for a failure before a
 listing or a batch exists, which uses this envelope with status `failure`. A
 command-line grammar error reports the command its first argument names:
-`frames`, with `--list` anywhere after it, or otherwise the scene render. The
-reference profile is not repeated in reports: the renderer version identifies
-it, and `--version --verbose` prints it.
+`frames`, with a `--list` option after it (not after `--` and not as the
+`--output` value), or otherwise the scene render. The reference profile is
+not repeated in reports: the renderer version identifies it, and
+`--version --verbose` prints it.
 
 An incompatible shape or new detail kind after first publication requires a
 new report schema; a new stable code can then remain in schema 1 only with null

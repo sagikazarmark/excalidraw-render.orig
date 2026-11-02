@@ -287,6 +287,7 @@ fn real_capture_repeats_and_rejects_resealed_report_tampering() {
     for mutation in [
         json!({"schema_version":true}),
         json!({"format":"svg"}),
+        json!({"command":"frames.export"}),
         json!({"diagnostics":[{"code":"color.invalid","severity":"warning","format":"png","effects":["visual","visual"],"element_id":null,"json_pointer":"","message":"observed","details":null}]}),
     ] {
         let mut report = original.clone();

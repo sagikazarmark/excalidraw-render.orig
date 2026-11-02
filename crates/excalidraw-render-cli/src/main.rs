@@ -1956,19 +1956,25 @@ fn preparse_json_mode(args: &[OsString]) -> bool {
 }
 
 /// The command a rejected command line meant to run, for its JSON report:
-/// `frames` is the first argument when given, and `--list` makes it a
-/// listing.
+/// `frames` is the first argument when given, and the `--list` option makes
+/// it a listing.
 fn preparse_command(args: &[OsString]) -> ReportCommand {
-    match args.get(1) {
-        Some(first) if first == "frames" => {
-            if args[2..].iter().any(|arg| arg == "--list") {
-                ReportCommand::FramesList
-            } else {
-                ReportCommand::FramesExport
-            }
-        }
-        _ => ReportCommand::Render,
+    if args.get(1).is_none_or(|first| first != "frames") {
+        return ReportCommand::Render;
     }
+    // `--list` counts only as an option: not after `--`, and not as the
+    // value of `-o`/`--output`, which accepts one that starts with a hyphen.
+    let mut rest = args[2..].iter();
+    while let Some(arg) = rest.next() {
+        if arg == "--" {
+            break;
+        } else if arg == "-o" || arg == "--output" {
+            rest.next();
+        } else if arg == "--list" {
+            return ReportCommand::FramesList;
+        }
+    }
+    ReportCommand::FramesExport
 }
 
 /// `report` as one line of JSON.
@@ -2867,6 +2873,19 @@ mod tests {
                 ReportCommand::FramesList,
             ),
             (&["frames", "--list"][..], ReportCommand::FramesList),
+            // After `--`, or as the output directory, `--list` is no option.
+            (
+                &["frames", "scene.excalidraw", "--", "--list"][..],
+                ReportCommand::FramesExport,
+            ),
+            (
+                &["frames", "scene.excalidraw", "-o", "--list"][..],
+                ReportCommand::FramesExport,
+            ),
+            (
+                &["frames", "-o", "out", "--list"][..],
+                ReportCommand::FramesList,
+            ),
         ] {
             assert_eq!(preparse_command(&args(values)), command, "{values:?}");
         }
