@@ -14,7 +14,8 @@ if [[ "${MODE}" != "generate" && "${MODE}" != "reproduce" ]] || [[ "${CASE_ID}" 
   exit 2
 fi
 
-# Generation over a manifested case needs --supersede; the generator enforces it.
+# Generation over a manifested case needs --supersede, which the generator
+# enforces; nothing else may reach the container command line.
 SUPERSEDE="${3:-}"
 if [[ -n "${SUPERSEDE}" && ( "${SUPERSEDE}" != "--supersede" || "${MODE}" != "generate" || -n "${4:-}" ) ]]; then
   echo "usage: $0 <generate|reproduce> focused.frame-export.v1 [--supersede]" >&2

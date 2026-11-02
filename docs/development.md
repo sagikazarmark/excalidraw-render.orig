@@ -286,9 +286,10 @@ than unset, empty, `0` or `1` fails the build. The build script is not
 packaged: the published crate has no build script, so dependents never run it.
 
 The xtask tests that build the qualified release CLI to replay the
-representative candidate, and the ones that judge the live coverage
-inventory and ownership ledger, are `#[ignore]`d as the release tier as
-well; `just test-release` runs them.
+representative candidate, the ones that judge the live coverage inventory
+and ownership ledger, and the ones that run host tools (qpdf, Node) are
+`#[ignore]`d as the release tier as well; `just test-release` runs them from
+the `release` devenv profile.
 
 ## CI and evidence generation
 

@@ -124,8 +124,7 @@ const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
 const KNOWN_GEOMETRY_DEFECTS: &[PinnedGeometryDefect] = &[];
 
 /// Diagnosed paint or text attribute divergences whose fix is pending a
-/// maintainer decision, held at the attribute dimension's exact message. All
-/// 48 registered variants agree today.
+/// maintainer decision, held at the attribute dimension's exact message.
 const KNOWN_ATTRIBUTE_DIVERGENCES: &[PinnedAttributeDivergence] = &[];
 
 /// Compatibility exceptions whose approved tolerance exception the case

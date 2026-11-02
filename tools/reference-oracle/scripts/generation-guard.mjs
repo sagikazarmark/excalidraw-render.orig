@@ -4,8 +4,8 @@
 // replaced only when the caller passes --supersede, so a stray `generate`
 // cannot silently rewrite reviewed evidence; reproduction never writes the
 // checkout. A superseded manifest keeps the approval block it had: ADR-0019
-// makes that block historical metadata, and carrying it means a regeneration
-// against an unmoved reference reviews as a clean diff in Git.
+// makes that block historical metadata, and carrying it keeps the Git diff of
+// a regeneration to what the reference moved.
 import { existsSync, readFileSync } from "node:fs";
 
 /** `<generate|reproduce> <case-id> [--supersede]`, validated. */

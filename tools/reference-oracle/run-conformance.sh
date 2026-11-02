@@ -22,7 +22,8 @@ if [[ -z "${2:-}" ]]; then
   exit 2
 fi
 
-# Generation over a manifested case needs --supersede; the generator enforces it.
+# Generation over a manifested case needs --supersede, which the generator
+# enforces; nothing else may reach the container command line.
 SUPERSEDE="${3:-}"
 if [[ -n "${SUPERSEDE}" && ( "${SUPERSEDE}" != "--supersede" || "${MODE}" != "generate" || -n "${4:-}" ) ]]; then
   echo "usage: $0 <generate|reproduce> <case-id> [--supersede]" >&2

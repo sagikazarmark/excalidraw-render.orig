@@ -1687,39 +1687,27 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
 /// against literals: a regenerated profile moves every identity at once and
 /// needs no edit here.
 fn verify_reference_runtime(provenance: &Value, profile: &Value) -> Result<(), String> {
-    let platform = &profile["canonicalPlatform"];
+    let reference = crate::viewer_identity::ReferenceRuntime::from_profile(profile)?;
     let container = provenance["container_image"].as_str().unwrap_or_default();
-    let digest = container
+    let pinned = container
         .rsplit_once("@sha256:")
-        .map(|(_, digest)| digest)
-        .unwrap_or_default();
-    if digest.len() != 64
-        || !digest
-            .bytes()
-            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
-    {
+        .is_some_and(|(_, digest)| crate::viewer_identity::is_lower_hex(digest, 64));
+    if !pinned {
         return Err(format!(
             "provenance container image {container:?} is not pinned by a SHA-256 digest"
         ));
     }
-    let profile_container = format!(
-        "{}@{}",
-        platform["container"]["image"].as_str().unwrap_or_default(),
-        platform["container"]["perPlatformDigest"]
-            .as_str()
-            .unwrap_or_default()
-    );
-    if container != profile_container {
+    if container != reference.container {
         return Err(format!(
-            "provenance container image {container:?} is not the reference profile's \
-             {profile_container:?}"
+            "provenance container image {container:?} is not the reference profile's {:?}",
+            reference.container
         ));
     }
     let node = provenance["node_version"].as_str().unwrap_or_default();
-    let profile_node = platform["runtime"]["node"].as_str().unwrap_or_default();
-    if node.is_empty() || node.strip_prefix('v') != Some(profile_node) {
+    if node.strip_prefix('v') != Some(reference.node.as_str()) {
         return Err(format!(
-            "provenance Node {node:?} is not the reference profile's v{profile_node}"
+            "provenance Node {node:?} is not the reference profile's v{}",
+            reference.node
         ));
     }
     let browser = object(&provenance["browser"], "browser provenance")?;
@@ -1728,10 +1716,8 @@ fn verify_reference_runtime(provenance: &Value, profile: &Value) -> Result<(), S
         &["arguments", "context", "version"],
         "browser provenance",
     )?;
-    let version = browser["version"].as_str().unwrap_or_default();
-    if version.is_empty()
-        || browser["version"] != platform["runtime"]["chromium"]
-        || browser["arguments"] != profile["browser"]["launch"]["explicitArguments"]
+    if browser["version"] != json!(reference.chromium)
+        || browser["arguments"] != json!(reference.browser_arguments)
         || browser["context"] != profile["browser"]["context"]
     {
         return Err("browser provenance does not match the approved reference profile".to_owned());

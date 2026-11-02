@@ -3,10 +3,11 @@ use super::{is_library_sha256, repo_root, sha256, verify_descriptor};
 use serde_json::{json, Value};
 use std::{fs, process::Command};
 
-use crate::viewer_identity::{cargo_locked_version, read_text};
+use crate::viewer_identity::{
+    cargo_locked_version, read_text, sealed_profile, PDFIUM_PROFILE_PATH,
+};
 
 const RECORD: &str = "tools/pdf-harness/pdfium-runtime.json";
-const PDFIUM_PROFILE: &str = "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json";
 const WORKER_LOCK: &str = "tools/pdf-harness/pdfium-rust/Cargo.lock";
 const CASE: &str = "tests/conformance/pdf-viewer-qualification/rectangle-outline";
 const ROLES: [(&str, &str); 3] = [
@@ -24,8 +25,7 @@ fn descriptor(path: &str) -> Result<Value, String> {
 /// lockfile resolves and the PDFium version the viewer profile names.
 fn versions() -> Result<(String, String), String> {
     let adapter = cargo_locked_version(&read_text(WORKER_LOCK)?, "pdfium-render")?;
-    let profile: Value = serde_json::from_str(&read_text(PDFIUM_PROFILE)?)
-        .map_err(|e| format!("{PDFIUM_PROFILE}: {e}"))?;
+    let profile = sealed_profile(PDFIUM_PROFILE_PATH)?;
     let pdfium = profile["identity"]["upstream_version"]
         .as_str()
         .filter(|version| !version.is_empty())

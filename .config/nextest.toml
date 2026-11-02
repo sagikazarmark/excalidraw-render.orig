@@ -66,9 +66,10 @@ release-tier = { max-threads = 1 }
 # The xtask tests that run host tools: qpdf 12.3.2, bash and `realpath` for the
 # PDF inspector and harness wrappers, and Node for the WebP viewer boundary, the
 # candidate asset derivation and the ownership recorders, which verify the
-# representative owner through the candidate gate before writing. They are #[ignore]d so the fast tier needs
-# none of them and the base devenv shell no Node; `just test-release` runs them
-# from the `release` profile, which has both.
+# representative owner through the candidate gate before writing. They are
+# #[ignore]d so the fast tier needs none of them and the base devenv shell no
+# Node; `just test-release` runs them from the `release` profile, which has
+# both.
 host-tools = { max-threads = "num-cpus" }
 
 [[profile.default.overrides]]

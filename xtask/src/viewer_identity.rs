@@ -13,22 +13,28 @@ use serde_json::Value;
 use crate::conformance::{repo_root, sha256};
 
 const REFERENCE_PROFILE_PATH: &str = "tests/oracle/reference-profiles/revision-1.json";
-const REFERENCE_PROFILE_SIDECAR: &str = "tests/oracle/reference-profiles/revision-1.sha256";
+pub(crate) const PDFIUM_PROFILE_PATH: &str =
+    "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json";
 
-/// The scene reference profile, read only when its bytes match its sidecar
-/// digest, which `conformance verify-all` binds to every case.
-pub(crate) fn reference_profile() -> Result<Value, String> {
-    let bytes = fs::read(repo_root().join(REFERENCE_PROFILE_PATH))
-        .map_err(|error| format!("failed to read {REFERENCE_PROFILE_PATH}: {error}"))?;
-    let sidecar = fs::read_to_string(repo_root().join(REFERENCE_PROFILE_SIDECAR))
-        .map_err(|error| format!("failed to read {REFERENCE_PROFILE_SIDECAR}: {error}"))?;
-    if sha256(&bytes) != sidecar.trim() {
-        return Err(format!(
-            "{REFERENCE_PROFILE_PATH} does not match {REFERENCE_PROFILE_SIDECAR}"
-        ));
+/// A profile JSON (`*.json`), read only when its bytes match the digest in
+/// its `*.sha256` sidecar.
+pub(crate) fn sealed_profile(path: &str) -> Result<Value, String> {
+    let bytes = fs::read(repo_root().join(path))
+        .map_err(|error| format!("failed to read {path}: {error}"))?;
+    let sidecar = path
+        .strip_suffix(".json")
+        .map(|stem| format!("{stem}.sha256"))
+        .ok_or_else(|| format!("{path} is not a JSON profile"))?;
+    if sha256(&bytes) != read_text(&sidecar)?.trim() {
+        return Err(format!("{path} does not match {sidecar}"));
     }
-    serde_json::from_slice(&bytes)
-        .map_err(|error| format!("invalid {REFERENCE_PROFILE_PATH}: {error}"))
+    serde_json::from_slice(&bytes).map_err(|error| format!("invalid {path}: {error}"))
+}
+
+/// The scene reference profile, which `conformance verify-all` binds to every
+/// case.
+pub(crate) fn reference_profile() -> Result<Value, String> {
+    sealed_profile(REFERENCE_PROFILE_PATH)
 }
 
 /// The pinned reference container's runtime, as the reference profile
@@ -87,21 +93,15 @@ impl ReferenceRuntime {
     }
 }
 
-/// A canonical SVG viewer profile (`chromium` or `pure-rust`), read only when
-/// its bytes match its sidecar digest.
+/// A canonical SVG viewer profile (`chromium` or `pure-rust`).
 pub(crate) fn svg_viewer_profile(viewer: &str) -> Result<Value, String> {
-    let path = format!("tests/conformance/viewer-profiles/canonical-svg-{viewer}-v1.json");
-    let bytes = fs::read(repo_root().join(&path))
-        .map_err(|error| format!("failed to read {path}: {error}"))?;
-    let sidecar = read_text(&path.replace(".json", ".sha256"))?;
-    if sha256(&bytes) != sidecar.trim() {
-        return Err(format!("{path} does not match its sidecar digest"));
-    }
-    serde_json::from_slice(&bytes).map_err(|error| format!("invalid {path}: {error}"))
+    sealed_profile(&format!(
+        "tests/conformance/viewer-profiles/canonical-svg-{viewer}-v1.json"
+    ))
 }
 
-/// A viewer profile's `runtime` record named `name`.
-pub(crate) fn runtime<'a>(profile: &'a Value, name: &str) -> Result<&'a str, String> {
+/// The value of a viewer profile's `runtime` record named `name`.
+pub(crate) fn runtime_record<'a>(profile: &'a Value, name: &str) -> Result<&'a str, String> {
     let records = profile["runtime"]
         .as_array()
         .ok_or("viewer profile runtime records must be an array")?;
@@ -151,14 +151,19 @@ pub(crate) fn toolchain_channel(toolchain: &str) -> Result<String, String> {
         .ok_or_else(|| "rust-toolchain.toml pins no channel".to_owned())
 }
 
+/// Whether `value` is `length` lowercase hexadecimal digits.
+pub(crate) fn is_lower_hex(value: &str, length: usize) -> bool {
+    value.len() == length
+        && value
+            .bytes()
+            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+}
+
 /// Whether `value` is a full lowercase Git commit hash.
 pub(crate) fn is_commit(value: &Value) -> bool {
-    value.as_str().is_some_and(|commit| {
-        commit.len() == 40
-            && commit
-                .bytes()
-                .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
-    })
+    value
+        .as_str()
+        .is_some_and(|commit| is_lower_hex(commit, 40))
 }
 
 /// Reads a repository file as UTF-8.
@@ -201,10 +206,10 @@ mod tests {
             {"name": "twice", "value": "1"},
             {"name": "twice", "value": "2"},
         ]});
-        assert_eq!(runtime(&profile, "node").unwrap(), "24.16.0");
-        assert!(runtime(&profile, "npm").is_err());
-        assert!(runtime(&profile, "twice").is_err());
-        assert!(runtime(&profile, "absent").is_err());
+        assert_eq!(runtime_record(&profile, "node").unwrap(), "24.16.0");
+        assert!(runtime_record(&profile, "npm").is_err());
+        assert!(runtime_record(&profile, "twice").is_err());
+        assert!(runtime_record(&profile, "absent").is_err());
     }
 
     #[test]

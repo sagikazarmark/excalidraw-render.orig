@@ -66,13 +66,15 @@ test-shard shard archive="target/nextest-archive.tar.zst":
 
 # Run the release-tier tests: the xtask tests that build the qualified release
 # CLI and replay the representative candidate through it, the ones that judge
-# the live coverage inventory and ownership ledger, and the ones that run host
-# tools (qpdf, Node; the `release` devenv profile has both). Building the CLI
-# first keeps the one-thread group from serializing on Cargo's build lock.
+# the live coverage inventory and ownership ledger, the ones that run host tools
+# (qpdf, Node; the `release` devenv profile has both), and the case generators'
+# replacement guard. Building the CLI first keeps the one-thread group from
+# serializing on Cargo's build lock.
 test-release:
     cargo build --release --locked -p excalidraw-render-cli
     cargo nextest run --locked --workspace --profile default --no-fail-fast --run-ignored only \
         -E 'group(release-tier) | group(host-tools)'
+    node --test tools/reference-oracle/scripts/generation-guard.test.mjs
 
 # Test the builds that leave out the png or pdf feature.
 test-features:

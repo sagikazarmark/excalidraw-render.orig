@@ -4,7 +4,7 @@ use std::path::{Component, Path};
 use serde_json::{json, Value};
 
 use crate::conformance::{canonical_bytes, object, repo_root, sha256};
-use crate::viewer_identity::{is_commit, runtime, ReferenceRuntime};
+use crate::viewer_identity::{is_commit, runtime_record, ReferenceRuntime};
 
 mod runtime;
 pub use runtime::refresh as refresh_pdfium_runtime;
@@ -272,12 +272,12 @@ fn verify_viewer_profile(descriptor: &Value, viewer: &str) -> Result<(), String>
             if profile["id"] != json!("canonical-pdf.pdfium.v1")
                 || profile["identity"]["viewer"] != json!("pdfium")
                 || version.is_empty()
-                || !runtime(&profile, "pdfium")?.starts_with(&format!("{version} "))
+                || !runtime_record(&profile, "pdfium")?.starts_with(&format!("{version} "))
             {
                 return Err("canonical PDFium profile settings are invalid".to_owned());
             }
             for historical in ["pypdfium2", "python", "platform"] {
-                runtime(&profile, historical)?;
+                runtime_record(&profile, historical)?;
             }
             verify_exact_directory("tools/pdf-harness/pdfium/empty-fonts", &[".keep"])?;
         }
@@ -299,9 +299,9 @@ fn verify_pdfjs_profile(profile: &Value, reference: &ReferenceRuntime) -> Result
         || profile["identity"]["viewer"] != json!("pdfjs")
         || version.is_empty()
         || !is_commit(commit)
-        || runtime(profile, "pdfjs-dist")?
+        || runtime_record(profile, "pdfjs-dist")?
             != format!("{version} at {}", commit.as_str().unwrap_or_default())
-        || runtime(profile, "@napi-rs/canvas")?.is_empty()
+        || runtime_record(profile, "@napi-rs/canvas")?.is_empty()
     {
         return Err("canonical PDF.js profile settings are invalid".to_owned());
     }
@@ -313,7 +313,7 @@ fn verify_pdfjs_profile(profile: &Value, reference: &ReferenceRuntime) -> Result
             format!("{}, {}", reference.container, reference.architecture),
         ),
     ] {
-        let recorded = runtime(profile, name)?;
+        let recorded = runtime_record(profile, name)?;
         if recorded != expected {
             return Err(format!(
                 "PDF.js profile records {name} {recorded}, the reference profile {expected}"
@@ -333,7 +333,7 @@ fn verify_qpdf_identity(profile: &Value, lock: &Value) -> Result<(), String> {
         || !is_commit(commit)
         || profile["identity"]["upstream_version"] != *version
         || profile["identity"]["upstream_commit"] != *commit
-        || runtime(profile, "qpdf")?
+        || runtime_record(profile, "qpdf")?
             != format!(
                 "{} at {}",
                 version.as_str().unwrap_or_default(),
@@ -356,7 +356,7 @@ fn verify_structure_profile(descriptor: &Value) -> Result<(), String> {
         || profile["identity"]["parser"] != json!("qpdf")
         || profile["identity"]["reference_profile_digest"] != json!(REFERENCE_PROFILE_DIGEST)
         || profile["qualification"]["case_id"] != json!("focused.rectangle-outline.v1")
-        || runtime(&profile, "python")?.is_empty()
+        || runtime_record(&profile, "python")?.is_empty()
     {
         return Err("canonical PDF structure profile identity is invalid".to_owned());
     }

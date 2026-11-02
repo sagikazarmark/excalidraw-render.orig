@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 
 use crate::conformance::{canonical_bytes, object, repo_root, sha256};
 use crate::viewer_identity::{
-    cargo_locked_version, is_commit, read_text, runtime, toolchain_channel, ReferenceRuntime,
+    cargo_locked_version, is_commit, read_text, runtime_record, toolchain_channel, ReferenceRuntime,
 };
 
 const MANIFEST_PATH: &str =
@@ -150,7 +150,7 @@ fn verify_chromium_runtime(profile: &Value, reference: &ReferenceRuntime) -> Res
         ("playwright", &reference.playwright),
         ("ubuntu", &reference.ubuntu),
     ] {
-        let recorded = runtime(profile, name)?;
+        let recorded = runtime_record(profile, name)?;
         if recorded != expected {
             return Err(format!(
                 "Chromium viewer profile records {name} {recorded}, the reference profile \
@@ -166,7 +166,7 @@ fn verify_chromium_runtime(profile: &Value, reference: &ReferenceRuntime) -> Res
 /// bound to the profile by digest.
 fn verify_rust_runtime(profile: &Value, lockfile: &str, toolchain: &str) -> Result<(), String> {
     for name in PURE_RUST_CRATES {
-        let recorded = runtime(profile, name)?;
+        let recorded = runtime_record(profile, name)?;
         let locked = cargo_locked_version(lockfile, name)?;
         if recorded != locked {
             return Err(format!(
@@ -175,13 +175,13 @@ fn verify_rust_runtime(profile: &Value, lockfile: &str, toolchain: &str) -> Resu
         }
     }
     let channel = toolchain_channel(toolchain)?;
-    let rustc = runtime(profile, "rustc")?;
+    let rustc = runtime_record(profile, "rustc")?;
     if !rustc.starts_with(&format!("{channel} (")) {
         return Err(format!(
             "pure-Rust profile records rustc {rustc}, its toolchain file pins {channel}"
         ));
     }
-    if runtime(profile, "target")? != NATIVE_TARGET {
+    if runtime_record(profile, "target")? != NATIVE_TARGET {
         return Err(format!("pure-Rust profile does not run on {NATIVE_TARGET}"));
     }
     Ok(())

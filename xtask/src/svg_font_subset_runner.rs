@@ -62,11 +62,11 @@ pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> 
     // The viewer's crate versions are the ones its own lockfile resolves.
     let lockfile = read_text(VIEWER_LOCK)?;
     let mut environment = json!({
-        "host": "linux-amd64",
+        "host": crate::svg_font_subsets::QUALIFICATION_HOST,
         "rustc": rustc_version()?,
         "target": crate::svg_viewers::NATIVE_TARGET,
     });
-    for name in ["fontdb", "harfrust", "resvg", "skrifa", "tiny-skia", "usvg"] {
+    for name in crate::svg_font_subsets::PURE_RUST_REPORT_CRATES {
         environment[name] = json!(cargo_locked_version(&lockfile, name)?);
     }
     let report = json!({

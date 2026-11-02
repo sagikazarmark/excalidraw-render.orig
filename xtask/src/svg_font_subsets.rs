@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use crate::conformance::{
     canonical_bytes, object, read_repository_file as read_repository_file_in, repo_root, sha256,
 };
-use crate::viewer_identity::{runtime, svg_viewer_profile, ReferenceRuntime};
+use crate::viewer_identity::{runtime_record, svg_viewer_profile, ReferenceRuntime};
 
 const MANIFEST_PATH: &str =
     "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json";
@@ -463,7 +463,10 @@ fn verify_execution_coverage<'a>(
 }
 
 /// The host both viewers qualified the subsets on (ADR-0006).
-const QUALIFICATION_HOST: &str = "linux-amd64";
+pub(crate) const QUALIFICATION_HOST: &str = "linux-amd64";
+/// The pure-Rust viewer's crates whose versions its font-subset report records.
+pub(crate) const PURE_RUST_REPORT_CRATES: [&str; 6] =
+    ["fontdb", "harfrust", "resvg", "skrifa", "tiny-skia", "usvg"];
 
 /// The Chromium report's environment: the reference container's runtime and
 /// launch arguments, as the reference profile records them.
@@ -487,11 +490,11 @@ fn chromium_environment(reference: &ReferenceRuntime) -> Value {
 fn pure_rust_environment(profile: &Value) -> Result<Value, String> {
     let mut environment = json!({
         "host": QUALIFICATION_HOST,
-        "rustc": format!("rustc {}", runtime(profile, "rustc")?),
-        "target": runtime(profile, "target")?,
+        "rustc": format!("rustc {}", runtime_record(profile, "rustc")?),
+        "target": runtime_record(profile, "target")?,
     });
-    for name in ["fontdb", "harfrust", "resvg", "skrifa", "tiny-skia", "usvg"] {
-        environment[name] = json!(runtime(profile, name)?);
+    for name in PURE_RUST_REPORT_CRATES {
+        environment[name] = json!(runtime_record(profile, name)?);
     }
     Ok(environment)
 }

@@ -10,8 +10,9 @@ per-change gate and holds Rust, just, nextest, cargo-deny, qpdf and PDFium; the
 runner and headless Firefox for the WASM recipes, the `release` profile extends
 it with Node for the release checks (`just release`, whose candidate gate and
 host-tool tests run Node on the host) and `just candidate-successor`, and the
-`maintainer` profile the release tooling of the [runbook](../release.md). A laptop and CI run the same recipes with the
-same tools; GitHub Actions is a caller, not the authority.
+`maintainer` profile the release tooling of the [runbook](../release.md). A
+laptop and CI run the same recipes with the same tools; GitHub Actions is a
+caller, not the authority.
 
 | Recipe | When | What it establishes |
 | --- | --- | --- |
@@ -50,7 +51,11 @@ name, so neither a workflow nor a developer names individual tests:
 The xtask tests that build the qualified release CLI, and the ones that
 judge the live coverage inventory and ownership ledger (which re-key on
 every font-catalog or spec edit), are the release tier: `#[ignore]`d for the
-fast tier and run by `just test-release`.
+fast tier and run by `just test-release`. So are the xtask tests that run host
+tools (the `host-tools` nextest group): qpdf, bash and `realpath` for the PDF
+inspector and harness wrappers, and Node for the WebP viewer boundary, the
+candidate asset derivation and the ownership recorders. `just test-release`
+runs from the `release` profile, which has Node; the base shell does not.
 
 ### The golden record
 
@@ -58,9 +63,9 @@ fast tier and run by `just test-release`.
 every registered case variant and frame target in each format, and of the
 project-authored facade scenes in `golden/facade-scenes.json` under the default
 request: 189 keys, with the bytes under `golden/blobs/`. A facade scene is a
-scene with no official evidence whose exact bytes a fast-tier test used to pin
-itself; the test now reads the scene from the same file and keeps only its
-behavioural assertions. The render-tier test `golden_native` derives the keys
+project-authored scene with no official evidence; the fast-tier test that
+exercises it reads the same file and asserts its behaviour, and the golden
+record holds its bytes. The render-tier test `golden_native` derives the keys
 from the registry and the facade list, renders each twice (forward and reverse,
 a fresh renderer each time) and holds them to the record, so artifact byte
 stability (ADR-0002) is a per-change gate. An intentional output change is
@@ -71,8 +76,8 @@ just update-golden
 ```
 
 on any host (ADR-0024: the bytes do not depend on the host; rendering the 168
-registered keys on macOS arm64 reproduced every Linux-recorded blob) and reviewed as the
-diff of the record and its blobs. Under wasm32 in Firefox (`just golden-wasm`)
+registered keys on macOS arm64 reproduced every Linux-recorded blob) and
+reviewed as the diff of the record and its blobs. Under wasm32 in Firefox (`just golden-wasm`)
 the same test holds the browser build to the same record, with the four PNG
 differences `golden/experimental-wasm.json` records for #178, which must all
 appear exactly as recorded. The [release policy](release-0.1.0.md) scopes them

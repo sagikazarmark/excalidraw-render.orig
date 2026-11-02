@@ -329,14 +329,15 @@ fn pdf_maps_the_same_glyph_id_to_distinct_unicode_character_codes() {
     assert!(pdf.contains("/Span << /ActualText <FEFF00A0> >> BDC\n"));
 }
 
-/// The focused Excalifont text: two centered lines, rotated, translucent.
-/// The focused scene: one rotated, translucent, centred Excalifont text. The
-/// golden record holds its bytes in every format (`facade.excalifont-text.v1`).
+/// The focused scene: one Excalifont text of two centred lines, rotated and
+/// translucent. The golden record holds its bytes in every format
+/// (`facade.excalifont-text.v1`).
 const FOCUSED_SCENE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../tests/conformance/golden/facade-scenes/excalifont-text.excalidraw"
 ));
 
+/// The focused scene, admitted.
 fn focused_scene() -> SceneDocument {
     SceneDocument::parse(FOCUSED_SCENE).expect("focused text scene is admitted")
 }
