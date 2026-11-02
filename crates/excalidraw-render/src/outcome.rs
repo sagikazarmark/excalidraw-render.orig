@@ -709,6 +709,7 @@ impl RenderOutcome {
 
     /// Returns the reference profile the artifact reproduces: the scene profile
     /// for a scene export, the frame profile for a frame export.
+    #[doc(hidden)]
     pub const fn profile_identity(&self) -> &'static ReferenceProfileIdentity {
         self.profile
     }

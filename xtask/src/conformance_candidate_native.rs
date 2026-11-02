@@ -19,9 +19,7 @@ const BUILD_ARGS: [&str; 6] = [
     "excalidraw-render-cli",
     "--message-format=json-render-diagnostics",
 ];
-pub const OPTIONS: [&str; 10] = [
-    "--compatibility-revision",
-    "1",
+pub const OPTIONS: [&str; 8] = [
     "--padding",
     "0",
     "--no-background",
@@ -284,7 +282,7 @@ fn report(bytes: &[u8], artifact: &[u8], format: &str, expected: &Value) -> Resu
         "pdf" => "application/pdf",
         _ => return Err("unsupported native format".into()),
     };
-    let wanted = json!({"schema_version":1,"status":"success","renderer_version":env!("CARGO_PKG_VERSION"),"compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":crate::revision::Reference::Profile.prefixed_digest()?,"format":format,"artifact":{"media_type":media,"byte_length":artifact.len(),"sha256":format!("sha256:{}",sha256(artifact))},"error":null,"diagnostics":expected["diagnostics"]});
+    let wanted = json!({"schema_version":1,"command":"render","status":"success","renderer_version":env!("CARGO_PKG_VERSION"),"excalidraw_release":"v0.18.1","format":format,"artifact":{"media_type":media,"byte_length":artifact.len(),"sha256":format!("sha256:{}",sha256(artifact))},"error":null,"diagnostics":expected["diagnostics"]});
     if expected != &json!({"schema_version":1,"diagnostics":[]}) || actual != wanted {
         return Err(format!(
             "native {format} report differs from the independently authored contract"
@@ -673,15 +671,14 @@ mod tests {
     fn cli_success_alone_does_not_satisfy_the_report_contract() {
         let artifact = b"test";
         let expected = json!({"schema_version":1,"diagnostics":[]});
-        let base = json!({"schema_version":1,"status":"success","renderer_version":env!("CARGO_PKG_VERSION"),"compatibility_revision":1,"excalidraw_release":"v0.18.1","reference_profile_digest":crate::revision::Reference::Profile.prefixed_digest().unwrap(),"format":"svg","artifact":{"media_type":"image/svg+xml","byte_length":4,"sha256":format!("sha256:{}",sha256(artifact))},"error":null,"diagnostics":[]});
+        let base = json!({"schema_version":1,"command":"render","status":"success","renderer_version":env!("CARGO_PKG_VERSION"),"excalidraw_release":"v0.18.1","format":"svg","artifact":{"media_type":"image/svg+xml","byte_length":4,"sha256":format!("sha256:{}",sha256(artifact))},"error":null,"diagnostics":[]});
         report(&canonical_bytes(&base).unwrap(), artifact, "svg", &expected).unwrap();
         for key in [
             "schema_version",
+            "command",
             "status",
             "renderer_version",
-            "compatibility_revision",
             "excalidraw_release",
-            "reference_profile_digest",
             "format",
             "artifact",
             "error",

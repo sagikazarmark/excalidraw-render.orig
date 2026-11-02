@@ -314,13 +314,7 @@ fn frame_rows(cli: &Path, out: &Path, case: &Case, dir: &str) -> Result<Vec<Row>
                 "--format",
                 format,
             ])
-            .args([
-                "--compatibility-revision",
-                "1",
-                "--report-format",
-                "json",
-                "--report-output",
-            ])
+            .args(["--report-format", "json", "--report-output"])
             .arg(format!("report-{format}.json"))
             .args(&args)
             .status()
@@ -399,7 +393,7 @@ fn frame_rows(cli: &Path, out: &Path, case: &Case, dir: &str) -> Result<Vec<Row>
 /// The CLI flags reproducing an official export's options. An option the CLI
 /// cannot express is an error, never silently dropped.
 fn export_args(options: &Value) -> Result<Vec<String>> {
-    let mut args = vec!["--compatibility-revision".to_owned(), "1".to_owned()];
+    let mut args = Vec::new();
     let options = options
         .as_object()
         .ok_or("export options must be an object")?;
@@ -755,8 +749,6 @@ mod tests {
         assert_eq!(
             export_args(&options).unwrap(),
             [
-                "--compatibility-revision",
-                "1",
                 "--no-background",
                 "--embed-scene",
                 "--padding",

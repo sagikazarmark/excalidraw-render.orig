@@ -68,10 +68,21 @@ fn release_owner_cli_rejects_dev_capture_before_attempting_native_build() {
     );
     let scratch = root().join(&directory);
     fs::create_dir_all(&scratch).unwrap();
-    let live = root().join("tests/conformance/candidates/stage4-frames-text-assets-v29");
+    let live = root().join("tests/conformance/candidates/stage4-frames-text-assets-v30");
     fs::copy(live.join("scene.json"), scratch.join("scene.json")).unwrap();
     let mut capture: serde_json::Value =
         serde_json::from_slice(&fs::read(live.join("native-capture.json")).unwrap()).unwrap();
+    // The request the gate passes today, so only the build identity is wrong.
+    capture["request_args"] = serde_json::json!([
+        "--padding",
+        "0",
+        "--no-background",
+        "--no-frame-names",
+        "--no-frame-outlines",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+    ]);
     capture["build"] = serde_json::json!({
         "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
         "debug": 0,

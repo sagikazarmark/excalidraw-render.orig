@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "dcd7251fa59ecbe4b1ee344a0cb9351093a88ff74db5928d8f1ae18acc82cf8d",
+  "catalog_sha256": "b7db0eec04bcc5d60aed90db656be669ecb09cff3706abe6fe2f3c17b42c18f5",
   "approval": null,
   "assignments": [
     {
@@ -50450,14 +50450,14 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v29",
+            "case": "representative.stage4-frames-text-assets.v30",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "965b1d672efcbb806d19e434f755fcccd4bb98d5515bd4928790df7f34f89390"
+              "sha256": "935ebfef3f9bda9f7e2e1aecf08de5c154867d4bc26f6291c5f2e51002a94c62"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v29/manifest.json",
-              "sha256": "ae0bde60f94a59d98fd879c4a69f0483026194e421fd683f21a80a7231e7a3b4"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v30/manifest.json",
+              "sha256": "19f0becb08c214ca78972351c36a01fe7196c74f10897dc7a9a1230651b142c7"
             },
             "approval_subject_sha256": "",
             "command": [
@@ -50470,7 +50470,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v29"
+              "tests/conformance/candidates/stage4-frames-text-assets-v30"
             ]
           }
         },

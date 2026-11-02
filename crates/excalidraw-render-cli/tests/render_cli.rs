@@ -55,9 +55,8 @@ fn help_describes_the_commands_with_examples() {
         );
     }
 
-    // Help speaks the user's language: the single compatibility revision is
-    // not a choice to advertise, and the renderer's internal vocabulary stays
-    // out of it.
+    // Help speaks the user's language: the renderer's internal vocabulary
+    // stays out of it.
     for args in [
         vec!["--help"],
         vec!["-h"],
@@ -67,8 +66,6 @@ fn help_describes_the_commands_with_examples() {
         let help = cli(&args);
         let help = String::from_utf8(help.stdout).expect("help is UTF-8");
         for jargon in [
-            "--compatibility-revision",
-            "--list-revisions",
             "revision",
             "profile",
             "evidence",
@@ -709,20 +706,7 @@ fn cli(args: &[&str]) -> std::process::Output {
 }
 
 #[test]
-fn standalone_commands_expose_revision_identity_and_exact_licenses() {
-    let revisions = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
-        .args(["--list-revisions", "--report-format", "json"])
-        .output()
-        .expect("list revisions");
-    assert!(revisions.status.success());
-    assert!(revisions.stdout.is_empty());
-    let report: serde_json::Value =
-        serde_json::from_slice(&revisions.stderr).expect("revision JSON report");
-    assert_eq!(report["schema_version"], 1);
-    assert_eq!(report["renderer_version"], env!("CARGO_PKG_VERSION"));
-    assert_eq!(report["revisions"][0]["compatibility_revision"], 1);
-    assert_eq!(report["revisions"][0]["default"], true);
-
+fn standalone_commands_expose_the_version_and_exact_licenses() {
     // The plain version names the release; --verbose adds the exact identity.
     let version = cli(&["--version"]);
     assert!(version.status.success());
@@ -769,9 +753,61 @@ fn only_one_valid_json_report_selection_changes_usage_error_transport() {
     assert_eq!(json.status.code(), Some(2));
     assert!(json.stdout.is_empty());
     let report: serde_json::Value = serde_json::from_slice(&json.stderr).expect("JSON failure");
+    assert_eq!(report["command"], "render");
     assert_eq!(report["status"], "failure");
     assert_eq!(report["error"]["family"], "cli");
     assert_eq!(report["error"]["code"], "cli.invalid-arguments");
+
+    // A rejected frames command line still names its command.
+    for (args, command) in [
+        (
+            &["frames", "in.excalidraw", "--report-format=json", "--nope"][..],
+            "frames.export",
+        ),
+        (
+            &[
+                "frames",
+                "in.excalidraw",
+                "--list",
+                "--report-format=json",
+                "--nope",
+            ][..],
+            "frames.list",
+        ),
+    ] {
+        let rejected = cli(args);
+        assert_eq!(rejected.status.code(), Some(2), "{args:?}");
+        let report: serde_json::Value =
+            serde_json::from_slice(&rejected.stderr).expect("JSON failure");
+        assert_eq!(report["command"], command, "{args:?}");
+        assert_eq!(report["error"]["code"], "cli.invalid-arguments", "{args:?}");
+    }
+
+    // The revision options are gone: there is one revision to render.
+    for args in [
+        &["--list-revisions"][..],
+        &[
+            "in.excalidraw",
+            "-o",
+            "out.svg",
+            "--compatibility-revision",
+            "1",
+        ][..],
+        &[
+            "frames",
+            "in.excalidraw",
+            "--list",
+            "--compatibility-revision",
+            "1",
+        ][..],
+    ] {
+        let rejected = cli(args);
+        assert_eq!(rejected.status.code(), Some(2), "{args:?}");
+        assert!(
+            String::from_utf8_lossy(&rejected.stderr).contains("cli.invalid-arguments"),
+            "{args:?}"
+        );
+    }
 
     let duplicate = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .args([
@@ -795,44 +831,6 @@ fn validation_uses_normative_failure_order_and_stable_exit_statuses() {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/basic-shapes.excalidraw");
     let output = temp.join("result.svg");
 
-    assert_failure(
-        &[
-            fixture.to_str().unwrap(),
-            "-o",
-            "-",
-            "--compatibility-revision",
-            "999",
-            "--padding=-1",
-            "--report-format=json",
-        ],
-        2,
-        "revision.unsupported",
-    );
-    // A revision past u64 is unsupported too, not malformed.
-    assert_failure(
-        &[
-            fixture.to_str().unwrap(),
-            "-o",
-            "-",
-            "--compatibility-revision",
-            "99999999999999999999",
-            "--report-format=json",
-        ],
-        2,
-        "revision.unsupported",
-    );
-    assert_failure(
-        &[
-            fixture.to_str().unwrap(),
-            "-o",
-            "-",
-            "--compatibility-revision",
-            "1x",
-            "--report-format=json",
-        ],
-        2,
-        "cli.invalid-arguments",
-    );
     assert_failure(
         &[
             fixture.to_str().unwrap(),
@@ -1566,14 +1564,12 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
         serde_json::from_slice(&json.stdout).expect("frame list JSON report");
     assert_eq!(report["schema_version"], 1);
     assert_eq!(report["status"], "success");
-    assert_eq!(report["mode"], "list");
-    assert_eq!(report["compatibility_revision"], 1);
-    assert_eq!(
-        report["reference_profile_digest"],
-        Renderer::new()
-            .frame_profile_identity()
-            .reference_profile_digest()
-    );
+    assert_eq!(report["command"], "frames.list");
+    assert_eq!(report["excalidraw_release"], "v0.18.1");
+    // The command names the shape; the renderer version names the profile.
+    assert!(report.get("mode").is_none());
+    assert!(report.get("compatibility_revision").is_none());
+    assert!(report.get("reference_profile_digest").is_none());
     assert_eq!(report["frames"].as_array().map(Vec::len), Some(3));
     assert_eq!(report["frames"][0]["ordinal"], 1);
     assert_eq!(report["frames"][0]["kind"], "frame");
@@ -1756,12 +1752,8 @@ fn frames_command_filters_names_and_writes_one_deterministically_named_artifact_
         report["frames"][0]["output_path"],
         output.join("Road-Map.svg").to_string_lossy().as_ref()
     );
-    assert_eq!(
-        report["reference_profile_digest"],
-        Renderer::new()
-            .frame_profile_identity()
-            .reference_profile_digest()
-    );
+    assert_eq!(report["command"], "frames.export");
+    assert_eq!(report["excalidraw_release"], "v0.18.1");
 
     let no_match_output = temp.join("no-match");
     let no_match = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
@@ -1921,7 +1913,7 @@ fn frame_batches_are_stage_all_by_default_and_partial_only_when_requested() {
     assert_eq!(report["frames"][0]["error"]["details"]["kind"], "delivery");
     let raw_report = std::str::from_utf8(&result.stderr).expect("frame report is UTF-8");
     assert!(raw_report
-        .starts_with("{\"schema_version\":1,\"status\":\"partial\",\"renderer_version\":"));
+        .starts_with("{\"schema_version\":1,\"command\":\"frames.export\",\"status\":\"partial\",\"renderer_version\":"));
     assert!(raw_report.contains(
         "\"error\":{\"family\":\"cli\",\"category\":null,\"code\":\"cli.destination-exists\""
     ));
@@ -2136,6 +2128,84 @@ fn assert_no_staging_files(directory: &Path) {
 
 fn temp_directory() -> TempDir {
     temp_directory_named("render")
+}
+
+/// The JSON report each command prints, byte for byte, against the reviewed
+/// copies in `tests/fixtures/reports`. `@VERSION@` stands for the renderer
+/// version, and the artifact's length and digest for what the render wrote,
+/// so a golden changes only when a report does.
+#[test]
+fn json_reports_match_their_golden_copies() {
+    let scratch = temp_directory_named("golden-reports");
+    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
+    let scene = fixtures.join("basic-shapes.excalidraw");
+    let scene = scene.to_str().expect("UTF-8 fixture path");
+    let svg = scratch.path().join("scene.svg");
+    let frames = scratch.path().join("frames");
+
+    for (golden, args, stream, artifact) in [
+        (
+            "render-success.json",
+            vec![
+                scene,
+                "-o",
+                svg.to_str().unwrap(),
+                "--report-format",
+                "json",
+            ],
+            "stderr",
+            Some(&svg),
+        ),
+        (
+            "frames-list.json",
+            vec!["frames", scene, "--list", "--report-format", "json"],
+            "stdout",
+            None,
+        ),
+        (
+            "frames-export-failure.json",
+            vec![
+                "frames",
+                scene,
+                "-o",
+                frames.to_str().unwrap(),
+                "--format",
+                "png",
+                "--max-frames",
+                "0",
+                "--report-format",
+                "json",
+            ],
+            "stderr",
+            None,
+        ),
+    ] {
+        let output = cli(&args);
+        let report = if stream == "stdout" {
+            output.stdout
+        } else {
+            output.stderr
+        };
+        let mut expected = fs::read_to_string(fixtures.join("reports").join(golden))
+            .expect("read golden report")
+            .replace("@VERSION@", env!("CARGO_PKG_VERSION"));
+        if let Some(artifact) = artifact {
+            use sha2::Digest as _;
+            let bytes = fs::read(artifact).expect("read rendered artifact");
+            let digest: String = sha2::Sha256::digest(&bytes)
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect();
+            expected = expected
+                .replace("@ARTIFACT_LENGTH@", &bytes.len().to_string())
+                .replace("@ARTIFACT_SHA256@", &format!("sha256:{digest}"));
+        }
+        assert_eq!(
+            String::from_utf8(report).expect("UTF-8 report"),
+            expected,
+            "{golden}"
+        );
+    }
 }
 
 fn temp_directory_named(name: &str) -> TempDir {

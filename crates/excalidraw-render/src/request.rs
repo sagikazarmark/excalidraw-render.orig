@@ -195,6 +195,13 @@ pub enum Sizing {
     MaxDimension(f64),
 }
 
+/// The reference export size: `Scale(1.0)`.
+impl Default for Sizing {
+    fn default() -> Self {
+        Self::Scale(1.0)
+    }
+}
+
 /// Color mode used to interpret scene colors.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[non_exhaustive]
@@ -529,7 +536,7 @@ impl SupplementalAssetsBuilder {
 }
 
 /// A validated one-format render request.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RenderRequest {
     format: OutputFormat,
     include_background: bool,
@@ -551,7 +558,7 @@ impl RenderRequest {
                 format,
                 include_background: true,
                 padding: 10.0,
-                sizing: Sizing::Scale(1.0),
+                sizing: Sizing::default(),
                 color_mode: ColorMode::Light,
                 frame_options: FrameOptions::default(),
                 metadata_options: MetadataOptions::default(),
@@ -637,7 +644,7 @@ pub struct RenderRequestBuilder {
 }
 
 /// A validated one-format frame render request.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FrameRenderRequest {
     inner: RenderRequest,
 }
