@@ -17,7 +17,8 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/sagikazarmark/excalidraw-render"
 # The oldest compiler the published crates support; `just msrv` compiles the
 # renderer and CLI with it. Krilla 0.8.2 declares 1.92.
-# The gates themselves build with the toolchain `devenv.nix` pins.
+# The gates and the release binaries build with the toolchain
+# `rust-toolchain.toml` pins.
 rust-version = "1.92"
 
 [workspace.dependencies]
@@ -139,6 +140,12 @@ lto = true
 panic = "abort"
 strip = true
 
+# dist's release workflow builds the shipped binaries with this profile. It is
+# `release` unchanged: dist's default thin LTO would ship a binary built
+# differently from the one the release checks run.
+[profile.dist]
+inherits = "release"
+
 # `cargo test` builds with this profile. It keeps the `dev` semantics the suite
 # relies on for diagnosis — debug assertions, overflow checks, unwinding,
 # debuginfo for backtraces — and only turns codegen optimization on: brotli
@@ -157,3 +164,20 @@ opt-level = 2
 # dependencies and differ only in the workspace members' own opt-level.
 [profile.dev.package."*"]
 opt-level = 2
+
+# cargo-release (docs/development/releasing.md). Every crate moves in lockstep
+# and the release is one signed `vX.Y.Z` tag, which dist's release workflow
+# builds and publishes the binaries from. The font crates keep their
+# `+excalidraw.X.Y.Z` build metadata across a bump (`metadata = "persistent"`
+# in their manifests); xtask and the comparator are bumped but not published.
+# No `shared-version = true`: the crates that inherit `version.workspace` are
+# already one shared-version group, and the flag would put the font crates,
+# whose versions are their own, in a second one, which leaves `{{version}}`
+# unrendered in the consolidated commit message.
+[workspace.metadata.release]
+consolidate-commits = true
+allow-branch = ["main"]
+pre-release-commit-message = "release {{version}}"
+tag-name = "v{{version}}"
+tag-message = "excalidraw-render {{version}}"
+sign-tag = true

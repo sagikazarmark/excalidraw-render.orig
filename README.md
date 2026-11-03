@@ -56,7 +56,9 @@ cargo install --locked excalidraw-render-cli
 ```
 
 This installs the `excalidraw-render` binary and needs Rust 1.92 or newer.
-GitHub releases also carry a prebuilt Linux x86-64 (glibc) archive.
+GitHub releases also carry prebuilt archives and a shell installer for Linux
+(x86-64 and ARM64, glibc and musl) and macOS (x86-64 and ARM64); only Linux
+x86-64 (glibc) is release-qualified.
 
 ```sh
 excalidraw-render drawing.excalidraw -o drawing.svg

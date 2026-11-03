@@ -42,6 +42,9 @@ let
   lock = builtins.fromTOML (builtins.readFile ./Cargo.lock);
   wasmBindgen = lib.findFirst (p: p.name == "wasm-bindgen") null lock.package;
   wasm-bindgen-cli = multiverse.wasm-bindgen-cli.${wasmBindgen.version};
+
+  # One pin for devenv and rustup: dist's release workflow builds with rustup.
+  toolchain = (builtins.fromTOML (builtins.readFile ./rust-toolchain.toml)).toolchain;
 in
 {
   dotenv.enable = true;
@@ -87,10 +90,11 @@ in
     rust = {
       enable = true;
       channel = "stable";
-      # The toolchain the gates build with (ADR-0024). A newer Clippy adds lints.
-      # A default, so `just msrv` can run on another one with
+      # The toolchain the gates build with (ADR-0024), pinned in
+      # rust-toolchain.toml. A newer Clippy adds lints. A default, so
+      # `just msrv` can run on another one with
       # `devenv --option languages.rust.version:string 1.92.0`.
-      version = lib.mkDefault "1.97.1";
+      version = lib.mkDefault toolchain.channel;
       targets = [ "wasm32-unknown-unknown" ];
     };
   };
@@ -143,7 +147,9 @@ in
       };
     };
 
-    # Optional maintainer tools; no recipe or runbook step needs them.
+    # Maintainer tools. The release runbook (docs/development/releasing.md)
+    # tags and publishes with cargo-release and regenerates dist's release
+    # workflow with cargo-dist (`dist generate`); no recipe needs the rest.
     maintainer.module = {
       packages = with pkgs; [
         cargo-audit

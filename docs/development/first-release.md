@@ -26,6 +26,13 @@ runbook, once 0.1.0 is out; move anything still open into issues first.
   exist yet.
 - After publishing, add any co-owners with `cargo owner --add <login> <crate>`
   for each of the five crates.
+- `cargo login` with that token before `cargo release --execute`, and set up
+  git tag signing (`user.signingkey`), since the release tag is signed.
+- Turn on GitHub Pages with "GitHub Actions" as the source (Settings → Pages).
+  That creates the `github-pages` environment, which by default deploys only
+  from the default branch; add a tag rule for `v*` to its deployment branches
+  and tags (Settings → Environments → github-pages), or the deploy job of the
+  release fails. Run `pages.yml` once from `main` to check the deployment.
 
 ## Open items
 
@@ -46,7 +53,8 @@ Hostile and real-world input:
 - [ ] Check whether `cargo install excalidraw-render-cli` uses the workspace
       `[profile.release]` (`panic = "abort"`, LTO); a member's packaged
       manifest probably drops it, so the installed CLI may differ from the
-      release archive.
+      release archives, which dist builds with `[profile.dist]`
+      (`[profile.release]` unchanged).
 
 Platforms:
 
