@@ -53,7 +53,7 @@ image-webp = "0.2.4"
 # the comparator's tests. The renderer parses scene numbers itself, and xtask's
 # `arbitrary_precision` keeps each `Value` number's source token, so only typed
 # float deserialization would see the correctly rounded parse; nothing here does.
-jsonschema = { version = "=0.60.2", default-features = false }
+jsonschema = { version = "=0.61.1", default-features = false }
 # The PDF writer (ADR-0021). A Krilla bump is a byte-affecting change for every
 # PDF, as svg2pdf's was, so the lock moves it deliberately. Krilla shapes nothing (every glyph
 # arrives positioned). `raster-images` only compiles its image module: every
